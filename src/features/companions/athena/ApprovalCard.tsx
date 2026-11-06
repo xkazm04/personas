@@ -34,7 +34,7 @@ export function ApprovalCard({
           {t.athena.proposed_action}
         </span>
         <span
-          className="typo-caption text-foreground/85 px-2 py-0.5 rounded-input bg-foreground/5"
+          className="typo-caption text-ink-2 px-2 py-0.5 rounded-input bg-foreground/5"
           title={approval.action}
         >
           {actionLabel(t, approval.action)}
@@ -59,13 +59,13 @@ export function ApprovalCard({
       </details>
 
       {error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 typo-caption text-rose-400">
+        <div className="rounded-card border border-status-error/30 bg-status-error/10 px-2.5 py-1.5 typo-caption text-status-error">
           {error}
         </div>
       )}
 
       {failedOutcome && (
-        <div className="rounded-card border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 typo-caption text-amber-300">
+        <div className="rounded-card border border-status-warning/30 bg-status-warning/10 px-2.5 py-1.5 typo-caption text-status-warning">
           {t.athena.approved_failed.replace(
             '{message}',
             failedOutcome,

@@ -81,7 +81,7 @@ export function TwinChannelMarks({ marks, onActivate, onAddChannel }: TwinChanne
               aria-label={`${meta.label}, ${stateLabel}`}
               className={
                 mark.active
-                  ? `w-11 h-11 rounded-card flex items-center justify-center ${palette.bg} ring-1 ring-inset ring-primary/10 bg-gradient-to-br ${palette.tint} transition-transform hover:scale-105`
+                  ? `w-11 h-11 rounded-card flex items-center justify-center ${palette.bg} ring-1 ring-inset ring-primary/10 bg-surface-1 ${palette.tint} transition-transform hover:scale-105`
                   : 'w-11 h-11 rounded-card flex items-center justify-center bg-secondary/25 ring-1 ring-inset ring-primary/10 transition-transform hover:scale-105'
               }
             >

@@ -82,7 +82,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
     >
       <div className="contents">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/15">
-          <ShieldCheck className="w-4 h-4 text-sky-300" />
+          <ShieldCheck className="w-4 h-4 text-status-info" />
           <div id={TITLE_ID} className="typo-section-title flex-1 truncate">
             {t.plugins.doc_signing.verify_heading}
           </div>
@@ -112,7 +112,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
             <div
               className={`mb-3 flex items-center gap-2 typo-body rounded-input px-3 py-2 border ${
                 sidecarFound
-                  ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-100"
+                  ? "border-status-success/35 bg-status-success/10 text-status-success"
                   : "border-primary/15 bg-secondary/30 text-foreground"
               }`}
             >
@@ -134,7 +134,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 onChange={(e) => setSidecarJson(e.target.value)}
                 rows={6}
                 spellCheck={false}
-                className="w-full px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body font-mono text-foreground placeholder:text-foreground focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20 resize-none transition-colors"
+                className="w-full px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body font-mono text-foreground placeholder:text-foreground focus:outline-none focus:border-status-info/40 focus:ring-2 focus:ring-status-info/20 resize-none transition-colors"
                 placeholder={"{\n  \"version\": 1,\n  \"algorithm\": \"Ed25519\",\n  ...\n}"}
               />
             </div>
@@ -149,7 +149,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body hover:bg-sky-500/35 transition-colors focus-ring"
+              className="px-3 py-1.5 rounded-input bg-status-info/20 text-status-info border border-status-info/40 typo-body hover:bg-status-info/20 transition-colors focus-ring"
             >
               {t.plugins.drive.confirm}
             </button>
@@ -167,7 +167,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={handleVerify}
                 disabled={phase === "verifying" || !sidecarJson.trim()}
-                className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body hover:bg-sky-500/35 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
+                className="px-3 py-1.5 rounded-input bg-status-info/20 text-status-info border border-status-info/40 typo-body hover:bg-status-info/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
               >
                 {phase === "verifying"
                   ? t.plugins.doc_signing.verifying
@@ -190,17 +190,17 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
     <div
       className={`rounded-card border p-3 ${
         isValid
-          ? "border-emerald-500/40 bg-emerald-500/10"
-          : "border-rose-500/40 bg-rose-500/10"
+          ? "border-status-success/40 bg-status-success/10"
+          : "border-status-error/40 bg-status-error/10"
       }`}
     >
       <div className="flex items-center gap-2 mb-3">
         <Icon
-          className={`w-5 h-5 ${isValid ? "text-emerald-300" : "text-rose-300"}`}
+          className={`w-5 h-5 ${isValid ? "text-status-success" : "text-status-error"}`}
         />
         <span
           className={`typo-body ${
-            isValid ? "text-emerald-100" : "text-rose-100"
+            isValid ? "text-status-success" : "text-status-error"
           }`}
         >
           {isValid
@@ -227,7 +227,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
         </dt>
         <dd
           className={`font-semibold ${
-            result.file_hash_match ? "text-emerald-200" : "text-rose-200"
+            result.file_hash_match ? "text-status-success" : "text-status-error"
           }`}
         >
           {result.file_hash_match
@@ -240,7 +240,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
         </dt>
         <dd
           className={`font-semibold ${
-            result.signature_valid ? "text-emerald-200" : "text-rose-200"
+            result.signature_valid ? "text-status-success" : "text-status-error"
           }`}
         >
           {result.signature_valid
@@ -250,7 +250,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
       </dl>
 
       {result.error && (
-        <div className="mt-3 px-2 py-1.5 rounded bg-rose-500/20 typo-body text-rose-100 font-mono">
+        <div className="mt-3 px-2 py-1.5 rounded bg-status-error/20 typo-body text-status-error font-mono">
           {result.error}
         </div>
       )}

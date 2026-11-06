@@ -34,7 +34,7 @@ export function PeriodSelect({
             onClick={() => onChange(d)}
             aria-pressed={active}
             className={`px-2 py-0.5 rounded-pill typo-caption tabular-nums transition-colors focus-ring ${
-              active ? 'bg-violet-500/20 text-violet-100' : 'text-foreground hover:bg-secondary/50'
+              active ? 'bg-surface-2 text-ink-2' : 'text-foreground hover:bg-secondary/50'
             }`}
           >
             {tx(t.director.period_days, { count: d })}

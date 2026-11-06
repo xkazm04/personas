@@ -42,11 +42,11 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
   return (
     <div className="rounded-card border border-foreground/10 bg-secondary/20 p-3">
       <div className="flex items-center gap-2">
-        <span className={installed ? 'text-emerald-400' : 'text-foreground'}>{icon}</span>
+        <span className={installed ? 'text-status-success' : 'text-foreground'}>{icon}</span>
         <span className="typo-title">{label}</span>
         <span
           className={`ml-auto inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full ${
-            installed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-foreground/5 text-foreground'
+            installed ? 'bg-status-success/10 text-status-success' : 'bg-foreground/5 text-foreground'
           }`}
         >
           {installed && <CheckCircle2 className="w-3 h-3" />}
@@ -56,7 +56,7 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
         </span>
       </div>
       {installed ? (
-        <div className="typo-code text-[11px] text-foreground mt-1.5 break-all" title={installedText}>
+        <div className="typo-code text-foreground mt-1.5 break-all" title={installedText}>
           {installedText}
         </div>
       ) : (
@@ -77,7 +77,7 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
           <div>
             <div className="typo-caption text-foreground">{pathLabel}</div>
             <div className="flex items-center gap-1.5 mt-1">
-              <code className="flex-1 typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
+              <code className="flex-1 typo-code text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
                 {path}
               </code>
               <CopyButton text={path} tooltip={t.athena.voice_kokoro_copy_path} />
@@ -250,7 +250,7 @@ export function VoiceEngineInstallBlock({
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             <span>{phaseLabel(progress?.phase ?? 'downloading_engine')}</span>
             {isDownloading && (
-              <span className="ml-auto typo-code text-[11px]">
+              <span className="ml-auto typo-code">
                 {pct !== null ? (
                   `${pct}%`
                 ) : (

@@ -121,7 +121,7 @@ export default function DraftingTitleBlock({
                       >
                         {i + 1}
                       </span>
-                      <span className={`min-w-0 flex-1 truncate typo-body ${g.state === 'pending' ? 'text-foreground/90' : 'text-foreground'}`}>
+                      <span className={`min-w-0 flex-1 truncate typo-body ${g.state === 'pending' ? 'text-ink-2' : 'text-foreground'}`}>
                         {g.title}
                       </span>
                       {g.state !== 'pending' && (

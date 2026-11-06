@@ -52,8 +52,8 @@ export default function DecisionsPanel() {
   return (
     <div className="flex flex-col gap-4 p-6 max-w-5xl mx-auto w-full">
       <header className="space-y-2">
-        <h1 className="typo-heading-lg text-foreground/95 inline-flex items-center gap-2">
-          <ScrollText className="w-5 h-5 text-fuchsia-400" />
+        <h1 className="typo-heading-lg text-ink-2 inline-flex items-center gap-2">
+          <ScrollText className="w-5 h-5 text-ink-2" />
           {t.athena.decisions_panel_title}
         </h1>
         <p className="typo-body text-foreground">
@@ -95,7 +95,7 @@ export default function DecisionsPanel() {
             aria-label={t.athena.decisions_atlas_contexts}
           >
             <div className="flex items-center gap-1.5 px-2 pb-2">
-              <Layers className="w-3.5 h-3.5 text-fuchsia-400" />
+              <Layers className="w-3.5 h-3.5 text-ink-2" />
               <span className="typo-caption text-foreground">
                 {t.athena.decisions_atlas_contexts}
               </span>
@@ -147,12 +147,12 @@ function RailItem({
       aria-pressed={active}
       className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border-l-2 text-left transition-colors focus-ring ${
         active
-          ? 'border-l-fuchsia-400 bg-fuchsia-500/10 text-foreground'
+          ? 'border-l-fuchsia-400 bg-surface-2 text-foreground'
           : 'border-l-transparent text-foreground hover:bg-foreground/[0.05]'
       }`}
     >
       <span className="typo-body truncate flex-1">{label}</span>
-      <span className={`typo-caption shrink-0${active ? ' text-fuchsia-300' : ''}`}>
+      <span className={`typo-caption shrink-0${active ? ' text-ink-2' : ''}`}>
         {count}
       </span>
     </button>
@@ -163,7 +163,7 @@ function ContextThread({ group }: { group: DecisionGroup }) {
   return (
     <section data-context-key={group.key}>
       <h2 className="typo-title truncate mb-3">{group.label}</h2>
-      <ol className="relative space-y-6 pl-5 border-l border-fuchsia-500/20">
+      <ol className="relative space-y-6 pl-5 border-l border-hair-2">
         {group.items.map((row) => (
           <li
             key={row.id}
@@ -172,10 +172,10 @@ function ContextThread({ group }: { group: DecisionGroup }) {
           >
             <span
               aria-hidden
-              className="absolute -left-[27px] top-1.5 w-2.5 h-2.5 rounded-full bg-fuchsia-500/50 ring-2 ring-fuchsia-500/20"
+              className="absolute -left-[27px] top-1.5 w-2.5 h-2.5 rounded-full bg-surface-2 ring-2 ring-hair-2"
             />
             <div className="flex items-baseline justify-between gap-3">
-              <span className="typo-caption text-fuchsia-300/90 min-w-0 truncate">
+              <span className="typo-caption text-ink-2 min-w-0 truncate">
                 {row.label}
               </span>
               <RelativeTime

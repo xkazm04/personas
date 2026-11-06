@@ -72,7 +72,7 @@ export function AthenaShipMilestoneCard({
   if (created !== null) {
     return (
       <div
-        className="rounded-card border border-emerald-500/30 bg-emerald-500/[0.06] p-3 typo-caption text-foreground"
+        className="rounded-card border border-status-success/30 bg-status-success/10/[0.06] p-3 typo-caption text-foreground"
         data-testid="athena-ship-card"
       >
         {created}
@@ -199,7 +199,7 @@ export function AthenaShipMilestoneCard({
       )}
 
       {error !== null && (
-        <p className="typo-caption text-rose-400 break-words" data-testid="athena-ship-error">
+        <p className="typo-caption text-status-error break-words" data-testid="athena-ship-error">
           {resolveErrorTranslated(t, error).message}
         </p>
       )}

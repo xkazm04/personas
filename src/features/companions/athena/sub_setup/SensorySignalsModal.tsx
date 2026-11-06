@@ -166,7 +166,7 @@ export function SensorySignalsModal({
 
         <div className="flex-1 overflow-y-auto px-2 py-2">
           {loadError ? (
-            <div className="px-3 py-6 typo-body text-rose-400">
+            <div className="px-3 py-6 typo-body text-status-error">
               {t.athena.setup_desktop_load_failed}
             </div>
           ) : filter === 'cli_session' ? (
@@ -234,7 +234,7 @@ function SignalRow({
         : AppWindow;
   return (
     <li className="flex items-start gap-3 px-3 py-2.5">
-      <Icon className="w-4 h-4 mt-0.5 text-cyan-400 shrink-0" aria-hidden />
+      <Icon className="w-4 h-4 mt-0.5 text-ink-2 shrink-0" aria-hidden />
       <div className="flex-1 min-w-0">
         <div className="typo-body text-foreground break-words">
           {signal.summary}
@@ -256,7 +256,7 @@ function SignalRow({
       <button
         type="button"
         onClick={onDelete}
-        className="shrink-0 p-1.5 rounded-interactive text-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-ring"
+        className="shrink-0 p-1.5 rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors focus-ring"
         aria-label={t.athena.sensory_signals_delete_aria}
         title={t.athena.sensory_signals_delete_aria}
       >
@@ -292,7 +292,7 @@ function CliReadRow({ audit }: { audit: CliSessionReadAuditView }) {
   return (
     <li className="flex items-start gap-3 px-3 py-2.5">
       <Terminal
-        className="w-4 h-4 mt-0.5 text-cyan-400 shrink-0"
+        className="w-4 h-4 mt-0.5 text-ink-2 shrink-0"
         aria-hidden
       />
       <div className="flex-1 min-w-0">

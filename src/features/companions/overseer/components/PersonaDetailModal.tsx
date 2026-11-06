@@ -24,9 +24,9 @@ const SEVERITY_LINE: Record<string, string> = {
   info: 'var(--status-info)',
 };
 const SEVERITY_CHIP: Record<string, string> = {
-  error: 'bg-red-500/15 text-red-400',
-  warning: 'bg-amber-500/15 text-amber-400',
-  info: 'bg-blue-500/15 text-blue-400',
+  error: 'bg-status-error/15 text-status-error',
+  warning: 'bg-status-warning/15 text-status-warning',
+  info: 'bg-status-info/15 text-status-info',
 };
 
 const FLAG_LABEL = (t: ReturnType<typeof useTranslation>['t']): Record<AttentionFlag, { label: string; hint: string }> => ({
@@ -133,7 +133,7 @@ export function PersonaDetailModal({
       size="lg"
       portal
       staggerChildren={false}
-      panelClassName="relative bg-gradient-to-b from-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col w-full max-h-[82vh]"
+      panelClassName="relative bg-surface-1 from-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-card shadow-elevation-4 overflow-hidden flex flex-col w-full max-h-[82vh]"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/10 bg-secondary/20">
@@ -144,7 +144,7 @@ export function PersonaDetailModal({
         {entry.latestScore != null && tone && (
           <span
             className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded typo-body tabular-nums"
-            style={{ color: tone.color, backgroundColor: toneFill(tone.color, 16) }}
+            style={{ color: tone.color }}
           >
             {entry.latestScore}
           </span>
@@ -177,16 +177,16 @@ export function PersonaDetailModal({
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {entry.scoreTrend.length >= 2 && (
             <div className="flex items-center gap-2">
-              <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.col_verdict}</span>
+              <span className="typo-eyebrow text-ink-3">{t.director.col_verdict}</span>
               <ScoreSparkline scores={entry.scoreTrend} width={72} height={20} tooltip={`${t.director.sparkline_scores}: ${entry.scoreTrend.join(' → ')}`} />
             </div>
           )}
           <div className="flex items-center gap-2">
-            <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.detail_value_rate}</span>
+            <span className="typo-eyebrow text-ink-3">{t.director.detail_value_rate}</span>
             <Numeric value={entry.valueDeliveredRate} unit="ratio" precision={0} className="typo-body text-foreground tabular-nums" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.last_review}</span>
+            <span className="typo-eyebrow text-ink-3">{t.director.last_review}</span>
             {entry.lastReviewedAt ? (
               <RelativeTime timestamp={entry.lastReviewedAt} className="typo-body text-foreground" />
             ) : (
@@ -198,13 +198,13 @@ export function PersonaDetailModal({
         {/* attention flags */}
         {flags.length > 0 && (
           <div className="space-y-1.5">
-            <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.detail_attention}</span>
+            <span className="typo-eyebrow text-ink-3">{t.director.detail_attention}</span>
             <div className="flex flex-col gap-1.5">
               {flags.map((f) => (
                 <div key={f} className="flex items-center gap-2">
                   <span
-                    className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium shrink-0"
-                    style={{ color: FLAG_TONE[f], backgroundColor: toneFill(FLAG_TONE[f], 14) }}
+                    className="typo-eyebrow shrink-0"
+                    style={{ color: FLAG_TONE[f] }}
                   >
                     {flagMeta[f].label}
                   </span>
@@ -217,7 +217,7 @@ export function PersonaDetailModal({
 
         {/* verdict history */}
         <div className="space-y-1.5">
-          <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.detail_history}</span>
+          <span className="typo-eyebrow text-ink-3">{t.director.detail_history}</span>
           {/* category filter — only when the history spans more than one kind */}
           {presentCategories.length > 1 && (
             <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
@@ -225,7 +225,7 @@ export function PersonaDetailModal({
                 type="button"
                 onClick={() => setCatFilter(null)}
                 className={`px-2 py-0.5 rounded-pill typo-caption transition-colors focus-ring ${
-                  catFilter === null ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground border border-transparent hover:bg-secondary/40'
+                  catFilter === null ? 'bg-surface-2 text-ink-2 border border-hair-2' : 'text-foreground border border-transparent hover:bg-secondary/40'
                 }`}
               >
                 {t.director.category_all}
@@ -274,7 +274,7 @@ export function PersonaDetailModal({
                       className="w-full flex items-center gap-2 pl-3 pr-2.5 py-2 text-left hover:bg-secondary/30 transition-colors"
                     >
                       <Chevron className="w-3.5 h-3.5 text-foreground shrink-0" />
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide shrink-0 ${SEVERITY_CHIP[v.severity] ?? SEVERITY_CHIP.info}`}>
+                      <span className={`typo-eyebrow shrink-0 ${SEVERITY_CHIP[v.severity] ?? SEVERITY_CHIP.info}`}>
                         {tokenLabel(t, 'severity', v.severity)}
                       </span>
                       {v.category && (() => {
@@ -282,8 +282,8 @@ export function PersonaDetailModal({
                         const Icon = meta.icon;
                         return (
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] shrink-0"
-                            style={{ color: meta.color, backgroundColor: toneFill(meta.color, 14) }}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption shrink-0"
+                            style={{ color: meta.color }}
                           >
                             <Icon className="w-3 h-3" />
                             {categoryLabel(t, v.category)}
@@ -303,7 +303,7 @@ export function PersonaDetailModal({
                           <ul className="space-y-1">
                             {v.suggestedActions.map((a, j) => (
                               <li key={j} className="flex items-start gap-1.5 typo-caption text-foreground">
-                                <span className="mt-1 w-1 h-1 rounded-full bg-violet-400 shrink-0" />
+                                <span className="mt-1 w-1 h-1 rounded-full bg-surface-2 shrink-0" />
                                 {a}
                               </li>
                             ))}
@@ -325,10 +325,10 @@ export function PersonaDetailModal({
               type="button"
               onClick={() => setBrainOpen((o) => !o)}
               aria-expanded={brainOpen}
-              className="inline-flex items-center gap-1.5 typo-caption uppercase tracking-wider text-foreground focus-ring rounded"
+              className="inline-flex items-center gap-1.5 typo-caption text-foreground focus-ring rounded"
             >
               {brainOpen ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
-              <Brain className="w-3.5 h-3.5 text-violet-300" />
+              <Brain className="w-3.5 h-3.5 text-ink-2" />
               {t.director.brain_history_title}
             </button>
             {brainOpen && (

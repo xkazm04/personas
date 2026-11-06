@@ -122,7 +122,7 @@ export function Bubble({
           <span className="w-1.5 h-1.5 mt-2 rounded-full bg-primary/40" />
         </div>
         <div
-          className={`min-w-0 py-0.5 typo-caption italic text-foreground/55 ${
+          className={`min-w-0 py-0.5 typo-caption italic text-ink-2 ${
             compact ? 'max-w-[92%]' : 'max-w-[85%]'
           }`}
         >
@@ -231,7 +231,7 @@ export function Bubble({
               {createdAt && (
                 <RelativeTime
                   timestamp={createdAt}
-                  className="typo-caption text-foreground/60 tabular-nums"
+                  className="typo-caption text-ink-2 tabular-nums"
                 />
               )}
             </div>

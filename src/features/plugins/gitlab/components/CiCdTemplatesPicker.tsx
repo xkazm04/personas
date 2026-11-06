@@ -26,7 +26,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 w-full text-left"
       >
-        <Cpu className="w-4 h-4 text-orange-400" />
+        <Cpu className="w-4 h-4 text-status-warning" />
         <span className="typo-body text-foreground">{t.gitlab.cicd_agent_templates}</span>
         {expanded
           ? <ChevronUp className="w-3.5 h-3.5 text-foreground ml-auto" />
@@ -41,11 +41,11 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
             {GITLAB_TIERS.map((tier) => (
               <span
                 key={tier.id}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-full border ${tier.borderColor} ${tier.bgColor} ${tier.color}`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-interactive border ${tier.borderColor} ${tier.bgColor} ${tier.color}`}
               >
                 {tier.name}
                 {tier.id === userTier && (
-                  <span className="text-[10px] opacity-60">{t.gitlab.your_tier}</span>
+                  <span className="typo-caption opacity-60">{t.gitlab.your_tier}</span>
                 )}
               </span>
             ))}
@@ -73,11 +73,11 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                     <span className="typo-heading-lg mt-0.5">{template.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="typo-body text-foreground/90">
+                        <span className="typo-body text-ink-2">
                           {template.name}
                         </span>
                         {template.minTier !== 'free' && (
-                          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded-full border ${tierDef.borderColor} ${tierDef.bgColor} ${tierDef.color}`}>
+                          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 typo-caption rounded-interactive border ${tierDef.borderColor} ${tierDef.bgColor} ${tierDef.color}`}>
                             {!available && <Lock className="w-2.5 h-2.5" />}
                             {tierDef.name}
                           </span>
@@ -86,7 +86,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                       <p className="typo-caption text-foreground mt-0.5 line-clamp-2">
                         {template.description}
                       </p>
-                      <span className="inline-block mt-1 text-[10px] text-foreground font-mono">
+                      <span className="inline-block mt-1 typo-caption text-foreground font-mono">
                         {t.gitlab.trigger_on} {template.trigger}
                       </span>
                     </div>

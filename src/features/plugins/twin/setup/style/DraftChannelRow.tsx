@@ -29,7 +29,7 @@ function firstExample(raw: string | null | undefined): string | null {
 function Part({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <p className="typo-caption uppercase tracking-[0.14em]">{label}</p>
+      <p className="typo-eyebrow">{label}</p>
       {children}
     </div>
   );

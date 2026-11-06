@@ -69,12 +69,12 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
         type="button"
         onClick={() => onSelect(node.path)}
         className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card transition-colors group focus-ring ${
-          isSelected ? 'bg-violet-500/10 border border-violet-500/20' : 'hover:bg-secondary/30 border border-transparent'
+          isSelected ? 'bg-surface-2 border border-hair-2' : 'hover:bg-secondary/30 border border-transparent'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
-        <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-violet-400' : 'text-violet-400/60'}`} />
-        <span className={`typo-caption truncate ${isSelected ? 'text-violet-300' : 'text-foreground group-hover:text-foreground'}`}>
+        <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-ink-2' : 'text-ink-2'}`} />
+        <span className={`typo-caption truncate ${isSelected ? 'text-ink-2' : 'text-foreground group-hover:text-foreground'}`}>
           {node.name}
         </span>
       </button>
@@ -100,7 +100,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
         ) : (
           <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         )}
-        <Folder className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
+        <Folder className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
         <span className="typo-caption text-foreground truncate">{node.name}</span>
         {node.noteCount > 0 && (
           <span className="typo-caption text-foreground ml-auto">{node.noteCount}</span>
@@ -262,8 +262,8 @@ export default function BrowsePanel() {
         {/* Selected vault header */}
         {vaultName && (
           <div className="px-2 pb-2 mb-2 border-b border-primary/10">
-            <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.vault_label}</p>
-            <p className="typo-heading text-violet-300 truncate" title={vaultPath ?? undefined}>{vaultName}</p>
+            <p className="typo-label text-ink-2">{t.plugins.obsidian_brain.vault_label}</p>
+            <p className="typo-heading text-ink-2 truncate" title={vaultPath ?? undefined}>{vaultName}</p>
           </div>
         )}
         {/* Search */}
@@ -275,7 +275,7 @@ export default function BrowsePanel() {
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t.plugins.obsidian_brain.filter_notes}
             aria-label={t.plugins.obsidian_brain.filter_notes}
-            className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground/40 focus-ring transition-all"
+            className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-ink-3 focus-ring transition-all"
           />
         </div>
 
@@ -327,7 +327,7 @@ export default function BrowsePanel() {
                 <p className="typo-heading typo-card-label truncate">{selectedFileName}</p>
                 <div className="flex items-center gap-2 mt-1 min-w-0">
                   {parsed && (
-                    <span className="typo-caption text-foreground/90 tabular-nums flex-shrink-0">
+                    <span className="typo-caption text-ink-2 tabular-nums flex-shrink-0">
                       {tx(t.plugins.obsidian_brain.word_count, { count: parsed.wordCount })}
                     </span>
                   )}
@@ -340,7 +340,7 @@ export default function BrowsePanel() {
               <button
                 type="button"
                 onClick={openInObsidian}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring flex-shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors focus-ring flex-shrink-0"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 {t.plugins.obsidian_brain.open_in_obsidian}
@@ -362,18 +362,18 @@ export default function BrowsePanel() {
               <>
                 {parsed && parsed.properties.length > 0 && (
                   <div className="rounded-modal bg-secondary/20 border border-primary/8 p-3">
-                    <p className="typo-label text-foreground/90 mb-2">{t.plugins.obsidian_brain.note_properties}</p>
+                    <p className="typo-label text-ink-2 mb-2">{t.plugins.obsidian_brain.note_properties}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {parsed.properties.map((prop) => (
                         <span key={prop.key} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10 typo-caption">
-                          <span className="text-violet-300/80">{prop.key}</span>
+                          <span className="text-ink-2">{prop.key}</span>
                           {prop.value && <span className="text-foreground">{prop.value}</span>}
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
-                <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
+                <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-ink-2 [&_code]:text-ink-2 [&_code]:bg-surface-2 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-hair-2 [&_blockquote]:text-foreground">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed ? parsed.body : noteContent}</ReactMarkdown>
                 </div>
               </>

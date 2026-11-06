@@ -53,7 +53,7 @@ export default function GuideSketchSheet({
     <div className="absolute inset-0 overflow-hidden bg-background" style={BLUEPRINT_GRID}>
       <div className="flex h-full gap-6 p-6">
         <section className="flex min-w-0 flex-1 flex-col">
-          <p className="typo-label uppercase tracking-wider text-primary/80">{tx(g.sheet_title, { name })}</p>
+          <p className="typo-eyebrow text-ink-3">{tx(g.sheet_title, { name })}</p>
           {home ? (
             <div className="mt-4 grid min-h-0 flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6">
               <PageOutline title={home.title}>
@@ -64,7 +64,7 @@ export default function GuideSketchSheet({
                     className="rounded-interactive border border-primary/45 bg-primary/5 px-3 py-2"
                   >
                     <p className="typo-title text-primary">{r.title}</p>
-                    {r.purpose && <p className="typo-caption text-foreground/90">{r.purpose}</p>}
+                    {r.purpose && <p className="typo-caption text-ink-2">{r.purpose}</p>}
                   </motion.div>
                 ))}
               </PageOutline>
@@ -103,7 +103,7 @@ export default function GuideSketchSheet({
                 )}
               </PageOutline>
               <div className="flex flex-col gap-3">
-                <motion.p {...draw(order++)} className="typo-body text-foreground/90">
+                <motion.p {...draw(order++)} className="typo-body text-ink-2">
                   {g.template_hint}
                 </motion.p>
               </div>
@@ -111,7 +111,7 @@ export default function GuideSketchSheet({
           )}
           <ol className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1" aria-label={g.setup_label}>
             {steps.map((s) => (
-              <li key={s.key} className="flex items-center gap-1.5 typo-caption text-foreground/90">
+              <li key={s.key} className="flex items-center gap-1.5 typo-caption text-ink-2">
                 {s.state === 'done' ? (
                   <Check className="h-3.5 w-3.5 text-status-success" />
                 ) : s.state === 'failed' ? (
@@ -123,7 +123,7 @@ export default function GuideSketchSheet({
               </li>
             ))}
             {startedAt !== null && elapsed > 0 && (
-              <li className="ml-auto font-mono typo-caption text-foreground/90">
+              <li className="ml-auto font-mono typo-caption text-ink-2">
                 {tx(g.setup_elapsed, { elapsed: clock(elapsed) })}
               </li>
             )}
@@ -134,14 +134,14 @@ export default function GuideSketchSheet({
             <motion.div
               initial={shouldAnimate ? { opacity: 0, y: -8, rotate: -1.2 } : false}
               animate={{ opacity: 1, y: 0, rotate: -0.6 }}
-              className="rounded-card border border-status-warning/30 bg-gradient-to-br from-secondary/90 to-secondary/60 p-3 shadow-elevation-2"
+              className="rounded-card border border-status-warning/30 bg-surface-1 from-secondary/90 to-secondary/60 p-3 shadow-elevation-2"
             >
-              <p className="typo-label uppercase tracking-wider text-status-warning/90">{g.sketch_understood}</p>
+              <p className="typo-eyebrow text-status-warning">{g.sketch_understood}</p>
               <p className="mt-1 typo-body text-foreground">
                 {sketch?.summary || (sketchState === 'failed' ? g.sketch_failed : g.sketch_loading)}
               </p>
             </motion.div>
-            {sketch && <p className="typo-caption text-foreground/90">{g.sketch_draft}</p>}
+            {sketch && <p className="typo-caption text-ink-2">{g.sketch_draft}</p>}
           </aside>
         )}
       </div>
@@ -154,7 +154,7 @@ function PageOutline({ title, route, children }: { title: string; route?: string
     <div className="flex min-h-0 flex-col rounded-card border border-primary/40 bg-background/40 p-3">
       <p className="mb-2 flex items-baseline gap-2">
         <span className="typo-title text-foreground">{title}</span>
-        {route && <span className="font-mono typo-caption text-foreground/90">{route}</span>}
+        {route && <span className="font-mono typo-caption text-ink-2">{route}</span>}
       </p>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">{children}</div>
     </div>

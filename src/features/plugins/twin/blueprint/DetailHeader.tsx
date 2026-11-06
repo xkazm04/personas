@@ -48,7 +48,7 @@ export function DetailHeader({ profile, samplesOpen, switcher }: DetailHeaderPro
       icon={
         <span
           aria-hidden
-          className={`w-11 h-11 flex-shrink-0 rounded-card flex items-center justify-center bg-gradient-to-br ${sigil.tint}`}
+          className={`w-11 h-11 flex-shrink-0 rounded-card flex items-center justify-center bg-surface-1 ${sigil.tint}`}
         >
           <span className={`typo-data-lg ${sigil.color}`}>{sigil.glyph}</span>
         </span>

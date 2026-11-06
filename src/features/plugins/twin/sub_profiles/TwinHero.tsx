@@ -20,7 +20,7 @@ export function TwinHero({ onCreate, onImport }: { onCreate: () => void; onImpor
         {/* Eyebrow + title */}
         <div className="flex items-center justify-center gap-2 mb-2">
           <TwinGlyph className={`w-4 h-4 ${brand.icon}`} />
-          <span className={`typo-caption uppercase tracking-wider ${brand.icon}`}>{t.hero.eyebrow}</span>
+          <span className={`typo-eyebrow ${brand.icon}`}>{t.hero.eyebrow}</span>
         </div>
         <h1 className="typo-section-title text-center mb-2">{t.hero.title}</h1>
         <p className="typo-body text-foreground text-center mb-10">{t.hero.tagline}</p>
@@ -60,9 +60,9 @@ export function TwinHero({ onCreate, onImport }: { onCreate: () => void; onImpor
 
 function HeroPanel({ icon: Icon, title, body }: { icon: LucideIcon; title: string; body: string }) {
   return (
-    <div className="p-5 rounded-card border border-violet-500/15 bg-violet-500/5">
-      <div className="w-10 h-10 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
-        <Icon className="w-5 h-5 text-violet-400" />
+    <div className="p-5 rounded-card border border-hair-2 bg-surface-2">
+      <div className="w-10 h-10 rounded-card bg-surface-2 border border-hair-2 flex items-center justify-center mb-3">
+        <Icon className="w-5 h-5 text-ink-2" />
       </div>
       <h3 className="typo-card-label mb-1">{title}</h3>
       <p className="typo-caption text-foreground">{body}</p>

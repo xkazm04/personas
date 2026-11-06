@@ -56,19 +56,19 @@ export function StageCardEnginePick({
                 )}
                 <span
                   className={`ml-auto inline-flex items-center gap-1 typo-caption ${
-                    opt.installed ? 'text-primary' : 'text-foreground/85'
+                    opt.installed ? 'text-primary' : 'text-ink-2'
                   }`}
                 >
                   {opt.installed && <Check className="w-3 h-3" aria-hidden="true" />}
                   {opt.installed ? c.create_engine_installed : c.create_engine_needs_install}
                 </span>
               </div>
-              <p className="typo-caption text-foreground/85 mt-1.5">{copy[opt.id].desc}</p>
+              <p className="typo-caption text-ink-2 mt-1.5">{copy[opt.id].desc}</p>
             </button>
           );
         })}
       </div>
-      <p className="typo-caption text-foreground/85">{card.why}</p>
+      <p className="typo-caption text-ink-2">{card.why}</p>
       <Button
         variant={card.confirmed ? 'secondary' : 'primary'}
         size="md"
@@ -99,7 +99,7 @@ function InstallProgress({ state }: { state: InstallState }) {
     <div className="space-y-2" data-testid="create-athena-install-progress">
       <div className="flex items-center gap-2 typo-caption text-foreground">
         <span>{label}</span>
-        <span className="ml-auto tabular-nums text-foreground/85">
+        <span className="ml-auto tabular-nums text-ink-2">
           {pct !== null ? (
             <Numeric value={pct} unit="percent" precision={0} />
           ) : (
@@ -180,7 +180,7 @@ export function StageCardInstall({
             <AlertTriangle className="w-4 h-4 mt-0.5 text-status-error shrink-0" aria-hidden="true" />
             <span>
               {c.create_install_failed}
-              {state.error && <span className="block typo-caption text-foreground/85 mt-0.5">{state.error}</span>}
+              {state.error && <span className="block typo-caption text-ink-2 mt-0.5">{state.error}</span>}
             </span>
           </p>
           <Button variant="primary" size="sm" onClick={actions.retryInstall} data-testid="create-athena-install-retry">

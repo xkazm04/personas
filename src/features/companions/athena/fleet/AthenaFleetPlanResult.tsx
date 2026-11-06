@@ -34,7 +34,7 @@ export function AthenaFleetPlanResult({
 
   return (
     <div
-      className="rounded-card border border-emerald-500/30 bg-emerald-500/[0.06] p-3 space-y-2"
+      className="rounded-card border border-status-success/30 bg-status-success/10/[0.06] p-3 space-y-2"
       data-testid="athena-plan-card"
     >
       <MarkdownRenderer content={result} className="typo-caption text-foreground" />

@@ -53,7 +53,7 @@ export function PreviewSection({
     const Icon = visual.Icon;
     body = (
       <div className="flex flex-col items-center gap-3 py-3">
-        <div className={`w-16 h-16 rounded-card border border-card-border flex items-center justify-center bg-gradient-to-br ${visual.gradient}`}>
+        <div className={`w-16 h-16 rounded-card border border-card-border flex items-center justify-center bg-surface-1 ${visual.gradient}`}>
           <Icon className={`w-8 h-8 ${visual.text}`} />
         </div>
         <Button variant="secondary" size="sm" icon={<Eye className="w-3.5 h-3.5" />} onClick={() => onQuickLook(entry)}>

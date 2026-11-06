@@ -166,18 +166,18 @@ export default function CloudSyncPanel() {
   if (!isAuthenticated) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-20 px-6">
-        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-          <User className="w-7 h-7 text-blue-400/80" />
+        <div className="w-14 h-14 rounded-card bg-status-info/10 border border-status-info/20 flex items-center justify-center mb-4">
+          <User className="w-7 h-7 text-status-info" />
         </div>
         <p className="typo-heading-lg typo-section-title mb-1.5">{t.plugins.obsidian_brain.sign_in_required}</p>
-        <p className="typo-body text-foreground/90 max-w-md text-center mb-6">
+        <p className="typo-body text-ink-2 max-w-md text-center mb-6">
           {t.plugins.obsidian_brain.sign_in_hint}
         </p>
         <button
           type="button"
           onClick={loginWithGoogle}
           disabled={authLoading}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-status-info/15 text-status-info border border-status-info/25 hover:bg-status-info/20 transition-colors disabled:opacity-50 focus-ring"
         >
           {authLoading ? (
             <LoadingSpinner size="sm" />
@@ -201,8 +201,8 @@ export default function CloudSyncPanel() {
               {user.avatar_url ? (
                 <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full" />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center">
-                  <User className="w-4 h-4 text-violet-400" />
+                <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center">
+                  <User className="w-4 h-4 text-ink-2" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -218,7 +218,7 @@ export default function CloudSyncPanel() {
                   type="button"
                   onClick={connectDrive}
                   disabled={connecting}
-                  className="flex items-center gap-2 px-4 py-2 rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
+                  className="flex items-center gap-2 px-4 py-2 rounded-card bg-status-info/15 text-status-info border border-status-info/25 hover:bg-status-info/20 transition-colors disabled:opacity-50 focus-ring"
                 >
                   {connecting ? <LoadingSpinner size="sm" /> : <LogIn className="w-4 h-4" />}
                   {connecting ? t.plugins.obsidian_brain.connecting : t.plugins.obsidian_brain.connect_google_drive}
@@ -233,7 +233,7 @@ export default function CloudSyncPanel() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <HardDrive className="w-4 h-4 text-foreground" />
-                  <span className="typo-label text-foreground/90">{t.plugins.obsidian_brain.storage}</span>
+                  <span className="typo-label text-ink-2">{t.plugins.obsidian_brain.storage}</span>
                 </div>
                 <span className="typo-caption text-foreground tabular-nums">
                   {formatBytes(driveStorageUsed)} / {formatBytes(driveStorageLimit)}
@@ -241,7 +241,7 @@ export default function CloudSyncPanel() {
               </div>
               <div className="w-full h-1.5 rounded-full bg-secondary/40 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-blue-400/60 transition-all duration-500"
+                  className="h-full rounded-full bg-status-info/20 transition-all duration-500"
                   style={{ width: `${Math.min(100, (driveStorageUsed / driveStorageLimit) * 100)}%` }}
                 />
               </div>
@@ -253,8 +253,8 @@ export default function CloudSyncPanel() {
           )}
 
           {!driveConnected && (
-            <div className="px-4 py-3 rounded-modal bg-blue-500/5 border border-blue-500/15">
-              <p className="typo-body text-foreground/90">
+            <div className="px-4 py-3 rounded-modal bg-status-info/5 border border-status-info/15">
+              <p className="typo-body text-ink-2">
                 {t.plugins.obsidian_brain.drive_info}
               </p>
             </div>
@@ -271,7 +271,7 @@ export default function CloudSyncPanel() {
                 type="button"
                 onClick={pushToDrive}
                 disabled={pushing || pulling}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-40 focus-ring"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-status-info/15 text-status-info border border-status-info/25 hover:bg-status-info/20 transition-colors disabled:opacity-40 focus-ring"
               >
                 {pushing ? <LoadingSpinner size="sm" /> : <ArrowUpFromLine className="w-4 h-4" />}
                 {pushing ? t.plugins.obsidian_brain.pushing : t.plugins.obsidian_brain.push_to_drive}
@@ -280,7 +280,7 @@ export default function CloudSyncPanel() {
                 type="button"
                 onClick={pullFromDrive}
                 disabled={pushing || pulling}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/20 transition-colors disabled:opacity-40 focus-ring"
               >
                 {pulling ? <LoadingSpinner size="sm" /> : <ArrowDownToLine className="w-4 h-4" />}
                 {pulling ? t.plugins.obsidian_brain.pulling : t.plugins.obsidian_brain.pull_from_drive}
@@ -298,18 +298,18 @@ export default function CloudSyncPanel() {
       {lastResult && (
         <SectionCard status={lastResult.errors.length > 0 ? 'warning' : 'success'}>
           <div className="space-y-2">
-            <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.last_sync_result}</p>
+            <p className="typo-label text-ink-2">{t.plugins.obsidian_brain.last_sync_result}</p>
             <div className="flex gap-4 typo-body">
-              {lastResult.uploaded > 0 && <span className="text-blue-400">{lastResult.uploaded} uploaded</span>}
-              {lastResult.downloaded > 0 && <span className="text-emerald-400">{lastResult.downloaded} downloaded</span>}
-              {lastResult.deleted > 0 && <span className="text-red-400">{lastResult.deleted} deleted</span>}
+              {lastResult.uploaded > 0 && <span className="text-status-info">{lastResult.uploaded} uploaded</span>}
+              {lastResult.downloaded > 0 && <span className="text-status-success">{lastResult.downloaded} downloaded</span>}
+              {lastResult.deleted > 0 && <span className="text-status-error">{lastResult.deleted} deleted</span>}
               <span className="text-foreground">{lastResult.skipped} skipped</span>
-              {lastResult.errors.length > 0 && <span className="text-amber-400">{lastResult.errors.length} errors</span>}
+              {lastResult.errors.length > 0 && <span className="text-status-warning">{lastResult.errors.length} errors</span>}
             </div>
             {lastResult.errors.length > 0 && (
               <div className="space-y-1 mt-2">
                 {lastResult.errors.map((err, i) => (
-                  <p key={i} className="typo-caption text-red-400/70">{err}</p>
+                  <p key={i} className="typo-caption text-status-error">{err}</p>
                 ))}
               </div>
             )}
@@ -322,8 +322,8 @@ export default function CloudSyncPanel() {
         <SectionCard title={t.plugins.obsidian_brain.how_it_works} status="info">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="typo-caption text-blue-400">1</span>
+              <div className="w-6 h-6 rounded-card bg-status-info/10 border border-status-info/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="typo-caption text-status-info">1</span>
               </div>
               <div>
                 <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step1_title}</p>
@@ -331,8 +331,8 @@ export default function CloudSyncPanel() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="typo-caption text-blue-400">2</span>
+              <div className="w-6 h-6 rounded-card bg-status-info/10 border border-status-info/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="typo-caption text-status-info">2</span>
               </div>
               <div>
                 <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step2_title}</p>
@@ -340,8 +340,8 @@ export default function CloudSyncPanel() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="typo-caption text-blue-400">3</span>
+              <div className="w-6 h-6 rounded-card bg-status-info/10 border border-status-info/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="typo-caption text-status-info">3</span>
               </div>
               <div>
                 <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step3_title}</p>

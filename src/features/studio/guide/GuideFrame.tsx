@@ -52,9 +52,9 @@ export default function GuideFrame({
         working ? 'border-primary/60' : 'border-border'
       }`}
     >
-      <header className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-gradient-to-r from-secondary/70 via-secondary/40 to-secondary/70 px-3">
+      <header className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-surface-1 from-secondary/70 via-secondary/40 to-secondary/70 px-3">
         <span className={`h-2 w-2 rounded-full ${live && !vision ? 'bg-status-success' : 'bg-primary'}`} />
-        <span className="typo-body text-foreground/85">{label}</span>
+        <span className="typo-body text-ink-2">{label}</span>
         {blueprint && !vision && (
           // TODO(prototype, 2026-09-25): two sheet styles until one is chosen.
           <div role="group" aria-label={g.sheet_style_label} className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border p-0.5">
@@ -72,7 +72,7 @@ export default function GuideFrame({
           </div>
         )}
         {vision && onCancelCreate && (
-          <button type="button" onClick={onCancelCreate} aria-label={t.common.close} className="ml-auto rounded-interactive p-1 text-foreground/90 hover:text-foreground">
+          <button type="button" onClick={onCancelCreate} aria-label={t.common.close} className="ml-auto rounded-interactive p-1 text-ink-2 hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         )}
@@ -96,7 +96,7 @@ export default function GuideFrame({
               }}
               spellCheck={false}
               aria-label={t.studio.preview_path}
-              className="w-40 rounded-input border border-border bg-background/60 px-2 py-0.5 font-mono text-sm text-foreground/85 outline-none focus:border-primary/60"
+              className="w-40 rounded-input border border-border bg-background/60 px-2 py-0.5 font-mono typo-body text-ink-2 outline-none focus:border-primary/60"
             />
             {navRoutes.length > 0 && (
               <datalist id="guide-routes">
@@ -105,7 +105,7 @@ export default function GuideFrame({
                 ))}
               </datalist>
             )}
-            <button type="button" onClick={reloadActive} aria-label={t.studio.reload_preview} className="rounded-interactive p-1.5 text-foreground/90 hover:bg-secondary/60 hover:text-foreground">
+            <button type="button" onClick={reloadActive} aria-label={t.studio.reload_preview} className="rounded-interactive p-1.5 text-ink-2 hover:bg-secondary/60 hover:text-foreground">
               <RotateCcw className="h-4 w-4" />
             </button>
             <StudioVersions id={activeId} onRestored={reloadActive} />

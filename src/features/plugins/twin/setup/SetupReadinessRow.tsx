@@ -99,7 +99,7 @@ export function SetupReadinessRow({ checklist, score, focus, onFocus }: SetupRea
 
       {/* The score, once. */}
       <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 border-l border-primary/10">
-        <span className="typo-caption uppercase tracking-[0.18em] hidden sm:inline">
+        <span className="typo-eyebrow hidden sm:inline">
           {ts.scoreLabel}
         </span>
         <span aria-hidden className="w-16 h-1 rounded-full bg-foreground/10 overflow-hidden hidden sm:block">

@@ -71,8 +71,8 @@ export function trackCount(s: Station): number | null {
 export function YouTubePremiumNote() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-start gap-2 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-      <Info className="w-4 h-4 text-amber-400 mt-px shrink-0" />
+    <div className="flex items-start gap-2 rounded-card border border-status-warning/20 bg-status-warning/5 px-3 py-2">
+      <Info className="w-4 h-4 text-status-warning mt-px shrink-0" />
       <p className="typo-caption text-foreground" style={DESC_STYLE}>{t.radio.youtube_premium_note}</p>
     </div>
   );
@@ -90,7 +90,7 @@ export function RadioMasterControls({
     <div className="grid sm:grid-cols-2 gap-3">
       <div className="flex items-center justify-between gap-3 rounded-card border border-primary/10 bg-secondary/10 px-3 py-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
-          <Power className={`w-4 h-4 shrink-0 ${radioEnabled ? 'text-emerald-400' : 'text-foreground/50'}`} />
+          <Power className={`w-4 h-4 shrink-0 ${radioEnabled ? 'text-status-success' : 'text-ink-2'}`} />
           <div className="min-w-0">
             <p className="typo-body text-foreground" style={TITLE_STYLE}>{t.radio.master_footer_title}</p>
             <p className="typo-caption text-foreground" style={DESC_STYLE}>{t.radio.master_footer_desc}</p>

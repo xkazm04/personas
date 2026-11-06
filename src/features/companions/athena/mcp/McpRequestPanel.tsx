@@ -98,7 +98,7 @@ function SessionGroup({ group }: { group: SessionGroupShape }) {
       {showBatchAffordance && (
         <div className="flex items-center gap-2 rounded-card border border-primary/30 bg-primary/[0.05] px-2.5 py-1.5 typo-caption">
           <CheckCheck className="size-3.5 text-primary shrink-0" />
-          <span className="flex-1 text-foreground/90">
+          <span className="flex-1 text-ink-2">
             {t.athena.orchestration.batch_pending_label
               .replace('{count}', String(group.approvalCount))
               .replace('{session}', sessionLabel(group.fleetSessionId))}

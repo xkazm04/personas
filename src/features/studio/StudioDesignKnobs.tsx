@@ -60,7 +60,7 @@ export default function StudioDesignKnobs({ id, onApply }: { id: string; onApply
                 key={o.label}
                 type="button"
                 onClick={() => apply(o.prompt)}
-                className="rounded-interactive bg-secondary/40 px-2 py-0.5 typo-label text-foreground/90 transition-colors hover:bg-primary/20 hover:text-primary"
+                className="rounded-interactive bg-secondary/40 px-2 py-0.5 typo-label text-ink-2 transition-colors hover:bg-primary/20 hover:text-primary"
               >
                 {t.studio[o.label]}
               </button>

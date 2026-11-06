@@ -58,7 +58,7 @@ export function GuideCaption() {
     : { right: -7, top: 18, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '7px solid var(--color-primary)' };
 
   const ctrl =
-    'w-6 h-6 rounded-full flex items-center justify-center text-foreground/70 hover:bg-secondary focus-ring transition-colors disabled:opacity-30 disabled:hover:bg-transparent';
+    'w-6 h-6 rounded-full flex items-center justify-center text-ink-2 hover:bg-secondary focus-ring transition-colors disabled:opacity-30 disabled:hover:bg-transparent';
 
   return (
     <div
@@ -74,7 +74,7 @@ export function GuideCaption() {
         initial={reduceMotion ? false : { opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
-        className="typo-body text-foreground/90"
+        className="typo-body text-ink-2"
       >
         {step.narration(t)}
       </motion.p>

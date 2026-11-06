@@ -695,7 +695,7 @@ export default function RadioFooter() {
         <button
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
-          className="relative typo-caption text-foreground/85 hover:text-foreground text-left transition-colors min-w-0 flex-1"
+          className="relative typo-caption text-ink-2 hover:text-foreground text-left transition-colors min-w-0 flex-1"
           title={t.radio.expand_button}
           aria-label={t.radio.expand_button}
           aria-expanded={detailsOpen}

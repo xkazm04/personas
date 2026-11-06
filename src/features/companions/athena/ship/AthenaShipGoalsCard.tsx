@@ -66,7 +66,7 @@ export function AthenaShipGoalsCard({
   if (created !== null) {
     return (
       <div
-        className="rounded-card border border-emerald-500/30 bg-emerald-500/[0.06] p-3 typo-caption text-foreground"
+        className="rounded-card border border-status-success/30 bg-status-success/10/[0.06] p-3 typo-caption text-foreground"
         data-testid="athena-ship-goals-card"
       >
         {created}
@@ -157,7 +157,7 @@ export function AthenaShipGoalsCard({
 
       {error !== null && (
         <p
-          className="typo-caption text-rose-400 break-words"
+          className="typo-caption text-status-error break-words"
           data-testid="athena-ship-goals-error"
         >
           {resolveErrorTranslated(t, error).message}

@@ -43,7 +43,7 @@ export function MemberRail({ seat, ariaLabel }: { seat: Seat; ariaLabel: string 
                 ? 'bg-status-error'
                 : seat.state === 'carried'
                   ? 'bg-[repeating-linear-gradient(135deg,var(--primary)_0_5px,transparent_5px_9px)] ring-[1.5px] ring-inset ring-primary'
-                  : 'bg-gradient-to-r from-primary/50 to-primary'
+                  : 'bg-surface-1 from-primary/50 to-primary'
             }`}
             style={{ width: `${seat.score * 100}%` }}
           />

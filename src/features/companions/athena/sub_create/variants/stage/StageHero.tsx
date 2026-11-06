@@ -35,7 +35,7 @@ export function StageHero({ speaking }: StageHeroProps) {
       <style>{ORB_STYLE}</style>
       <div
         className={`create-stage-orb relative w-[120px] h-[120px] rounded-pill transition-shadow duration-slow motion-reduce:transition-none ${
-          speaking ? 'shadow-[0_0_48px_-8px_var(--color-primary)]' : 'shadow-elevation-2'
+          speaking ? '' : 'shadow-elevation-2'
         }`}
         style={{ background: ORB_GRADIENT }}
         data-speaking={speaking ? 'true' : 'false'}

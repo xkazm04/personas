@@ -58,7 +58,7 @@ export function ChoiceRow<T extends string>({
             onClick={() => onChoose(ch.id)}
             data-testid={ch.testId}
             className={`min-w-0 rounded-interactive px-2 py-1.5 typo-caption text-center transition-colors focus-ring disabled:is-disabled ${
-              checked ? 'bg-primary/20 text-primary shadow-elevation-1' : 'text-foreground/80 hover:bg-secondary/70 hover:text-foreground'
+              checked ? 'bg-primary/20 text-primary shadow-elevation-1' : 'text-ink-2 hover:bg-secondary/70 hover:text-foreground'
             }`}
           >
             {ch.label}

@@ -81,7 +81,7 @@ export function StageCardHandoff({
         {c.create_handoff_open}
       </AsyncButton>
       {!card.hasClaudeLogin && (
-        <p className="typo-caption text-foreground/85" data-testid="create-athena-handoff-no-login">
+        <p className="typo-caption text-ink-2" data-testid="create-athena-handoff-no-login">
           {c.create_handoff_no_login}
         </p>
       )}

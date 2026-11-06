@@ -201,11 +201,11 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
       ref={rootRef}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-card border border-violet-500/25 bg-gradient-to-br from-violet-500/8 to-cyan-500/5 p-5 shadow-elevation-1"
+      className="rounded-card border border-hair-2 bg-surface-1 p-5 shadow-elevation-1"
     >
       <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-card bg-violet-500/15 border border-violet-400/40 flex items-center justify-center">
-          <Inbox className="w-4 h-4 text-violet-300" />
+        <div className="w-8 h-8 rounded-card bg-surface-2 border border-hair-2 flex items-center justify-center">
+          <Inbox className="w-4 h-4 text-ink-2" />
         </div>
         <div className="min-w-0">
           <h3 className="typo-section-title">{tc.outboxTitle}</h3>
@@ -281,10 +281,10 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
               type="button"
               onClick={() => handleSteer(tc[key])}
               disabled={drafting}
-              className={`px-2 py-1 rounded-full border text-[11px] font-medium transition-colors focus-ring disabled:opacity-40 ${
+              className={`px-2 py-1 rounded-full border typo-caption transition-colors focus-ring disabled:opacity-40 ${
                 directions.trim() === tc[key]
-                  ? 'border-violet-500/40 bg-violet-500/15 text-violet-300'
-                  : 'border-primary/15 bg-secondary/30 text-foreground hover:border-violet-500/30 hover:text-violet-300'
+                  ? 'border-hair-2 bg-surface-2 text-ink-2'
+                  : 'border-primary/15 bg-secondary/30 text-foreground hover:border-hair-2 hover:text-ink-2'
               }`}
             >
               {tc[key]}
@@ -335,7 +335,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         </div>
       </Collapse>
 
-      {localError && <p className="typo-caption text-red-400 mt-3">{localError}</p>}
+      {localError && <p className="typo-caption text-status-error mt-3">{localError}</p>}
 
       {confirmSend && (
         <ConfirmDialog
@@ -362,7 +362,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <span className="text-[10px] uppercase tracking-[0.16em] font-medium text-foreground">{label}</span>
+      <span className="typo-eyebrow text-foreground">{label}</span>
       {children}
     </div>
   );

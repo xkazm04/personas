@@ -75,7 +75,7 @@ function StripTile({
           <img src={url} alt="" draggable={false} className="w-full h-full object-cover" />
         ) : (
           <span
-            className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${visual.gradient}`}
+            className={`w-full h-full flex items-center justify-center bg-surface-1 ${visual.gradient}`}
           >
             <Icon className={`w-5 h-5 ${visual.text}`} />
           </span>

@@ -124,7 +124,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
       {open && hasBody && (
         <div className="mt-2 pl-5 border-l border-foreground/10 typo-caption text-foreground">
           {failed && job.errorText ? (
-            <div className="text-rose-300/90 whitespace-pre-wrap font-mono">
+            <div className="text-status-error whitespace-pre-wrap font-mono">
               {job.errorText}
             </div>
           ) : job.resultText ? (
@@ -157,7 +157,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
           )}
           {retryingState.phase === 'fired' && (
             <span
-              className="inline-flex items-center gap-1 text-emerald-300/90"
+              className="inline-flex items-center gap-1 text-status-success"
               data-testid="companion-connector-retried"
             >
               <CheckCircle2 className="w-3 h-3" />
@@ -168,7 +168,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
             </span>
           )}
           {retryingState.phase === 'error' && (
-            <span className="inline-flex items-center gap-1 text-rose-300/90">
+            <span className="inline-flex items-center gap-1 text-status-error">
               <AlertCircle className="w-3 h-3" />
               {t.athena.connector_call_retry_failed.replace(
                 '{message}',
@@ -228,18 +228,18 @@ function iconFor(
   if (status === 'running') {
     return {
       Icon: Loader2,
-      accent: 'border-blue-500/30 bg-blue-500/[0.05]',
+      accent: 'border-status-info/30 bg-status-info/10/[0.05]',
     };
   }
   if (failed) {
     return {
       Icon: AlertCircle,
-      accent: 'border-rose-500/30 bg-rose-500/[0.06]',
+      accent: 'border-status-error/30 bg-status-error/10/[0.06]',
     };
   }
   return {
     Icon: CheckCircle2,
-    accent: 'border-emerald-500/30 bg-emerald-500/[0.06]',
+    accent: 'border-status-success/30 bg-status-success/10/[0.06]',
   };
 }
 
@@ -273,9 +273,9 @@ function RetriedJobStatus({ job }: { job: BackgroundJob | undefined }) {
   const { Icon } = iconFor(job.status, newFailed);
   const tone =
     job.status === 'completed'
-      ? 'text-emerald-300/90'
+      ? 'text-status-success'
       : newFailed
-        ? 'text-rose-300/90'
+        ? 'text-status-error'
         : 'text-foreground';
   return (
     <div

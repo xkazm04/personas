@@ -21,17 +21,17 @@ export default function RevitalizeProgress({ lines, onCancel }: RevitalizeProgre
   }, [lines]);
 
   return (
-    <div className="rounded-modal border border-violet-500/20 bg-violet-500/5 overflow-hidden animate-fade-slide-in">
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-violet-500/15">
+    <div className="rounded-modal border border-hair-2 bg-surface-2 overflow-hidden animate-fade-slide-in">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-hair-2">
         <LoadingSpinner size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="typo-heading text-violet-200">{ob.revitalize_running_title}</p>
-          <p className="typo-caption text-foreground/90">{ob.revitalize_running_hint}</p>
+          <p className="typo-heading text-ink-2">{ob.revitalize_running_title}</p>
+          <p className="typo-caption text-ink-2">{ob.revitalize_running_hint}</p>
         </div>
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card text-foreground border border-primary/15 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/25 transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card text-foreground border border-primary/15 hover:bg-status-error/10 hover:text-status-error hover:border-status-error/25 transition-colors focus-ring"
         >
           <XCircle className="w-3.5 h-3.5" />
           {ob.revitalize_cancel}

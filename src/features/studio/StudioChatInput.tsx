@@ -161,7 +161,7 @@ export default function StudioChatInput({
               >
                 <header className="flex shrink-0 items-center gap-1.5 border-b border-border px-3 py-1.5">
                   <MessageSquare className="h-3.5 w-3.5 text-primary/70" />
-                  <span className="typo-label text-foreground/90">
+                  <span className="typo-label text-ink-2">
                     {t.studio.conversation}
                   </span>
                   <div className="flex-1" />
@@ -169,7 +169,7 @@ export default function StudioChatInput({
                     type="button"
                     onClick={() => setChatOpen(false)}
                     aria-label={t.studio.collapse}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-foreground"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </button>
@@ -191,7 +191,7 @@ export default function StudioChatInput({
             role="status"
             data-testid={stopNoop && !working ? 'studio-stop-noop' : undefined}
             className={stopNoop && !working
-              ? 'pointer-events-auto self-center rounded-full border border-border bg-background/80 px-3 py-1 typo-caption shadow-elevation-1'
+              ? 'pointer-events-auto self-center rounded-interactive border border-border bg-background/80 px-3 py-1 typo-caption shadow-elevation-1'
               : 'sr-only'}
           >
             {stopNoop && !working ? t.studio.stop_nothing_running : null}
@@ -200,7 +200,7 @@ export default function StudioChatInput({
             role="status"
             data-testid={queueFull ? 'studio-queue-full' : undefined}
             className={queueFull
-              ? 'pointer-events-auto self-center rounded-full border border-status-warning/60 bg-background/80 px-3 py-1 typo-caption text-status-warning shadow-elevation-1'
+              ? 'pointer-events-auto self-center rounded-interactive border border-status-warning/60 bg-background/80 px-3 py-1 typo-caption text-status-warning shadow-elevation-1'
               : 'sr-only'}
           >
             {queueFull ? tx(guideStrings(t).notes_full, { max: QUEUED_NOTES_MAX }) : null}
@@ -231,12 +231,12 @@ export default function StudioChatInput({
                   className={`relative flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
                     goals.open
                       ? 'bg-secondary/70 text-primary'
-                      : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+                      : 'text-ink-2 hover:bg-secondary/60 hover:text-primary'
                   }`}
                 >
                   <ListChecks className="h-4 w-4" />
                   {hasPlan && (
-                    <span className="font-mono text-[11px] leading-none tabular-nums">
+                    <span className="font-mono typo-caption leading-none tabular-nums">
                       {done}/{total}
                     </span>
                   )}
@@ -255,7 +255,7 @@ export default function StudioChatInput({
               onClick={() => void pickReference()}
               disabled={working}
               aria-label={t.studio.add_reference_image}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
             >
               <ImageIcon className="h-4 w-4" />
             </button>
@@ -280,7 +280,7 @@ export default function StudioChatInput({
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors ${
                   autonomous
                     ? 'bg-primary/20 text-primary'
-                    : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+                    : 'text-ink-2 hover:bg-secondary/60 hover:text-primary'
                 }`}
               >
                 {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
@@ -311,7 +311,7 @@ export default function StudioChatInput({
                 onClick={() => setChatOpen((v) => !v)}
                 aria-label={chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation}
                 aria-expanded={chatOpen}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-primary"
               >
                 {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>

@@ -34,7 +34,7 @@ export default function OverseerSetupPage() {
       icon: <Power className="w-4 h-4 text-role-agent" />,
       content: (
         <SettingRow
-          icon={<Eye className="w-4 h-4 text-violet-400" />}
+          icon={<Eye className="w-4 h-4 text-ink-2" />}
           label={t.companions.setup.overseer_enable}
           description={
             <>

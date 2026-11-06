@@ -98,7 +98,7 @@ export const AthenaChatTranscript = memo(function AthenaChatTranscript({
             onClick={onShowEarlier}
             data-testid="companion-show-earlier"
             data-hidden-count={hiddenCount}
-            className="inline-flex items-center gap-1.5 rounded-full border border-foreground/12 bg-foreground/[0.04] hover:bg-foreground/[0.08] px-3 py-1 typo-caption text-foreground transition-colors focus-ring"
+            className="inline-flex items-center gap-1.5 rounded-interactive border border-foreground/12 bg-foreground/[0.04] hover:bg-foreground/[0.08] px-3 py-1 typo-caption text-foreground transition-colors focus-ring"
           >
             <ChevronUp className="w-3 h-3" aria-hidden />
             {tx(

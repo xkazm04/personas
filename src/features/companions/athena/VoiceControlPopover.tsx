@@ -143,7 +143,7 @@ export function VoiceControlPopover() {
           <div className="space-y-1.5 mb-3">
             <div className="flex items-center justify-between">
               <label className="typo-caption text-foreground">{c.voice_volume_label}</label>
-              <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
+              <span className="typo-code text-foreground">{Math.round(volume * 100)}%</span>
             </div>
             <Slider
               min={0}

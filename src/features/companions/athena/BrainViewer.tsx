@@ -98,11 +98,11 @@ type KindDescKey =
 type BrainFamily = 'identity' | 'goals' | 'procedural' | 'episodic' | 'doctrine';
 
 const FAMILY_ACCENT: Record<BrainFamily, { icon: string; bar: string }> = {
-  identity: { icon: 'text-cyan-400', bar: 'bg-cyan-400/60' },        // identity + the three fact scopes
-  goals: { icon: 'text-amber-400', bar: 'bg-amber-400/60' },         // goals + backlog
-  procedural: { icon: 'text-violet-400', bar: 'bg-violet-400/60' },  // procedurals + rituals
-  episodic: { icon: 'text-fuchsia-400', bar: 'bg-fuchsia-400/60' },  // episodes + reflections + decisions
-  doctrine: { icon: 'text-slate-400', bar: 'bg-slate-400/60' },      // doctrine + constitution
+  identity: { icon: 'text-ink-2', bar: 'bg-hair-2' },        // identity + the three fact scopes
+  goals: { icon: 'text-ink-2', bar: 'bg-hair-2' },         // goals + backlog
+  procedural: { icon: 'text-ink-2', bar: 'bg-hair-2' },  // procedurals + rituals
+  episodic: { icon: 'text-ink-2', bar: 'bg-hair-2' },  // episodes + reflections + decisions
+  doctrine: { icon: 'text-ink-2', bar: 'bg-hair-2' },      // doctrine + constitution
 };
 
 const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey; descKey: KindDescKey; family: BrainFamily }[] = [
@@ -742,7 +742,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
 
   if (error) {
     return (
-      <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
+      <div className="m-5 rounded-card border border-status-error/30 bg-status-error/10 px-3 py-2 typo-body text-status-error">
         {error}
       </div>
     );
@@ -830,7 +830,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-status-error/10 text-status-error hover:bg-status-error/20 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {deleting
@@ -943,7 +943,7 @@ function IdentityClaimCorrections({ content }: { content: string }) {
               type="button"
               disabled={done}
               onClick={() => onWrong(claim.section, claim.bullet)}
-              className="shrink-0 inline-flex items-center gap-1 rounded-interactive border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 px-2 py-0.5 typo-caption disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
+              className="shrink-0 inline-flex items-center gap-1 rounded-interactive border border-status-error/20 text-status-error hover:bg-status-error/10 px-2 py-0.5 typo-caption disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
             >
               <X className="w-3 h-3" />
               {done ? c.identity_wrong_proposed : c.identity_wrong}

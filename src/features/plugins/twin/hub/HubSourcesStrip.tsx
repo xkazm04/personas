@@ -64,7 +64,7 @@ export function HubSourcesStrip({ feed }: { feed: HubFeed }) {
             ) : feed.knowledgeBases.map((kb) => (
               <button key={kb.id} type="button"
                 onClick={() => { setPicking(false); void feed.bindKnowledgeBase(kb.id); }}
-                className="px-2 py-0.5 rounded-full border border-primary/30 bg-primary/10 typo-caption text-foreground transition-colors hover:bg-primary/20 focus-ring">
+                className="px-2 py-0.5 rounded-interactive border border-primary/30 bg-primary/10 typo-caption text-foreground transition-colors hover:bg-primary/20 focus-ring">
                 {kb.name}
               </button>
             ))}

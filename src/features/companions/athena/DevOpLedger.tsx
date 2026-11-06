@@ -113,7 +113,7 @@ export function DevOpLedger() {
 
   return (
     <div
-      className="border-b border-amber-500/15 bg-amber-500/[0.03]"
+      className="border-b border-status-warning/15 bg-status-warning/10/[0.03]"
       data-testid="companion-dev-ledger"
     >
       <div className="flex w-full items-center">
@@ -125,7 +125,7 @@ export function DevOpLedger() {
         data-testid="companion-dev-ledger-toggle"
       >
         <Tooltip content={c.dev_ledger_hint}>
-          <span className="flex items-center gap-1 typo-caption text-amber-400 flex-shrink-0">
+          <span className="flex items-center gap-1 typo-caption text-status-warning flex-shrink-0">
             <Wrench className="w-3 h-3" aria-hidden />
             {c.dev_ledger_label}
           </span>
@@ -161,7 +161,7 @@ export function DevOpLedger() {
             disabled={reviewing || total === 0}
             aria-label={c.dev_self_review}
             data-testid="companion-dev-ledger-self-review"
-            className="mr-2 p-1 rounded-interactive text-amber-400/60 transition-colors focus-ring hover:bg-amber-500/10 hover:text-amber-400 disabled:opacity-40"
+            className="mr-2 p-1 rounded-interactive text-status-warning transition-colors focus-ring hover:bg-status-warning/10 hover:text-status-warning disabled:opacity-40"
           >
             <ScrollText className="w-3.5 h-3.5" aria-hidden />
           </button>
@@ -210,7 +210,7 @@ export function DevOpLedger() {
                     className={`p-1 rounded-interactive transition-colors focus-ring ${
                       e.userVerdict === 'up'
                         ? 'bg-status-success/15 text-status-success'
-                        : 'text-foreground/40 hover:text-status-success hover:bg-status-success/10'
+                        : 'text-ink-3 hover:text-status-success hover:bg-status-success/10'
                     }`}
                   >
                     <ThumbsUp className="w-3 h-3" />
@@ -225,7 +225,7 @@ export function DevOpLedger() {
                     className={`p-1 rounded-interactive transition-colors focus-ring ${
                       e.userVerdict === 'down'
                         ? 'bg-status-error/15 text-status-error'
-                        : 'text-foreground/40 hover:text-status-error hover:bg-status-error/10'
+                        : 'text-ink-3 hover:text-status-error hover:bg-status-error/10'
                     }`}
                   >
                     <ThumbsDown className="w-3 h-3" />

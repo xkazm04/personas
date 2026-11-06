@@ -79,7 +79,7 @@ export function RecallStrip({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 w-full text-left hover:text-foreground/85 transition-colors rounded-interactive"
+        className="flex items-center gap-1.5 w-full text-left hover:text-ink-2 transition-colors rounded-interactive"
         aria-expanded={open}
       >
         <Chevron className="w-3 h-3" />

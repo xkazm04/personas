@@ -40,12 +40,12 @@ export default function ConflictDiffView({
     <div className="space-y-2">
       {/* Legend */}
       <div className="flex items-center gap-3">
-        <span className="inline-flex items-center gap-1.5 typo-caption text-blue-400/80">
-          <span className="w-2 h-2 rounded-interactive bg-blue-400/70" />
+        <span className="inline-flex items-center gap-1.5 typo-caption text-status-info">
+          <span className="w-2 h-2 rounded-interactive bg-status-info/20" />
           {ob.app_version}
         </span>
-        <span className="inline-flex items-center gap-1.5 typo-caption text-violet-400/80">
-          <span className="w-2 h-2 rounded-interactive bg-violet-400/70" />
+        <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
+          <span className="w-2 h-2 rounded-interactive bg-surface-2" />
           {ob.vault_version}
         </span>
       </div>
@@ -54,16 +54,16 @@ export default function ConflictDiffView({
         {lines.map((line, idx) => {
           if (line.kind === 'app') {
             return (
-              <div key={idx} className={`${ROW} bg-blue-500/10`}>
-                <span className={`${MARK} text-blue-400`}>−</span>
+              <div key={idx} className={`${ROW} bg-status-info/10`}>
+                <span className={`${MARK} text-status-info`}>−</span>
                 <span className="text-foreground min-w-0">{line.text || ' '}</span>
               </div>
             );
           }
           if (line.kind === 'vault') {
             return (
-              <div key={idx} className={`${ROW} bg-violet-500/10`}>
-                <span className={`${MARK} text-violet-400`}>+</span>
+              <div key={idx} className={`${ROW} bg-surface-2`}>
+                <span className={`${MARK} text-ink-2`}>+</span>
                 <span className="text-foreground min-w-0">{line.text || ' '}</span>
               </div>
             );

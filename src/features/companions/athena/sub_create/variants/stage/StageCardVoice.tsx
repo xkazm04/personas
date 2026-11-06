@@ -64,7 +64,7 @@ function VoiceTile({
           <span className="typo-label text-foreground truncate">{voice.label}</span>
           {selected && <Check className="w-3.5 h-3.5 text-primary shrink-0" aria-label={c.create_voice_selected} />}
         </span>
-        {voice.meta && <span className="block typo-caption text-foreground/85 truncate">{voice.meta}</span>}
+        {voice.meta && <span className="block typo-caption text-ink-2 truncate">{voice.meta}</span>}
       </button>
       <Button
         variant={playing ? 'primary' : 'secondary'}
@@ -90,7 +90,7 @@ export function StageCardVoice({ card, actions }: { card: VoiceCard; actions: Cr
       {card.loading && card.voices.length === 0 ? (
         <GhostTiles />
       ) : card.voices.length === 0 ? (
-        <p className="typo-body text-foreground/85 py-4" data-testid="create-athena-voice-none">
+        <p className="typo-body text-ink-2 py-4" data-testid="create-athena-voice-none">
           {c.create_voice_none}
         </p>
       ) : (

@@ -44,7 +44,7 @@ export function AthenaShipGoalsRow({ row, index, disabled, onChange, onRemove }:
         <div className="min-w-0 flex items-center gap-2 flex-wrap">
           <span
             className={`shrink-0 px-1.5 py-0.5 rounded-interactive typo-caption text-foreground ${
-              adopts ? 'bg-teal-500/15' : 'bg-primary/15'
+              adopts ? 'bg-status-success/15' : 'bg-primary/15'
             }`}
           >
             {adopts ? c.ship_goals_badge_existing : c.ship_goals_badge_new}

@@ -30,11 +30,11 @@ export function DirectorSection({
   return (
     <section
       style={style}
-      className={`relative overflow-hidden rounded-card border border-primary/10 bg-gradient-to-b from-secondary/35 to-secondary/10 shadow-elevation-1 p-4 ${className ?? ''}`}
+      className={`relative overflow-hidden rounded-card border border-primary/10 bg-surface-1 from-secondary/35 to-secondary/10 shadow-elevation-1 p-4 ${className ?? ''}`}
     >
       <header className="flex items-center justify-between gap-3 mb-3">
         <h3 className="inline-flex items-center gap-2 typo-title min-w-0">
-          {Icon && <Icon aria-hidden className="w-[1.1em] h-[1.1em] shrink-0 text-violet-300" />}
+          {Icon && <Icon aria-hidden className="w-[1.1em] h-[1.1em] shrink-0 text-ink-2" />}
           <span className="truncate">{label}</span>
         </h3>
         {action}

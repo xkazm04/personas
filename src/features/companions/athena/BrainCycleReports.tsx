@@ -159,10 +159,10 @@ function CycleCard({ cycle }: { cycle: CycleSummary }) {
   const Icon = STATUS_ICON[cycle.status as keyof typeof STATUS_ICON] ?? AlertTriangle;
   const accent =
     cycle.status === 'failed'
-      ? 'text-rose-400'
+      ? 'text-status-error'
       : cycle.status === 'running'
-        ? 'text-amber-400'
-        : 'text-emerald-400';
+        ? 'text-status-warning'
+        : 'text-status-success';
 
   return (
     <article
@@ -178,7 +178,7 @@ function CycleCard({ cycle }: { cycle: CycleSummary }) {
         </span>
       </header>
 
-      {stats.error ? <p className="typo-caption text-rose-400 mb-2">{stats.error}</p> : null}
+      {stats.error ? <p className="typo-caption text-status-error mb-2">{stats.error}</p> : null}
 
       <p className="typo-caption text-foreground mb-2">
         {t.athena.cycles_episodes_read}{' '}
@@ -245,7 +245,7 @@ function CycleStatChips({ stats }: { stats: CycleStats }) {
             <Numeric value={entry.value ?? 0} unit="count" />
             {entry.hint ? (
               <Tooltip content={entry.hint}>
-                <span className="ml-1 text-amber-400" aria-label={entry.hint}>
+                <span className="ml-1 text-status-warning" aria-label={entry.hint}>
                   !
                 </span>
               </Tooltip>
@@ -267,10 +267,10 @@ function CyclePhaseRow({ phases }: { phases: CyclePhase[] }) {
           <span
             className={`typo-caption rounded-interactive px-2 py-0.5 border ${
               phase.status === 'failed'
-                ? 'border-rose-400/40 text-rose-400'
+                ? 'border-status-error/40 text-status-error'
                 : phase.status === 'skipped'
                   ? 'border-foreground/15 text-foreground'
-                  : 'border-emerald-400/30 text-emerald-400'
+                  : 'border-status-success/30 text-status-success'
             }`}
           >
             {titleCase(phase.phase)}

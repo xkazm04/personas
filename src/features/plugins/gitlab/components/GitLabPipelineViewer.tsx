@@ -142,7 +142,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <StatusIcon status={activePipeline.status} />
-                  <span className="typo-body text-foreground/90">
+                  <span className="typo-body text-ink-2">
                     {t.gitlab.pipeline_hash}{activePipeline.id}
                   </span>
                   <span className={`typo-caption capitalize ${statusColor(activePipeline.status)}`}>
@@ -155,7 +155,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                       href={sanitizeExternalUrl(activePipeline.webUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
+                      className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-ink-2 transition-colors"
                       title={t.gitlab.open_in_gitlab}
                     >
                       <ExternalLink className="w-4 h-4" />

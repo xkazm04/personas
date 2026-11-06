@@ -54,7 +54,7 @@ export function FinderHeaderActions({ drive, onRequestDelete }: Props) {
         </div>
       ) : (
         <span
-          className="px-2.5 py-1 rounded-full bg-secondary/30 border border-border typo-body tabular-nums text-foreground"
+          className="px-2.5 py-1 rounded-interactive bg-secondary/30 border border-border typo-body tabular-nums text-foreground"
           data-testid="finder-items-total"
         >
           {tx(f.items_total_n, { count: drive.visibleEntries.length })}

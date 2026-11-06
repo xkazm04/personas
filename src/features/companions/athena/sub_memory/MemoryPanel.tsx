@@ -125,7 +125,7 @@ export default function MemoryPanel() {
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption focus-ring transition-colors ${
               view === 'consolidation'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-foreground/5 hover:bg-foreground/10 text-foreground/85'
+                : 'bg-foreground/5 hover:bg-foreground/10 text-ink-2'
             }`}
             title={t.athena.memory_run_consolidation}
           >
@@ -138,7 +138,7 @@ export default function MemoryPanel() {
             type="button"
             onClick={generateReflection}
             disabled={reflecting}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-ink-2 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             title={t.athena.memory_generate_reflection}
           >
             {reflecting ? (
@@ -156,7 +156,7 @@ export default function MemoryPanel() {
             type="button"
             onClick={decayFacts}
             disabled={decaying}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-ink-2 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             title={t.athena.memory_decay_unused}
           >
             {decaying ? (
@@ -172,7 +172,7 @@ export default function MemoryPanel() {
             type="button"
             onClick={rebuildSearchIndex}
             disabled={reembedding}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-ink-2 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             title={t.athena.memory_rebuild_search}
           >
             {reembedding ? (

@@ -67,7 +67,7 @@ export function ChannelHealthStrip({ twinId, channels }: Props) {
         const Icon = health === 'stale' ? AlertTriangle : health === 'never' ? CircleDashed : CircleDot;
         const tone =
           health === 'stale'
-            ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+            ? 'border-status-warning/30 bg-status-warning/10 text-status-warning'
             : health === 'never'
               ? 'border-primary/15 bg-secondary/20 text-foreground'
               : `border-primary/15 bg-secondary/20 ${paletteOf(meta).text}`;

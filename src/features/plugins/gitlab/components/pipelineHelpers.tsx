@@ -4,52 +4,41 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 export function statusColor(status: string): string {
   switch (status) {
     case 'success':
-      return 'text-emerald-400';
+      return 'text-status-success';
     case 'failed':
-      return 'text-red-400';
+      return 'text-status-error';
     case 'warning':
-      return 'text-amber-400';
+      return 'text-status-warning';
     case 'running':
     case 'pending':
-      return 'text-amber-400';
+      return 'text-status-warning';
     case 'canceled':
     case 'skipped':
-      return 'text-foreground';
+      return 'text-ink-2';
     default:
-      return 'text-foreground';
+      return 'text-ink-2';
   }
 }
 
 export function statusBg(status: string): string {
-  switch (status) {
-    case 'success':
-      return 'bg-emerald-500/10 border-emerald-500/20';
-    case 'failed':
-      return 'bg-red-500/10 border-red-500/20';
-    case 'warning':
-      return 'bg-amber-500/10 border-amber-500/20';
-    case 'running':
-    case 'pending':
-      return 'bg-amber-500/10 border-amber-500/20';
-    default:
-      return 'bg-secondary/30 border-primary/10';
-  }
+  // Console law: a surface keeps one hairline tile; the verdict is the status glyph and word, not a tint.
+  return status === 'failed' ? 'bg-surface-1 border-status-error/40' : 'bg-surface-1 border-hair';
 }
 
 export function StatusIcon({ status }: { status: string }) {
   switch (status) {
     case 'success':
-      return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+      return <CheckCircle2 className="w-4 h-4 text-status-success" />;
     case 'failed':
-      return <XCircle className="w-4 h-4 text-red-400" />;
+      return <XCircle className="w-4 h-4 text-status-error" />;
     case 'warning':
-      return <AlertTriangle className="w-4 h-4 text-amber-400" />;
+      return <AlertTriangle className="w-4 h-4 text-status-warning" />;
     case 'running':
-      return <LoadingSpinner className="text-amber-400" />;
+      return <LoadingSpinner className="text-status-warning" />;
     case 'pending':
-      return <Clock className="w-4 h-4 text-amber-400" />;
+      return <Clock className="w-4 h-4 text-status-warning" />;
     default:
-      return <Clock className="w-4 h-4 text-foreground" />;
+      return <Clock className="w-4 h-4 text-ink-2" />;
   }
 }
 

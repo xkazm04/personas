@@ -34,7 +34,7 @@ function Tile({ selected, onSelect, title, body, icon, testId, dashed }: TilePro
       data-testid={testId}
       className={`focus-ring text-left flex gap-2 rounded-interactive border px-3 py-2 transition-colors ${
         dashed ? 'border-dashed' : ''
-      } ${selected ? 'border-violet-500/40 bg-violet-500/10' : 'border-primary/10 hover:bg-secondary/40'}`}
+      } ${selected ? 'border-hair-2 bg-surface-2' : 'border-primary/10 hover:bg-secondary/40'}`}
     >
       <span className="mt-0.5 flex-shrink-0 text-primary" aria-hidden="true">{icon}</span>
       <span className="min-w-0">

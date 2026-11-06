@@ -32,7 +32,7 @@ export default function GuideQueuedNotes({ notes, onRemove }: { notes: string[];
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="true"
         aria-expanded={open}
-        className="rounded-full border border-border px-2.5 py-0.5 typo-caption text-foreground/90 hover:bg-secondary/60"
+        className="rounded-interactive border border-border px-2.5 py-0.5 typo-caption text-ink-2 hover:bg-secondary/60"
       >
         {tx(g.notes_waiting, { count: notes.length })}
       </button>
@@ -45,7 +45,7 @@ export default function GuideQueuedNotes({ notes, onRemove }: { notes: string[];
                 type="button"
                 onClick={() => onRemove(i)}
                 aria-label={g.note_remove}
-                className="shrink-0 rounded-interactive p-1 text-foreground/70 hover:bg-secondary hover:text-foreground"
+                className="shrink-0 rounded-interactive p-1 text-ink-2 hover:bg-secondary hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

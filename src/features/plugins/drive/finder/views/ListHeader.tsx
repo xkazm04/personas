@@ -39,10 +39,10 @@ export function ListHeader({ drive }: { drive: DriveApi }) {
           dir={drive.sortDir}
           onSort={() => drive.setSort(col.key)}
           className="min-w-0"
-          buttonClassName="typo-caption font-mono uppercase tracking-widest"
+          buttonClassName="typo-eyebrow"
         />
       ))}
-      <div className="typo-caption font-mono uppercase tracking-widest text-foreground" role="columnheader">
+      <div className="typo-eyebrow text-foreground" role="columnheader">
         {f.col_tags}
       </div>
     </div>

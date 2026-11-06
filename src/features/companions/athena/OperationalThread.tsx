@@ -16,7 +16,7 @@ import type { TodoStep } from './operationalSteps';
 
 function StepIcon({ status }: { status: TodoStep['status'] }) {
   if (status === 'completed') {
-    return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+    return <CheckCircle2 className="w-3.5 h-3.5 text-status-success shrink-0" />;
   }
   if (status === 'in_progress') {
     return <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />;

@@ -17,7 +17,7 @@ export function AthenaStatusSection() {
   return (
     <SettingRow
       icon={
-        <Power className={`w-4 h-4 ${status?.enabled ? 'text-cyan-400' : 'text-foreground'}`} />
+        <Power className={`w-4 h-4 ${status?.enabled ? 'text-ink-2' : 'text-foreground'}`} />
       }
       label={t.companions.setup.athena_enable}
       description={t.companions.setup.athena_enable_desc}

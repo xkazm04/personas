@@ -59,7 +59,7 @@ export function GitLabAgentList({
         <button
           type="button"
           onClick={() => onFetchAgents(projectId)}
-          className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-ink-2 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.common.refresh}
@@ -71,11 +71,11 @@ export function GitLabAgentList({
           key={agent.id}
           className="p-3 rounded-modal border border-primary/10 bg-secondary/20 flex items-center gap-3"
         >
-          <div className="w-9 h-9 rounded-card bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
-            <Bot className="w-4 h-4 text-orange-400" />
+          <div className="w-9 h-9 rounded-card bg-status-warning/10 border border-status-warning/20 flex items-center justify-center flex-shrink-0">
+            <Bot className="w-4 h-4 text-status-warning" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="typo-body text-foreground/90 truncate">{agent.name}</p>
+            <p className="typo-body text-ink-2 truncate">{agent.name}</p>
             {agent.description && (
               <p className="typo-body text-foreground truncate">{agent.description}</p>
             )}
@@ -86,7 +86,7 @@ export function GitLabAgentList({
               type="button"
               onClick={() => onRedeploy(agent.name)}
               disabled={redeployingAgentId === agent.name}
-              className="p-1.5 rounded-card hover:bg-orange-500/10 text-foreground hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-1.5 rounded-card hover:bg-status-warning/10 text-foreground hover:text-status-warning transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={t.gitlab.redeploy_agent}
             >
               {redeployingAgentId === agent.name ? (
@@ -100,7 +100,7 @@ export function GitLabAgentList({
                 href={sanitizeExternalUrl(agent.webUrl)!}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/80 transition-colors"
+                className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-ink-2 transition-colors"
                 title={t.gitlab.open_in_gitlab}
               >
                 <ExternalLink className="w-4 h-4" />
@@ -109,7 +109,7 @@ export function GitLabAgentList({
             <button
               type="button"
               onClick={() => onUndeploy(projectId, agent.id)}
-              className="p-1.5 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
+              className="p-1.5 rounded-card hover:bg-status-error/10 text-foreground hover:text-status-error transition-colors"
               title={t.gitlab.undeploy_agent}
             >
               <Trash2 className="w-4 h-4" />
@@ -145,23 +145,23 @@ function PipelineStatusBadge({ projectId, agentName }: { projectId: number; agen
   const cfg: Record<string, { icon: React.ReactNode; bg: string; text: string }> = {
     success: {
       icon: <CheckCircle2 className="w-3 h-3" />,
-      bg: 'bg-emerald-500/10 border-emerald-500/20',
-      text: 'text-emerald-400',
+      bg: 'bg-status-success/10 border-status-success/20',
+      text: 'text-status-success',
     },
     failed: {
       icon: <XCircle className="w-3 h-3" />,
-      bg: 'bg-red-500/10 border-red-500/20',
-      text: 'text-red-400',
+      bg: 'bg-status-error/10 border-status-error/20',
+      text: 'text-status-error',
     },
     running: {
       icon: <LoadingSpinner size="xs" />,
-      bg: 'bg-amber-500/10 border-amber-500/20',
-      text: 'text-amber-400',
+      bg: 'bg-status-warning/10 border-status-warning/20',
+      text: 'text-status-warning',
     },
     pending: {
       icon: <Clock className="w-3 h-3" />,
-      bg: 'bg-amber-500/10 border-amber-500/20',
-      text: 'text-amber-400',
+      bg: 'bg-status-warning/10 border-status-warning/20',
+      text: 'text-status-warning',
     },
   };
 

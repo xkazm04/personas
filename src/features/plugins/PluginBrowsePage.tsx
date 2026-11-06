@@ -6,6 +6,7 @@ import { Puzzle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getBrandTokens } from '@/lib/connectors/brandTokens';
 import { PLUGIN_ICONS } from './PluginIcons';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { TwinGlyph } from './twin/TwinGlyph';
 
 interface PluginDef {
@@ -38,14 +39,14 @@ export default function PluginBrowsePage() {
   return (
     <ContentBox data-testid="plugin-browse-page">
       <ContentHeader
-        icon={<Puzzle className="w-5 h-5 text-primary/80" />}
+        icon={<Puzzle className="w-5 h-5" />}
         iconColor="primary"
         title={t.plugins.title}
         subtitle={t.plugins.subtitle}
       />
 
       <ContentBody centered>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
           {PLUGINS.map((plugin) => {
             const Icon = plugin.icon;
             const CustomIcon = PLUGIN_ICONS[plugin.id];
@@ -54,38 +55,25 @@ export default function PluginBrowsePage() {
             return (
               <div
                 key={plugin.id}
-                className={`rounded-modal border transition-all ${
-                  enabled
-                    ? `${brand.badgeBorder} ${brand.badgeBg}`
-                    : 'border-primary/10 bg-card/40 opacity-60'
-                }`}
+                className={`rounded-card border border-hair bg-surface-1 transition-colors ${enabled ? '' : 'text-ink-3'}`}
               >
-                <div className="flex items-start gap-4 p-5">
-                  <div className={`w-10 h-10 rounded-modal ${brand.badgeBg} ${brand.badgeBorder} border flex items-center justify-center flex-shrink-0 ${brand.icon}`}>
+                <div className="flex items-start gap-4 p-4">
+                  <div className={`w-10 h-10 rounded-interactive border border-hair-2 bg-surface-2 flex items-center justify-center flex-shrink-0 ${enabled ? brand.icon : 'text-ink-3'}`}>
                     {CustomIcon
                       ? <CustomIcon active={enabled} className="w-5 h-5" />
-                      : <Icon className={`w-5 h-5 ${brand.icon}`} />}
+                      : <Icon className="w-5 h-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="typo-card-label">{plugin.label}</h3>
-                      <button
-                        type="button"
-                        onClick={() => togglePlugin(plugin.id)}
-                        role="switch"
-                        aria-checked={enabled}
-                        className={`relative w-10 h-5.5 rounded-full transition-colors flex-shrink-0 ${
-                          enabled ? 'bg-emerald-500/80' : 'bg-secondary/60'
-                        }`}
-                      >
-                        <span
-                          className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-secondary shadow transition-transform ${
-                            enabled ? 'translate-x-[18px]' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
+                      <h3 className="typo-section-title">{plugin.label}</h3>
+                      <AccessibleToggle
+                        checked={enabled}
+                        onChange={() => togglePlugin(plugin.id)}
+                        label={plugin.label}
+                        size="sm"
+                      />
                     </div>
-                    <p className="typo-body text-foreground mt-1">{plugin.description}</p>
+                    <p className="typo-body text-ink-2 mt-1">{plugin.description}</p>
                   </div>
                 </div>
               </div>

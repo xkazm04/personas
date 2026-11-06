@@ -75,7 +75,7 @@ export function ReplyShapePanel() {
     <section className="space-y-2" data-testid="companion-reply-shape-panel">
       <div className="flex items-center gap-2 flex-wrap">
         <MessageSquareText className="w-4 h-4 text-primary" aria-hidden />
-        <h4 className="typo-heading text-foreground/90">{c.reply_shape_title}</h4>
+        <h4 className="typo-heading text-ink-2">{c.reply_shape_title}</h4>
         <span className="typo-caption text-foreground">{c.reply_shape_hint}</span>
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-6 gap-y-1.5 items-baseline rounded-card border border-primary/10 bg-secondary/20 px-3 py-2">

@@ -185,12 +185,11 @@ export default function DirectorCoachingTab() {
       <ContentHeader
         icon={
           <span className="relative inline-flex items-center justify-center">
-            <span aria-hidden className="absolute -inset-2 rounded-full bg-violet-500/30 blur-md animate-glow-breathe motion-reduce:hidden" />
             <span className="relative inline-flex">
               {d.director ? (
                 <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-5 h-5" />
               ) : (
-                <Clapperboard className="w-5 h-5 text-violet-300" />
+                <Clapperboard className="w-5 h-5 text-ink-2" />
               )}
             </span>
           </span>
@@ -272,7 +271,7 @@ export default function DirectorCoachingTab() {
                 <PeriodSelect value={d.period ?? p.periodDays} onChange={d.setPeriod} />
                 {p.avgScore != null && (
                   <span className="inline-flex items-center gap-1.5">
-                    <Star className="w-3.5 h-3.5 text-violet-300" />
+                    <Star className="w-3.5 h-3.5 text-ink-2" />
                     {t.director.kpi_avg_score}
                     <Numeric value={p.avgScore} precision={1} className="text-foreground font-medium tabular-nums" />
                   </span>
@@ -292,7 +291,7 @@ export default function DirectorCoachingTab() {
                     className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded"
                     data-testid="director-open-reviews"
                   >
-                    <Inbox className="w-3.5 h-3.5 text-amber-400" />
+                    <Inbox className="w-3.5 h-3.5 text-status-warning" />
                     {tx(t.director.open_reviews, { count: openReviewCount })}
                   </button>
                 )}
@@ -300,7 +299,7 @@ export default function DirectorCoachingTab() {
               {/* Memory toggle */}
               {d.vaultConfigured ? (
                 <div className="flex items-center gap-2 shrink-0">
-                  <Brain className={`w-3.5 h-3.5 ${d.brainEnabled ? 'text-violet-300' : 'text-foreground'}`} />
+                  <Brain className={`w-3.5 h-3.5 ${d.brainEnabled ? 'text-ink-2' : 'text-foreground'}`} />
                   <span className="typo-caption text-foreground">{t.director.brain_title}</span>
                   <AccessibleToggle
                     checked={d.brainEnabled}

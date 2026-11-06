@@ -184,7 +184,7 @@ export default function GuideDraftingSheet({
       {steps
         .filter((s) => s.state !== 'pending')
         .map((s) => (
-          <li key={s.key} className="truncate typo-code text-foreground/90">
+          <li key={s.key} className="truncate typo-code text-ink-2">
             <span style={{ color: 'var(--ink-strong)' }}>{s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : '›'}</span> {stepLabel[s.key]}
             {s.state === 'running' && elapsed > 0 ? ` ${clock(elapsed)}` : ''}
           </li>

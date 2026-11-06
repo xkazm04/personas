@@ -16,7 +16,7 @@ function Toggle({ checked, onChange, label, id }: {
 }) {
   return (
     <label htmlFor={id} className="flex items-center justify-between py-1.5 cursor-pointer group">
-      <span className="typo-body text-foreground group-hover:text-foreground/95 transition-colors">
+      <span className="typo-body text-foreground group-hover:text-ink-2 transition-colors">
         {label}
       </span>
       <button
@@ -25,9 +25,9 @@ function Toggle({ checked, onChange, label, id }: {
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 ${
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/40 ${
           checked
-            ? 'bg-orange-500/80 border-orange-500/40'
+            ? 'bg-status-warning/20 border-status-warning/40'
             : 'bg-secondary/60 border-primary/10'
         }`}
       >
@@ -56,9 +56,9 @@ export function PipelineNotificationPrefs() {
   return (
     <div className={`p-4 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10`}>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="flex items-center gap-2 typo-body text-foreground/90">
+        <h3 className="flex items-center gap-2 typo-body text-ink-2">
           {prefs.enabled ? (
-            <Bell className="w-4 h-4 text-orange-400" />
+            <Bell className="w-4 h-4 text-status-warning" />
           ) : (
             <BellOff className="w-4 h-4 text-foreground" />
           )}
@@ -70,9 +70,9 @@ export function PipelineNotificationPrefs() {
           aria-checked={prefs.enabled}
           aria-label={t.gitlab.enable_pipeline_notifications}
           onClick={() => update({ enabled: !prefs.enabled })}
-          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 ${
+          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/40 ${
             prefs.enabled
-              ? 'bg-orange-500/80 border-orange-500/40'
+              ? 'bg-status-warning/20 border-status-warning/40'
               : 'bg-secondary/60 border-primary/10'
           }`}
         >
@@ -109,7 +109,7 @@ export function PipelineNotificationPrefs() {
           />
           <div className="pt-1.5 mt-1.5 border-t border-primary/5">
             <label htmlFor="notif-sound" className="flex items-center justify-between py-1.5 cursor-pointer group">
-              <span className="flex items-center gap-1.5 typo-body text-foreground group-hover:text-foreground/95 transition-colors">
+              <span className="flex items-center gap-1.5 typo-body text-foreground group-hover:text-ink-2 transition-colors">
                 <Volume2 className="w-3.5 h-3.5 text-foreground" />
                 {t.gitlab.play_sound}
               </span>
@@ -119,9 +119,9 @@ export function PipelineNotificationPrefs() {
                 role="switch"
                 aria-checked={prefs.sound}
                 onClick={() => update({ sound: !prefs.sound })}
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 ${
+                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/40 ${
                   prefs.sound
-                    ? 'bg-orange-500/80 border-orange-500/40'
+                    ? 'bg-status-warning/20 border-status-warning/40'
                     : 'bg-secondary/60 border-primary/10'
                 }`}
               >

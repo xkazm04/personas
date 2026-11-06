@@ -33,7 +33,7 @@ export function StageCardKeepToggle({
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <h3 className="typo-title">{stepLabel(card.feature)}</h3>
-          <p className="typo-caption text-foreground/85 mt-0.5">{card.why}</p>
+          <p className="typo-caption text-ink-2 mt-0.5">{card.why}</p>
         </div>
         <AccessibleToggle
           checked={card.enabled}

@@ -154,7 +154,7 @@ export default function PocketVoicePanel() {
                   {t.athena.voice_pocket_voices_dir_hint}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <code className="flex-1 typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
+                  <code className="flex-1 typo-code text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
                     {status.voicesDir}
                   </code>
                   <CopyButton
@@ -286,9 +286,9 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
 
   if (!credLoading && !hasHfCredential) {
     return (
-      <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+      <div className="rounded-card border border-status-warning/30 bg-status-warning/5 p-3 space-y-2">
         <div className="flex items-center gap-2">
-          <KeyRound className="w-4 h-4 text-amber-400" />
+          <KeyRound className="w-4 h-4 text-status-warning" />
           <span className="typo-title">
             {t.athena.voice_pocket_hf_gate_title}
           </span>
@@ -297,7 +297,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
         <button
           type="button"
           onClick={() => setSidebarSection('credentials')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 typo-caption transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-status-warning/15 hover:bg-status-warning/20 text-status-warning typo-caption transition-colors focus-ring"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           {t.athena.voice_empty_cta}
@@ -448,13 +448,13 @@ function ServiceRow({ status }: { status: PocketStatus }) {
   return (
     <div className="rounded-card border border-foreground/10 bg-secondary/20 p-3">
       <div className="flex items-center gap-2">
-        <span className={running ? 'text-emerald-400' : 'text-foreground'}>
+        <span className={running ? 'text-status-success' : 'text-foreground'}>
           <FolderOpen className="w-4 h-4" />
         </span>
         <span className="typo-title">{t.athena.voice_pocket_service_title}</span>
         <span
           className={`ml-auto inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full ${
-            running ? 'bg-emerald-500/10 text-emerald-400' : 'bg-foreground/5 text-foreground'
+            running ? 'bg-status-success/10 text-status-success' : 'bg-foreground/5 text-foreground'
           }`}
         >
           {running && <CheckCircle2 className="w-3 h-3" />}
@@ -465,7 +465,7 @@ function ServiceRow({ status }: { status: PocketStatus }) {
       </div>
       <p className="typo-caption mt-1.5">{t.athena.voice_pocket_service_desc}</p>
       <div className="flex items-center gap-1.5 mt-1.5">
-        <code className="flex-1 typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
+        <code className="flex-1 typo-code text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
           {status.baseUrl}
         </code>
         <CopyButton text={status.baseUrl} tooltip={t.athena.voice_pocket_url_label} />
@@ -491,7 +491,7 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
   return (
     <div
       className={`rounded-card border p-3 ${
-        selected ? 'border-cyan-500/40 bg-cyan-500/5' : 'border-foreground/10 bg-secondary/20'
+        selected ? 'border-hair-2 bg-surface-2' : 'border-foreground/10 bg-secondary/20'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -499,13 +499,13 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
           <div className="flex items-center gap-2 flex-wrap">
             <span className="typo-title">{voice.name}</span>
             {isCloned && (
-              <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+              <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-interactive bg-primary/15 text-primary">
                 <AudioWaveform className="w-3 h-3" />
                 {t.athena.voice_pocket_cloned_badge}
               </span>
             )}
             {selected && (
-              <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
+              <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-interactive bg-surface-2 text-ink-2">
                 <CheckCircle2 className="w-3 h-3" />
                 {t.athena.voice_piper_voice_selected}
               </span>
@@ -517,7 +517,7 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
             type="button"
             onClick={onSelect}
             disabled={selected}
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 typo-caption transition-colors focus-ring disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-surface-2 hover:bg-surface-2 text-ink-2 typo-caption transition-colors focus-ring disabled:opacity-40"
           >
             <CheckCircle2 className="w-3 h-3" />
             {selected
@@ -535,7 +535,7 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
               onClick={onDelete}
               title={t.athena.voice_pocket_delete_title}
               aria-label={t.athena.voice_pocket_delete_title}
-              className="inline-flex items-center px-2 py-1 rounded-interactive bg-secondary/40 hover:bg-red-500/15 border border-foreground/10 hover:border-red-500/30 text-foreground hover:text-red-400 typo-caption transition-colors focus-ring"
+              className="inline-flex items-center px-2 py-1 rounded-interactive bg-secondary/40 hover:bg-status-error/15 border border-foreground/10 hover:border-status-error/30 text-foreground hover:text-status-error typo-caption transition-colors focus-ring"
             >
               <Trash2 className="w-3 h-3" />
             </button>

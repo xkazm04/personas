@@ -50,8 +50,8 @@ export function KbPickerDialog({
     <BaseModal isOpen onClose={onClose} titleId={TITLE_ID} size="md" portal>
       <div className="contents">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/10">
-          <div className="w-9 h-9 rounded-card bg-violet-500/15 border border-violet-500/30 flex items-center justify-center">
-            <Brain className="w-4.5 h-4.5 text-violet-200" />
+          <div className="w-9 h-9 rounded-card bg-surface-2 border border-hair-2 flex items-center justify-center">
+            <Brain className="w-4.5 h-4.5 text-ink-2" />
           </div>
           <div className="flex-1 min-w-0">
             <div id={TITLE_ID} className="typo-section-title">
@@ -84,9 +84,9 @@ export function KbPickerDialog({
               type="button"
               disabled={pending}
               onClick={() => onPick(kb)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 hover:border-violet-500/40 transition-colors text-left disabled:opacity-50 focus-ring"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 hover:border-hair-2 transition-colors text-left disabled:opacity-50 focus-ring"
             >
-              <Brain className="w-4 h-4 text-violet-200 shrink-0" />
+              <Brain className="w-4 h-4 text-ink-2 shrink-0" />
               <span className="flex-1 min-w-0 typo-body text-foreground truncate">
                 {kb.name}
               </span>
@@ -108,15 +108,15 @@ export function KbPickerDialog({
                 }}
                 placeholder={d.kb_create_placeholder}
                 autoFocus
-                className="flex-1 min-w-0 px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-violet-500/50 transition-colors"
+                className="flex-1 min-w-0 px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-hair-2 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => void handleCreate()}
                 disabled={!newName.trim() || pending}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-input bg-violet-500/20 border border-violet-500/45 typo-body text-violet-50 hover:bg-violet-500/30 disabled:opacity-40 transition-colors focus-ring"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-input bg-surface-2 border border-hair-2 typo-body text-ink-2 hover:bg-surface-2 disabled:opacity-40 transition-colors focus-ring"
               >
-                {pending ? <LoadingSpinner className="text-violet-200" /> : null}
+                {pending ? <LoadingSpinner className="text-ink-2" /> : null}
                 {d.kb_create}
               </button>
             </div>
@@ -124,7 +124,7 @@ export function KbPickerDialog({
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-card border border-dashed border-primary/25 typo-body text-foreground hover:border-violet-500/40 hover:bg-secondary/30 transition-colors focus-ring"
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-card border border-dashed border-primary/25 typo-body text-foreground hover:border-hair-2 hover:bg-secondary/30 transition-colors focus-ring"
             >
               <Plus className="w-4 h-4 shrink-0" />
               {d.kb_create_new}

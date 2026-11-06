@@ -28,7 +28,7 @@ export function FinderDeleteBreakdown({ paths, entries }: { paths: string[]; ent
       {buckets.map(([key, count]) => (
         <span
           key={key}
-          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-status-error/10 border border-status-error/25 typo-caption text-foreground"
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-interactive bg-status-error/10 border border-status-error/25 typo-caption text-foreground"
         >
           <span className="tabular-nums">{count}</span>
           <span>{kindGroupLabel(t, key as Parameters<typeof kindGroupLabel>[1])}</span>

@@ -142,7 +142,7 @@ export function AthenaOrb({
         <span
           className={`absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 bg-primary/10 transition-[box-shadow] ${
             reactions.forwardAck
-              ? 'ring-2 ring-amber-400'
+              ? 'ring-2 ring-status-warning'
               : reactions.messageActive
                 ? 'ring-2 ring-primary'
                 : presence.hasUnread

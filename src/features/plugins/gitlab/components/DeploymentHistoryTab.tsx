@@ -86,7 +86,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
               setFilterPersonaId(e.target.value);
               setConfirmRollback(null);
             }}
-            className="w-full rounded-modal border border-primary/15 bg-secondary/30 px-3 py-2 typo-body text-foreground/90 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
+            className="w-full rounded-modal border border-primary/15 bg-secondary/30 px-3 py-2 typo-body text-ink-2 focus:outline-none focus:ring-1 focus:ring-status-warning/30"
           >
             <option value="">{t.gitlab.all_personas}</option>
             {personas.map((p) => (
@@ -100,7 +100,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
           type="button"
           onClick={loadHistory}
           disabled={loading}
-          className="mt-6 flex items-center gap-1.5 px-2.5 py-2 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"
+          className="mt-6 flex items-center gap-1.5 px-2.5 py-2 typo-body rounded-card text-foreground hover:text-ink-2 transition-colors"
         >
           {loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3.5 h-3.5" />}
           {t.common.refresh}
@@ -109,7 +109,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <History className="w-4 h-4 text-amber-400" />
+        <History className="w-4 h-4 text-status-warning" />
         <h3 className="typo-body text-foreground">{t.gitlab.deployment_timeline}</h3>
         <span className="ml-auto typo-caption text-foreground">
           {tx(history.length === 1 ? t.gitlab.deployment_count_one : t.gitlab.deployment_count_other, { count: history.length })}
@@ -188,9 +188,9 @@ function DeploymentRow({
       <div
         className={`absolute left-2.5 top-4 w-3 h-3 rounded-full border-2 ${
           isLatest
-            ? 'bg-emerald-400 border-emerald-400/40'
+            ? 'bg-status-success/10 border-status-success/40'
             : isRollback
-              ? 'bg-amber-400 border-amber-400/40'
+              ? 'bg-status-warning/10 border-status-warning/40'
               : 'bg-primary/30 border-primary/20'
         }`}
       />
@@ -198,7 +198,7 @@ function DeploymentRow({
       <div
         className={`p-3 rounded-modal border transition-colors ${
           isLatest
-            ? 'border-emerald-500/20 bg-emerald-500/[0.03]'
+            ? 'border-status-success/20 bg-status-success/10/[0.03]'
             : 'border-primary/10 bg-secondary/20'
         }`}
       >
@@ -207,21 +207,21 @@ function DeploymentRow({
           <div
             className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${
               isRollback
-                ? 'bg-amber-500/10 border border-amber-500/20'
-                : 'bg-orange-500/10 border border-orange-500/20'
+                ? 'bg-status-warning/10 border border-status-warning/20'
+                : 'bg-status-warning/10 border border-status-warning/20'
             }`}
           >
             {isRollback ? (
-              <RotateCcw className="w-4 h-4 text-amber-400" />
+              <RotateCcw className="w-4 h-4 text-status-warning" />
             ) : (
-              <Rocket className="w-4 h-4 text-orange-400" />
+              <Rocket className="w-4 h-4 text-status-warning" />
             )}
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="typo-body text-foreground/90">
+              <span className="typo-body text-ink-2">
                 {record.personaName}
               </span>
               {isLatest && (
@@ -241,7 +241,7 @@ function DeploymentRow({
 
             {record.credentialsProvisioned > 0 && (
               <p className="typo-caption text-foreground mt-1 flex items-center gap-1">
-                <KeyRound className="w-3 h-3 text-orange-400/70" />
+                <KeyRound className="w-3 h-3 text-status-warning" />
                 {tx(record.credentialsProvisioned === 1 ? t.gitlab.credential_provisioned_count_one : t.gitlab.credential_provisioned_count_other, { count: record.credentialsProvisioned })}
               </p>
             )}
@@ -264,7 +264,7 @@ function DeploymentRow({
                     type="button"
                     onClick={onRollback}
                     disabled={rollingBack}
-                    className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
+                    className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card bg-status-error/10 border border-status-error/20 text-status-error hover:bg-status-error/15 transition-colors disabled:opacity-40"
                   >
                     {rollingBack ? (
                       <LoadingSpinner size="xs" />
@@ -277,7 +277,7 @@ function DeploymentRow({
                     type="button"
                     onClick={onCancelRollback}
                     disabled={rollingBack}
-                    className="px-2 py-1.5 typo-caption rounded-card text-foreground hover:text-foreground/80 transition-colors"
+                    className="px-2 py-1.5 typo-caption rounded-card text-foreground hover:text-ink-2 transition-colors"
                   >
                     {t.common.cancel}
                   </button>
@@ -286,7 +286,7 @@ function DeploymentRow({
                 <button
                   type="button"
                   onClick={onRollback}
-                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card hover:bg-status-warning/10 border border-transparent hover:border-status-warning/20 text-foreground hover:text-status-warning transition-colors"
                   title={t.gitlab.rollback_to_deployment}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />

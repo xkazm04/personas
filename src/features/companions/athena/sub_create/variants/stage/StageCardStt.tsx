@@ -50,13 +50,13 @@ function SttColumn({
           {id === 'browser' ? c.create_stt_browser : c.create_stt_whisper}
         </span>
         {take.elapsedMs !== null && (
-          <span className="ml-auto inline-flex items-center px-1.5 py-px rounded-pill bg-secondary/60 typo-caption text-foreground/85 tabular-nums">
+          <span className="ml-auto inline-flex items-center px-1.5 py-px rounded-pill bg-secondary/60 typo-caption text-ink-2 tabular-nums">
             {tx(c.create_stt_latency, { ms: take.elapsedMs })}
           </span>
         )}
       </div>
       <p
-        className={`flex-1 typo-body ${heard ? 'text-foreground' : 'text-foreground/85'} ${
+        className={`flex-1 typo-body ${heard ? 'text-foreground' : 'text-ink-2'} ${
           take.busy && !heard ? 'animate-pulse motion-reduce:animate-none' : ''
         }`}
         data-testid={`create-athena-stt-text-${id}`}

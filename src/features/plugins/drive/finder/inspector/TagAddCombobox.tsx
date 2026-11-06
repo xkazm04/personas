@@ -83,7 +83,7 @@ export function TagAddCombobox({ candidates, onAdd, onCreate, disabled = false }
               setOpen(false);
             }
           }}
-          className="flex-1 min-w-0 bg-transparent py-1.5 typo-body text-foreground placeholder:text-foreground/60 outline-none"
+          className="flex-1 min-w-0 bg-transparent py-1.5 typo-body text-foreground placeholder:text-ink-2 outline-none"
         />
       </div>
       {open && options.length > 0 && (

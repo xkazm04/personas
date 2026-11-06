@@ -56,7 +56,7 @@ const STATUS_TABLE: Record<TwinSlotStatus, TwinStatusEntry> = {
     role: 'neutral',
     labelKey: 'empty',
     dot: 'bg-foreground/25',
-    text: 'text-foreground/50',
+    text: 'text-ink-3',
     ring: 'ring-foreground/15',
     shape: 'hollow',
   },

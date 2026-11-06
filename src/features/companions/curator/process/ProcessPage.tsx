@@ -64,7 +64,7 @@ export default function ProcessPage() {
   return (
     <ContentBox data-testid="process-page">
       <ContentHeader
-        icon={<GitCommitVertical className="h-5 w-5 text-violet-400" />}
+        icon={<GitCommitVertical className="h-5 w-5 text-ink-2" />}
         iconColor="violet"
         title={t.companions.nav.page_process}
         subtitle={subtitle}

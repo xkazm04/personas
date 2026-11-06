@@ -60,12 +60,12 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
   return (
     <aside className="w-64 flex-shrink-0 border-l border-primary/10 pl-4 py-2 flex flex-col">
       <div className="flex items-center gap-2 mb-3 px-1">
-        <BookMarked className="w-3.5 h-3.5 text-violet-400/70" />
+        <BookMarked className="w-3.5 h-3.5 text-ink-2" />
         <p className="typo-label typo-section-title">
           {t.plugins.obsidian_brain.saved_vaults}
         </p>
         {configs.length > 0 && (
-          <span className="ml-auto typo-caption text-foreground/90">{configs.length}</span>
+          <span className="ml-auto typo-caption text-ink-2">{configs.length}</span>
         )}
       </div>
 
@@ -80,7 +80,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                 key={cfg.vaultPath}
                 className={`group relative rounded-modal border transition-colors ${
                   active
-                    ? 'border-violet-500/30 bg-violet-500/10'
+                    ? 'border-hair-2 bg-surface-2'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
                 }`}
               >
@@ -92,21 +92,21 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                   <div className="flex items-center gap-2 min-w-0">
                     <p
                       className={`typo-heading truncate flex-1 ${
-                        active ? 'text-violet-300' : 'typo-card-label'
+                        active ? 'text-ink-2' : 'typo-card-label'
                       }`}
                     >
                       {cfg.vaultName}
                     </p>
-                    {active && <Check className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />}
+                    {active && <Check className="w-3.5 h-3.5 text-ink-2 flex-shrink-0" />}
                   </div>
-                  <p className="typo-caption text-foreground/90 truncate mt-0.5">
+                  <p className="typo-caption text-ink-2 truncate mt-0.5">
                     {cfg.vaultPath}
                   </p>
                 </button>
                 <button
                   type="button"
                   onClick={(e) => void removeConfig(e, cfg)}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
+                  className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-status-error/10 text-foreground hover:text-status-error focus-ring"
                   title={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
                   aria-label={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
                 >

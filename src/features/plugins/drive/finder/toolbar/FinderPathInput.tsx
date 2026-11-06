@@ -60,7 +60,7 @@ export function FinderPathInput({ drive, onDone }: Props) {
         aria-label={f.path_edit}
         spellCheck={false}
         autoComplete="off"
-        className="flex-1 min-w-0 bg-transparent typo-body font-mono text-foreground placeholder:text-foreground/60 focus:outline-none"
+        className="flex-1 min-w-0 bg-transparent typo-body font-mono text-foreground placeholder:text-ink-2 focus:outline-none"
         data-testid="finder-path-input"
       />
       <span className="typo-caption text-foreground flex-shrink-0 hidden md:inline">{f.path_hint}</span>

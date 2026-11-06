@@ -245,14 +245,14 @@ export function OrbDecisionBubble() {
           </span>
           <SourceIcon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           {/* Wraps — never ellipsized; the chip caps line length, not content. */}
-          <span className="typo-caption text-foreground/90 text-left whitespace-normal break-words min-w-0">
+          <span className="typo-caption text-ink-2 text-left whitespace-normal break-words min-w-0">
             {shortLabel}
           </span>
         </button>
       ) : (
         <div className="relative rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3.5">
           <div data-testid="athena-decision-prompt">
-            <MarkdownRenderer content={decision.prompt} className="typo-body text-foreground/90" />
+            <MarkdownRenderer content={decision.prompt} className="typo-body text-ink-2" />
           </div>
 
           {/* Explain-in-Cockpit — composing / fallback states for the
@@ -284,7 +284,7 @@ export function OrbDecisionBubble() {
             <p
               data-testid="athena-decision-run-failed"
               role="alert"
-              className="mt-2.5 rounded-input border border-rose-500/25 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400"
+              className="mt-2.5 rounded-input border border-status-error/25 bg-status-error/10 px-3 py-2 typo-caption text-status-error"
             >
               {t.athena.decision_run_failed}
             </p>
@@ -299,7 +299,7 @@ export function OrbDecisionBubble() {
               <p className="typo-label text-primary">
                 {t.athena.decision_recommend_prefix}
               </p>
-              <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90" />
+              <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-ink-2" />
               {decision.detail && (
                 <p className="mt-1.5 typo-caption text-foreground">
                   {decision.detail}
@@ -354,13 +354,13 @@ export function OrbDecisionBubble() {
                 title={opt.hint ?? opt.label}
                 className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
                   opt.danger
-                    ? 'bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 text-rose-400'
+                    ? 'bg-status-error/10 border border-status-error/20 hover:bg-status-error/20 hover:border-status-error/30 text-status-error'
                     : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/30 text-primary'
                 }`}
               >
                 <span
-                  className={`inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-medium ${
-                    opt.danger ? 'bg-rose-500/20' : 'bg-primary/20'
+                  className={`inline-flex items-center justify-center w-4 h-4 rounded typo-caption ${
+                    opt.danger ? 'bg-status-error/20' : 'bg-primary/20'
                   }`}
                   aria-hidden
                 >

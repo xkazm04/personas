@@ -50,23 +50,23 @@ export default function GuideQuestionCard({
       exit={shouldAnimate ? { opacity: 0, scale: 0.6, x: -120, y: 80 } : { opacity: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 26 }}
       style={{ transformOrigin: 'bottom left' }}
-      className="pointer-events-auto w-[min(34rem,92%)] overflow-hidden rounded-modal border border-status-warning/40 bg-gradient-to-b from-secondary to-background shadow-elevation-4"
+      className="pointer-events-auto w-[min(34rem,92%)] overflow-hidden rounded-modal border border-status-warning/40 bg-surface-1 from-secondary to-background shadow-elevation-4"
     >
       <header className="flex items-center gap-2 border-b border-border px-5 py-3">
         <span className="h-2 w-2 rounded-full bg-status-warning" />
         <span className="typo-title text-status-warning">{g.needs_you}</span>
-        {counter && <span className="typo-caption text-foreground/90">{counter}</span>}
+        {counter && <span className="typo-caption text-ink-2">{counter}</span>}
         {lastTurnSecs !== null && (
-          <span className="typo-caption text-foreground/90">
+          <span className="typo-caption text-ink-2">
             {tx(g.after_step, { step, minutes: Math.max(1, Math.round(lastTurnSecs / 60)) })}
           </span>
         )}
         <button
           type="button"
           onClick={onHide}
-          className="ml-auto flex items-center gap-1.5 rounded-interactive px-2 py-1 typo-caption text-foreground/90 hover:bg-secondary/60 hover:text-foreground"
+          className="ml-auto flex items-center gap-1.5 rounded-interactive px-2 py-1 typo-caption text-ink-2 hover:bg-secondary/60 hover:text-foreground"
         >
-          <kbd className="rounded-interactive border border-border px-1.5 font-mono text-xs">Esc</kbd>
+          <kbd className="rounded-interactive border border-border px-1.5 font-mono typo-caption">Esc</kbd>
           {g.look_around}
         </button>
       </header>
@@ -89,7 +89,7 @@ export default function GuideQuestionCard({
                   onClick={() => onAnswer(o)}
                   className="flex w-full items-center gap-3 rounded-card border border-border bg-background/50 px-4 py-3 text-left transition-colors hover:border-primary/70 hover:bg-primary/10 focus-visible:border-primary focus-visible:outline-none"
                 >
-                  <kbd className="flex h-6 w-6 shrink-0 items-center justify-center rounded-interactive border border-border font-mono text-sm text-foreground/90">
+                  <kbd className="flex h-6 w-6 shrink-0 items-center justify-center rounded-interactive border border-border font-mono typo-body text-ink-2">
                     {i + 1}
                   </kbd>
                   <span className="typo-title-lg text-foreground">{o}</span>
@@ -118,7 +118,7 @@ export default function GuideQuestionCard({
             </button>
           </form>
         )}
-        <p className="mt-3 typo-caption text-foreground/90">
+        <p className="mt-3 typo-caption text-ink-2">
           {options.length > 0 ? tx(g.answer_keys, { count: options.length }) : inlineAnswer ? g.answer_inline : g.answer_free}
         </p>
       </div>

@@ -86,7 +86,7 @@ export default function DraftingPage({
           {num}
         </span>
         {!skeleton && <span style={{ ...LETTERING, color: 'var(--ink-strong)' }}>{title}</span>}
-        {!skeleton && route && <span className="typo-code text-foreground/90">{route}</span>}
+        {!skeleton && route && <span className="typo-code text-ink-2">{route}</span>}
       </motion.p>
       {!compact && (
         <div className={`relative mb-2 h-3 ${started ? '' : 'invisible'}`} aria-hidden>

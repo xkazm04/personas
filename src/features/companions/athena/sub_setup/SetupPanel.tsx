@@ -168,32 +168,32 @@ export default function SetupPanel() {
       // Setup pages carry the same control.
       id: 'status',
       label: t.companions.setup.enable_section,
-      icon: <Power className="w-4 h-4 text-cyan-400" />,
+      icon: <Power className="w-4 h-4 text-ink-2" />,
       content: <AthenaStatusSection />,
     },
     {
       id: 'chrome',
       label: c.setup_chrome_title,
       subtitle: c.setup_chrome_desc,
-      icon: <AppWindow className="w-4 h-4 text-cyan-400" />,
+      icon: <AppWindow className="w-4 h-4 text-ink-2" />,
       content: (
         <>
           <SettingRow
-            icon={<Bot className="w-4 h-4 text-cyan-400" />}
+            icon={<Bot className="w-4 h-4 text-ink-2" />}
             label={c.setup_footer_label}
             description={c.setup_footer_desc}
             checked={footerEnabled}
             onChange={() => setFooterEnabled(!footerEnabled)}
           />
           <SettingRow
-            icon={<Sparkles className="w-4 h-4 text-cyan-400" />}
+            icon={<Sparkles className="w-4 h-4 text-ink-2" />}
             label={c.setup_orb_label}
             description={c.setup_orb_desc}
             checked={orbEnabled}
             onChange={() => setOrbEnabled(!orbEnabled)}
           />
           <SettingRow
-            icon={<Volume2 className="w-4 h-4 text-cyan-400" />}
+            icon={<Volume2 className="w-4 h-4 text-ink-2" />}
             label={c.setup_sound_label}
             description={c.setup_sound_desc}
             checked={soundEnabled}
@@ -206,18 +206,18 @@ export default function SetupPanel() {
       id: 'memory',
       label: c.setup_memory_title,
       subtitle: c.setup_memory_desc,
-      icon: <Brain className="w-4 h-4 text-cyan-400" />,
+      icon: <Brain className="w-4 h-4 text-ink-2" />,
       content: (
         <>
           <SettingRow
-            icon={<Brain className="w-4 h-4 text-cyan-400" />}
+            icon={<Brain className="w-4 h-4 text-ink-2" />}
             label={c.setup_recall_synthesis_label}
             description={c.setup_recall_synthesis_desc}
             checked={recallSynthesisEnabled}
             onChange={() => setRecallSynthesisEnabled(!recallSynthesisEnabled)}
           />
           <SettingRow
-            icon={<Eye className="w-4 h-4 text-cyan-400" />}
+            icon={<Eye className="w-4 h-4 text-ink-2" />}
             label={c.setup_hands_free_decisions_label}
             description={c.setup_hands_free_decisions_desc}
             checked={handsFreeDecisions}
@@ -230,15 +230,15 @@ export default function SetupPanel() {
       id: 'desktop',
       label: c.setup_desktop_title,
       subtitle: c.setup_desktop_desc,
-      icon: <Eye className="w-4 h-4 text-cyan-400" />,
+      icon: <Eye className="w-4 h-4 text-ink-2" />,
       content: sensoryLoadError ? (
-        <div className="px-1 py-2 typo-caption text-rose-400">
+        <div className="px-1 py-2 typo-caption text-status-error">
           {c.setup_desktop_load_failed}
         </div>
       ) : (
         <>
           <SettingRow
-            icon={<Clipboard className="w-4 h-4 text-cyan-400" />}
+            icon={<Clipboard className="w-4 h-4 text-ink-2" />}
             label={c.setup_desktop_clipboard_label}
             description={c.setup_desktop_clipboard_desc}
             countLabel={signalsCountLabel(t, sensory?.clipboardSignalsInWindow)}
@@ -248,7 +248,7 @@ export default function SetupPanel() {
             onChange={() => void toggleSensory('clipboard', !(sensory?.clipboardEnabled ?? false))}
           />
           <SettingRow
-            icon={<FileText className="w-4 h-4 text-cyan-400" />}
+            icon={<FileText className="w-4 h-4 text-ink-2" />}
             label={c.setup_desktop_file_changes_label}
             description={c.setup_desktop_file_changes_desc}
             countLabel={signalsCountLabel(t, sensory?.fileChangesSignalsInWindow)}
@@ -258,7 +258,7 @@ export default function SetupPanel() {
             onChange={() => void toggleSensory('file_watcher', !(sensory?.fileChangesEnabled ?? false))}
           />
           <SettingRow
-            icon={<AppWindow className="w-4 h-4 text-cyan-400" />}
+            icon={<AppWindow className="w-4 h-4 text-ink-2" />}
             label={c.setup_desktop_app_focus_label}
             description={c.setup_desktop_app_focus_desc}
             countLabel={signalsCountLabel(t, sensory?.appFocusSignalsInWindow)}
@@ -268,7 +268,7 @@ export default function SetupPanel() {
             onChange={() => void toggleSensory('app_focus', !(sensory?.appFocusEnabled ?? false))}
           />
           <SettingRow
-            icon={<Terminal className="w-4 h-4 text-cyan-400" />}
+            icon={<Terminal className="w-4 h-4 text-ink-2" />}
             label={c.setup_desktop_cli_session_label}
             description={c.setup_desktop_cli_session_desc}
             statusDot={sensoryDot(sensory?.cliSessionEnabled, undefined)}
@@ -293,10 +293,10 @@ export default function SetupPanel() {
       id: 'beta',
       label: c.setup_beta_title,
       subtitle: c.setup_beta_desc,
-      icon: <Wrench className="w-4 h-4 text-cyan-400" />,
+      icon: <Wrench className="w-4 h-4 text-ink-2" />,
       content: (
         <div className="flex items-start gap-3 px-1 py-2">
-          <Wrench className={`w-4 h-4 mt-0.5 ${devAvailable && devMode ? 'text-amber-400' : 'text-foreground'}`} />
+          <Wrench className={`w-4 h-4 mt-0.5 ${devAvailable && devMode ? 'text-status-warning' : 'text-foreground'}`} />
           <div className="flex-1 min-w-0">
             <div className="typo-title">{c.setup_dev_mode_label}</div>
             <div className="typo-caption mt-1">
@@ -310,7 +310,7 @@ export default function SetupPanel() {
           <span
             className={`shrink-0 typo-caption px-2 py-0.5 rounded-full border ${
               devAvailable && devMode
-                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                ? 'border-status-warning/30 bg-status-warning/10 text-status-warning'
                 : 'border-foreground/10 bg-foreground/5 text-foreground'
             }`}
           >
@@ -327,10 +327,10 @@ export default function SetupPanel() {
       id: 'tracking',
       label: c.tracking_title,
       subtitle: c.tracking_subtitle,
-      icon: <Activity className="w-4 h-4 text-cyan-400" />,
+      icon: <Activity className="w-4 h-4 text-ink-2" />,
       content: (
         <SettingRow
-          icon={<Activity className={`w-4 h-4 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground'}`} />}
+          icon={<Activity className={`w-4 h-4 ${trackingEnabled ? 'text-status-success' : 'text-foreground'}`} />}
           label={c.tracking_master_label}
           description={
             trackingEnabled === null
@@ -348,7 +348,7 @@ export default function SetupPanel() {
     {
       id: 'browser',
       label: c.browser_bridge_title,
-      icon: <Puzzle className="w-4 h-4 text-cyan-400" />,
+      icon: <Puzzle className="w-4 h-4 text-ink-2" />,
       card: false,
       content: (
         <DeferUntilIdle priority="idle" enter suspend>

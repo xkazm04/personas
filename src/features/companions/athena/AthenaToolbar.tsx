@@ -556,7 +556,7 @@ function ConnectorIconButton({
               setMenuOpen(false);
               onRemove();
             }}
-            className="w-full text-left px-3 py-1.5 typo-caption text-foreground/85 hover:bg-foreground/5 focus-ring"
+            className="w-full text-left px-3 py-1.5 typo-caption text-ink-2 hover:bg-foreground/5 focus-ring"
             role="menuitem"
           >
             {t.athena.connectors_remove_from_sidebar}

@@ -35,7 +35,7 @@ const ICONS = {
 /** Accent + label colour per kind. A blocked action is the only warm one. */
 function toneOf(kind: SystemNote['kind']): { rail: string; label: string } {
   if (kind === 'dispatcher') {
-    return { rail: 'bg-amber-400/40', label: 'text-amber-300' };
+    return { rail: 'bg-status-warning/20', label: 'text-status-warning' };
   }
   return { rail: 'bg-primary/30', label: 'text-primary' };
 }
@@ -102,7 +102,7 @@ export function AthenaChatSystemNote({
             // control below says what to do about it.
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-b from-transparent to-background"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-surface-1 from-transparent to-background"
             />
           )}
         </div>

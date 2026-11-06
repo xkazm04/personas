@@ -137,7 +137,7 @@ export function BubbleReadAloud({
   if (typeof state === 'object' && state.kind === 'error') {
     return (
       <span
-        className="inline-flex items-center gap-1 rounded-interactive border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 typo-caption text-rose-300/90"
+        className="inline-flex items-center gap-1 rounded-interactive border border-status-error/30 bg-status-error/10 px-2 py-0.5 typo-caption text-status-error"
         data-testid="companion-read-aloud-error"
         title={state.message}
       >

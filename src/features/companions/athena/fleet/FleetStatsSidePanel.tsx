@@ -154,7 +154,7 @@ export function FleetStatsSidePanel() {
               <span
                 key={m.id}
                 data-testid={`companion-fleet-side-panel-chip-${m.id}`}
-                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums ${m.chip} ${m.text}`}
+                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 typo-caption leading-none tabular-nums ${m.chip} ${m.text}`}
                 title={t.plugins.fleet[m.labelKey]}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} aria-hidden="true" />
@@ -262,7 +262,7 @@ export function FleetStatsSidePanel() {
         type="button"
         onClick={openFleetPage}
         data-testid="companion-fleet-side-panel-open-page"
-        className="mt-1 w-full flex items-center justify-center gap-1 px-1.5 py-1 rounded-input text-[10px] text-foreground hover:bg-secondary/40 transition-colors"
+        className="mt-1 w-full flex items-center justify-center gap-1 px-1.5 py-1 rounded-input typo-caption text-foreground hover:bg-secondary/40 transition-colors"
       >
         <ExternalLink className="w-3 h-3" />
         {t.plugins.fleet.footer_open_page}
@@ -344,9 +344,9 @@ function PanelRow({
         </span>
       </div>
       <div className="flex items-center justify-between gap-1 pl-3">
-        <span className={`truncate text-[10px] ${statusClass ?? 'text-foreground'}`}>{status}</span>
+        <span className={`truncate typo-caption ${statusClass ?? 'text-foreground'}`}>{status}</span>
         {meta && (
-          <span className="shrink-0 text-[10px] text-foreground tabular-nums" title={metaTooltip}>
+          <span className="shrink-0 typo-caption text-foreground tabular-nums" title={metaTooltip}>
             {meta}
           </span>
         )}

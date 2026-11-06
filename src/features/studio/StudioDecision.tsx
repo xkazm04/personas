@@ -22,7 +22,7 @@ export default function StudioDecision({
     <div className="pointer-events-auto mt-2 overflow-hidden rounded-card border border-primary/40 bg-primary/[0.07] shadow-elevation-2">
       <div className="flex items-center gap-1.5 border-b border-primary/20 bg-primary/10 px-3 py-1.5">
         <Sparkles className="h-3.5 w-3.5 text-primary" />
-        <span className="typo-caption uppercase tracking-wide text-primary">{t.studio.your_call}</span>
+        <span className="typo-eyebrow text-primary">{t.studio.your_call}</span>
       </div>
       <div className="px-3 py-2.5">
         <p className="text-md leading-snug text-foreground">{question}</p>
@@ -34,9 +34,9 @@ export default function StudioDecision({
                 type="button"
                 data-testid="studio-decision-option"
                 onClick={() => onAnswer(o)}
-                className="group flex items-center gap-2.5 rounded-interactive border border-border bg-background/70 px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-primary/15"
+                className="group flex items-center gap-2.5 rounded-interactive border border-border bg-background/70 px-2.5 py-2 text-left typo-body text-foreground transition-colors hover:border-primary/50 hover:bg-primary/15"
               >
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-secondary/60 font-mono text-[11px] text-foreground/60 transition-colors group-hover:border-primary/40 group-hover:text-primary">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-secondary/60 font-mono typo-caption text-ink-2 transition-colors group-hover:border-primary/40 group-hover:text-primary">
                   {i + 1}
                 </span>
                 <span className="min-w-0 flex-1">{o}</span>
@@ -45,7 +45,7 @@ export default function StudioDecision({
             ))}
           </div>
         )}
-        <p className="mt-2 typo-caption text-foreground/45">
+        <p className="mt-2 typo-caption text-ink-3">
           {options.length > 0
             ? tx(t.studio.press_to_pick, { count: options.length })
             : t.studio.type_answer_below}

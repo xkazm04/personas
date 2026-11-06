@@ -57,7 +57,7 @@ export default function RevitalizePanel() {
         {vaultName && (
           <div className="flex items-center gap-2 px-1">
             <span className="typo-caption text-foreground">{ob.active_vault_label}</span>
-            <span className="typo-caption text-violet-300">{vaultName}</span>
+            <span className="typo-caption text-ink-2">{vaultName}</span>
           </div>
         )}
 
@@ -69,9 +69,9 @@ export default function RevitalizePanel() {
           <div className="space-y-4">
             <div className="space-y-3">
               {[
-                { icon: <Trash2 className="w-4 h-4 text-violet-400" />, label: ob.revitalize_goal_prune, desc: ob.revitalize_goal_prune_desc, checked: pruneStale, onChange: () => setPruneStale((v) => !v), testId: 'revitalize-goal-prune' },
-                { icon: <GitMerge className="w-4 h-4 text-violet-400" />, label: ob.revitalize_goal_merge, desc: ob.revitalize_goal_merge_desc, checked: mergeDuplicates, onChange: () => setMergeDuplicates((v) => !v), testId: 'revitalize-goal-merge' },
-                { icon: <Wand2 className="w-4 h-4 text-violet-400" />, label: ob.revitalize_goal_refresh, desc: ob.revitalize_goal_refresh_desc, checked: refreshStructure, onChange: () => setRefreshStructure((v) => !v), testId: 'revitalize-goal-refresh' },
+                { icon: <Trash2 className="w-4 h-4 text-ink-2" />, label: ob.revitalize_goal_prune, desc: ob.revitalize_goal_prune_desc, checked: pruneStale, onChange: () => setPruneStale((v) => !v), testId: 'revitalize-goal-prune' },
+                { icon: <GitMerge className="w-4 h-4 text-ink-2" />, label: ob.revitalize_goal_merge, desc: ob.revitalize_goal_merge_desc, checked: mergeDuplicates, onChange: () => setMergeDuplicates((v) => !v), testId: 'revitalize-goal-merge' },
+                { icon: <Wand2 className="w-4 h-4 text-ink-2" />, label: ob.revitalize_goal_refresh, desc: ob.revitalize_goal_refresh_desc, checked: refreshStructure, onChange: () => setRefreshStructure((v) => !v), testId: 'revitalize-goal-refresh' },
               ].map((opt) => (
                 <SettingRow
                   key={opt.label}
@@ -88,7 +88,7 @@ export default function RevitalizePanel() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="typo-label text-foreground/90" htmlFor="revitalize-instructions">
+              <label className="typo-label text-ink-2" htmlFor="revitalize-instructions">
                 {ob.revitalize_instructions_label}
               </label>
               <textarea
@@ -98,7 +98,7 @@ export default function RevitalizePanel() {
                 placeholder={ob.revitalize_instructions_placeholder}
                 rows={2}
                 disabled={running}
-                className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-y disabled:opacity-50"
+                className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all resize-y disabled:opacity-50"
               />
             </div>
 
@@ -109,7 +109,7 @@ export default function RevitalizePanel() {
                 type="button"
                 onClick={handleStart}
                 data-testid="revitalize-start"
-                className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors focus-ring"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors focus-ring"
               >
                 <MoonStar className="w-4 h-4" />
                 {ob.revitalize_start}
@@ -121,9 +121,9 @@ export default function RevitalizePanel() {
         {running && <RevitalizeProgress lines={lines} onCancel={() => void cancel()} />}
 
         {!running && error && (
-          <div className="flex items-start gap-3 px-4 py-3 rounded-modal border bg-red-500/5 border-red-500/20 animate-fade-slide-in">
-            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="typo-body text-red-400 min-w-0 break-words">
+          <div className="flex items-start gap-3 px-4 py-3 rounded-modal border bg-status-error/5 border-status-error/20 animate-fade-slide-in">
+            <AlertTriangle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
+            <p className="typo-body text-status-error min-w-0 break-words">
               {tx(ob.revitalize_failed, { error })}
             </p>
           </div>

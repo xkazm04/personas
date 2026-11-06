@@ -73,10 +73,10 @@ const STAGE_ICON: Record<StageStatus, LucideIcon> = {
 };
 
 const STAGE_ACCENT: Record<StageStatus, string> = {
-  ok: 'text-emerald-400',
+  ok: 'text-status-success',
   skipped: 'text-foreground',
-  degraded: 'text-amber-400',
-  blocked: 'text-rose-400',
+  degraded: 'text-status-warning',
+  blocked: 'text-status-error',
   unknown: 'text-foreground',
 };
 
@@ -170,8 +170,8 @@ export function BrainHealthPanel() {
     <div className="p-4 space-y-4" data-testid="brain-health-panel">
       <HealthVerdict report={cached} />
       {cached.firstBlockingCause ? (
-        <section className="rounded-card border border-rose-400/30 bg-rose-400/5 px-4 py-3">
-          <h3 className="typo-body text-rose-400 mb-1">
+        <section className="rounded-card border border-status-error/30 bg-status-error/5 px-4 py-3">
+          <h3 className="typo-body text-status-error mb-1">
             {t.athena.health_blocking_cause}
           </h3>
           <p className="typo-caption text-foreground">{cached.firstBlockingCause.summary}</p>
@@ -193,7 +193,7 @@ function HealthVerdict({ report }: { report: BrainHealth }) {
   return (
     <header className="flex items-center gap-2">
       <Icon
-        className={`w-5 h-5 shrink-0 ${report.healthy ? 'text-emerald-400' : 'text-rose-400'}`}
+        className={`w-5 h-5 shrink-0 ${report.healthy ? 'text-status-success' : 'text-status-error'}`}
         aria-hidden="true"
       />
       <span className="typo-body">

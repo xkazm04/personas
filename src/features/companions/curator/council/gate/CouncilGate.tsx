@@ -112,7 +112,7 @@ export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture
     <section
       data-testid="council-gate"
       data-gate-open="true"
-      className="grid grid-cols-[auto_1fr_auto] items-center gap-x-[22px] gap-y-3.5 rounded-modal border border-status-pending/50 bg-gradient-to-br from-status-pending/10 to-transparent p-4 shadow-elevation-3"
+      className="grid grid-cols-[auto_1fr_auto] items-center gap-x-[22px] gap-y-3.5 rounded-modal border border-status-pending/50 bg-surface-1 from-status-pending/10 to-transparent p-4 shadow-elevation-3"
     >
       <LockOpen className="h-8 w-8 text-status-pending" aria-hidden="true" />
       <div className="min-w-0">

@@ -88,7 +88,7 @@ export function FinderBreadcrumb({ drive, activeDragCount, onEditPath }: Props) 
               >
                 <span className="truncate">{crumb.label}</span>
                 {over && activeDragCount ? (
-                  <span className="typo-caption tabular-nums px-1.5 rounded-full bg-accent/30">
+                  <span className="typo-caption tabular-nums px-1.5 rounded-interactive bg-accent/30">
                     {activeDragCount}
                   </span>
                 ) : null}

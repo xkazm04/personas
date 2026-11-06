@@ -78,7 +78,7 @@ export function TrackedGlowRing({ source }: { source: GlowSource }) {
       {label && (
         <span
           data-testid="athena-flash-label"
-          className="absolute left-0 -top-7 inline-flex items-center rounded-full bg-primary px-2 py-0.5 typo-caption text-btn-primary-fg shadow-elevation-2 whitespace-nowrap athena-flash-label"
+          className="absolute left-0 -top-7 inline-flex items-center rounded-interactive bg-primary px-2 py-0.5 typo-caption text-btn-primary-fg shadow-elevation-2 whitespace-nowrap athena-flash-label"
         >
           {label}
         </span>

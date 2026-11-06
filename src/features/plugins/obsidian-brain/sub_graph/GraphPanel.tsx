@@ -249,11 +249,11 @@ export default function GraphPanel() {
           ) : stats ? (
             <div className="grid grid-cols-5 gap-3">
               {[
-                { key: 'notes', label: t.plugins.obsidian_brain.stat_notes, value: stats.totalNotes, icon: Network, color: 'text-violet-300' },
-                { key: 'links', label: t.plugins.obsidian_brain.stat_links, value: stats.totalLinks, icon: GitBranch, color: 'text-blue-300' },
-                { key: 'orphans', label: t.plugins.obsidian_brain.stat_orphans, value: stats.orphanCount, icon: AlertTriangle, color: 'text-amber-300' },
-                { key: 'mocs', label: t.plugins.obsidian_brain.stat_mocs, value: stats.mocCount, icon: Compass, color: 'text-emerald-300' },
-                { key: 'daily', label: t.plugins.obsidian_brain.stat_daily_notes, value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-fuchsia-300' },
+                { key: 'notes', label: t.plugins.obsidian_brain.stat_notes, value: stats.totalNotes, icon: Network, color: 'text-ink-2' },
+                { key: 'links', label: t.plugins.obsidian_brain.stat_links, value: stats.totalLinks, icon: GitBranch, color: 'text-status-info' },
+                { key: 'orphans', label: t.plugins.obsidian_brain.stat_orphans, value: stats.orphanCount, icon: AlertTriangle, color: 'text-status-warning' },
+                { key: 'mocs', label: t.plugins.obsidian_brain.stat_mocs, value: stats.mocCount, icon: Compass, color: 'text-status-success' },
+                { key: 'daily', label: t.plugins.obsidian_brain.stat_daily_notes, value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-ink-2' },
               ].map((s) => {
                 const Icon = s.icon;
                 // The one tile whose number the list beside it does not yet
@@ -280,7 +280,7 @@ export default function GraphPanel() {
                       shown: orphans.length,
                       total: stats.orphanCount,
                     })}
-                    className={`${tileClass} text-left transition-colors hover:border-amber-400/40 hover:bg-amber-500/5 focus-ring disabled:is-disabled`}
+                    className={`${tileClass} text-left transition-colors hover:border-status-warning/40 hover:bg-status-warning/5 focus-ring disabled:is-disabled`}
                   >
                     {body}
                   </button>
@@ -311,7 +311,7 @@ export default function GraphPanel() {
                   }}
                   placeholder={t.plugins.obsidian_brain.search_vault_placeholder}
                   aria-label={t.plugins.obsidian_brain.search_vault_placeholder}
-                  className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+                  className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all"
                 />
               </div>
               <Button
@@ -334,13 +334,13 @@ export default function GraphPanel() {
                     type="button"
                     onClick={() => openNoteInObsidian(vaultName, hit.path)}
                     title={t.plugins.obsidian_brain.open_in_obsidian}
-                    className="group w-full text-left px-3 py-2.5 rounded-modal border border-primary/10 hover:border-violet-500/30 hover:bg-secondary/20 transition-colors focus-ring"
+                    className="group w-full text-left px-3 py-2.5 rounded-modal border border-primary/10 hover:border-hair-2 hover:bg-secondary/20 transition-colors focus-ring"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="typo-heading typo-card-label truncate transition-colors">{hit.title}</p>
                       <span className="flex items-center gap-1.5 flex-shrink-0">
                         <span className="typo-caption text-foreground tabular-nums">{t.plugins.obsidian_brain.score_label} {hit.score}</span>
-                        <ExternalLink className="w-3 h-3 text-violet-400/70 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ExternalLink className="w-3 h-3 text-ink-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </span>
                     </div>
                     <p className="typo-caption text-foreground line-clamp-2">{hit.snippet}</p>
@@ -383,8 +383,8 @@ export default function GraphPanel() {
                     title={o.path}
                     className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card bg-secondary/20 hover:bg-secondary/40 transition-colors focus-ring text-left"
                   >
-                    <span className="typo-caption text-foreground truncate flex-1 group-hover:text-violet-300 transition-colors">{o.title}</span>
-                    <ExternalLink className="w-3 h-3 text-violet-400/70 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="typo-caption text-foreground truncate flex-1 group-hover:text-ink-2 transition-colors">{o.title}</span>
+                    <ExternalLink className="w-3 h-3 text-ink-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
               </div>
@@ -404,10 +404,10 @@ export default function GraphPanel() {
                     title={m.path}
                     className="group w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card bg-secondary/20 hover:bg-secondary/40 transition-colors focus-ring text-left"
                   >
-                    <span className="typo-caption text-foreground truncate group-hover:text-violet-300 transition-colors">{m.title}</span>
+                    <span className="typo-caption text-foreground truncate group-hover:text-ink-2 transition-colors">{m.title}</span>
                     <span className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="typo-caption text-emerald-400/70">{m.outgoingLinkCount} →</span>
-                      <ExternalLink className="w-3 h-3 text-violet-400/70 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <span className="typo-caption text-status-success">{m.outgoingLinkCount} →</span>
+                      <ExternalLink className="w-3 h-3 text-ink-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </span>
                   </button>
                 ))}
@@ -426,7 +426,7 @@ export default function GraphPanel() {
                 onChange={(e) => setJournalSection(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.journal_section_placeholder}
                 aria-label={t.plugins.obsidian_brain.journal_section_placeholder}
-                className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+                className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all"
               />
               <Button
                 variant="accent"
@@ -446,7 +446,7 @@ export default function GraphPanel() {
               placeholder={t.plugins.obsidian_brain.journal_body_placeholder}
               aria-label={t.plugins.obsidian_brain.quick_journal}
               rows={4}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all resize-none"
             />
           </div>
         </SectionCard>
@@ -460,7 +460,7 @@ export default function GraphPanel() {
               onChange={(e) => setMeetingTitle(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_title_placeholder}
               aria-label={t.plugins.obsidian_brain.meeting_title_placeholder}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all"
             />
             <div className="relative">
               <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
@@ -470,7 +470,7 @@ export default function GraphPanel() {
                 onChange={(e) => setMeetingAttendees(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.meeting_attendees_placeholder}
                 aria-label={t.plugins.obsidian_brain.meeting_attendees_placeholder}
-                className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+                className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all"
               />
             </div>
             <textarea
@@ -479,7 +479,7 @@ export default function GraphPanel() {
               placeholder={t.plugins.obsidian_brain.meeting_body_placeholder}
               aria-label={t.plugins.obsidian_brain.meeting_body_placeholder}
               rows={5}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all resize-none"
             />
             <Button
               variant="accent"

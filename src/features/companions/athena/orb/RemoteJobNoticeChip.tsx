@@ -66,7 +66,7 @@ export function RemoteJobNoticeChip() {
   const Icon =
     notice.phase === 'started' ? Laptop : notice.phase === 'completed' ? CircleCheck : CircleAlert;
   const tone =
-    notice.phase === 'failed' ? 'text-status-warning' : notice.phase === 'completed' ? 'text-primary' : 'text-cyan-400';
+    notice.phase === 'failed' ? 'text-status-warning' : notice.phase === 'completed' ? 'text-primary' : 'text-ink-2';
 
   // Dock BELOW the orb — the decision bubble and the guide caption both claim
   // the space above it, so the notice never competes for the same pixels.
@@ -92,7 +92,7 @@ export function RemoteJobNoticeChip() {
     >
       <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${tone}`} aria-hidden />
       <span className="min-w-0 flex-1">
-        <span className="typo-caption text-foreground/90 block break-words">{label}</span>
+        <span className="typo-caption text-ink-2 block break-words">{label}</span>
         {notice.phase !== 'started' && notice.summary && (
           <span
             data-testid="remote-job-notice-summary"

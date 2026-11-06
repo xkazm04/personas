@@ -36,7 +36,7 @@ export function OrbSpeakingGlow({
 
 /** One-shot blooms: the message-reaction pulse and the forward-ack. */
 export function OrbPulseGlow({ tone, reduceMotion }: { tone: 'primary' | 'amber'; reduceMotion?: boolean }) {
-  const color = tone === 'amber' ? 'bg-amber-400/55' : 'bg-primary/55';
+  const color = tone === 'amber' ? 'bg-status-warning/20' : 'bg-primary/55';
   return (
     <span
       aria-hidden
@@ -105,7 +105,7 @@ export function OrbTaskDots({
       {dots.map((d, i) => (
         <span
           key={i}
-          className={`absolute w-2 h-2 rounded-full bg-blue-400 ring-2 ring-background shadow-elevation-1 ${
+          className={`absolute w-2 h-2 rounded-full bg-status-info/10 ring-2 ring-background shadow-elevation-1 ${
             reduceMotion ? '' : 'animate-pulse'
           }`}
           style={{

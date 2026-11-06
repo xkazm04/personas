@@ -81,7 +81,7 @@ export function DriveSignaturesPanel({
     >
       <div className="contents">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/15">
-          <FileSignature className="w-4 h-4 text-rose-300" />
+          <FileSignature className="w-4 h-4 text-status-error" />
           <div id={TITLE_ID} className="typo-section-title flex-1">
             {t.plugins.doc_signing.history_heading}
           </div>
@@ -249,7 +249,7 @@ function SignatureRow({
               disabled={verify.status === "verifying"}
               title={t.plugins.doc_signing.verify_signature}
               aria-label={t.plugins.doc_signing.verify_signature}
-              className="p-1.5 rounded-input text-foreground hover:text-emerald-200 hover:bg-emerald-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+              className="p-1.5 rounded-input text-foreground hover:text-status-success hover:bg-status-success/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
             </button>
@@ -258,7 +258,7 @@ function SignatureRow({
             type="button"
             onClick={onExport}
             title={t.plugins.doc_signing.export_sig}
-            className="p-1.5 rounded-input text-foreground hover:text-sky-200 hover:bg-sky-500/15 transition-colors focus-ring"
+            className="p-1.5 rounded-input text-foreground hover:text-status-info hover:bg-status-info/15 transition-colors focus-ring"
           >
             <Download className="w-3.5 h-3.5" />
           </button>
@@ -266,7 +266,7 @@ function SignatureRow({
             type="button"
             onClick={onDelete}
             title={t.plugins.doc_signing.delete_signature}
-            className="p-1.5 rounded-input text-foreground hover:text-rose-200 hover:bg-rose-500/15 transition-colors focus-ring"
+            className="p-1.5 rounded-input text-foreground hover:text-status-error hover:bg-status-error/15 transition-colors focus-ring"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -295,8 +295,8 @@ function VerifyChip({ result }: { result: VerifyDocumentResult }) {
     <div
       className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full typo-caption border ${
         valid
-          ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-100"
-          : "border-rose-500/35 bg-rose-500/10 text-rose-100"
+          ? "border-status-success/35 bg-status-success/10 text-status-success"
+          : "border-status-error/35 bg-status-error/10 text-status-error"
       }`}
     >
       <Icon className="w-3 h-3 flex-shrink-0" />

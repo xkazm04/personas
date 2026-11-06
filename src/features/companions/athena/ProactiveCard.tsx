@@ -110,11 +110,11 @@ export function ProactiveCard({
           · {triggerKindLabel(t, message.triggerKind)}
         </span>
       </div>
-      <p className="typo-body text-foreground/90">
+      <p className="typo-body text-ink-2">
         {message.message}
       </p>
       {error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 typo-caption text-rose-400">
+        <div className="rounded-card border border-status-error/30 bg-status-error/10 px-2.5 py-1.5 typo-caption text-status-error">
           {error}
         </div>
       )}
@@ -157,32 +157,32 @@ export function ProactiveCard({
 function accentForTrigger(kind: string): string {
   switch (kind) {
     case 'goal_target_approaching':
-      return 'border-amber-500/30 bg-amber-500/[0.06]';
+      return 'border-status-warning/30 bg-status-warning/10/[0.06]';
     case 'backlog_aging':
-      return 'border-rose-500/30 bg-rose-500/[0.06]';
+      return 'border-status-error/30 bg-status-error/10/[0.06]';
     case 'on_this_day':
-      return 'border-violet-500/30 bg-violet-500/[0.06]';
+      return 'border-hair-2 bg-surface-2/[0.06]';
     case 'cadence_due':
-      return 'border-emerald-500/30 bg-emerald-500/[0.06]';
+      return 'border-status-success/30 bg-status-success/10/[0.06]';
     case 'athena_scheduled':
-      return 'border-sky-500/30 bg-sky-500/[0.06]';
+      return 'border-status-info/30 bg-status-info/10/[0.06]';
     case 'ambient_match':
-      return 'border-cyan-500/30 bg-cyan-500/[0.06]';
+      return 'border-hair-2 bg-surface-2/[0.06]';
     case 'fleet_failed':
     case 'fleet_stuck_dispatched':
-      return 'border-rose-500/30 bg-rose-500/[0.06]';
+      return 'border-status-error/30 bg-status-error/10/[0.06]';
     case 'fleet_awaiting':
     case 'fleet_stale':
-      return 'border-amber-500/30 bg-amber-500/[0.06]';
+      return 'border-status-warning/30 bg-status-warning/10/[0.06]';
     case 'fleet_op_completed':
-      return 'border-emerald-500/30 bg-emerald-500/[0.06]';
+      return 'border-status-success/30 bg-status-success/10/[0.06]';
     case 'incident_blocker':
     case 'credential_reauth':
-      return 'border-rose-500/30 bg-rose-500/[0.06]';
+      return 'border-status-error/30 bg-status-error/10/[0.06]';
     case 'execution_review':
-      return 'border-amber-500/30 bg-amber-500/[0.06]';
+      return 'border-status-warning/30 bg-status-warning/10/[0.06]';
     case 'message_digest':
-      return 'border-sky-500/30 bg-sky-500/[0.06]';
+      return 'border-status-info/30 bg-status-info/10/[0.06]';
     default:
       return 'border-primary/30 bg-primary/[0.06]';
   }

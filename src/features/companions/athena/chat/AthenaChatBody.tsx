@@ -127,7 +127,7 @@ export function AthenaChatBody({
                 </div>
               )}
               {engine.initError && (
-                <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
+                <div className="rounded-card border border-status-error/30 bg-status-error/10 px-3 py-2 typo-body text-status-error">
                   {t.athena.init_failed}: {engine.initError}
                 </div>
               )}

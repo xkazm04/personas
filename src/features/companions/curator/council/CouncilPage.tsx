@@ -78,7 +78,7 @@ export default function CouncilPage() {
   return (
     <ContentBox data-testid="council-page">
       <ContentHeader
-        icon={<Scale className="w-5 h-5 text-violet-400" />}
+        icon={<Scale className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={t.sidebar.council}
         fitWidth

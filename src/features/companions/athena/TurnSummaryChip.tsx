@@ -164,7 +164,7 @@ export function TurnSummaryChip({
               <button
                 type="button"
                 onClick={() => onJump!(p.target!)}
-                className="inline-flex items-center gap-1 rounded-interactive hover:bg-foreground/[0.06] hover:text-foreground/90 transition-colors focus-ring px-1 -mx-1 cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-interactive hover:bg-foreground/[0.06] hover:text-ink-2 transition-colors focus-ring px-1 -mx-1 cursor-pointer"
                 title={tooltip}
                 aria-label={tooltip}
                 data-testid={`companion-turn-summary-jump-${p.target}`}

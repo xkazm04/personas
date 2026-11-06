@@ -143,7 +143,7 @@ export default function StationPicker({
         <button
           type="button"
           onClick={() => setSourceKindCollapsed(kind, !collapsed)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground hover:text-foreground/90 hover:bg-secondary/15 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground hover:text-ink-2 hover:bg-secondary/15 transition-colors"
           aria-label={t.radio.group_toggle_label}
           aria-expanded={!collapsed}
         >
@@ -153,7 +153,7 @@ export default function StationPicker({
             <ChevronDown className="w-3 h-3 shrink-0" />
           )}
           <Icon className="w-3 h-3 shrink-0 text-foreground" />
-          <span className="font-medium uppercase tracking-wide">{label}</span>
+          <span className="typo-eyebrow">{label}</span>
           <span className="ml-auto text-foreground tabular-nums">
             {tx(t.radio.group_count, { count: list.length })}
           </span>
@@ -172,7 +172,7 @@ export default function StationPicker({
     >
       <div className="px-3 py-2 border-b border-primary/8 flex items-center gap-2">
         <Radio className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-caption text-foreground/85">
+        <span className="typo-caption text-ink-2">
           {t.radio.stations_label}
         </span>
       </div>
@@ -204,7 +204,7 @@ export default function StationPicker({
           <button
             type="button"
             role="menuitem"
-            className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-foreground/85 hover:bg-secondary/30 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-ink-2 hover:bg-secondary/30 transition-colors"
             onClick={() => {
               setStationDisabled(contextStation.id, true);
               setContextMenu(null);
@@ -217,7 +217,7 @@ export default function StationPicker({
             <button
               type="button"
               role="menuitem"
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-foreground/85 hover:bg-secondary/30 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-ink-2 hover:bg-secondary/30 transition-colors"
               onClick={() => {
                 if (contextStation.sourceUrl) {
                   openExternalUrl(contextStation.sourceUrl).catch(

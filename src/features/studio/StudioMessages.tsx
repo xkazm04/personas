@@ -86,7 +86,7 @@ const Working = ({ autonomous, name }: { autonomous: boolean; name: string }) =>
   const { shouldAnimate } = useMotion();
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
-      <span className="flex items-center gap-1.5 text-md text-foreground/80">
+      <span className="flex items-center gap-1.5 text-md text-ink-2">
         {autonomous
           ? tx(t.studio.building_name_autonomously, { name })
           : t.studio.athena_is_working}
@@ -154,8 +154,8 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
           <div key={m.id} className="flex items-start gap-2">
             <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
             <div className="min-w-0 flex-1">
-              <div className="mb-0.5 flex items-center gap-1.5 typo-caption text-foreground/40">
-                <span className="font-medium text-foreground/65">Athena</span>
+              <div className="mb-0.5 flex items-center gap-1.5 typo-caption text-ink-3">
+                <span className="font-medium text-ink-2">Athena</span>
                 <span>·</span>
                 <RelativeTime timestamp={m.ts} />
               </div>
@@ -194,7 +194,7 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
           data-testid="studio-messages-toggle"
           onClick={() => setShowAll((v) => !v)}
           aria-expanded={showAll}
-          className="pointer-events-auto inline-flex items-center gap-1 self-start rounded-full border border-border bg-background/85 px-2 py-0.5 typo-caption text-foreground/60 shadow-elevation-2 backdrop-blur transition-colors hover:text-foreground"
+          className="pointer-events-auto inline-flex items-center gap-1 self-start rounded-interactive border border-border bg-background/85 px-2 py-0.5 typo-caption text-ink-2 shadow-elevation-2 backdrop-blur transition-colors hover:text-foreground"
         >
           <History className="h-3 w-3" />
           {/* The count/plural pair is selected at the CALL SITE, per the repo's

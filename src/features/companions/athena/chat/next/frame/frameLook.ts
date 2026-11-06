@@ -67,7 +67,7 @@ export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
       size: 'w-4 h-4',
     },
     message: 'typo-body-lg text-foreground',
-    label: 'typo-label uppercase tracking-wider text-primary',
+    label: 'typo-eyebrow text-ink-3',
   },
   filament: {
     id: 'filament',
@@ -97,6 +97,6 @@ export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
       size: 'w-4 h-4',
     },
     message: 'typo-body-lg text-foreground',
-    label: 'typo-label uppercase tracking-wider text-primary animate-pulse',
+    label: 'typo-eyebrow text-ink-3 animate-pulse',
   },
 };

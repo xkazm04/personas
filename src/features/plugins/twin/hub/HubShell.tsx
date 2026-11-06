@@ -45,7 +45,7 @@ export function HubShell({ feed }: { feed: HubFeed }) {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="twin-hub-page">
       {/* ── Title + counts ─────────────────────────────────────────── */}
-      <header className="flex-shrink-0 border-b border-border bg-gradient-to-r from-primary/8 to-transparent px-4 md:px-6 xl:px-8 py-4 flex items-center gap-4">
+      <header className="flex-shrink-0 border-b border-border bg-surface-1 from-primary/8 to-transparent px-4 md:px-6 xl:px-8 py-4 flex items-center gap-4">
         <span className="w-11 h-11 rounded-card bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
           <Brain className="w-5 h-5 text-primary" />
         </span>

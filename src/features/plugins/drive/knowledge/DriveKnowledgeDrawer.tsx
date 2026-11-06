@@ -124,7 +124,7 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
       onClick={() => setTab(id)}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body transition-colors focus-ring ${
         tab === id
-          ? "bg-violet-500/20 border border-violet-500/45 text-violet-50"
+          ? "bg-surface-2 border border-hair-2 text-ink-2"
           : "border border-transparent text-foreground hover:bg-secondary/50"
       } disabled:opacity-40 disabled:cursor-not-allowed`}
     >
@@ -138,8 +138,8 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
       <div className="contents">
         <div className="px-5 py-4 border-b border-primary/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-modal bg-violet-500/20 border border-violet-500/45 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-violet-100" />
+            <div className="w-10 h-10 rounded-modal bg-surface-2 border border-hair-2 flex items-center justify-center">
+              <Brain className="w-5 h-5 text-ink-2" />
             </div>
             <div className="flex-1 min-w-0">
               <div id={TITLE_ID} className="typo-section-title truncate">
@@ -195,7 +195,7 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
                   aria-valuenow={progress.documentsDone}
                 >
                   <div
-                    className="h-full bg-violet-400 transition-[width] duration-300"
+                    className="h-full bg-surface-2 transition-[width] duration-300"
                     style={{
                       width: `${Math.round((progress.documentsDone / progress.documentsTotal) * 100)}%`,
                     }}

@@ -23,21 +23,21 @@ const CHIP_META: Record<
   // decision Athena is holding) — the only kind loud enough to tint at rest.
   blocked: {
     icon: XOctagon,
-    idle: 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20',
-    active: 'border-rose-500/40 bg-rose-500/20 text-rose-300',
-    dot: 'bg-rose-400',
+    idle: 'border-status-error/30 bg-status-error/10 text-status-error hover:bg-status-error/20',
+    active: 'border-status-error/40 bg-status-error/20 text-status-error',
+    dot: 'bg-status-error/10',
   },
   errors: {
     icon: AlertTriangle,
-    idle: 'border-rose-500/25 bg-rose-500/[0.07] text-rose-400 hover:bg-rose-500/15',
-    active: 'border-rose-500/40 bg-rose-500/20 text-rose-300',
-    dot: 'bg-rose-400',
+    idle: 'border-status-error/25 bg-status-error/10/[0.07] text-status-error hover:bg-status-error/15',
+    active: 'border-status-error/40 bg-status-error/20 text-status-error',
+    dot: 'bg-status-error/10',
   },
   warnings: {
     icon: AlertTriangle,
-    idle: 'border-amber-500/25 bg-amber-500/[0.07] text-amber-400 hover:bg-amber-500/15',
-    active: 'border-amber-500/40 bg-amber-500/20 text-amber-300',
-    dot: 'bg-amber-400',
+    idle: 'border-status-warning/25 bg-status-warning/10/[0.07] text-status-warning hover:bg-status-warning/15',
+    active: 'border-status-warning/40 bg-status-warning/20 text-status-warning',
+    dot: 'bg-status-warning/10',
   },
   nudges: {
     icon: Bell,
@@ -47,13 +47,13 @@ const CHIP_META: Record<
   },
   assignments: {
     icon: ClipboardList,
-    idle: 'border-sky-500/25 bg-sky-500/[0.07] text-sky-400 hover:bg-sky-500/15',
-    active: 'border-sky-500/40 bg-sky-500/20 text-sky-300',
-    dot: 'bg-sky-400',
+    idle: 'border-status-info/25 bg-status-info/10/[0.07] text-status-info hover:bg-status-info/15',
+    active: 'border-status-info/40 bg-status-info/20 text-status-info',
+    dot: 'bg-status-info/10',
   },
   activity: {
     icon: Sparkles,
-    idle: 'border-foreground/15 bg-foreground/[0.04] text-foreground/70 hover:bg-foreground/10',
+    idle: 'border-foreground/15 bg-foreground/[0.04] text-ink-2 hover:bg-foreground/10',
     active: 'border-foreground/25 bg-foreground/10 text-foreground',
     dot: 'bg-foreground/50',
   },

@@ -175,7 +175,7 @@ function AutonomyPopup({
       className="fixed z-[9995] rounded-card border border-primary/20 bg-background shadow-elevation-4 p-3"
     >
       <div className="px-0.5">
-        <p className="typo-label uppercase tracking-wider text-primary">{c.autonomy_options}</p>
+        <p className="typo-eyebrow text-ink-3">{c.autonomy_options}</p>
         <p className="mt-0.5 typo-caption text-foreground">
           {autonomous ? c.autonomy_status_on : c.autonomy_status_off}
         </p>
@@ -280,7 +280,7 @@ function Tile({
       data-testid={testId}
       className={`w-full flex flex-col items-center gap-1 rounded-interactive border px-2 py-2.5 transition-colors focus-ring ${
         dormant
-          ? 'cursor-not-allowed border-foreground/10 text-foreground/55'
+          ? 'cursor-not-allowed border-foreground/10 text-ink-2'
           : on
             ? 'border-primary/40 bg-primary/15 text-primary'
             : 'border-foreground/12 text-foreground hover:bg-secondary/50'
@@ -295,7 +295,7 @@ function Tile({
         <Icon className="w-4 h-4" />
       </span>
       <span className="typo-caption">{label}</span>
-      <span className={`typo-caption tabular-nums ${dormant ? '' : 'text-foreground/75'}`}>{value ?? '—'}</span>
+      <span className={`typo-caption tabular-nums ${dormant ? '' : 'text-ink-2'}`}>{value ?? '—'}</span>
     </button>
   );
 }

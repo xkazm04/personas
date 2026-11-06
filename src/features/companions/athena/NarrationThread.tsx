@@ -42,7 +42,7 @@ function EntryRow({ entry }: { entry: NarrationEntry }) {
     entry.kind === 'beat' ? (
       <Sparkles className="w-3 h-3 text-primary shrink-0" />
     ) : entry.endedAt != null ? (
-      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+      <CheckCircle2 className="w-3 h-3 text-status-success shrink-0" />
     ) : (
       <Loader2 className="w-3 h-3 text-primary animate-spin shrink-0" />
     );
@@ -136,7 +136,7 @@ export function NarrationTrail({ narration }: { narration: StoredNarration }) {
         }`}
       >
         <motion.span
-          className="flex shrink-0 text-foreground/45 group-hover/trail:text-foreground/70"
+          className="flex shrink-0 text-ink-3 group-hover/trail:text-ink-2"
           aria-hidden
           initial={false}
           animate={{ rotate: open ? 90 : 0 }}
@@ -145,8 +145,8 @@ export function NarrationTrail({ narration }: { narration: StoredNarration }) {
           <ChevronRight className="w-3 h-3" />
         </motion.span>
         <span className="truncate">
-          <span className="font-medium text-foreground/85">{c.narration_trail_label}</span>
-          <span className="text-foreground/45"> — {steps} · {duration}</span>
+          <span className="font-medium text-ink-2">{c.narration_trail_label}</span>
+          <span className="text-ink-3"> — {steps} · {duration}</span>
         </span>
       </button>
       <Collapse open={open} unmountWhenClosed duration={220}>

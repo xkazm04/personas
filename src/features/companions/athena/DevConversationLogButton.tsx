@@ -110,7 +110,7 @@ export function DevConversationLogButton() {
         disabled={busy}
         aria-busy={busy}
         data-testid="companion-dev-dump-log"
-        className="p-1 rounded-interactive text-amber-400/70 transition-colors focus-ring hover:bg-amber-500/10 hover:text-amber-400 disabled:is-disabled"
+        className="p-1 rounded-interactive text-status-warning transition-colors focus-ring hover:bg-status-warning/10 hover:text-status-warning disabled:is-disabled"
         aria-label={t.athena.dev_dump_log}
       >
         <FileDown className="w-3.5 h-3.5" aria-hidden />

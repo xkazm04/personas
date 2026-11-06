@@ -56,7 +56,7 @@ export default function StudioPickComposer({ preview }: { preview: StudioPreview
       <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-4">
         <p
           role="status"
-          className="pointer-events-auto flex items-center gap-2 rounded-full border border-primary/60 bg-background/90 px-3 py-1.5 typo-caption text-foreground shadow-elevation-2"
+          className="pointer-events-auto flex items-center gap-2 rounded-interactive border border-primary/60 bg-background/90 px-3 py-1.5 typo-caption text-foreground shadow-elevation-2"
         >
           <Crosshair className="h-3.5 w-3.5 text-primary" />
           {t.studio.pick_mode_hint}
@@ -111,7 +111,7 @@ export default function StudioPickComposer({ preview }: { preview: StudioPreview
                 key={`${i}-${name}`}
                 aria-current={i === chain.length - 1 ? 'true' : undefined}
                 className={`rounded-interactive px-1.5 typo-label ${
-                  i === chain.length - 1 ? 'bg-primary/15 text-primary' : 'text-foreground/90'
+                  i === chain.length - 1 ? 'bg-primary/15 text-primary' : 'text-ink-2'
                 }`}
               >
                 {name}

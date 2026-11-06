@@ -27,9 +27,9 @@ import { scoreTopicCoverage, topicByCommunication, type CoverageTier, type Topic
 import { TRAINING_TOPIC_PRESETS, TRAINING_TOPIC_WINDOW } from './useTrainingSession';
 
 const TIER_TINT: Record<CoverageTier, string> = {
-  thin: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
-  some: 'border-cyan-500/25 bg-cyan-500/10 text-cyan-200',
-  covered: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-200',
+  thin: 'border-status-warning/30 bg-status-warning/10 text-status-warning',
+  some: 'border-hair-2 bg-surface-2 text-ink-2',
+  covered: 'border-status-success/25 bg-status-success/10 text-status-success',
 };
 
 const TIER_LABEL_KEY: Record<CoverageTier, 'coverageThin' | 'coverageSome' | 'coverageCovered'> = {
@@ -96,7 +96,7 @@ export function TrainingMomentumBand({ twinId, topic, onPickTopic, refreshToken 
       data-testid="training-momentum-band"
     >
       <span className="flex items-center gap-2 flex-shrink-0">
-        <GraduationCap className="w-3.5 h-3.5 text-violet-300" aria-hidden />
+        <GraduationCap className="w-3.5 h-3.5 text-ink-2" aria-hidden />
         <span className="typo-card-label" data-testid="training-momentum-sessions">
           {momentum.sessions} {tt.momentumSessions}
         </span>
@@ -130,7 +130,7 @@ export function TrainingMomentumBand({ twinId, topic, onPickTopic, refreshToken 
               data-testid={`training-coverage-${preset.id}`}
               data-tier={tier}
               className={`px-2 py-1 rounded-interactive border typo-caption transition-colors flex items-center gap-1.5 ${TIER_TINT[tier]} ${
-                selected ? 'ring-1 ring-violet-400/60' : 'hover:shadow-elevation-1'
+                selected ? 'ring-1 ring-hair-2' : 'hover:shadow-elevation-1'
               }`}
               aria-label={`${tt[preset.labelKey]}: ${tt[TIER_LABEL_KEY[tier]]}`}
             >

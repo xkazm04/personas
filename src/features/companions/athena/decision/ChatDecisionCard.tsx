@@ -45,7 +45,7 @@ export function ChatDecisionCard() {
       <div data-testid="athena-chat-decision-prompt" className="mt-1">
         <MarkdownRenderer
           content={decision.prompt}
-          className="typo-body text-foreground/90"
+          className="typo-body text-ink-2"
         />
       </div>
 
@@ -73,7 +73,7 @@ export function ChatDecisionCard() {
         <p
           data-testid="athena-chat-decision-run-failed"
           role="alert"
-          className="mt-2.5 rounded-input border border-rose-500/25 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400"
+          className="mt-2.5 rounded-input border border-status-error/25 bg-status-error/10 px-3 py-2 typo-caption text-status-error"
         >
           {t.athena.decision_run_failed}
         </p>
@@ -89,7 +89,7 @@ export function ChatDecisionCard() {
           </p>
           <MarkdownRenderer
             content={decision.recommendation}
-            className="mt-1 typo-body text-foreground/90"
+            className="mt-1 typo-body text-ink-2"
           />
           {decision.detail && (
             <p className="mt-1.5 typo-caption text-foreground">
@@ -109,13 +109,13 @@ export function ChatDecisionCard() {
             title={opt.hint ?? opt.label}
             className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
               opt.danger
-                ? 'bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400'
+                ? 'bg-status-error/10 border border-status-error/20 hover:bg-status-error/20 text-status-error'
                 : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary'
             }`}
           >
             <span
-              className={`inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-medium ${
-                opt.danger ? 'bg-rose-500/20' : 'bg-primary/20'
+              className={`inline-flex items-center justify-center w-4 h-4 rounded typo-caption ${
+                opt.danger ? 'bg-status-error/20' : 'bg-primary/20'
               }`}
               aria-hidden
             >

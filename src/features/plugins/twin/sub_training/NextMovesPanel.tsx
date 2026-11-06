@@ -31,12 +31,12 @@ const TOPIC_ICONS: Record<string, LucideIcon> = {
 };
 
 const TOPIC_TINTS: Record<string, string> = {
-  background: 'border-violet-500/25 bg-violet-500/10 text-violet-300',
-  opinions: 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-  communication: 'border-cyan-500/25 bg-cyan-500/10 text-cyan-300',
-  values: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-  expertise: 'border-indigo-500/25 bg-indigo-500/10 text-indigo-300',
-  personal: 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+  background: 'border-hair-2 bg-surface-2 text-ink-2',
+  opinions: 'border-status-warning/25 bg-status-warning/10 text-status-warning',
+  communication: 'border-hair-2 bg-surface-2 text-ink-2',
+  values: 'border-status-success/25 bg-status-success/10 text-status-success',
+  expertise: 'border-hair-2 bg-surface-2 text-ink-2',
+  personal: 'border-status-error/25 bg-status-error/10 text-status-error',
 };
 
 interface Scored {
@@ -108,8 +108,8 @@ export function NextMovesPanel({ onPick }: Props) {
   return (
     <section className="mt-8 rounded-card border border-primary/15 bg-card/40 overflow-hidden">
       <div className="px-5 py-3 border-b border-primary/10 flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-violet-300" />
-        <span className="text-[10px] uppercase tracking-[0.2em] text-violet-300 font-medium">
+        <Sparkles className="w-4 h-4 text-ink-2" />
+        <span className="typo-eyebrow text-ink-2">
           {t.training.nextMovesHeading}
         </span>
       </div>
@@ -131,7 +131,7 @@ export function NextMovesPanel({ onPick }: Props) {
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block typo-card-label truncate">{label}</span>
-                  <span className="block text-[11px] text-foreground mt-0.5">
+                  <span className="block typo-caption text-foreground mt-0.5">
                     {tx(t.training.nextMovesCoverage, { count: r.count })}
                   </span>
                 </span>

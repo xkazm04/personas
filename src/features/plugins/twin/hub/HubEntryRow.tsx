@@ -53,7 +53,7 @@ export function HubEntryRow({ entry, feed, order, enter }: {
             </Tooltip>
           )}
           {entry.channel && (
-            <span className="px-1.5 rounded-full border border-border bg-secondary/40 typo-label text-foreground">
+            <span className="px-1.5 rounded-interactive border border-border bg-secondary/40 typo-label text-foreground">
               {channelChipText(entry.channel, tRoot.twin.samples.memoryOrigin)}
             </span>
           )}

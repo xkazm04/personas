@@ -318,7 +318,7 @@ export function Composer({
           disabled={disabled}
           rows={1}
           data-testid="companion-composer"
-          className="flex-1 bg-transparent border-0 outline-none resize-none typo-body text-foreground placeholder:text-foreground/40 disabled:opacity-50"
+          className="flex-1 bg-transparent border-0 outline-none resize-none typo-body text-foreground placeholder:text-ink-3 disabled:opacity-50"
           aria-label={placeholder}
         />
         {dictation.supported && (
@@ -331,9 +331,9 @@ export function Composer({
               compact ? 'p-1.5' : 'p-2'
             } ${
               dictation.listening
-                ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
+                ? 'bg-status-error/15 text-status-error hover:bg-status-error/20'
                 : dictation.error
-                  ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                  ? 'bg-status-warning/10 text-status-warning hover:bg-status-warning/20'
                   : 'bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground'
             }`}
             aria-label={

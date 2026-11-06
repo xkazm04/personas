@@ -52,7 +52,7 @@ export default function CuratorSetupPage() {
           <section className="space-y-2">
             <h3 className="typo-title">{t.companions.setup.enable_section}</h3>
             <SettingRow
-              icon={<BookOpen className="w-4 h-4 text-cyan-400" />}
+              icon={<BookOpen className="w-4 h-4 text-ink-2" />}
               label={t.companions.setup.curator_enable}
               description={
                 <>

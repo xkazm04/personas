@@ -74,7 +74,7 @@ export function AthenaActionsStrip() {
                   className="ml-auto shrink-0 typo-caption text-foreground"
                 />
               </div>
-              <p className="mt-0.5 typo-caption text-foreground/90 whitespace-pre-wrap break-words">
+              <p className="mt-0.5 typo-caption text-ink-2 whitespace-pre-wrap break-words">
                 {a.text}
               </p>
             </li>

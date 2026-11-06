@@ -52,8 +52,8 @@ export function DriveConfirm({
             onClick={onConfirm}
             className={`px-3 py-1.5 rounded-input typo-body border transition-colors focus-ring ${
               danger
-                ? "bg-rose-500/25 text-rose-100 border-rose-500/45 hover:bg-rose-500/35"
-                : "bg-sky-500/25 text-sky-100 border-sky-500/40 hover:bg-sky-500/35"
+                ? "bg-status-error/20 text-status-error border-status-error/40 hover:bg-status-error/20"
+                : "bg-status-info/20 text-status-info border-status-info/40 hover:bg-status-info/20"
             }`}
           >
             {t.plugins.drive.confirm}

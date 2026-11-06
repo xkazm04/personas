@@ -51,7 +51,7 @@ export function HubRejectChips({ onPick, onCancel, showKeys = false }: {
           type="button"
           onClick={() => onPick(reason)}
           data-testid={`hub-reject-${reason}`}
-          className="px-2 py-0.5 rounded-full border border-status-error/30 bg-status-error/10 text-status-error typo-caption transition-colors hover:bg-status-error/20 focus-ring"
+          className="px-2 py-0.5 rounded-interactive border border-status-error/30 bg-status-error/10 text-status-error typo-caption transition-colors hover:bg-status-error/20 focus-ring"
         >
           {showKeys ? `${i + 1} · ${t.reasons[reason]}` : t.reasons[reason]}
         </button>
@@ -59,7 +59,7 @@ export function HubRejectChips({ onPick, onCancel, showKeys = false }: {
       <button
         type="button"
         onClick={onCancel}
-        className="px-2 py-0.5 rounded-full border border-border typo-caption text-foreground transition-colors hover:bg-secondary/50 focus-ring"
+        className="px-2 py-0.5 rounded-interactive border border-border typo-caption text-foreground transition-colors hover:bg-secondary/50 focus-ring"
       >
         {t.entry.rejectCancel}
       </button>

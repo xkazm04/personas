@@ -43,7 +43,7 @@ export default function AthenaPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<IconCompanion active className="w-5 h-5 text-cyan-400" />}
+        icon={<IconCompanion active className="w-5 h-5 text-ink-2" />}
         iconColor="cyan"
         title={t.athena.page_title}
         subtitle={tab === 'standup' ? t.athena.standup.page_subtitle : t.athena.page_subtitle}

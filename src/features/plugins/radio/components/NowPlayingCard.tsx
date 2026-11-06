@@ -90,7 +90,7 @@ export default function NowPlayingCard({
         style={{ background: `linear-gradient(135deg, ${accent}25, transparent 70%)` }}
       >
         <div className="min-w-0">
-          <p className="typo-caption text-foreground uppercase tracking-wide">
+          <p className="typo-eyebrow">
             {t.radio.now_playing}
           </p>
           <p className="typo-body text-foreground truncate">
@@ -210,7 +210,7 @@ export default function NowPlayingCard({
 
       {isYoutube && tracks.length > 0 && (
         <div className="border-t border-primary/8">
-          <div className="px-4 py-1.5 typo-caption text-foreground uppercase tracking-wide bg-secondary/10">
+          <div className="px-4 py-1.5 typo-eyebrow bg-secondary/10">
             {tx(t.radio.tracklist_label, { count: tracks.length })}
           </div>
           <ul className="max-h-48 overflow-y-auto py-1">
@@ -248,7 +248,7 @@ export default function NowPlayingCard({
               const url = nowPlaying.station.sourceUrl;
               if (url) openExternalUrl(url).catch(silentCatch('radio:open-source'));
             }}
-            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 transition-colors focus-ring"
+            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-ink-2 transition-colors focus-ring"
           >
             <ExternalLink className="w-3 h-3" />
             {nowPlaying.station.sourceLabel ?? t.radio.open_source}

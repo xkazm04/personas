@@ -150,7 +150,7 @@ export function ConsolidationReview({
       )}
 
       {error && (
-        <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+        <div className="m-5 rounded-card border border-status-error/30 bg-status-error/10 px-3 py-2 typo-caption text-status-error">
           {error}
         </div>
       )}
@@ -191,7 +191,7 @@ export function ConsolidationReview({
                       <RelativeTime timestamp={run.triggeredAt} showTooltip={false} />
                     </div>
                     {run.errorText && (
-                      <div className="typo-caption text-rose-400 mt-1 truncate">
+                      <div className="typo-caption text-status-error mt-1 truncate">
                         {run.errorText}
                       </div>
                     )}
@@ -267,17 +267,17 @@ function RunStatusBadge({ run }: { run: ConsolidationRun }) {
       case 'review':
         return {
           label: t.athena.consolidation_run_status_review,
-          tone: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+          tone: 'bg-status-warning/15 text-status-warning border-status-warning/30',
         };
       case 'applied':
         return {
           label: t.athena.consolidation_run_status_applied,
-          tone: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+          tone: 'bg-status-success/15 text-status-success border-status-success/30',
         };
       case 'failed':
         return {
           label: t.athena.consolidation_run_status_failed,
-          tone: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+          tone: 'bg-status-error/15 text-status-error border-status-error/30',
         };
       default:
         return {
@@ -359,7 +359,7 @@ function RunDetail({
       </p>
 
       {error && (
-        <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+        <div className="m-5 rounded-card border border-status-error/30 bg-status-error/10 px-3 py-2 typo-caption text-status-error">
           {error}
         </div>
       )}
@@ -460,10 +460,10 @@ function ItemCard({
         : t.athena.consolidation_kind_contradict;
   const kindTone =
     item.kind === 'add'
-      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+      ? 'bg-status-success/15 text-status-success border-status-success/30'
       : item.kind === 'update'
-        ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-        : 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+        ? 'bg-status-warning/15 text-status-warning border-status-warning/30'
+        : 'bg-status-error/15 text-status-error border-status-error/30';
 
   return (
     <div
@@ -530,7 +530,7 @@ function ItemCard({
           </label>
         </div>
       ) : (
-        <p className="typo-body text-foreground/85 whitespace-pre-wrap">
+        <p className="typo-body text-ink-2 whitespace-pre-wrap">
           {item.proposedValue}
         </p>
       )}
@@ -568,7 +568,7 @@ function ItemCard({
       )}
 
       {error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2 py-1 typo-caption text-rose-400">
+        <div className="rounded-card border border-status-error/30 bg-status-error/10 px-2 py-1 typo-caption text-status-error">
           {error}
         </div>
       )}

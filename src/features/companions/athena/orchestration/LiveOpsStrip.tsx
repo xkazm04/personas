@@ -127,7 +127,7 @@ function OpCard({
           {op.status}
         </span>
         <div className="flex-1 min-w-0">
-          <div className="truncate text-foreground/90">{op.intent}</div>
+          <div className="truncate text-ink-2">{op.intent}</div>
           <div className="flex items-baseline gap-1.5 text-foreground typo-caption">
             <code className="font-mono">{op.id8}</code>
             <span>·</span>
@@ -159,7 +159,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
   const { t } = useTranslation();
   return (
     <li
-      className="space-y-0.5 typo-caption text-foreground/85"
+      className="space-y-0.5 typo-caption text-ink-2"
       data-testid="companion-live-ops-session"
       data-session-id={sess.id8}
     >
@@ -226,7 +226,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
           label={t.athena.orchestration.live_view_failure_label}
           text={sess.failure}
           tone="error"
-          icon={<AlertTriangle className="size-3 text-rose-400" />}
+          icon={<AlertTriangle className="size-3 text-status-error" />}
         />
       )}
       {sess.summary && (
@@ -252,10 +252,10 @@ function DetailLine({
 }) {
   const toneClass =
     tone === 'error'
-      ? 'text-rose-400'
+      ? 'text-status-error'
       : tone === 'warn'
-        ? 'text-amber-400'
-        : 'text-foreground/85';
+        ? 'text-status-warning'
+        : 'text-ink-2';
   return (
     <div className={`flex items-baseline gap-1 ${toneClass}`}>
       {icon ?? null}
@@ -268,13 +268,13 @@ function DetailLine({
 function toneForStatus(status: string): string {
   const norm = status.toLowerCase();
   if (norm.includes('fail') || norm.includes('error')) {
-    return 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+    return 'bg-status-error/10 text-status-error border border-status-error/20';
   }
   if (norm.includes('complete') || norm.includes('finished')) {
-    return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+    return 'bg-status-success/10 text-status-success border border-status-success/20';
   }
   if (norm.includes('block') || norm.includes('wait')) {
-    return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+    return 'bg-status-warning/10 text-status-warning border border-status-warning/20';
   }
   // Active / running / dispatched / queued — neutral primary tint.
   return 'bg-primary/10 text-primary border border-primary/20';

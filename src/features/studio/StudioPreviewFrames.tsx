@@ -70,7 +70,7 @@ export default function StudioPreviewFrames({
             <div className="rounded-card bg-secondary/25" />
             <div className="rounded-card bg-secondary/25" />
           </div>
-          <p className="typo-caption text-foreground/90">{guideStrings(t).preview_loading}</p>
+          <p className="typo-caption text-ink-2">{guideStrings(t).preview_loading}</p>
         </motion.div>
       )}
       {showPointer && !hidden && live && active?.question && pointerRect ? (

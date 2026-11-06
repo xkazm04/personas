@@ -217,11 +217,11 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
       {/* Control strip */}
       <div className="flex-shrink-0 border-b border-primary/10 px-4 md:px-6 py-3 space-y-2.5">
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onExit} className="typo-caption text-foreground hover:text-violet-300 transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
+          <button type="button" onClick={onExit} className="typo-caption text-foreground hover:text-ink-2 transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
             <GraduationCap className="w-3.5 h-3.5" /> {t.training.studioBack}
           </button>
           <span className="w-px h-3.5 bg-primary/15" aria-hidden />
-          <span className="typo-caption text-violet-300 inline-flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> {t.training.studioOpen}</span>
+          <span className="typo-caption text-ink-2 inline-flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> {t.training.studioOpen}</span>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-2">
@@ -251,8 +251,8 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
               aria-label={t.training.studioSaveDirections}
               className={`flex-shrink-0 inline-flex items-center justify-center w-9 rounded-card border transition-colors focus-ring disabled:opacity-40 ${
                 directionsDirty
-                  ? 'border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20'
-                  : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
+                  ? 'border-hair-2 bg-surface-2 text-ink-2 hover:bg-surface-2'
+                  : 'border-status-success/30 bg-status-success/5 text-status-success'
               }`}
             >
               {savingDirections ? <Loader2 className="w-4 h-4 animate-spin" /> : directionsDirty ? <Bookmark className="w-4 h-4" /> : <BookmarkCheck className="w-4 h-4" />}
@@ -270,7 +270,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             {t.training.studioDraftAll}
           </Button>
           {busy && (
-            <button type="button" onClick={() => void cancelStudio()} className="typo-caption text-foreground hover:text-red-400 transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
+            <button type="button" onClick={() => void cancelStudio()} className="typo-caption text-foreground hover:text-status-error transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
               <X className="w-3.5 h-3.5" /> {t.training.studioCancel}
             </button>
           )}
@@ -283,7 +283,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
 
         {busy ? (
           <div className="space-y-1.5">
-            <p className="typo-caption text-violet-300 inline-flex items-center gap-1.5">
+            <p className="typo-caption text-ink-2 inline-flex items-center gap-1.5">
               <Loader2 className="w-3 h-3 animate-spin" />
               {studioPhase === 'answers'
                 ? tx(t.training.studioRunningAnswers, { completed: studioCompleted, total: studioTotal })
@@ -291,14 +291,14 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             </p>
             {studioPhase === 'answers' && studioTotal > 0 && (
               <div className="h-1 rounded-full bg-secondary/40 overflow-hidden max-w-md">
-                <motion.div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                <motion.div className="h-full w-full origin-left rounded-full bg-surface-1"
                   animate={{ scaleX: studioCompleted / studioTotal }} transition={{ duration: 0.3 }} />
               </div>
             )}
-            <p className="text-[10px] text-foreground">{t.training.studioBackgroundNote}</p>
+            <p className="typo-caption text-foreground">{t.training.studioBackgroundNote}</p>
           </div>
         ) : (
-          <p className="text-[10px] text-foreground">{t.training.studioTagline}</p>
+          <p className="typo-caption text-foreground">{t.training.studioTagline}</p>
         )}
       </div>
 
@@ -311,21 +311,21 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             rows.map((row, idx) => {
               const words = wordCount(row.answer);
               const tier = words === 0 ? 'empty' : words < 15 ? 'thin' : words < 60 ? 'ok' : 'rich';
-              const tierClass = tier === 'rich' ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25'
-                : tier === 'ok' ? 'text-amber-300 bg-amber-500/10 border-amber-500/25'
-                : tier === 'thin' ? 'text-rose-300 bg-rose-500/10 border-rose-500/25'
+              const tierClass = tier === 'rich' ? 'text-status-success bg-status-success/10 border-status-success/25'
+                : tier === 'ok' ? 'text-status-warning bg-status-warning/10 border-status-warning/25'
+                : tier === 'thin' ? 'text-status-error bg-status-error/10 border-status-error/25'
                 : 'text-foreground bg-secondary/40 border-primary/10';
               const isDrafting = draftingRowId === row.id;
               return (
                 <div key={row.id} className="rounded-card border border-primary/10 bg-card/40 p-3 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr_auto] gap-3">
                   {/* Question (D2) */}
                   <div className="flex gap-2 min-w-0">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[10px] font-bold flex items-center justify-center mt-0.5 tabular-nums">{idx + 1}</span>
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-surface-2 border border-hair-2 text-ink-2 typo-caption flex items-center justify-center mt-0.5 tabular-nums">{idx + 1}</span>
                     <textarea
                       value={row.question}
                       onChange={(e) => updateRow(row.id, { question: e.target.value })}
                       rows={2}
-                      className="flex-1 resize-none rounded-interactive border border-primary/10 bg-background px-2.5 py-1.5 typo-caption text-foreground focus:border-violet-500/40 focus:outline-none focus:ring-1 focus:ring-violet-500/15 min-h-[3rem]"
+                      className="flex-1 resize-none rounded-interactive border border-primary/10 bg-background px-2.5 py-1.5 typo-caption text-foreground focus:border-hair-2 focus:outline-none focus:ring-1 focus:ring-hair-2 min-h-[3rem]"
                     />
                   </div>
 
@@ -336,11 +336,11 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                       onChange={(e) => updateRow(row.id, { answer: e.target.value, aiDrafted: false })}
                       rows={2}
                       placeholder={t.training.studioAnswerPlaceholder}
-                      className="w-full resize-none rounded-interactive border border-primary/10 bg-background px-2.5 py-1.5 typo-caption text-foreground placeholder:text-foreground/40 focus:border-violet-500/40 focus:outline-none focus:ring-1 focus:ring-violet-500/15 min-h-[3rem]"
+                      className="w-full resize-none rounded-interactive border border-primary/10 bg-background px-2.5 py-1.5 typo-caption text-foreground placeholder:text-ink-3 focus:border-hair-2 focus:outline-none focus:ring-1 focus:ring-hair-2 min-h-[3rem]"
                     />
                     <div className="flex items-center gap-2 mt-1">
-                      {row.aiDrafted && <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-violet-300"><Bot className="w-2.5 h-2.5" /> twin</span>}
-                      {row.answer.trim() && <span className={`px-1.5 py-0.5 rounded-full text-[9px] border tabular-nums ${tierClass}`}>{tx(t.training.studioWordCount, { count: words })}</span>}
+                      {row.aiDrafted && <span className="inline-flex items-center gap-1 typo-eyebrow text-ink-2"><Bot className="w-2.5 h-2.5" /> twin</span>}
+                      {row.answer.trim() && <span className={`px-1.5 py-0.5 rounded-interactive typo-caption border tabular-nums ${tierClass}`}>{tx(t.training.studioWordCount, { count: words })}</span>}
                     </div>
                   </div>
 
@@ -351,7 +351,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                       onClick={() => void handleDraftRow(row)}
                       disabled={!row.question.trim() || isDrafting || busy}
                       title={t.training.studioDraftOne}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/15 focus-ring transition-colors disabled:opacity-30 typo-caption"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-hair-2 bg-surface-2 text-ink-2 hover:bg-surface-2 focus-ring transition-colors disabled:opacity-30 typo-caption"
                     >
                       {isDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : row.aiDrafted ? <Wand2 className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                     </button>
@@ -361,7 +361,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                       title={t.training.studioSaveApproved.replace('{count}', '')}
                       aria-pressed={row.include}
                       className={`inline-flex items-center justify-center w-7 h-7 rounded-interactive border transition-colors focus-ring ${
-                        row.include ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-secondary/40 border-primary/10 text-foreground hover:text-emerald-300'
+                        row.include ? 'bg-status-success/15 border-status-success/40 text-status-success' : 'bg-secondary/40 border-primary/10 text-foreground hover:text-status-success'
                       }`}
                     >
                       <Check className="w-3.5 h-3.5" />
@@ -370,7 +370,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                       type="button"
                       onClick={() => setRows((prev) => prev.filter((r) => r.id !== row.id))}
                       title={t.training.studioRemoveRow}
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors focus-ring"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors focus-ring"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -384,14 +384,14 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             type="button"
             onClick={() => setRows((prev) => [...prev, newRow()])}
             disabled={busy}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-card border border-dashed border-primary/15 text-foreground hover:text-violet-300 hover:border-violet-500/30 transition-colors typo-caption focus-ring disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-card border border-dashed border-primary/15 text-foreground hover:text-ink-2 hover:border-hair-2 transition-colors typo-caption focus-ring disabled:opacity-40"
           >
             <Plus className="w-4 h-4" /> {t.training.studioAddQuestion}
           </button>
 
           {rows.some((r) => r.include && r.answer.trim()) && (
             <div className="flex justify-end pt-1">
-              <button type="button" onClick={() => setTwinTab('hub')} className="typo-caption text-foreground hover:text-violet-300 transition-colors">
+              <button type="button" onClick={() => setTwinTab('hub')} className="typo-caption text-foreground hover:text-ink-2 transition-colors">
                 {t.training.reviewMemories}
               </button>
             </div>

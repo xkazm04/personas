@@ -39,7 +39,7 @@ export function ToneChannelCard({ channel, values, commit, styleJson }: ToneChan
 
   return (
     <div className="rounded-card border border-primary/12 bg-background/30 p-4 space-y-3">
-      <p className="typo-caption uppercase tracking-[0.18em] text-primary/70">
+      <p className="typo-eyebrow text-primary/70">
         {tx(ts.toneFor, { channel })}
       </p>
 

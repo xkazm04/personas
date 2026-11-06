@@ -83,7 +83,7 @@ export function TwinCard({
         <div className="flex items-start gap-3 px-4 pt-4">
           <span
             aria-hidden
-            className={`w-9 h-9 shrink-0 rounded-card bg-gradient-to-br ${gender.tint} flex items-center justify-center ${gender.color} typo-title-lg`}
+            className={`w-9 h-9 shrink-0 rounded-card bg-surface-1 ${gender.tint} flex items-center justify-center ${gender.color} typo-title-lg`}
           >
             {gender.glyph}
           </span>

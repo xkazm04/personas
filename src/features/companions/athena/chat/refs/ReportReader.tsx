@@ -99,7 +99,7 @@ export function ReportReader({
           <ArrowLeft className="w-4 h-4" aria-hidden />
         </button>
         <div className="min-w-0 flex-1">
-          <div className="typo-label uppercase tracking-wider text-primary">{c.report_kicker}</div>
+          <div className="typo-eyebrow text-ink-3">{c.report_kicker}</div>
           {report ? (
             <h2 className="typo-heading text-foreground truncate">{report.title}</h2>
           ) : (

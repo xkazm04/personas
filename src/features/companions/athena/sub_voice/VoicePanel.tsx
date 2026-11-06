@@ -110,7 +110,7 @@ function EngineSelectorCard() {
           <label className="typo-title">
             {t.athena.voice_volume_label}
           </label>
-          <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
+          <span className="typo-code text-foreground">{Math.round(volume * 100)}%</span>
         </div>
         <Slider
           min={0}
@@ -142,14 +142,14 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
       aria-pressed={active}
       className={`text-left rounded-card border p-3 transition-colors focus-ring ${
         active
-          ? 'border-cyan-500/50 bg-cyan-500/10'
+          ? 'border-hair-2 bg-surface-2'
           : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
       }`}
     >
       <div className="flex items-center gap-2">
-        <span className={active ? 'text-cyan-300' : 'text-foreground'}>{icon}</span>
+        <span className={active ? 'text-ink-2' : 'text-foreground'}>{icon}</span>
         <span
-          className={`typo-body ${active ? 'text-cyan-200' : 'text-foreground'}`}
+          className={`typo-body ${active ? 'text-ink-2' : 'text-foreground'}`}
         >
           {label}
         </span>

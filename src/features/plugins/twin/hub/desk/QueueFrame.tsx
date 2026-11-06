@@ -18,12 +18,12 @@ export function QueueEntryHeader({ entry }: { entry: HubEntry }) {
   const meta = HUB_KIND_META[entry.kind];
   return (
     <header className="flex-shrink-0 px-4 md:px-8 pt-4 pb-3 border-b border-border flex items-center gap-2 flex-wrap">
-      <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${meta.bg} ${meta.border} ${meta.text}`}>
+      <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-interactive border ${meta.bg} ${meta.border} ${meta.text}`}>
         <meta.Icon className="w-3.5 h-3.5" />
         <span className="typo-label">{t.kinds[entry.kind]}</span>
       </span>
       {entry.channel && (
-        <span className="px-2 py-0.5 rounded-full border border-border bg-secondary/40 typo-label text-foreground">
+        <span className="px-2 py-0.5 rounded-interactive border border-border bg-secondary/40 typo-label text-foreground">
           {channelChipText(entry.channel, tRoot.twin.samples.memoryOrigin)}
         </span>
       )}

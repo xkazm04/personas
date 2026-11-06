@@ -148,7 +148,7 @@ export function TreeNode({
         )}
         <span className="truncate flex-1">{node.name || t.plugins.drive.finder.breadcrumb_root}</span>
         {dropActive && activeDragCount ? (
-          <span className="typo-caption tabular-nums px-1.5 rounded-full bg-accent/30 text-foreground">
+          <span className="typo-caption tabular-nums px-1.5 rounded-interactive bg-accent/30 text-foreground">
             {activeDragCount}
           </span>
         ) : null}

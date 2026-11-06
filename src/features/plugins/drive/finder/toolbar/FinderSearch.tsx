@@ -49,7 +49,7 @@ export function FinderSearch({ drive, inputRef }: Props) {
           aria-label={f.search_placeholder}
           spellCheck={false}
           autoComplete="off"
-          className="pl-8 pr-7 py-1 w-52 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors duration-fast [&::-webkit-search-cancel-button]:hidden"
+          className="pl-8 pr-7 py-1 w-52 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-ink-2 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors duration-fast [&::-webkit-search-cancel-button]:hidden"
           data-testid="finder-search"
         />
         {query && (

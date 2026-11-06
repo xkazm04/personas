@@ -7,7 +7,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ScoreSparkline } from '../ScoreSparkline';
-import { scoreTone, toneFill } from '../directorScore';
+import { scoreTone } from '../directorScore';
 import { attentionFlags, attentionRank, primaryFlag, FLAG_TONE, type AttentionFlag } from '../attention';
 import { rosterRowMatches, toggleFilter, type RosterFilter } from '../rosterFilter';
 import { rosterScoreDelta, rosterMomentum, MOMENTUM_TONE, type Momentum } from '../momentum';
@@ -97,7 +97,7 @@ export function PersonaCoachingTable({
           onClick={() => onFilterChange(toggleFilter(filter, { type: 'flagged' }))}
           disabled={flaggedCount === 0}
           className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill normal-case tracking-normal transition-colors disabled:opacity-40 focus-ring ${
-            onlyFlagged ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground border border-transparent hover:bg-secondary/40'
+            onlyFlagged ? 'bg-surface-2 text-ink-2 border border-hair-2' : 'text-foreground border border-transparent hover:bg-secondary/40'
           }`}
           title={t.director.only_flagged}
         >
@@ -154,8 +154,8 @@ export function PersonaCoachingTable({
               <span className="flex flex-col items-center gap-0.5">
                 {r.latestScore != null && tone ? (
                   <span
-                    className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded text-[11px] tabular-nums font-medium"
-                    style={{ color: tone.color, backgroundColor: toneFill(tone.color, 14) }}
+                    className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded typo-caption tabular-nums"
+                    style={{ color: tone.color }}
                   >
                     {r.latestScore}
                   </span>
@@ -164,8 +164,8 @@ export function PersonaCoachingTable({
                   // double-failed) — surface it explicitly, never as a bare "—".
                   <Tooltip content={t.director.roster_unscored_hint}>
                     <span
-                      className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium"
-                      style={{ color: 'var(--status-warning)', backgroundColor: toneFill('var(--status-warning)', 14) }}
+                      className="inline-flex items-center justify-center typo-eyebrow"
+                      style={{ color: 'var(--status-warning)' }}
                     >
                       {t.director.roster_unscored}
                     </span>
@@ -180,7 +180,7 @@ export function PersonaCoachingTable({
                   const Arrow = up ? TrendingUp : TrendingDown;
                   return (
                     <span
-                      className="inline-flex items-center gap-0.5 text-[10px] tabular-nums leading-none font-medium"
+                      className="inline-flex items-center gap-0.5 typo-caption tabular-nums leading-none"
                       style={{ color: up ? MOMENTUM_TONE.improving : MOMENTUM_TONE.declining }}
                     >
                       <Arrow aria-hidden className="w-2.5 h-2.5" />
@@ -212,8 +212,8 @@ export function PersonaCoachingTable({
                   flags.map((f) => (
                     <Tooltip key={f} content={FLAG_HINT[f]}>
                       <span
-                        className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium"
-                        style={{ color: FLAG_TONE[f], backgroundColor: toneFill(FLAG_TONE[f], 14) }}
+                        className="typo-eyebrow"
+                        style={{ color: FLAG_TONE[f] }}
                       >
                         {FLAG_LABEL[f]}
                       </span>

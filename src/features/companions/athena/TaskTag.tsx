@@ -51,7 +51,7 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
       {pct != null && running && (
         <div className="mt-1 h-1 rounded-full bg-foreground/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-blue-400/70 transition-[width] duration-300"
+            className="h-full rounded-full bg-status-info/20 transition-[width] duration-300"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -93,8 +93,8 @@ function statusFor(t: ReturnType<typeof useTranslation>['t'], status: string): s
 }
 
 function visualFor(status: string, failed: boolean): { Icon: typeof Hourglass; accent: string; tone: string } {
-  if (status === 'queued') return { Icon: Hourglass, accent: 'border-foreground/10 bg-secondary/40', tone: 'text-foreground/55' };
-  if (status === 'running') return { Icon: Loader2, accent: 'border-blue-500/30 bg-blue-500/[0.05]', tone: 'text-blue-300/90' };
-  if (failed) return { Icon: AlertCircle, accent: 'border-rose-500/30 bg-rose-500/[0.06]', tone: 'text-rose-300/90' };
-  return { Icon: CheckCircle2, accent: 'border-emerald-500/30 bg-emerald-500/[0.06]', tone: 'text-emerald-300/90' };
+  if (status === 'queued') return { Icon: Hourglass, accent: 'border-foreground/10 bg-secondary/40', tone: 'text-ink-2' };
+  if (status === 'running') return { Icon: Loader2, accent: 'border-status-info/30 bg-status-info/10/[0.05]', tone: 'text-status-info' };
+  if (failed) return { Icon: AlertCircle, accent: 'border-status-error/30 bg-status-error/10/[0.06]', tone: 'text-status-error' };
+  return { Icon: CheckCircle2, accent: 'border-status-success/30 bg-status-success/10/[0.06]', tone: 'text-status-success' };
 }

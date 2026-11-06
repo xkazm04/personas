@@ -15,7 +15,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
       onClick={onSelect}
       className={`w-full text-left p-3 rounded-modal border transition-colors ${
         isActive
-          ? 'border-orange-500/30 bg-orange-500/5'
+          ? 'border-status-warning/30 bg-status-warning/5'
           : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40'
       }`}
     >
@@ -23,7 +23,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
         <StatusIcon status={pipeline.status} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-body text-foreground/90">#{pipeline.id}</span>
+            <span className="typo-body text-ink-2">#{pipeline.id}</span>
             <span className={`typo-caption capitalize ${statusColor(pipeline.status)}`}>
               {pipeline.status}
             </span>

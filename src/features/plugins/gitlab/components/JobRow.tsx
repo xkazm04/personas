@@ -106,7 +106,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
         )}
         <StatusIcon status={job.status} />
         <div className="flex-1 min-w-0">
-          <span className="typo-body text-foreground/85">{job.name}</span>
+          <span className="typo-body text-ink-2">{job.name}</span>
           <span className="typo-caption text-foreground ml-2">{job.stage}</span>
         </div>
         {job.duration != null && (
@@ -118,7 +118,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
+            className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-ink-2 transition-colors"
             title={t.gitlab.open_in_gitlab}
           >
             <ExternalLink className="w-3.5 h-3.5" />

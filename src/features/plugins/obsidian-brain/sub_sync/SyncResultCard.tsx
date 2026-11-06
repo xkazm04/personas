@@ -36,13 +36,13 @@ interface CountPill {
 
 const PUSH_ACCENT = {
   border: 'border-l-violet-500',
-  icon: 'text-violet-300',
-  iconBg: 'bg-violet-500/12 border-violet-500/25',
+  icon: 'text-ink-2',
+  iconBg: 'bg-surface-2 border-hair-2',
 };
 const PULL_ACCENT = {
   border: 'border-l-emerald-500',
-  icon: 'text-emerald-300',
-  iconBg: 'bg-emerald-500/12 border-emerald-500/25',
+  icon: 'text-status-success',
+  iconBg: 'bg-status-success/12 border-status-success/25',
 };
 
 export default function SyncResultCard({ summary }: { summary: SyncResultSummary }) {
@@ -58,12 +58,12 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
   // each entry is dropped below when its count is zero so the headline only
   // ever shows what actually happened.
   const allPills: CountPill[] = [
-    { key: 'created', label: ob.result_created, count: summary.created, dotClass: 'bg-emerald-400', textClass: 'text-emerald-300' },
-    { key: 'updated', label: ob.result_updated, count: summary.updated, dotClass: 'bg-blue-400', textClass: 'text-blue-300' },
-    { key: 'skipped', label: ob.result_skipped, count: summary.skipped ?? 0, dotClass: 'bg-slate-400', textClass: 'text-foreground/80' },
-    { key: 'converged', label: ob.result_converged, count: summary.converged ?? 0, dotClass: 'bg-violet-400', textClass: 'text-violet-300' },
-    { key: 'conflicts', label: ob.result_conflicts, count: summary.conflicts ?? 0, dotClass: 'bg-amber-400', textClass: 'text-amber-300' },
-    { key: 'errors', label: ob.result_errors, count: summary.errors.length, dotClass: 'bg-red-400', textClass: 'text-red-300' },
+    { key: 'created', label: ob.result_created, count: summary.created, dotClass: 'bg-status-success/10', textClass: 'text-status-success' },
+    { key: 'updated', label: ob.result_updated, count: summary.updated, dotClass: 'bg-status-info/10', textClass: 'text-status-info' },
+    { key: 'skipped', label: ob.result_skipped, count: summary.skipped ?? 0, dotClass: 'bg-surface-2', textClass: 'text-ink-2' },
+    { key: 'converged', label: ob.result_converged, count: summary.converged ?? 0, dotClass: 'bg-surface-2', textClass: 'text-ink-2' },
+    { key: 'conflicts', label: ob.result_conflicts, count: summary.conflicts ?? 0, dotClass: 'bg-status-warning/10', textClass: 'text-status-warning' },
+    { key: 'errors', label: ob.result_errors, count: summary.errors.length, dotClass: 'bg-status-error/10', textClass: 'text-status-error' },
   ];
   const pills = allPills.filter((p) => p.count > 0);
 
@@ -131,14 +131,14 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
 
           {summary.errors.length > 0 && (
             <div className="space-y-1.5">
-              <p className="typo-caption text-red-300/80">{ob.result_error_detail}</p>
+              <p className="typo-caption text-status-error">{ob.result_error_detail}</p>
               <div className="space-y-1">
                 {summary.errors.map((err, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-card bg-red-500/5 border border-red-500/15"
+                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-card bg-status-error/5 border border-status-error/15"
                   >
-                    <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-3.5 h-3.5 text-status-error flex-shrink-0 mt-0.5" />
                     <span className="typo-caption text-foreground break-words min-w-0">{err}</span>
                   </div>
                 ))}

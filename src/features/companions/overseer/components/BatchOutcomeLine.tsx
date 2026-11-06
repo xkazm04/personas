@@ -41,7 +41,7 @@ export function BatchOutcomeLine({ outcome }: BatchOutcomeLineProps) {
       data-testid="director-batch-outcome"
     >
       <Icon
-        className={`w-3.5 h-3.5 shrink-0 ${reviewed ? 'text-violet-300' : 'text-foreground'}`}
+        className={`w-3.5 h-3.5 shrink-0 ${reviewed ? 'text-ink-2' : 'text-foreground'}`}
         aria-hidden
       />
       <span className="truncate text-foreground">

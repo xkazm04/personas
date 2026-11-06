@@ -95,7 +95,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
             setSelectedPersonaName(e.target.value);
             setConfirmRollback(null);
           }}
-          className="w-full rounded-modal border border-primary/15 bg-secondary/30 px-3 py-2 typo-body text-foreground/90 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
+          className="w-full rounded-modal border border-primary/15 bg-secondary/30 px-3 py-2 typo-body text-ink-2 focus:outline-none focus:ring-1 focus:ring-status-warning/30"
         >
           <option value="">{t.gitlab.select_persona}</option>
           {personas.map((p) => (
@@ -120,7 +120,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
               ) : (
                 <ChevronRight className="w-4 h-4 text-foreground" />
               )}
-              <GitBranch className="w-4 h-4 text-amber-400" />
+              <GitBranch className="w-4 h-4 text-status-warning" />
               {t.gitlab.environment_branches}
               <span className="ml-auto typo-caption text-foreground">
                 {tx(branches.length === 1 ? t.gitlab.branch_count_one : t.gitlab.branch_count_other, { count: branches.length })}
@@ -142,7 +142,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                       key={branch.name}
                       className="flex items-center gap-2 px-2.5 py-2 rounded-card bg-secondary/20 border border-primary/5"
                     >
-                      <GitBranch className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
+                      <GitBranch className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <span className="typo-body text-foreground">
                           {branch.environment}
@@ -153,7 +153,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                       </div>
                       {branch.isProtected && (
                         <span title={t.gitlab.protected_branch}>
-                          <Shield className="w-3.5 h-3.5 text-emerald-400/60" />
+                          <Shield className="w-3.5 h-3.5 text-status-success" />
                         </span>
                       )}
                     </div>
@@ -166,14 +166,14 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           {/* Version history header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <History className="w-4 h-4 text-amber-400" />
+              <History className="w-4 h-4 text-status-warning" />
               <h3 className="typo-body text-foreground">{t.gitlab.version_history}</h3>
             </div>
             <button
               type="button"
               onClick={loadVersions}
               disabled={loading}
-              className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-ink-2 transition-colors"
             >
               {loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3.5 h-3.5" />}
               {t.common.refresh}
@@ -239,7 +239,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
     <div
       className={`p-3 rounded-modal border transition-colors ${
         version.isCurrent
-          ? 'border-emerald-500/20 bg-emerald-500/[0.03]'
+          ? 'border-status-success/20 bg-status-success/10/[0.03]'
           : 'border-primary/10 bg-secondary/20'
       }`}
     >
@@ -248,13 +248,13 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
         <div
           className={`w-9 h-9 rounded-card flex items-center justify-center flex-shrink-0 ${
             version.isCurrent
-              ? 'bg-emerald-500/10 border border-emerald-500/20'
-              : 'bg-amber-500/10 border border-amber-500/20'
+              ? 'bg-status-success/10 border border-status-success/20'
+              : 'bg-status-warning/10 border border-status-warning/20'
           }`}
         >
           <Tag
             className={`w-4 h-4 ${
-              version.isCurrent ? 'text-emerald-400' : 'text-amber-400'
+              version.isCurrent ? 'text-status-success' : 'text-status-warning'
             }`}
           />
         </div>
@@ -262,7 +262,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
         {/* Version info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-body text-foreground/90">
+            <span className="typo-body text-ink-2">
               {version.version}
             </span>
             {version.isCurrent && (
@@ -299,7 +299,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                   type="button"
                   onClick={onRollback}
                   disabled={rollingBack}
-                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card bg-status-error/10 border border-status-error/20 text-status-error hover:bg-status-error/15 transition-colors disabled:opacity-40"
                 >
                   {rollingBack ? (
                     <LoadingSpinner size="xs" />
@@ -312,7 +312,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                   type="button"
                   onClick={onCancelRollback}
                   disabled={rollingBack}
-                  className="px-2 py-1.5 typo-caption rounded-card text-foreground hover:text-foreground/80 transition-colors"
+                  className="px-2 py-1.5 typo-caption rounded-card text-foreground hover:text-ink-2 transition-colors"
                 >
                   {t.common.cancel}
                 </button>
@@ -321,7 +321,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
               <button
                 type="button"
                 onClick={onRollback}
-                className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card hover:bg-status-warning/10 border border-transparent hover:border-status-warning/20 text-foreground hover:text-status-warning transition-colors"
                 title={tx(t.gitlab.rollback_to_version, { version: version.version })}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
