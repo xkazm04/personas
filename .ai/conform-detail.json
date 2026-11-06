@@ -44956,6 +44956,63 @@
       "evaluatedTs": "2026-11-06T22:03:24.945Z",
       "worker": "983bb22e-3e28-465b-94de-b70c21c885fd",
       "techniques": []
+    },
+    "468953eb-0204-4013-b366-9357b2161138/prompt-assembly": {
+      "context": "core",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T22:35:08.112Z",
+      "worker": "ef8e15ad-d5cc-4be5-bdf5-6734188ab52e",
+      "techniques": [
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/types.rs:436 The persisted execution snapshot has no fingerprint, version stamp, digest or size field for the prompt it fed; only booleans and counts for some layers (has_workspace_instructions, tool_roster_bytes)."
+        },
+        {
+          "technique": "context-ownership-regimes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/types.rs:352 The regime in which the CLI holds the conversation is a typed variant of its own (CLI --resume), separate from the client-side PromptHint continuation, so callers have to choose an ownership regime explicitly."
+        }
+      ]
+    },
+    "dc471d31-ae30-4ac9-b015-d51969df458d/prompt-assembly": {
+      "context": "shared-chrome",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T22:35:08.112Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "ef8e15ad-d5cc-4be5-bdf5-6734188ab52e",
+        "state": "not-applicable",
+        "at": "2026-11-06T22:36:49.327872+00:00",
+        "reason": "reviewer (sonnet): The anchor BackgroundServices.tsx:47 is an incidental line (an Athena reconciliation hook) that does not show a prompt-assembly precondition is absent, and the listed context files are only sidebar files, so the absence rests on a keyword grep alone."
+      }
+    },
+    "54236947-3775-4d0a-8e14-1a709dd4d8bc/prompt-assembly": {
+      "context": "teams-factory",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T22:35:08.112Z",
+      "worker": "ef8e15ad-d5cc-4be5-bdf5-6734188ab52e",
+      "techniques": [
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/AddKpiModal.tsx:45 Raw template-literal interpolation of user-entered data into an app-tagged prompt, with no declared variable, type or trust class."
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/useAddKpi.ts:120 The AI KPI proposal passes typed fields (name, category, direction, measureKind, ...) to the backend assembler instead of pre-rendered prompt text."
+        }
+      ]
     }
   }
 }

@@ -10797,7 +10797,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/types.rs:436 ExecutionConfig is the per-execution record \"persisted alongside results for post-mortem debugging\". It stores tool-roster bytes, whether workspace instructions were injected, and the continuation mode, but it has no digest or size of the assembled prompt. A repo-wide grep for prompt_digest, prompt_bytes and prompt_size in the Rust sources found nothing, so 'what was this run told?' cannot be answered from artifacts (the unrecorded-send failure).",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "agent-runtime-assembly",
@@ -38472,7 +38476,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/AddKpiModal.tsx:45 The operator-entered project name is spliced into a hand-written task string at the call site, and useAskAthena then tags the whole string as app-composed (source 'Add KPI'). The variable's trust class is therefore decided by the call site, not declared on the variable, which is the failure variable-interpolation names.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-harness",

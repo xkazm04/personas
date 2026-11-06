@@ -1,0 +1,109 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ef8e15ad-d5cc-4be5-bdf5-6734188ab52e",
+  "subject": "prompt-assembly",
+  "evaluatedAt": "2026-11-06T22:35:08.112990+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "core",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/types.rs:436 ExecutionConfig is the per-execution record \"persisted alongside results for post-mortem debugging\". It stores tool-roster bytes, whether workspace instructions were injected, and the continuation mode, but it has no digest or size of the assembled prompt. A repo-wide grep for prompt_digest, prompt_bytes and prompt_size in the Rust sources found nothing, so 'what was this run told?' cannot be answered from artifacts (the unrecorded-send failure).",
+      "techniques": [
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/types.rs:436 The persisted execution snapshot has no fingerprint, version stamp, digest or size field for the prompt it fed; only booleans and counts for some layers (has_workspace_instructions, tool_roster_bytes)."
+        },
+        {
+          "technique": "context-ownership-regimes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/types.rs:352 The regime in which the CLI holds the conversation is a typed variant of its own (CLI --resume), separate from the client-side PromptHint continuation, so callers have to choose an ownership regime explicitly."
+        }
+      ]
+    },
+    {
+      "context": "teams-factory",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_factory/AddKpiModal.tsx:45 The operator-entered project name is spliced into a hand-written task string at the call site, and useAskAthena then tags the whole string as app-composed (source 'Add KPI'). The variable's trust class is therefore decided by the call site, not declared on the variable, which is the failure variable-interpolation names.",
+      "techniques": [
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/AddKpiModal.tsx:45 Raw template-literal interpolation of user-entered data into an app-tagged prompt, with no declared variable, type or trust class."
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/useAddKpi.ts:120 The AI KPI proposal passes typed fields (name, category, direction, measureKind, ...) to the backend assembler instead of pre-rendered prompt text."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "prompt-assembly",
+      "context": "settings-network",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "stores-slices-agents",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "shared-chrome",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor BackgroundServices.tsx:47 is an incidental line (an Athena reconciliation hook) that does not show a prompt-assembly precondition is absent, and the listed context files are only sidebar files, so the absence rests on a keyword grep alone."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T22:35:08.112990+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [
+        "context-ownership-regimes",
+        "fingerprinting-and-cache-keys"
+      ],
+      "deviations": 1,
+      "context": "core",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T22:35:08.112990+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "shared-chrome",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T22:35:08.112990+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [
+        "layered-composition",
+        "variable-interpolation"
+      ],
+      "deviations": 1,
+      "context": "teams-factory",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
