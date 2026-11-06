@@ -22897,13 +22897,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/features/notepad/__tests__/notepadCapParity.test.ts:22 parses the Rust ACTIVE_STATUSES const at run time instead of copying it, fails loudly on a missing needle (:23) and records its negative controls (:15); store tests reset per test (src/features/notepad/__tests__/notepadStore.test.ts:105) - every technique applicable to a unit-lane test context is realized; lane-level techniques are not properties of this context.",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/notepad/__tests__/noteSuggestions.test.ts:21 The note_suggestions wire is hand-built JSON on both sides: Rust json! in note_suggestions.rs:86-100 is pinned only by its own literal test (note_suggestions.rs:671), and this suite parses a TS-authored copy of the keys. Rename body_md or row_id in Rust config(), updating the Rust test too, and parseNoteSuggestionRows drops every row (that is what it is designed to do) while this suite stays green. Each side pins its own copy, and the header (:14-16) calls this parse the type check.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "markdown-vault",
@@ -35917,12 +35916,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/browser/__tests__/pendingApproval.test.ts:5 claims the exact shape useDecisionQueue builds but holds a hand copy, while the real producer is src/features/companions/athena/decision/rosterDecisions.ts:111; emitting params as an object there makes every browser approval bar vanish (src/features/browser/webview/PendingApprovalBar.tsx:42) with the suite green",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/browser/__tests__/pendingApproval.test.ts:5 The suite's payload is a hand copy that names the wrong producer: useDecisionQueue.ts no longer builds approval payloads (its created_at sites build message_attention payloads), and the real producer is rosterDecisions.ts:111-115, which no test reaches. So if rosterDecisions stops emitting `params` as a JSON string, pendingBrowserTabId returns null for every browser approval and the suite stays green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
