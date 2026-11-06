@@ -26,24 +26,24 @@ export function IdleSuggestions({
   const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
 
   return (
-    <div className="p-3 rounded-modal border border-primary/15 bg-secondary/20 space-y-2">
+    <div className="p-3 rounded-modal border border-hair bg-surface-1 space-y-2">
       <p className="typo-body text-foreground">{dp.saved_catalog}</p>
       <input
         type="text"
         value={templateSearch}
         onChange={(e) => onTemplateSearchChange(e.target.value)}
         placeholder={dp.search_catalog}
-        className="w-full px-3 py-1.5 rounded-modal border border-primary/15 bg-background/40 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
+        className="w-full px-3 py-1.5 rounded-modal border border-hair bg-background/40 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
       />
       {templateConnectors.length === 0 ? (
         <p className="typo-body text-foreground">{dp.no_catalog}</p>
       ) : (
         <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
           {templateConnectors.map((conn) => (
-            <div key={conn.id} className="rounded-card border border-primary/10 bg-background/30 overflow-hidden">
+            <div key={conn.id} className="rounded-card border border-hair bg-background/30 overflow-hidden">
               <div
                 onClick={() => onExpandTemplate(expandedTemplateId === conn.id ? null : conn.id)}
-                className="w-full px-2.5 py-2 flex items-center justify-between gap-2 hover:bg-secondary/40 transition-colors text-left cursor-pointer"
+                className="w-full px-2.5 py-2 flex items-center justify-between gap-2 hover:bg-surface-2 transition-colors text-left cursor-pointer"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <div
@@ -72,7 +72,7 @@ export function IdleSuggestions({
                     }
                   }}
                   disabled={applyingTemplateId === conn.id}
-                  className="px-2 py-1 typo-body rounded-card border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                  className="px-2 py-1 typo-body rounded-card border border-hair bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                 >
                   {applyingTemplateId === conn.id ? (
                     <span className="inline-flex items-center gap-1">
@@ -86,7 +86,7 @@ export function IdleSuggestions({
               </div>
               {expandedTemplateId === conn.id && (
                 <div
-                  className="animate-fade-slide-in overflow-hidden border-t border-primary/10"
+                  className="animate-fade-slide-in overflow-hidden border-t border-hair"
                 >
                   <div className="px-2.5 py-2 typo-body text-foreground">
                     {(() => {

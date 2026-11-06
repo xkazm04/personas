@@ -33,10 +33,10 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
   if (compact) {
     return (
       <span
-        className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded-full border ${
+        className={`inline-flex items-center gap-1 typo-caption font-mono px-1.5 py-0.5 rounded-full border ${
           capable
-            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-            : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+            ? 'bg-status-success/10 text-status-success border-status-success/20'
+            : 'bg-status-warning/10 text-status-warning border-status-warning/20'
         }`}
         title={tx(capable ? s.engine_verified_title : s.engine_unparseable_title, { provider: providerLabel })}
       >
@@ -53,7 +53,7 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
   if (capable) return null; // Only show warning when engine is not capable
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-[11px] text-amber-400">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-status-warning/10 border-b border-status-warning/20 typo-caption text-status-warning">
       <AlertTriangle className="w-3 h-3 flex-shrink-0" />
       <span>
         {tx(s.engine_not_capable, { provider: providerLabel })}

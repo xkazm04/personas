@@ -98,7 +98,7 @@ export function ConnectorsSection({
   return (
     <div id={anchorId} className="space-y-3">
       <div className={SECTION_LABEL}>
-        <Plug className="w-4 h-4 text-emerald-400" />
+        <Plug className="w-4 h-4 text-status-success" />
         {t.templates.design.connectors_and_tools}
       </div>
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
@@ -139,17 +139,17 @@ export function ConnectorsSection({
             (item.connDef?.fields?.length ?? 0) > 0;
 
           return (
-            <div key={idx} className="bg-secondary/30 border border-primary/10 rounded-modal p-3.5 space-y-3">
+            <div key={idx} className="bg-surface-1 border border-hair rounded-modal p-3.5 space-y-3">
               {/* Connector header */}
               <div className="flex items-center gap-2.5">
                 {item.connDef?.icon_url ? (
-                  <ThemedConnectorIcon url={item.connDef.icon_url} label={item.connDef.label} color={item.connDef.color} size="w-6 h-6 flex-shrink-0 rounded" />
+                  <ThemedConnectorIcon url={item.connDef.icon_url} label={item.connDef.label} color={item.connDef.color} size="w-6 h-6 flex-shrink-0 rounded-interactive" />
                 ) : isGeneral ? (
-                  <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-interactive bg-primary/10 flex items-center justify-center">
                     <Wrench className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 ) : (
-                  <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-interactive bg-primary/10 flex items-center justify-center">
                     <Plug className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 )}
@@ -158,13 +158,13 @@ export function ConnectorsSection({
                 </span>
                 {!isGeneral && (
                   isNativeCap ? (
-                    <Sparkles className="w-4 h-4 text-violet-400/80 flex-shrink-0" />
+                    <Sparkles className="w-4 h-4 text-role-agent/80 flex-shrink-0" />
                   ) : hasCredential && isHealthy ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400/80 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-status-success/80 flex-shrink-0" />
                   ) : needsSetup ? (
-                    <AlertCircle className="w-4 h-4 text-amber-400/80 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 text-status-warning/80 flex-shrink-0" />
                   ) : (
-                    <AlertCircle className={`w-4 h-4 flex-shrink-0 ${isUnhealthy ? 'text-red-400/80' : 'text-amber-400/80'}`} />
+                    <AlertCircle className={`w-4 h-4 flex-shrink-0 ${isUnhealthy ? 'text-status-error/80' : 'text-status-warning/80'}`} />
                   )
                 )}
               </div>
@@ -173,7 +173,7 @@ export function ConnectorsSection({
               {!isGeneral && (
                 isNativeCap ? (
                   <Tooltip content={runnability.reason}>
-                  <div className="flex items-center gap-1.5 typo-body text-violet-400/80">
+                  <div className="flex items-center gap-1.5 typo-body text-role-agent/80">
                     <Sparkles className="w-3 h-3" />
                     <span><DebtText k="auto_native_capability_no_credential_needed_0491f8a9" /></span>
                   </div>
@@ -186,13 +186,13 @@ export function ConnectorsSection({
                     className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors"
                   >
                     {hasCredential && isHealthy ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      <CheckCircle2 className="w-3 h-3 text-status-success" />
                     ) : hasCredential && isUnhealthy ? (
-                      <AlertCircle className="w-3 h-3 text-red-400" />
+                      <AlertCircle className="w-3 h-3 text-status-error" />
                     ) : hasCredential ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      <CheckCircle2 className="w-3 h-3 text-status-success" />
                     ) : (
-                      <AlertCircle className="w-3 h-3 text-amber-400" />
+                      <AlertCircle className="w-3 h-3 text-status-warning" />
                     )}
                     <span>
                       {hasCredential && isHealthy
@@ -245,7 +245,7 @@ export function ConnectorsSection({
                           />
                         )}
                         <Wrench className="w-3 h-3 text-primary/40 flex-shrink-0" />
-                        <span className="typo-body text-foreground/90 truncate">
+                        <span className="typo-body text-ink-1 truncate">
                           {toolDef?.name || toolName}
                         </span>
                       </div>

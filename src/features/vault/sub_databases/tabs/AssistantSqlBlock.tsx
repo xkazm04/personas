@@ -35,8 +35,8 @@ export function AssistantSqlBlock({
         <p className="typo-body text-foreground">{msg.explanation}</p>
       )}
 
-      <div className="rounded-modal border border-primary/10 overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/40 border-b border-primary/10">
+      <div className="rounded-modal border border-hair overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-1.5 bg-surface-2 border-b border-hair">
           <span className="typo-label text-foreground">
             {tx(db.generated_label, { language: language === 'sql' ? 'SQL' : language })}
           </span>
@@ -45,11 +45,11 @@ export function AssistantSqlBlock({
               <button
                 type="button"
                 onClick={() => onCopySql(msg.sql!, msg.id)}
-                className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70 transition-colors"
+                className="p-1 rounded-interactive hover:bg-surface-2 text-foreground hover:text-ink-2 transition-colors"
                 aria-label={db.copy_sql}
               >
                 {copiedSql === msg.id ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-status-success" />
                 ) : (
                   <Copy className="w-3 h-3" />
                 )}
@@ -72,7 +72,7 @@ export function AssistantSqlBlock({
           type="button"
           data-testid="chat-run-sql"
           onClick={() => onExecuteSql(msg.id, msg.sql!)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20 transition-colors"
         >
           <Play className="w-3 h-3" />
           {msg.result ? db.rerun_query : db.run_query}
@@ -94,7 +94,7 @@ export function AssistantSqlBlock({
               data-testid="chat-cancel-sql"
               onClick={() => onCancelExecution(msg.id)}
               aria-label={t.common.cancel}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-modal typo-caption bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors focus-ring"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-modal typo-caption text-status-error hover:bg-status-error/20 transition-colors focus-ring"
             >
               <X className="w-3 h-3" aria-hidden="true" />
               {t.common.cancel}

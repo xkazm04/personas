@@ -25,22 +25,22 @@ interface ForagingResultCardProps {
 }
 
 const SOURCE_META: Record<ForageSource, { icon: typeof Cloud; labelKey: ForagingLabelKey; color: string }> = {
-  aws_credentials: { icon: Cloud, labelKey: "source_aws_credentials", color: "text-amber-400" },
-  aws_config: { icon: Cloud, labelKey: "source_aws_config", color: "text-amber-400" },
-  kube_config: { icon: Server, labelKey: "source_kube_config", color: "text-blue-400" },
-  env_var: { icon: Terminal, labelKey: "source_env_var", color: "text-emerald-400" },
-  dot_env: { icon: FileKey, labelKey: "source_dot_env", color: "text-violet-400" },
-  npmrc: { icon: HardDrive, labelKey: "source_npmrc", color: "text-red-400" },
-  docker_config: { icon: Server, labelKey: "source_docker_config", color: "text-cyan-400" },
-  git_hub_cli: { icon: Globe, labelKey: "source_git_hub_cli", color: "text-purple-400" },
-  ssh_key: { icon: Shield, labelKey: "source_ssh_key", color: "text-orange-400" },
-  git_config: { icon: Globe, labelKey: "source_git_config", color: "text-pink-400" },
+  aws_credentials: { icon: Cloud, labelKey: "source_aws_credentials", color: "text-status-warning" },
+  aws_config: { icon: Cloud, labelKey: "source_aws_config", color: "text-status-warning" },
+  kube_config: { icon: Server, labelKey: "source_kube_config", color: "text-status-info" },
+  env_var: { icon: Terminal, labelKey: "source_env_var", color: "text-status-success" },
+  dot_env: { icon: FileKey, labelKey: "source_dot_env", color: "text-role-agent" },
+  npmrc: { icon: HardDrive, labelKey: "source_npmrc", color: "text-status-error" },
+  docker_config: { icon: Server, labelKey: "source_docker_config", color: "text-role-highlight" },
+  git_hub_cli: { icon: Globe, labelKey: "source_git_hub_cli", color: "text-role-agent" },
+  ssh_key: { icon: Shield, labelKey: "source_ssh_key", color: "text-status-warning" },
+  git_config: { icon: Globe, labelKey: "source_git_config", color: "text-role-human" },
 };
 
 const CONFIDENCE_STYLES: Record<string, string> = {
-  high: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-  medium: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  low: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
+  high: "bg-status-success/15 text-status-success border-status-success/20",
+  medium: "bg-status-warning/15 text-status-warning border-status-warning/20",
+  low: "bg-zinc-500/15 text-ink-2 border-zinc-500/20",
 };
 
 const FALLBACK_SOURCE_META: { icon: typeof Cloud; labelKey: ForagingLabelKey; color: string } = {
@@ -49,7 +49,7 @@ const FALLBACK_SOURCE_META: { icon: typeof Cloud; labelKey: ForagingLabelKey; co
   color: "text-foreground",
 };
 
-const FALLBACK_CONFIDENCE_STYLE = "bg-zinc-500/15 text-zinc-400 border-zinc-500/20";
+const FALLBACK_CONFIDENCE_STYLE = "bg-zinc-500/15 text-ink-2 border-zinc-500/20";
 
 export function ForagingResultCard({
   credential,
@@ -73,33 +73,33 @@ export function ForagingResultCard({
       aria-pressed={isSelected}
       className={`animate-fade-slide-in w-full text-left rounded-modal border p-3 transition-all ${
         isImported
-          ? "border-emerald-500/30 bg-emerald-500/5 opacity-70"
+          ? "border-status-success/30 bg-status-success/5 opacity-70"
           : credential.already_imported
-            ? "border-primary/10 bg-secondary/20 opacity-50 cursor-default"
+            ? "border-hair bg-surface-1 opacity-50 cursor-default"
             : isSelected
-              ? "border-violet-500/40 bg-violet-500/8 ring-1 ring-violet-500/20"
-              : "border-primary/15 bg-secondary/25 hover:bg-secondary/40 hover:border-primary/25"
+              ? "border-role-agent/40 bg-role-agent/8 ring-1 ring-role-agent/20"
+              : "border-hair bg-surface-1 hover:bg-surface-2 hover:border-primary/25"
       }`}
     >
       <div className="flex items-start gap-3">
         {/* Checkbox area */}
         <div className="mt-0.5 flex-shrink-0">
           {isImporting ? (
-            <LoadingSpinner className="text-violet-400" />
+            <LoadingSpinner className="text-role-agent" />
           ) : isImported ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-status-success" />
           ) : credential.already_imported ? (
             <CheckCircle2 className="w-4 h-4 text-foreground" />
           ) : (
             <div
-              className={`w-4 h-4 rounded border-2 transition-colors ${
+              className={`w-4 h-4 rounded-interactive border-2 transition-colors ${
                 isSelected
-                  ? "border-violet-400 bg-violet-500/30"
-                  : "border-primary/20 bg-transparent"
+                  ? "border-role-agent bg-role-agent/30"
+                  : "border-hair bg-transparent"
               }`}
             >
               {isSelected && (
-                <svg viewBox="0 0 16 16" className="w-full h-full text-violet-300">
+                <svg viewBox="0 0 16 16" className="w-full h-full text-role-agent">
                   <path d="M4 8l3 3 5-5" fill="none" stroke="currentColor" strokeWidth="2" />
                 </svg>
               )}
@@ -111,16 +111,16 @@ export function ForagingResultCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <Icon className={`w-3.5 h-3.5 ${meta.color} flex-shrink-0`} />
-            <span className="typo-body text-foreground/90 truncate">
+            <span className="typo-body text-ink-1 truncate">
               {credential.label}
             </span>
             {credential.already_imported && (
-              <span className="typo-body px-1.5 py-0.5 rounded bg-muted-foreground/10 text-foreground">
+              <span className="typo-body px-1.5 py-0.5 rounded-interactive bg-muted-foreground/10 text-foreground">
                 {fg.already_in_vault}
               </span>
             )}
             {isImported && (
-              <span className="typo-body px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400">
+              <span className="typo-body px-1.5 py-0.5 rounded-interactive bg-status-success/15 text-status-success">
                 {fg.imported}
               </span>
             )}
@@ -131,7 +131,7 @@ export function ForagingResultCard({
             {Object.entries(credential.fields).map(([key, val]) => (
               <span
                 key={key}
-                className="inline-flex items-center gap-1 typo-code px-1.5 py-0.5 rounded bg-secondary/50 text-foreground"
+                className="inline-flex items-center gap-1 typo-code px-1.5 py-0.5 rounded-interactive bg-surface-2 text-foreground"
               >
                 <span className="text-foreground">{key}:</span>
                 <span className="truncate max-w-[120px]">{val}</span>
@@ -143,7 +143,7 @@ export function ForagingResultCard({
           <div className="mt-1.5 flex items-center gap-2">
             <span className="typo-body text-foreground">{sourceLabel}</span>
             <span
-              className={`typo-body px-1.5 py-0.5 rounded border ${CONFIDENCE_STYLES[credential.confidence] ?? FALLBACK_CONFIDENCE_STYLE}`}
+              className={`typo-body px-1.5 py-0.5 rounded-interactive border ${CONFIDENCE_STYLES[credential.confidence] ?? FALLBACK_CONFIDENCE_STYLE}`}
             >
               {tokenLabel(t, 'forage_confidence', credential.confidence)}
             </span>

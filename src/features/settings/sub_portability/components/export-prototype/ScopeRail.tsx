@@ -7,12 +7,12 @@ import { ENCRYPTED_SCOPES } from './types';
  *  `ExportKind` without an entry here fails typecheck instead of rendering
  *  an undefined icon. */
 export const SCOPE_META: Record<ExportKind, { icon: LucideIcon; accent: string }> = {
-  personas: { icon: Bot, accent: 'bg-violet-500/10 text-violet-300' },
-  teams: { icon: Users, accent: 'bg-sky-500/10 text-sky-300' },
-  credentials: { icon: KeyRound, accent: 'bg-amber-500/10 text-amber-300' },
-  projects: { icon: FolderGit2, accent: 'bg-emerald-500/10 text-emerald-300' },
+  personas: { icon: Bot, accent: 'bg-role-agent/10 text-role-agent' },
+  teams: { icon: Users, accent: 'bg-status-info/10 text-status-info' },
+  credentials: { icon: KeyRound, accent: 'bg-status-warning/10 text-status-warning' },
+  projects: { icon: FolderGit2, accent: 'bg-status-success/10 text-status-success' },
   knowledge: { icon: BookOpen, accent: 'bg-indigo-500/10 text-indigo-300' },
-  twins: { icon: Fingerprint, accent: 'bg-rose-500/10 text-rose-300' },
+  twins: { icon: Fingerprint, accent: 'bg-status-error/10 text-status-error' },
   athena: { icon: Sparkles, accent: 'bg-fuchsia-500/10 text-fuchsia-300' },
 };
 
@@ -64,7 +64,7 @@ export function ScopeRail({
   };
 
   return (
-    <nav className="w-56 flex-shrink-0 border-r border-primary/10 bg-secondary/5 p-3 flex flex-col gap-1 overflow-y-auto">
+    <nav className="w-56 flex-shrink-0 border-r border-hair bg-secondary/5 p-3 flex flex-col gap-1 overflow-y-auto">
       {SCOPES.map((key) => {
         const { icon: Icon, accent } = SCOPE_META[key];
         const c = picker.counts[key];
@@ -77,7 +77,7 @@ export function ScopeRail({
             aria-current={active}
             data-testid={`portability-scope-${key}`}
             className={`relative flex items-center gap-2.5 pl-3 pr-2.5 py-2.5 rounded-card text-left transition-colors ${
-              active ? 'bg-primary/10 border border-primary/20' : 'border border-transparent hover:bg-secondary/20'
+              active ? 'bg-primary/10 border border-hair' : 'border border-transparent hover:bg-surface-1'
             }`}
           >
             {active && <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-primary" />}
@@ -91,7 +91,7 @@ export function ScopeRail({
               </span>
             </span>
             {ENCRYPTED.has(key) && (
-              <Lock className="w-3 h-3 text-amber-300 flex-shrink-0" aria-label={p.encrypted_scope} />
+              <Lock className="w-3 h-3 text-status-warning flex-shrink-0" aria-label={p.encrypted_scope} />
             )}
           </button>
         );
@@ -102,7 +102,7 @@ export function ScopeRail({
           type="button"
           onClick={() => setAll(true)}
           data-testid="portability-select-everything"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-secondary/25 transition-colors"
+          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-surface-1 transition-colors"
         >
           <Boxes className="w-3.5 h-3.5" /> {p.select_everything}
         </button>
@@ -110,7 +110,7 @@ export function ScopeRail({
           type="button"
           onClick={() => setAll(false)}
           data-testid="portability-clear-all"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-secondary/25 transition-colors"
+          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-surface-1 transition-colors"
         >
           <Eraser className="w-3.5 h-3.5" /> {p.clear_all}
         </button>

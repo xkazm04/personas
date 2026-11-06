@@ -50,7 +50,7 @@ export function CompositionXray({ designResult }: CompositionXrayProps) {
 
   return (
     <div
-      className="flex items-center gap-2 flex-wrap px-4 py-2 border-b border-card-border/50 bg-secondary/20 shrink-0"
+      className="flex items-center gap-2 flex-wrap px-4 py-2 border-b border-card-border/50 bg-surface-1 shrink-0"
       data-testid="composition-xray"
     >
       <Tooltip content={t.foundry.xray_tooltip}>
@@ -62,7 +62,7 @@ export function CompositionXray({ designResult }: CompositionXrayProps) {
       {chips.map((name, i) => (
         <span
           key={`${name}-${i}`}
-          className="px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 typo-caption text-foreground/90"
+          className="px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-2 typo-caption text-ink-1"
         >
           {name}
         </span>

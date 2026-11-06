@@ -197,7 +197,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t.recipes_catalog.search_placeholder}
-            className="pl-8 pr-3 py-1.5 rounded-input border border-card-border bg-secondary/40 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/45 transition-colors min-w-[220px]"
+            className="pl-8 pr-3 py-1.5 rounded-input border border-card-border bg-surface-2 typo-caption text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/45 transition-colors min-w-[220px]"
           />
         </div>
 
@@ -303,7 +303,7 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
             aria-label={t.recipes_catalog.category_filter_aria}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-input border typo-caption transition-colors cursor-pointer ${
               isAll
-                ? 'border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/30'
+                ? 'border-card-border bg-surface-2 text-ink-1 hover:border-foreground/30'
                 : 'border-primary/35 bg-primary/12 text-primary hover:bg-primary/22'
             }`}
           >
@@ -329,7 +329,7 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
                 aria-selected={isActive}
                 onClick={() => { onChange(opt.value); close(); }}
                 className={`flex items-center gap-2 w-full px-3 py-2 typo-caption transition-colors cursor-pointer text-left ${
-                  isFocused ? 'bg-secondary/60' : 'hover:bg-secondary/40'
+                  isFocused ? 'bg-surface-2' : 'hover:bg-surface-2'
                 } ${isActive ? 'text-primary' : 'text-foreground'}`}
               >
                 <span className="flex-1">{opt.label}</span>
@@ -362,14 +362,14 @@ function EligibilityFilterChip({ active, onClick, label, count, icon, tone }: El
     : tone === 'warning'
       ? 'bg-status-warning/12 border-status-warning/35 text-status-warning/95'
       : tone === 'muted'
-        ? 'bg-secondary/60 border-card-border text-foreground'
+        ? 'bg-surface-2 border-card-border text-foreground'
         : 'bg-primary/12 border-primary/35 text-primary';
   return (
     <button
       type="button"
       onClick={onClick}
       className={`inline-flex items-center gap-1 px-2 py-1 rounded-full typo-caption transition-colors cursor-pointer border ${
-        active ? toneCls : 'bg-secondary/40 border-card-border/60 text-foreground hover:text-foreground hover:border-foreground/30'
+        active ? toneCls : 'bg-surface-2 border-card-border/60 text-foreground hover:text-foreground hover:border-foreground/30'
       }`}
     >
       {icon}

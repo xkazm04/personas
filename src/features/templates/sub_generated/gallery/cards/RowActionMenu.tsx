@@ -29,7 +29,7 @@ export function RowActionMenu({
           e.stopPropagation();
           setOpen(true);
         }}
-        className="p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all"
+        className="p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-surface-2 transition-all"
         aria-label={t.templates.row_actions.row_actions_label}
       >
         <MoreVertical className="w-4.5 h-4.5 text-foreground" />
@@ -39,21 +39,21 @@ export function RowActionMenu({
         onClose={close}
         titleId="row-actions-title"
         size="sm"
-        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+        panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
         portal
       >
         <div
           onClick={(e) => e.stopPropagation()}
           className="flex flex-col"
         >
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
-            <h2 id="row-actions-title" className="typo-heading text-foreground/90">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-hair">
+            <h2 id="row-actions-title" className="typo-heading text-ink-1">
               {t.templates.row_actions.row_actions_label}
             </h2>
             <button
               type="button"
               onClick={close}
-              className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
+              className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-1"
               aria-label={t.common.close}
             >
               <X className="w-4 h-4" />
@@ -82,7 +82,7 @@ export function RowActionMenu({
                     close();
                     onRebuild();
                   }}
-                  className="w-full flex items-center gap-3 px-5 py-3 typo-body text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-5 py-3 typo-body text-status-info hover:bg-status-info/10 transition-colors text-left"
                 >
                   <RefreshCw className="w-4 h-4" />
                   {t.templates.row_actions.rebuild}

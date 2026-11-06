@@ -42,7 +42,7 @@ export function ToolDetail({
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="text-foreground hover:text-muted-foreground/60"
+          className="text-foreground hover:text-ink-3"
         >
           {t.common.close}
         </Button>

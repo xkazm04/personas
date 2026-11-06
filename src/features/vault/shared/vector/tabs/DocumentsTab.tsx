@@ -120,7 +120,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       />
 
       {activeJobId && (
-        <div className="px-6 py-2 border-b border-primary/10">
+        <div className="px-6 py-2 border-b border-hair">
           <IngestProgressBar kbId={kb.id} jobId={activeJobId} onComplete={handleIngestComplete} />
         </div>
       )}
@@ -152,13 +152,13 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-modal hover:bg-secondary/30 transition-colors group"
+                  className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-modal hover:bg-surface-1 transition-colors group"
                 >
-                  <div className="w-8 h-8 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
-                    <FileText className="w-4 h-4 text-violet-400/70" />
+                  <div className="w-8 h-8 rounded-card bg-role-agent/10 border border-role-agent/15 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 text-role-agent/70" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="typo-body text-foreground/90 truncate">{doc.title}</p>
+                    <p className="typo-body text-ink-1 truncate">{doc.title}</p>
                     <p className="typo-caption text-foreground mt-0.5">
                       {doc.sourceType}
                       {doc.sourcePath && <span className="ml-1.5">-- {truncatePath(doc.sourcePath)}</span>}
@@ -171,7 +171,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                   </div>
                   {doc.emptyPages > 0 && (
                     <Tooltip content={t.vault.shared.scanned_pages_tooltip}>
-                      <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card border bg-amber-500/10 text-amber-400/80 border-amber-500/15 shrink-0">
+                      <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 text-status-warning/80 shrink-0">
                         <ScanLine className="w-3 h-3" aria-hidden />
                         {t.vault.shared.scanned_pages_warning.replace('{count}', String(doc.emptyPages))}
                       </span>
@@ -182,7 +182,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                     type="button"
                     onClick={() => void handleDelete(doc.id)}
                     disabled={deletingId === doc.id}
-                    className="p-1.5 rounded-card text-red-400/0 group-hover:text-red-400/60 hover:!text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
+                    className="p-1.5 rounded-card text-status-error/0 group-hover:text-status-error/60 hover:!text-status-error hover:bg-status-error/10 transition-all disabled:opacity-50"
                     title={t.vault.shared.delete_document}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

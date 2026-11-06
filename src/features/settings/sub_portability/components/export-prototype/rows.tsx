@@ -15,8 +15,8 @@ const ROW_BASE =
   'group flex items-center gap-3 px-3 py-2.5 rounded-card cursor-pointer transition-colors border';
 const rowTone = (selected: boolean) =>
   selected
-    ? 'border-emerald-500/40'
-    : 'border-transparent hover:bg-secondary/20';
+    ? 'border-status-success/40'
+    : 'border-transparent hover:bg-surface-1';
 
 // ---------------------------------------------------------------------------
 // Persona pick row
@@ -49,7 +49,7 @@ export function PersonaPickRow({
         color={persona.color}
         display="pop"
         frameSize="sm"
-        frameClass="border border-primary/15"
+        frameClass="border border-hair"
         frameStyle={{ backgroundColor: `${persona.color ?? 'var(--primary)'}15` }}
       />
       <div className="min-w-0 flex-1">
@@ -148,7 +148,7 @@ export function CredentialRow({
   return (
     <label className={`${ROW_BASE} ${rowTone(selected)}`}>
       <SelectBox state={selected} onChange={onToggle} ariaLabel={credential.name} />
-      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-amber-500/10 text-amber-300 flex-shrink-0">
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-status-warning/10 text-status-warning flex-shrink-0">
         <KeyRound className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
@@ -188,7 +188,7 @@ export function ProjectPickRow({
   return (
     <label className={`${ROW_BASE} ${rowTone(selected)}`}>
       <SelectBox state={selected} onChange={onToggle} ariaLabel={project.name} />
-      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-emerald-500/10 text-emerald-300 flex-shrink-0">
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-status-success/10 text-status-success flex-shrink-0">
         <FolderGit2 className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
@@ -259,7 +259,7 @@ export function TwinPickRow({
   return (
     <label className={`${ROW_BASE} ${rowTone(selected)}`} data-testid={`portability-twin-row-${twin.id}`}>
       <SelectBox state={selected} onChange={onToggle} ariaLabel={twin.name} />
-      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-rose-500/10 text-rose-300 flex-shrink-0">
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-status-error/10 text-status-error flex-shrink-0">
         <Fingerprint className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">

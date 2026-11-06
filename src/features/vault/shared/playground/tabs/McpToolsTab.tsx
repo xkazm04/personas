@@ -88,7 +88,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
 
   return (
     <div className="flex flex-col h-full" data-testid="mcp-tools-tab">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-hair shrink-0">
         <span
           className="typo-body text-foreground"
           data-testid="mcp-tools-count"

@@ -29,9 +29,9 @@ const ACCESS_ICONS = {
 } as const;
 
 const ACCESS_COLORS = {
-  read: 'text-blue-400 bg-blue-500/10',
-  execute: 'text-amber-400 bg-amber-500/10',
-  fork: 'text-emerald-400 bg-emerald-500/10',
+  read: 'text-status-info bg-status-info/10',
+  execute: 'text-status-warning bg-status-warning/10',
+  fork: 'text-status-success bg-status-success/10',
 } as const;
 
 const RESOURCE_TYPES = ['persona', 'template', 'execution_result', 'knowledge', 'connector'] as const;
@@ -52,31 +52,31 @@ function ResourceExposureCard({
   const parsedTags: string[] = useMemo(() => parseJsonOrDefault(resource.tags, []), [resource.tags]);
 
   return (
-    <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
+    <div className="rounded-modal border border-border bg-surface-1 p-3 flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground truncate">
             {resource.display_name || resource.resource_id}
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-foreground">
+          <span className="typo-caption px-1.5 py-0.5 rounded-full bg-surface-2 text-foreground">
             {resource.resource_type}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-1 ${colorClass}`}>
+          <span className={`typo-caption px-1.5 py-0.5 rounded-full flex items-center gap-1 ${colorClass}`}>
             <AccessIcon className="w-3 h-3" />
             {resource.access_level}
           </span>
           <span
             data-testid="exposure-auth-state"
             className={`typo-caption px-1.5 py-0.5 rounded-full ${
-              resource.requires_auth ? 'text-status-success bg-secondary/40' : 'text-status-warning bg-secondary/40'
+              resource.requires_auth ? 'text-status-success bg-surface-2' : 'text-status-warning bg-surface-2'
             }`}
           >
             {resource.requires_auth ? t.sharing.exposure_auth_required : t.sharing.exposure_open_lan}
           </span>
           {parsedFields.length > 0 && (
-            <span className="text-[10px] text-foreground">
+            <span className="typo-caption text-foreground">
               {tx(parsedFields.length === 1 ? t.sharing.fields_exposed_count_one : t.sharing.fields_exposed_count_other, { count: parsedFields.length })}
             </span>
           )}
@@ -84,7 +84,7 @@ function ResourceExposureCard({
         {parsedTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
             {parsedTags.map((tag) => (
-              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/70">
+              <span key={tag} className="typo-caption px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/70">
                 {tag}
               </span>
             ))}
@@ -100,7 +100,7 @@ function ResourceExposureCard({
             type="button"
             onClick={requestConfirm}
             title={t.sharing.remove_exposure}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-error transition-colors flex-shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -145,7 +145,7 @@ function AddExposureForm({
   };
 
   return (
-    <div className="rounded-modal border border-border bg-secondary/20 p-4 space-y-3">
+    <div className="rounded-modal border border-border bg-surface-1 p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="typo-caption text-foreground mb-1 block">{st.resource_type_label}</label>
@@ -233,7 +233,7 @@ function AddExposureForm({
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
+          className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2"
         >
           {st.cancel}
         </button>
@@ -265,7 +265,7 @@ export default function ExposureManager() {
     return (
       <ContentBox>
         <ContentHeader
-          icon={<Share2 className="w-5 h-5 text-cyan-400" />}
+          icon={<Share2 className="w-5 h-5 text-ink-2" />}
           iconColor="cyan"
           title={st.network_sharing_title}
           subtitle={st.network_sharing_subtitle}
@@ -312,7 +312,7 @@ export default function ExposureManager() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Share2 className="w-5 h-5 text-cyan-400" />}
+        icon={<Share2 className="w-5 h-5 text-ink-2" />}
         iconColor="cyan"
         title={st.network_sharing_title}
         subtitle={st.network_sharing_subtitle}
@@ -329,7 +329,7 @@ export default function ExposureManager() {
           {/* Exposed Resources section */}
           <SectionCard
             title={st.exposed_resources}
-            icon={<Package className="w-4 h-4 text-cyan-400" />}
+            icon={<Package className="w-4 h-4 text-ink-2" />}
             titleClassName="text-primary"
             action={
               <div className="flex items-center gap-2">
@@ -337,7 +337,7 @@ export default function ExposureManager() {
                   type="button"
                   onClick={() => setShowExport(true)}
                   data-testid="bundle-export-trigger"
-                  className="px-2.5 py-1 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 transition-colors flex items-center gap-1.5"
+                  className="px-2.5 py-1 typo-caption text-role-highlight hover:bg-role-highlight/10 transition-colors flex items-center gap-1.5"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   {st.export_share_button}
@@ -345,7 +345,7 @@ export default function ExposureManager() {
                 <button
                   type="button"
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                  className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   {st.expose_resource}
@@ -401,7 +401,7 @@ export default function ExposureManager() {
 // animation-delay starting at 120ms so a fast fetch never paints a ghost.
 // ---------------------------------------------------------------------------
 
-const RESOURCE_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const RESOURCE_GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 
 function ExposedResourceGhostRows() {
   return (
@@ -409,7 +409,7 @@ function ExposedResourceGhostRows() {
       {[0, 1].map((i) => (
         <div
           key={i}
-          className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3 animate-fade-in"
+          className="rounded-modal border border-border bg-surface-1 p-3 flex items-center justify-between gap-3 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <div className="min-w-0 flex-1 space-y-1.5">

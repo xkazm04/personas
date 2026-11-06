@@ -129,10 +129,10 @@ export function TemplateDetailModal({
   } | null>(review.suggested_adjustment, null);
 
   const statusBadge = {
-    passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: t.templates.detail.review_passed },
-    failed: { Icon: XCircle, color: 'text-red-400 bg-red-500/10 border-red-500/20', label: t.templates.detail.review_failed },
-    error: { Icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', label: t.templates.detail.review_error },
-  }[review.status] || { Icon: Clock, color: 'text-foreground bg-secondary/30 border-primary/10', label: review.status };
+    passed: { Icon: CheckCircle2, color: 'text-status-success bg-status-success/10 border-status-success/20', label: t.templates.detail.review_passed },
+    failed: { Icon: XCircle, color: 'text-status-error bg-status-error/10 border-status-error/20', label: t.templates.detail.review_failed },
+    error: { Icon: AlertTriangle, color: 'text-status-warning bg-status-warning/10 border-status-warning/20', label: t.templates.detail.review_error },
+  }[review.status] || { Icon: Clock, color: 'text-foreground bg-surface-1 border-hair', label: review.status };
 
   const StatusIcon = statusBadge.Icon;
 
@@ -143,12 +143,12 @@ export function TemplateDetailModal({
       titleId="template-detail-title"
       maxWidthClass="max-w-7xl"
       containerClassName="absolute inset-0 z-50 flex items-center justify-center p-4"
-      panelClassName="h-full max-h-full bg-background border border-primary/10 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+      panelClassName="h-full max-h-full bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden"
     >
         {/* Header with gradient accent */}
         <div className="relative flex-shrink-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/8 via-indigo-500/5 to-transparent pointer-events-none" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-violet-500/30 via-indigo-500/15 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-role-agent/8 via-indigo-500/5 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-role-agent/30 via-indigo-500/15 to-transparent" />
           <div className="relative px-8 py-5 flex items-start justify-between gap-6">
             <div className="min-w-0 flex-1">
               <h2 id="template-detail-title" className="typo-heading-lg text-foreground">
@@ -163,7 +163,7 @@ export function TemplateDetailModal({
                   {statusBadge.label}
                 </span>
                 {!isSimple && review.adoption_count > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-card bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/80">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-card bg-status-success/10 border border-status-success/15 text-status-success/80">
                     <Download className="w-3.5 h-3.5" />
                     {t.templates.detail_modal.adopted.replace('{count}', String(review.adoption_count))}
                   </span>
@@ -185,15 +185,15 @@ export function TemplateDetailModal({
                   </span>
                 )}
                 {!isSimple && review.had_references && (
-                  <span className="typo-body text-violet-400/60 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-violet-400/50 ring-2 ring-violet-400/20" />
+                  <span className="typo-body text-role-agent/60 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-role-agent/50 ring-2 ring-role-agent/20" />
                     {t.templates.detail_modal.reference_patterns}
                   </span>
                 )}
               </div>
             </div>
             <Button onClick={onClose} variant="ghost" size="icon-sm" aria-label={t.common.close} className="flex-shrink-0 hover:bg-white/5">
-              <X className="w-5 h-5 text-foreground hover:text-muted-foreground" aria-hidden="true" />
+              <X className="w-5 h-5 text-foreground hover:text-ink-2" aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -203,7 +203,7 @@ export function TemplateDetailModal({
           role="tablist"
           aria-label={t.templates.gallery.template_details_tabs_aria}
           onKeyDown={handleTabKeyDown}
-          className="px-8 border-b border-primary/8 flex gap-1 flex-shrink-0 bg-secondary/20"
+          className="px-8 border-b border-primary/8 flex gap-1 flex-shrink-0 bg-surface-1"
         >
           {visibleTabs.map((tab) => {
             const TabIcon = tab.icon;
@@ -221,14 +221,14 @@ export function TemplateDetailModal({
                 onClick={() => setActiveTab(tab.key)}
                 className={`relative flex items-center gap-2 px-4 py-3 typo-body transition-colors rounded-t-card ${
                   isActive
-                    ? 'text-violet-300'
-                    : 'text-foreground hover:text-muted-foreground/80 hover:bg-white/3'
+                    ? 'text-role-agent'
+                    : 'text-foreground hover:text-ink-2 hover:bg-white/3'
                 }`}
               >
-                <TabIcon className={`w-4 h-4 ${isActive ? 'text-violet-400/80' : ''}`} />
+                <TabIcon className={`w-4 h-4 ${isActive ? 'text-role-agent/80' : ''}`} />
                 {tab.label}
                 {isActive && (
-                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/60 rounded-full" />
+                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-role-agent/80 to-indigo-500/60 rounded-full" />
                 )}
               </button>
             );
@@ -264,7 +264,7 @@ export function TemplateDetailModal({
             )}
             {!designResult && effectiveTab !== 'use_cases' && (
               <div className="flex flex-col items-center justify-center py-20 typo-body text-foreground gap-3">
-                <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/10 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-modal bg-surface-2 border border-hair flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-foreground" />
                 </div>
                 {t.templates.detail_modal.design_unavailable}
@@ -284,7 +284,7 @@ export function TemplateDetailModal({
                   variant="secondary"
                   size="sm"
                   icon={<Download className="w-4 h-4" />}
-                  className="bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 shadow-elevation-3 shadow-violet-500/5"
+                  className="bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 shadow-elevation-3 shadow-role-agent/5"
                   data-testid="button-adopt-template"
                 >
                   {t.templates.detail_modal.adopt_as_persona}
@@ -298,7 +298,7 @@ export function TemplateDetailModal({
                     variant="secondary"
                     size="sm"
                     icon={<Play className="w-4 h-4" />}
-                    className="bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 shadow-elevation-3 shadow-emerald-500/5"
+                    className="bg-status-success/10 text-status-success/80 border border-status-success/20 hover:bg-status-success/20 shadow-elevation-3 shadow-status-success/5"
                   >
                     {t.templates.detail_modal.try_it}
                   </Button>
@@ -313,7 +313,7 @@ export function TemplateDetailModal({
                 variant="danger"
                 size="sm"
                 icon={<Trash2 className="w-3.5 h-3.5" />}
-                className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+                className="text-status-error/60 hover:text-status-error hover:bg-status-error/10"
               >
                 {t.common.delete}
               </Button>

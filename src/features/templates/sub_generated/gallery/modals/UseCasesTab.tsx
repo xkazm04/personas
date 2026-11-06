@@ -10,10 +10,10 @@ interface UseCasesTabProps {
 }
 
 const NODE_ICONS: Partial<Record<FlowNode['type'], { icon: LucideIcon; color: string }>> = {
-  action: { icon: Play, color: 'text-sky-400' },
-  decision: { icon: GitBranch, color: 'text-amber-400' },
-  event: { icon: Zap, color: 'text-purple-400' },
-  error: { icon: AlertTriangle, color: 'text-red-400' },
+  action: { icon: Play, color: 'text-status-info' },
+  decision: { icon: GitBranch, color: 'text-status-warning' },
+  event: { icon: Zap, color: 'text-role-agent' },
+  error: { icon: AlertTriangle, color: 'text-status-error' },
 };
 
 /**
@@ -56,7 +56,7 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
   return (
     <div className="space-y-4">
       {digests.map(({ flow, nodes }) => (
-        <div key={flow.id} className="rounded-modal border border-primary/10 bg-secondary/10 p-4">
+        <div key={flow.id} className="rounded-modal border border-hair bg-secondary/10 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h3 className="typo-body-lg text-foreground">{flow.name}</h3>
@@ -76,13 +76,13 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
                   <span key={node.id} className="inline-flex items-center">
                     {i > 0 && <ArrowRight className="w-3.5 h-3.5 text-foreground mx-1.5 flex-shrink-0" />}
                     <span
-                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-secondary/40 border border-primary/10 max-w-[260px]"
+                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-surface-2 border border-hair max-w-[260px]"
                       title={node.detail || undefined}
                     >
                       {connMeta ? (
                         <ConnectorIcon meta={connMeta} size="w-3.5 h-3.5" />
                       ) : (
-                        <NodeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${meta?.color ?? 'text-sky-400'}`} />
+                        <NodeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${meta?.color ?? 'text-status-info'}`} />
                       )}
                       <span className="typo-caption text-foreground truncate">{node.label}</span>
                     </span>
@@ -97,7 +97,7 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
       <button
         type="button"
         onClick={onViewFlows}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body text-violet-300 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body text-role-agent bg-role-agent/10 border border-role-agent/20 hover:bg-role-agent/20 transition-colors"
       >
         <Workflow className="w-3.5 h-3.5" />
         {t.templates.detail.open_diagram}

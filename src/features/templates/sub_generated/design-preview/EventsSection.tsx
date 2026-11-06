@@ -90,12 +90,12 @@ export function EventsSection({
   return (
     <div id={anchorId} className="space-y-3">
       <div className={SECTION_LABEL}>
-        <Zap className="w-4 h-4 text-amber-400" />
+        <Zap className="w-4 h-4 text-status-warning" />
         {t.templates.design.events_and_triggers}
         <span className="typo-caption ml-1">{t.templates.design.what_activates}</span>
       </div>
 
-      <div className={`bg-secondary/20 border border-primary/10 rounded-modal overflow-hidden ${
+      <div className={`bg-surface-1 border border-hair rounded-modal overflow-hidden ${
         hasTriggers && hasSubscriptions
           ? 'grid grid-cols-1 md:grid-cols-2 md:divide-x divide-primary/[0.06]'
           : 'divide-y divide-primary/[0.06]'
@@ -125,11 +125,11 @@ export function EventsSection({
                       <button
                         type="button"
                         onClick={() => onTriggerEnabledToggle(trigger.id, !trigger.enabled)}
-                        className="flex-shrink-0 p-0.5 rounded transition-colors hover:bg-secondary/50"
+                        className="flex-shrink-0 p-0.5 rounded-interactive transition-colors hover:bg-surface-2"
                         title={trigger.enabled ? 'Disable' : 'Enable'}
                       >
                         {trigger.enabled ? (
-                          <ToggleRight className="w-5 h-5 text-emerald-400" />
+                          <ToggleRight className="w-5 h-5 text-status-success" />
                         ) : (
                           <ToggleLeft className="w-5 h-5 text-foreground" />
                         )}
@@ -167,7 +167,7 @@ export function EventsSection({
         {hasSubscriptions && (
           <div className="p-3.5 space-y-2">
             <span className="typo-code uppercase tracking-wider text-foreground flex items-center gap-1.5">
-              <Zap className="w-3 h-3 text-purple-400" />
+              <Zap className="w-3 h-3 text-role-agent" />
               {t.templates.design.event_subscriptions}
             </span>
             {suggestedSubscriptions!.map((sub, subIdx) => {
@@ -183,7 +183,7 @@ export function EventsSection({
                       />
                     </div>
                   )}
-                  <Zap className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
+                  <Zap className="w-3.5 h-3.5 text-role-agent flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <span className="typo-body text-foreground block">{sub.event_type}</span>
                     <span className="typo-caption block">{sub.description}</span>

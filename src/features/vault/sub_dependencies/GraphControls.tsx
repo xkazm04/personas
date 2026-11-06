@@ -24,8 +24,8 @@ export function GraphControls({ stats, filterKind, onFilterChange }: GraphContro
             onClick={() => onFilterChange(active ? 'all' : kind)}
             className={`flex items-center gap-2 px-3 py-2 rounded-modal border text-left transition-colors cursor-pointer ${
               active
-                ? 'bg-primary/10 border-primary/25 text-foreground/90'
-                : 'bg-secondary/25 border-primary/10 text-foreground hover:border-primary/20 hover:bg-secondary/40'
+                ? 'bg-primary/10 border-primary/25 text-ink-1'
+                : 'bg-surface-1 border-hair text-foreground hover:border-hair hover:bg-surface-2'
             }`}
           >
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />

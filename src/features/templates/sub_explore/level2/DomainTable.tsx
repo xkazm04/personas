@@ -77,7 +77,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
 
       {/* Type switcher + name filter (left-aligned) */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-input border border-primary/10 p-0.5 bg-background/40">
+        <div className="inline-flex rounded-input border border-hair p-0.5 bg-background/40">
           {([['all', t.explore.l2_filter_all], ['template', t.explore.l2_filter_templates], ['recipe', t.explore.l2_filter_recipes]] as [TypeFilter, string][]).map(([id, label]) => (
             <button type="button" key={id} onClick={() => setType(id)}
               className="px-3 py-1 rounded-input typo-caption transition-colors"
@@ -90,16 +90,16 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground opacity-50" />
           <input
             value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.explore.l2_filter_placeholder}
-            className="pl-8 pr-3 py-1.5 rounded-input bg-background/50 border border-primary/10 typo-body text-foreground w-52 focus:outline-none focus:border-primary/30"
+            className="pl-8 pr-3 py-1.5 rounded-input bg-background/50 border border-hair typo-body text-foreground w-52 focus:outline-none focus:border-primary/30"
           />
         </div>
       </div>
 
       {/* Table — all columns left-aligned */}
-      <div className="overflow-x-auto rounded-modal border border-primary/10">
+      <div className="overflow-x-auto rounded-modal border border-hair">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-primary/10">
+            <tr className="border-b border-hair">
               <Th col="name" label={t.explore.l2_col_name} sort={sort} onSort={toggleSort} />
               <Th col="kind" label={t.explore.l2_col_type} sort={sort} onSort={toggleSort} />
               <Th col="category" label={t.explore.l2_col_focus} sort={sort} onSort={toggleSort} />
@@ -118,7 +118,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
                   clickRow(r);
                 }}
                 data-testid={`explore-row-${r.kind}-${r.id}`}
-                className="border-b border-primary/5 last:border-0 hover:bg-secondary/20 focus-visible:outline-none focus-visible:bg-secondary/30 cursor-pointer">
+                className="border-b border-hair last:border-0 hover:bg-surface-1 focus-visible:outline-none focus-visible:bg-surface-1 cursor-pointer">
                 <td className="px-3 py-2 typo-body template-name-themed">{r.name}</td>
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
@@ -173,7 +173,7 @@ function DomainTableGhostRows() {
         <tr key={i} aria-hidden="true">
           <td className="px-3 py-2.5" colSpan={5}>
             <span
-              className={`inline-block h-3 ${w} rounded bg-primary/[0.06] animate-fade-in`}
+              className={`inline-block h-3 ${w} rounded-interactive bg-primary/[0.06] animate-fade-in`}
               style={{ animationDelay: `${120 + i * 35}ms` }}
             />
           </td>

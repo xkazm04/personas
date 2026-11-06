@@ -13,7 +13,7 @@ import { PolicyProposalsSection } from './PolicyProposalsSection';
 
 const EFFORTS = ['', 'low', 'medium', 'high', 'xhigh'] as const;
 const INPUT_CLS =
-  'rounded-input border border-primary/10 bg-secondary/40 px-2 py-1 typo-body text-foreground';
+  'rounded-input border border-hair bg-surface-2 px-2 py-1 typo-body text-foreground';
 
 /**
  * F10: model-routing rules editor. Each rule tiers a model by persona category
@@ -120,7 +120,7 @@ export function ModelRoutingSection() {
         </AsyncButton>
       </div>
 
-      <div className="border-t border-primary/10 pt-4">
+      <div className="border-t border-hair pt-4">
         <PolicyProposalsSection onRulesChanged={fetchRules} />
       </div>
     </div>

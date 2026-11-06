@@ -84,7 +84,7 @@ export function SetupStatusBadge({
   if (key === 'ready') {
     if (variant === 'inline') {
       return (
-        <span className={`inline-flex items-center gap-1 typo-caption text-emerald-400/80 ${className}`}>
+        <span className={`inline-flex items-center gap-1 typo-caption text-status-success/80 ${className}`}>
           <CheckCircle2 className="w-3 h-3" /> Ready
         </span>
       );
@@ -98,7 +98,7 @@ export function SetupStatusBadge({
     // aria-label) still name exactly which connectors need setup.
     return (
       <span
-        className={`inline-flex items-center justify-center text-amber-400 ${className}`}
+        className={`inline-flex items-center justify-center text-status-warning ${className}`}
         title={setupTooltip(t, parseSetup(setupDetail))}
         aria-label={debtText('auto_setup_required_9fa0e005')}
       >
@@ -110,7 +110,7 @@ export function SetupStatusBadge({
   // misconfigured (future expansion)
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-caption bg-red-500/10 text-red-400 border border-red-500/30 ${className}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-status-error ${className}`}
       title={debtText("auto_this_persona_has_a_configuration_problem_s_f9c78e89")}
     >
       <Settings className="w-3 h-3" />

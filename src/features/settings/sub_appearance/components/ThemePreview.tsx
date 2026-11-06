@@ -91,7 +91,7 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
                 <span className="typo-caption" style={{ color: fg }}>{t.settings.appearance.preview_dashboard}</span>
               </div>
               <div
-                className="px-2 py-0.5 rounded-input text-[9px] font-medium"
+                className="px-2 py-0.5 rounded-input typo-label"
                 style={{ backgroundColor: btnPrimary, color: '#fff' }}
               >
                 {t.settings.appearance.preview_action}
@@ -105,10 +105,10 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
             >
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
-                <span className="text-[10px] font-medium" style={{ color: fg }}>{t.settings.appearance.preview_card_title}</span>
+                <span className="typo-label" style={{ color: fg }}>{t.settings.appearance.preview_card_title}</span>
               </div>
               <div className="h-px" style={{ backgroundColor: border }} />
-              <span className="text-[9px] block" style={{ color: muted }}>
+              <span className="typo-caption block" style={{ color: muted }}>
                 {t.settings.appearance.preview_muted_text}
               </span>
             </div>
@@ -117,15 +117,15 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: vars['--status-success'] }} />
-                <span className="text-[8px]" style={{ color: muted }}>{t.settings.appearance.preview_ok}</span>
+                <span className="typo-caption" style={{ color: muted }}>{t.settings.appearance.preview_ok}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: vars['--status-warning'] }} />
-                <span className="text-[8px]" style={{ color: muted }}>{t.settings.appearance.preview_warn}</span>
+                <span className="typo-caption" style={{ color: muted }}>{t.settings.appearance.preview_warn}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: vars['--status-error'] }} />
-                <span className="text-[8px]" style={{ color: muted }}>{t.settings.appearance.preview_err}</span>
+                <span className="typo-caption" style={{ color: muted }}>{t.settings.appearance.preview_err}</span>
               </div>
             </div>
           </div>

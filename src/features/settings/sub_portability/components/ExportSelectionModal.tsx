@@ -212,12 +212,12 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
       titleId="export-selection-title"
       maxWidthClass="max-w-[1600px]"
       staggerChildren={false}
-      panelClassName="relative w-full flex flex-col h-[88vh] bg-background rounded-2xl shadow-elevation-4 overflow-hidden border border-primary/15"
+      panelClassName="relative w-full flex flex-col h-[88vh] bg-background rounded-card shadow-elevation-4 overflow-hidden border border-hair"
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-primary/10 flex-shrink-0">
+      <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-hair flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="w-9 h-9 rounded-card flex items-center justify-center bg-emerald-500/10 text-emerald-300 flex-shrink-0">
+          <span className="w-9 h-9 rounded-card flex items-center justify-center bg-status-success/10 text-status-success flex-shrink-0">
             <HardDriveDownload className="w-4.5 h-4.5" />
           </span>
           <div className="min-w-0">
@@ -231,7 +231,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
           type="button"
           onClick={onClose}
           aria-label={s.close}
-          className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors flex-shrink-0"
+          className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-surface-1 transition-colors flex-shrink-0"
         >
           <X className="w-5 h-5" />
         </button>
@@ -250,14 +250,14 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={p.search_placeholder}
                 aria-label={p.search_placeholder}
-                className="w-full pl-9 pr-9 py-2 rounded-card border border-primary/10 bg-secondary/20 typo-body text-foreground placeholder:text-foreground/40 outline-none focus-visible:border-primary/30"
+                className="w-full pl-9 pr-9 py-2 rounded-card border border-hair bg-surface-1 typo-body text-foreground placeholder:text-foreground/40 outline-none focus-visible:border-primary/30"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery('')}
                   aria-label={s.cancel}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-foreground"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-interactive text-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -273,7 +273,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                     className={`px-2.5 py-1 rounded-input typo-caption border transition-colors ${
                       personaFilter === chip.key
                         ? 'bg-primary/15 border-primary/25 text-foreground'
-                        : 'bg-secondary/20 border-primary/10 text-foreground hover:text-foreground'
+                        : 'bg-surface-1 border-hair text-foreground hover:text-foreground'
                     }`}
                   >
                     {chip.label}
@@ -287,7 +287,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                 onClick={() => picker.setMany(scope, shownIds, !allShownSelected)}
                 disabled={shownIds.length === 0}
                 data-testid="portability-select-filtered"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption text-status-success hover:bg-status-success/15 transition-colors disabled:opacity-40"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 {allShownSelected
@@ -314,7 +314,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
   );
 }
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 
 /** Geometry-matched placeholder for a pick row. Delayed CSS so a fast list
  *  IPC never paints a ghost. */

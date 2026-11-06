@@ -18,9 +18,9 @@ export function RecommendedCarousel({
   if (recommendedTemplates.length === 0) return null;
 
   return (
-    <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0">
+    <div className="px-4 py-3 border-b border-hair flex-shrink-0">
       <div className="flex items-center gap-2 mb-2.5">
-        <Sparkles className="w-4 h-4 text-amber-400/70" />
+        <Sparkles className="w-4 h-4 text-ink-3" />
         <SectionLabel as="span" className="mb-0">
           {t.templates.recommended.title}
         </SectionLabel>
@@ -36,9 +36,9 @@ export function RecommendedCarousel({
               type="button"
               key={tmpl.id}
               onClick={() => onSelectTemplate(tmpl)}
-              className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-amber-500/5 border border-amber-500/12 hover:border-amber-500/50 hover:bg-amber-500/10 hover:-translate-y-px transition-all text-left group/rec outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-surface-1 border border-hair hover:border-hair-2 hover:bg-surface-2 hover:-translate-y-px transition-all text-left group/rec outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <div className="typo-body text-foreground group-hover/rec:text-amber-300 truncate">
+              <div className="typo-body text-foreground group-hover/rec:text-ink-1 truncate">
                 {tmpl.test_case_name}
               </div>
               <div className="typo-body text-foreground truncate mt-0.5">
@@ -50,7 +50,7 @@ export function RecommendedCarousel({
                   return (
                     <span
                       key={c}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-secondary/40 text-foreground"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-surface-2 text-foreground"
                       title={meta.label}
                     >
                       <ConnectorIcon meta={meta} size="w-3 h-3" />
@@ -62,7 +62,7 @@ export function RecommendedCarousel({
                   <span className="typo-body text-foreground">+{connectors.length - 3}</span>
                 )}
                 {tmpl.adoption_count > 0 && (
-                  <span className="ml-auto inline-flex items-center gap-1 typo-code text-emerald-400/60">
+                  <span className="ml-auto inline-flex items-center gap-1 typo-data text-ink-2">
                     <Download className="w-2.5 h-2.5" />
                     {tmpl.adoption_count}
                   </span>

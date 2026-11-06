@@ -23,7 +23,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
 
   if (confirmed && !isLatest) {
     return (
-      <div data-testid="vault-autocred-waiting" className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-emerald-500/15 bg-emerald-500/5 typo-body text-emerald-400/60">
+      <div data-testid="vault-autocred-waiting" className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-status-success/15 bg-status-success/5 typo-body text-status-success/60">
         <Check className="w-3 h-3" />
         <span className="truncate">{message}</span>
       </div>
@@ -34,16 +34,16 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
     <div
       data-testid="vault-autocred-waiting"
       className={`animate-fade-slide-in flex items-start gap-3 p-3 rounded-modal border-2 ${
-        confirmed ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/8'
+        confirmed ? 'border-status-success/20 bg-status-success/5' : 'border-status-warning/30 bg-status-warning/8'
       }`}
     >
       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-        confirmed ? 'bg-emerald-500/15' : 'bg-amber-500/15'
+        confirmed ? 'bg-status-success/15' : 'bg-status-warning/15'
       }`}>
-        {confirmed ? <Check className="w-4 h-4 text-emerald-400" /> : <Hand className="w-4 h-4 text-amber-400" />}
+        {confirmed ? <Check className="w-4 h-4 text-status-success" /> : <Hand className="w-4 h-4 text-status-warning" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`typo-heading ${confirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
+        <p className={`typo-heading ${confirmed ? 'text-status-success' : 'text-status-warning'}`}>
           {confirmed ? t.vault.auto_cred.step_confirmed : t.vault.auto_cred.action_required}
         </p>
         <p className="typo-body text-foreground mt-1">{message}</p>
@@ -53,7 +53,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
               <button
                 type="button"
                 onClick={handleOpenUrl}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-blue-500/25 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-status-info/25 bg-status-info/10 text-status-info hover:bg-status-info/20 transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
                 {t.vault.auto_cred.open_in_browser}
@@ -62,7 +62,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
             <button
               type="button"
               onClick={() => setConfirmed(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-status-success/25 bg-status-success/10 text-status-success hover:bg-status-success/20 transition-colors"
             >
               <Check className="w-3 h-3" />
               {t.vault.auto_cred.completed_step}
@@ -79,13 +79,13 @@ export function InputRequestCard({ entry }: { entry: BrowserLogEntry }) {
   const { t } = useTranslation();
   return (
     <div
-      className="animate-fade-slide-in flex items-start gap-3 p-3 rounded-modal border-2 border-violet-500/30 bg-violet-500/8"
+      className="animate-fade-slide-in flex items-start gap-3 p-3 rounded-modal border-2 border-hair bg-surface-1"
     >
-      <div className="w-8 h-8 rounded-full bg-violet-500/15 flex items-center justify-center shrink-0 mt-0.5">
-        <MessageSquare className="w-4 h-4 text-violet-400" />
+      <div className="w-8 h-8 rounded-full bg-role-agent/15 flex items-center justify-center shrink-0 mt-0.5">
+        <MessageSquare className="w-4 h-4 text-role-agent" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="typo-heading text-violet-400">{t.vault.auto_cred.input_requested}</p>
+        <p className="typo-heading text-role-agent">{t.vault.auto_cred.input_requested}</p>
         <p className="typo-body text-foreground mt-1">{entry.message}</p>
       </div>
     </div>

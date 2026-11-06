@@ -63,7 +63,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
         className={`focus-ring group relative flex flex-col w-full p-0 overflow-hidden rounded-modal border transition-all ${
           active
             ? 'border-primary/40 ring-2 ring-primary/20'
-            : 'border-primary/10 hover:border-primary/30'
+            : 'border-hair hover:border-primary/30'
         }`}
       >
         <div
@@ -74,7 +74,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
           <span
             id={badgeId}
             aria-label={badgeAriaLabel}
-            className="absolute top-2 right-2 px-1.5 py-0.5 rounded-pill border text-[9px] font-semibold tracking-wide"
+            className="absolute top-2 right-2 px-1.5 py-0.5 rounded-pill border typo-label tracking-wide"
             style={{
               backgroundColor: theme.backgroundSample,
               color: theme.foregroundSample,

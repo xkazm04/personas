@@ -26,7 +26,7 @@ export function AuthMethodTabs({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-colors ${
             activeAuthMethodId === method.id
               ? `border ${getAuthBadgeClasses(method)}`
-              : 'text-foreground hover:bg-secondary/40 border border-transparent'
+              : 'text-foreground hover:bg-surface-2 border border-transparent'
           }`}
         >
           {method.type === 'mcp' && <Server className="w-3 h-3" />}

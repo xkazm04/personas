@@ -56,19 +56,19 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
       maxWidthClass="max-w-lg"
     >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-hair flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <Users className="w-4.5 h-4.5 text-violet-400" />
+            <div className="w-9 h-9 rounded-modal bg-role-agent/15 border border-role-agent/25 flex items-center justify-center">
+              <Users className="w-4.5 h-4.5 text-role-agent" />
             </div>
             <div>
-              <h2 id="team-synthesis-title" className="typo-heading text-foreground/90">{t.templates.team_synthesis.title}</h2>
+              <h2 id="team-synthesis-title" className="typo-heading text-ink-1">{t.templates.team_synthesis.title}</h2>
               <p className="typo-body text-foreground">
                 {t.templates.team_synthesis.subtitle}
               </p>
             </div>
           </div>
-          <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-card hover:bg-surface-2 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
@@ -87,7 +87,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder={t.templates.team_synthesis.team_name_placeholder}
-                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30"
+                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-hair bg-background/40 text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-role-agent/30"
                   disabled={loading}
                 />
               </div>
@@ -102,25 +102,25 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t.templates.team_synthesis.describe_placeholder}
                   rows={4}
-                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/30"
+                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-hair bg-background/40 text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-role-agent/30"
                   disabled={loading}
                 />
               </div>
 
               {error && (
-                <div className="flex items-start gap-2.5 p-3 rounded-modal bg-red-500/10 border border-red-500/20">
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="typo-body text-red-400/80">{inlineErrorCopy(t, error.raw)}</p>
+                <div className="flex items-start gap-2.5 p-3 rounded-modal bg-status-error/10 border border-status-error/20">
+                  <AlertCircle className="w-4 h-4 text-status-error flex-shrink-0 mt-0.5" />
+                  <p className="typo-body text-status-error/80">{inlineErrorCopy(t, error.raw)}</p>
                 </div>
               )}
             </>
           ) : (
             <div className="flex flex-col items-center gap-4 py-4">
-              <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+              <div className="w-14 h-14 rounded-modal bg-status-success/10 border border-status-success/20 flex items-center justify-center">
+                <CheckCircle2 className="w-7 h-7 text-status-success" />
               </div>
               <div className="text-center">
-                <h3 className="typo-body-lg text-foreground/90">
+                <h3 className="typo-body-lg text-ink-1">
                   {result.team_name}
                 </h3>
                 <p className="typo-body text-foreground mt-1">
@@ -135,13 +135,13 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-primary/10 flex items-center justify-end gap-2">
+        <div className="px-6 py-3.5 border-t border-hair flex items-center justify-end gap-2">
           {!result ? (
             <button
               type="button"
               onClick={handleSynthesize}
               disabled={loading || !query.trim() || !teamName.trim()}
-              className="px-4 py-2.5 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 typo-body rounded-modal bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -159,7 +159,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 typo-body rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
+              className="px-4 py-2.5 typo-body rounded-modal bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25 transition-colors flex items-center gap-2"
             >
               {t.templates.team_synthesis.done}
               <ArrowRight className="w-4 h-4" />

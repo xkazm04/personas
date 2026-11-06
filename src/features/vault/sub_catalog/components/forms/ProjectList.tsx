@@ -27,17 +27,17 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
           className={`w-full flex items-start gap-3 p-3 rounded-modal border text-left transition-colors ${
             isSelected(project.id)
               ? 'border-indigo-500/30 bg-indigo-500/8'
-              : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/30'
+              : 'border-hair hover:border-hair hover:bg-surface-1'
           }`}
         >
           <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-indigo-400' : 'text-foreground'}`} />
           <div className="min-w-0 flex-1">
-            <p className="typo-body text-foreground/90 truncate">{project.name}</p>
-            <p className="text-[11px] text-foreground truncate">{project.root_path}</p>
+            <p className="typo-body text-ink-1 truncate">{project.name}</p>
+            <p className="typo-caption text-foreground truncate">{project.root_path}</p>
             {project.tech_stack && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {project.tech_stack.split(',').map((t) => (
-                  <span key={t.trim()} className="text-[10px] px-1.5 py-0.5 rounded-input bg-secondary/50 text-foreground border border-primary/10">
+                  <span key={t.trim()} className="typo-caption px-1.5 py-0.5 rounded-input bg-surface-2 text-foreground border border-hair">
                     {t.trim()}
                   </span>
                 ))}
@@ -45,10 +45,10 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
             )}
           </div>
           {multiSelect && (
-            <div className={`w-4 h-4 mt-1 rounded border flex-shrink-0 flex items-center justify-center ${
-              isSelected(project.id) ? 'bg-indigo-500 border-indigo-500' : 'border-primary/20'
+            <div className={`w-4 h-4 mt-1 rounded-interactive border flex-shrink-0 flex items-center justify-center ${
+              isSelected(project.id) ? 'bg-indigo-500 border-indigo-500' : 'border-hair'
             }`}>
-              {isSelected(project.id) && <span className="text-foreground text-[10px] font-bold">&#10003;</span>}
+              {isSelected(project.id) && <span className="text-foreground typo-label">&#10003;</span>}
             </div>
           )}
         </button>

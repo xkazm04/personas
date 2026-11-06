@@ -233,7 +233,7 @@ export function ByomApiKeyManager() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-hair bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.api_key_title} />
         <p className="typo-body text-foreground">
           {s.api_key_hint}
@@ -333,13 +333,13 @@ function QwenKeyRow() {
   const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
+    <div className="rounded-card border border-hair bg-surface-1 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground">{s.provider_qwen_label}</span>
           {failed && <ConnectionBadge state="error" />}
           {configured && (
-            <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
+            <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-surface-2 border border-hair text-foreground">
               <Check className="w-3 h-3" />
               {s.stored}
             </span>
@@ -350,7 +350,7 @@ function QwenKeyRow() {
             type="button"
             onClick={() => setConfirmingRemove(true)}
             disabled={busy}
-            className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
+            className="typo-caption p-1.5 rounded-input text-status-error/60 hover:text-status-error hover:bg-status-error/10 transition-all disabled:opacity-50"
             title={s.remove_key}
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -379,7 +379,7 @@ function QwenKeyRow() {
             type="button"
             onClick={() => void save()}
             disabled={!value.trim() || busy}
-            className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
+            className="p-1.5 rounded-input text-status-success hover:bg-status-success/10 transition-all disabled:opacity-30"
             title={s.save_key_title}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -441,7 +441,7 @@ function KeyEntryRow({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
+    <div className="rounded-card border border-hair bg-surface-1 p-3 space-y-2">
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -471,7 +471,7 @@ function KeyEntryRow({
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
+              className="typo-caption p-1.5 rounded-input text-status-error/60 hover:text-status-error hover:bg-status-error/10 transition-all"
               title={s.remove_key}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -521,7 +521,7 @@ function KeyEntryRow({
             type="button"
             onClick={onSave}
             disabled={!isDirty}
-            className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
+            className="p-1.5 rounded-input text-status-success hover:bg-status-success/10 transition-all disabled:opacity-30"
             title={s.save_key_title}
           >
             <Check className="w-4 h-4" />
@@ -529,7 +529,7 @@ function KeyEntryRow({
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
+            className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-surface-2 transition-all"
             title={s.cancel_key_title}
           >
             <X className="w-4 h-4" />
@@ -575,7 +575,7 @@ function KeyEntryRow({
               aria-label={copiedKey === 'value' ? t.common.copied : t.common.copy}
               className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
             >
-              {copiedKey === 'value' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copiedKey === 'value' ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
             </button>
           )}
         </div>
@@ -608,7 +608,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
 
   if (state === 'testing') {
     return (
-      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-amber-500/10 border border-amber-500/20 text-amber-300">
+      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input text-status-warning">
         <Loader2 className="w-3 h-3 animate-spin" />
       </span>
     );
@@ -619,7 +619,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
     // green 'connected' check — we did NOT contact the API. Previously this
     // used emerald visuals that misled users into thinking auth was verified.
     return (
-      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
+      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-surface-2 border border-hair text-foreground">
         <Check className="w-3 h-3" />
         {s.stored}
       </span>
@@ -629,7 +629,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
   return (
     <StatusBadge
       variant="error"
-      icon={<span className="w-1.5 h-1.5 rounded-full bg-red-400" />}
+      icon={<span className="w-1.5 h-1.5 rounded-full bg-status-error" />}
       className="typo-caption px-1.5 py-0.5 rounded-input"
     >
       {s.error}
@@ -650,11 +650,11 @@ function ByomKeyGhostRows() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2 animate-fade-in"
+          className="rounded-card border border-hair bg-surface-1 p-3 space-y-2 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="block h-3.5 w-40 rounded bg-primary/[0.06]" />
-          <span className="block h-2.5 w-56 rounded bg-primary/[0.06]" />
+          <span className="block h-3.5 w-40 rounded-interactive bg-primary/[0.06]" />
+          <span className="block h-2.5 w-56 rounded-interactive bg-primary/[0.06]" />
           <span className="block h-8 w-full rounded-card bg-primary/[0.06]" />
         </div>
       ))}

@@ -41,19 +41,19 @@ export function KbErrorNotice({ raw, onDismiss, className = '', compact = false,
 
   return (
     <div
-      className={`p-3 rounded-card bg-red-500/10 border border-red-500/20 ${typo} text-red-400 flex items-start gap-2 ${className}`}
+      className={`p-3 rounded-card bg-status-error/10 border border-status-error/20 ${typo} text-status-error flex items-start gap-2 ${className}`}
     >
       {!compact && <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden />}
       <div className="flex-1 min-w-0">
         <p>{friendly.message}</p>
-        {friendly.suggestion && <p className="text-red-400/70 mt-0.5">{friendly.suggestion}</p>}
+        {friendly.suggestion && <p className="text-status-error/70 mt-0.5">{friendly.suggestion}</p>}
         {/* Only worth a disclosure when it says something the friendly copy did not. */}
         {!localized && raw !== friendly.message && (
           <details className="mt-1.5">
-            <summary className="typo-caption text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
+            <summary className="typo-caption text-status-error/40 cursor-pointer hover:text-status-error/60 transition-colors">
               {t.vault.forms.technical_details}
             </summary>
-            <p className="mt-1 typo-code text-red-400/40 break-all">{raw}</p>
+            <p className="mt-1 typo-code text-status-error/40 break-all">{raw}</p>
           </details>
         )}
       </div>
@@ -62,7 +62,7 @@ export function KbErrorNotice({ raw, onDismiss, className = '', compact = false,
           type="button"
           onClick={onDismiss}
           aria-label={t.common.dismiss}
-          className="text-red-400/60 hover:text-red-400 shrink-0"
+          className="text-status-error/60 hover:text-status-error shrink-0"
         >
           &times;
         </button>

@@ -37,13 +37,13 @@ function KeyInfoGhost({ typeLabel }: { typeLabel: string }) {
         <span className="typo-body text-foreground">{typeLabel}</span>
         <span
           aria-hidden="true"
-          className="inline-block h-5 w-20 rounded bg-primary/[0.06] animate-fade-in"
+          className="inline-block h-5 w-20 rounded-interactive bg-primary/[0.06] animate-fade-in"
           style={{ animationDelay: '120ms' }}
         />
       </div>
       <span
         aria-hidden="true"
-        className="block h-3.5 w-3/5 rounded bg-primary/[0.06] animate-fade-in"
+        className="block h-3.5 w-3/5 rounded-interactive bg-primary/[0.06] animate-fade-in"
         style={{ animationDelay: '155ms' }}
       />
     </div>
@@ -119,20 +119,20 @@ export function TableDetailPanel({
       {/* SQL / API table detail */}
       {!isRedis && selectedTable && (
         <>
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-            <HeaderIcon className="w-4 h-4 text-blue-400/60" />
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-hair shrink-0">
+            <HeaderIcon className="w-4 h-4 text-status-info/60" />
             <span className={`typo-code text-foreground flex-1`}>
               {displayName}
             </span>
             {tables.find((t) => t.table_name === selectedTable)?.table_type === 'VIEW' && (
-              <span className="px-1.5 py-0.5 rounded typo-body bg-violet-500/10 text-violet-400/70">VIEW</span>
+              <span className="px-1.5 py-0.5 rounded-interactive typo-body bg-role-agent/10 text-role-agent/70">VIEW</span>
             )}
             {!isPinned && (
               <Tooltip content={dbt.pin_table}>
                 <button
                   type="button"
                   onClick={() => onPinTable(selectedTable)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-modal typo-body text-blue-400/70 hover:bg-blue-500/10 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-modal typo-body text-status-info/70 hover:bg-status-info/10 transition-colors"
                 >
                   <Pin className="w-3 h-3" />
                   {dbt.pin}
@@ -140,7 +140,7 @@ export function TableDetailPanel({
               </Tooltip>
             )}
             {isPinned && (
-              <span className="flex items-center gap-1 px-2.5 py-1 typo-body text-blue-400/50">
+              <span className="flex items-center gap-1 px-2.5 py-1 typo-body text-status-info/50">
                 <Pin className="w-3 h-3" />
                 {dbt.pinned}
               </span>
@@ -163,8 +163,8 @@ export function TableDetailPanel({
       {/* Redis key detail */}
       {isRedis && selectedKey && (
         <>
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-            <Key className="w-4 h-4 text-amber-400/60" />
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-hair shrink-0">
+            <Key className="w-4 h-4 text-status-warning/60" />
             <span className="typo-code text-foreground flex-1 truncate">{selectedKey}</span>
           </div>
           <div className="p-4">
@@ -182,7 +182,7 @@ export function TableDetailPanel({
                   <span className="typo-body text-foreground">{dbt.type_label}</span>
                   <span
                     data-testid="db-redis-key-type"
-                    className="px-2 py-0.5 rounded typo-code bg-amber-500/10 text-amber-400/70"
+                    className="px-2 py-0.5 typo-code text-status-warning/70"
                   >
                     {keyType.type}
                   </span>

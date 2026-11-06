@@ -27,7 +27,7 @@ export function CodeStep({ displayName, fingerprint, busy, onCancel }: CodeStepP
         <p className="typo-body text-foreground">{tx(st.wizard_code_body, { device: displayName })}</p>
       </div>
 
-      <div className="rounded-card border border-border bg-secondary/20 py-6">
+      <div className="rounded-card border border-border bg-surface-1 py-6">
         {fingerprint ? (
           <p
             data-testid="pairing-fingerprint"

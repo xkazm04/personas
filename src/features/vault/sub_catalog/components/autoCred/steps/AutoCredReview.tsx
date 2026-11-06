@@ -64,10 +64,10 @@ export function AutoCredReview({
 
       {/* Partial extraction warning */}
       {(isPartial || completeness?.isPartial) && (
-        <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2.5 p-3 rounded-card border border-status-warning/20 bg-status-warning/5">
+          <AlertTriangle className="w-4 h-4 text-status-warning shrink-0 mt-0.5" />
           <div>
-            <p className="typo-body text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
+            <p className="typo-body text-status-warning">{t.vault.auto_cred_extra.partial_extraction}</p>
             <p className="typo-body text-foreground mt-0.5">
               {completeness
                 ? tx(t.vault.auto_cred_extra.completeness_partial, { filled: completeness.filledRequired, total: completeness.totalRequired })
@@ -84,7 +84,7 @@ export function AutoCredReview({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 rounded-modal border border-primary/15 bg-secondary/25 typo-body text-foreground focus-ring"
+          className="w-full px-3 py-2 rounded-modal border border-hair bg-surface-1 typo-body text-foreground focus-ring"
         />
       </div>
 
@@ -94,7 +94,7 @@ export function AutoCredReview({
           const isEmpty = !(extractedValues[field.key] ?? '').trim();
           const isMissing = (completeness?.missingKeys.includes(field.key)) ?? (isPartial && isEmpty && field.required);
           return (
-            <div key={field.key} className={isMissing ? 'ring-1 ring-amber-500/30 rounded-card' : ''}>
+            <div key={field.key} className={isMissing ? 'ring-1 ring-status-warning/30 rounded-card' : ''}>
               <FieldCaptureRow
                 source="auto"
                 mode="confirming"

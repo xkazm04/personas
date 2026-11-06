@@ -37,7 +37,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
   return (
     <div
-      className={`bg-background/95 border border-primary/20 rounded-modal shadow-elevation-4 surface-blur-popover ${CARD_PADDING.standard} space-y-3 max-w-sm`}
+      className={`bg-background/95 border border-hair rounded-modal shadow-elevation-4 surface-blur-popover ${CARD_PADDING.standard} space-y-3 max-w-sm`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
@@ -49,12 +49,12 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
           <TypeIcon className="w-3.5 h-3.5" style={{ color: typeMeta.color }} />
         </div>
         <span className="typo-code uppercase tracking-wider text-foreground">{typeMeta.label}</span>
-        <button type="button" onClick={onClose} className="ml-auto w-5 h-5 rounded flex items-center justify-center hover:bg-secondary/60 transition-colors">
+        <button type="button" onClick={onClose} className="ml-auto w-5 h-5 rounded-interactive flex items-center justify-center hover:bg-surface-2 transition-colors">
           <X className="w-3 h-3 text-foreground" />
         </button>
       </div>
 
-      <div className="typo-body text-foreground/90">{node.label}</div>
+      <div className="typo-body text-ink-1">{node.label}</div>
 
       {node.detail && (
         <p className="typo-body text-foreground">{node.detail}</p>

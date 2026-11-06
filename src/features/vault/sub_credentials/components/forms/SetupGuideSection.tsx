@@ -13,12 +13,12 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
   const steps = guide.split('\n').filter(Boolean);
 
   return (
-    <div className="border border-primary/10 rounded-modal overflow-hidden">
+    <div className="border border-hair rounded-modal overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors"
+        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-surface-1 transition-colors"
       >
         {open ? (
           <ChevronDown className="w-3.5 h-3.5 text-foreground" />
@@ -38,7 +38,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
                 const stripped = line.replace(/^\d+\.\s*/, '');
                 return (
                   <div key={i} className="flex gap-2.5">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center typo-heading text-primary/70">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-hair flex items-center justify-center typo-heading text-primary/70">
                       {i + 1}
                     </span>
                     <p className="typo-body text-foreground pt-0.5">{stripped}</p>

@@ -12,7 +12,7 @@ import { decidePolicyProposalRow } from '@/lib/decisions/rowWrites';
 import { toastCatch } from '@/lib/silentCatch';
 
 const INPUT_CLS =
-  'rounded-input border border-primary/10 bg-secondary/40 px-2 py-1 typo-body text-foreground';
+  'rounded-input border border-hair bg-surface-2 px-2 py-1 typo-body text-foreground';
 
 const pct = (v: number) => Math.round(v * 100);
 const signedPct = (v: number) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}`;
@@ -168,7 +168,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
         ? p.evidence.cells.filter((c) => c.category === (p.routing?.category ?? c.category))
         : p.evidence.cells;
     return (
-      <div className="mt-2 space-y-2 rounded-card border border-primary/10 bg-secondary/30 p-3">
+      <div className="mt-2 space-y-2 rounded-card border border-hair bg-surface-1 p-3">
         <p className="typo-caption text-foreground">
           {tx(s.tuning_evidence_snapshot, {
             id: p.evidenceSnapshotId,
@@ -190,7 +190,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
               </thead>
               <tbody>
                 {cells.map((c) => (
-                  <tr key={`${c.category}:${c.model}`} className="border-t border-primary/5">
+                  <tr key={`${c.category}:${c.model}`} className="border-t border-hair">
                     <td className="pr-4 py-1 font-mono">{c.model}</td>
                     <td className="pr-4 py-1">{c.runs}</td>
                     <td className="pr-4 py-1">{pct(c.successRate)}%</td>
@@ -227,7 +227,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
   const renderProposal = (p: PolicyProposal) => {
     const isOpen = !!expanded[p.id];
     return (
-      <div key={p.id} className="rounded-card border border-primary/10 bg-secondary/20 p-3">
+      <div key={p.id} className="rounded-card border border-hair bg-surface-1 p-3">
         <div className="flex flex-wrap items-center gap-2">
           <AthenaComposedBadge
             variant="composed"

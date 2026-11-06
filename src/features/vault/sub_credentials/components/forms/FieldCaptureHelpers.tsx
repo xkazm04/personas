@@ -37,8 +37,8 @@ export function computeValidationGlow(value: string, inputType: FieldInputType):
 
 export const GLOW_CLASSES: Record<ValidationGlow, string> = {
   none: '',
-  valid: 'border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.15)]',
-  warning: 'border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.12)]',
+  valid: 'border-status-success/40 shadow-[0_0_8px_rgba(16,185,129,0.15)]',
+  warning: 'border-status-warning/30 shadow-[0_0_8px_rgba(245,158,11,0.12)]',
 };
 
 interface FieldActionButtonsProps {
@@ -129,7 +129,7 @@ export function FieldActionButtons({
         <button
           type="button"
           onClick={() => setIsVisible((v) => !v)}
-          className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
+          className="p-0.5 text-foreground hover:text-ink-2 transition-colors"
           data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
           aria-label={isVisible ? t.vault.schemas.kv_hide_value : t.vault.schemas.kv_show_value}
           aria-pressed={isVisible}
@@ -144,13 +144,13 @@ export function FieldActionButtons({
             type="button"
             onClick={handleCopy}
             disabled={!value}
-            className="p-0.5 text-foreground hover:text-foreground/80 disabled:opacity-30 transition-colors"
+            className="p-0.5 text-foreground hover:text-ink-2 disabled:opacity-30 transition-colors"
             aria-label={t.vault.credential_forms.copy_value}
             data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
           >
             {copied ? (
               <div className="animate-fade-scale-in">
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-status-success" />
               </div>
             ) : (
               <Copy className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export function FieldActionButtons({
         <button
           type="button"
           onClick={handlePaste}
-          className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
+          className="p-0.5 text-foreground hover:text-ink-2 transition-colors"
           aria-label={t.vault.credential_forms.paste_from_clipboard}
           data-testid={testIdBase ? `${testIdBase}-paste-btn` : undefined}
         >

@@ -16,7 +16,7 @@ export function SchemaFormHeader({ config, onBack }: SchemaFormHeaderProps) {
         type="button"
         onClick={onBack}
         aria-label={t.common.back}
-        className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+        className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
       </button>
@@ -42,7 +42,7 @@ export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder
   return (
     <div>
       <label htmlFor={inputId} className="block typo-body text-foreground mb-1.5">
-        {nameLabel} <span className="text-red-400 ml-1">*</span>
+        {nameLabel} <span className="text-status-error ml-1">*</span>
       </label>
       <input
         id={inputId}
@@ -87,7 +87,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
                 className={`flex-1 px-4 py-2.5 rounded-modal typo-body border transition-all ${
                   subTypeId === st.id
                     ? config.subTypeActiveClass
-                    : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
+                    : 'bg-surface-1 border-hair text-foreground hover:bg-surface-2'
                 }`}
               >
                 {st.displayLabel ?? st.label}
@@ -107,7 +107,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
               className={`text-left px-3 py-2.5 rounded-modal typo-body border transition-all ${
                 subTypeId === st.id
                   ? config.subTypeActiveClass
-                  : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
+                  : 'bg-surface-1 border-hair text-foreground hover:bg-surface-2'
               }`}
             >
               <div className="typo-body flex items-center gap-2">

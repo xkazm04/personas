@@ -46,25 +46,25 @@ export function EntityTable({ entities, isLoading = false }: { entities: KbEntit
             <tr key={i} className="border-b border-border/15">
               <td className="py-1.5 pr-3">
                 <span
-                  className="block h-3 w-16 rounded bg-primary/[0.06] animate-fade-in"
+                  className="block h-3 w-16 rounded-interactive bg-primary/[0.06] animate-fade-in"
                   style={{ animationDelay: `${120 + i * 35}ms` }}
                 />
               </td>
               <td className="py-1.5 px-3">
                 <span
-                  className="block h-3 w-24 rounded bg-primary/[0.06] animate-fade-in"
+                  className="block h-3 w-24 rounded-interactive bg-primary/[0.06] animate-fade-in"
                   style={{ animationDelay: `${120 + i * 35}ms` }}
                 />
               </td>
               <td className="py-1.5 px-3">
                 <span
-                  className="block h-3 w-32 rounded bg-primary/[0.06] animate-fade-in"
+                  className="block h-3 w-32 rounded-interactive bg-primary/[0.06] animate-fade-in"
                   style={{ animationDelay: `${120 + i * 35}ms` }}
                 />
               </td>
               <td className="py-1.5 pl-3">
                 <span
-                  className="block h-3 w-20 rounded bg-primary/[0.06] animate-fade-in"
+                  className="block h-3 w-20 rounded-interactive bg-primary/[0.06] animate-fade-in"
                   style={{ animationDelay: `${120 + i * 35}ms` }}
                 />
               </td>
@@ -96,13 +96,13 @@ export function EntityTable({ entities, isLoading = false }: { entities: KbEntit
           return (
             <tr key={e.id} className="typo-body text-foreground border-b border-border/15 align-top">
               <td className="py-1.5 pr-3">
-                <span className="typo-code text-violet-400/80">{e.entityType}</span>
+                <span className="typo-code text-role-agent/80">{e.entityType}</span>
               </td>
               <td className="py-1.5 px-3">
                 <span className="inline-flex items-center gap-1.5">
                   {partial && (
                     <Tooltip content={sh.partial_text_tooltip}>
-                      <ScanLine className="w-3 h-3 text-amber-400/80" aria-hidden />
+                      <ScanLine className="w-3 h-3 text-status-warning/80" aria-hidden />
                     </Tooltip>
                   )}
                   {e.entityKey}

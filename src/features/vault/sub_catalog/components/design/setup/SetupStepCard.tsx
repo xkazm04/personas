@@ -30,7 +30,7 @@ export function SetupStepCard({
   return (
     <div
       className={`flex gap-2.5 px-3 py-2 rounded-modal transition-colors ${
-        isCompleted ? 'bg-emerald-500/5' : 'bg-transparent hover:bg-secondary/20'
+        isCompleted ? 'bg-status-success/5' : 'bg-transparent hover:bg-surface-1'
       }`}
     >
       {/* Checkmark button */}
@@ -43,7 +43,7 @@ export function SetupStepCard({
           aria-pressed={isCompleted}
         >
           {isCompleted ? (
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
+            <CheckCircle className="w-4 h-4 text-status-success" />
           ) : (
             <Circle className="w-4 h-4 text-foreground hover:text-primary/50 transition-colors" />
           )}

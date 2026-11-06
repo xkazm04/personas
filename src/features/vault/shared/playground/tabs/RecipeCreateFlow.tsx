@@ -38,7 +38,7 @@ export function RecipeCreateFlow({
     <div
         className="animate-fade-slide-in overflow-hidden"
       >
-        <div className="rounded-modal border border-primary/10 bg-primary/5 p-4 mb-4 space-y-3">
+        <div className="rounded-modal border border-hair bg-primary/5 p-4 mb-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="typo-heading text-foreground flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
@@ -46,7 +46,7 @@ export function RecipeCreateFlow({
             </h4>
             <button
               onClick={onCancel}
-              className="p-1 rounded-card text-foreground hover:text-foreground/80 hover:bg-muted/30 transition-colors"
+              className="p-1 rounded-card text-foreground hover:text-ink-2 hover:bg-muted/30 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -96,7 +96,7 @@ export function RecipeCreateFlow({
 
           {/* Error */}
           {(error || generator.error) && (
-            <div className="rounded-modal border border-red-500/30 bg-red-500/10 px-3 py-2 typo-body text-red-400">
+            <div className="rounded-modal border border-status-error/30 bg-status-error/10 px-3 py-2 typo-body text-status-error">
               {error || generator.error}
             </div>
           )}
@@ -145,7 +145,7 @@ export function RecipeCreateFlow({
               {generator.draft.example_result && (
                 <div>
                   <p className="typo-body text-foreground mb-0.5">{sh.example_result}</p>
-                  <pre className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-3 typo-code text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
+                  <pre className="rounded-card border border-hair bg-surface-1 p-3 typo-code text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
                     {generator.draft.example_result}
                   </pre>
                 </div>

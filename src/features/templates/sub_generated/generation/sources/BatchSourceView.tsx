@@ -38,7 +38,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
           <button
             type="button"
             onClick={() => batchFileInputRef.current?.click()}
-            className="px-4 py-3 rounded-modal border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-foreground hover:text-violet-300 transition-all flex items-center gap-2"
+            className="px-4 py-3 rounded-modal border-2 border-dashed border-hair hover:border-role-agent/30 hover:bg-role-agent/5 text-foreground hover:text-role-agent transition-all flex items-center gap-2"
           >
             <Upload className="w-4 h-4" />
             {t.templates.generation.batch_upload_btn}
@@ -61,8 +61,8 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
             onClick={() => onCategoryFilterChange(null)}
             className={`px-2.5 py-1 typo-body rounded-modal border transition-all ${
               categoryFilter === null
-                ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                : 'bg-secondary/30 border-primary/10 text-foreground hover:border-primary/20'
+                ? 'bg-role-agent/15 border-role-agent/30 text-role-agent'
+                : 'bg-surface-1 border-hair text-foreground hover:border-hair'
             }`}
           >
             {t.templates.generation.batch_all.replace('{count}', String(templates.length))}
@@ -76,8 +76,8 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
                 onClick={() => onCategoryFilterChange(categoryFilter === cat ? null : cat)}
                 className={`px-2.5 py-1 typo-body rounded-modal border transition-all ${
                   categoryFilter === cat
-                    ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                    : 'bg-secondary/30 border-primary/10 text-foreground hover:border-primary/20'
+                    ? 'bg-role-agent/15 border-role-agent/30 text-role-agent'
+                    : 'bg-surface-1 border-hair text-foreground hover:border-hair'
                 }`}
               >
                 {cat} ({count})
@@ -90,16 +90,16 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
       {/* Template list */}
       <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1">
         {filtered.map((t) => {
-          const catStyle = CATEGORY_COLORS[t.category ?? ''] ?? 'bg-secondary/30 text-foreground border-primary/15';
+          const catStyle = CATEGORY_COLORS[t.category ?? ''] ?? 'bg-surface-1 text-foreground border-hair';
           return (
             <div
               key={t.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-modal bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-modal bg-surface-1 border border-hair hover:border-hair transition-colors"
             >
               <span className="typo-body text-foreground w-6 text-right flex-shrink-0">
                 {t.id.replace('template_', '')}
               </span>
-              <span className="typo-body text-foreground/90 flex-1 truncate">{t.name}</span>
+              <span className="typo-body text-ink-1 flex-1 truncate">{t.name}</span>
               {t.category && (
                 <span className={`px-2 py-0.5 typo-body rounded-card border flex-shrink-0 ${catStyle}`}>
                   {t.category}
@@ -118,7 +118,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
         <button
           type="button"
           onClick={onClear}
-          className="px-2 py-1 typo-body rounded-card text-foreground hover:text-red-400 transition-colors"
+          className="px-2 py-1 typo-body rounded-card text-foreground hover:text-status-error transition-colors"
         >
           Clear
         </button>

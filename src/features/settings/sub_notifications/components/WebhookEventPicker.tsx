@@ -148,7 +148,7 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
-          className="w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground font-mono"
+          className="w-full rounded-input border border-hair bg-surface-2 px-2 py-1 typo-body text-foreground font-mono"
           placeholder={s.webhook_events_custom_placeholder}
           data-testid="webhook-draft-custom-pattern"
         />
@@ -172,7 +172,7 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
                 key={v.eventType}
                 type="button"
                 onClick={() => setPatterns([...patterns, v.eventType])}
-                className={`${CHIP} border-primary/15 bg-secondary/40 text-foreground hover:bg-primary/10`}
+                className={`${CHIP} border-hair bg-surface-2 text-foreground hover:bg-primary/10`}
               >
                 <Plus className="w-3 h-3 text-primary/60" />
                 {v.eventType}

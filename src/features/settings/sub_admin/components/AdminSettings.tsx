@@ -23,7 +23,7 @@ export default function AdminSettings() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Shield className="w-5 h-5 text-violet-400" />}
+        icon={<Shield className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={s.title}
         subtitle={s.subtitle}
@@ -33,21 +33,21 @@ export default function AdminSettings() {
           <SectionCard
             title={s.user_consent}
             subtitle={s.consent_hint}
-            icon={<ScrollText className="w-4 h-4 text-cyan-400" />}
+            icon={<ScrollText className="w-4 h-4 text-ink-2" />}
             titleClassName="text-primary"
             action={
-              <span className={`inline-flex items-center px-2.5 py-1 rounded-card text-[11px] font-semibold border ${
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-card typo-label border ${
                 consentStatus
-                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                  : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                  ? 'text-status-success bg-status-success/10 border-status-success/20'
+                  : 'text-status-warning bg-status-warning/10 border-status-warning/20'
               }`}>
                 {consentStatus ? s.consent_accepted : s.consent_not_accepted}
               </span>
             }
           >
             <div className="space-y-4">
-              <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
-                <p className="text-[11px] uppercase tracking-wider text-foreground mb-1">{s.storage_key}</p>
+              <div className="rounded-card bg-surface-1 border border-primary/8 p-3">
+                <p className="typo-eyebrow text-foreground mb-1">{s.storage_key}</p>
                 <p className="typo-code text-foreground">{CONSENT_KEY}</p>
               </div>
 
@@ -57,8 +57,8 @@ export default function AdminSettings() {
                   onClick={triggerConsentReset}
                   className={`flex items-center gap-2 px-4 py-2 typo-body rounded-modal border transition-colors ${
                     confirmConsentReset
-                      ? 'bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25'
-                      : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20'
+                      ? 'bg-status-error/15 text-status-error border-status-error/25 hover:bg-status-error/25'
+                      : 'bg-role-highlight/10 text-role-highlight border border-role-highlight/20 hover:bg-role-highlight/20'
                   }`}
                 >
                   {confirmConsentReset ? (

@@ -14,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 function StatBadge({ icon: Icon, label, value, accent }: { icon: LucideIcon; label: string; value: number; accent: string }) {
   return (
     <Tooltip content={label} placement="top">
-      <div className="flex items-center justify-center gap-1.5 rounded-card border border-primary/10 bg-secondary/10 px-2 py-1.5">
+      <div className="flex items-center justify-center gap-1.5 rounded-card border border-hair bg-secondary/10 px-2 py-1.5">
         <Icon className={`w-4 h-4 flex-shrink-0 ${accent}`} aria-hidden />
         <span className="typo-heading text-foreground tabular-nums">{value}</span>
         <span className="sr-only">{label}</span>
@@ -32,7 +32,7 @@ export default function DataPortabilitySettings() {
     {
       id: 'workspace',
       label: s.workspace_overview,
-      icon: <Boxes className="w-4 h-4 text-emerald-400" />,
+      icon: <Boxes className="w-4 h-4 text-ink-2" />,
       content: (
         <div className="space-y-4">
           {dp.statsStatus === 'loading' && (
@@ -43,21 +43,21 @@ export default function DataPortabilitySettings() {
           )}
 
           {dp.statsStatus === 'error' && (
-            <p className="typo-body text-red-400">{s.stats_error}</p>
+            <p className="typo-body text-status-error">{s.stats_error}</p>
           )}
 
           {dp.stats && (
             <div className="flex flex-wrap gap-2">
-              <StatBadge icon={Bot} label={s.personas} value={dp.stats.personaCount} accent="text-emerald-400" />
-              <StatBadge icon={Users} label={s.teams} value={dp.stats.teamCount} accent="text-blue-400" />
-              <StatBadge icon={Wrench} label={s.tools} value={dp.stats.toolCount} accent="text-amber-400" />
-              <StatBadge icon={KeyRound} label={s.credentials} value={dp.stats.credentialCount} accent="text-violet-400" />
-              <StatBadge icon={Brain} label={s.memories} value={dp.stats.memoryCount} accent="text-cyan-400" />
+              <StatBadge icon={Bot} label={s.personas} value={dp.stats.personaCount} accent="text-status-success" />
+              <StatBadge icon={Users} label={s.teams} value={dp.stats.teamCount} accent="text-status-info" />
+              <StatBadge icon={Wrench} label={s.tools} value={dp.stats.toolCount} accent="text-status-warning" />
+              <StatBadge icon={KeyRound} label={s.credentials} value={dp.stats.credentialCount} accent="text-role-agent" />
+              <StatBadge icon={Brain} label={s.memories} value={dp.stats.memoryCount} accent="text-role-highlight" />
               <StatBadge icon={BrainCircuit} label={s.team_memories} value={dp.stats.teamMemoryCount} accent="text-teal-400" />
-              <StatBadge icon={FlaskConical} label={s.test_suites} value={dp.stats.testSuiteCount} accent="text-rose-400" />
-              <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpiCount} accent="text-pink-400" />
-              <StatBadge icon={FolderGit2} label={s.dev_projects} value={dp.stats.devProjectCount} accent="text-lime-400" />
-              <StatBadge icon={Fingerprint} label={s.twins} value={dp.stats.twinCount} accent="text-rose-300" />
+              <StatBadge icon={FlaskConical} label={s.test_suites} value={dp.stats.testSuiteCount} accent="text-status-error" />
+              <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpiCount} accent="text-role-human" />
+              <StatBadge icon={FolderGit2} label={s.dev_projects} value={dp.stats.devProjectCount} accent="text-status-success" />
+              <StatBadge icon={Fingerprint} label={s.twins} value={dp.stats.twinCount} accent="text-status-error" />
               <StatBadge icon={Sparkles} label={s.athena_core} value={dp.stats.athenaCoreCount} accent="text-fuchsia-400" />
               <StatBadge icon={Library} label={s.athena_learned} value={dp.stats.athenaLearnedCount} accent="text-fuchsia-300" />
             </div>
@@ -67,7 +67,7 @@ export default function DataPortabilitySettings() {
               surfaced next to the counts they qualify. */}
           {dp.stats && dp.stats.warnings.length > 0 && (
             <div data-testid="portability-export-warnings" className="space-y-1">
-              <p className="typo-body text-amber-400">{s.warnings}</p>
+              <p className="typo-body text-status-warning">{s.warnings}</p>
               {dp.stats.warnings.map((w, i) => (
                 <p key={i} className="typo-body text-foreground pl-2">
                   - {w}
@@ -81,7 +81,7 @@ export default function DataPortabilitySettings() {
     {
       id: 'export',
       label: s.export_import_title,
-      icon: <Download className="w-4 h-4 text-blue-400" />,
+      icon: <Download className="w-4 h-4 text-ink-2" />,
       content: (
         <ExportSection
           exportStatus={dp.exportStatus}
@@ -100,7 +100,7 @@ export default function DataPortabilitySettings() {
     {
       id: 'credentials',
       label: s.credential_vault,
-      icon: <ShieldCheck className="w-4 h-4 text-amber-400" />,
+      icon: <ShieldCheck className="w-4 h-4 text-ink-2" />,
       content: (
         <CredentialPortability
           credExportStatus={dp.credExportStatus}
@@ -125,7 +125,7 @@ export default function DataPortabilitySettings() {
       id: 'storage',
       label: s.storage_title,
       subtitle: s.storage_subtitle,
-      icon: <HardDrive className="w-4 h-4 text-sky-400" />,
+      icon: <HardDrive className="w-4 h-4 text-ink-2" />,
       content: <StorageUsageSection />,
     },
   ];
@@ -133,7 +133,7 @@ export default function DataPortabilitySettings() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<HardDriveDownload className="w-5 h-5 text-emerald-400" />}
+        icon={<HardDriveDownload className="w-5 h-5 text-ink-2" />}
         iconColor="emerald"
         title={s.title}
         subtitle={s.subtitle}
@@ -145,10 +145,10 @@ export default function DataPortabilitySettings() {
 
           {/* Error display */}
           {dp.errorMsg && (
-            <div className="rounded-modal border border-red-500/20 bg-red-500/5 p-4 flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+            <div className="rounded-modal border border-status-error/20 bg-status-error/5 p-4 flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-status-error mt-0.5 flex-shrink-0" />
               <div className="typo-body text-foreground">
-                <p className="font-medium text-red-400/90 mb-1">{s.error_label}</p>
+                <p className="font-medium text-status-error/90 mb-1">{s.error_label}</p>
                 <p>{dp.errorMsg}</p>
               </div>
             </div>

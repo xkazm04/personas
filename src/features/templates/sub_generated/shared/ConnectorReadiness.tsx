@@ -46,7 +46,7 @@ const HEALTH_CONFIG = {
   unknown: {
     Icon: HelpCircle,
     color: 'text-status-neutral',
-    bg: 'bg-secondary/40 border-primary/10',
+    bg: 'bg-surface-2 border-hair',
   },
 } as const;
 
@@ -150,7 +150,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <StatusIcon className={`w-4 h-4 ${config.color}`} />
-        <span className="typo-body text-foreground/90">{label}</span>
+        <span className="typo-body text-ink-1">{label}</span>
       </div>
       {statuses.map((status) => {
         const Icon = STATUS_ICON[status.health];

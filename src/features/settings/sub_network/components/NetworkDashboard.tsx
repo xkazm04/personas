@@ -44,7 +44,7 @@ function StatCard({
 }) {
   return (
     <div className="rounded-card border border-border bg-secondary/10 p-3">
-      <div className="text-[10px] uppercase tracking-wider text-foreground mb-1">
+      <div className="typo-eyebrow text-foreground mb-1">
         {label}
       </div>
       <div className="typo-heading-lg text-foreground">{children}</div>
@@ -63,8 +63,8 @@ function formatBytes(bytes: number): string {
 function MetricRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-1">
-      <span className="text-[11px] text-foreground">{label}</span>
-      <span className="text-[11px] font-mono text-foreground">{value}</span>
+      <span className="typo-caption text-foreground">{label}</span>
+      <span className="typo-caption font-mono text-foreground">{value}</span>
     </div>
   );
 }
@@ -86,10 +86,10 @@ function MetricsSection({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary/20 transition-colors rounded-card"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-1 transition-colors rounded-card"
       >
         <Icon className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-        <span className="text-[11px] font-medium text-foreground flex-1">{title}</span>
+        <span className="typo-label text-foreground flex-1">{title}</span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-foreground transition-transform ${open ? 'rotate-180' : ''}`}
         />
@@ -114,7 +114,7 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
         label={st.sent}
         value={
           <span className="flex items-center gap-1">
-            <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+            <ArrowUpRight className="w-3 h-3 text-status-success" />
             <Numeric value={m.messagesSent} unit="count" precision={0} />
             <span className="text-foreground ml-1">({formatBytes(m.bytesSent)})</span>
           </span>
@@ -124,7 +124,7 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
         label={st.received}
         value={
           <span className="flex items-center gap-1">
-            <ArrowDownLeft className="w-3 h-3 text-blue-400" />
+            <ArrowDownLeft className="w-3 h-3 text-status-info" />
             <Numeric value={m.messagesReceived} unit="count" precision={0} />
             <span className="text-foreground ml-1">({formatBytes(m.bytesReceived)})</span>
           </span>
@@ -135,13 +135,13 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
           {m.messagesDroppedBufferFull > 0 && (
             <MetricRow
               label={st.dropped_buffer_full}
-              value={<span className="text-amber-400">{m.messagesDroppedBufferFull}</span>}
+              value={<span className="text-status-warning">{m.messagesDroppedBufferFull}</span>}
             />
           )}
           {m.messagesRateLimited > 0 && (
             <MetricRow
               label={st.rate_limited}
-              value={<span className="text-amber-400">{m.messagesRateLimited}</span>}
+              value={<span className="text-status-warning">{m.messagesRateLimited}</span>}
             />
           )}
         </>
@@ -177,7 +177,7 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
           value={
             <span className="text-foreground">
               {totalDropped}
-              <span className="ml-1 text-[10px]">
+              <span className="ml-1 typo-caption">
                 (H:{m.connectionsDroppedHealth} U:{m.connectionsDroppedUser} S:{m.connectionsDroppedShutdown} P:{m.connectionsDroppedProtocol})
               </span>
             </span>
@@ -187,7 +187,7 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
       {m.connectionsRejectedCapacity > 0 && (
         <MetricRow
           label={st.rejected_capacity}
-          value={<span className="text-amber-400">{m.connectionsRejectedCapacity}</span>}
+          value={<span className="text-status-warning">{m.connectionsRejectedCapacity}</span>}
         />
       )}
     </MetricsSection>
@@ -213,11 +213,11 @@ function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
         label={st.success_fail}
         value={
           <span>
-            <span className="text-emerald-400">{m.syncSuccesses}</span>
+            <span className="text-status-success">{m.syncSuccesses}</span>
             {' / '}
-            <span className={m.syncFailures > 0 ? 'text-red-400' : ''}>{m.syncFailures}</span>
+            <span className={m.syncFailures > 0 ? 'text-status-error' : ''}>{m.syncFailures}</span>
             {successRate != null && (
-              <span className="text-foreground ml-1 text-[10px]">({successRate}%)</span>
+              <span className="text-foreground ml-1 typo-caption">({successRate}%)</span>
             )}
           </span>
         }
@@ -264,7 +264,7 @@ export function NetworkDashboard() {
         {st.network_status}
       </h3>
       {networkError && (
-        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 typo-caption text-amber-300">
+        <div className="flex items-center gap-2 rounded-card border border-status-warning/30 bg-status-warning/10 px-3 py-2 mb-2 typo-caption text-status-warning">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{st.network_data_stale} {networkError}</span>
         </div>
@@ -273,8 +273,8 @@ export function NetworkDashboard() {
       {!networkStatus ? (
         <div className="rounded-card border border-border bg-secondary/10 p-4 flex items-center gap-3 typo-body text-foreground">
           <div className="relative">
-            <Wifi className="w-4 h-4 text-emerald-400/50" />
-            <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
+            <Wifi className="w-4 h-4 text-status-success/50" />
+            <span className="absolute inset-0 rounded-full animate-ping bg-status-success/20" />
           </div>
           {st.checking_network}
         </div>
@@ -300,13 +300,13 @@ export function NetworkDashboard() {
               <div className="flex items-center gap-2">
                 {isRunning ? (
                   <div className="relative w-4 h-4 flex-shrink-0">
-                    <Wifi className="w-4 h-4 text-emerald-400" />
-                    <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/25" />
+                    <Wifi className="w-4 h-4 text-status-success" />
+                    <span className="absolute inset-0 rounded-full animate-ping bg-status-success/25" />
                   </div>
                 ) : (
                   <WifiOff className="w-4 h-4 text-foreground flex-shrink-0" />
                 )}
-                <span className={isRunning ? 'text-emerald-400' : 'text-foreground'}>
+                <span className={isRunning ? 'text-status-success' : 'text-foreground'}>
                   {isRunning ? st.status_online : st.status_offline}
                 </span>
               </div>
@@ -350,7 +350,7 @@ export function NetworkDashboard() {
                 </div>
                 <span>{isRunning ? networkStatus.connected_peer_count : 0}</span>
                 {label && (
-                  <span className="text-[10px] font-mono font-normal" style={{ color }}>
+                  <span className="typo-caption font-mono" style={{ color }}>
                     {label}
                   </span>
                 )}
@@ -361,8 +361,8 @@ export function NetworkDashboard() {
           {/* Peer ID footer */}
           {isRunning && networkStatus.local_peer_id && (
             <div className="flex items-center gap-1.5 px-1 pt-1">
-              <span className="text-[10px] uppercase tracking-wider text-foreground">{st.peer_id_footer}</span>
-              <span className="text-[11px] font-mono text-foreground">
+              <span className="typo-eyebrow text-foreground">{st.peer_id_footer}</span>
+              <span className="typo-caption font-mono text-foreground">
                 {networkStatus.local_peer_id.slice(0, 8)}...{networkStatus.local_peer_id.slice(-8)}
               </span>
             </div>

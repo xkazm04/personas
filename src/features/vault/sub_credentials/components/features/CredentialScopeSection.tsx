@@ -42,7 +42,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
   if (specs.length === 0) return null;
 
   return (
-    <div className="border border-primary/10 rounded-modal p-4 space-y-3">
+    <div className="border border-hair rounded-modal p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-foreground" />
@@ -74,7 +74,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
                 )}
               </div>
               {isBroad ? (
-                <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-secondary/30 border border-foreground/10">
+                <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-surface-1 border border-foreground/10">
                   <Globe className="w-3 h-3 text-foreground" />
                   <span className="typo-caption text-foreground">{sh.scope_broad}</span>
                 </div>
@@ -84,7 +84,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
                     <span
                       key={p.id}
                       title={p.sublabel ?? p.id}
-                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-primary/10 border border-primary/20 typo-caption text-foreground"
+                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-primary/10 border border-hair typo-caption text-foreground"
                     >
                       <span className="truncate max-w-[18ch]">{p.label}</span>
                       {p.sublabel && (

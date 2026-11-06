@@ -38,7 +38,7 @@ export function HealthcheckResultDisplay({
       <div
         data-testid="healthcheck-result"
         data-state={outcome}
-        className="animate-fade-slide-in mt-2 flex items-start gap-2 px-3 py-2 rounded-modal typo-body bg-secondary/40 border border-border/40 text-foreground"
+        className="animate-fade-slide-in mt-2 flex items-start gap-2 px-3 py-2 rounded-modal typo-body bg-surface-2 border border-border/40 text-foreground"
       >
         <Icon className="w-4 h-4 mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0 space-y-1">

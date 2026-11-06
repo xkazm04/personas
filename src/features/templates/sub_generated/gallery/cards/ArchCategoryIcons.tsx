@@ -30,8 +30,8 @@ export function ArchCategoryIcons({ connectors, credentialServiceTypes }: ArchCa
             <span
               className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
                 hasIt
-                  ? 'bg-emerald-500'
-                  : 'bg-amber-500/60 border border-dashed border-amber-500/30'
+                  ? 'bg-status-success'
+                  : 'bg-status-warning/60 border border-dashed border-status-warning/30'
               }`}
             />
           </div>

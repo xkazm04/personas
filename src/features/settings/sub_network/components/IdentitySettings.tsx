@@ -98,7 +98,7 @@ export default function IdentitySettings() {
           <Fingerprint className="w-4 h-4" />
           {st.your_identity}
         </h3>
-        <div className="rounded-modal border border-border bg-secondary/20 p-4 space-y-3">
+        <div className="rounded-modal border border-border bg-surface-1 p-4 space-y-3">
           {localIdentity ? (
             <>
               <div className="flex items-center justify-between">
@@ -111,9 +111,9 @@ export default function IdentitySettings() {
                 <button
                   type="button"
                   onClick={handleCopyCard}
-                  className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? t.common.copied : st.copy_identity_card}
                 </button>
               </div>
@@ -131,7 +131,7 @@ export default function IdentitySettings() {
                       autoFocus
                     />
                     <button type="button" onClick={handleSaveName} className="px-2 py-1 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90">{st.save}</button>
-                    <button type="button" onClick={() => setEditingName(false)} className="px-2 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50">{st.cancel}</button>
+                    <button type="button" onClick={() => setEditingName(false)} className="px-2 py-1 typo-caption rounded-card border border-border hover:bg-surface-2">{st.cancel}</button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -161,16 +161,16 @@ export default function IdentitySettings() {
             <div className="space-y-3" aria-hidden="true">
               <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: '120ms' }}>
                 <div className="space-y-1.5">
-                  <span className="block h-2.5 w-20 rounded bg-primary/[0.06]" />
-                  <span className="block h-3.5 w-32 rounded bg-primary/[0.06]" />
+                  <span className="block h-2.5 w-20 rounded-interactive bg-primary/[0.06]" />
+                  <span className="block h-3.5 w-32 rounded-interactive bg-primary/[0.06]" />
                 </div>
                 <span className="h-7 w-28 rounded-card bg-primary/[0.06]" />
               </div>
               <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '155ms' }}>
-                <span className="block h-2.5 w-24 rounded bg-primary/[0.06]" />
-                <span className="block h-3.5 w-28 rounded bg-primary/[0.06]" />
+                <span className="block h-2.5 w-24 rounded-interactive bg-primary/[0.06]" />
+                <span className="block h-3.5 w-28 rounded-interactive bg-primary/[0.06]" />
               </div>
-              <span className="block h-2.5 w-32 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '190ms' }} />
+              <span className="block h-2.5 w-32 rounded-interactive bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '190ms' }} />
             </div>
           )}
         </div>
@@ -183,7 +183,7 @@ export default function IdentitySettings() {
           <button
             type="button"
             onClick={() => setShowImportForm(!showImportForm)}
-            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
           >
             <UserPlus className="w-3.5 h-3.5" />
             {st.add_peer}
@@ -191,7 +191,7 @@ export default function IdentitySettings() {
         </div>
 
         {showImportForm && (
-          <div className="rounded-modal border border-border bg-secondary/20 p-4 mb-3 space-y-2">
+          <div className="rounded-modal border border-border bg-surface-1 p-4 mb-3 space-y-2">
             <label className="typo-caption text-foreground">{st.paste_identity_card}</label>
             <textarea
               value={importInput}
@@ -218,7 +218,7 @@ export default function IdentitySettings() {
               <button
                 type="button"
                 onClick={() => { setShowImportForm(false); setImportInput(''); setImportNotes(''); }}
-                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
+                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2"
               >
                 {st.cancel}
               </button>
@@ -235,16 +235,16 @@ export default function IdentitySettings() {
             {trustedPeers.map((peer) => (
               <div
                 key={peer.peer_id}
-                className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between"
+                className="rounded-modal border border-border bg-surface-1 p-3 flex items-center justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 typo-body text-foreground truncate">
                     {peer.trust_level === 'verified' ? (
-                      <TrustVerifiedIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      <TrustVerifiedIcon className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
                     ) : peer.trust_level === 'revoked' ? (
-                      <TrustRevokedIcon className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                      <TrustRevokedIcon className="w-3.5 h-3.5 text-status-error flex-shrink-0" />
                     ) : (
-                      <TrustUnknownIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                      <TrustUnknownIcon className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
                     )}
                     <span className="truncate">{peer.display_name}</span>
                   </div>
@@ -254,10 +254,10 @@ export default function IdentitySettings() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                    peer.trust_level === 'manual' ? 'bg-blue-500/10 text-blue-400' :
-                    peer.trust_level === 'verified' ? 'bg-green-500/10 text-green-400' :
-                    'bg-red-500/10 text-red-400'
+                  <span className={`typo-caption px-1.5 py-0.5 rounded-full ${
+                    peer.trust_level === 'manual' ? 'bg-status-info/10 text-status-info' :
+                    peer.trust_level === 'verified' ? 'bg-status-success/10 text-status-success' :
+                    'bg-status-error/10 text-status-error'
                   }`}>
                     {peer.trust_level}
                   </span>
@@ -271,7 +271,7 @@ export default function IdentitySettings() {
                           type="button"
                           onClick={requestConfirm}
                           title={t.sharing.revoke_trust}
-                          className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
+                          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-warning transition-colors"
                         >
                           <TrustRevokedIcon className="w-3.5 h-3.5" />
                         </button>
@@ -287,7 +287,7 @@ export default function IdentitySettings() {
                         type="button"
                         onClick={requestConfirm}
                         title={t.sharing.remove_peer}
-                        className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors"
+                        className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-error transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

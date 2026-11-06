@@ -37,7 +37,7 @@ export function RotationCountdownRing({
         r={RING_RADIUS}
         fill="none"
         stroke="currentColor"
-        className="text-cyan-500/10"
+        className="text-role-highlight/10"
         strokeWidth={RING_STROKE}
       />
       {/* Progress arc -- starts from 12 o'clock */}
@@ -47,7 +47,7 @@ export function RotationCountdownRing({
         r={RING_RADIUS}
         fill="none"
         stroke="currentColor"
-        className="text-cyan-400"
+        className="text-role-highlight"
         strokeWidth={RING_STROKE}
         strokeLinecap="round"
         strokeDasharray={RING_CIRCUMFERENCE}
@@ -64,7 +64,7 @@ export function RotationCountdownRing({
         y={cy}
         textAnchor="middle"
         dominantBaseline="central"
-        className="fill-muted-foreground/90 text-[9px] font-mono"
+        className="fill-muted-foreground/90 typo-caption font-mono"
       >
         {countdown}
       </text>

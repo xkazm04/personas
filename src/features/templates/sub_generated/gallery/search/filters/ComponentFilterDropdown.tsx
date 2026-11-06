@@ -75,12 +75,12 @@ export function ComponentFilterDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+        className="px-3 py-2 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5"
       >
         <Layers className="w-3.5 h-3.5" />
         {t.templates.search.components_label}
         {componentFilter.length > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 typo-body">
+          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-role-agent/20 text-role-agent typo-body">
             {componentFilter.length}
           </span>
         )}
@@ -88,8 +88,8 @@ export function ComponentFilterDropdown({
       </button>
 
       {isOpen && (
-        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-primary/20 rounded-modal shadow-elevation-3 min-w-[280px] overflow-hidden">
-          <div className="px-3 py-2 border-b border-primary/10">
+        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-hair rounded-modal shadow-elevation-3 min-w-[280px] overflow-hidden">
+          <div className="px-3 py-2 border-b border-hair">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
               <input
@@ -98,7 +98,7 @@ export function ComponentFilterDropdown({
                 value={dropdownSearch}
                 onChange={(e) => setDropdownSearch(e.target.value)}
                 placeholder={t.templates.search.search_components}
-                className="w-full pl-8 pr-3 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-modal text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                className="w-full pl-8 pr-3 py-1.5 typo-body bg-surface-2 border border-hair rounded-modal text-ink-1 placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
               />
             </div>
           </div>
@@ -122,18 +122,18 @@ export function ComponentFilterDropdown({
                   >
                     <CatIcon className="w-4 h-4" style={{ color: cat.color }} />
                   </div>
-                  <span className="typo-body text-foreground/90 flex-1">{highlightMatch(cat.label, debouncedSearch.trim())}</span>
-                  <span className="typo-data text-foreground px-1.5 py-0.5 rounded-full bg-secondary/60">
+                  <span className="typo-body text-ink-1 flex-1">{highlightMatch(cat.label, debouncedSearch.trim())}</span>
+                  <span className="typo-data text-foreground px-1.5 py-0.5 rounded-full bg-surface-2">
                     {item.count}
                   </span>
                   <div
-                    className={`w-4.5 h-4.5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                    className={`w-4.5 h-4.5 rounded-interactive border flex items-center justify-center flex-shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-violet-500/30 border-violet-500/50'
-                        : 'border-primary/20'
+                        ? 'bg-role-agent/30 border-role-agent/50'
+                        : 'border-hair'
                     }`}
                   >
-                    {isSelected && <CheckCircle2 className="w-3 h-3 text-violet-300" />}
+                    {isSelected && <CheckCircle2 className="w-3 h-3 text-role-agent" />}
                   </div>
                 </button>
               );
@@ -146,14 +146,14 @@ export function ComponentFilterDropdown({
           </div>
 
           {componentFilter.length > 0 && (
-            <div className="border-t border-primary/10 px-1 py-1">
+            <div className="border-t border-hair px-1 py-1">
               <button
                 type="button"
                 onClick={() => {
                   setComponentFilter([]);
                   setIsOpen(false);
                 }}
-                className="w-full px-3.5 py-2 text-left typo-body text-foreground hover:text-foreground/95 hover:bg-primary/5 rounded-modal transition-colors"
+                className="w-full px-3.5 py-2 text-left typo-body text-foreground hover:text-ink-1 hover:bg-primary/5 rounded-modal transition-colors"
               >
                 {t.templates.search.clear_all}
               </button>

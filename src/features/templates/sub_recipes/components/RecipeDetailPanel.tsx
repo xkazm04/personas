@@ -87,7 +87,7 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
         {/* About */}
         <div className="px-4 py-4">
           <h4 className="typo-label text-foreground mb-2">{t.recipes_catalog.about_heading}</h4>
-          <p className="typo-body text-foreground/90 whitespace-pre-line">{recipe.description}</p>
+          <p className="typo-body text-ink-1 whitespace-pre-line">{recipe.description}</p>
           {recipe.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               {recipe.tags.map((tag) => onTagClick ? (
@@ -96,7 +96,7 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
                     type="button"
                     data-testid={`recipe-tag-${tag}`}
                     onClick={() => onTagClick(tag)}
-                    className="typo-label px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/30 text-foreground hover:border-primary/40 hover:text-primary cursor-pointer transition-colors"
+                    className="typo-label px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-1 text-foreground hover:border-primary/40 hover:text-primary cursor-pointer transition-colors"
                   >
                     {tag}
                   </button>
@@ -104,7 +104,7 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
               ) : (
                 <span
                   key={tag}
-                  className="typo-label px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/30 text-foreground"
+                  className="typo-label px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-1 text-foreground"
                 >
                   {tag}
                 </span>

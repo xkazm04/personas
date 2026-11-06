@@ -70,10 +70,10 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           variants={item}
           whileHover={lift}
           onClick={() => onGoToCatalog?.()}
-          className={`group text-left p-4 rounded-modal border border-primary/15 ring-1 ring-primary/30 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 hover:shadow-elevation-2 ${CARD_TRANSITION}`}
+          className={`group text-left p-4 rounded-modal border border-hair ring-1 ring-primary/30 bg-surface-1 hover:bg-surface-2 hover:border-primary/25 hover:shadow-elevation-2 ${CARD_TRANSITION}`}
         >
-          <div className="w-9 h-9 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
-            <LayoutTemplate className="w-4.5 h-4.5 text-emerald-400" />
+          <div className="w-9 h-9 rounded-card bg-status-success/10 border border-status-success/20 flex items-center justify-center mb-3">
+            <LayoutTemplate className="w-4.5 h-4.5 text-status-success" />
           </div>
           <span className="block typo-code uppercase tracking-wider text-primary/70 mb-1">
             {t.vault.empty_state.recommended}
@@ -86,7 +86,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
             {connectorDefinitions.slice(0, 4).map((c) => (
               <div
                 key={c.id}
-                className="w-5 h-5 rounded border flex items-center justify-center"
+                className="w-5 h-5 rounded-interactive border flex items-center justify-center"
                 style={{
                   backgroundColor: `${c.color}12`,
                   borderColor: `${c.color}25`,
@@ -112,16 +112,16 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           whileHover={lift}
           data-testid="create-credential-btn"
           onClick={() => onGoToAddNew?.()}
-          className={`group text-left p-4 rounded-modal border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 hover:shadow-elevation-2 ${CARD_TRANSITION}`}
+          className={`group text-left p-4 rounded-modal border border-hair bg-surface-1 hover:bg-surface-2 hover:border-primary/25 hover:shadow-elevation-2 ${CARD_TRANSITION}`}
         >
-          <div className="w-9 h-9 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
-            <Sparkles className="w-4.5 h-4.5 text-violet-400" />
+          <div className="w-9 h-9 rounded-card bg-role-agent/10 border border-role-agent/20 flex items-center justify-center mb-3">
+            <Sparkles className="w-4.5 h-4.5 text-role-agent" />
           </div>
           <p className="typo-body text-foreground mb-1">{t.vault.empty_state.ai_heading}</p>
           <p className="typo-body text-foreground">
             {t.vault.empty_state.ai_description}
           </p>
-          <span className="inline-flex items-center gap-1 mt-3 typo-body text-violet-400/60 group-hover:text-violet-400/80 transition-colors">
+          <span className="inline-flex items-center gap-1 mt-3 typo-body text-role-agent/60 group-hover:text-role-agent/80 transition-colors">
             {t.vault.empty_state.works_with_any} <ArrowRight className="w-3 h-3" />
           </span>
         </motion.button>
@@ -133,11 +133,11 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           variants={item}
           whileHover={lift}
           onClick={onWorkspaceConnect}
-          className={`w-full text-left p-4 rounded-modal bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 hover:shadow-elevation-2 ${CARD_TRANSITION}`}
+          className={`w-full text-left p-4 rounded-modal bg-gradient-to-r from-status-info/5 to-status-success/5 border border-status-info/15 hover:from-status-info/10 hover:to-status-success/10 hover:border-status-info/25 hover:shadow-elevation-2 ${CARD_TRANSITION}`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-              <Globe className="w-4.5 h-4.5 text-blue-400" />
+            <div className="w-9 h-9 rounded-card bg-status-info/10 border border-status-info/20 flex items-center justify-center">
+              <Globe className="w-4.5 h-4.5 text-status-info" />
             </div>
             <div>
               <p className="typo-body text-foreground">{t.vault.workspace_connect}</p>
@@ -159,10 +159,10 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
                 type="button"
                 key={connector.id}
                 onClick={() => onQuickStart(connector)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all typo-body"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair transition-all typo-body"
               >
                 <div
-                  className="w-4.5 h-4.5 rounded flex items-center justify-center"
+                  className="w-4.5 h-4.5 rounded-interactive flex items-center justify-center"
                   style={{ backgroundColor: `${connector.color}15` }}
                 >
                   {connector.icon_url ? (

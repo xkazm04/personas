@@ -361,11 +361,11 @@ export function QuestionCard({
         ) : (
           <CircleDot className="w-5 h-5 text-status-warning/70 mt-1 flex-shrink-0" />
         )}
-        <span className="flex-1 typo-body-lg text-foreground/90">
+        <span className="flex-1 typo-body-lg text-ink-1">
           {question.question}
         </span>
         {isAutoDetected && !isBlocked && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-0.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-interactive bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-0.5">
             <KeyRound className="w-3 h-3" />
             {t.templates.adopt_modal.auto_detected}
           </span>
@@ -376,10 +376,10 @@ export function QuestionCard({
             onClick={() => setTipOpen((v) => !v)}
             aria-expanded={tipOpen}
             aria-label={tipOpen ? t.templates.adopt_modal.hide_explanation : t.templates.adopt_modal.show_explanation}
-            className={`flex-shrink-0 mt-0.5 p-0.5 rounded transition-colors ${
+            className={`flex-shrink-0 mt-0.5 p-0.5 rounded-interactive transition-colors ${
               tipOpen
                 ? 'text-primary/80 hover:text-primary'
-                : 'text-foreground hover:text-muted-foreground/70'
+                : 'text-foreground hover:text-ink-2'
             }`}
           >
             <Info className="w-3.5 h-3.5" />

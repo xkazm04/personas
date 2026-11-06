@@ -149,7 +149,7 @@ export default function PairedPhonesPanel() {
             src={qrDataUri}
             alt={s.cloud_phones_qr_alt}
             data-testid="paired-phones-qr"
-            className="h-40 w-40 shrink-0 rounded-card border border-primary/20"
+            className="h-40 w-40 shrink-0 rounded-card border border-hair"
           />
           <div className="min-w-0 flex-1 space-y-2">
             <p className="typo-body text-foreground">{s.cloud_phones_scan}</p>

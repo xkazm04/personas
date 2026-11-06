@@ -30,7 +30,7 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
   return (
     <div className="space-y-5">
       {/* Illustrated header with the back control inside it */}
-      <div className="relative rounded-modal border border-primary/10 overflow-hidden p-5 flex flex-col justify-center gap-2" style={{ minHeight: 104 }}>
+      <div className="relative rounded-modal border border-hair overflow-hidden p-5 flex flex-col justify-center gap-2" style={{ minHeight: 104 }}>
         <img src={domainArt(d, isDark)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, var(--background) 32%, ${d.color}22)` }} />
         <button
@@ -44,7 +44,7 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
           <div className="typo-heading-lg text-foreground">{domainLabel(d, t.explore)}</div>
           <div className="typo-caption text-foreground opacity-80 h-4 flex items-center">
             {loading ? (
-              <span className="inline-block h-2.5 w-32 rounded bg-primary/[0.08] animate-fade-in" style={{ animationDelay: '120ms' }} aria-hidden="true" />
+              <span className="inline-block h-2.5 w-32 rounded-interactive bg-primary/[0.08] animate-fade-in" style={{ animationDelay: '120ms' }} aria-hidden="true" />
             ) : (
               tx(t.explore.l2_counts, { templates: templates.length, recipes: recipes.length })
             )}

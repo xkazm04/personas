@@ -12,8 +12,8 @@ export function SelectionCheckbox({ checked, onChange }: { checked: boolean; onC
       }}
       className={`w-4 h-4 rounded-card flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer ${
         checked
-          ? 'bg-violet-500 border border-violet-500'
-          : 'bg-secondary/40 border border-primary/20 hover:border-primary/40'
+          ? 'bg-role-agent border border-role-agent'
+          : 'bg-surface-2 border border-hair hover:border-primary/40'
       }`}
     >
       {checked && (

@@ -81,8 +81,8 @@ function TypeChip({ label, active, onClick }: { label: string; active: boolean; 
       className={[
         'px-2 py-0.5 rounded-interactive typo-caption font-mono transition-colors focus-ring',
         active
-          ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-          : 'bg-secondary/40 text-foreground border border-border/40 hover:bg-secondary/70',
+          ? 'bg-role-agent/20 text-role-agent border border-role-agent/40'
+          : 'bg-surface-2 text-foreground border border-border/40 hover:bg-secondary/70',
       ].join(' ')}
     >
       {label}

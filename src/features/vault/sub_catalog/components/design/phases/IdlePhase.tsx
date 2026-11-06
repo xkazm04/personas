@@ -53,7 +53,7 @@ export function IdlePhase({
         <button
           type="button"
           onClick={onToggleTemplates}
-          className="px-2.5 py-1 typo-body rounded-modal border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+          className="px-2.5 py-1 typo-body rounded-modal border border-hair text-primary hover:bg-primary/10 transition-colors"
         >
           {t.vault.design_phases.from_catalog}
         </button>
@@ -73,7 +73,7 @@ export function IdlePhase({
           <button
             type="button"
             onClick={onImportFrom}
-            className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-role-highlight/20 text-role-highlight hover:bg-role-highlight/10 transition-colors"
           >
             <Import className="w-3.5 h-3.5" />
             {t.vault.design_phases.import_from}
@@ -85,7 +85,7 @@ export function IdlePhase({
             key={hint}
             type="button"
             onClick={() => onInstructionChange(hint)}
-            className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-hair text-ink-1 hover:bg-surface-2 transition-colors"
             data-testid={`hint-chip-${hint.split(' ')[0]?.toLowerCase()}`}
           >
             <span
@@ -116,7 +116,7 @@ export function IdlePhase({
         rows={3}
         autoFocus
         data-testid="vault-design-input"
-        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-surface-2 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
       <div className="flex justify-end gap-2.5">
         {onAutoSetup && (
@@ -124,7 +124,7 @@ export function IdlePhase({
             type="button"
             onClick={onAutoSetup}
             disabled={!instruction.trim()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-cyan-600/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-role-highlight hover:bg-role-highlight disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-role-highlight/20"
           >
             <Bot className="w-4 h-4" />
             {t.vault.design_phases.auto_setup}

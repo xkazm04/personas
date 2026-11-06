@@ -28,14 +28,14 @@ export function OverviewTab({
     <div className="space-y-6">
       {/* Summary */}
       {designResult?.summary && (
-        <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-modal px-4 py-3">
-          <p className="typo-body text-foreground/90">{designResult.summary}</p>
+        <div className="bg-gradient-to-r from-role-agent/5 to-transparent border border-role-agent/10 rounded-modal px-4 py-3">
+          <p className="typo-body text-ink-1">{designResult.summary}</p>
         </div>
       )}
 
       {/* Performance Metrics */}
       {perfLoading && (
-        <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3">
+        <div className="rounded-modal border border-hair bg-surface-1 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground/80 animate-spin" />
             <span className="typo-body text-foreground">{t.templates.overview_tab.loading_metrics}</span>
@@ -43,19 +43,19 @@ export function OverviewTab({
         </div>
       )}
       {!perfLoading && perfError && (
-        <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+        <div className="rounded-modal border border-status-warning/15 bg-status-warning/5 px-4 py-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400/70" />
-            <span className="typo-body text-amber-400/80">{t.templates.overview_tab.metrics_unavailable}</span>
+            <AlertTriangle className="w-4 h-4 text-status-warning/70" />
+            <span className="typo-body text-status-warning/80">{t.templates.overview_tab.metrics_unavailable}</span>
           </div>
           <p className="typo-body text-foreground mt-1">{t.templates.overview_tab.metrics_load_error}</p>
         </div>
       )}
       {!perfLoading && !perfError && performance && !performance.data_available && (
-        <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+        <div className="rounded-modal border border-status-warning/15 bg-status-warning/5 px-4 py-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400/70" />
-            <span className="typo-body text-amber-400/80">{t.templates.overview_tab.incomplete_data}</span>
+            <AlertTriangle className="w-4 h-4 text-status-warning/70" />
+            <span className="typo-body text-status-warning/80">{t.templates.overview_tab.incomplete_data}</span>
           </div>
           <p className="typo-body text-foreground mt-1">
             {t.templates.overview_tab.incomplete_data_hint}
@@ -68,23 +68,23 @@ export function OverviewTab({
             {t.templates.overview_tab.performance}
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
+            <div className="rounded-modal border border-hair bg-surface-1 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <Users className="w-3.5 h-3.5 text-violet-400/70" />
+                <Users className="w-3.5 h-3.5 text-role-agent/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.adoptions_label}</span>
               </div>
-              <span className="typo-heading-lg text-foreground/90 font-mono">{performance.total_adoptions}</span>
+              <span className="typo-heading-lg text-ink-1 font-mono">{performance.total_adoptions}</span>
             </div>
-            <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
+            <div className="rounded-modal border border-hair bg-surface-1 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <Activity className="w-3.5 h-3.5 text-blue-400/70" />
+                <Activity className="w-3.5 h-3.5 text-status-info/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.executions_label}</span>
               </div>
-              <span className="typo-heading-lg text-foreground/90 font-mono">{performance.total_executions}</span>
+              <span className="typo-heading-lg text-ink-1 font-mono">{performance.total_executions}</span>
             </div>
-            <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
+            <div className="rounded-modal border border-hair bg-surface-1 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <BarChart3 className="w-3.5 h-3.5 text-emerald-400/70" />
+                <BarChart3 className="w-3.5 h-3.5 text-status-success/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.success_label}</span>
               </div>
               {/* No run yet is "not measured", never 0%: the backend reports a
@@ -93,28 +93,28 @@ export function OverviewTab({
                 value={performance.total_executions > 0 ? performance.success_rate : null}
                 unit="ratio"
                 precision={0}
-                className="typo-heading-lg text-foreground/90 font-mono"
+                className="typo-heading-lg text-ink-1 font-mono"
               />
             </div>
-            <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
+            <div className="rounded-modal border border-hair bg-surface-1 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <DollarSign className="w-3.5 h-3.5 text-amber-400/70" />
+                <DollarSign className="w-3.5 h-3.5 text-status-warning/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.avg_cost_label}</span>
               </div>
-              <Numeric value={performance.total_executions > 0 ? performance.avg_cost_usd : null} unit="usd" className="typo-heading-lg text-foreground/90 font-mono" />
+              <Numeric value={performance.total_executions > 0 ? performance.avg_cost_usd : null} unit="usd" className="typo-heading-lg text-ink-1 font-mono" />
             </div>
           </div>
           {/* Feedback summary */}
           {(performance.positive_count > 0 || performance.negative_count > 0) && (
             <div className="flex items-center gap-4 mt-3">
               {performance.positive_count > 0 && (
-                <span className="flex items-center gap-1.5 typo-body text-emerald-400/80">
+                <span className="flex items-center gap-1.5 typo-body text-status-success/80">
                   <ThumbsUp className="w-3.5 h-3.5" />
                   {performance.positive_count}
                 </span>
               )}
               {performance.negative_count > 0 && (
-                <span className="flex items-center gap-1.5 typo-body text-red-400/80">
+                <span className="flex items-center gap-1.5 typo-body text-status-error/80">
                   <ThumbsDown className="w-3.5 h-3.5" />
                   {performance.negative_count}
                 </span>
@@ -141,11 +141,11 @@ export function OverviewTab({
                 type="button"
                 key={flow.id}
                 onClick={onViewFlows}
-                className="bg-violet-500/5 border border-violet-500/15 rounded-modal px-4 py-3 text-left hover:bg-violet-500/10 hover:border-violet-500/25 transition-all group min-w-[180px]"
+                className="bg-role-agent/5 border border-role-agent/15 rounded-modal px-4 py-3 text-left hover:bg-role-agent/10 hover:border-role-agent/25 transition-all group min-w-[180px]"
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
-                  <span className="typo-body text-foreground group-hover:text-foreground/95 truncate">
+                  <Workflow className="w-4 h-4 text-role-agent/70 group-hover:text-role-agent transition-colors" />
+                  <span className="typo-body text-foreground group-hover:text-ink-1 truncate">
                     {flow.name}
                   </span>
                 </div>
@@ -161,10 +161,10 @@ export function OverviewTab({
 
       {/* Adjustment */}
       {adjustment && (
-        <div className="bg-amber-500/5 border border-amber-500/15 rounded-modal px-4 py-3 space-y-2">
+        <div className="bg-status-warning/5 border border-status-warning/15 rounded-modal px-4 py-3 space-y-2">
           <div className="flex items-center gap-2">
-            <Lightbulb className="w-4 h-4 text-amber-400/80" />
-            <h4 className="typo-body text-amber-400/80 uppercase">
+            <Lightbulb className="w-4 h-4 text-status-warning/80" />
+            <h4 className="typo-body text-status-warning/80 uppercase">
               {t.templates.overview_tab.suggested_adjustment}
               {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                 <span className="ml-1.5 text-foreground normal-case">
@@ -174,7 +174,7 @@ export function OverviewTab({
             </h4>
           </div>
           <p className="typo-body text-foreground">{adjustment.reason}</p>
-          <div className="bg-background/50 rounded-modal px-3 py-2 typo-body text-foreground/90 border border-primary/10">
+          <div className="bg-background/50 rounded-modal px-3 py-2 typo-body text-ink-1 border border-hair">
             {adjustment.suggestion}
           </div>
           {adjustment.appliedFixes.length > 0 && (
@@ -182,7 +182,7 @@ export function OverviewTab({
               {adjustment.appliedFixes.map((fix: string, i: number) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/15 text-amber-400/70"
+                  className="px-2 py-0.5 typo-body rounded-full bg-status-warning/10 border border-status-warning/15 text-status-warning/70"
                 >
                   {fix}
                 </span>
@@ -199,16 +199,16 @@ export function OverviewTab({
             {t.templates.overview_tab.dimension_completion}
           </h4>
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-2 bg-secondary/40 rounded-full overflow-hidden max-w-[200px]">
+            <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden max-w-[200px]">
               <div
                 className={`h-full rounded-full transition-all ${
-                  review.structural_score >= 80 ? 'bg-emerald-500/70' : review.structural_score >= 60 ? 'bg-amber-500/70' : 'bg-red-500/70'
+                  review.structural_score >= 80 ? 'bg-status-success/70' : review.structural_score >= 60 ? 'bg-status-warning/70' : 'bg-status-error/70'
                 }`}
                 style={{ width: `${Math.min(review.structural_score, 100)}%` }}
               />
             </div>
             <span className={`typo-code ${
-              review.structural_score >= 80 ? 'text-emerald-400' : review.structural_score >= 60 ? 'text-amber-400' : 'text-red-400'
+              review.structural_score >= 80 ? 'text-status-success' : review.structural_score >= 60 ? 'text-status-warning' : 'text-status-error'
             }`}>
               {review.structural_score}%
             </span>

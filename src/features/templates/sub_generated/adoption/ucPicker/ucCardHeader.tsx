@@ -72,7 +72,7 @@ export function UcCardHeader({
             className={`focus-ring w-10 h-10 rounded-full ring-1 flex items-center justify-center transition-colors ${
               cardMode === 'edit'
                 ? 'ring-primary/60 bg-primary/15 text-primary shadow-elevation-1'
-                : 'ring-border bg-secondary/40 text-foreground hover:bg-secondary/70 hover:text-foreground'
+                : 'ring-border bg-surface-2 text-foreground hover:bg-secondary/70 hover:text-foreground'
             }`}
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -95,7 +95,7 @@ export function UcCardHeader({
             className={`focus-ring w-10 h-10 rounded-full ring-1 flex items-center justify-center transition-colors ${
               descExpanded
                 ? 'ring-primary/60 bg-primary/15 text-primary'
-                : 'ring-border bg-secondary/40 text-foreground hover:bg-secondary/70 hover:text-foreground'
+                : 'ring-border bg-surface-2 text-foreground hover:bg-secondary/70 hover:text-foreground'
             }`}
           >
             <Info className="w-5 h-5" />
@@ -110,7 +110,7 @@ export function UcCardHeader({
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={FADE}
                 onClick={onPreview}
-                className="focus-ring w-10 h-10 rounded-full ring-1 ring-border bg-secondary/40 text-foreground hover:bg-secondary/70 hover:text-foreground flex items-center justify-center transition-colors"
+                className="focus-ring w-10 h-10 rounded-full ring-1 ring-border bg-surface-2 text-foreground hover:bg-secondary/70 hover:text-foreground flex items-center justify-center transition-colors"
               >
                 <Eye className="w-5 h-5" />
               </motion.button>

@@ -78,7 +78,7 @@ export default function AccountSettings() {
         <SectionCard>
           <SettingRow
             variant="card"
-            icon={<Activity className="w-4 h-4 text-rose-400" />}
+            icon={<Activity className="w-4 h-4 text-status-error" />}
             label={s.telemetry_toggle}
             checked={telemetryOn}
             onChange={handleTelemetryToggle}
@@ -89,13 +89,13 @@ export default function AccountSettings() {
     {
       id: 'updates',
       label: s.updates_title,
-      icon: <Download className="w-4 h-4 text-blue-400" />,
+      icon: <Download className="w-4 h-4 text-ink-2" />,
       content: (
         <div className="space-y-4">
           <p className="typo-body text-foreground">{s.updates_description}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             {appVersion && (
-              <span className="inline-flex items-center px-2 py-0.5 typo-caption rounded-full bg-secondary/30 border border-primary/10 text-foreground">
+              <span className="inline-flex items-center px-2 py-0.5 typo-caption rounded-full bg-surface-1 border border-hair text-foreground">
                 {interpolate(s.updates_current_version, { version: appVersion })}
               </span>
             )}
@@ -117,19 +117,19 @@ export default function AccountSettings() {
               {isChecking ? s.updates_checking : s.updates_check_button}
             </Button>
             {!isChecking && lastOutcome === 'up-to-date' && (
-              <span className="inline-flex items-center gap-1.5 typo-caption text-emerald-400 animate-fade-slide-in">
+              <span className="inline-flex items-center gap-1.5 typo-caption text-status-success animate-fade-slide-in">
                 <CheckCircle2 className="w-4 h-4" />
                 {s.updates_up_to_date}
               </span>
             )}
             {!isChecking && lastOutcome === 'already-checking' && (
-              <span className="inline-flex items-center gap-1.5 typo-caption text-amber-400 animate-fade-slide-in">
+              <span className="inline-flex items-center gap-1.5 typo-caption text-status-warning animate-fade-slide-in">
                 <AlertCircle className="w-4 h-4" />
                 {s.updates_already_checking}
               </span>
             )}
             {!isChecking && lastOutcome === 'failed' && (
-              <span className="inline-flex items-center gap-1.5 typo-caption text-red-400 animate-fade-slide-in">
+              <span className="inline-flex items-center gap-1.5 typo-caption text-status-error animate-fade-slide-in">
                 <AlertCircle className="w-4 h-4" />
                 {s.updates_check_failed}
               </span>
@@ -141,7 +141,7 @@ export default function AccountSettings() {
     {
       id: 'account',
       label: s.title,
-      icon: <User className="w-4 h-4 text-blue-400" />,
+      icon: <User className="w-4 h-4 text-ink-2" />,
       content: (
         <div className="space-y-6">
           {isAuthenticated && user ? (
@@ -151,29 +151,29 @@ export default function AccountSettings() {
                   <img
                     src={user.avatar_url}
                     alt={user.display_name ?? s.avatar_alt}
-                    className="w-14 h-14 rounded-full border-2 border-primary/20"
+                    className="w-14 h-14 rounded-full border-2 border-hair"
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-primary/15 border-2 border-primary/20 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-primary/15 border-2 border-hair flex items-center justify-center">
                     <User className="w-7 h-7 text-primary" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="typo-body-lg text-foreground/90 truncate">
+                  <div className="typo-body-lg text-ink-1 truncate">
                     {user.display_name ?? user.email}
                   </div>
                   {user.display_name && (
                     <div className="typo-body text-foreground truncate">{user.email}</div>
                   )}
                   {isOffline && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 typo-heading rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                    <span className="inline-block mt-1.5 px-2 py-0.5 typo-heading rounded-full bg-status-warning/20 text-status-warning border border-status-warning/30 uppercase">
                       {s.offline}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="border-t border-primary/10 pt-4">
+              <div className="border-t border-hair pt-4">
                 <Button variant="secondary" icon={<LogOut className="w-4 h-4" />} onClick={logout}>
                   {s.sign_out}
                 </Button>
@@ -181,17 +181,17 @@ export default function AccountSettings() {
             </>
           ) : (
             <div className="text-center py-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-hair flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
               <p className="typo-body text-foreground mb-4">{s.sign_in_prompt}</p>
 
               {/* Error display */}
               {error && (
-                <div className="max-w-sm mx-auto mb-4 flex items-start gap-2.5 p-3 rounded-modal border border-red-500/20 bg-red-500/5 text-left">
-                  <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="max-w-sm mx-auto mb-4 flex items-start gap-2.5 p-3 rounded-modal border border-status-error/20 bg-status-error/5 text-left">
+                  <AlertCircle className="w-4 h-4 text-status-error mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="typo-body text-red-300/90">{error}</p>
+                    <p className="typo-body text-status-error/90">{error}</p>
                     <Button variant="link" size="xs" onClick={clearError} className="mt-1">
                       {s.dismiss}
                     </Button>
@@ -227,7 +227,7 @@ export default function AccountSettings() {
     sections.push({
       id: 'cloud',
       label: s.cloud_sync_title,
-      icon: <CloudUpload className="w-4 h-4 text-sky-400" />,
+      icon: <CloudUpload className="w-4 h-4 text-ink-2" />,
       card: false,
       content: <CloudSyncCard />,
     });
@@ -236,7 +236,7 @@ export default function AccountSettings() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<User className="w-5 h-5 text-blue-400" />}
+        icon={<User className="w-5 h-5 text-ink-2" />}
         iconColor="blue"
         title={s.title}
         subtitle={s.subtitle}

@@ -14,7 +14,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
   const { t, tx } = useTranslation();
 
   return (
-    <section className="rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1">
+    <section className="rounded-card border border-card-border bg-surface-1 p-4 shadow-elevation-1">
       <h4 className="typo-label text-foreground mb-3">
         {t.recipes_catalog.what_it_needs_heading}
       </h4>
@@ -30,7 +30,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
               return (
                 <span
                   key={slug}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border bg-secondary/40"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border bg-surface-2"
                   style={{ borderColor: m.color + '55' }}
                 >
                   <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
@@ -55,7 +55,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
               return (
                 <span
                   key={slug}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-card-border/60 bg-secondary/30"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-card-border/60 bg-surface-1"
                 >
                   <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
                   <span className="typo-caption text-foreground">{m.label}</span>
@@ -77,7 +77,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
             {recipe.template.inputParameters!.map((p) => (
               <li
                 key={p.name}
-                className="flex items-start gap-2 px-2 py-1.5 rounded-interactive border border-card-border/50 bg-secondary/20"
+                className="flex items-start gap-2 px-2 py-1.5 rounded-interactive border border-card-border/50 bg-surface-1"
               >
                 <SlidersHorizontal className="w-3 h-3 text-foreground mt-1 shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -87,7 +87,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                       <span className="typo-label text-foreground">{p.type}</span>
                     )}
                     {p.defaultValue && (
-                      <span className="typo-label font-mono px-1 py-0.5 rounded-interactive border border-card-border/50 bg-secondary/30 text-foreground">
+                      <span className="typo-label font-mono px-1 py-0.5 rounded-interactive border border-card-border/50 bg-surface-1 text-foreground">
                         {t.recipes_catalog.param_default_label} {p.defaultValue}
                       </span>
                     )}
@@ -111,7 +111,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
             {recipe.bindings.map((b) => (
               <li
                 key={b.variable}
-                className="flex items-start gap-2 px-2 py-1.5 rounded-interactive border border-card-border/50 bg-secondary/20"
+                className="flex items-start gap-2 px-2 py-1.5 rounded-interactive border border-card-border/50 bg-surface-1"
               >
                 <Plug className="w-3 h-3 text-foreground mt-1 shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -124,7 +124,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                       {bindingKindLabel(b.kind.type, t)}
                     </span>
                     {b.default !== undefined && (
-                      <span className="typo-label font-mono px-1 py-0.5 rounded-interactive border border-card-border/50 bg-secondary/30 text-foreground">
+                      <span className="typo-label font-mono px-1 py-0.5 rounded-interactive border border-card-border/50 bg-surface-1 text-foreground">
                         {t.recipes_catalog.param_default_label} {Array.isArray(b.default) ? b.default.join(', ') : String(b.default)}
                       </span>
                     )}

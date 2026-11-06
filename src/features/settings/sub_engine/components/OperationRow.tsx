@@ -24,8 +24,8 @@ export function OperationRow({
   const { t, tx } = useTranslation();
   const s = t.settings.engine;
   return (
-    <tr className="group even:bg-secondary/20 hover:bg-primary/[0.06] transition-colors">
-      <td className="sticky left-0 z-10 bg-background group-hover:bg-primary/[0.06] py-2.5 pr-4 pl-3 border-b border-primary/5 border-r border-r-primary/10 transition-colors">
+    <tr className="group even:bg-surface-1 hover:bg-primary/[0.06] transition-colors">
+      <td className="sticky left-0 z-10 bg-background group-hover:bg-primary/[0.06] py-2.5 pr-4 pl-3 border-b border-hair border-r border-r-primary/10 transition-colors">
         <div className="flex flex-col">
           <span className="typo-body text-foreground">{label}</span>
           <span className="typo-caption text-foreground">{description}</span>
@@ -38,20 +38,20 @@ export function OperationRow({
         const locked = !defaultEnabled;
 
         return (
-          <td key={p.id} className="py-2.5 px-2 text-center border-b border-primary/5">
+          <td key={p.id} className="py-2.5 px-2 text-center border-b border-hair">
             {!installed ? (
               <div className="flex justify-center">
-                <span className="w-6 h-6 rounded bg-secondary/20 border border-primary/5 flex items-center justify-center cursor-not-allowed">
+                <span className="w-6 h-6 rounded-interactive bg-surface-1 border border-hair flex items-center justify-center cursor-not-allowed">
                   <Minus className="w-3 h-3 text-foreground" />
                 </span>
               </div>
             ) : locked ? (
               <div className="flex justify-center">
                 <span
-                  className="w-6 h-6 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-center cursor-not-allowed"
+                  className="w-6 h-6 rounded-interactive bg-status-error/10 border border-status-error/20 flex items-center justify-center cursor-not-allowed"
                   title={tx(s.op_unsupported_title, { label, provider: p.shortLabel })}
                 >
-                  <Lock className="w-2.5 h-2.5 text-rose-400/40" />
+                  <Lock className="w-2.5 h-2.5 text-status-error/40" />
                 </span>
               </div>
             ) : (
@@ -59,17 +59,17 @@ export function OperationRow({
                 <button
                   type="button"
                   onClick={() => onToggle(operation, p.id)}
-                  className={`w-6 h-6 rounded border flex items-center justify-center transition-all ${
+                  className={`w-6 h-6 rounded-interactive border flex items-center justify-center transition-all ${
                     enabled
-                      ? 'bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30'
-                      : 'bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20'
+                      ? 'bg-status-success/20 border-status-success/30 hover:bg-status-success/30'
+                      : 'bg-status-error/10 border-status-error/20 hover:bg-status-error/20'
                   }`}
                   title={tx(enabled ? s.op_disable_title : s.op_enable_title, { label, provider: p.shortLabel })}
                 >
                   {enabled ? (
-                    <Check className="w-3 h-3 text-emerald-400" />
+                    <Check className="w-3 h-3 text-status-success" />
                   ) : (
-                    <X className="w-3 h-3 text-rose-400/60" />
+                    <X className="w-3 h-3 text-status-error/60" />
                   )}
                 </button>
               </div>

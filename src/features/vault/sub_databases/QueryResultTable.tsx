@@ -76,13 +76,13 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
 
   return (
     <div className="space-y-2">
-      <div className="rounded-modal border border-primary/10 overflow-hidden">
+      <div className="rounded-modal border border-hair overflow-hidden">
         {/* Sticky header */}
         <div className="overflow-x-auto">
           <table className="w-full typo-body" style={{ tableLayout: 'fixed' }}>
             {colGroup}
             <thead>
-              <tr className="bg-secondary/40 border-b border-primary/10">
+              <tr className="bg-surface-2 border-b border-hair">
                 {result.columns.map((col, i) => {
                   const isColCopied = copiedCell === `col-${i}`;
                   return (
@@ -99,8 +99,8 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                       <span className="flex items-center gap-1.5">
                         {isColCopied ? (
                           <>
-                            <Check className="w-3 h-3 text-emerald-400 shrink-0" />
-                            <span className="text-emerald-400">{db.copied}</span>
+                            <Check className="w-3 h-3 text-status-success shrink-0" />
+                            <span className="text-status-success">{db.copied}</span>
                           </>
                         ) : (
                           <>
@@ -131,9 +131,9 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                       key={rowIdx}
                       data-index={rowIdx}
                       ref={rowVirtualizer.measureElement}
-                      className={`border-b border-primary/5 ${
+                      className={`border-b border-hair ${
                         rowIdx % 2 === 0 ? 'bg-transparent' : 'bg-secondary/8'
-                      } hover:bg-secondary/20 transition-colors`}
+                      } hover:bg-surface-1 transition-colors`}
                       style={{
                         position: 'absolute',
                         top: 0,
@@ -159,7 +159,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                             aria-label={tx(db.click_copy_cell, { value: formatCell(cell, { pretty: true }) })}
                             className={`px-3 py-1.5 max-w-[300px] cursor-pointer transition-all duration-150 select-text focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 ${
                               isCellCopied
-                                ? 'bg-emerald-500/10 text-emerald-400'
+                                ? 'bg-status-success/10 text-status-success'
                                 : isNull
                                   ? 'text-foreground italic'
                                   : 'text-foreground hover:bg-primary/5'
@@ -196,7 +196,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
           {result.duration_ms}ms
         </span>
         {result.truncated && (
-          <span className="flex items-center gap-1 text-amber-400/70">
+          <span className="flex items-center gap-1 text-status-warning/70">
             <AlertTriangle className="w-3 h-3" />
             {db.results_truncated}
           </span>

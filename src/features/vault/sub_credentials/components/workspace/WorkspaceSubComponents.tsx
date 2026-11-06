@@ -39,13 +39,13 @@ export function ServiceCheckbox({
       size="md"
       className={`flex items-center gap-3 p-3 rounded-modal border transition-all text-left w-full ${
         checked
-          ? 'bg-secondary/50 border-primary/25'
-          : 'bg-secondary/15 border-primary/10 opacity-60'
-      } ${disabled ? 'cursor-not-allowed' : 'hover:bg-secondary/60 hover:border-primary/30'}`}
+          ? 'bg-surface-2 border-primary/25'
+          : 'bg-secondary/15 border-hair opacity-60'
+      } ${disabled ? 'cursor-not-allowed' : 'hover:bg-surface-2 hover:border-primary/30'}`}
     >
       <div
         className={`w-5 h-5 rounded-input border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
-          checked ? 'border-blue-500 bg-blue-500' : 'border-primary/25 bg-transparent'
+          checked ? 'border-status-info bg-status-info' : 'border-primary/25 bg-transparent'
         }`}
       >
         {checked && <Check className="w-3 h-3 text-foreground" />}
@@ -74,15 +74,15 @@ export function ProvisionProgress({ states }: { states: ServiceProvisionState[] 
       {states.map((s) => (
         <div
           key={s.service.serviceType}
-          className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20"
+          className="flex items-center gap-3 p-3 rounded-modal border border-hair bg-surface-1"
         >
           <div className="flex-shrink-0">
-            {s.status === 'pending' && <LoadingSpinner className="text-blue-400" />}
-            {s.status === 'created' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-            {s.status === 'failed' && <AlertCircle className="w-4 h-4 text-red-400" />}
+            {s.status === 'pending' && <LoadingSpinner className="text-status-info" />}
+            {s.status === 'created' && <CheckCircle2 className="w-4 h-4 text-status-success" />}
+            {s.status === 'failed' && <AlertCircle className="w-4 h-4 text-status-error" />}
           </div>
           <div
-            className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
+            className="w-6 h-6 rounded-interactive flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: `${s.service.color}15` }}
           >
             <div
@@ -93,7 +93,7 @@ export function ProvisionProgress({ states }: { states: ServiceProvisionState[] 
           <div className="min-w-0 flex-1">
             <div className="typo-body text-foreground">{s.service.label}</div>
             {s.status === 'failed' && s.error && (
-              <div className="typo-caption text-red-400 truncate">{s.error}</div>
+              <div className="typo-caption text-status-error truncate">{s.error}</div>
             )}
           </div>
           <div className="typo-caption text-foreground flex-shrink-0">

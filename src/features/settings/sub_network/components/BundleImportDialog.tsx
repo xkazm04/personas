@@ -269,9 +269,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
         <div>
           <h2 id="bundle-import-title" className="typo-body-lg text-foreground flex items-center gap-2">
             {isEnclave ? (
-              <Lock className="w-4 h-4 text-violet-400" />
+              <Lock className="w-4 h-4 text-role-agent" />
             ) : (
-              <Download className="w-4 h-4 text-emerald-400" />
+              <Download className="w-4 h-4 text-status-success" />
             )}
             {isEnclave ? st.verify_enclave_title : st.import_title}
           </h2>
@@ -283,9 +283,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
         </div>
 
         {error && (
-          <div className="rounded-card border border-red-500/20 bg-red-500/5 p-3 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <span className="typo-caption text-red-400">{error}</span>
+          <div className="rounded-card border border-status-error/20 bg-status-error/5 p-3 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-status-error mt-0.5 flex-shrink-0" />
+            <span className="typo-caption text-status-error">{error}</span>
           </div>
         )}
 
@@ -307,7 +307,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
                 <button
                   type="button"
                   onClick={handlePasteFromClipboard}
-                  className="px-4 py-2 typo-body rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 typo-body rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
                 >
                   <ClipboardPaste className="w-4 h-4" />
                   {st.paste_from_clipboard}
@@ -329,7 +329,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
                   type="button"
                   onClick={() => handleImportShareLink()}
                   disabled={!shareLinkInput.trim()}
-                  className="px-3 py-1.5 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  className="px-3 py-1.5 typo-caption rounded-card border border-role-highlight/30 text-role-highlight hover:bg-role-highlight/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {st.open}
                 </button>
@@ -411,7 +411,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
           <button
             type="button"
             onClick={handleClose}
-            className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
+            className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2"
           >
             {phase === 'done' || isEnclave ? st.close : st.cancel}
           </button>
@@ -436,7 +436,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
                   type="button"
                   onClick={matchedKind ? handleImport : undefined}
                   disabled={!matchedKind}
-                  className="px-3 py-1.5 typo-caption rounded-card bg-red-600 text-foreground hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="px-3 py-1.5 typo-caption rounded-card bg-status-error text-foreground hover:bg-status-error disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   <ShieldOff className="w-3.5 h-3.5" />
                   {st.import_anyway}

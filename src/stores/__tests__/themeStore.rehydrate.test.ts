@@ -106,3 +106,34 @@ describe('themeStore onRehydrateStorage — customTheme re-injection', () => {
     expect(customTheme.injectCustomThemeStyle).not.toHaveBeenCalled();
   });
 });
+
+describe('themeStore density — v1 to v2 migration (two choices: Console | Comfortable)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    document.documentElement.removeAttribute('data-density');
+  });
+
+  async function rehydrateWith(density: string) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { density }, version: 1 }));
+    await useThemeStore.persist.rehydrate();
+    return useThemeStore.getState().density;
+  }
+
+  it('cozy (the old air choice) becomes comfortable and applies the air block', async () => {
+    expect(await rehydrateWith('cozy')).toBe('comfortable');
+    expect(document.documentElement.getAttribute('data-density')).toBe('comfortable');
+  });
+
+  it.each(['comfortable', 'compact'])('%s (the old Console geometry) becomes compact', async (old) => {
+    expect(await rehydrateWith(old)).toBe('compact');
+    expect(document.documentElement.getAttribute('data-density')).toBe('compact');
+  });
+
+  it('setDensity folds the retired cozy spelling onto comfortable', () => {
+    useThemeStore.getState().setDensity('cozy');
+    expect(useThemeStore.getState().density).toBe('comfortable');
+    useThemeStore.getState().setDensity('compact');
+    expect(useThemeStore.getState().density).toBe('compact');
+  });
+});

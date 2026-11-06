@@ -86,12 +86,12 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
       titleId="pending-auth-modal-title"
       size="sm"
       portal
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
     >
       <div className={CARD_PADDING.standard}>
         <div className={SECTION_GAP.within}>
           <div className="flex items-start gap-3">
-            <div className="shrink-0 w-10 h-10 rounded-interactive bg-amber-500/15 text-amber-400 flex items-center justify-center">
+            <div className="shrink-0 w-10 h-10 rounded-interactive bg-status-warning/15 text-status-warning flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -107,7 +107,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
             </div>
           </div>
 
-          <div className="rounded-interactive border border-primary/10 bg-background/50 p-3">
+          <div className="rounded-interactive border border-hair bg-background/50 p-3">
             <p className="typo-caption text-foreground mb-2 uppercase tracking-wider">
               {pa.auth_url_label}
             </p>
@@ -123,7 +123,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
           </ol>
 
           {retryError && (
-            <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
+            <div className="rounded-interactive border border-status-error/30 bg-status-error/10 p-3">
               <p className="typo-body text-foreground">{retryError}</p>
             </div>
           )}

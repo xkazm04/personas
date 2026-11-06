@@ -64,16 +64,16 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       className="animate-fade-slide-in space-y-4"
     >
       {/* Error message */}
-      <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-modal">
-        <AlertTriangle className="w-4 h-4 mt-0.5 text-red-400 shrink-0" />
+      <div className="flex items-start gap-3 px-4 py-3 bg-status-error/10 border border-status-error/20 rounded-modal">
+        <AlertTriangle className="w-4 h-4 mt-0.5 text-status-error shrink-0" />
         <div>
-          <p className="typo-body text-red-300">{friendly}</p>
+          <p className="typo-body text-status-error">{friendly}</p>
           {friendly !== error && error && (
             <details className="mt-2">
-              <summary className="typo-body text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
+              <summary className="typo-body text-status-error/40 cursor-pointer hover:text-status-error/60 transition-colors">
                 {dm.technical_details}
               </summary>
-              <p className="mt-1 typo-code text-red-400/30 break-all">
+              <p className="mt-1 typo-code text-status-error/30 break-all">
                 {error}
               </p>
             </details>
@@ -82,10 +82,10 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       </div>
 
       {/* Recovery tips */}
-      <div className="px-4 py-3 bg-amber-500/5 border border-amber-500/15 rounded-modal space-y-2">
+      <div className="px-4 py-3 bg-status-warning/5 border border-status-warning/15 rounded-modal space-y-2">
         <div className="flex items-center gap-2">
-          <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-          <span className="typo-body text-amber-300/80">{dm.how_to_fix}</span>
+          <Lightbulb className="w-3.5 h-3.5 text-status-warning" />
+          <span className="typo-body text-status-warning/80">{dm.how_to_fix}</span>
         </div>
         <ul className="space-y-1.5 pl-6">
           {tips.map((tip, i) => (
@@ -96,9 +96,9 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
 
       {/* Show preserved instruction */}
       {hasInstruction && (
-        <div className="px-4 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal">
+        <div className="px-4 py-2.5 bg-surface-1 border border-hair rounded-modal">
           <p className="typo-body text-foreground mb-1">{dm.original_request}</p>
-          <p className="typo-body text-foreground/90 italic">"{instruction}"</p>
+          <p className="typo-body text-ink-1 italic">"{instruction}"</p>
         </div>
       )}
 
@@ -107,7 +107,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
         <button
           type="button"
           onClick={onStartOver}
-          className="flex items-center gap-1.5 px-3 py-2 text-foreground hover:text-foreground/95 typo-body transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-foreground hover:text-ink-1 typo-body transition-colors"
         >
           <X className="w-3 h-3" />
           {dm.start_over}
@@ -115,7 +115,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
         <button
           type="button"
           onClick={onRetry}
-          className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground rounded-modal typo-body transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-hair text-foreground rounded-modal typo-body transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {hasInstruction ? dm.try_again_with : t.common.try_again}

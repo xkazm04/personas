@@ -90,7 +90,7 @@ export function QuestionnaireStackedOptions({
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={fadeTransition}
                     aria-hidden="true"
-                    className={`hide-on-touch absolute top-2 right-2 px-1.5 min-w-[1.25rem] h-5 rounded-input flex items-center justify-center font-mono text-[11px] font-semibold border pointer-events-none ${
+                    className={`hide-on-touch absolute top-2 right-2 px-1.5 min-w-[1.25rem] h-5 rounded-input flex items-center justify-center font-mono typo-label border pointer-events-none ${
                       isSelected
                         ? 'bg-primary/15 text-primary/85 border-primary/30'
                         : 'bg-foreground/[0.04] text-foreground border-border/60'

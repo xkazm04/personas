@@ -48,13 +48,13 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
   }, [aiSearchActive, aiSearchLoading, aiSearchMode, total, search]);
 
   return (
-    <div className="border-b border-primary/10 flex-shrink-0">
+    <div className="border-b border-hair flex-shrink-0">
       <div className="px-4 py-2.5 flex items-center gap-2">
         {onAiSearchToggle && (
           <Button onClick={onAiSearchToggle}
             variant="ghost"
             size="icon-sm"
-            className={`border flex-shrink-0 ${aiSearchMode ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' : 'border-primary/10 text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'}`}
+            className={`border flex-shrink-0 ${aiSearchMode ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' : 'border-hair text-foreground hover:text-ink-2 hover:bg-surface-2'}`}
             title={aiSearchMode ? t.templates.search.switch_to_keyword : t.templates.search.switch_to_ai}>
             <Sparkles className="w-4 h-4" />
           </Button>

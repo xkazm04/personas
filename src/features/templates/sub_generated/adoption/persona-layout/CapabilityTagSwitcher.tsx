@@ -112,7 +112,7 @@ export function CapabilityTagSwitcher({
                 className={`shrink-0 p-1 rounded-full border transition-colors cursor-pointer ${
                   item.enabled
                     ? 'border-status-success/40 text-status-success hover:bg-status-success/10'
-                    : 'border-card-border/50 text-foreground/40 hover:text-foreground/70 hover:bg-foreground/5'
+                    : 'border-card-border/50 text-foreground/40 hover:text-ink-2 hover:bg-foreground/5'
                 }`}
               >
                 <Power className="w-3 h-3" />

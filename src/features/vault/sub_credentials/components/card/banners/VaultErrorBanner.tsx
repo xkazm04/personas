@@ -20,7 +20,7 @@ export function VaultErrorBanner({ message, onDismiss, variant = 'banner' }: Vau
         <button
           type="button"
           onClick={onDismiss}
-          className="text-red-400/60 hover:text-red-400 typo-body shrink-0"
+          className="text-status-error/60 hover:text-status-error typo-body shrink-0"
         >
           {t.common.dismiss}
         </button>

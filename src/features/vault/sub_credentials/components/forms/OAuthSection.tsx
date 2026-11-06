@@ -87,7 +87,7 @@ export function OAuthSection({
                 type="button"
                 data-testid="oauth-authorize"
                 disabled={consentDisabled}
-                className="flex items-center gap-2 px-4 py-2 border rounded-modal typo-body transition-all bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/25 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 border rounded-modal typo-body transition-all bg-status-info/10 hover:bg-status-info/20 border-status-info/25 text-status-info disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Shield className="w-4 h-4" />
                 {consentLabel || tx(t.vault.forms.authorize_with, { label: 'Google' })}
@@ -100,7 +100,7 @@ export function OAuthSection({
         )}
 
         {consentSuccessBadge && !ringPhase && (
-          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 typo-body">
+          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-success/15 border border-status-success/25 text-status-success typo-body">
             <CheckCircle className="w-3.5 h-3.5" />
             {consentSuccessBadge}
           </div>

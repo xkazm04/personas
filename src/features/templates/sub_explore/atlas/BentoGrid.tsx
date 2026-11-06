@@ -34,7 +34,7 @@ export function BentoGrid({ onPick }: { onPick: (domainId: string) => void }) {
             key={d.id}
             type="button"
             onClick={() => onPick(d.id)}
-            className={`group relative overflow-hidden rounded-2xl border border-primary/10 hover:border-primary/30 text-left transition-all ${span}`}
+            className={`group relative overflow-hidden rounded-card border border-hair hover:border-primary/30 text-left transition-all ${span}`}
           >
             <img src={domainArt(d, isDark)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
             <div className="absolute inset-0" style={{ background: `linear-gradient(to top, var(--background) 16%, transparent 62%), radial-gradient(120% 80% at 70% 20%, ${d.color}22, transparent)` }} />

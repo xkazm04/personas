@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle, ShieldQuestion, WifiOff } from 'lucide-react';
+import { Key, Plug, Trash2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -21,7 +21,7 @@ export function HealthBadge({ state }: { state: HealthState }) {
   const { t } = useTranslation();
   if (state === 'untested') {
     return (
-      <StatusBadge variant="neutral" icon={<HelpCircle className="w-3 h-3" />}>
+      <StatusBadge variant="neutral">
         {t.vault.credential_list.health_untested}
       </StatusBadge>
     );
@@ -31,7 +31,7 @@ export function HealthBadge({ state }: { state: HealthState }) {
     // "healthy" check. The tooltip explains why it can't be verified.
     return (
       <Tooltip content={t.vault.credential_list.health_unverifiable_tooltip}>
-        <StatusBadge variant="neutral" icon={<ShieldQuestion className="w-3 h-3" />}>
+        <StatusBadge variant="neutral">
           {t.vault.credential_list.health_unverifiable}
         </StatusBadge>
       </Tooltip>
@@ -43,7 +43,7 @@ export function HealthBadge({ state }: { state: HealthState }) {
     // of good keys into a wall of failures. Mirrors `HealthProbeState::is_verdict`.
     return (
       <Tooltip content={t.vault.credential_list.health_unreachable_tooltip}>
-        <StatusBadge variant="neutral" icon={<WifiOff className="w-3 h-3" />}>
+        <StatusBadge variant="neutral">
           {t.vault.credential_list.health_unreachable}
         </StatusBadge>
       </Tooltip>
@@ -51,13 +51,13 @@ export function HealthBadge({ state }: { state: HealthState }) {
   }
   if (state === 'verified') {
     return (
-      <StatusBadge variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>
+      <StatusBadge variant="success">
         {t.vault.credential_list.health_healthy}
       </StatusBadge>
     );
   }
   return (
-    <StatusBadge variant="error" icon={<XCircle className="w-3 h-3" />}>
+    <StatusBadge variant="error">
       {t.vault.credential_list.health_failing}
     </StatusBadge>
   );
@@ -95,7 +95,7 @@ export function useCredentialColumns({
       return (
         <div className={`flex items-center gap-2.5 min-w-0 ${isPending ? 'opacity-40 pointer-events-none' : ''}`}>
           {isPending ? (
-            <LoadingSpinner className="text-red-400/70 flex-shrink-0" />
+            <LoadingSpinner className="text-status-error/70 flex-shrink-0" />
           ) : (
             <div
               className="w-6 h-6 rounded-input flex items-center justify-center flex-shrink-0 border"
@@ -109,13 +109,13 @@ export function useCredentialColumns({
               ) : row.connector ? (
                 <Plug className="w-3.5 h-3.5" style={{ color: row.connector.color }} />
               ) : (
-                <Key className="w-3.5 h-3.5 text-emerald-400/80" />
+                <Key className="w-3.5 h-3.5 text-status-success/80" />
               )}
             </div>
           )}
           <span className="typo-body text-foreground truncate">
             {row.credential.name}
-            {isPending && <span className="ml-2 typo-caption text-red-400/70">{t.common.deleting}</span>}
+            {isPending && <span className="ml-2 typo-caption text-status-error/70">{t.common.deleting}</span>}
           </span>
           {/* Which account this credential is bound to — with several Google
               accounts in one vault the service type alone is ambiguous. */}
@@ -196,12 +196,12 @@ export function useCredentialColumns({
         render: (row: CredRow) => {
           const isPending = pendingDeleteIds.has(row.credential.id);
           return isPending ? (
-            <LoadingSpinner size="sm" className="text-red-400/50" />
+            <LoadingSpinner size="sm" className="text-status-error/50" />
           ) : (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(row.credential.id); }}
-              className="p-1 rounded-card text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="p-1 rounded-card text-status-error/40 hover:text-status-error hover:bg-status-error/10 transition-colors"
               title={t.vault.credential_card.delete_credential}
             >
               <Trash2 className="w-3.5 h-3.5" />

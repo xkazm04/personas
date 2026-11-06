@@ -101,7 +101,7 @@ export default function PairApprovalModal() {
   return (
     <BaseModal isOpen onClose={dequeue} titleId="pair-approval-title" size="sm" portal>
       <div className="p-6 space-y-5">
-        <div className="flex items-center gap-2 typo-caption text-sky-300">
+        <div className="flex items-center gap-2 typo-caption text-status-info">
           <Globe className="w-3.5 h-3.5" />
           {s.pair_title}
         </div>
@@ -112,7 +112,7 @@ export default function PairApprovalModal() {
           </h2>
           <p className="typo-caption text-foreground break-all mt-0.5">{current.origin}</p>
           {!isHttps && (
-            <div className="flex items-center gap-1.5 typo-caption text-amber-400 mt-2">
+            <div className="flex items-center gap-1.5 typo-caption text-status-warning mt-2">
               <AlertTriangle size={12} />
               {s.pair_insecure_origin}
             </div>
@@ -126,7 +126,7 @@ export default function PairApprovalModal() {
             {s.pair_scopes_label}
           </p>
           {current.requested_scopes.length === 0 ? (
-            <p className="typo-caption text-foreground bg-secondary/30 rounded-card p-2">{s.pair_no_scopes}</p>
+            <p className="typo-caption text-foreground bg-surface-1 rounded-card p-2">{s.pair_no_scopes}</p>
           ) : (
             <div className="space-y-1 max-h-40 overflow-y-auto">
               {current.requested_scopes.map((scope) => (
@@ -136,7 +136,7 @@ export default function PairApprovalModal() {
                   onClick={() => toggleScope(scope)}
                   disabled={busy}
                   className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:opacity-50 ${
-                    scopes.has(scope) ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-secondary/20'
+                    scopes.has(scope) ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1'
                   }`}
                 >
                   <input type="checkbox" checked={scopes.has(scope)} readOnly tabIndex={-1} />
@@ -148,7 +148,7 @@ export default function PairApprovalModal() {
           {/* Unticking everything is not "grant nothing": reads need only a
               valid key (management_api.rs), so say what the floor still is. */}
           {current.requested_scopes.length > 0 && scopes.size === 0 && (
-            <p className="typo-caption text-foreground bg-secondary/30 rounded-card p-2">{s.pair_no_scopes}</p>
+            <p className="typo-caption text-foreground bg-surface-1 rounded-card p-2">{s.pair_no_scopes}</p>
           )}
         </div>
 
@@ -166,7 +166,7 @@ export default function PairApprovalModal() {
                 className={`flex-1 px-2 py-1.5 rounded-interactive typo-caption border transition-colors disabled:opacity-50 ${
                   expiresInDays === days
                     ? 'border-primary/50 bg-primary/15 text-foreground'
-                    : 'border-border/30 bg-secondary/30 text-foreground'
+                    : 'border-border/30 bg-surface-1 text-foreground'
                 }`}
               >
                 {days === 7 ? s.expiry_7d : days === 30 ? s.expiry_30d : s.expiry_90d}
@@ -175,8 +175,8 @@ export default function PairApprovalModal() {
           </div>
         </div>
 
-        <div className="flex items-start gap-2 rounded-card border border-emerald-500/15 bg-emerald-500/5 p-3">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-2 rounded-card border border-hair bg-surface-1 p-3">
+          <ShieldCheck className="w-4 h-4 text-status-success mt-0.5 flex-shrink-0" />
           <p className="typo-caption text-foreground">{s.pair_safety_note}</p>
         </div>
 
@@ -186,7 +186,7 @@ export default function PairApprovalModal() {
           </Button>
           <Button
             variant="ghost"
-            className="text-red-300 hover:bg-red-500/10"
+            className="text-status-error hover:bg-status-error/10"
             onClick={() => void onReject()}
             disabled={busy}
           >

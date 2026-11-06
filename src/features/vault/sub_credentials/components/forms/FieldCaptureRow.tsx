@@ -33,8 +33,8 @@ interface FieldCaptureRowProps {
 
 const SOURCE_ACCENT: Record<FieldCaptureSource, string> = {
   schema: 'focus-visible:ring-primary/40',
-  negotiator: 'focus-visible:ring-violet-500/40',
-  auto: 'focus-visible:ring-emerald-500/35',
+  negotiator: 'focus-visible:ring-role-agent/40',
+  auto: 'focus-visible:ring-status-success/35',
 };
 
 export function FieldCaptureRow({
@@ -78,7 +78,7 @@ export function FieldCaptureRow({
   );
 
   const valueClass = mode === 'confirming'
-    ? (value ? 'border-emerald-500/25 bg-emerald-500/5 text-foreground' : 'border-primary/15 bg-secondary/25 text-foreground')
+    ? (value ? 'border-status-success/25 bg-status-success/5 text-foreground' : 'border-hair bg-surface-1 text-foreground')
     : 'border-border/50 bg-background/50 text-foreground';
 
   return (
@@ -86,7 +86,7 @@ export function FieldCaptureRow({
       <div className="flex items-center justify-between gap-2">
         <label htmlFor={fieldId} className="typo-body text-foreground">
           {label}
-          {required && <span aria-hidden="true" className="text-red-400 ml-1">*</span>}
+          {required && <span aria-hidden="true" className="text-status-error ml-1">*</span>}
         </label>
         <FieldActionButtons
           mode={mode}
@@ -114,7 +114,7 @@ export function FieldCaptureRow({
           aria-invalid={!!error}
           aria-describedby={describedBy}
           aria-required={required || undefined}
-          className={`rounded-modal ${error ? 'border-red-500/50' : ''}`}
+          className={`rounded-modal ${error ? 'border-status-error/50' : ''}`}
         >
           <option value="">{placeholder || t.vault.schemas.select_placeholder}</option>
           {options.map((option) => {
@@ -138,13 +138,13 @@ export function FieldCaptureRow({
           aria-invalid={!!error}
           aria-describedby={describedBy}
           aria-required={required || undefined}
-          className={`w-full px-3 py-2 border rounded-modal typo-body focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
+          className={`w-full px-3 py-2 border rounded-modal typo-body focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-status-error/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
       )}
 
       {error ? (
-        <p id={errorId} className="typo-body text-red-400">{error}</p>
+        <p id={errorId} className="typo-body text-status-error">{error}</p>
       ) : (
         (helpText ? <p id={helpId} className="typo-body text-foreground">{helpText}</p> : null)
       )}

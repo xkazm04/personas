@@ -59,7 +59,7 @@ function IconTile({
     <motion.span
       title={destination.label}
       className={`group relative flex flex-col items-center justify-start cursor-default transition-[filter,color] duration-200 hover:brightness-125 ${
-        active ? 'text-primary' : 'text-foreground hover:text-foreground/60'
+        active ? 'text-primary' : 'text-foreground hover:text-ink-3'
       }`}
       animate={
         firing
@@ -82,7 +82,7 @@ function IconTile({
         ) : null}
       </span>
       <span
-        className={`h-4 mt-1 leading-none font-medium tracking-tight text-[11px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 truncate max-w-full ${
+        className={`h-4 mt-1 leading-none tracking-tight typo-label opacity-0 group-hover:opacity-100 transition-opacity duration-200 truncate max-w-full ${
           active ? 'text-primary' : 'text-primary/80'
         }`}
       >

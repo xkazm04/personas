@@ -40,7 +40,7 @@ const auditCache = createModuleCache<string, ApiKeyAuditEntry[]>({ maxSize: 32 }
 
 const CASCADE_ROWS = 10;
 const AUDIT_ROW_H = 32;
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 
 export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawerProps) {
   const { t } = useTranslation();
@@ -95,7 +95,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
 
         <div className="p-3 overflow-y-auto">
           {error && (
-            <div className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2 mb-2">
+            <div className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-interactive p-2 mb-2">
               <AlertTriangle size={14} />
               {error}
             </div>
@@ -107,7 +107,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
               <AuditGhostRows />
             </>
           ) : rows !== null && rows.length === 0 ? (
-            <div className="typo-caption text-foreground py-8 text-center bg-secondary/20 rounded">
+            <div className="typo-caption text-foreground py-8 text-center bg-surface-1 rounded-interactive">
               {s.audit_empty}
             </div>
           ) : rows !== null ? (
@@ -119,7 +119,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
                   order={index}
                   hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
                   markEntered={enter.markEntered}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-secondary/20 border border-border/20"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-surface-1 border border-border/20"
                 >
                   <span className={`typo-code ${statusColor(Number(row.status))}`}>
                     {String(row.status)}
@@ -162,7 +162,7 @@ function AuditGhostRows() {
         return (
           <div
             key={i}
-            className="flex items-center gap-2 px-2.5 rounded-input bg-secondary/20 border border-border/20 animate-fade-in"
+            className="flex items-center gap-2 px-2.5 rounded-input bg-surface-1 border border-border/20 animate-fade-in"
             style={{ height: AUDIT_ROW_H, animationDelay: delay }}
           >
             <span className={`h-3 w-8 ${GHOST_BAR}`} />

@@ -35,7 +35,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
       className="space-y-3"
       data-testid="vault-negotiator-idle"
     >
-      <p className="typo-body text-foreground/90">
+      <p className="typo-body text-ink-1">
         {existing
           ? tx(negx.existing_auth_description, { service: connectorLabel, method: existing.method })
           : tx(neg.start_description, { label: connectorLabel })}
@@ -46,7 +46,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
           onClick={onStart}
           disabled={authDetectLoading}
           data-testid="vault-negotiator-start"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal bg-violet-500/15 border border-violet-500/25 text-violet-300 typo-body hover:bg-violet-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal bg-role-agent/15 border border-role-agent/25 text-role-agent typo-body hover:bg-role-agent/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {authDetectLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -92,8 +92,8 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       className="flex flex-col items-center py-6 gap-3"
       data-testid="vault-negotiator-done"
     >
-      <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
-        <Zap className="w-5 h-5 text-emerald-400" />
+      <div className="w-10 h-10 rounded-full bg-status-success/15 flex items-center justify-center">
+        <Zap className="w-5 h-5 text-status-success" />
       </div>
       <p className="typo-body text-foreground">{neg.captured}</p>
       <p className="typo-body text-foreground">
@@ -103,7 +103,7 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
         type="button"
         onClick={onFinish}
         data-testid="vault-negotiator-apply"
-        className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body transition-colors mt-1"
+        className="px-4 py-2 bg-status-success/20 hover:bg-status-success/30 border border-status-success/30 text-status-success rounded-modal typo-body transition-colors mt-1"
       >
         {neg.apply_button}
       </button>
@@ -132,8 +132,8 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
       className="space-y-3"
       data-testid="vault-negotiator-error"
     >
-      <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-modal">
-        <p className="typo-body text-red-300">{error}</p>
+      <div className="px-4 py-3 bg-status-error/10 border border-status-error/20 rounded-modal">
+        <p className="typo-body text-status-error">{error}</p>
       </div>
       <div className="flex gap-2">
         <Button variant="secondary" onClick={onRetry} disabled={authDetectLoading}>
@@ -142,7 +142,7 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 rounded-modal text-foreground typo-body hover:text-foreground/95 transition-colors"
+          className="px-4 py-2 rounded-modal text-foreground typo-body hover:text-ink-1 transition-colors"
         >
           {t.common.close}
         </button>

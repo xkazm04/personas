@@ -76,7 +76,7 @@ export function RemoteInstructionComposer({ peerId: fixedPeerId }: { peerId?: st
                 onClick={toggle}
                 aria-expanded={isOpen}
                 data-testid="remote-instruction-device"
-                className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-primary/15 bg-secondary/40 text-foreground hover:border-primary/30 transition-colors"
+                className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-hair bg-surface-2 text-foreground hover:border-primary/30 transition-colors"
               >
                 <span className="flex-1 text-left truncate">
                   {target ? target.displayName : st.send_instruction_pick_device}
@@ -101,7 +101,7 @@ export function RemoteInstructionComposer({ peerId: fixedPeerId }: { peerId?: st
                       setPeerId(device.peerId);
                       close();
                     }}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-secondary/40 ${
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-surface-2 ${
                       device.peerId === peerId ? 'text-primary' : 'text-foreground'
                     }`}
                   >
@@ -121,7 +121,7 @@ export function RemoteInstructionComposer({ peerId: fixedPeerId }: { peerId?: st
           placeholder={st.send_instruction_placeholder}
           aria-label={st.send_instruction_title}
           data-testid="remote-instruction-input"
-          className="flex-1 min-w-[200px] px-2.5 py-1.5 rounded-input typo-caption border border-primary/15 bg-secondary/40 text-foreground placeholder:text-foreground/50 focus-ring"
+          className="flex-1 min-w-[200px] px-2.5 py-1.5 rounded-input typo-caption border border-hair bg-surface-2 text-foreground placeholder:text-ink-3 focus-ring"
         />
 
         <AsyncButton

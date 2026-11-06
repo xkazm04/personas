@@ -194,7 +194,7 @@ export function CredentialTemplateForm({
 
   return (
     <div key="form"
-      className="animate-fade-slide-in w-full bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-6 space-y-4">
+      className="animate-fade-slide-in w-full bg-surface-2 backdrop-blur-sm border border-hair rounded-modal p-6 space-y-4">
       <TemplateFormHeader selectedConnector={selectedConnector} activeMethod={activeMethod}
         onBack={onBack} onAutoSetup={onAutoSetup} onDesktopDetect={onDesktopDetect} />
       {guide && <SetupGuideSection guide={guide} connectorLabel={selectedConnector.label} />}

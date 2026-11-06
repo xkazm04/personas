@@ -76,8 +76,8 @@ function TableListGhost() {
           className="flex items-center gap-1.5 px-2.5 py-2 rounded-modal border border-transparent animate-fade-in"
           style={{ animationDelay: `${120 + r * 35}ms` }}
         >
-          <span className="w-4 h-4 rounded bg-primary/[0.06] shrink-0" />
-          <span className={`h-3.5 rounded bg-primary/[0.06] ${GHOST_BAR_WIDTHS[r % GHOST_BAR_WIDTHS.length]}`} />
+          <span className="w-4 h-4 rounded-interactive bg-primary/[0.06] shrink-0" />
+          <span className={`h-3.5 rounded-interactive bg-primary/[0.06] ${GHOST_BAR_WIDTHS[r % GHOST_BAR_WIDTHS.length]}`} />
         </div>
       ))}
     </div>
@@ -144,7 +144,7 @@ export function TableListSidebar({
     // 288px left the detail panel and results grid squeezed to nothing while
     // the sidebar kept every pixel; the list is legible at 224px, so it gives
     // ground first and only takes the full width once there is room for both.
-    <div className="w-56 xl:w-72 border-r border-primary/10 flex flex-col shrink-0">
+    <div className="w-56 xl:w-72 border-r border-hair flex flex-col shrink-0">
       <TableSearch
         filter={filter}
         onFilterChange={onFilterChange}
@@ -195,8 +195,8 @@ export function TableListSidebar({
               aria-current={isSelected || undefined}
               className={`focus-ring flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
                 isSelected
-                  ? 'bg-primary/10 border border-primary/20'
-                  : 'hover:bg-secondary/40 border border-transparent'
+                  ? 'bg-primary/10 border border-hair'
+                  : 'hover:bg-surface-2 border border-transparent'
               }`}
               onClick={() => onSelectTable(table.table_name)}
               onKeyDown={(e) => activateOnKey(e, () => onSelectTable(table.table_name))}
@@ -206,12 +206,12 @@ export function TableListSidebar({
               <span className={`flex-1 typo-code text-foreground truncate`}>
                 {displayName}
               </span>
-              {isPinned && <Pin className="w-2.5 h-2.5 text-blue-400/50 shrink-0" />}
+              {isPinned && <Pin className="w-2.5 h-2.5 text-status-info/50 shrink-0" />}
               {table.table_type === 'VIEW' && (
-                <span className="px-1 py-0.5 rounded typo-body bg-violet-500/10 text-violet-400/70 shrink-0">VIEW</span>
+                <span className="px-1 py-0.5 rounded-interactive typo-body bg-role-agent/10 text-role-agent/70 shrink-0">VIEW</span>
               )}
               {table.table_type === 'DATABASE' && (
-                <span className="px-1 py-0.5 rounded typo-body bg-blue-500/10 text-blue-400/70 shrink-0">DB</span>
+                <span className="px-1 py-0.5 rounded-interactive typo-body bg-status-info/10 text-status-info/70 shrink-0">DB</span>
               )}
             </div>
           );
@@ -236,8 +236,8 @@ export function TableListSidebar({
               aria-current={isSelected || undefined}
               className={`focus-ring flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
                 isSelected
-                  ? 'bg-primary/10 border border-primary/20'
-                  : 'hover:bg-secondary/40 border border-transparent'
+                  ? 'bg-primary/10 border border-hair'
+                  : 'hover:bg-surface-2 border border-transparent'
               }`}
               onClick={() => onSelectKey(keyInfo.key)}
               onKeyDown={(e) => activateOnKey(e, () => onSelectKey(keyInfo.key))}
@@ -252,7 +252,7 @@ export function TableListSidebar({
 
       {/* Footer: count */}
       {!loading && !error && (
-        <div data-testid="db-table-list-count" className="px-3 py-2 border-t border-primary/5 typo-body text-foreground">
+        <div data-testid="db-table-list-count" className="px-3 py-2 border-t border-hair typo-body text-foreground">
           {shownCount === totalCount
             ? totalLabel
             : tx(dbt.filtered_count, { matched: shownCount, total: totalLabel })}

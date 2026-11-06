@@ -15,7 +15,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
   const [showSync, setShowSync] = useState(!!syncConfig);
 
   return (
-    <div className="rounded-modal border border-cyan-500/15 bg-cyan-500/5 p-3 space-y-2.5">
+    <div className="rounded-modal border border-hair bg-surface-1 p-3 space-y-2.5">
       <label className="flex items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
@@ -30,15 +30,15 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
               intervalMinutes: 60,
             });
           }}
-          className="rounded border-cyan-500/30 text-cyan-500 focus-visible:ring-cyan-500/30"
+          className="rounded-interactive border-role-highlight/30 text-role-highlight focus-visible:ring-role-highlight/30"
         />
-        <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-        <span className="typo-body text-cyan-300">{ci.enable_sync}</span>
+        <RefreshCw className="w-3.5 h-3.5 text-role-highlight" />
+        <span className="typo-body text-role-highlight">{ci.enable_sync}</span>
       </label>
       {showSync && syncConfig && (
         <div className="flex items-center gap-3 pl-6">
           <div className="flex-1">
-            <label className="text-[11px] text-foreground">{ci.source_ref}</label>
+            <label className="typo-caption text-foreground">{ci.source_ref}</label>
             <input
               type="text"
               value={syncConfig.sourceRef}
@@ -49,15 +49,15 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
                 sourceId === 'azure_keyvault' ? 'https://myvault.vault.azure.net/...' :
                 'project/config'
               }
-              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
+              className="w-full px-2.5 py-1.5 rounded-card border border-role-highlight/20 bg-background/40 typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-highlight/30"
             />
           </div>
           <div className="w-28">
-            <label className="text-[11px] text-foreground">{ci.poll_interval}</label>
+            <label className="typo-caption text-foreground">{ci.poll_interval}</label>
             <select
               value={syncConfig.intervalMinutes}
               onChange={(e) => onSyncConfigChange({ ...syncConfig, intervalMinutes: Number(e.target.value) })}
-              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 typo-body text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
+              className="w-full px-2.5 py-1.5 rounded-card border border-role-highlight/20 bg-background/40 typo-body text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-highlight/30"
             >
               <option value={15}>{ci.interval_15min}</option>
               <option value={30}>{ci.interval_30min}</option>
@@ -68,7 +68,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
           </div>
         </div>
       )}
-      <p className="text-[11px] text-foreground pl-6">
+      <p className="typo-caption text-foreground pl-6">
         {ci.sync_hint}
       </p>
     </div>

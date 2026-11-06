@@ -41,7 +41,7 @@ export function RecipeDetailHeader({
 
   return (
     <>
-      <div className="relative flex items-start gap-3 px-4 py-4 border-b border-card-border/60 flex-shrink-0 bg-secondary/20 overflow-hidden" data-testid="recipe-detail-header">
+      <div className="relative flex items-start gap-3 px-4 py-4 border-b border-card-border/60 flex-shrink-0 bg-surface-1 overflow-hidden" data-testid="recipe-detail-header">
         {/* Connector-tinted wash so each recipe's header carries its brand */}
         {accent && (
           <div
@@ -55,7 +55,7 @@ export function RecipeDetailHeader({
             type="button"
             onClick={onBack}
             aria-label={t.recipes_catalog.back_to_catalog}
-            className="relative mt-1 inline-flex items-center justify-center w-8 h-8 rounded-full border border-card-border bg-secondary/40 text-foreground hover:border-primary/40 cursor-pointer transition-colors"
+            className="relative mt-1 inline-flex items-center justify-center w-8 h-8 rounded-full border border-card-border bg-surface-2 text-foreground hover:border-primary/40 cursor-pointer transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -81,14 +81,14 @@ export function RecipeDetailHeader({
             {hasPersona && <EligibilityChip eligibility={eligibility} />}
             {hasPersona && adopted && stale && (
               <Tooltip content={tx(t.recipes_catalog.update_badge_detail_tooltip, { from: adoptedVersion ?? '?', to: recipe.version })}>
-                <span className="inline-flex items-center gap-0.5 typo-label px-1.5 py-0.5 rounded border border-status-warning/40 bg-status-warning/10 text-status-warning">
+                <span className="inline-flex items-center gap-0.5 typo-label px-1.5 py-0.5 text-status-warning">
                   <ArrowUpCircle className="w-2.5 h-2.5" />
                   {t.recipes_catalog.update_badge}
                 </span>
               </Tooltip>
             )}
             {hasPersona && adopted && !stale && (
-              <span className="inline-flex items-center gap-0.5 typo-label px-1.5 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
+              <span className="inline-flex items-center gap-0.5 typo-label px-1.5 py-0.5 text-status-success">
                 <Check className="w-2.5 h-2.5" />
                 {t.recipes_catalog.adopted_badge}
               </span>
@@ -96,10 +96,10 @@ export function RecipeDetailHeader({
           </div>
           <div className="typo-body text-foreground mt-0.5">{recipe.summary}</div>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="typo-label px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary">
+            <span className="typo-label px-1.5 py-0.5 rounded-interactive border border-primary/30 bg-primary/10 text-primary">
               {categoryLabel(t, recipe.category)}
             </span>
-            <span className="typo-label font-mono px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 text-foreground">
+            <span className="typo-label font-mono px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-2 text-foreground">
               v{recipe.version}
             </span>
             <span className="typo-caption text-foreground">
@@ -143,7 +143,7 @@ export function RecipeDetailHeader({
             className={`relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
               canAdopt
                 ? 'border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 shadow-elevation-1'
-                : 'border-card-border bg-secondary/40 text-foreground'
+                : 'border-card-border bg-surface-2 text-foreground'
             }`}
             title={
               !hasPersona
@@ -208,7 +208,7 @@ interface EligibilityBannerProps {
 function EligibilityBanner({ kind, title, body }: EligibilityBannerProps) {
   const cls = kind === 'setup'
     ? 'border-status-warning/35 bg-status-warning/10'
-    : 'border-card-border bg-secondary/40';
+    : 'border-card-border bg-surface-2';
   const Icon = kind === 'setup' ? AlertTriangle : Lock;
   const iconCls = kind === 'setup' ? 'text-status-warning' : 'text-foreground';
   return (
@@ -216,7 +216,7 @@ function EligibilityBanner({ kind, title, body }: EligibilityBannerProps) {
       <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconCls}`} />
       <div className="flex-1 min-w-0">
         <div className={`typo-label ${iconCls}`}>{title}</div>
-        <div className="typo-caption text-foreground/85 mt-0.5">{body}</div>
+        <div className="typo-caption text-ink-1 mt-0.5">{body}</div>
       </div>
     </div>
   );

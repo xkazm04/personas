@@ -159,7 +159,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
                     aria-pressed={isSelected}
                     disabled={submitting}
                     className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:opacity-50 ${
-                      isSelected ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-secondary/30 hover:bg-secondary/50'
+                      isSelected ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1 hover:bg-surface-2'
                     }`}
                   >
                     <input type="checkbox" checked={isSelected} readOnly className="mt-0.5" tabIndex={-1} aria-hidden="true" />
@@ -177,7 +177,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
                 aria-pressed={allowExecute}
                 disabled={submitting}
                 className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:opacity-50 ${
-                  allowExecute ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-secondary/30 hover:bg-secondary/50'
+                  allowExecute ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1 hover:bg-surface-2'
                 }`}
               >
                 <input type="checkbox" checked={allowExecute} readOnly className="mt-0.5" tabIndex={-1} aria-hidden="true" />
@@ -210,7 +210,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
                     onClick={() => setExpiresInDays(opt.days)}
                     disabled={submitting}
                     className={`flex-1 px-2 py-1.5 rounded-interactive typo-caption border transition-colors disabled:opacity-50 ${
-                      active ? 'border-primary/50 bg-primary/15 text-foreground' : 'border-border/30 bg-secondary/30 text-foreground hover:bg-secondary/50'
+                      active ? 'border-primary/50 bg-primary/15 text-foreground' : 'border-border/30 bg-surface-1 text-foreground hover:bg-surface-2'
                     }`}
                   >
                     {s[opt.labelKey]}
@@ -220,7 +220,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
             </div>
           </div>
 
-          {error && <div className="typo-caption text-red-400 bg-red-400/10 rounded p-2">{error}</div>}
+          {error && <div className="typo-caption text-status-error bg-status-error/10 rounded-interactive p-2">{error}</div>}
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border/30">
@@ -228,7 +228,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-surface-2 transition-colors disabled:opacity-50"
           >
             {s.cancel}
           </button>

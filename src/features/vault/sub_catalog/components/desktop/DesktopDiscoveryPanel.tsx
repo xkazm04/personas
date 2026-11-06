@@ -134,7 +134,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           onClick={onBack}
           aria-label={t.common.back}
           title={t.common.back}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -151,14 +151,14 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           data-testid="vault-desktop-scan"
           aria-label={dd.rescan_aria}
           title={dd.rescan_aria}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-secondary/30 rounded-card">
+      <div className="flex gap-1 p-1 bg-surface-1 rounded-card">
         <button
           type="button"
           onClick={() => setTab('apps')}

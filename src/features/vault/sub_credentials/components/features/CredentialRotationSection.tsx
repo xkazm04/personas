@@ -22,8 +22,8 @@ function RotationHistorySkeleton() {
       {widths.map((w, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary/10 animate-pulse shrink-0" />
-          <span className="h-3 rounded bg-primary/10 animate-pulse" style={{ width: w }} />
-          <span className="h-3 w-10 rounded bg-primary/10 animate-pulse ml-auto shrink-0" />
+          <span className="h-3 rounded-interactive bg-primary/10 animate-pulse" style={{ width: w }} />
+          <span className="h-3 w-10 rounded-interactive bg-primary/10 animate-pulse ml-auto shrink-0" />
         </div>
       ))}
     </div>
@@ -69,7 +69,7 @@ export function CredentialRotationSection({
     <div className="space-y-3">
       {/* Corrupted Healthcheck Warning */}
       {rotationStatus?.healthcheck_corrupted && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-orange-500/10 border border-orange-500/20 typo-body text-orange-400">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-status-warning/10 border border-status-warning/20 typo-body text-status-warning">
           <DatabaseZap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>{t.vault.rotation_section.corrupted_warning}</span>
         </div>
@@ -85,7 +85,7 @@ export function CredentialRotationSection({
 
       {/* Legacy Anomaly Warning (only if no windowed data available) */}
       {!showAnomalyPanel && rotationStatus?.anomaly_detected && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 typo-body text-amber-400">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-status-warning/10 border border-status-warning/20 typo-body text-status-warning">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>{t.vault.rotation_section.anomaly_warning}</span>
         </div>
@@ -93,10 +93,10 @@ export function CredentialRotationSection({
 
       {/* Action error banner */}
       {actionError && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20 typo-body text-red-400">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-status-error/10 border border-status-error/20 typo-body text-status-error">
           <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span className="flex-1">{actionError}</span>
-          <button type="button" onClick={() => setActionError(null)} className="shrink-0 p-0.5 hover:bg-red-500/10 rounded transition-colors">
+          <button type="button" onClick={() => setActionError(null)} className="shrink-0 p-0.5 hover:bg-status-error/10 rounded-interactive transition-colors">
             <XCircle className="w-3 h-3" />
           </button>
         </div>
@@ -121,7 +121,7 @@ export function CredentialRotationSection({
           {tx(t.vault.rotation_section.last_rotated, { time: formatRelativeTime(rotationStatus.last_rotated_at) })}
           {rotationStatus.last_status && (
             <span className={`ml-1.5 ${
-              rotationStatus.last_status === 'success' ? 'text-emerald-400/60' : 'text-red-400/60'
+              rotationStatus.last_status === 'success' ? 'text-status-success/60' : 'text-status-error/60'
             }`}>
               ({rotationStatus.last_status})
             </span>
@@ -132,7 +132,7 @@ export function CredentialRotationSection({
       {/* Rotation History Timeline */}
       {showHistorySection && (
         <>
-          <div className="border-t border-primary/10" />
+          <div className="border-t border-hair" />
           <div className="space-y-1.5">
             <p className="typo-heading text-foreground uppercase">{t.vault.rotation_section.history}</p>
             {isLoadingHistory ? (
@@ -159,9 +159,9 @@ export function CredentialRotationSection({
                     transition={animateHistory ? { delay: Math.min(index * 0.03, 0.3), duration: 0.2, ease: 'easeOut' } : undefined}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ring-2 ring-current/20 ${
-                      entry.status === 'success' ? 'bg-emerald-400 text-emerald-400' :
-                      entry.status === 'failed' ? 'bg-red-400 text-red-400' :
-                      'bg-amber-400/60 text-amber-400'
+                      entry.status === 'success' ? 'bg-status-success text-status-success' :
+                      entry.status === 'failed' ? 'bg-status-error text-status-error' :
+                      'bg-status-warning/60 text-status-warning'
                     }`} />
                     <div className="flex-1 min-w-0">
                       <span className="text-foreground font-mono">{entry.rotation_type}</span>

@@ -163,7 +163,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             {...PHASE_TRANSITION}
             className="flex flex-col items-center justify-center py-12 gap-3"
           >
-            <LoadingSpinner size="2xl" className="text-emerald-400" />
+            <LoadingSpinner size="2xl" className="text-status-success" />
             <p className="typo-body text-foreground">{t.vault.design_phases.saving}</p>
           </motion.div>
         )}
@@ -174,8 +174,8 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             {...PHASE_TRANSITION}
             className="flex flex-col items-center justify-center py-10 gap-4"
           >
-            <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+            <div className="w-14 h-14 rounded-full bg-status-success/15 flex items-center justify-center">
+              <CheckCircle2 className="w-7 h-7 text-status-success" />
             </div>
             <div className="text-center">
               <p className="typo-body-lg text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>

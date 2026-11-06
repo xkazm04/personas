@@ -58,7 +58,7 @@ export function ThinkingLoader({ size = 32, className = '' }: ThinkingLoaderProp
         height="14"
         rx="5"
         fill="currentColor"
-        className="text-violet-400/30"
+        className="text-role-agent/30"
         style={{ animation: 'tl-pulse-head 2.4s ease-in-out infinite' }}
       />
       {/* Neck / body hint */}
@@ -69,7 +69,7 @@ export function ThinkingLoader({ size = 32, className = '' }: ThinkingLoaderProp
         height="5"
         rx="2"
         fill="currentColor"
-        className="text-violet-400/20"
+        className="text-role-agent/20"
       />
 
       {/* Orbiting dot 1 -- violet */}
@@ -78,7 +78,7 @@ export function ThinkingLoader({ size = 32, className = '' }: ThinkingLoaderProp
         cy="14"
         r="2"
         fill="currentColor"
-        className="text-violet-400"
+        className="text-role-agent"
         style={{ animation: 'tl-orbit 2s linear infinite', transformOrigin: '16px 14px' }}
       />
       {/* Orbiting dot 2 -- blue, reverse direction */}
@@ -87,7 +87,7 @@ export function ThinkingLoader({ size = 32, className = '' }: ThinkingLoaderProp
         cy="14"
         r="1.5"
         fill="currentColor"
-        className="text-blue-400"
+        className="text-status-info"
         style={{ animation: 'tl-orbit-reverse 2.8s linear infinite', transformOrigin: '16px 14px' }}
       />
     </svg>

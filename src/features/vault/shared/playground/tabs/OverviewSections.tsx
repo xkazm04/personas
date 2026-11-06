@@ -26,12 +26,12 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
         <div className="ml-auto">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2">
-              <span className="typo-body text-red-400/80">{sh.delete_credential_confirm}</span>
+              <span className="typo-body text-status-error/80">{sh.delete_credential_confirm}</span>
               <Button
                 onClick={() => onDelete(credential.id)}
                 variant="danger"
                 size="sm"
-                className="bg-red-500/15 hover:bg-red-500/25 border-red-500/25 text-red-400"
+                className="bg-status-error/15 hover:bg-status-error/25 border-status-error/25 text-status-error"
               >
                 {sh.confirm}
               </Button>
@@ -50,7 +50,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
               variant="ghost"
               size="icon-sm"
               title={sh.delete_credential}
-              icon={<Trash2 className="w-4 h-4 text-red-400/50 hover:text-red-400/80" />}
+              icon={<Trash2 className="w-4 h-4 text-status-error/50 hover:text-status-error/80" />}
             />
           )}
         </div>
@@ -62,7 +62,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
 
       {/* Collapsible sections: Services and Events */}
       {connector.services.length > 0 && (
-        <div className="border border-primary/10 rounded-modal overflow-hidden">
+        <div className="border border-hair rounded-modal overflow-hidden">
           <Button
             onClick={() => setExpandedSection(expandedSection === 'services' ? null : 'services')}
             variant="ghost"
@@ -79,7 +79,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
               {connector.services.map((service) => (
                 <div
                   key={service.toolName}
-                  className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-modal border-l-2"
+                  className="flex items-center gap-3 p-3 bg-surface-1 border border-hair rounded-modal border-l-2"
                   style={{ borderLeftColor: connector.color || 'transparent' }}
                 >
                   <Wrench className="w-3.5 h-3.5 text-foreground" />
@@ -95,7 +95,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
       )}
 
       {connector.events.length > 0 && (
-        <div className="border border-primary/10 rounded-modal overflow-hidden">
+        <div className="border border-hair rounded-modal overflow-hidden">
           <Button
             onClick={() => setExpandedSection(expandedSection === 'events' ? null : 'events')}
             variant="ghost"
@@ -116,7 +116,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
       )}
 
       {/* Intelligence */}
-      <div className="border border-primary/10 rounded-modal p-4">
+      <div className="border border-hair rounded-modal p-4">
         <CredentialIntelligence credentialId={credential.id} />
       </div>
     </>

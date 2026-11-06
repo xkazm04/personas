@@ -58,7 +58,7 @@ export function RecentChangeChip({ category }: RecentChangeChipProps) {
       type="button"
       onClick={() => setSettingsTab('history')}
       title={`${absolute}\n${s.click_to_open}`}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-foreground bg-secondary/30 border border-primary/10 hover:text-primary hover:bg-secondary/50 transition-colors"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-foreground bg-surface-1 border border-hair hover:text-primary hover:bg-surface-2 transition-colors"
     >
       <History className="w-3 h-3 shrink-0" />
       <span>{label}</span>

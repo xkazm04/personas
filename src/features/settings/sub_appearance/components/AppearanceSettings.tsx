@@ -22,20 +22,20 @@ export default function AppearanceSettings() {
   const sections: SettingsSection[] = [
     // Only when there is a language to choose (SHIPPED_UI_LOCALES; English-only since 2026-10-25).
     ...(UI_LANGUAGE_PICKER_ENABLED
-      ? [{ id: 'language', label: s.language, icon: <Languages className="w-4 h-4 text-emerald-400" />, content: <AppearanceLanguageSettings /> }]
+      ? [{ id: 'language', label: s.language, icon: <Languages className="w-4 h-4 text-ink-2" />, content: <AppearanceLanguageSettings /> }]
       : []),
-    { id: 'text-size', label: s.text_size, icon: <Type className="w-4 h-4 text-violet-400" />, content: <AppearanceTextSizeSettings /> },
-    { id: 'density', label: s.density, icon: <Rows2 className="w-4 h-4 text-blue-400" />, content: <AppearanceDensitySettings /> },
+    { id: 'text-size', label: s.text_size, icon: <Type className="w-4 h-4 text-ink-2" />, content: <AppearanceTextSizeSettings /> },
+    { id: 'density', label: s.density, icon: <Rows2 className="w-4 h-4 text-ink-2" />, content: <AppearanceDensitySettings /> },
     // Timezone picker hidden (operator choice 2026-10-31): themeStore.timezone has no reader. Store field + persistence kept.
-    { id: 'brightness', label: s.brightness, icon: <Sun className="w-4 h-4 text-amber-400" />, content: <AppearanceBrightnessSettings /> },
+    { id: 'brightness', label: s.brightness, icon: <Sun className="w-4 h-4 text-ink-2" />, content: <AppearanceBrightnessSettings /> },
     // Theming brings its own SectionCard (its header carries the default/custom tab switch).
-    { id: 'theming', label: s.theming, icon: <Palette className="w-4 h-4 text-violet-400" />, card: false, content: <AppearanceThemingSection /> },
+    { id: 'theming', label: s.theming, icon: <Palette className="w-4 h-4 text-ink-2" />, card: false, content: <AppearanceThemingSection /> },
   ];
 
   return (
     <ContentBox data-testid="settings-appearance-panel">
       <ContentHeader
-        icon={<Palette className="w-5 h-5 text-violet-400" />}
+        icon={<Palette className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={s.title}
         subtitle={s.subtitle}

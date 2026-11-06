@@ -116,12 +116,12 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
       data-testid="vault-negotiator-panel"
       data-phase={negotiator.phase}
     >
-      <div className="rounded-modal border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
+      <div className="rounded-modal border border-role-agent/20 bg-gradient-to-b from-role-agent/5 to-transparent">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/10">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-role-agent/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-card bg-violet-500/15 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-violet-400" />
+            <div className="w-7 h-7 rounded-card bg-role-agent/15 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-role-agent" />
             </div>
             <div>
               <h3 className="typo-heading text-foreground">{negx.panel_title}</h3>
@@ -132,7 +132,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
             type="button"
             onClick={handleClose}
             aria-label={t.common.close}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground transition-colors duration-snap"
+            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground transition-colors duration-snap"
           >
             <X className="w-3.5 h-3.5" />
           </button>

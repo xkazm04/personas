@@ -237,7 +237,7 @@ export function CredentialSchemaForm({
         <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraState} />
       ))}
 
-      {error && <p id="schema-form-error" role="alert" className="typo-body text-red-400">{error}</p>}
+      {error && <p id="schema-form-error" role="alert" className="typo-body text-status-error">{error}</p>}
     </div>
   );
 }

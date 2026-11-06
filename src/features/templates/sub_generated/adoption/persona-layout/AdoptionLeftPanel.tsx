@@ -80,7 +80,7 @@ export function AdoptionLeftPanel({ connectors, channels = [], summaryEntries, o
       {hasConnectors && (
         <div className="flex flex-col gap-2">
           <span className="typo-label text-foreground px-1 inline-flex items-center gap-1.5">
-            <Plug className="w-3.5 h-3.5 text-cyan-400" />
+            <Plug className="w-3.5 h-3.5 text-role-highlight" />
             {t.templates.adopt_modal.left_connections_heading}
           </span>
           <ul className="flex flex-col gap-2">
@@ -94,7 +94,7 @@ export function AdoptionLeftPanel({ connectors, channels = [], summaryEntries, o
       {hasChannels && (
         <div className="flex flex-col gap-2">
           <span className="typo-label text-foreground px-1 inline-flex items-center gap-1.5">
-            <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+            <MessageSquare className="w-3.5 h-3.5 text-status-info" />
             {t.templates.adopt_modal.left_messages_heading}
           </span>
           <ul className="flex flex-col gap-2">

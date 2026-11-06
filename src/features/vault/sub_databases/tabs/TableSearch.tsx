@@ -24,7 +24,7 @@ export function TableSearch({
   const db = t.vault.databases;
 
   return (
-    <div className="p-3 border-b border-primary/5 space-y-2">
+    <div className="p-3 border-b border-hair space-y-2">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
@@ -33,7 +33,7 @@ export function TableSearch({
             value={filter}
             onChange={(e) => onFilterChange(e.target.value)}
             placeholder={isRedis ? db.filter_keys : isApi ? db.filter_databases : db.filter_tables}
-            className="w-full pl-7 pr-2 py-1.5 rounded-modal bg-secondary/30 border border-primary/10 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+            className="w-full pl-7 pr-2 py-1.5 rounded-modal bg-surface-1 border border-hair typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
           />
         </div>
         <Tooltip content={db.refresh}>
@@ -41,7 +41,7 @@ export function TableSearch({
             type="button"
             onClick={onRefresh}
             disabled={loading}
-            className="p-1.5 rounded-card text-foreground hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
+            className="p-1.5 rounded-card text-foreground hover:text-ink-2 hover:bg-surface-2 disabled:opacity-40 transition-colors"
             aria-label={db.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -77,8 +77,8 @@ export function SidebarTestConnection({ credentialId }: { credentialId: string }
         <div
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption ${
             result.success
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
+              ? 'bg-status-success/10 text-status-success'
+              : 'bg-status-error/10 text-status-error'
           }`}
         >
           {result.success ? (

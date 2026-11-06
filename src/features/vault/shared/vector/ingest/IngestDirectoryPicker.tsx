@@ -95,19 +95,19 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
       titleId="ingest-directory-title"
       size="md"
       containerClassName="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden"
     >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
-          <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
-            <FolderOpen className="w-3.5 h-3.5 text-violet-400" />
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-hair">
+          <div className="w-7 h-7 rounded-card bg-role-agent/10 border border-role-agent/15 flex items-center justify-center">
+            <FolderOpen className="w-3.5 h-3.5 text-role-agent" />
           </div>
-          <h2 id="ingest-directory-title" className="typo-heading text-foreground/90 flex-1">{sh.scan_directory}</h2>
+          <h2 id="ingest-directory-title" className="typo-heading text-ink-1 flex-1">{sh.scan_directory}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label={sh.close}
-            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
+            className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
           >
             <X className="w-4 h-4" />
           </button>
@@ -118,7 +118,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           <div>
             <label className="typo-caption text-foreground mb-1.5 block">{sh.directory_path}</label>
             <div className="flex items-center gap-2">
-              <div className="flex-1 px-3 py-2 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground min-h-[36px] flex items-center">
+              <div className="flex-1 px-3 py-2 typo-code bg-surface-1 border border-hair rounded-card text-foreground min-h-[36px] flex items-center">
                 {dirPath ? (
                   <span className="truncate">{dirPath}</span>
                 ) : (
@@ -129,7 +129,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 type="button"
                 onClick={() => void handleBrowse()}
                 disabled={browsing || ingesting}
-                className="px-3 py-2 typo-body rounded-card bg-secondary/50 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 typo-body rounded-card bg-surface-2 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 {browsing ? sh.browsing : sh.browse}
@@ -154,14 +154,14 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             {/* Active patterns */}
             {patterns.length > 0 && (
               <>
-              <p className="typo-caption text-amber-400/80 mb-2">
+              <p className="typo-caption text-status-warning/80 mb-2">
                 {sh.patterns_replace_defaults}
               </p>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {patterns.map((p) => (
-                  <span key={p} className="inline-flex items-center gap-1 typo-caption px-2 py-1 rounded-card bg-violet-500/10 text-violet-400/80 border border-violet-500/15">
+                  <span key={p} className="inline-flex items-center gap-1 typo-caption px-2 py-1 text-role-agent/80">
                     {p}
-                    <button type="button" onClick={() => removePattern(p)} className="hover:text-red-400 transition-colors">
+                    <button type="button" onClick={() => removePattern(p)} className="hover:text-status-error transition-colors">
                       <Minus className="w-3 h-3" />
                     </button>
                   </span>
@@ -178,13 +178,13 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 onChange={(e) => setCustomPattern(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPattern(); } }}
                 placeholder={sh.add_pattern_placeholder}
-                className="flex-1 px-2.5 py-1.5 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+                className="flex-1 px-2.5 py-1.5 typo-code bg-surface-1 border border-hair rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
               />
               <button
                 type="button"
                 onClick={addPattern}
                 disabled={!customPattern.trim()}
-                className="p-1.5 rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors disabled:opacity-30"
+                className="p-1.5 rounded-card bg-surface-2 hover:bg-surface-2 text-foreground transition-colors disabled:opacity-30"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -195,7 +195,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-hair">
           <Button variant="ghost" onClick={onClose}>
             {t.common.cancel}
           </Button>

@@ -142,7 +142,7 @@ export function QuestionnaireFormGrid({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-foreground/[0.06] transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-ink-2 hover:bg-foreground/[0.06] transition-colors"
             >
               <X className="w-4.5 h-4.5" />
             </button>
@@ -171,7 +171,7 @@ export function QuestionnaireFormGrid({
                 {blockedCategories.map(({ category, questionLabels }) => (
                   <div key={category} className="flex items-center justify-between gap-3 p-2.5 rounded-card bg-status-error/10 border border-status-error/20">
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body text-foreground/90 capitalize">{category}</div>
+                      <div className="typo-body text-ink-1 capitalize">{category}</div>
                       <div className="typo-caption text-foreground truncate">
                         {questionLabels.join(' · ')}
                       </div>
@@ -229,7 +229,7 @@ export function QuestionnaireFormGrid({
                       <h3 className={`typo-heading ${accent}`}>
                         {heading}
                       </h3>
-                      <span className="text-[10px] text-foreground">
+                      <span className="typo-caption text-foreground">
                         {answered}/{section.questions.length}
                       </span>
                     </header>
@@ -255,7 +255,7 @@ export function QuestionnaireFormGrid({
                               <span className={`typo-label ${meta.color}`}>
                                 {meta.label}
                               </span>
-                              <span className="text-[10px] text-foreground ml-auto">
+                              <span className="typo-caption text-foreground ml-auto">
                                 {qs.filter((q) => !!userAnswers[q.id]).length}/{qs.length}
                               </span>
                             </div>
@@ -312,7 +312,7 @@ export function QuestionnaireFormGrid({
                       <span className={`typo-label ${meta.color}`}>
                         {meta.label}
                       </span>
-                      <span className="text-[10px] text-foreground ml-auto">
+                      <span className="typo-caption text-foreground ml-auto">
                         {qs.filter((q) => !!userAnswers[q.id]).length}/{qs.length}
                       </span>
                     </div>
@@ -347,7 +347,7 @@ export function QuestionnaireFormGrid({
           <button
             type="button"
             onClick={onClose}
-            className="typo-body text-foreground hover:text-foreground/70 transition-colors"
+            className="typo-body text-foreground hover:text-ink-2 transition-colors"
           >
             {t.templates.adopt_modal.cancel}
           </button>

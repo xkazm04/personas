@@ -36,13 +36,13 @@ export function useDbGridColumns(
       render: (row) => (
         <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className="w-6 h-6 rounded-input flex items-center justify-center border border-primary/15 shrink-0"
+            className="w-6 h-6 rounded-input flex items-center justify-center border border-hair shrink-0"
             style={{ backgroundColor: `${row.connector?.color || '#6B7280'}15` }}
           >
             {row.connector?.icon_url ? (
               <ThemedConnectorIcon url={row.connector.icon_url} label={row.connector.label} color={row.connector.color} size="w-3.5 h-3.5" />
             ) : (
-              <Database className="w-3.5 h-3.5 text-blue-400/60" />
+              <Database className="w-3.5 h-3.5 text-status-info/60" />
             )}
           </div>
           <span className="typo-body text-foreground truncate">{row.credential.name}</span>
@@ -68,7 +68,7 @@ export function useDbGridColumns(
       // Zero pins renders as `0`, not `--`: this is a number we know, and a
       // dash is the glyph for one we do not.
       render: (row) => row.pinnedTableCount > 0 ? (
-        <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-card bg-blue-500/10 text-blue-400/80">
+        <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 text-status-info/80">
           <Table2 className="w-3 h-3" />
           {row.pinnedTableCount}
         </span>
@@ -82,7 +82,7 @@ export function useDbGridColumns(
       width: '0.5fr',
       sortable: true,
       render: (row) => row.queryCount > 0 ? (
-        <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-card bg-violet-500/10 text-violet-400/80">
+        <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 text-role-agent/80">
           <Code2 className="w-3 h-3" />
           {row.queryCount}
         </span>

@@ -60,7 +60,7 @@ export default function PopoverPositioner({
         }
       >
         <div
-          className="w-3 h-3 bg-background/95 border border-primary/20 rotate-45"
+          className="w-3 h-3 bg-background/95 border border-hair rotate-45"
           style={pointerSide === 'left'
             ? { borderRight: 'none', borderTop: 'none' }
             : { borderLeft: 'none', borderBottom: 'none' }

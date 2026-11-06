@@ -14150,9 +14150,10 @@ export type Translations = {
       reduce_motion_hint: string;
       density: string;
       density_hint: string;
-      density_compact_desc: string;
+      density_console_label: string;
+      density_console_desc: string;
+      density_comfortable_label: string;
       density_comfortable_desc: string;
-      density_cozy_desc: string;
       custom_theme: string;
       custom_theme_active: string;
       custom_theme_hint: string;

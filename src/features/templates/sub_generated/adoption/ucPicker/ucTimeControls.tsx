@@ -35,7 +35,7 @@ export function TimeControls({
               key={p.key}
               type="button"
               onClick={() => onChange(selectionForTimePreset(p.key, selection))}
-              className={`focus-ring inline-flex items-center gap-1 rounded px-2 py-0.5 typo-caption transition-colors ${
+              className={`focus-ring inline-flex items-center gap-1 rounded-interactive px-2 py-0.5 typo-caption transition-colors ${
                 on
                   ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
                   : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'
@@ -56,7 +56,7 @@ export function TimeControls({
                   key={d}
                   type="button"
                   onClick={() => onChange(updateTime(selection, { weekday: i }))}
-                  className={`rounded px-1.5 py-0.5 font-mono transition-colors ${
+                  className={`rounded-interactive px-1.5 py-0.5 font-mono transition-colors ${
                     weekday === i ? 'bg-primary/25 text-primary' : 'text-foreground hover:text-foreground hover:bg-foreground/[0.05]'
                   }`}
                 >

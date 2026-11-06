@@ -13,11 +13,11 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
   const { t, tx } = useTranslation();
   return (
     <div
-      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-orange-500/15 rounded-modal p-6 space-y-4"
+      className="animate-fade-slide-in bg-surface-2 backdrop-blur-sm border border-status-warning/15 rounded-modal p-6 space-y-4"
     >
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-modal flex items-center justify-center border bg-orange-500/10 border-orange-500/20">
-          <Monitor className="w-5 h-5 text-orange-400" />
+        <div className="w-10 h-10 rounded-modal flex items-center justify-center border bg-status-warning/10 border-status-warning/20">
+          <Monitor className="w-5 h-5 text-status-warning" />
         </div>
         <div className="flex-1">
           <h4 className="font-medium text-foreground">{tx(t.vault.auto_cred_extra.desktop_bridge_title, { label: connector.label })}</h4>
@@ -30,7 +30,7 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 typo-body text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
+          className="px-4 py-2 typo-body text-foreground bg-surface-1 rounded-card hover:bg-surface-2 transition-colors"
         >
           {t.common.back}
         </button>
@@ -53,7 +53,7 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
       <button
         type="button"
         onClick={onCancel}
-        className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors"
+        className="p-1.5 rounded-card hover:bg-surface-2 transition-colors"
       >
         <ArrowLeft className="w-4 h-4 text-foreground" />
       </button>
@@ -77,14 +77,14 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
         </p>
       </div>
       {mode === 'guided' ? (
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-violet-500/10 border border-violet-500/20">
-          <MessageSquare className="w-3 h-3 text-violet-400" />
-          <span className="typo-caption text-violet-400">{t.vault.auto_cred_extra.guided_badge}</span>
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-role-agent/10 border border-role-agent/20">
+          <MessageSquare className="w-3 h-3 text-role-agent" />
+          <span className="typo-caption text-role-agent">{t.vault.auto_cred_extra.guided_badge}</span>
         </div>
       ) : (
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-cyan-500/10 border border-cyan-500/20">
-          <Bot className="w-3 h-3 text-cyan-400" />
-          <span className="typo-caption text-cyan-400">{t.vault.auto_cred_extra.playwright_badge}</span>
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-role-highlight/10 border border-role-highlight/20">
+          <Bot className="w-3 h-3 text-role-highlight" />
+          <span className="typo-caption text-role-highlight">{t.vault.auto_cred_extra.playwright_badge}</span>
         </div>
       )}
     </div>

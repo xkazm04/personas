@@ -62,7 +62,7 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
         </p>
 
         {/* Incident toggle */}
-        <div className="flex items-start gap-3 px-3 py-2.5 rounded-card bg-secondary/30 border border-card-border/50">
+        <div className="flex items-start gap-3 px-3 py-2.5 rounded-card bg-surface-1 border border-card-border/50">
           <Inbox className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className="typo-body text-foreground">{ep.incident_label}</div>
@@ -76,7 +76,7 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
         </div>
 
         {/* Lab toggle */}
-        <div className="flex items-start gap-3 px-3 py-2.5 rounded-card bg-secondary/30 border border-card-border/50">
+        <div className="flex items-start gap-3 px-3 py-2.5 rounded-card bg-surface-1 border border-card-border/50">
           <FlaskConical className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className="typo-body text-foreground">{ep.lab_label}</div>
@@ -90,7 +90,7 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
         </div>
 
         {/* Escalate-after threshold */}
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-card bg-secondary/30 border border-card-border/50">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-card bg-surface-1 border border-card-border/50">
           <div className="flex-1 min-w-0">
             <div className="typo-body text-foreground">{ep.escalate_after_label}</div>
             <div className="typo-caption text-foreground">{ep.escalate_after_desc}</div>

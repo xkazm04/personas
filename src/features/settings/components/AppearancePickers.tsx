@@ -62,8 +62,8 @@ const DENSITY: Record<AppearancePickerDensity, DensityTokens> = {
     swatchSize: 'w-6 h-6',
     swatchInner: 'p-2',
     brightnessIconSize: 'w-3.5 h-3.5',
-    textScaleLabelSize: 'text-[11px]',
-    themeLabelSize: 'text-[11px]',
+    textScaleLabelSize: 'typo-caption',
+    themeLabelSize: 'typo-caption',
     checkSize: 'w-2.5 h-2.5',
     checkPosition: 'top-1 right-1',
     brightnessSwatchIconSize: 'w-3.5 h-3.5',
@@ -100,10 +100,10 @@ export function TextScalePicker({
             className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border transition-colors ${
               isActive
                 ? 'border-primary/30 bg-primary/5'
-                : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                : 'border-hair hover:border-hair hover:bg-primary/5'
             }`}
           >
-            <span className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
+            <span className={`font-semibold ${sizeClass} ${isActive ? 'text-ink-1' : 'text-foreground'}`}>
               Aa
             </span>
             <span className={`${d.textScaleLabelSize} ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
@@ -161,11 +161,11 @@ export function BrightnessPicker({
             className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border transition-colors ${
               isActive
                 ? 'border-primary/30 bg-primary/5'
-                : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                : 'border-hair hover:border-hair hover:bg-primary/5'
             }`}
           >
-            <Sun className={`${d.brightnessSwatchIconSize} ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
-            <span className={`${density === 'compact' ? 'text-[11px]' : 'typo-caption'} ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+            <Sun className={`${d.brightnessSwatchIconSize} ${iconOpacity} ${isActive ? 'text-status-warning' : 'text-foreground'}`} />
+            <span className={`${density === 'compact' ? 'typo-caption' : 'typo-caption'} ${isActive ? 'text-ink-1 font-medium' : 'text-foreground'}`}>
               {t.settings.appearance[level.labelKey]}
             </span>
             {showDescription && (
@@ -219,7 +219,7 @@ export function SimpleThemePicker({
             className={`flex flex-col items-center ${d.cardGap} ${d.swatchInner} rounded-modal border transition-colors ${
               isActive
                 ? 'border-primary/30 bg-primary/5'
-                : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                : 'border-hair hover:border-hair hover:bg-primary/5'
             }`}
           >
             <div
@@ -228,7 +228,7 @@ export function SimpleThemePicker({
             >
               {isActive && <Check className={`${d.checkSize} text-foreground drop-shadow-elevation-1`} />}
             </div>
-            <span className={`${d.themeLabelSize} ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+            <span className={`${d.themeLabelSize} ${isActive ? 'text-ink-1 font-medium' : 'text-foreground'}`}>
               {theme.label}
             </span>
           </button>

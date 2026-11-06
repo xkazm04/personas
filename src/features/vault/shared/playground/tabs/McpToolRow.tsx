@@ -24,12 +24,12 @@ export function ToolRow({
   const sh = t.vault.shared;
   return (
     <div className={`border rounded-card overflow-hidden transition-colors ${
-      isSelected ? 'border-status-success/25 bg-status-success/5' : 'border-primary/8 hover:border-primary/15'
+      isSelected ? 'border-status-success/25 bg-status-success/5' : 'border-primary/8 hover:border-hair'
     }`}>
       {/* Two sibling controls, not a button inside a button: the nested form
           is invalid HTML, and its inner Run button was reached by neither a
           screen reader's button list nor a reliable keyboard path. */}
-      <div className="flex items-center gap-2.5 px-3 py-2 hover:bg-secondary/20 transition-colors">
+      <div className="flex items-center gap-2.5 px-3 py-2 hover:bg-surface-1 transition-colors">
         <button
           type="button"
           onClick={onToggle}
@@ -66,7 +66,7 @@ export function ToolRow({
       </div>
 
       {isExpanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-primary/5 bg-secondary/10 space-y-2">
+        <div className="px-3 pb-3 pt-1 border-t border-hair bg-secondary/10 space-y-2">
           {tool.description && (
             <p className="typo-body text-foreground">{tool.description}</p>
           )}
@@ -75,7 +75,7 @@ export function ToolRow({
               <span className="typo-heading uppercase text-foreground">
                 {sh.input_schema}
               </span>
-              <pre className="typo-code text-foreground bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
+              <pre className="typo-code text-foreground bg-surface-1 rounded-interactive p-2 overflow-x-auto max-h-[200px]">
                 {JSON.stringify(tool.input_schema, null, 2)}
               </pre>
             </div>

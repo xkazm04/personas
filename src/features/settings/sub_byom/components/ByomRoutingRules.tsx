@@ -5,9 +5,9 @@ import { PROVIDER_OPTIONS, COMPLEXITY_OPTIONS, type PolicyWarning, type PolicyWa
 import { useTranslation } from '@/i18n/useTranslation';
 
 const SEVERITY_STYLES: Record<PolicyWarningSeverity, { border: string; text: string; icon: typeof AlertTriangle }> = {
-  error:   { border: 'border-red-500/30',   text: 'text-red-400/90',   icon: AlertCircle },
-  warning: { border: 'border-amber-500/30', text: 'text-amber-400/90', icon: AlertTriangle },
-  info:    { border: 'border-blue-500/30',  text: 'text-blue-400/90',  icon: Info },
+  error:   { border: 'border-status-error/30',   text: 'text-status-error/90',   icon: AlertCircle },
+  warning: { border: 'border-status-warning/30', text: 'text-status-warning/90', icon: AlertTriangle },
+  info:    { border: 'border-status-info/30',  text: 'text-status-info/90',  icon: Info },
 };
 
 interface ByomRoutingRulesProps {
@@ -23,14 +23,14 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
   const s = t.settings.byom;
   return (
     <div className="space-y-4">
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-4">
+      <div className="rounded-modal border border-hair bg-card-bg p-4 space-y-4">
         <SectionHeading
           title={s.routing_title}
           action={
             <button
               type="button"
               onClick={onAdd}
-              className="flex items-center gap-1 px-3 py-1.5 typo-body rounded-modal border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 typo-body rounded-modal border border-hair text-primary hover:bg-primary/10 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               {s.add_rule}
@@ -57,8 +57,8 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
               return (
                 <div
                   key={idx}
-                  className={`p-4 rounded-card border bg-secondary/20 space-y-3 ${
-                    worstSeverity ? SEVERITY_STYLES[worstSeverity].border : 'border-primary/10'
+                  className={`p-4 rounded-card border bg-surface-1 space-y-3 ${
+                    worstSeverity ? SEVERITY_STYLES[worstSeverity].border : 'border-hair'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -82,7 +82,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                         className="typo-body"
                       >
                         {rule.enabled
-                          ? <ToggleRight className="w-5 h-5 text-emerald-400" />
+                          ? <ToggleRight className="w-5 h-5 text-status-success" />
                           : <ToggleLeft className="w-5 h-5 text-foreground" />
                         }
                       </button>
@@ -90,7 +90,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                         type="button"
                         onClick={() => onRemove(idx)}
                         aria-label={`${t.common.delete}: ${rule.name || s.rule_name_placeholder}`}
-                        className="text-foreground hover:text-red-400 transition-colors"
+                        className="text-foreground hover:text-status-error transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -103,7 +103,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <select
                         value={rule.task_complexity}
                         onChange={(e) => onUpdate(idx, { task_complexity: e.target.value as TaskComplexity })}
-                        className="w-full typo-body p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none"
+                        className="w-full typo-body p-2 rounded-card border border-hair bg-surface-2 text-foreground outline-none"
                       >
                         {COMPLEXITY_OPTIONS.map((c) => (
                           <option key={c.id} value={c.id}>{c.label}</option>
@@ -115,8 +115,8 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <select
                         value={rule.provider}
                         onChange={(e) => onUpdate(idx, { provider: e.target.value })}
-                        className={`w-full typo-body p-2 rounded-card border bg-secondary/40 text-foreground outline-none ${
-                          worstSeverity ? SEVERITY_STYLES[worstSeverity].border : 'border-primary/15'
+                        className={`w-full typo-body p-2 rounded-card border bg-surface-2 text-foreground outline-none ${
+                          worstSeverity ? SEVERITY_STYLES[worstSeverity].border : 'border-hair'
                         }`}
                       >
                         {PROVIDER_OPTIONS.map((p) => (
@@ -130,7 +130,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                         value={rule.model || ''}
                         onChange={(e) => onUpdate(idx, { model: e.target.value || null })}
                         placeholder={s.model_placeholder}
-                        className="w-full typo-body p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-foreground/45"
+                        className="w-full typo-body p-2 rounded-card border border-hair bg-surface-2 text-foreground outline-none placeholder:text-ink-3"
                       />
                     </div>
                   </div>

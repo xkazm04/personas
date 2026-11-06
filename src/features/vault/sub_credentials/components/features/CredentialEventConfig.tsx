@@ -138,7 +138,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-3">
-        <Zap className="w-3.5 h-3.5 text-amber-400/70" />
+        <Zap className="w-3.5 h-3.5 text-status-warning/70" />
         <span className="typo-body text-foreground uppercase tracking-wider">{t.vault.event_config.event_triggers}</span>
       </div>
 

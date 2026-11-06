@@ -41,9 +41,9 @@ export function ExtraFieldRenderer({
             type="checkbox"
             checked={(state[def.key] as boolean) ?? false}
             onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.checked }))}
-            className="w-3.5 h-3.5 rounded border-border/50 bg-background/50 text-primary focus-visible:ring-primary/40"
+            className="w-3.5 h-3.5 rounded-interactive border-border/50 bg-background/50 text-primary focus-visible:ring-primary/40"
           />
-          <span className="typo-body text-foreground group-hover:text-muted-foreground/90 transition-colors">
+          <span className="typo-body text-foreground group-hover:text-ink-2 transition-colors">
             {def.label}
           </span>
         </label>
@@ -98,7 +98,7 @@ function KeyValueListField({
             type="button"
             onClick={() => update([...pairs, { id: crypto.randomUUID(), key: '', value: '' }])}
             className={`flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border transition-colors ${
-              def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-primary/20'
+              def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-hair'
             }`}
           >
             <Plus className="w-3 h-3" />
@@ -145,7 +145,7 @@ function KeyValueListField({
                   type="button"
                   onClick={() => toggleVisibility(pair.id)}
                   aria-label={revealed ? s.kv_hide_value : s.kv_show_value}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/80 transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-ink-2 transition-colors"
                 >
                   {revealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
@@ -161,7 +161,7 @@ function KeyValueListField({
                   });
                 }}
                 aria-label={s.kv_remove}
-                className="p-1 text-foreground hover:text-red-400 transition-colors"
+                className="p-1 text-foreground hover:text-status-error transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

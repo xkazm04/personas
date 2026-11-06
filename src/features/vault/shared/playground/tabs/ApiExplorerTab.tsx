@@ -36,7 +36,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
   return (
     <div className="flex flex-col h-full">
       {/* Header bar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-hair shrink-0">
         <Globe className="w-4 h-4 text-foreground" />
         <span className="typo-body text-foreground">
           {endpointCountLabel}
@@ -51,7 +51,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
               value={state.search}
               onChange={(e) => state.setSearch(e.target.value)}
               placeholder={sh.filter}
-              className="pl-6 pr-2 py-1.5 w-[180px] rounded typo-body bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+              className="pl-6 pr-2 py-1.5 w-[180px] rounded-interactive typo-body bg-surface-1 border border-hair text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
             />
           </div>
         )}
@@ -63,7 +63,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
             <Button
               variant="primary" size="sm" icon={<PlayCircle className="w-3 h-3" />}
               onClick={() => { state.testRunner.runAll(state.endpoints, credentialId, scopedResources); state.setShowLogPanel(true); }}
-              className="bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
+              className="bg-status-info/10 text-status-info border border-status-info/20 hover:bg-status-info/20"
             >{sh.run_all}</Button>
           )
         )}
@@ -74,9 +74,9 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
       </div>
 
       {state.parseError && (
-        <div className="mx-4 mt-3 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-start gap-2">
+        <div className="mx-4 mt-3 p-3 rounded-card bg-status-error/10 border border-status-error/20 typo-body text-status-error flex items-start gap-2">
           <span className="flex-1">{inlineErrorCopy(t, state.parseError.raw)}</span>
-          <Button variant="ghost" size="icon-sm" onClick={() => state.setParseError(null)} className="text-red-400/50 hover:text-red-400">
+          <Button variant="ghost" size="icon-sm" onClick={() => state.setParseError(null)} className="text-status-error/50 hover:text-status-error">
             <X className="w-3 h-3" />
           </Button>
         </div>
@@ -127,9 +127,9 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                 <div className={`grid gap-0 ${state.response || state.sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
                   <div className="space-y-4 min-w-0 pr-4">
                     <div className="flex items-center gap-2">
-                      <span className="typo-heading uppercase text-blue-400/70">{sh.request_builder}</span>
+                      <span className="typo-heading uppercase text-status-info/70">{sh.request_builder}</span>
                       <div className="flex-1" />
-                      <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-muted-foreground/80">{t.common.close}</Button>
+                      <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-ink-2">{t.common.close}</Button>
                     </div>
                     <RequestBuilder endpoint={state.selectedEndpoint} onSend={state.handleSend} isSending={state.isSending} scopedResources={scopedResources} />
                   </div>
@@ -137,9 +137,9 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                   {(state.response || state.sendError) && <div className="bg-primary/25" />}
                   {(state.response || state.sendError) && (
                     <div className="min-w-0 pl-4">
-                      <span className="typo-heading uppercase text-emerald-400/70 block mb-3">{sh.response}</span>
+                      <span className="typo-heading uppercase text-status-success/70 block mb-3">{sh.response}</span>
                       {state.sendError && (
-                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap">{inlineErrorCopy(t, state.sendError.raw)}</div>
+                        <div className="p-3 rounded-card bg-status-error/10 border border-status-error/20 typo-code text-status-error whitespace-pre-wrap">{inlineErrorCopy(t, state.sendError.raw)}</div>
                       )}
                       {state.response && <ResponseViewer response={state.response} />}
                       {/* A working call is the raw material for an automation,
@@ -165,7 +165,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
               </div>
             )}
 
-            <div className="border-t border-primary/10 pt-4">
+            <div className="border-t border-hair pt-4">
               <RecipesPanel state={recipes} />
             </div>
           </>

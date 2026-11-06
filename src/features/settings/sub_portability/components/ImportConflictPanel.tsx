@@ -64,9 +64,9 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
   return (
     <div
       data-testid="portability-conflict-panel"
-      className="rounded-card border border-amber-500/20 bg-amber-500/5 p-4 space-y-3"
+      className="rounded-card border border-status-warning/20 bg-status-warning/5 p-4 space-y-3"
     >
-      <div className="flex items-center gap-2 typo-body text-amber-400">
+      <div className="flex items-center gap-2 typo-body text-status-warning">
         <AlertTriangle className="w-4 h-4" />
         {tx(conflicts.length > 1 ? s.items_exist_plural : s.items_exist, { count: conflicts.length })}
       </div>
@@ -80,7 +80,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
             <div
               key={key}
               data-testid={`portability-conflict-row-${key}`}
-              className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20 border border-primary/10"
+              className="flex items-center gap-3 px-3 py-2 rounded-card bg-surface-1 border border-hair"
             >
               <div className="flex-1 min-w-0">
                 <span className="typo-body text-foreground truncate block">{c.name}</span>
@@ -129,7 +129,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
                         className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                           i === focusIndex || current === option
                             ? 'bg-primary/10 text-foreground'
-                            : 'text-foreground/80 hover:bg-primary/5'
+                            : 'text-ink-2 hover:bg-primary/5'
                         }`}
                       >
                         {labels[option]}
@@ -161,7 +161,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
           data-testid="portability-conflict-cancel"
           onClick={onDismiss}
           disabled={busy}
-          className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors disabled:opacity-40"
+          className="typo-caption text-foreground hover:text-ink-2 transition-colors disabled:opacity-40"
         >
           {s.cancel}
         </button>

@@ -18,9 +18,9 @@ interface PeerCardProps {
 }
 
 const STATE_DOT: Record<string, string> = {
-  Connected: 'bg-emerald-400',
-  Connecting: 'bg-amber-400 animate-pulse',
-  Failed: 'bg-red-400',
+  Connected: 'bg-status-success',
+  Connecting: 'bg-status-warning animate-pulse',
+  Failed: 'bg-status-error',
   Disconnected: 'bg-zinc-500',
 };
 
@@ -44,7 +44,7 @@ export const PeerCard = memo(function PeerCard({
     : peer.peer_id;
 
   return (
-    <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3">
+    <div className="rounded-modal border border-border bg-surface-1 p-3 flex items-center gap-3">
       {/* Status dot */}
       <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
 
@@ -59,14 +59,14 @@ export const PeerCard = memo(function PeerCard({
             {peer.display_name}
           </span>
           {isTrusted ? (
-            <TrustVerifiedIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <TrustVerifiedIcon className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
           ) : (
-            <TrustUnknownIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            <TrustUnknownIcon className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="typo-code text-foreground">{truncatedId}</span>
-          <span className="text-[10px] text-foreground">
+          <span className="typo-caption text-foreground">
             <RelativeTime timestamp={peer.last_seen_at} showTooltip={false} />
           </span>
         </div>
@@ -83,7 +83,7 @@ export const PeerCard = memo(function PeerCard({
             type="button"
             onClick={() => onDisconnect(peer.peer_id)}
             title={st.disconnect}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
+            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-warning transition-colors"
           >
             <NodeDisconnectedIcon className="w-3.5 h-3.5" />
           </button>
@@ -92,7 +92,7 @@ export const PeerCard = memo(function PeerCard({
             type="button"
             onClick={() => onConnect(peer.peer_id)}
             title={st.connect}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-emerald-500 transition-colors"
+            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-success transition-colors"
           >
             <NodeConnectedIcon className="w-3.5 h-3.5" />
           </button>
@@ -101,7 +101,7 @@ export const PeerCard = memo(function PeerCard({
           type="button"
           onClick={() => onSelect(peer.peer_id)}
           title={st.view_details}
-          className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
         >
           <ChevronRight className="w-3.5 h-3.5" />
         </button>

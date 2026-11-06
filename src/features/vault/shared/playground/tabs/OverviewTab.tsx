@@ -63,7 +63,7 @@ export function OverviewTab({
 
       {isEditing ? (
         <>
-          <p className="typo-caption text-muted-foreground -mb-2">
+          <p className="typo-caption text-ink-2 -mb-2">
             Leave a field blank to keep its current saved value. Only fields you
             fill in are updated; hidden tokens and untouched secrets are preserved.
           </p>

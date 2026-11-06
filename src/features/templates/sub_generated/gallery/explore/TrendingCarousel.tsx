@@ -22,9 +22,9 @@ export function TrendingCarousel({
   if (trendingTemplates.length === 0) return null;
 
   return (
-    <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0">
+    <div className="px-4 py-3 border-b border-hair flex-shrink-0">
       <div className="flex items-center gap-2 mb-2.5">
-        <TrendingUp className="w-4 h-4 text-emerald-400/70" />
+        <TrendingUp className="w-4 h-4 text-ink-3" />
         <SectionLabel as="span" className="mb-0">
           {t.templates.trending.title}
         </SectionLabel>
@@ -38,13 +38,13 @@ export function TrendingCarousel({
             <button
               type="button"
               onClick={() => onSelectTemplate(tmpl)}
-              className="w-[200px] p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/12 hover:border-emerald-500/25 group-hover/trend:bg-emerald-500/10 transition-all text-left"
+              className="w-[200px] p-3 rounded-modal bg-surface-1 border border-hair hover:border-hair-2 group-hover/trend:bg-surface-2 transition-all text-left"
             >
-              <div className="typo-body text-foreground group-hover/trend:text-emerald-300 truncate pr-7">
+              <div className="typo-body text-ink-1 truncate pr-7">
                 {tmpl.test_case_name}
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="inline-flex items-center gap-1 typo-code text-emerald-400/70">
+                <span className="inline-flex items-center gap-1 typo-data text-ink-2">
                   <Download className="w-2.5 h-2.5" />
                   {tmpl.adoption_count}
                 </span>
@@ -58,7 +58,7 @@ export function TrendingCarousel({
                   onClick={() => onAdoptTemplate(tmpl)}
                   aria-label={t.templates.actions.adopt}
                   data-testid={`trending-adopt-${tmpl.id}`}
-                  className="absolute top-2 right-2 p-1.5 rounded-interactive bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 opacity-0 group-hover/trend:opacity-100 focus-visible:opacity-100 hover:bg-emerald-500/25 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)]"
+                  className="absolute top-2 right-2 p-1.5 rounded-interactive bg-status-success/15 border border-status-success/25 text-status-success opacity-0 group-hover/trend:opacity-100 focus-visible:opacity-100 hover:bg-status-success/25 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)]"
                 >
                   <Download className="w-3.5 h-3.5" />
                 </button>

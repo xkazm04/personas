@@ -37,7 +37,7 @@ export function RecipeListItem({
           onClick={onToggleExpand}
           aria-expanded={isExpanded}
           aria-label={recipe.name}
-          className="text-foreground hover:text-foreground/80 transition-colors"
+          className="text-foreground hover:text-ink-2 transition-colors"
         >
           {isExpanded ? (
             <ChevronDown className="w-3.5 h-3.5" />
@@ -45,7 +45,7 @@ export function RecipeListItem({
             <ChevronRight className="w-3.5 h-3.5" />
           )}
         </button>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-card bg-primary/10 border border-primary/20">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-card bg-primary/10 border border-hair">
           <BookOpen className="w-3 h-3 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
@@ -74,7 +74,7 @@ export function RecipeListItem({
           type="button"
           onClick={() => setConfirmOpen(true)}
           aria-label={t.common.delete}
-          className="rounded-card p-1.5 text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+          className="rounded-card p-1.5 text-status-error/40 hover:text-status-error hover:bg-status-error/10 transition-colors shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

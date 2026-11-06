@@ -34,7 +34,7 @@ export function MessagesSection({
   return (
     <div id={anchorId} className="space-y-3">
       <div className={SECTION_LABEL}>
-        <Bell className="w-4 h-4 text-blue-400" />
+        <Bell className="w-4 h-4 text-status-info" />
         {t.templates.design.messages_and_notifications}
         <span className="typo-body text-foreground ml-1">{t.templates.design.how_communicates}</span>
       </div>
@@ -43,7 +43,7 @@ export function MessagesSection({
         {visibleChannels.map((channel, chIdx) => {
           const isSelected = selectedChannelIndices.has(chIdx);
           return (
-            <div key={`ch-${chIdx}`} className="bg-secondary/20 border border-primary/10 rounded-modal p-3.5">
+            <div key={`ch-${chIdx}`} className="bg-surface-1 border border-hair rounded-modal p-3.5">
               <div className="flex items-start gap-3">
                 {!readOnly && (
                   <div className="mt-0.5">
@@ -54,14 +54,14 @@ export function MessagesSection({
                     />
                   </div>
                 )}
-                <div className="w-8 h-8 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-card bg-status-info/10 border border-status-info/20 flex items-center justify-center flex-shrink-0">
                   {(() => { const { Icon, color } = channelIconMeta(channel.type); return <Icon className={`w-4 h-4 ${color}`} />; })()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="typo-body text-foreground capitalize block">{channel.type}</span>
                   <span className="typo-body text-foreground block mt-0.5">{channel.description}</span>
                   {channel.required_connector && (
-                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 typo-body rounded-full bg-primary/8 text-foreground border border-primary/10">
+                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 typo-body rounded-full bg-primary/8 text-foreground border border-hair">
                       <Plug className="w-2.5 h-2.5" />
                       Requires {channel.required_connector}
                     </span>

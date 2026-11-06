@@ -55,7 +55,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
   );
 
   return (
-    <div className="w-48 xl:w-64 border-r border-primary/10 flex flex-col shrink-0 bg-secondary/5">
+    <div className="w-48 xl:w-64 border-r border-hair flex flex-col shrink-0 bg-secondary/5">
       <div className="p-3 border-b border-primary/8">
         {isCreating ? (
             <div
@@ -68,11 +68,11 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsCreating(false); }}
                 placeholder={db.query_title_placeholder}
-                className="flex-1 px-2.5 py-1.5 rounded-modal typo-body bg-background/50 border border-primary/15 text-foreground focus-ring placeholder:text-foreground"
+                className="flex-1 px-2.5 py-1.5 rounded-modal typo-body bg-background/50 border border-hair text-foreground focus-ring placeholder:text-foreground"
               />
               {/* Same reason as the row controls below: icon-only, so the
                   aria-label is the only accessible name these two have. */}
-              <Button variant="ghost" size="icon-sm" aria-label={t.common.confirm} onClick={handleCreate} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+              <Button variant="ghost" size="icon-sm" aria-label={t.common.confirm} onClick={handleCreate} className="text-status-success hover:text-status-success hover:bg-status-success/10">
                 <Check className="w-3.5 h-3.5" />
               </Button>
               <Button variant="ghost" size="icon-sm" aria-label={t.common.cancel} onClick={() => setIsCreating(false)}>
@@ -84,7 +84,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               key="create-btn"
               type="button"
               onClick={() => setIsCreating(true)}
-              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
+              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body text-primary/80 hover:bg-primary/8 border border-dashed border-hair hover:border-primary/25 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               {db.new_query}
@@ -101,8 +101,8 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             aria-current={selectedId === q.id || undefined}
             className={`focus-ring group flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-all duration-150 ${
               selectedId === q.id
-                ? 'bg-primary/10 border border-primary/20 shadow-elevation-1 shadow-primary/5'
-                : 'hover:bg-secondary/40 border border-transparent'
+                ? 'bg-primary/10 border border-hair shadow-elevation-1 shadow-primary/5'
+                : 'hover:bg-surface-2 border border-transparent'
             }`}
             onClick={() => onSelect(q.id)}
             onKeyDown={(e) => {
@@ -115,7 +115,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             <span className="flex-1 typo-body text-foreground truncate">{q.title}</span>
 
             {q.last_run_ok !== null && (
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${q.last_run_ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${q.last_run_ok ? 'bg-status-success' : 'bg-status-error'}`} />
             )}
 
             {/* Both controls are icon-only, so the aria-label IS the accessible
@@ -128,7 +128,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               aria-label={q.is_favorite ? db.remove_favorite : db.add_favorite}
               aria-pressed={q.is_favorite}
               onClick={(e) => { e.stopPropagation(); handleToggleFavorite(q.id, q.is_favorite); }}
-              className={`p-0.5 transition-colors ${q.is_favorite ? 'text-amber-400' : 'text-foreground hover:text-amber-400/50'}`}
+              className={`p-0.5 transition-colors ${q.is_favorite ? 'text-status-warning' : 'text-foreground hover:text-status-warning/50'}`}
             >
               <Star className="w-3 h-3" fill={q.is_favorite ? 'currentColor' : 'none'} />
             </button>
@@ -137,7 +137,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               type="button"
               aria-label={t.common.delete}
               onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: q.id, title: q.title }); }}
-              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-red-400/60 transition-all"
+              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-status-error/60 transition-all"
             >
               <Trash2 className="w-3 h-3" />
             </button>

@@ -98,7 +98,7 @@ export function ExportSection({
               value={importPassphrase}
               onChange={(e) => setImportPassphrase(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleImport()}
-              inputClassName="w-56 px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-blue-500/30"
+              inputClassName="w-56 px-3 py-2 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 placeholder:text-ink-3 outline-none focus-visible:border-status-info/30"
               autoFocus
             />
             <button
@@ -115,7 +115,7 @@ export function ExportSection({
             <button
               type="button"
               onClick={() => { setShowImportInput(false); setImportPassphrase(''); }}
-              className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors"
+              className="typo-caption text-foreground hover:text-ink-2 transition-colors"
             >
               {s.cancel}
             </button>
@@ -135,8 +135,8 @@ export function ExportSection({
 
       {/* Import result */}
       {importResult && (
-        <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
-          <div className="flex items-center gap-2 typo-body text-emerald-400">
+        <div className="rounded-card border border-hair bg-surface-1 p-4 space-y-2">
+          <div className="flex items-center gap-2 typo-body text-status-success">
             <PackageCheck className="w-4 h-4" />
             {s.import_complete}
           </div>
@@ -190,7 +190,7 @@ export function ExportSection({
           </div>
           {importResult.warnings.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="typo-body text-amber-400">{s.warnings}</p>
+              <p className="typo-body text-status-warning">{s.warnings}</p>
               {importResult.warnings.map((w, i) => (
                 <p key={i} className="typo-body text-foreground pl-2">
                   - {w}

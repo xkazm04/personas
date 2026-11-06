@@ -25,17 +25,17 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
   const scorePercent = Math.round(result.score * 100);
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/15 hover:bg-secondary/25 transition-colors">
+    <div className="rounded-modal border border-hair bg-secondary/15 hover:bg-surface-1 transition-colors">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <span className="typo-code text-foreground w-5 text-right shrink-0">
           {rank}
         </span>
-        <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
-          <FileText className="w-3.5 h-3.5 text-violet-400/70" />
+        <div className="w-7 h-7 rounded-card bg-role-agent/10 border border-role-agent/15 flex items-center justify-center shrink-0">
+          <FileText className="w-3.5 h-3.5 text-role-agent/70" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="typo-body text-foreground/90 truncate">{result.documentTitle}</p>
+          <p className="typo-body text-ink-1 truncate">{result.documentTitle}</p>
           {result.sourcePath && (
             <p className="typo-code text-foreground truncate mt-0.5">{result.sourcePath}</p>
           )}
@@ -43,7 +43,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
         <div className="flex items-center gap-2 shrink-0">
           {isPartial && (
             <Tooltip content={sh.partial_text_tooltip}>
-              <span className="inline-flex items-center gap-1 typo-code px-2 py-0.5 rounded-card border bg-amber-500/10 text-amber-400/80 border-amber-500/15">
+              <span className="inline-flex items-center gap-1 typo-code px-2 py-0.5 text-status-warning/80">
                 <ScanLine className="w-3 h-3" aria-hidden />
                 {sh.partial_text_badge}
               </span>
@@ -64,7 +64,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 typo-caption text-violet-400/70 hover:text-violet-400 mt-2 transition-colors"
+            className="flex items-center gap-1 typo-caption text-role-agent/70 hover:text-role-agent mt-2 transition-colors"
           >
             {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             {expanded ? sh.show_less : sh.show_full_chunk}
@@ -85,9 +85,9 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  let colorClass = 'bg-violet-500/10 text-violet-400/80 border-violet-500/15';
-  if (score >= 80) colorClass = 'bg-emerald-500/10 text-emerald-400/80 border-emerald-500/15';
-  else if (score >= 60) colorClass = 'bg-amber-500/10 text-amber-400/80 border-amber-500/15';
+  let colorClass = 'bg-role-agent/10 text-role-agent/80 border-role-agent/15';
+  if (score >= 80) colorClass = 'bg-status-success/10 text-status-success/80 border-status-success/15';
+  else if (score >= 60) colorClass = 'bg-status-warning/10 text-status-warning/80 border-status-warning/15';
 
   return (
     <span className={`typo-code px-2 py-0.5 rounded-card border ${colorClass}`}>

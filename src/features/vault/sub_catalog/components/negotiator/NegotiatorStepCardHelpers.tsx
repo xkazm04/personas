@@ -64,17 +64,17 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
             ? `${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`
             : isActive
               ? `${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`
-              : 'bg-secondary/40 border-primary/15 text-foreground'
+              : 'bg-surface-2 border-hair text-foreground'
         }`}
       >
         {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepIndex + 1}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`typo-body ${isActive ? 'text-foreground' : 'text-foreground/90'}`}>
+          <span className={`typo-body ${isActive ? 'text-foreground' : 'text-ink-1'}`}>
             {step.title}
           </span>
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body border ${colorClasses}`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body border ${colorClasses}`}>
             <Icon className="w-2.5 h-2.5" />
             {step.action_type.replace('_', ' ')}
           </span>
@@ -146,7 +146,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
       <button
         type="button"
         onClick={() => setShowHelp(!showHelp)}
-        className="inline-flex items-center gap-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors duration-snap"
+        className="inline-flex items-center gap-1.5 typo-body text-foreground hover:text-ink-1 transition-colors duration-snap"
         data-testid={`negotiator-step-${stepIndex}-help-toggle-btn`}
       >
         <HelpCircle className="w-3 h-3" />
@@ -160,7 +160,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             onChange={(e) => setHelpQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAskHelp(); }}
             placeholder={t.vault.negotiator_extra.ask_question}
-            className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
+            className={`flex-1 px-3 py-1.5 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
             data-testid={`negotiator-step-${stepIndex}-help-input`}
           />
           <button
@@ -185,12 +185,12 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
           const translated = resolveErrorTranslated(t, stepHelp.answer);
           return (
             <div
-              className="px-3 py-2 rounded-modal typo-body text-red-300 bg-red-500/10 border border-red-500/20 space-y-1"
+              className="px-3 py-2 rounded-modal typo-body text-status-error bg-status-error/10 border border-status-error/20 space-y-1"
               data-testid={`negotiator-step-${stepIndex}-help-error`}
             >
               <div>{translated.message}</div>
               {translated.suggestion && (
-                <div className="typo-body text-red-200/70">{translated.suggestion}</div>
+                <div className="typo-body text-status-error/70">{translated.suggestion}</div>
               )}
             </div>
           );

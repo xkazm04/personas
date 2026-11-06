@@ -47,7 +47,7 @@ export function FilterChips({
     <>
       {/* Active category chip */}
       {selectedCategory && activeCategoryMeta && ActiveCategoryIcon && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-role-agent/10 border border-role-agent/20 text-role-agent flex-shrink-0">
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
           {activeCategoryLabel}
           <button
@@ -70,7 +70,7 @@ export function FilterChips({
             return (
               <span
                 key={name}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-role-agent/10 border border-role-agent/20 text-role-agent"
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
                 {meta.label}
@@ -99,7 +99,7 @@ export function FilterChips({
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full border border-role-agent/20 text-role-agent"
                 style={{ backgroundColor: `${cat.color}15` }}
               >
                 <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
@@ -155,20 +155,14 @@ export function FilterChips({
               const target = e.currentTarget.querySelector<HTMLElement>(`[data-value="${nextValue}"]`);
               target?.focus();
             }}
-            className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0"
+            className="inline-flex items-center rounded-card border border-hair overflow-hidden flex-shrink-0"
           >
             {coverageOptions.map((opt) => {
               const isActive = (coverageFilter ?? 'all') === opt.value;
               const Icon = opt.icon;
               const count = coverageCounts?.[opt.countKey];
-              const activeClass =
-                opt.color === 'violet'
-                  ? 'bg-violet-500/20 text-violet-300'
-                  : opt.color === 'emerald'
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : opt.color === 'slate'
-                      ? 'bg-slate-500/25 text-slate-200'
-                      : 'bg-amber-500/20 text-amber-300';
+              // Selection is one signal (bg-sel + ink-1), not a per-coverage hue.
+              const activeClass = 'bg-sel text-ink-1';
               return (
                 <button
                   type="button"
@@ -179,7 +173,7 @@ export function FilterChips({
                   data-value={opt.value}
                   onClick={() => onCoverageFilterChange(opt.value)}
                   className={`px-2.5 py-1.5 typo-body transition-colors flex items-center gap-1 ${
-                    isActive ? activeClass : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
+                    isActive ? activeClass : 'text-foreground hover:text-ink-2 hover:bg-surface-2'
                   }`}
                 >
                   {Icon && <Icon className="w-3 h-3" />}

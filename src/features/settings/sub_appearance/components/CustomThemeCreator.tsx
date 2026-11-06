@@ -51,7 +51,7 @@ function ContrastReadout({ vars, labels }: {
           <div key={p.id} className="flex flex-col gap-1">
             <span className="typo-caption text-foreground">{p.label}</span>
             <div className="flex items-center gap-1.5">
-              <span className={`px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass(p.level)}`}>
+              <span className={`px-1.5 py-0.5 rounded-pill typo-label tracking-wide ${badgeClass(p.level)}`}>
                 {badgeText(p.level)}
               </span>
               <span className="typo-code text-foreground text-[11px]"><Numeric value={p.ratio} precision={1} />:1</span>
@@ -174,13 +174,13 @@ export default function CustomThemeCreator() {
   ], [primaryColor, accentColor, backgroundColor, foregroundColor, secondaryColor, borderColor, cardBgColor, mutedFgColor, baseVars, s]);
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-5">
+    <div className="rounded-modal border border-hair bg-card-bg p-6 space-y-5">
       {/* Header */}
       <SectionHeading
         title={s.custom_theme}
         icon={<Paintbrush />}
         action={isActiveCustom ? (
-          <span className="text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">{s.custom_theme_active}</span>
+          <span className="typo-label text-primary bg-primary/10 border border-hair rounded-full px-2 py-0.5">{s.custom_theme_active}</span>
         ) : undefined}
       />
 
@@ -203,7 +203,7 @@ export default function CustomThemeCreator() {
                   onClick={() => setBaseMode(mode)}
                   aria-pressed={active}
                   className={`focus-ring flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
-                    active ? 'border-primary/30 bg-primary/10 text-foreground' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
+                    active ? 'border-primary/30 bg-primary/10 text-foreground' : 'border-hair text-foreground hover:border-hair hover:bg-primary/5'
                   }`}
                 >
                   <Icon className="w-3 h-3" />
@@ -221,7 +221,7 @@ export default function CustomThemeCreator() {
             onChange={(e) => setLabel(e.target.value)}
             placeholder={s.custom_theme_name_placeholder}
             maxLength={24}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
           />
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function CustomThemeCreator() {
         <button
           type="button"
           onClick={() => { const next = !showGradient; setShowGradient(next); if (!next) setBackgroundEndColor(null); }}
-          className="focus-ring flex items-center gap-1.5 typo-caption text-foreground hover:text-muted-foreground transition-colors"
+          className="focus-ring flex items-center gap-1.5 typo-caption text-foreground hover:text-ink-2 transition-colors"
         >
           <ChevronRight className={`w-3 h-3 transition-transform ${showGradient ? 'rotate-90' : ''}`} />
           {s.background_gradient}

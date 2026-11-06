@@ -41,30 +41,30 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       isOpen={isOpen}
       onClose={onClose}
       titleId="activity-diagram-title"
-      panelClassName="bg-background/95 border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col w-[90vw] h-[85vh]"
+      panelClassName="bg-background/95 border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col w-[90vw] h-[85vh]"
       maxWidthClass="max-w-7xl"
     >
       {/* Header */}
-      <div className={`flex items-center justify-between ${CARD_PADDING.modalSection} border-b border-primary/10 bg-secondary/30`}>
+      <div className={`flex items-center justify-between ${CARD_PADDING.modalSection} border-b border-hair bg-surface-1`}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-            <Workflow className="w-5 h-5 text-violet-400" />
+          <div className="w-9 h-9 rounded-modal bg-role-agent/10 border border-role-agent/20 flex items-center justify-center">
+            <Workflow className="w-5 h-5 text-role-agent" />
           </div>
           <div>
-            <h2 id="activity-diagram-title" className="typo-body-lg text-foreground/90">{titleOverride || templateName}</h2>
+            <h2 id="activity-diagram-title" className="typo-body-lg text-ink-1">{titleOverride || templateName}</h2>
             <p className="typo-body text-foreground">
               {subtitleOverride || tx(flows.length === 1 ? t.templates.diagrams.flows_count_one : t.templates.diagrams.flows_count_other, { count: flows.length })}
             </p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label={t.templates.diagrams.close_dialog}>
+        <button type="button" onClick={onClose} className="w-8 h-8 rounded-card bg-surface-2 hover:bg-secondary flex items-center justify-center transition-colors" aria-label={t.templates.diagrams.close_dialog}>
           <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
       {/* Use Case Tabs */}
       {flows.length > 1 && (
-        <div className={`flex items-center gap-2 ${CARD_PADDING.modalSection} border-b border-primary/10 bg-secondary/20 overflow-x-auto`}>
+        <div className={`flex items-center gap-2 ${CARD_PADDING.modalSection} border-b border-hair bg-surface-1 overflow-x-auto`}>
           {flows.map((flow, index) => (
             <button
               type="button"
@@ -76,11 +76,11 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body transition-all whitespace-nowrap ${
                 index === activeFlowIndex
-                  ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.1)]'
-                  : 'bg-secondary/40 border border-transparent text-foreground hover:bg-secondary/60 hover:text-muted-foreground'
+                  ? 'bg-role-agent/15 border border-role-agent/30 text-role-agent shadow-[0_0_12px_rgba(139,92,246,0.1)]'
+                  : 'bg-surface-2 border border-transparent text-foreground hover:bg-surface-2 hover:text-ink-2'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${index === activeFlowIndex ? 'bg-violet-400' : 'bg-muted-foreground/30'}`} />
+              <span className={`w-2 h-2 rounded-full ${index === activeFlowIndex ? 'bg-role-agent' : 'bg-muted-foreground/30'}`} />
               {flow.name}
             </button>
           ))}
@@ -130,7 +130,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
 
       {/* Footer -- Flow Description */}
       {activeFlow && (
-        <div className={`${CARD_PADDING.modalSection} border-t border-primary/10 bg-secondary/20`}>
+        <div className={`${CARD_PADDING.modalSection} border-t border-hair bg-surface-1`}>
           <p className="typo-body text-foreground">{activeFlow.description}</p>
           <div className="flex items-center gap-4 mt-1.5 typo-body text-foreground">
             <span>{tx(t.templates.diagrams.nodes_count, { count: nodes.length })}</span>

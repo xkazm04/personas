@@ -41,7 +41,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
         <button
           type="button"
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -63,7 +63,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
         placeholder={placeholder}
         rows={10}
         autoFocus
-        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-surface-2 border border-hair rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
 
       {error && <VaultErrorBanner message={error} variant="inline" />}

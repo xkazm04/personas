@@ -100,7 +100,7 @@ export function PresetGraphAdapter({ preset }: PresetGraphAdapterProps) {
           {t.templates.presets.preview_graph_heading}
         </h3>
       </div>
-      <div className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
+      <div className="rounded-card border border-hair bg-secondary/15 overflow-hidden">
         <svg
           viewBox={`0 0 ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`}
           preserveAspectRatio="xMidYMid meet"

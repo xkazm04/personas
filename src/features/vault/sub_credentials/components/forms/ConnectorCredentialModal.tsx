@@ -117,7 +117,7 @@ export function ConnectorCredentialModal({
       onClose={onClose}
       titleId="connector-credential-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-elevation-4 p-6 max-h-[85vh] overflow-y-auto"
+      panelClassName="bg-secondary/95 backdrop-blur-xl border border-hair rounded-card shadow-elevation-4 p-6 max-h-[85vh] overflow-y-auto"
     >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -132,7 +132,7 @@ export function ConnectorCredentialModal({
             <div>
               <h3 id="connector-credential-title" className="typo-heading text-foreground">{label}</h3>
               {category && (
-                <span className="typo-body text-foreground px-1.5 py-0.5 bg-muted/30 rounded mt-0.5 inline-block">
+                <span className="typo-body text-foreground px-1.5 py-0.5 bg-muted/30 rounded-interactive mt-0.5 inline-block">
                   {category}
                 </span>
               )}
@@ -142,7 +142,7 @@ export function ConnectorCredentialModal({
             type="button"
             onClick={onClose}
             aria-label={t.common.close}
-            className="p-1.5 rounded-card hover:bg-primary/10 transition-colors text-foreground hover:text-foreground/95"
+            className="p-1.5 rounded-card hover:bg-primary/10 transition-colors text-foreground hover:text-ink-1"
           >
             <X className="w-4 h-4" />
           </button>
@@ -150,7 +150,7 @@ export function ConnectorCredentialModal({
 
         {/* Existing credential badge */}
         {existingCredential && (
-          <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-modal typo-body text-emerald-400">
+          <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-status-success/10 border border-status-success/20 rounded-modal typo-body text-status-success">
             <Check className="w-3.5 h-3.5" />
             {cf.already_configured}
           </div>
@@ -162,18 +162,18 @@ export function ConnectorCredentialModal({
             href={sanitizeExternalUrl(connector.setup_url)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 mb-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-modal typo-body text-foreground hover:bg-amber-500/15 hover:border-amber-500/40 transition-colors group"
+            className="flex items-center gap-3 px-4 py-3 mb-4 bg-status-warning/10 border-2 border-status-warning/30 rounded-modal typo-body text-foreground hover:bg-status-warning/15 hover:border-status-warning/40 transition-colors group"
           >
-            <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center typo-heading text-amber-400 flex-shrink-0">
+            <span className="w-6 h-6 rounded-full bg-status-warning/20 border border-status-warning/40 flex items-center justify-center typo-heading text-status-warning flex-shrink-0">
               1
             </span>
             <div className="flex-1 min-w-0">
-              <span className="font-semibold text-foreground/90">{t.vault.credential_forms.get_credentials}</span>
+              <span className="font-semibold text-ink-1">{t.vault.credential_forms.get_credentials}</span>
               <span className="typo-body text-foreground block truncate mt-0.5">
                 {tx(cf.open_to_generate, { label })}
               </span>
             </div>
-            <ExternalLink className="w-4 h-4 text-amber-400/70 flex-shrink-0 group-hover:scale-110 transition-transform" />
+            <ExternalLink className="w-4 h-4 text-status-warning/70 flex-shrink-0 group-hover:scale-110 transition-transform" />
           </a>
         )}
         {sanitizeExternalUrl(connector.setup_url) && existingCredential && (
@@ -181,7 +181,7 @@ export function ConnectorCredentialModal({
             href={sanitizeExternalUrl(connector.setup_url)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 px-3.5 py-2.5 mb-4 bg-primary/5 border border-primary/15 rounded-modal typo-body text-primary/80 hover:bg-primary/10 hover:text-primary transition-colors group"
+            className="flex items-center gap-2.5 px-3.5 py-2.5 mb-4 bg-primary/5 border border-hair rounded-modal typo-body text-primary/80 hover:bg-primary/10 hover:text-primary transition-colors group"
           >
             <ExternalLink className="w-4 h-4 flex-shrink-0 group-hover:scale-105 transition-transform" />
             <div className="flex-1 min-w-0">
@@ -195,7 +195,7 @@ export function ConnectorCredentialModal({
 
         {/* Setup instructions */}
         {connector.setup_instructions && (
-          <div className="mb-4 px-3.5 py-2.5 bg-secondary/60 border border-primary/10 rounded-modal">
+          <div className="mb-4 px-3.5 py-2.5 bg-surface-2 border border-hair rounded-modal">
             <p className="typo-code text-foreground uppercase tracking-wider mb-1.5">
               {cf.setup_instructions_label}
             </p>
@@ -235,7 +235,7 @@ export function ConnectorCredentialModal({
             <button
               type="button"
               onClick={onClose}
-              className="mt-3 px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
+              className="mt-3 px-4 py-2 bg-surface-2 hover:bg-secondary text-ink-1 rounded-modal typo-body transition-colors"
             >
               {t.common.close}
             </button>

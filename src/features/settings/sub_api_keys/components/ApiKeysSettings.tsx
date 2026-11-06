@@ -71,7 +71,7 @@ let keysCache: ExternalApiKey[] | null = null;
 /** Rows in the first viewport that play the one-shot entrance cascade. */
 const CASCADE_ROWS = 12;
 const KEY_ROW_H = 68;
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-52', 'w-32'];
 
 export default function ApiKeysSettings() {
@@ -221,13 +221,13 @@ export default function ApiKeysSettings() {
       />
       <ContentBody>
         {error && (
-          <div className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2 mb-3">
+          <div className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-interactive p-2 mb-3">
             <AlertTriangle size={14} />
             {error}
             <button
               type="button"
               onClick={() => void load()}
-              className="ml-auto inline-flex items-center gap-1 hover:text-red-300"
+              className="ml-auto inline-flex items-center gap-1 hover:text-status-error"
             >
               <RefreshCw size={12} />
               {s.retry}
@@ -250,7 +250,7 @@ export default function ApiKeysSettings() {
               ) : keys === null ? null : regularKeys.length === 0 ? (
                 <div
                   data-testid="keys-empty"
-                  className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded flex flex-col items-center gap-3"
+                  className="typo-caption text-foreground py-6 text-center bg-surface-1 rounded-interactive flex flex-col items-center gap-3"
                 >
                   {s.empty}
                   <Button variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowCreate(true)}>
@@ -355,21 +355,21 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
         isRevoked
           ? 'border-border/20 bg-secondary/10 opacity-60'
           : stale
-          ? 'border-amber-400/30 bg-amber-400/5'
-          : 'border-border/30 bg-secondary/20'
+          ? 'border-status-warning/30 bg-status-warning/5'
+          : 'border-border/30 bg-surface-1'
       }`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground truncate">{apiKey.name}</span>
           {isRevoked && (
-            <span className="typo-caption text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
+            <span className="typo-caption text-status-warning px-1.5 py-0.5">
               {s.revoked}
             </span>
           )}
           {stale && (
             <span
-              className="typo-caption text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+              className="typo-caption text-status-warning px-1.5 py-0.5 inline-flex items-center gap-1"
               title={s.stale_tooltip}
             >
               <Clock3 size={10} />
@@ -378,10 +378,10 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
           )}
           {!isRevoked && expiry && (
             <span
-              className={`typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${
+              className={`typo-caption px-1.5 py-0.5 rounded-interactive inline-flex items-center gap-1 ${
                 expiry.expired
-                  ? 'text-red-400 bg-red-400/10 border border-red-400/30'
-                  : 'text-foreground bg-secondary/40'
+                  ? 'text-status-error bg-status-error/10 border border-status-error/30'
+                  : 'text-foreground bg-surface-2'
               }`}
               title={apiKey.expires_at ? formatTimestamp(apiKey.expires_at) : undefined}
             >
@@ -398,7 +398,7 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
           </span>
           <span className="typo-caption text-foreground">·</span>
           <span
-            className={`typo-caption ${stale ? 'text-amber-400/80' : 'text-foreground'}`}
+            className={`typo-caption ${stale ? 'text-status-warning/80' : 'text-foreground'}`}
             title={lastUsedAbsolute ?? undefined}
           >
             {s.last_used}: {lastUsedRelative}
@@ -427,7 +427,7 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
             className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
               confirmRevoke
                 ? 'text-status-warning bg-status-warning/10 hover:bg-status-warning/20'
-                : 'text-foreground hover:text-amber-400 hover:bg-amber-400/10'
+                : 'text-foreground hover:text-status-warning hover:bg-status-warning/10'
             }`}
             title={s.revoke_tooltip}
           >
@@ -450,8 +450,8 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
           disabled={actioning}
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
             confirmDelete
-              ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
-              : 'text-foreground hover:text-red-400 hover:bg-red-400/10'
+              ? 'text-status-error bg-status-error/10 hover:bg-status-error/20'
+              : 'text-foreground hover:text-status-error hover:bg-status-error/10'
           }`}
           title={s.delete_tooltip}
         >
@@ -488,7 +488,7 @@ function ApiKeyGhostRows() {
         return (
           <div
             key={i}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-card border border-border/30 bg-secondary/20 animate-fade-in"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-card border border-border/30 bg-surface-1 animate-fade-in"
             style={{ height: KEY_ROW_H, animationDelay: delay }}
           >
             <div className="flex-1 min-w-0 space-y-2">

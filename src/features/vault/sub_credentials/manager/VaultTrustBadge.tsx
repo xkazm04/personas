@@ -66,16 +66,16 @@ export function VaultTrustBadge() {
         data-testid="vault-trust-badge"
         className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border typo-body transition-colors text-left ${
           attention
-            ? 'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10'
-            : 'border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10'
+            ? 'border-status-warning/20 bg-status-warning/5 hover:bg-status-warning/10'
+            : 'border-status-success/20 bg-status-success/5 hover:bg-status-success/10'
         }`}
       >
         {attention ? (
-          <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
+          <ShieldAlert className="w-4 h-4 shrink-0 text-status-warning" />
         ) : (
-          <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+          <ShieldCheck className="w-4 h-4 shrink-0 text-status-success" />
         )}
-        <span className={`font-medium ${attention ? 'text-amber-300' : 'text-emerald-300'}`}>
+        <span className={`font-medium ${attention ? 'text-status-warning' : 'text-status-success'}`}>
           {attention ? b.vault_needs_attention : b.vault_secure}
         </span>
         <ChevronDown
@@ -84,7 +84,7 @@ export function VaultTrustBadge() {
       </button>
 
       {open && (
-        <div className="mt-1.5 px-3 py-3 rounded-card border border-primary/10 bg-secondary/20 space-y-3">
+        <div className="mt-1.5 px-3 py-3 rounded-card border border-hair bg-surface-1 space-y-3">
           <TrustRow icon={<Lock className="w-3.5 h-3.5" />} title={b.aes_title} detail={b.aes_detail} />
           <TrustRow
             icon={<KeyRound className="w-3.5 h-3.5" />}
@@ -120,7 +120,7 @@ function TrustRow({
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className={`mt-0.5 shrink-0 ${warn ? 'text-amber-400' : 'text-emerald-400/80'}`}>{icon}</span>
+      <span className={`mt-0.5 shrink-0 ${warn ? 'text-status-warning' : 'text-status-success/80'}`}>{icon}</span>
       <div className="min-w-0">
         <div className="typo-title">{title}</div>
         <div className="typo-caption text-foreground">{detail}</div>

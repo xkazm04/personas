@@ -27,13 +27,13 @@ export function ReviewHealthcheck({ onHealthcheck, healthResult }: ReviewHealthc
           }
         }}
         disabled={isHealthchecking}
-        className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/40 text-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
       >
         {isHealthchecking ? <LoadingSpinner size="sm" /> : <RefreshCw className="w-3.5 h-3.5" />}
         {isHealthchecking ? t.vault.auto_cred.testing : t.vault.auto_cred.test_connection}
       </button>
       {healthResult && (
-        <div className={`flex items-center gap-1.5 typo-body ${healthResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
+        <div className={`flex items-center gap-1.5 typo-body ${healthResult.success ? 'text-status-success' : 'text-status-error'}`}>
           {healthResult.success ? (
             <CheckCircle2 className="w-3.5 h-3.5" />
           ) : (
@@ -96,14 +96,14 @@ export function ReviewActionButtons({
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-surface-2 transition-colors"
         >
           {t.vault.auto_cred.discard}
         </button>
         <button
           type="button"
           onClick={onRetry}
-          className="flex items-center gap-1.5 px-4 py-2 typo-body text-cyan-400/80 hover:text-cyan-400 rounded-modal border border-cyan-500/15 hover:bg-cyan-500/10 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 typo-body text-role-highlight/80 hover:text-role-highlight rounded-modal border border-role-highlight/15 hover:bg-role-highlight/10 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.vault.auto_cred.re_run_browser}
@@ -126,8 +126,8 @@ export function ReviewActionButtons({
             disabled={savingProcedure || procedureSaved}
             className={`flex items-center gap-1.5 px-3 py-2 typo-body rounded-modal border transition-colors ${
               procedureSaved
-                ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
-                : 'border-violet-500/20 text-violet-400/80 hover:bg-violet-500/10 hover:text-violet-400'
+                ? 'bg-role-agent/10 text-role-agent border-role-agent/20'
+                : 'border-role-agent/20 text-role-agent/80 hover:bg-role-agent/10 hover:text-role-agent'
             }`}
             title={t.vault.auto_cred_extra.save_procedure_title}
           >
@@ -145,7 +145,7 @@ export function ReviewActionButtons({
           type="button"
           onClick={onSave}
           disabled={isSaving || !healthResult?.success}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-emerald-600/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-status-success hover:bg-status-success disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-status-success/20"
         >
           {isSaving ? (
             <LoadingSpinner />

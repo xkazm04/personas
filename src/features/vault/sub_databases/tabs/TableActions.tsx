@@ -28,8 +28,8 @@ export function TestConnectionButton({ credentialId }: { credentialId: string })
         <div
           className={`flex items-center gap-2 px-3 py-1.5 rounded-card typo-body ${
             result.success
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
+              ? 'bg-status-success/10 text-status-success'
+              : 'bg-status-error/10 text-status-error'
           }`}
         >
           {result.success ? (

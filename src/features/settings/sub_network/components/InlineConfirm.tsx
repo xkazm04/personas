@@ -43,7 +43,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="px-2 py-1 text-[11px] rounded-input border border-border hover:bg-secondary/50 text-foreground"
+              className="px-2 py-1 typo-caption rounded-input border border-border hover:bg-surface-2 text-foreground"
             >
               {st.cancel}
             </button>
@@ -53,7 +53,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
                 setOpen(false);
                 onConfirm();
               }}
-              className="px-2 py-1 text-[11px] rounded-input bg-red-500/90 text-foreground hover:bg-red-500"
+              className="px-2 py-1 typo-caption rounded-input text-foreground hover:bg-status-error"
             >
               {st.confirm}
             </button>

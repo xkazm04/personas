@@ -18,9 +18,9 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
       className="animate-fade-slide-in space-y-4"
       data-testid="vault-negotiator-planning"
     >
-      <div className="flex items-center gap-3 px-4 py-3 bg-violet-500/10 border border-violet-500/20 rounded-modal">
-        <Brain className="w-4 h-4 text-violet-400 shrink-0 animate-pulse" />
-        <p className="typo-body text-violet-200/80">
+      <div className="flex items-center gap-3 px-4 py-3 bg-role-agent/10 border border-role-agent/20 rounded-modal">
+        <Brain className="w-4 h-4 text-role-agent shrink-0 animate-pulse" />
+        <p className="typo-body text-role-agent/80">
           {negx.planning_description}
         </p>
       </div>
@@ -34,9 +34,9 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
               className="animate-fade-slide-in flex items-center gap-3 py-1.5"
             >
               {isLast ? (
-                <LoadingSpinner size="sm" className="text-violet-400 shrink-0" />
+                <LoadingSpinner size="sm" className="text-role-agent shrink-0" />
               ) : (
-                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <Check className="w-3.5 h-3.5 text-status-success shrink-0" />
               )}
               <span className="typo-body text-foreground">
                 {line}
@@ -46,7 +46,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
         })}
         {progressLines.length === 0 && (
           <div className="flex items-center gap-3 py-1.5">
-            <LoadingSpinner size="sm" className="text-violet-400 shrink-0" />
+            <LoadingSpinner size="sm" className="text-role-agent shrink-0" />
             <span className="typo-body text-foreground">{neg.initializing}</span>
           </div>
         )}

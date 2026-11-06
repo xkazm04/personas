@@ -32,10 +32,10 @@ const SEVERITY_ROWS: Array<{
   descKey: 'severity_critical' | 'severity_high' | 'severity_medium' | 'severity_low';
   color: string;
 }> = [
-  { key: 'healing_critical', severity: 'critical', labelKey: 'severity_critical_label', descKey: 'severity_critical', color: 'text-red-400' },
-  { key: 'healing_high', severity: 'high', labelKey: 'severity_high_label', descKey: 'severity_high', color: 'text-orange-400' },
-  { key: 'healing_medium', severity: 'medium', labelKey: 'severity_medium_label', descKey: 'severity_medium', color: 'text-amber-400' },
-  { key: 'healing_low', severity: 'low', labelKey: 'severity_low_label', descKey: 'severity_low', color: 'text-blue-400' },
+  { key: 'healing_critical', severity: 'critical', labelKey: 'severity_critical_label', descKey: 'severity_critical', color: 'text-status-error' },
+  { key: 'healing_high', severity: 'high', labelKey: 'severity_high_label', descKey: 'severity_high', color: 'text-status-warning' },
+  { key: 'healing_medium', severity: 'medium', labelKey: 'severity_medium_label', descKey: 'severity_medium', color: 'text-status-warning' },
+  { key: 'healing_low', severity: 'low', labelKey: 'severity_low_label', descKey: 'severity_low', color: 'text-status-info' },
 ];
 
 function WeeklyDigestToggle() {
@@ -134,7 +134,7 @@ export default function NotificationSettings() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Bell className="w-5 h-5 text-amber-400" />}
+        icon={<Bell className="w-5 h-5 text-ink-2" />}
         iconColor="amber"
         title={s.title}
         subtitle={s.subtitle}

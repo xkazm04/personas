@@ -13,48 +13,48 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
       {/* Status header */}
       <div className={`rounded-card border p-3 space-y-2 ${
         !allValid
-          ? 'border-red-500/30 bg-red-500/5'
-          : 'border-violet-500/20 bg-violet-500/5'
+          ? 'border-status-error/30 bg-status-error/5'
+          : 'border-role-agent/20 bg-role-agent/5'
       }`}>
         <div className="flex items-center gap-2">
           {allValid ? (
             result.creatorTrusted ? (
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              <ShieldCheck className="w-5 h-5 text-status-success" />
             ) : (
-              <ShieldAlert className="w-5 h-5 text-amber-400" />
+              <ShieldAlert className="w-5 h-5 text-status-warning" />
             )
           ) : (
-            <ShieldOff className="w-5 h-5 text-red-400" />
+            <ShieldOff className="w-5 h-5 text-status-error" />
           )}
           <div>
             <div className="typo-body text-foreground">
               {result.personaName}
             </div>
-            <div className="text-[10px] text-foreground">
+            <div className="typo-caption text-foreground">
               {tx(st.by_creator, { name: result.creatorDisplayName })}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[10px]">
+        <div className="flex flex-wrap items-center gap-2 typo-caption">
           <span className={`px-1.5 py-0.5 rounded-full ${
             result.signatureValid
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
+              ? 'bg-status-success/10 text-status-success'
+              : 'bg-status-error/10 text-status-error'
           }`}>
             {result.signatureValid ? st.signature_valid : st.invalid_signature}
           </span>
           <span className={`px-1.5 py-0.5 rounded-full ${
             result.contentIntact
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
+              ? 'bg-status-success/10 text-status-success'
+              : 'bg-status-error/10 text-status-error'
           }`}>
             {result.contentIntact ? st.content_intact : st.content_tampered}
           </span>
           <span className={`px-1.5 py-0.5 rounded-full ${
             result.creatorTrusted
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-amber-500/10 text-amber-400'
+              ? 'bg-status-success/10 text-status-success'
+              : 'bg-status-warning/10 text-status-warning'
           }`}>
             {result.creatorTrusted ? st.trusted_creator : st.unknown_creator}
           </span>
@@ -64,7 +64,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
       {/* Creator identity */}
       <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-1.5">
         <div className="typo-caption text-foreground">{st.creator_identity}</div>
-        <div className="text-[10px] text-foreground font-mono">
+        <div className="typo-caption text-foreground font-mono">
           {result.creatorPeerId.slice(0, 12)}...{result.creatorPeerId.slice(-12)}
         </div>
       </div>
@@ -95,7 +95,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
       </div>
 
       {/* Enclave hash */}
-      <div className="text-[10px] text-foreground font-mono truncate">
+      <div className="typo-caption text-foreground font-mono truncate">
         {st.enclave_hash_label} {result.enclaveHash}
       </div>
     </div>

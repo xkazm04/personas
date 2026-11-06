@@ -33,21 +33,21 @@ export const resolveProbeState = (result: HealthResult): HealthProbeState =>
 
 const CHROME: Record<HealthProbeState, { box: string; Icon: typeof CheckCircle2 }> = {
   verified: {
-    box: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400',
+    box: 'bg-status-success/10 border border-status-success/20 text-status-success',
     Icon: CheckCircle2,
   },
   unverifiable: {
-    box: 'bg-secondary/40 border border-border/40 text-foreground',
+    box: 'bg-surface-2 border border-border/40 text-foreground',
     Icon: ShieldQuestion,
   },
   // Could-not-reach shares the neutral treatment with could-not-verify: both
   // are the absence of a verdict, and neither is evidence against the key.
   unreachable: {
-    box: 'bg-secondary/40 border border-border/40 text-foreground',
+    box: 'bg-surface-2 border border-border/40 text-foreground',
     Icon: PlugZap,
   },
   failed: {
-    box: 'bg-red-500/10 border border-red-500/20 text-red-400',
+    box: 'bg-status-error/10 border border-status-error/20 text-status-error',
     Icon: XCircle,
   },
 };
@@ -90,7 +90,7 @@ export function HealthProbeBanner({
           {result.isStale && (
             <span
               data-testid="health-probe-stale"
-              className="typo-caption px-1.5 py-0.5 rounded bg-secondary/60 text-foreground"
+              className="typo-caption px-1.5 py-0.5 rounded-interactive bg-surface-2 text-foreground"
             >
               {sh.health_stored_result}
             </span>

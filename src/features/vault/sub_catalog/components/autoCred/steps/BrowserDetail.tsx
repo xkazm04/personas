@@ -29,7 +29,7 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
             <StateIcon className={`w-5 h-5 ${config.color}`} />
           )}
           {config.pulse && (
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-status-warning animate-ping" />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -53,10 +53,10 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
 
       {/* Browser hands-off warning (playwright mode only) */}
       {!isGuided && (sessionState === 'connecting' || sessionState === 'working') && (
-        <div className="flex items-start gap-2.5 px-3 py-2 rounded-card border border-orange-500/20 bg-orange-500/5">
-          <MonitorX className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
+        <div className="flex items-start gap-2.5 px-3 py-2 rounded-card border border-status-warning/20 bg-status-warning/5">
+          <MonitorX className="w-3.5 h-3.5 text-status-warning mt-0.5 shrink-0" />
           <p className="typo-body text-foreground">
-            <span className="font-medium text-orange-400/90">{t.vault.auto_cred_extra.do_not_interact}</span>{' '}
+            <span className="font-medium text-status-warning/90">{t.vault.auto_cred_extra.do_not_interact}</span>{' '}
             {t.vault.auto_cred_extra.browser_automation_warning}
           </p>
         </div>

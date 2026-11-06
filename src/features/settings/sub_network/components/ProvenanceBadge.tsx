@@ -14,7 +14,7 @@ export function ProvenanceBadge({ provenance }: ProvenanceBadgeProps) {
 
   return (
     <div
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-cyan-500/10 text-cyan-400 cursor-default"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-role-highlight cursor-default"
       title={`Imported from ${provenance.source_display_name} (${provenance.source_peer_id})${bundleInfo}\nVerified: ${provenance.signature_verified ? 'Yes' : 'No'}`}
     >
       <GitFork className="w-3 h-3" />

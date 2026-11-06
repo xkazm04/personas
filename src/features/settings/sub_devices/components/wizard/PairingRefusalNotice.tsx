@@ -49,9 +49,9 @@ export function PairingRefusalNotice({ outcome, onDismiss }: PairingRefusalNotic
       data-testid="pairing-refusal"
       data-refusal-code={outcome.refusal.code}
       role="alert"
-      className="flex items-start gap-3 rounded-modal border border-amber-500/30 bg-amber-500/10 p-3"
+      className="flex items-start gap-3 rounded-modal border border-status-warning/30 bg-status-warning/10 p-3"
     >
-      <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" aria-hidden />
+      <AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" aria-hidden />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="typo-body text-foreground">
           {tx(st.refusal_title, { device: outcome.displayName })}

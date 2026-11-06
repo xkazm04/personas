@@ -55,9 +55,9 @@ function MemberHealthBadge({ state }: { state: string | null }) {
   const { t } = useTranslation();
   const gw = t.vault.gateway;
   const map = {
-    ok: { label: gw.member_health_ok, cls: 'text-emerald-400 bg-emerald-400/10', dot: 'bg-emerald-400' },
-    failed: { label: gw.member_health_failed, cls: 'text-red-400 bg-red-400/10', dot: 'bg-red-400' },
-    unknown: { label: gw.member_health_unknown, cls: 'text-muted-foreground bg-secondary/40', dot: 'bg-muted-foreground' },
+    ok: { label: gw.member_health_ok, cls: 'text-status-success bg-status-success/10', dot: 'bg-status-success' },
+    failed: { label: gw.member_health_failed, cls: 'text-status-error bg-status-error/10', dot: 'bg-status-error' },
+    unknown: { label: gw.member_health_unknown, cls: 'text-ink-2 bg-surface-2', dot: 'bg-muted-foreground' },
   } as const;
   const key = state === 'verified' ? 'ok' : state === 'failed' ? 'failed' : 'unknown';
   const cfg = map[key];
@@ -65,7 +65,7 @@ function MemberHealthBadge({ state }: { state: string | null }) {
     <span
       data-testid="gateway-member-health"
       data-health={key}
-      className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded ${cfg.cls}`}
+      className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive ${cfg.cls}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
@@ -195,9 +195,9 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
       titleId="gateway-members-modal-title"
       size="lg"
       portal
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[85vh]"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden max-h-[85vh]"
     >
-      <div className="border-b border-primary/10 px-6 py-4 shrink-0">
+      <div className="border-b border-hair px-6 py-4 shrink-0">
         <h2
           id="gateway-members-modal-title"
           className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
@@ -212,7 +212,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
       <div className={`flex-1 overflow-y-auto ${CARD_PADDING.standard}`}>
         <div className={SECTION_GAP.between}>
           {loadFailure ? (
-            <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
+            <div className="rounded-interactive border border-status-error/30 bg-status-error/10 p-3">
               <p className="typo-body text-foreground">{resolveErrorTranslated(t, extractMessage(loadFailure.raw)).message}</p>
               <Button variant="secondary" size="sm" onClick={refresh} className="mt-2">
                 {t.common.try_again}
@@ -229,18 +229,18 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                     {Array.from({ length: 3 }).map((_, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-3 rounded-interactive border border-primary/10 bg-background/50 p-3 animate-fade-in"
+                        className="flex items-center gap-3 rounded-interactive border border-hair bg-background/50 p-3 animate-fade-in"
                         style={{ animationDelay: `${120 + i * 35}ms` }}
                       >
                         <div className="flex-1 min-w-0 space-y-1.5">
-                          <span className="block h-3.5 w-40 rounded bg-primary/[0.06]" />
-                          <span className="block h-2.5 w-24 rounded bg-primary/[0.06]" />
+                          <span className="block h-3.5 w-40 rounded-interactive bg-primary/[0.06]" />
+                          <span className="block h-2.5 w-24 rounded-interactive bg-primary/[0.06]" />
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : members.length === 0 ? (
-                  <div className="rounded-interactive border border-primary/10 bg-background/50 p-3">
+                  <div className="rounded-interactive border border-hair bg-background/50 p-3">
                     <p className="typo-body text-foreground">
                       {gw.no_members}
                     </p>
@@ -253,11 +253,11 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                         <li
                           key={m.id}
                           data-testid="gateway-member-row"
-                          className="flex items-center gap-3 rounded-interactive border border-primary/10 bg-background/50 p-3"
+                          className="flex items-center gap-3 rounded-interactive border border-hair bg-background/50 p-3"
                         >
                           <div className="flex-1 min-w-0">
                             <p className="typo-body text-foreground truncate">
-                              <span className="font-mono text-[12px]">{m.displayName}</span>
+                              <span className="font-mono typo-caption">{m.displayName}</span>
                               <span className="text-foreground">{' → '}</span>
                               <span>{m.memberLabel}</span>
                             </p>
@@ -327,7 +327,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                     <label className="typo-caption text-foreground">
                       {gw.display_name}
                       <input
-                        className={`${INPUT_FIELD} mt-1 font-mono text-[12px]`}
+                        className={`${INPUT_FIELD} mt-1 font-mono typo-caption`}
                         placeholder={gw.display_name_placeholder}
                         value={newMemberDisplayName}
                         onChange={(e) => setNewMemberDisplayName(e.target.value)}
@@ -361,7 +361,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
               </section>
 
               {actionFailure && (
-                <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
+                <div className="rounded-interactive border border-status-error/30 bg-status-error/10 p-3">
                   <p className="typo-body text-foreground" data-testid="gateway-action-error">
                     {'text' in actionFailure
                       ? actionFailure.text
@@ -374,7 +374,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
         </div>
       </div>
 
-      <div className="border-t border-primary/10 px-6 py-3 flex items-center justify-end shrink-0">
+      <div className="border-t border-hair px-6 py-3 flex items-center justify-end shrink-0">
         <Button variant="secondary" size="sm" onClick={onClose}>
           {t.common.close}
         </Button>

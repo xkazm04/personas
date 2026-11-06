@@ -121,7 +121,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
   );
 
   return (
-    <div className="p-3 rounded-card border border-primary/10 bg-secondary/20">
+    <div className="p-3 rounded-card border border-hair bg-surface-1">
       <div className="typo-body text-foreground mb-2">
         {ENGINE_LABELS[stat.engine_kind] || stat.engine_kind}
       </div>
@@ -155,7 +155,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
         </div>
       </div>
       {stat.failover_count > 0 && (
-        <div className="typo-caption text-amber-400 mt-2">
+        <div className="typo-caption text-status-warning mt-2">
           {tx(Number(stat.failover_count) === 1 ? s.failover_one : s.failover_other, { count: Number(stat.failover_count) })}
         </div>
       )}
@@ -251,7 +251,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
   return (
     <div className="space-y-4">
       {/* Allowed providers — card buttons (click to enable/disable) */}
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-hair bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.allowed_providers} />
         <p className="typo-body text-foreground">
           {s.allowed_providers_hint}
@@ -300,7 +300,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       </div>
 
       {/* Blocked providers */}
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-hair bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.blocked_providers} />
         <p className="typo-body text-foreground">
           {s.blocked_providers_hint}
@@ -315,12 +315,12 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                 onClick={() => toggleProvider(prov.id, 'blocked')}
                 className={`p-3 rounded-card border text-left typo-body transition-all ${
                   isBlocked
-                    ? 'border-red-500/30 bg-red-500/10 text-foreground'
-                    : 'border-primary/10 text-foreground hover:border-primary/20'
+                    ? 'border-status-error/30 bg-status-error/10 text-foreground'
+                    : 'border-hair text-foreground hover:border-hair'
                 }`}
               >
                 {prov.label}
-                {isBlocked && <span className="ml-2 text-red-400">{s.blocked}</span>}
+                {isBlocked && <span className="ml-2 text-status-error">{s.blocked}</span>}
               </button>
             );
           })}
@@ -328,7 +328,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       </div>
 
       {/* Usage stats with sparkline trends */}
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-hair bg-card-bg p-4 space-y-3">
         <div className="flex items-baseline gap-2">
           <SectionHeading title={s.provider_usage} />
           <span className="typo-caption text-foreground">{s.usage_trends}</span>
@@ -386,17 +386,17 @@ function ProviderCard({
         onClick={onClick}
         className={`p-3 rounded-card border text-left transition-all flex flex-col gap-2 ${
           enabled
-            ? 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
-            : 'border-primary/10 text-foreground hover:border-primary/25 hover:bg-secondary/20'
+            ? 'border-status-success/30 bg-status-success/10 text-foreground'
+            : 'border-hair text-foreground hover:border-primary/25 hover:bg-surface-1'
         }`}
       >
         <span className="flex items-center gap-2">
-          <Icon className={`w-5 h-5 shrink-0 ${enabled ? 'text-emerald-400' : 'text-foreground/70'}`} />
+          <Icon className={`w-5 h-5 shrink-0 ${enabled ? 'text-status-success' : 'text-ink-2'}`} />
           <span className="typo-body">{card.label}</span>
           {dotState && <HealthDot state={dotState} />}
         </span>
         {statusText && (
-          <span className={`typo-caption ${enabled ? 'text-emerald-400' : 'text-foreground/60'}`}>
+          <span className={`typo-caption ${enabled ? 'text-status-success' : 'text-ink-3'}`}>
             {statusText}
           </span>
         )}
@@ -415,9 +415,9 @@ function HealthDot({ state }: { state: TestState }) {
   const s = t.settings.byom;
   const config: Record<TestState, { cls: string; ariaKey: 'health_pending' | 'health_testing' | 'health_pass' | 'health_fail' }> = {
     idle: { cls: 'bg-foreground/30', ariaKey: 'health_pending' },
-    testing: { cls: 'bg-amber-400 animate-pulse', ariaKey: 'health_testing' },
-    pass: { cls: 'bg-emerald-400', ariaKey: 'health_pass' },
-    fail: { cls: 'bg-red-400', ariaKey: 'health_fail' },
+    testing: { cls: 'bg-status-warning animate-pulse', ariaKey: 'health_testing' },
+    pass: { cls: 'bg-status-success', ariaKey: 'health_pass' },
+    fail: { cls: 'bg-status-error', ariaKey: 'health_fail' },
   };
   const c = config[state];
   return (
@@ -467,7 +467,7 @@ function TestConnectionButton({
         // The check only probes the local CLI binary (presence + --version), not
         // the external model endpoint or API key — surface that scope via the
         // tooltip so a green check doesn't overclaim end-to-end connectivity.
-        <span className="typo-caption text-emerald-400 flex items-center gap-1" title={s.test_cli_scope_note}>
+        <span className="typo-caption text-status-success flex items-center gap-1" title={s.test_cli_scope_note}>
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.78 4.97a.75.75 0 00-1.06 0L7 8.69 5.28 6.97a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l4.25-4.25a.75.75 0 000-1.06z" />
           </svg>
@@ -479,7 +479,7 @@ function TestConnectionButton({
       )}
 
       {state === 'fail' && (
-        <span className="typo-caption text-red-400 flex items-center gap-1" title={result?.error ?? undefined}>
+        <span className="typo-caption text-status-error flex items-center gap-1" title={result?.error ?? undefined}>
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.03 4.97a.75.75 0 00-1.06 0L8 6.94 6.03 4.97a.75.75 0 10-1.06 1.06L6.94 8 4.97 9.97a.75.75 0 001.06 1.06L8 9.06l1.97 1.97a.75.75 0 001.06-1.06L9.06 8l1.97-1.97a.75.75 0 000-1.06z" />
           </svg>

@@ -39,7 +39,7 @@ export default function AppearanceThemingSection() {
   return (
     <SectionCard
       title={labels.theming}
-      icon={<Palette className="w-4 h-4 text-violet-400" />}
+      icon={<Palette className="w-4 h-4 text-ink-2" />}
       titleClassName="text-primary"
       action={
         <SegmentedTabs<'default' | 'custom'>

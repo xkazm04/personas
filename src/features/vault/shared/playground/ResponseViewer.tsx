@@ -52,7 +52,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
     <div className="space-y-3">
       {/* Status bar */}
       <div className="flex items-center gap-3">
-        <span className={`px-2.5 py-1 rounded typo-heading border ${statusStyle(response.status)}`}>
+        <span className={`px-2.5 py-1 rounded-interactive typo-heading border ${statusStyle(response.status)}`}>
           {response.status} {response.status_text}
         </span>
         <span className="flex items-center gap-1 typo-body text-foreground">
@@ -66,7 +66,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
       {/* Truncation warning */}
       {response.truncated && (
-        <div className="px-3 py-2 rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-400 typo-body">
+        <div className="px-3 py-2 rounded-card border border-status-warning/25 bg-status-warning/10 text-status-warning typo-body">
           {vt.truncated_warning}
         </div>
       )}
@@ -80,7 +80,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
             className={`px-3 py-1.5 typo-body capitalize transition-colors border-b-2 ${
               subTab === tab
                 ? 'text-foreground border-primary/50'
-                : 'text-foreground border-transparent hover:text-muted-foreground/80'
+                : 'text-foreground border-transparent hover:text-ink-2'
             }`}
           >
             {tab}
@@ -90,9 +90,9 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         <div className="flex-1" />
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-1 rounded typo-body text-foreground hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded-interactive typo-body text-foreground hover:text-ink-2 hover:bg-surface-1 transition-colors"
         >
-          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
           {copied ? sh.copied : t.common.copy}
         </button>
       </div>
@@ -124,7 +124,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         <div className="rounded-card border border-primary/8 overflow-hidden">
           <table className="w-full typo-body">
             <thead>
-              <tr className="bg-secondary/30 border-b border-primary/8">
+              <tr className="bg-surface-1 border-b border-primary/8">
                 <th className="px-3 py-2 text-left w-1/3 typo-caption font-mono uppercase tracking-widest text-foreground">{vt.header_col}</th>
                 <th className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{vt.value_col}</th>
               </tr>
@@ -133,9 +133,9 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
               {headerEntries.map(([key, val], i) => (
                 <tr
                   key={key}
-                  className={`border-b border-primary/5 ${i % 2 === 0 ? '' : 'bg-secondary/10'}`}
+                  className={`border-b border-hair ${i % 2 === 0 ? '' : 'bg-secondary/10'}`}
                 >
-                  <td className="px-3 py-1.5 font-mono text-violet-400/80">{key}</td>
+                  <td className="px-3 py-1.5 font-mono text-role-agent/80">{key}</td>
                   <td className="px-3 py-1.5 text-foreground break-all">{val}</td>
                 </tr>
               ))}

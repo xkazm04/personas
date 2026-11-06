@@ -67,7 +67,7 @@ export default function DeviceLinkPage() {
 
   const header = (
     <ContentHeader
-      icon={<Laptop className="w-5 h-5 text-cyan-400" />}
+      icon={<Laptop className="w-5 h-5 text-ink-2" />}
       iconColor="cyan"
       title={st.devices_title}
       subtitle={st.devices_subtitle}

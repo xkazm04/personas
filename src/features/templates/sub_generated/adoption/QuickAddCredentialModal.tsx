@@ -140,17 +140,17 @@ export function QuickAddCredentialModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-background border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
+        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-background border border-hair rounded-modal shadow-elevation-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-hair">
           <div className="flex items-center gap-3 min-w-0">
             {phase === 'form' && (
               <button
                 type="button"
                 onClick={handleBackToPicker}
-                className="p-1 rounded-card hover:bg-secondary/60 transition-colors"
+                className="p-1 rounded-card hover:bg-surface-2 transition-colors"
                 aria-label={debtText("auto_back_to_picker_2d203d04")}
               >
                 <ArrowLeft className="w-4 h-4 text-foreground" />
@@ -172,7 +172,7 @@ export function QuickAddCredentialModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-card hover:bg-secondary/60 transition-colors"
+            className="p-1 rounded-card hover:bg-surface-2 transition-colors"
             aria-label="Close"
           >
             <X className="w-4 h-4 text-foreground" />
@@ -196,7 +196,7 @@ export function QuickAddCredentialModal({
             ) : (
               <div className="text-center py-10 space-y-3">
                 <p className="typo-body text-foreground">
-                  <DebtText k="auto_no_connectors_declare_the_6bf34e6e" /> <code className="px-1 py-0.5 rounded bg-secondary/40 text-foreground">{category}</code> <DebtText k="auto_category_yet_58439dd0" />
+                  <DebtText k="auto_no_connectors_declare_the_6bf34e6e" /> <code className="px-1 py-0.5 rounded-interactive bg-surface-2 text-foreground">{category}</code> <DebtText k="auto_category_yet_58439dd0" />
                 </p>
                 <p className="typo-body text-foreground">
                   <DebtText k="auto_you_can_still_add_one_from_the_vault_catal_ac9cc338" />
@@ -204,7 +204,7 @@ export function QuickAddCredentialModal({
                 <button
                   type="button"
                   onClick={handleOpenVaultCatalog}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 hover:bg-primary/10 transition-colors typo-body text-foreground"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-hair hover:bg-primary/10 transition-colors typo-body text-foreground"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <DebtText k="auto_open_vault_catalog_6e8c24e5" />
@@ -303,11 +303,11 @@ function InlineCredentialForm({
       ))}
 
       {setupGuide && (
-        <details className="rounded-card border border-primary/10 bg-secondary/20">
+        <details className="rounded-card border border-hair bg-surface-1">
           <summary className="cursor-pointer px-3 py-2 typo-body text-foreground hover:text-foreground">
             <DebtText k="auto_setup_guide_6b2f076c" />
           </summary>
-          <pre className="whitespace-pre-wrap px-3 py-2 typo-body text-foreground font-sans border-t border-primary/10">
+          <pre className="whitespace-pre-wrap px-3 py-2 typo-body text-foreground font-sans border-t border-hair">
             {setupGuide}
           </pre>
         </details>

@@ -39,8 +39,8 @@ export function ForagingStepIndicator({ phase }: ForagingStepIndicatorProps) {
             <div
               className={[
                 "w-2 h-2 rounded-full transition-colors duration-300",
-                isCompleted && "bg-emerald-400",
-                isCurrent && "bg-violet-400 animate-pulse",
+                isCompleted && "bg-status-success",
+                isCurrent && "bg-role-agent animate-pulse",
                 !isCompleted && !isCurrent && "bg-muted-foreground/20",
               ]
                 .filter(Boolean)
@@ -53,7 +53,7 @@ export function ForagingStepIndicator({ phase }: ForagingStepIndicatorProps) {
               <div
                 className={[
                   "w-6 h-px transition-colors duration-300",
-                  i < currentIndex ? "bg-emerald-400/50" : "bg-muted-foreground/15",
+                  i < currentIndex ? "bg-status-success/50" : "bg-muted-foreground/15",
                 ].join(" ")}
               />
             )}

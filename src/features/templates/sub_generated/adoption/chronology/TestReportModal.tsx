@@ -68,36 +68,36 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 surface-blur-modal">
       <div
         ref={modalRef}
-        className="flex flex-col rounded-2xl border border-primary/15 bg-background shadow-elevation-4 shadow-black/30 overflow-hidden"
+        className="flex flex-col rounded-card border border-hair bg-background shadow-elevation-4 shadow-black/30 overflow-hidden"
         style={{ width: '70vw', height: '80vh', maxWidth: '1200px', maxHeight: '900px' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/[0.03]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-hair bg-primary/[0.03]">
           <div className="flex items-center gap-3">
             <div className={`w-9 h-9 rounded-modal flex items-center justify-center border ${
-              allPassed ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'
+              allPassed ? 'bg-status-success/10 border-status-success/20' : 'bg-status-warning/10 border-status-warning/20'
             }`}>
-              {allPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-amber-400" />}
+              {allPassed ? <CheckCircle2 className="w-5 h-5 text-status-success" /> : <AlertTriangle className="w-5 h-5 text-status-warning" />}
             </div>
             <div>
-              <h2 className="typo-body-lg text-foreground/90">{t.templates.test_report.title}</h2>
+              <h2 className="typo-body-lg text-ink-1">{t.templates.test_report.title}</h2>
               <div className="flex items-center gap-3 mt-1">
-                {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-emerald-400/90"><CheckCircle2 className="w-3 h-3" />{tx(t.templates.test_report.passed, { count: passedCount })}</span>}
-                {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-red-400/90"><XCircle className="w-3 h-3" />{tx(t.templates.test_report.failed, { count: failedCount })}</span>}
-                {unverifiedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-amber-400/90"><HelpCircle className="w-3 h-3" />{tx(t.templates.test_report.unverified, { count: unverifiedCount })}</span>}
+                {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-status-success/90"><CheckCircle2 className="w-3 h-3" />{tx(t.templates.test_report.passed, { count: passedCount })}</span>}
+                {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-status-error/90"><XCircle className="w-3 h-3" />{tx(t.templates.test_report.failed, { count: failedCount })}</span>}
+                {unverifiedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-status-warning/90"><HelpCircle className="w-3 h-3" />{tx(t.templates.test_report.unverified, { count: unverifiedCount })}</span>}
                 {skippedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-foreground"><AlertTriangle className="w-3 h-3" />{tx(t.templates.test_report.skipped, { count: skippedCount })}</span>}
               </div>
               {results.length > 0 && (
-                <div className="flex gap-0.5 mt-2 h-1.5 w-48 rounded-full overflow-hidden bg-secondary/30">
-                  {passedCount > 0 && <div className="bg-emerald-400/70 rounded-full" style={{ flex: passedCount }} />}
-                  {failedCount > 0 && <div className="bg-red-400/70 rounded-full" style={{ flex: failedCount }} />}
-                  {unverifiedCount > 0 && <div className="bg-amber-400/70 rounded-full" style={{ flex: unverifiedCount }} />}
+                <div className="flex gap-0.5 mt-2 h-1.5 w-48 rounded-full overflow-hidden bg-surface-1">
+                  {passedCount > 0 && <div className="bg-status-success/70 rounded-full" style={{ flex: passedCount }} />}
+                  {failedCount > 0 && <div className="bg-status-error/70 rounded-full" style={{ flex: failedCount }} />}
+                  {unverifiedCount > 0 && <div className="bg-status-warning/70 rounded-full" style={{ flex: unverifiedCount }} />}
                   {skippedCount > 0 && <div className="bg-muted-foreground/20 rounded-full" style={{ flex: skippedCount }} />}
                 </div>
               )}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-card hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={onClose} className="p-2 rounded-card hover:bg-surface-2 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
@@ -105,20 +105,20 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
         {/* Split content */}
         <div className="flex-1 min-h-0 flex">
           {/* Left pane: Test Scope */}
-          <div className="w-[280px] flex-shrink-0 border-r border-primary/10 flex flex-col min-h-0">
-            <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/10">
-              <h3 className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{t.templates.test_report.test_scope}</h3>
+          <div className="w-[280px] flex-shrink-0 border-r border-hair flex flex-col min-h-0">
+            <div className="px-4 py-2.5 border-b border-hair bg-secondary/10">
+              <h3 className="typo-eyebrow text-foreground">{t.templates.test_report.test_scope}</h3>
             </div>
             <div className="flex-1 overflow-y-auto py-1">
               <button
                 type="button"
                 onClick={() => setSelectedTool(null)}
                 className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
-                  selectedTool === null ? 'bg-primary/8 border-r-2 border-primary' : 'hover:bg-secondary/30'
+                  selectedTool === null ? 'bg-primary/8 border-r-2 border-primary' : 'hover:bg-surface-1'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
-                <span className="text-[13px] font-medium text-foreground">{t.templates.test_report.overview}</span>
+                <span className="typo-label text-foreground">{t.templates.test_report.overview}</span>
               </button>
               {results.map((r) => (
                 <ToolTab key={r.tool_name} result={r} isActive={selectedTool === r.tool_name} onClick={() => setSelectedTool(r.tool_name)} />
@@ -128,8 +128,8 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
 
           {/* Right pane: Analysis */}
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="px-5 py-2.5 border-b border-primary/5 bg-secondary/10">
-              <h3 className="text-[10px] font-semibold text-foreground uppercase tracking-wider">
+            <div className="px-5 py-2.5 border-b border-hair bg-secondary/10">
+              <h3 className="typo-eyebrow text-foreground">
                 {selectedTool ? selectedTool.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : t.templates.test_report.analysis}
               </h3>
             </div>
@@ -154,20 +154,20 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
 function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isActive: boolean; onClick: () => void }) {
   const { t } = useTranslation();
   const statusIcon = r.status === 'passed'
-    ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+    ? <CheckCircle2 className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
     : r.status === 'skipped'
     ? <AlertTriangle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
     : r.status === 'unverified'
-    ? <HelpCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+    ? <HelpCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
     : r.status === 'credential_missing'
-    ? <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-    : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />;
+    ? <Key className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+    : <XCircle className="w-3.5 h-3.5 text-status-error flex-shrink-0" />;
   const label = toolLabel(r);
   const latencyLabel = r.latency_ms != null && r.latency_ms > 0
     ? r.latency_ms < 500 ? t.templates.test_report.latency_fast : r.latency_ms < 2000 ? t.templates.test_report.latency_ok : t.templates.test_report.latency_slow
     : null;
   const latencyColor = r.latency_ms != null
-    ? r.latency_ms < 500 ? 'text-emerald-400/50' : r.latency_ms < 2000 ? 'text-amber-400/50' : 'text-red-400/50'
+    ? r.latency_ms < 500 ? 'text-status-success/50' : r.latency_ms < 2000 ? 'text-status-warning/50' : 'text-status-error/50'
     : '';
 
   return (
@@ -175,21 +175,21 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
       type="button"
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
-        isActive ? 'bg-primary/8 border-r-2 border-primary' : 'hover:bg-secondary/30'
+        isActive ? 'bg-primary/8 border-r-2 border-primary' : 'hover:bg-surface-1'
       }`}
     >
       {statusIcon}
       <div className="flex-1 min-w-0">
-        <span className={`text-[13px] truncate block ${isActive ? 'font-medium text-foreground/90' : 'text-foreground'}`}>{label}</span>
-        {r.connector && <span className="text-[10px] text-foreground truncate block">{r.connector}</span>}
+        <span className={`typo-caption truncate block ${isActive ? 'font-medium text-ink-1' : 'text-foreground'}`}>{label}</span>
+        {r.connector && <span className="typo-caption text-foreground truncate block">{r.connector}</span>}
       </div>
       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
         {r.http_status && (
-          <span className={`text-[10px] font-mono ${r.http_status >= 200 && r.http_status < 300 ? 'text-emerald-400/60' : 'text-red-400/60'}`}>
+          <span className={`typo-caption font-mono ${r.http_status >= 200 && r.http_status < 300 ? 'text-status-success/60' : 'text-status-error/60'}`}>
             {r.http_status}
           </span>
         )}
-        {latencyLabel && <span className={`text-[9px] ${latencyColor}`}>{latencyLabel}</span>}
+        {latencyLabel && <span className={`typo-caption ${latencyColor}`}>{latencyLabel}</span>}
       </div>
     </button>
   );
@@ -273,7 +273,7 @@ function ConnectorHandshakeCard({
 
   return (
     <>
-      <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
+      <div className="rounded-modal border border-hair bg-primary/[0.02] px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           <Key className="w-4 h-4 text-primary/50" />
           <h4 className="typo-label text-foreground">{t.templates.test_report.connector_credentials}</h4>
@@ -281,9 +281,9 @@ function ConnectorHandshakeCard({
         <div className="space-y-1.5">
           {matched.map((c) => (
             <div key={c.name} className="flex items-center gap-2 typo-body">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
               <span className="text-foreground">{c.name}</span>
-              <span className="text-emerald-400/60 typo-caption">
+              <span className="text-status-success/60 typo-caption">
                 {addedNames.has(c.name) ? t.templates.test_report.key_added : t.templates.test_report.matched}
               </span>
             </div>
@@ -291,15 +291,15 @@ function ConnectorHandshakeCard({
           {missing.map((c) => (
             <div key={c.name} className="flex items-center justify-between gap-2 typo-body">
               <div className="flex items-center gap-2">
-                <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                <XCircle className="w-3.5 h-3.5 text-status-error flex-shrink-0" />
                 <span className="text-foreground">{c.name}</span>
-                <span className="text-red-400/60 typo-caption">{t.templates.test_report.not_found}</span>
+                <span className="text-status-error/60 typo-caption">{t.templates.test_report.not_found}</span>
               </div>
               <button
                 type="button"
                 onClick={() => handleAddKey(c.name)}
                 title={tx(t.templates.test_report.add_key_for, { connector: c.name })}
-                className="flex items-center gap-1 px-2.5 py-1 typo-caption rounded-card bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 typo-caption rounded-card bg-primary/10 border border-hair text-primary hover:bg-primary/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 {t.templates.test_report.add_key}
@@ -392,7 +392,7 @@ function ReportOverview({ sections, summary, results, connectors = [], onCredent
 
 function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
+    <div className="rounded-modal border border-hair bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <h4 className="typo-label text-foreground">{label}</h4>
@@ -407,41 +407,41 @@ function ResultCards({ passed, failed, credentialMissing, skipped, unverified = 
   return (
     <div className="space-y-3">
       {unverified.length > 0 && (
-        <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><HelpCircle className="w-4 h-4 text-amber-400" /><h4 className="typo-label text-amber-400">{t.templates.test_report.not_verified}</h4></div>
+        <div className="rounded-modal border border-status-warning/15 bg-status-warning/5 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2"><HelpCircle className="w-4 h-4 text-status-warning" /><h4 className="typo-label text-status-warning">{t.templates.test_report.not_verified}</h4></div>
           <div className="space-y-1">{unverified.map((r) => <div key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
-          <p className="text-[11px] text-amber-400/60 mt-2">{t.templates.test_report.unverified_hint}</p>
+          <p className="typo-caption text-status-warning/60 mt-2">{t.templates.test_report.unverified_hint}</p>
         </div>
       )}
       {passed.length > 0 && (
-        <div className="rounded-modal border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="typo-label text-emerald-400">{t.templates.test_report.connected_successfully}</h4></div>
+        <div className="rounded-modal border border-status-success/15 bg-status-success/5 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-status-success" /><h4 className="typo-label text-status-success">{t.templates.test_report.connected_successfully}</h4></div>
           <div className="space-y-1">{passed.map((r) => (
             <div key={r.tool_name} className="flex items-center justify-between typo-body">
               <span className="text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">via {r.connector}</span> : null}</span>
-              {r.latency_ms != null && r.latency_ms > 0 && <span className="text-[10px] text-foreground font-mono">{r.latency_ms}ms</span>}
+              {r.latency_ms != null && r.latency_ms > 0 && <span className="typo-caption text-foreground font-mono">{r.latency_ms}ms</span>}
             </div>
           ))}</div>
         </div>
       )}
       {credentialMissing.length > 0 && (
-        <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-amber-400" /><h4 className="typo-label text-amber-400">{t.templates.test_report.needs_credentials}</h4></div>
+        <div className="rounded-modal border border-status-warning/15 bg-status-warning/5 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-status-warning" /><h4 className="typo-label text-status-warning">{t.templates.test_report.needs_credentials}</h4></div>
           <div className="space-y-1">{credentialMissing.map((r) => <div key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
-          <p className="text-[11px] text-amber-400/60 mt-2">{t.templates.test_report.add_keys_hint}</p>
+          <p className="typo-caption text-status-warning/60 mt-2">{t.templates.test_report.add_keys_hint}</p>
         </div>
       )}
       {failed.length > 0 && (
-        <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="typo-label text-red-400">{t.templates.test_report.connection_failed}</h4></div>
+        <div className="rounded-modal border border-status-error/15 bg-status-error/5 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-status-error" /><h4 className="typo-label text-status-error">{t.templates.test_report.connection_failed}</h4></div>
           <div className="space-y-1">{failed.map((r) => {
             const hint = r.http_status ? httpStatusHint(t, r.http_status) : null;
-            return <div key={r.tool_name} className="typo-body"><span className="text-foreground">{toolLabel(r)}</span>{hint && <span className="text-red-400/50 ml-1.5 typo-caption">{hint}</span>}</div>;
+            return <div key={r.tool_name} className="typo-body"><span className="text-foreground">{toolLabel(r)}</span>{hint && <span className="text-status-error/50 ml-1.5 typo-caption">{hint}</span>}</div>;
           })}</div>
         </div>
       )}
       {skipped.length > 0 && (
-        <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3">
+        <div className="rounded-modal border border-hair bg-surface-1 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-foreground" /><h4 className="typo-label text-foreground">{t.templates.test_report.builtin_no_test}</h4></div>
           <div className="flex flex-wrap gap-x-4 gap-y-0.5">{skipped.map((r) => <span key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}</span>)}</div>
         </div>
@@ -459,17 +459,15 @@ function MarkdownLine({ text }: { text: string }) {
   if (!trimmed) return null;
   if (/^####\s+/.test(trimmed)) return <h5 className="typo-label text-primary/70 mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
   if (/^###\s+/.test(trimmed)) return <h4 className="typo-heading text-primary/80 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
-  if (/^##\s+/.test(trimmed)) return <h3 className="typo-body-lg text-foreground/90 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
-  if (/^---+$/.test(trimmed)) return <hr className="border-primary/10 my-3" />;
+  if (/^##\s+/.test(trimmed)) return <h3 className="typo-body-lg text-ink-1 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
+  if (/^---+$/.test(trimmed)) return <hr className="border-hair my-3" />;
 
   const isBullet = /^[-*]\s/.test(trimmed);
   const numberedMatch = trimmed.match(/^(\d+)[.)]\s/);
   const isNumbered = !!numberedMatch;
   const content = isBullet ? trimmed.slice(2) : isNumbered ? trimmed.slice(numberedMatch![0].length) : trimmed;
 
-  const parts = content.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="text-foreground/90 font-semibold">{part.slice(2, -2)}</strong>;
-    if (part.startsWith('`') && part.endsWith('`')) return <code key={i} className="px-1 py-0.5 rounded bg-primary/8 text-primary/80 font-mono text-[11px]">{part.slice(1, -1)}</code>;
+  const parts = content.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g).map((part, i) => { if (part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="text-ink-1 font-semibold">{part.slice(2, -2)}</strong>; if (part.startsWith('`') && part.endsWith('`')) return <code key={i} className="px-1 py-0.5 rounded-interactive bg-primary/8 text-primary/80 font-mono typo-caption">{part.slice(1, -1)}</code>;
     const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (linkMatch) return <span key={i} className="text-primary/70 underline underline-offset-2">{linkMatch[1]}</span>;
     return <span key={i}>{part}</span>;
@@ -516,15 +514,15 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
   return (
     <div className="space-y-4">
       <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${
-        isPassed ? 'bg-emerald-500/5 border-emerald-500/15' : isSkipped ? 'bg-secondary/30 border-primary/10' : isUnverified || result.status === 'credential_missing' ? 'bg-amber-500/5 border-amber-500/15' : 'bg-red-500/5 border-red-500/15'
+        isPassed ? 'bg-status-success/5 border-status-success/15' : isSkipped ? 'bg-surface-1 border-hair' : isUnverified || result.status === 'credential_missing' ? 'bg-status-warning/5 border-status-warning/15' : 'bg-status-error/5 border-status-error/15'
       }`}>
-        {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : isUnverified ? <HelpCircle className="w-5 h-5 text-amber-400 flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
+        {isPassed ? <CheckCircle2 className="w-5 h-5 text-status-success flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : isUnverified ? <HelpCircle className="w-5 h-5 text-status-warning flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-status-warning flex-shrink-0" /> : <XCircle className="w-5 h-5 text-status-error flex-shrink-0" />}
         <div className="flex-1">
-          <span className={`typo-heading ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : isUnverified || result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
+          <span className={`typo-heading ${isPassed ? 'text-status-success' : isSkipped ? 'text-foreground' : isUnverified || result.status === 'credential_missing' ? 'text-status-warning' : 'text-status-error'}`}>
             {isPassed ? t.templates.test_report.status_passed : isSkipped ? t.templates.test_report.status_skipped_builtin : isUnverified ? t.templates.test_report.status_unverified : result.status === 'credential_missing' ? t.templates.test_report.status_needs_credential : t.templates.test_report.status_failed}
           </span>
           {result.http_status && (
-            <span className={`text-[10px] font-mono ml-2 px-1.5 py-0.5 rounded ${result.http_status >= 200 && result.http_status < 300 ? 'bg-emerald-500/10 text-emerald-400/70' : 'bg-red-500/10 text-red-400/70'}`}>
+            <span className={`typo-caption font-mono ml-2 px-1.5 py-0.5 rounded-interactive ${result.http_status >= 200 && result.http_status < 300 ? 'bg-status-success/10 text-status-success/70' : 'bg-status-error/10 text-status-error/70'}`}>
               HTTP {result.http_status}
             </span>
           )}
@@ -549,7 +547,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
             <h4 className="typo-label text-foreground">{t.templates.test_report.response_preview}</h4>
             <InlineCopyButton text={result.output_preview} />
           </div>
-          <div className="rounded-card bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
+          <div className="rounded-card bg-black/20 border border-hair px-3 py-2.5 font-mono typo-caption leading-relaxed max-h-64 overflow-y-auto">
             <FormattedPreview text={result.output_preview} />
           </div>
         </div>
@@ -565,7 +563,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
             <h4 className="typo-label text-foreground">{t.templates.test_report.error_detail}</h4>
             <InlineCopyButton text={result.error} />
           </div>
-          <div className="rounded-card bg-red-500/5 border border-red-500/10 px-3 py-2.5 font-mono text-[11px] text-red-400/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
+          <div className="rounded-card bg-status-error/5 border border-status-error/10 px-3 py-2.5 font-mono typo-caption text-status-error/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
             {result.error}
           </div>
         </div>
@@ -583,8 +581,8 @@ function InlineCopyButton({ text }: { text: string }) {
   const { copied, copy } = useCopyToClipboard();
   const handleCopy = () => copy(text);
   return (
-    <button type="button" onClick={handleCopy} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-foreground hover:text-muted-foreground/70 hover:bg-secondary/30 transition-colors">
-      {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+    <button type="button" onClick={handleCopy} className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-caption text-foreground hover:text-ink-2 hover:bg-surface-1 transition-colors">
+      {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
       {copied ? t.templates.test_report.copied : t.templates.test_report.copy}
     </button>
   );
@@ -600,7 +598,7 @@ function FormattedPreview({ text }: { text: string }) {
         {formatted.split('\n').map((line, i) => {
           const keyMatch = line.match(/^(\s*)"([^"]+)":/);
           if (keyMatch) {
-            return <div key={i}><span className="text-foreground">{keyMatch[1]}</span><span className="text-primary/70">&quot;{keyMatch[2]}&quot;</span><span className="text-foreground">:</span><span className="text-emerald-400/60">{line.slice(keyMatch[0].length)}</span></div>;
+            return <div key={i}><span className="text-foreground">{keyMatch[1]}</span><span className="text-primary/70">&quot;{keyMatch[2]}&quot;</span><span className="text-foreground">:</span><span className="text-status-success/60">{line.slice(keyMatch[0].length)}</span></div>;
           }
           return <div key={i} className="text-foreground">{line}</div>;
         })}

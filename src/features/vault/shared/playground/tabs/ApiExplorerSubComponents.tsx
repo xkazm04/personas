@@ -22,7 +22,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
             size="sm"
             icon={<Upload className="w-3.5 h-3.5" />}
             onClick={onUpload}
-            className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
+            className="bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20"
           >
             {sh.upload_spec}
           </Button>
@@ -48,13 +48,13 @@ export function TestRunCounters({ progress }: { progress: TestProgress }) {
         {progress.current}/{progress.total}
       </span>
       {progress.passed > 0 && (
-        <span className="flex items-center gap-0.5 text-emerald-400">
+        <span className="flex items-center gap-0.5 text-status-success">
           <CheckCircle2 className="w-3 h-3" />
           {progress.passed}
         </span>
       )}
       {progress.failed > 0 && (
-        <span className="flex items-center gap-0.5 text-red-400">
+        <span className="flex items-center gap-0.5 text-status-error">
           <XCircle className="w-3 h-3" />
           {progress.failed}
         </span>
@@ -85,7 +85,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
   const sh = t.vault.shared;
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-modal">
-      <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-modal shadow-elevation-3 p-4 space-y-3">
+      <div className="w-full max-w-2xl mx-4 bg-background border border-hair rounded-modal shadow-elevation-3 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="typo-heading text-foreground">{vt.paste_spec_title}</h3>
           <Button
@@ -101,7 +101,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           value={pasteContent}
           onChange={(e) => setPasteContent(e.target.value)}
           placeholder={vt.paste_placeholder}
-          className="w-full h-[300px] p-3 rounded-card typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
+          className="w-full h-[300px] p-3 rounded-card typo-code bg-surface-1 border border-hair text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
         />
         <div className="flex justify-end gap-2">
           <Button
@@ -119,7 +119,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
             onClick={onSubmit}
             disabled={isParsing || !pasteContent.trim()}
             loading={isParsing}
-            className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
+            className="bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20"
           >
             {isParsing ? sh.parsing : sh.parse_and_load}
           </Button>

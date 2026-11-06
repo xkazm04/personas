@@ -14,11 +14,11 @@ interface ExecutionsTabProps {
 }
 
 const OP_STYLES: Record<string, string> = {
-  decrypt: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-  create: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-  update: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-  delete: 'bg-red-500/10 border-red-500/20 text-red-400',
-  healthcheck: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+  decrypt: 'bg-status-info/10 border-status-info/20 text-status-info',
+  create: 'bg-status-success/10 border-status-success/20 text-status-success',
+  update: 'bg-status-warning/10 border-status-warning/20 text-status-warning',
+  delete: 'bg-status-error/10 border-status-error/20 text-status-error',
+  healthcheck: 'bg-role-highlight/10 border-role-highlight/20 text-role-highlight',
 };
 
 export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
@@ -67,7 +67,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
         )}
 
         {!loading && !loadError && entries.length === 0 && (
-          <div className="typo-body text-foreground py-4 text-center border border-dashed border-primary/15 rounded-card">
+          <div className="typo-body text-foreground py-4 text-center border border-dashed border-hair rounded-card">
             {sh.no_recorded_activity}
           </div>
         )}
@@ -75,13 +75,13 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
         {!loading && entries.length > 0 && (
           <div className="space-y-1">
             {entries.map((entry) => {
-              const opStyle = OP_STYLES[entry.operation] ?? 'bg-secondary/40 border-primary/15 text-foreground';
+              const opStyle = OP_STYLES[entry.operation] ?? 'bg-surface-2 border-hair text-foreground';
               return (
                 <div
                   key={entry.id}
                   className="flex items-center gap-3 px-3 py-2 bg-secondary/15 border border-primary/8 rounded-card"
                 >
-                  <span className={`typo-code px-1.5 py-0.5 rounded border shrink-0 ${opStyle}`}>
+                  <span className={`typo-code px-1.5 py-0.5 rounded-interactive border shrink-0 ${opStyle}`}>
                     {entry.operation}
                   </span>
                   <div className="flex-1 min-w-0 typo-body text-foreground truncate">

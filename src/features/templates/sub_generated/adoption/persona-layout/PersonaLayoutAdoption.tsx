@@ -21,7 +21,7 @@ import type { PersonaLayoutAdoptionProps } from './personaLayoutAdoptionTypes';
 
 const VAL: Record<ImpactTone, string> = {
   active: 'text-foreground',
-  muted: 'text-foreground/50',
+  muted: 'text-ink-3',
   warn: 'text-status-warning',
 };
 
@@ -30,7 +30,7 @@ function HeaderChip({ impact }: { impact: DimImpact | undefined }) {
   const meta = DIM_META[impact.dim];
   const Icon = meta.icon;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-interactive border border-card-border/50 bg-secondary/25 px-2 py-1">
+    <span className="inline-flex items-center gap-1.5 rounded-interactive border border-card-border/50 bg-surface-1 px-2 py-1">
       <Icon className="h-3 w-3" style={{ color: meta.color }} />
       <span className={`typo-caption ${VAL[impact.tone]}`}>{impact.value}</span>
     </span>
@@ -57,7 +57,7 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
             <ConnectorIcon key={c.key ?? c.label} meta={getConnectorMeta(c.key ?? c.label)} size="w-4 h-4" />
           ))}
           {cons.length > 4 && (
-            <span className="typo-caption tabular-nums text-foreground/55">+{cons.length - 4}</span>
+            <span className="typo-caption tabular-nums text-ink-3">+{cons.length - 4}</span>
           )}
         </>
       );
@@ -83,8 +83,8 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
   const leftSlot = (
     <div className="flex flex-col gap-3">
       <div className="flex w-full items-center justify-between px-0.5">
-        <span className="typo-label text-foreground/45">{t.templates.adoption.petals_header}</span>
-        <span className="typo-caption tabular-nums text-foreground/45">{model.answeredCount}/{model.totalCount}</span>
+        <span className="typo-label text-ink-3">{t.templates.adoption.petals_header}</span>
+        <span className="typo-caption tabular-nums text-ink-3">{model.answeredCount}/{model.totalCount}</span>
       </div>
       <div className="flex flex-col gap-2">
         {GLYPH_DIMENSIONS.map((dim) => {
@@ -135,7 +135,7 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
         <div className="rounded-card border border-card-border/40 bg-secondary/12 px-4 py-3">
           <h3 className="typo-heading text-foreground">{model.activeUc.title}</h3>
           {model.activeUc.description && (
-            <p className="typo-body text-foreground/85 mt-1">{model.activeUc.description}</p>
+            <p className="typo-body text-ink-1 mt-1">{model.activeUc.description}</p>
           )}
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             <HeaderChip impact={impactByDim('trigger')} />
@@ -169,7 +169,7 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
           heroCenterOverlay={model.centerOverlay}
           heroWideOverlay={model.wideOverlay}
           emptyNode={
-            <div className="rounded-modal border border-card-border bg-secondary/30 p-8 text-center">
+            <div className="rounded-modal border border-card-border bg-surface-1 p-8 text-center">
               <span className="typo-body text-foreground italic">
                 {t.templates.adopt_modal.persona_layout_no_capabilities}
               </span>

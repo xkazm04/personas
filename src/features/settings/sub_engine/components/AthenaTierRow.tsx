@@ -51,7 +51,7 @@ function TierSelect({ options, value, onChange, ariaLabel, testId, disabled, inp
           data-testid={testId}
           // `is-disabled` is the design system's one disabled token; the
           // state is never painted by hand.
-          className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-primary/15 bg-secondary/40 text-foreground hover:border-primary/30 transition-colors ${disabled ? 'is-disabled' : ''}`}
+          className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-hair bg-surface-2 text-foreground hover:border-primary/30 transition-colors ${disabled ? 'is-disabled' : ''}`}
         >
           <span className="flex-1 text-left truncate">{current}</span>
           <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
@@ -71,7 +71,7 @@ function TierSelect({ options, value, onChange, ariaLabel, testId, disabled, inp
                 onChange(o.id);
                 close();
               }}
-              className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-secondary/40 ${o.id === value ? 'text-primary' : 'text-foreground'}`}
+              className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-surface-2 ${o.id === value ? 'text-primary' : 'text-foreground'}`}
             >
               <span className="flex-1 text-left truncate">{o.label}</span>
               {o.id === value && <Check className="w-3.5 h-3.5 shrink-0" aria-hidden />}
@@ -118,7 +118,7 @@ export function AthenaTierRow({ cls, tier, installed, grokModels, onChange }: At
   return (
     <div
       data-testid={`athena-tier-row-${cls}`}
-      className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2"
+      className="rounded-card border border-hair bg-surface-1 p-3 space-y-2"
     >
       <div>
         <p className="typo-card-label">{s[`${cls}_label`]}</p>

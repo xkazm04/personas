@@ -21,7 +21,7 @@ interface ExecutePersonaPickerProps {
   disabled?: boolean;
 }
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 
 export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: ExecutePersonaPickerProps) {
   const { t } = useTranslation();
@@ -78,18 +78,18 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
       {showGhost ? (
         <PersonaPickerGhostRows />
       ) : personas.length === 0 && loadFailed ? (
-        <div className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input space-y-1.5" role="alert">
+        <div className="typo-caption text-foreground py-3 text-center bg-surface-1 rounded-input space-y-1.5" role="alert">
           <p>{s.execute_load_failed}</p>
           <Button variant="ghost" size="sm" onClick={() => setAttempt((n) => n + 1)} disabled={disabled}>
             {t.common.retry}
           </Button>
         </div>
       ) : personas.length === 0 ? (
-        <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
+        <p className="typo-caption text-foreground py-3 text-center bg-surface-1 rounded-input">
           {s.execute_no_personas}
         </p>
       ) : filtered.length === 0 ? (
-        <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
+        <p className="typo-caption text-foreground py-3 text-center bg-surface-1 rounded-input">
           {t.common.no_results}
         </p>
       ) : (
@@ -106,7 +106,7 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
                 className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:opacity-50 ${
                   isSelected
                     ? 'border-primary/40 bg-primary/10'
-                    : 'border-border/30 bg-secondary/20 hover:bg-secondary/40'
+                    : 'border-border/30 bg-surface-1 hover:bg-surface-2'
                 }`}
               >
                 <input type="checkbox" checked={isSelected} readOnly tabIndex={-1} aria-hidden="true" />

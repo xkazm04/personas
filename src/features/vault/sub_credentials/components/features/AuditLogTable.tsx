@@ -15,11 +15,11 @@ type AuditOpKey = 'op_decrypted' | 'op_created' | 'op_updated' | 'op_deleted' | 
 
 /** Label is a key into `t.vault.features.audit`, resolved at render. */
 export const OP_LABELS: Record<string, { labelKey: AuditOpKey; color: string; dot: string }> = {
-  decrypt: { labelKey: 'op_decrypted', color: INFO_STATUS.text, dot: 'bg-blue-400' },
-  create: { labelKey: 'op_created', color: SUCCESS_STATUS.text, dot: 'bg-emerald-400' },
-  update: { labelKey: 'op_updated', color: 'text-purple-400', dot: 'bg-purple-400' },
-  delete: { labelKey: 'op_deleted', color: ERROR_STATUS.text, dot: 'bg-red-400' },
-  healthcheck: { labelKey: 'op_healthcheck', color: WARNING_STATUS.text, dot: 'bg-amber-400' },
+  decrypt: { labelKey: 'op_decrypted', color: INFO_STATUS.text, dot: 'bg-status-info' },
+  create: { labelKey: 'op_created', color: SUCCESS_STATUS.text, dot: 'bg-status-success' },
+  update: { labelKey: 'op_updated', color: 'text-role-agent', dot: 'bg-role-agent' },
+  delete: { labelKey: 'op_deleted', color: ERROR_STATUS.text, dot: 'bg-status-error' },
+  healthcheck: { labelKey: 'op_healthcheck', color: WARNING_STATUS.text, dot: 'bg-status-warning' },
 };
 
 const AUDIT_FILTERS = ['all', 'decrypt', 'create', 'update', 'delete', 'healthcheck'] as const;
@@ -57,17 +57,17 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
   if (isLoading && auditLog.length === 0) {
     return (
       <div data-testid="audit-log-tab" className="space-y-2" aria-hidden="true">
-        <div className="border border-primary/10 rounded-modal overflow-hidden">
-          <div className="border-b border-primary/10 bg-secondary/10 h-7" />
+        <div className="border border-hair rounded-modal overflow-hidden">
+          <div className="border-b border-hair bg-secondary/10 h-7" />
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 px-3 py-1.5 border-b border-primary/5 last:border-b-0 animate-fade-in"
+              className="flex items-center gap-3 px-3 py-1.5 border-b border-hair last:border-b-0 animate-fade-in"
               style={{ animationDelay: `${120 + i * 35}ms` }}
             >
-              <span className="h-3 w-16 rounded bg-primary/[0.06]" />
-              <span className="h-3 w-28 rounded bg-primary/[0.06]" />
-              <span className="h-3 w-12 rounded bg-primary/[0.06] ml-auto" />
+              <span className="h-3 w-16 rounded-interactive bg-primary/[0.06]" />
+              <span className="h-3 w-28 rounded-interactive bg-primary/[0.06]" />
+              <span className="h-3 w-12 rounded-interactive bg-primary/[0.06] ml-auto" />
             </div>
           ))}
         </div>
@@ -97,10 +97,10 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
             key={f}
             type="button"
             onClick={() => handleFilterChange(f)}
-            className={`px-2 py-0.5 rounded typo-caption transition-colors ${
+            className={`px-2 py-0.5 rounded-interactive typo-caption transition-colors ${
               auditFilter === f
-                ? 'bg-primary/15 text-foreground/90 border border-primary/20'
-                : 'text-foreground hover:text-muted-foreground/90 hover:bg-secondary/30'
+                ? 'bg-primary/15 text-ink-1 border border-hair'
+                : 'text-foreground hover:text-ink-2 hover:bg-surface-1'
             }`}
           >
             {f === 'all' ? t.common.all : opLabel(f)}
@@ -110,10 +110,10 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
       </div>
 
       {/* Table */}
-      <div className="border border-primary/10 rounded-modal overflow-hidden">
+      <div className="border border-hair rounded-modal overflow-hidden">
         <table className="w-full typo-body">
           <thead>
-            <tr className="border-b border-primary/10 bg-secondary/10">
+            <tr className="border-b border-hair bg-secondary/10">
               <th className="text-left px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.operation}</th>
               <th className="text-left px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.detail}</th>
               <th className="text-right px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.time}</th>
@@ -123,7 +123,7 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
             {pageEntries.map((entry) => {
               const op = OP_LABELS[entry.operation] ?? { color: 'text-foreground', dot: 'bg-muted-foreground' };
               return (
-                <tr key={entry.id} className="border-b border-primary/5 last:border-b-0 hover:bg-secondary/10" data-testid={`audit-entry-${entry.id}`}>
+                <tr key={entry.id} className="border-b border-hair last:border-b-0 hover:bg-secondary/10" data-testid={`audit-entry-${entry.id}`}>
                   <td className="px-3 py-1.5">
                     <span className={`inline-flex items-center gap-1.5 typo-caption ${op.color}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${op.dot}`} />
@@ -150,7 +150,7 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
             type="button"
             onClick={() => setAuditPage((p) => Math.max(0, p - 1))}
             disabled={auditPage === 0}
-            className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"
+            className="p-1 rounded-interactive hover:bg-surface-1 disabled:opacity-30 transition-colors"
           >
             <ChevronLeft className="w-3.5 h-3.5 text-foreground" />
           </button>
@@ -161,7 +161,7 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
             type="button"
             onClick={() => setAuditPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={auditPage >= totalPages - 1}
-            className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"
+            className="p-1 rounded-interactive hover:bg-surface-1 disabled:opacity-30 transition-colors"
           >
             <ChevronRightIcon className="w-3.5 h-3.5 text-foreground" />
           </button>

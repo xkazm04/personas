@@ -46,13 +46,13 @@ export function TemplateCardHeader({
     <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h3 className="typo-body-lg text-foreground/90 truncate">
+          <h3 className="typo-body-lg text-ink-1 truncate">
             {name}
           </h3>
           <TrustBadge trustLevel={verification.trustLevel} compact />
           {tier != null && readinessScore != null ? (
             <span
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border ${tier.bgClass}`}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption font-mono rounded-interactive border ${tier.bgClass}`}
               title={`${readinessScore}% of connectors ready`}
             >
               {readinessScore === 100 ? (
@@ -63,13 +63,13 @@ export function TemplateCardHeader({
               {readinessScore}%
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border bg-zinc-500/10 text-foreground border-zinc-500/15">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption font-mono rounded-interactive border bg-zinc-500/10 text-foreground border-zinc-500/15">
               --%
             </span>
           )}
           {difficultyMeta && difficulty && (
             <span
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium rounded border ${difficultyMeta.bgClass}`}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 typo-label rounded-interactive border ${difficultyMeta.bgClass}`}
               title={`${t.complexity[difficulty]}${setupMinutes ? ` · ${t.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}
             >
               <GraduationCap className="w-2.5 h-2.5" />
@@ -85,7 +85,7 @@ export function TemplateCardHeader({
           )}
         </div>
         {goal ? (
-          <p className="typo-body text-foreground/85 mt-1 line-clamp-2 italic">
+          <p className="typo-body text-ink-1 mt-1 line-clamp-2 italic">
             {goal}
           </p>
         ) : (
@@ -104,12 +104,12 @@ export function TemplateCardHeader({
             e.stopPropagation();
             setMenuOpen(!menuOpen);
           }}
-          className={`p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all ${motionCss}`}
+          className={`p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-surface-2 transition-all ${motionCss}`}
         >
           <MoreVertical className="w-4.5 h-4.5 text-foreground" />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-primary/20 rounded-card shadow-elevation-4 backdrop-blur-sm">
+          <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-hair rounded-card shadow-elevation-4 backdrop-blur-sm">
             <button
               type="button"
               onClick={(e) => {

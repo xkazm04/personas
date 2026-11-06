@@ -51,7 +51,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
       )}
 
       {/* Connector preview */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-secondary/40 border border-primary/10 rounded-modal">
+      <div className="flex items-center gap-3 px-4 py-3 bg-surface-2 border border-hair rounded-modal">
         <div
           className="w-10 h-10 rounded-modal flex items-center justify-center border"
           style={{
@@ -66,15 +66,15 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
           <p className="typo-body text-foreground">{result.summary}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/50 border border-primary/10 typo-body text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-surface-2 border border-hair typo-body text-ink-1">
             <ListChecks className="w-3 h-3" />
             {fields.length}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/50 border border-primary/10 typo-body text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-surface-2 border border-hair typo-body text-ink-1">
             <KeyRound className="w-3 h-3" />
             {requiredCount}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/50 border border-primary/10 typo-body text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-surface-2 border border-hair typo-body text-ink-1">
             <CircleHelp className="w-3 h-3" />
             {optionalCount}
           </span>

@@ -20,7 +20,7 @@ export function CompareTray({ selected, onRemove, onClear, onCompare }: CompareT
   const canCompare = selected.length >= 2;
 
   return (
-    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-3 py-2 rounded-modal glass-md border border-primary/15 shadow-elevation-3 max-w-[90%]">
+    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-3 py-2 rounded-modal glass-md border border-hair shadow-elevation-3 max-w-[90%]">
       <span className="typo-body text-foreground whitespace-nowrap">
         {tx(t.templates.compare.selected, { count: selected.length })}
       </span>
@@ -29,14 +29,14 @@ export function CompareTray({ selected, onRemove, onClear, onCompare }: CompareT
         {selected.map((s) => (
           <span
             key={s.id}
-            className="inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-input bg-secondary/50 border border-primary/10 max-w-[160px]"
+            className="inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-input bg-surface-2 border border-hair max-w-[160px]"
           >
             <span className="typo-caption text-foreground truncate">{s.test_case_name}</span>
             <button
               type="button"
               onClick={() => onRemove(s.id)}
               aria-label={t.templates.compare.remove_from_compare}
-              className="p-0.5 rounded text-foreground hover:bg-secondary/60 transition-colors flex-shrink-0"
+              className="p-0.5 rounded-interactive text-foreground hover:bg-surface-2 transition-colors flex-shrink-0"
             >
               <X className="w-3 h-3" />
             </button>
@@ -60,7 +60,7 @@ export function CompareTray({ selected, onRemove, onClear, onCompare }: CompareT
         <button
           type="button"
           onClick={onClear}
-          className="px-2.5 py-1.5 typo-body rounded-modal text-foreground hover:bg-secondary/50 transition-colors"
+          className="px-2.5 py-1.5 typo-body rounded-modal text-foreground hover:bg-surface-2 transition-colors"
         >
           {t.templates.compare.clear}
         </button>

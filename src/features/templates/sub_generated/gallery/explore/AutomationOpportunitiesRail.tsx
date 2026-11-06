@@ -31,7 +31,7 @@ export function AutomationOpportunitiesRail({
   return (
     <div className="mb-6 max-w-5xl 3xl:max-w-7xl 4xl:max-w-[1800px] mx-auto">
       <div className="flex items-center gap-2 mb-3">
-        <Lightbulb className="w-4 h-4 text-amber-400/70" />
+        <Lightbulb className="w-4 h-4 text-status-warning/70" />
         <SectionLabel as="span" className="mb-0">{t.templates.opportunities.title}</SectionLabel>
         <span className="typo-body text-foreground">{t.templates.opportunities.subtitle}</span>
       </div>
@@ -68,19 +68,19 @@ function OpportunityCard({
   const connectorMeta = suggestedConnector ? getConnectorMeta(suggestedConnector) : null;
 
   return (
-    <div className="rounded-modal border border-amber-500/12 bg-amber-500/[0.03] p-4 hover:border-amber-500/25 transition-all">
+    <div className="rounded-modal border border-status-warning/12 bg-amber-500/[0.03] p-4 hover:border-status-warning/25 transition-all">
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-2">
-        <div className="p-1.5 rounded-card bg-amber-500/10 border border-amber-500/15">
-          <GroupIcon className="w-4 h-4 text-amber-300/80" />
+        <div className="p-1.5 rounded-card bg-status-warning/10 border border-status-warning/15">
+          <GroupIcon className="w-4 h-4 text-status-warning/80" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-foreground/85">{t.templates.search[group.labelKey]}</h3>
+          <h3 className="typo-heading text-ink-1">{t.templates.search[group.labelKey]}</h3>
         </div>
         <button
           type="button"
           onClick={() => onSelectCategory(group.categories[0]!)}
-          className="typo-body text-amber-400/60 hover:text-amber-400 transition-colors"
+          className="typo-body text-status-warning/60 hover:text-status-warning transition-colors"
           title={t.templates.opportunities.explore_templates.replace('{label}', t.templates.search[group.labelKey])}
         >
           <ChevronRight className="w-4 h-4" />
@@ -96,8 +96,8 @@ function OpportunityCard({
       {hasReadyNow && (
         <div className="mb-2">
           <div className="flex items-center gap-1.5 mb-1.5">
-            <Zap className="w-3 h-3 text-emerald-400/70" />
-            <span className="typo-body text-emerald-400/70">
+            <Zap className="w-3 h-3 text-status-success/70" />
+            <span className="typo-body text-status-success/70">
               {t.templates.opportunities.ready_now}
             </span>
             <span className="typo-body text-foreground">
@@ -116,11 +116,11 @@ function OpportunityCard({
       {hasOneAway && connectorMeta && (
         <div>
           <div className="flex items-center gap-1.5 mb-1.5">
-            <Plus className="w-3 h-3 text-amber-400/60" />
-            <span className="typo-body text-amber-400/70">
+            <Plus className="w-3 h-3 text-status-warning/60" />
+            <span className="typo-body text-status-warning/70">
               {t.templates.opportunities.add_connector}
             </span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/15">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-status-warning/10 text-status-warning/80 border border-status-warning/15">
               <ConnectorIcon meta={connectorMeta} size="w-3 h-3" />
               {connectorMeta.label}
             </span>
@@ -152,7 +152,7 @@ function TemplateRow({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-amber-500/5 transition-colors ${
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-status-warning/5 transition-colors ${
         dimmed ? 'opacity-60' : ''
       }`}
     >
@@ -160,7 +160,7 @@ function TemplateRow({
         {template.test_case_name}
       </span>
       {template.adoption_count > 0 && (
-        <span className="inline-flex items-center gap-0.5 typo-data text-emerald-400/50 flex-shrink-0">
+        <span className="inline-flex items-center gap-0.5 typo-data text-status-success/50 flex-shrink-0">
           <Download className="w-2.5 h-2.5" />
           {template.adoption_count}
         </span>

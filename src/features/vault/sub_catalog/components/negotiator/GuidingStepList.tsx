@@ -16,7 +16,7 @@ export function GuidingProgressBar({ plan, completedCount, totalSteps, skippedSt
   const { t, tx } = useTranslation();
   const neg = t.vault.negotiator;
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border border-primary/10 rounded-modal">
+    <div className="flex items-center justify-between px-4 py-3 bg-surface-1 border border-hair rounded-modal">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5 text-foreground" />
@@ -40,9 +40,9 @@ export function GuidingProgressBar({ plan, completedCount, totalSteps, skippedSt
       </div>
 
       {/* Progress bar */}
-      <div className="w-32 h-1.5 bg-secondary/60 rounded-full overflow-hidden">
+      <div className="w-32 h-1.5 bg-surface-2 rounded-full overflow-hidden">
         <div style={{ width: `${progressPercent}%` }}
-          className="animate-fade-in h-full bg-gradient-to-r from-violet-500 to-emerald-500 rounded-full"
+          className="animate-fade-in h-full bg-gradient-to-r from-role-agent to-status-success rounded-full"
         />
       </div>
     </div>
@@ -59,8 +59,8 @@ export function GuidingSkippedSummary({ skippedSteps }: GuidingSkippedSummaryPro
   if (skippedSteps.length === 0) return null;
 
   return (
-    <details className="group rounded-modal border border-primary/10 bg-secondary/15 px-4 py-2">
-      <summary className="cursor-pointer typo-body text-foreground hover:text-muted-foreground transition-colors flex items-center gap-1.5">
+    <details className="group rounded-modal border border-hair bg-secondary/15 px-4 py-2">
+      <summary className="cursor-pointer typo-body text-foreground hover:text-ink-2 transition-colors flex items-center gap-1.5">
         <SkipForward className="w-3 h-3" />
         {tx(skippedSteps.length === 1 ? neg.steps_auto_skipped_one : neg.steps_auto_skipped_other, { count: skippedSteps.length })}
       </summary>
@@ -87,14 +87,14 @@ export function GuidingPrerequisites({ prerequisites }: GuidingPrerequisitesProp
   if (prerequisites.length === 0) return null;
 
   return (
-    <div className="px-4 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-modal">
+    <div className="px-4 py-2.5 bg-status-warning/5 border border-status-warning/15 rounded-modal">
       <div className="flex items-center gap-2 mb-1.5">
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-        <span className="typo-body text-amber-300/80">{t.vault.negotiator.prerequisites}</span>
+        <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
+        <span className="typo-body text-status-warning/80">{t.vault.negotiator.prerequisites}</span>
       </div>
       <ul className="space-y-0.5">
         {prerequisites.map((prereq, i) => (
-          <li key={i} className="typo-body text-amber-200/60 pl-5">
+          <li key={i} className="typo-body text-status-warning/60 pl-5">
             {prereq}
           </li>
         ))}
@@ -162,7 +162,7 @@ export function GuidingTips({ tips }: GuidingTipsProps) {
   if (tips.length === 0) return null;
 
   return (
-    <details className="group rounded-modal border border-primary/10 bg-secondary/20 px-4 py-2.5">
+    <details className="group rounded-modal border border-hair bg-surface-1 px-4 py-2.5">
       <summary className="cursor-pointer typo-body text-foreground transition-colors flex items-center gap-1.5">
         <Lightbulb className="w-3 h-3" />
         {t.vault.negotiator.tips_heading}
@@ -189,12 +189,12 @@ export function GuidingCompletionBanner({ allDone, verificationHint }: GuidingCo
 
   return (
     <div
-      className="animate-fade-slide-in flex items-start gap-2.5 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-modal"
+      className="animate-fade-slide-in flex items-start gap-2.5 px-4 py-3 bg-status-success/10 border border-status-success/20 rounded-modal"
     >
-      <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+      <CheckCircle className="w-4 h-4 text-status-success mt-0.5 shrink-0" />
       <div>
-        <p className="typo-body text-emerald-300">{t.vault.negotiator.all_steps_completed}</p>
-        <p className="typo-body text-emerald-200/60 mt-0.5">{verificationHint}</p>
+        <p className="typo-body text-status-success">{t.vault.negotiator.all_steps_completed}</p>
+        <p className="typo-body text-status-success/60 mt-0.5">{verificationHint}</p>
       </div>
     </div>
   );

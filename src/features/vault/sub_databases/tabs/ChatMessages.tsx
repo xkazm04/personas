@@ -58,10 +58,10 @@ export function ChatMessages({
       {messages.map((msg) => (
         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
           <div
-            className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+            className={`max-w-[85%] rounded-card px-4 py-3 ${
               msg.role === 'user'
-                ? 'bg-violet-500/10 border border-violet-500/15 text-foreground/85'
-                : 'bg-secondary/30 border border-primary/10 text-foreground'
+                ? 'bg-role-agent/10 border border-role-agent/15 text-ink-1'
+                : 'bg-surface-1 border border-hair text-foreground'
             }`}
           >
             {msg.role === 'user' && (
@@ -76,7 +76,7 @@ export function ChatMessages({
                   <button
                     type="button"
                     onClick={onCancel}
-                    className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
+                    className="ml-2 p-1 rounded-card hover:bg-status-error/10 text-foreground hover:text-status-error transition-colors"
                     aria-label={t.common.cancel}
                   >
                     <X className="w-3 h-3" />
@@ -86,7 +86,7 @@ export function ChatMessages({
             )}
 
             {msg.role === 'assistant' && msg.status === 'failed' && (
-              <p className="typo-body text-red-400">{msg.content}</p>
+              <p className="typo-body text-status-error">{msg.content}</p>
             )}
 
             {/* An answer that carries no SQL (a clarifying question, a refusal,
@@ -140,7 +140,7 @@ function EmptyState({
               type="button"
               key={i}
               onClick={() => onSuggestionClick(s)}
-              className="px-3 py-1.5 rounded-modal typo-body text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
+              className="px-3 py-1.5 rounded-modal typo-body text-foreground bg-surface-1 border border-hair hover:bg-surface-2 hover:text-ink-2 transition-colors"
             >
               {s}
             </button>

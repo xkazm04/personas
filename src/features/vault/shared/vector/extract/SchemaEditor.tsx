@@ -22,7 +22,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
   return (
     <div className="space-y-3">
       {schema.entities.map((entity, ei) => (
-        <div key={ei} className="rounded-card border border-border/40 bg-secondary/20 p-3 space-y-2">
+        <div key={ei} className="rounded-card border border-border/40 bg-surface-1 p-3 space-y-2">
           <div className="flex items-center gap-2">
             <input
               value={entity.entityType}
@@ -32,7 +32,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                 setEntities(next);
               }}
               placeholder={sh.extract_entity_type_ph}
-              className="typo-code text-violet-400/90 bg-background/50 border border-primary/15 rounded-input px-2 py-1 w-48 focus-visible:outline-none focus-visible:border-primary/40"
+              className="typo-code text-role-agent/90 bg-background/50 border border-hair rounded-input px-2 py-1 w-48 focus-visible:outline-none focus-visible:border-primary/40"
             />
             <input
               value={entity.description}
@@ -42,12 +42,12 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                 setEntities(next);
               }}
               placeholder={sh.extract_entity_desc_ph}
-              className="flex-1 typo-body text-foreground bg-background/50 border border-primary/15 rounded-input px-2 py-1 focus-visible:outline-none focus-visible:border-primary/40"
+              className="flex-1 typo-body text-foreground bg-background/50 border border-hair rounded-input px-2 py-1 focus-visible:outline-none focus-visible:border-primary/40"
             />
             <button
               type="button"
               onClick={() => setEntities(schema.entities.filter((_, i) => i !== ei))}
-              className="p-1.5 rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="p-1.5 rounded-card text-status-error/60 hover:text-status-error hover:bg-status-error/10 transition-colors"
               title={sh.extract_remove}
                   aria-label={sh.extract_remove}
             >
@@ -68,7 +68,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                     setEntities(next);
                   }}
                   placeholder={sh.extract_field_name_ph}
-                  className="typo-code text-foreground bg-background/50 border border-primary/15 rounded-input px-2 py-0.5 w-40 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="typo-code text-foreground bg-background/50 border border-hair rounded-input px-2 py-0.5 w-40 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <input
                   value={field.description}
@@ -80,7 +80,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                     setEntities(next);
                   }}
                   placeholder={sh.extract_field_desc_ph}
-                  className="flex-1 typo-caption text-foreground bg-background/50 border border-primary/15 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="flex-1 typo-caption text-foreground bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <button
                   type="button"
@@ -89,7 +89,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                     next[ei] = { ...entity, fields: entity.fields.filter((_, i) => i !== fi) };
                     setEntities(next);
                   }}
-                  className="p-1 rounded-card text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="p-1 rounded-card text-status-error/50 hover:text-status-error hover:bg-status-error/10 transition-colors"
                   title={sh.extract_remove}
                   aria-label={sh.extract_remove}
                 >
@@ -104,7 +104,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                 next[ei] = { ...entity, fields: [...entity.fields, { name: '', description: '' }] };
                 setEntities(next);
               }}
-              className="inline-flex items-center gap-1 typo-caption text-violet-400/70 hover:text-violet-400 transition-colors"
+              className="inline-flex items-center gap-1 typo-caption text-role-agent/70 hover:text-role-agent transition-colors"
             >
               <Plus className="w-3 h-3" /> {sh.extract_add_field}
             </button>
@@ -115,7 +115,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
       <button
         type="button"
         onClick={() => setEntities([...schema.entities, { entityType: '', description: '', fields: [] }])}
-        className="inline-flex items-center gap-1.5 typo-body text-violet-400/80 hover:text-violet-400 transition-colors"
+        className="inline-flex items-center gap-1.5 typo-body text-role-agent/80 hover:text-role-agent transition-colors"
       >
         <Plus className="w-4 h-4" /> {sh.extract_add_entity}
       </button>

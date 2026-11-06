@@ -69,9 +69,9 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
   );
 
   return (
-    <div className="flex items-center gap-3 px-6 py-3 border-b border-primary/10 bg-secondary/20 shrink-0">
+    <div className="flex items-center gap-3 px-6 py-3 border-b border-hair bg-surface-1 shrink-0">
       <div
-        className="w-9 h-9 rounded-card flex items-center justify-center border border-primary/15 shrink-0"
+        className="w-9 h-9 rounded-card flex items-center justify-center border border-hair shrink-0"
         style={{ backgroundColor: `${color}15` }}
       >
         {iconUrl ? (
@@ -79,7 +79,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         ) : connector ? (
           <Plug className="w-5 h-5" style={{ color }} />
         ) : (
-          <Key className="w-5 h-5 text-emerald-400/80" />
+          <Key className="w-5 h-5 text-status-success/80" />
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -94,11 +94,11 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 onKeyDown={handleKeyDown}
                 onBlur={saveName}
                 autoFocus
-                className="flex-1 min-w-0 typo-heading text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                className="flex-1 min-w-0 typo-heading text-ink-1 bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
               />
               <button
                 onMouseDown={(e) => { e.preventDefault(); saveName(); }}
-                className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
+                className="p-0.5 rounded-interactive text-status-success hover:text-status-success transition-colors shrink-0"
                 title={t.vault.ingest.save_name}
               >
                 <Check className="w-3.5 h-3.5" />
@@ -106,12 +106,12 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
             </div>
           ) : (
             <>
-              <h2 id="credential-playground-title" className="typo-heading text-foreground/90 truncate">
+              <h2 id="credential-playground-title" className="typo-heading text-ink-1 truncate">
                 {credential.name}
               </h2>
               <button
                 onClick={startEditing}
-                className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
+                className="p-0.5 rounded-interactive text-foreground hover:text-ink-2 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
                 title={t.vault.ingest.rename_credential}
               >
                 <Pencil className="w-3 h-3" />
@@ -121,7 +121,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {fieldKeys.map((key) => (
-            <span key={key} className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground">
+            <span key={key} className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-2 border border-primary/8 text-foreground">
               {key}
             </span>
           ))}
@@ -130,7 +130,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
             return (
               <span
                 key={tag}
-                className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
+                className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border ${style.bg} ${style.text} ${style.border}`}
               >
                 {tag}
                 <button
@@ -157,15 +157,15 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
                 autoFocus
                 placeholder={vt.add_tag}
-                className="w-24 typo-caption px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+                className="w-24 typo-caption px-1.5 py-0.5 rounded-interactive border border-hair bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
               />
               {showSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[100px]">
+                <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-hair rounded-card shadow-elevation-3 py-1 min-w-[100px]">
                   {filteredSuggestions.map((s) => (
                     <button
                       key={s}
                       onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                      className="w-full text-left px-2.5 py-1 typo-caption hover:bg-secondary/50 transition-colors text-foreground"
+                      className="w-full text-left px-2.5 py-1 typo-caption hover:bg-surface-2 transition-colors text-foreground"
                     >
                       {s}
                     </button>
@@ -176,7 +176,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
           ) : (
             <button
               onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
-              className="inline-flex items-center gap-0.5 typo-caption text-foreground hover:text-muted-foreground/70 transition-colors"
+              className="inline-flex items-center gap-0.5 typo-caption text-foreground hover:text-ink-2 transition-colors"
               title={t.vault.shared.add_tag_title}
             >
               <Plus className="w-2.5 h-2.5" /> {t.vault.shared.add_tag_title}
@@ -186,7 +186,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
       </div>
       <button
         onClick={onClose}
-        className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80 shrink-0"
+        className="p-2 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2 shrink-0"
       >
         <X className="w-4 h-4" />
       </button>

@@ -107,12 +107,12 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       titleId="preset-preview-title"
       size="lg"
       portal
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
     >
       {/* Header */}
       <div
         data-testid={`preset-preview-modal-${preset.id}`}
-        className="px-5 pt-5 pb-3 border-b border-primary/10 flex items-center justify-between"
+        className="px-5 pt-5 pb-3 border-b border-hair flex items-center justify-between"
         style={{ borderLeft: `3px solid ${colorWithAlpha(teamColor, 0.8)}` }}
       >
         <div className="flex items-center gap-2.5 min-w-0">
@@ -120,7 +120,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
           <div className="min-w-0">
             <h2
               id="preset-preview-title"
-              className="typo-heading text-foreground/90 truncate"
+              className="typo-heading text-ink-1 truncate"
             >
               {preset.name}
             </h2>
@@ -141,7 +141,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
             change that cannot take effect. */}
         {a.stage === 'preview' && (
           <section
-            className="rounded-card border border-primary/10 bg-secondary/15 px-3 py-2 flex items-center gap-2.5"
+            className="rounded-card border border-hair bg-secondary/15 px-3 py-2 flex items-center gap-2.5"
             data-testid="preset-target-picker"
           >
             <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: teamColor }} />
@@ -168,12 +168,12 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
             mints its own team — a project's team keeps its own instructions,
             so don't promise a binding that additive mode deliberately skips. */}
         {preset.group && !targetTeamId && (
-          <section className="rounded-card border border-primary/10 bg-secondary/15 px-3 py-2 flex items-center gap-2">
+          <section className="rounded-card border border-hair bg-secondary/15 px-3 py-2 flex items-center gap-2">
             <Users
               className="w-3.5 h-3.5 flex-shrink-0"
               style={{ color: preset.group.color }}
             />
-            <span className="typo-body text-foreground/90 truncate">
+            <span className="typo-body text-ink-1 truncate">
               {tx(t.templates.presets.preview_group_binding, { name: preset.group.name })}
             </span>
           </section>
@@ -231,9 +231,9 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
                   className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-card border transition-colors ${
                     interactive
                       ? selected
-                        ? 'bg-secondary/30 border-primary/15 hover:border-primary/30'
-                        : 'bg-secondary/10 border-primary/5 opacity-55 hover:opacity-80'
-                      : 'bg-secondary/30 border-primary/10'
+                        ? 'bg-surface-1 border-hair hover:border-primary/30'
+                        : 'bg-secondary/10 border-hair opacity-55 hover:opacity-80'
+                      : 'bg-surface-1 border-hair'
                   }`}
                 >
                   {interactive && (
@@ -250,7 +250,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
                     {row.role}
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="typo-body text-foreground/90 block truncate">
+                    <span className="typo-body text-ink-1 block truncate">
                       {meta?.name ?? row.templateId}
                     </span>
                     {meta?.description && (
@@ -268,8 +268,8 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       </div>
 
       {/* Footer — adoption gate or "open team" CTA */}
-      <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-between gap-2">
-        <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-amber-400' : 'text-foreground'}`}>
+      <div className="px-5 py-3 border-t border-hair flex items-center justify-between gap-2">
+        <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-status-warning' : 'text-foreground'}`}>
           {a.stage === 'preview' && t.templates.presets.footer_preview_hint}
           {a.stage === 'adopting' && t.templates.presets.footer_adopting_hint}
           {a.stage === 'done' && a.result && (
@@ -386,7 +386,7 @@ function StatusBadge({ row, t }: { row: PresetMemberRowState; t: ReturnType<type
   }
   if (row.status === 'done') {
     return (
-      <span className="inline-flex items-center gap-1.5 typo-caption text-emerald-300">
+      <span className="inline-flex items-center gap-1.5 typo-caption text-status-success">
         <CheckCircle2 className="w-3 h-3" />
         {t.templates.presets.status_done}
       </span>
@@ -394,7 +394,7 @@ function StatusBadge({ row, t }: { row: PresetMemberRowState; t: ReturnType<type
   }
   return (
     <span
-      className="inline-flex items-center gap-1.5 typo-caption text-red-400 max-w-[180px] truncate"
+      className="inline-flex items-center gap-1.5 typo-caption text-status-error max-w-[180px] truncate"
       title={row.error ?? t.templates.presets.status_failed}
     >
       <AlertCircle className="w-3 h-3 flex-shrink-0" />

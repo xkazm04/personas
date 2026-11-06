@@ -135,8 +135,8 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
           >
             {result.confirmed_capabilities.map((cap, i) => (
               <motion.div key={i} variants={item} className="flex items-start gap-2 typo-body">
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/90">{cap}</span>
+                <CheckCircle className="w-3.5 h-3.5 text-status-success mt-0.5 flex-shrink-0" />
+                <span className="text-ink-1">{cap}</span>
               </motion.div>
             ))}
           </motion.div>
@@ -157,8 +157,8 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
           >
             {result.issues.map((issue, i) => (
               <motion.div key={i} variants={item} className="flex items-start gap-2 typo-body">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/90">{issue}</span>
+                <AlertTriangle className="w-3.5 h-3.5 text-status-warning mt-0.5 flex-shrink-0" />
+                <span className="text-ink-1">{issue}</span>
               </motion.div>
             ))}
           </motion.div>

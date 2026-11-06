@@ -34,17 +34,17 @@ export function EventTemplateCard({
     <div
       className={`p-3 rounded-modal border transition-all ${
         isEnabled
-          ? 'bg-amber-500/5 border-amber-500/20'
-          : 'bg-secondary/20 border-border/20'
+          ? 'bg-status-warning/5 border-status-warning/20'
+          : 'bg-surface-1 border-border/20'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {isSaving ? (
-              <LoadingSpinner size="sm" className="text-amber-400/70" />
+              <LoadingSpinner size="sm" className="text-status-warning/70" />
             ) : (
-              <Icon className="w-3.5 h-3.5 text-amber-400/60" />
+              <Icon className="w-3.5 h-3.5 text-status-warning/60" />
             )}
             <span className="typo-body text-foreground">{template.name}</span>
           </div>
@@ -60,7 +60,7 @@ export function EventTemplateCard({
           onClick={() => onToggle(template.id, template.name)}
           disabled={isSaving}
           className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-            isEnabled ? 'bg-amber-500' : 'bg-secondary/60'
+            isEnabled ? 'bg-status-warning' : 'bg-surface-2'
           } ${isSaving ? 'opacity-50' : ''}`}
         >
           <span

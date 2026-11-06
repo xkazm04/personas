@@ -25,8 +25,8 @@ export function AutoCredModeBanner({ mode }: AutoCredModeBannerProps) {
         <span
           className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-input typo-caption border ${
             isGuided
-              ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
-              : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25'
+              ? 'bg-role-agent/15 text-role-agent border-role-agent/25'
+              : 'bg-role-highlight/15 text-role-highlight border-role-highlight/25'
           }`}
         >
           {isGuided ? <MessageSquare className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
@@ -36,11 +36,11 @@ export function AutoCredModeBanner({ mode }: AutoCredModeBannerProps) {
 
       {/* Fallback explanation — only when we degraded to guided */}
       {isGuided && (
-        <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
-          <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+        <div className="flex items-start gap-2.5 p-3 rounded-card border border-status-warning/20 bg-status-warning/5">
+          <Info className="w-4 h-4 text-status-warning mt-0.5 shrink-0" />
           <div className="typo-body text-foreground space-y-1">
             <p>
-              <span className="font-medium text-amber-400/90">{ace.guided_fallback_title}</span>{' '}
+              <span className="font-medium text-status-warning/90">{ace.guided_fallback_title}</span>{' '}
               {ace.guided_fallback_body}
             </p>
             <p className="typo-code text-foreground">{ace.guided_fallback_hint}</p>

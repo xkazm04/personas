@@ -37,8 +37,8 @@ export function ConnectionTestSection({
             data-testid="vault-test-connection"
             className={`flex items-center gap-2 px-4 py-2 border rounded-modal typo-body transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
               result?.success
-                ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400'
-                : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/25 text-amber-300'
+                ? 'bg-status-success/10 hover:bg-status-success/20 border-status-success/20 text-status-success'
+                : 'bg-status-warning/10 hover:bg-status-warning/20 border-status-warning/25 text-status-warning'
             }`}
           >
             {isTesting ? (
@@ -58,7 +58,7 @@ export function ConnectionTestSection({
                 type="button"
                 aria-label={testHint}
                 data-testid="vault-test-hint"
-                className="p-1.5 rounded-full border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+                className="p-1.5 rounded-full border border-hair text-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Info className="w-3.5 h-3.5" />
               </button>

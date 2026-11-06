@@ -99,22 +99,22 @@ export default function AdoptionWizardModal({
   const content = (
     <>
       <div className="relative h-full overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-hair flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-modal bg-brand-purple/15 border border-brand-purple/25 flex items-center justify-center">
               <Grid3X3 className="w-4.5 h-4.5 text-brand-purple" />
             </div>
             <div>
-              <h2 id="adoption-matrix-title" className="typo-heading text-foreground/90">
+              <h2 id="adoption-matrix-title" className="typo-heading text-ink-1">
                 {t.templates.adopt_modal.adopt_template}
               </h2>
-              <p className="text-[11px] text-foreground">{review.test_case_name}</p>
+              <p className="typo-caption text-foreground">{review.test_case_name}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleCloseAttempt}
-            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
+            className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-1"
           >
             <X className="w-4 h-4" />
           </button>
@@ -150,7 +150,7 @@ export default function AdoptionWizardModal({
       onClose={handleCloseAttempt}
       titleId="adoption-matrix-title"
       maxWidthClass="max-w-[1750px]"
-      panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
+      panelClassName="h-[92vh] bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col"
       // Required for the flex-column header + scrollable body layout below:
       // BaseModal's default `staggerChildren=true` wraps each child in a
       // block-level `motion.div`, which breaks the parent `flex flex-col`

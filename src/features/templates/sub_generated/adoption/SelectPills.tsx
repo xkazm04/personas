@@ -245,7 +245,7 @@ export function SelectPills({
               if (!multi) commitCustom();
             }}
             placeholder={t.templates.adopt_modal.type_custom_value}
-            className="flex-1 max-w-sm px-3 py-1.5 typo-body rounded-card border border-primary/20 bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
+            className="flex-1 max-w-sm px-3 py-1.5 typo-body rounded-card border border-hair bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
           />
           {multi && (
             <button

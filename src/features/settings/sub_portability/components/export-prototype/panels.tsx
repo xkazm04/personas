@@ -45,9 +45,9 @@ export function KpiSetupCard({ picker }: { picker: ExportPicker }) {
   const eligible = picker.inv.eligibleKpiCount;
   const noKpis = eligible === 0;
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/5 px-3.5 py-3">
+    <div className="rounded-card border border-hair bg-secondary/5 px-3.5 py-3">
       <div className="flex items-center gap-3">
-        <span className="w-8 h-8 rounded-card flex items-center justify-center bg-rose-500/10 text-rose-300 flex-shrink-0">
+        <span className="w-8 h-8 rounded-card flex items-center justify-center bg-status-error/10 text-status-error flex-shrink-0">
           <Target className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
@@ -85,7 +85,7 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
   return (
     <div className="space-y-3">
       {/* Memories */}
-      <div className="flex items-center gap-3 rounded-card border border-primary/10 bg-secondary/5 px-3.5 py-3">
+      <div className="flex items-center gap-3 rounded-card border border-hair bg-secondary/5 px-3.5 py-3">
         <span className="w-8 h-8 rounded-card flex items-center justify-center bg-fuchsia-500/10 text-fuchsia-300 flex-shrink-0">
           <Brain className="w-4 h-4" />
         </span>
@@ -105,11 +105,11 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
           envelope, so there is nothing to write without a key). */}
       <div
         className={`rounded-card border px-3.5 py-3 space-y-2 ${
-          gated ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/10 bg-secondary/5'
+          gated ? 'border-status-warning/30 bg-status-warning/5' : 'border-hair bg-secondary/5'
         }`}
       >
         <label className="flex items-center gap-2 typo-body text-foreground">
-          <KeyRound className="w-4 h-4 text-amber-300" />
+          <KeyRound className="w-4 h-4 text-status-warning" />
           {picker.passphraseRequired ? p.encryption_title_required : p.encryption_title}
         </label>
         <PasswordToggleField
@@ -118,16 +118,16 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
           onChange={(e) => picker.setPassphrase(e.target.value)}
           hasError={!valid}
           data-testid="portability-passphrase-input"
-          inputClassName={`w-full px-3 py-2 rounded-card border bg-secondary/20 typo-body text-foreground placeholder:text-foreground/40 outline-none ${
-            !valid ? 'border-red-500/30 focus-visible:border-red-500/50' : 'border-primary/10 focus-visible:border-amber-500/30'
+          inputClassName={`w-full px-3 py-2 rounded-card border bg-surface-1 typo-body text-foreground placeholder:text-foreground/40 outline-none ${
+            !valid ? 'border-status-error/30 focus-visible:border-status-error/50' : 'border-hair focus-visible:border-status-warning/30'
           }`}
         />
         {!valid ? (
-          <p className="typo-caption text-red-400">{s.passphrase_too_short}</p>
+          <p className="typo-caption text-status-error">{s.passphrase_too_short}</p>
         ) : gated ? (
           <p
             data-testid="portability-passphrase-gate"
-            className="flex items-start gap-1.5 typo-caption text-amber-400"
+            className="flex items-start gap-1.5 typo-caption text-status-warning"
           >
             <ShieldAlert className="w-3.5 h-3.5 mt-px flex-shrink-0" />
             {p.passphrase_required_hint}
@@ -150,14 +150,14 @@ export function SecretsStatus({ picker }: { picker: ExportPicker }) {
   const encrypted = picker.passphrase.length >= 8;
   if (picker.passphraseMissing) {
     return (
-      <div className="flex items-center gap-2 typo-caption text-amber-400">
+      <div className="flex items-center gap-2 typo-caption text-status-warning">
         <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0" />
         {p.secrets_blocked}
       </div>
     );
   }
   return (
-    <div className={`flex items-center gap-2 typo-caption ${encrypted ? 'text-emerald-300' : 'text-foreground'}`}>
+    <div className={`flex items-center gap-2 typo-caption ${encrypted ? 'text-status-success' : 'text-foreground'}`}>
       {encrypted ? <Lock className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
       {encrypted ? p.secrets_encrypted : p.secrets_excluded}
     </div>
@@ -172,8 +172,8 @@ export function DependencyNotes() {
   const { t } = useTranslation();
   const p = t.settings.portability.proto;
   return (
-    <div className="flex items-start gap-2 rounded-card bg-blue-500/5 border border-blue-500/10 px-3 py-2.5">
-      <Info className="w-4 h-4 text-blue-300 mt-0.5 flex-shrink-0" />
+    <div className="flex items-start gap-2 rounded-card bg-status-info/5 border border-status-info/10 px-3 py-2.5">
+      <Info className="w-4 h-4 text-status-info mt-0.5 flex-shrink-0" />
       <p className="typo-caption text-foreground">{p.dependency_note}</p>
     </div>
   );
@@ -211,9 +211,7 @@ export function ExportButton({
       onClick={onClick}
       disabled={disabled}
       data-testid="export-confirm-button"
-      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-modal typo-body
-        bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/20
-        transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${className ?? ''}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-modal typo-body bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${className ?? ''}`}
     >
       {exporting ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
       {label}

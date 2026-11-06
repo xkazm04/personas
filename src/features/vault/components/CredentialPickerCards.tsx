@@ -103,7 +103,7 @@ export function CredentialPickerCards({
               <span className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-card border border-dashed border-border/60 group-hover:border-primary/40 transition-colors">
                 <Plus className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" />
               </span>
-              <span className="block w-full truncate typo-body text-foreground/85">
+              <span className="block w-full truncate typo-body text-ink-1">
                 {item.label}
               </span>
               {item.sublabel && (
@@ -172,7 +172,7 @@ export function CredentialPickerCards({
             </span>
             <span
               className={`block w-full truncate typo-body ${
-                isSelected ? 'text-foreground' : 'text-foreground/90'
+                isSelected ? 'text-foreground' : 'text-ink-1'
               }`}
               title={item.label}
             >

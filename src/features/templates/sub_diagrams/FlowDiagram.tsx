@@ -151,7 +151,7 @@ export default function FlowDiagram({
                     {interLayerLabels[layerIdx].map((label) => (
                       <span
                         key={label}
-                        className="text-[10px] leading-tight bg-primary/5 px-1.5 py-px rounded-full text-primary/60 whitespace-nowrap"
+                        className="typo-caption leading-tight bg-primary/5 px-1.5 py-px rounded-full text-primary/60 whitespace-nowrap"
                       >
                         {label}
                       </span>

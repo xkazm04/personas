@@ -77,7 +77,7 @@ export function TemplateFormBody({
   if (isZeroConfig) {
     return (
       <div className="space-y-4">
-        <div className="rounded-modal border border-primary/8 bg-secondary/20 p-4 space-y-2">
+        <div className="rounded-modal border border-primary/8 bg-surface-1 p-4 space-y-2">
           <p className="typo-body text-foreground">
             {cf.no_config_required_heading}
           </p>
@@ -105,7 +105,7 @@ export function TemplateFormBody({
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={tx(cf.credential_name_placeholder, { label })}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 
@@ -118,8 +118,8 @@ export function TemplateFormBody({
               size="sm"
               onClick={() => onVariantChange(v.id)}
               className={activeVariantId === v.id
-                ? 'bg-primary/10 text-primary border border-primary/20'
-                : 'text-foreground hover:bg-secondary/40 border border-transparent'}
+                ? 'bg-primary/10 text-primary border border-hair'
+                : 'text-foreground hover:bg-surface-2 border border-transparent'}
             >
               {v.label}
             </Button>

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 import { customThemeAttr, deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
 import { storeBus } from '@/lib/storeBus';
-import { DEFAULT_DENSITY, isDensity, type Density } from '@/lib/density';
+import { isDensity, type Density } from '@/lib/density';
 import { createDedupedJSONStorage } from './util/dedupedStorage';
 
 export type { Density } from '@/lib/density';
@@ -223,10 +223,24 @@ function applyReduceMotion(reduceMotion: boolean) {
  *  globals.css. `comfortable` is the :root default, so the attribute is still
  *  set for it (inspectable + future-proof) but matches no override block. */
 function applyDensity(density: Density) {
-  // Console density axis (2026-11-06): the CSS has ONE air block, keyed
-  // "comfortable". Stored 'cozy' maps onto it; stored 'comfortable' (the old
-  // default) and 'compact' are the Console default geometry. Storage is untouched.
-  document.documentElement.setAttribute('data-density', density === 'cozy' ? 'comfortable' : 'compact');
+  // Console density axis (2026-11-06): TWO choices. Stored 'compact' is "Console"
+  // (the default geometry, data-density="compact"); stored 'comfortable' is "Comfortable
+  // (more air)" (data-density="comfortable", the one air block in globals.css).
+  // 'cozy' is a retired spelling of the air choice that stays in the shared list-density
+  // `Density` type only; `normalizeAppDensity` folds it onto 'comfortable'.
+  document.documentElement.setAttribute('data-density', normalizeAppDensity(density) === 'comfortable' ? 'comfortable' : 'compact');
+}
+
+/** Collapse the three-valued list `Density` onto the app's two-valued setting. */
+export function normalizeAppDensity(density: unknown): Density {
+  return density === 'comfortable' || density === 'cozy' ? 'comfortable' : 'compact';
+}
+
+/** v1 -> v2 persisted density. The old 3-way setting put cozy on the air block and
+ *  comfortable/compact on Console geometry, so cozy becomes 'comfortable' (air) and the
+ *  rest become 'compact' (Console). */
+export function migrateStoredDensity(density: unknown): Density {
+  return density === 'cozy' ? 'comfortable' : 'compact';
 }
 
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {
@@ -328,7 +342,7 @@ export const useThemeStore = create<ThemeState>()(
       cvdSafe: false,
       highContrast: false,
       reduceMotion: false,
-      density: DEFAULT_DENSITY,
+      density: 'compact' as Density,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         const brightness = resolveBrightness(get().brightnessByMode, isLightTheme(id, get().customTheme));
@@ -390,7 +404,8 @@ export const useThemeStore = create<ThemeState>()(
         set({ reduceMotion: enabled });
         storeBus.emit('appearance:changed', { field: 'reduceMotion', value: enabled ? 'on' : 'off' });
       },
-      setDensity: (density: Density) => {
+      setDensity: (next: Density) => {
+        const density = normalizeAppDensity(next);
         applyDensity(density);
         set({ density });
         storeBus.emit('appearance:changed', { field: 'density', value: density });
@@ -399,7 +414,7 @@ export const useThemeStore = create<ThemeState>()(
     {
       name: 'persona-theme',
       storage: createDedupedJSONStorage(),
-      version: 1,
+      version: 2,
       // v0 kept one level for both modes, and a light theme read the shared default 'low' as Dimmer.
       // A saved dark level is kept as the dark pick; a saved light level cannot be told apart from
       // that default, so light restarts at Standard.
@@ -408,6 +423,10 @@ export const useThemeStore = create<ThemeState>()(
         if (from < 1) {
           const wasLight = p.themeId ? isLightTheme(p.themeId, p.customTheme) : false;
           p.brightnessByMode = !wasLight && p.brightness ? { dark: p.brightness } : {};
+        }
+        // v2: density became two choices (Console | Comfortable); see migrateStoredDensity.
+        if (from < 2 && p.density !== undefined) {
+          p.density = migrateStoredDensity(p.density);
         }
         return p as ThemeState;
       },
@@ -435,7 +454,7 @@ export const useThemeStore = create<ThemeState>()(
           applyCvdSafe(state.cvdSafe ?? false);
           applyHighContrast(state.highContrast ?? false);
           applyReduceMotion(state.reduceMotion ?? false);
-          applyDensity(isDensity(state.density) ? state.density : DEFAULT_DENSITY);
+          applyDensity(isDensity(state.density) ? state.density : 'compact');
         }
       },
     }

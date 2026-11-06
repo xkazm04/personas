@@ -12,7 +12,7 @@ export function SetupHelp() {
   const tips = [st.wizard_help_same_network, st.wizard_help_private, st.wizard_help_firewall, st.wizard_help_open_devices];
 
   return (
-    <section data-testid="wizard-setup-help" className="rounded-card border border-border bg-secondary/20 p-4 space-y-2">
+    <section data-testid="wizard-setup-help" className="rounded-card border border-border bg-surface-1 p-4 space-y-2">
       <h3 className="flex items-center gap-2 typo-body text-foreground">
         <LifeBuoy className="w-4 h-4 text-primary" aria-hidden />
         {st.wizard_help_title}

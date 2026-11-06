@@ -122,15 +122,15 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
             value={credentialName ?? ''}
             onChange={(e) => onCredentialNameChange(e.target.value)}
             placeholder={multiSelect ? 'My Codebases' : 'My Codebase'}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
           />
         </div>
       )}
 
       {loadError ? (
         <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center">
-            <AlertTriangle className="w-7 h-7 text-amber-400/80" />
+          <div className="w-14 h-14 rounded-card bg-status-warning/10 border border-status-warning/15 flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-status-warning/80" />
           </div>
           <div className="space-y-1">
             <p className="typo-body text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
@@ -139,7 +139,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           <button
             type="button"
             onClick={() => void loadProjects()}
-            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body bg-status-warning/15 text-status-warning border border-status-warning/20 hover:bg-status-warning/25 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
@@ -147,7 +147,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         </div>
       ) : !loading && projects.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-card bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center">
             <Code2 className="w-7 h-7 text-indigo-400/60" />
           </div>
           <div className="space-y-1">
@@ -198,7 +198,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-card typo-body text-foreground hover:text-foreground/70 transition-colors"
+          className="px-4 py-2 rounded-card typo-body text-foreground hover:text-ink-2 transition-colors"
         >
           {t.common.cancel}
         </button>
@@ -214,13 +214,13 @@ function ProjectListGhost() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="w-full flex items-start gap-3 p-3 rounded-modal border border-primary/10 animate-fade-in"
+          className="w-full flex items-start gap-3 p-3 rounded-modal border border-hair animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="w-5 h-5 mt-0.5 rounded bg-primary/[0.06] shrink-0" />
+          <span className="w-5 h-5 mt-0.5 rounded-interactive bg-primary/[0.06] shrink-0" />
           <div className="min-w-0 flex-1 space-y-1.5">
-            <span className={`block h-3.5 rounded bg-primary/[0.06] ${widths[i % widths.length]}`} />
-            <span className="block h-2.5 w-56 rounded bg-primary/[0.06]" />
+            <span className={`block h-3.5 rounded-interactive bg-primary/[0.06] ${widths[i % widths.length]}`} />
+            <span className="block h-2.5 w-56 rounded-interactive bg-primary/[0.06]" />
           </div>
         </div>
       ))}

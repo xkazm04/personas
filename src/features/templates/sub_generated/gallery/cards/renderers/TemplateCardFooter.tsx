@@ -22,7 +22,7 @@ export function TemplateCardFooter({
 }: TemplateCardFooterProps) {
   const { t } = useTranslation();
   return (
-    <div className="px-4 py-3.5 border-t border-primary/5 flex items-center justify-between">
+    <div className="px-4 py-3.5 border-t border-hair flex items-center justify-between">
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -58,7 +58,7 @@ export function TemplateCardFooter({
               e.stopPropagation();
               onViewFlows();
             }}
-            className="px-2.5 py-1.5 typo-body rounded-modal bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1.5"
+            className="px-2.5 py-1.5 typo-body rounded-modal bg-role-agent/8 text-role-agent/70 hover:bg-role-agent/15 transition-colors inline-flex items-center gap-1.5"
           >
             <Workflow className="w-3.5 h-3.5" />
             {displayFlows.length}

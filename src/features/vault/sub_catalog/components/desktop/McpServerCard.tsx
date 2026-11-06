@@ -15,9 +15,9 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
   const dd = t.vault.desktop_discovery;
   const envCount = Object.keys(server.env).length;
   return (
-    <div className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20">
-      <div className="w-8 h-8 rounded-card flex items-center justify-center border bg-cyan-500/10 border-cyan-500/20">
-        <Monitor className="w-4 h-4 text-cyan-400" />
+    <div className="flex items-center gap-3 p-3 rounded-modal border border-hair bg-surface-1">
+      <div className="w-8 h-8 rounded-card flex items-center justify-center border bg-role-highlight/10 border-role-highlight/20">
+        <Monitor className="w-4 h-4 text-role-highlight" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="typo-body text-foreground">{server.label}</p>
@@ -29,7 +29,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
         )}
       </div>
       {imported ? (
-        <span className="flex items-center gap-1 typo-caption text-emerald-400">
+        <span className="flex items-center gap-1 typo-caption text-status-success">
           <CheckCircle2 className="w-3.5 h-3.5" />
           {t.common.imported}
         </span>
@@ -38,7 +38,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
           type="button"
           onClick={onImport}
           disabled={importing}
-          className="px-3 py-1.5 typo-caption text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-card hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 typo-caption text-role-highlight bg-role-highlight/10 border border-role-highlight/20 rounded-card hover:bg-role-highlight/20 transition-colors disabled:opacity-50"
         >
           {importing ? (
             <LoadingSpinner size="sm" />

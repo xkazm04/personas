@@ -90,7 +90,7 @@ export function PreviewPhase() {
             >
               <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.text}`} />
               <div className="flex-1 min-w-0">
-                <p className="typo-body text-foreground/90">
+                <p className="typo-body text-ink-1">
                   <span className={`${AI_STATUS.text} font-medium`}>{dp.auto_provision}</span>{' '}
                   {tx(dp.auto_provision_hint, { label: result.connector.label })}
                 </p>
@@ -130,7 +130,7 @@ export function PreviewPhase() {
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={tx(t.vault.credential_forms.credential_suffix, { name: result.connector.label })}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 
@@ -144,7 +144,7 @@ export function PreviewPhase() {
 
       {oauthStatusMessage && !oauthStatusMessage.success && (
         // eslint-disable-next-line custom/prefer-status-badge -- full-width error banner
-        <div className="typo-body px-3 py-2 rounded-card bg-red-500/10 border border-red-500/20 text-red-400">
+        <div className="typo-body px-3 py-2 rounded-card bg-status-error/10 border border-status-error/20 text-status-error">
           {oauthStatusMessage.message}
         </div>
       )}

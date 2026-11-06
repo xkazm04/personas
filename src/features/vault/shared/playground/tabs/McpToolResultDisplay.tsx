@@ -26,12 +26,12 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {/* Status line */}
       <div className="flex items-center gap-3">
         {result.is_error ? (
-          <span className="flex items-center gap-1 px-2 py-1 rounded typo-body bg-red-500/15 text-red-400 border border-red-500/25">
+          <span className="flex items-center gap-1 px-2 py-1 rounded-interactive typo-body bg-status-error/15 text-status-error border border-status-error/25">
             <AlertCircle className="w-3 h-3" />
             {t.vault.playground.mcp_error}
           </span>
         ) : (
-          <span className="flex items-center gap-1 px-2 py-1 rounded typo-body bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+          <span className="flex items-center gap-1 px-2 py-1 rounded-interactive typo-body bg-status-success/15 text-status-success border border-status-success/25">
             <Check className="w-3 h-3" />
             {t.vault.playground.mcp_success}
           </span>
@@ -46,7 +46,7 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {result.content.map((block, i) => (
         <div key={i} className="rounded-card border border-primary/8 overflow-hidden">
           {block.type !== 'text' && (
-            <div className="px-3 py-1 typo-body text-foreground bg-secondary/20 border-b border-primary/5">
+            <div className="px-3 py-1 typo-body text-foreground bg-surface-1 border-b border-hair">
               {block.type}
             </div>
           )}

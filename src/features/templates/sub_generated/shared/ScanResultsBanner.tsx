@@ -130,7 +130,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={`typo-body ${config.text}`}>{finding.title}</span>
-            <span className="typo-body px-1.5 py-0.5 rounded bg-secondary/5 text-foreground uppercase tracking-wider">
+            <span className="typo-body px-1.5 py-0.5 rounded-interactive bg-secondary/5 text-foreground uppercase tracking-wider">
               {CATEGORY_LABELS[finding.category]}
             </span>
           </div>
@@ -151,7 +151,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
             <p className="typo-body uppercase tracking-wider text-foreground mb-1">
               {t.templates.scan.source_label} <span className="text-foreground">{finding.source}</span>
             </p>
-            <pre className="text-sm text-foreground whitespace-pre-wrap font-mono bg-black/20 rounded-modal px-2.5 py-2 leading-relaxed">
+            <pre className="typo-body text-foreground whitespace-pre-wrap font-mono bg-black/20 rounded-modal px-2.5 py-2 leading-relaxed">
               {finding.context}
             </pre>
           </div>
@@ -182,7 +182,7 @@ function SeveritySection({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground/80 transition-colors mb-1.5 w-full"
+        className="flex items-center gap-2 typo-body text-foreground hover:text-ink-2 transition-colors mb-1.5 w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         {icon}
@@ -207,11 +207,11 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   // Scanning in progress
   if (scanning) {
     return (
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-blue-500/15 bg-blue-500/5 ${className}`}>
-        <LoadingSpinner className="text-blue-400/60 flex-shrink-0" />
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-status-info/15 bg-status-info/5 ${className}`}>
+        <LoadingSpinner className="text-status-info/60 flex-shrink-0" />
         <div>
-          <p className="typo-body text-blue-300/80">{t.templates.scan.scanning_draft}</p>
-          <p className="typo-body text-blue-300/50">{t.templates.scan.checking_unsafe}</p>
+          <p className="typo-body text-status-info/80">{t.templates.scan.scanning_draft}</p>
+          <p className="typo-body text-status-info/50">{t.templates.scan.checking_unsafe}</p>
         </div>
       </div>
     );
@@ -223,11 +223,11 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   // All clear
   if (result.passed && result.info.length === 0) {
     return (
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
-        <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-status-success/15 bg-status-success/5 ${className}`}>
+        <ShieldThumbsUpIllustration className="text-status-success flex-shrink-0" />
         <div>
-          <p className="typo-body text-emerald-300/80">{t.templates.scan.scan_passed}</p>
-          <p className="typo-body text-emerald-300/50">{t.templates.scan.no_concerns}</p>
+          <p className="typo-body text-status-success/80">{t.templates.scan.scan_passed}</p>
+          <p className="typo-body text-status-success/50">{t.templates.scan.no_concerns}</p>
         </div>
       </div>
     );
@@ -236,12 +236,12 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   // Passed with info only
   if (result.passed && result.info.length > 0) {
     return (
-      <div className={`rounded-modal border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
+      <div className={`rounded-modal border border-status-success/15 bg-status-success/5 ${className}`}>
         <div className="flex items-center gap-3 px-4 py-3">
-          <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
+          <ShieldThumbsUpIllustration className="text-status-success flex-shrink-0" />
           <div className="flex-1">
-            <p className="typo-body text-emerald-300/80">{t.templates.scan.scan_passed}</p>
-            <p className="typo-body text-emerald-300/50">
+            <p className="typo-body text-status-success/80">{t.templates.scan.scan_passed}</p>
+            <p className="typo-body text-status-success/50">
               {t.templates.scan.info_notes.replace('{count}', String(result.info.length))}
             </p>
           </div>
@@ -249,7 +249,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         <div className="px-4 pb-3">
           <SeveritySection
             label={t.templates.scan.informational_label}
-            icon={<Info className="w-3 h-3 text-blue-400/50" />}
+            icon={<Info className="w-3 h-3 text-status-info/50" />}
             findings={result.info}
             defaultOpen={false}
           />
@@ -260,19 +260,19 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
 
   // Findings detected
   const hasCritical = result.critical.length > 0;
-  const borderColor = hasCritical ? 'border-red-500/20' : 'border-amber-500/20';
-  const bgColor = hasCritical ? 'bg-red-500/5' : 'bg-amber-500/5';
-  const titleColor = hasCritical ? 'text-red-300/80' : 'text-amber-300/80';
-  const subtitleColor = hasCritical ? 'text-red-300/50' : 'text-amber-300/50';
+  const borderColor = hasCritical ? 'border-status-error/20' : 'border-status-warning/20';
+  const bgColor = hasCritical ? 'bg-status-error/5' : 'bg-status-warning/5';
+  const titleColor = hasCritical ? 'text-status-error/80' : 'text-status-warning/80';
+  const subtitleColor = hasCritical ? 'text-status-error/50' : 'text-status-warning/50';
 
   return (
     <div className={`rounded-modal border ${borderColor} ${bgColor} ${className}`}>
       {/* Header */}
       <div className="flex items-start gap-3 px-4 py-3">
         {hasCritical ? (
-          <ShieldSearchIllustration className="text-red-400 flex-shrink-0" />
+          <ShieldSearchIllustration className="text-status-error flex-shrink-0" />
         ) : (
-          <ShieldAlert className="w-4.5 h-4.5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <ShieldAlert className="w-4.5 h-4.5 text-status-warning flex-shrink-0 mt-0.5" />
         )}
         <div className="flex-1 min-w-0">
           <p className={`typo-body ${titleColor}`}>
@@ -290,12 +290,12 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         {/* Summary badges */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {result.critical.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-red-500/15 text-red-400 border border-red-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-status-error/15 text-status-error border border-status-error/20">
               {result.critical.length} {t.templates.scan.critical_label}
             </span>
           )}
           {result.warnings.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-amber-500/15 text-amber-400 border border-amber-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-status-warning/15 text-status-warning border border-status-warning/20">
               {result.warnings.length} {t.templates.scan.warnings_label}
             </span>
           )}
@@ -306,19 +306,19 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
       <div className="px-4 pb-3 space-y-3">
         <SeveritySection
           label={t.templates.scan.critical_label}
-          icon={<ShieldX className="w-3 h-3 text-red-400/50" />}
+          icon={<ShieldX className="w-3 h-3 text-status-error/50" />}
           findings={result.critical}
           defaultOpen={true}
         />
         <SeveritySection
           label={t.templates.scan.warnings_label}
-          icon={<AlertTriangle className="w-3 h-3 text-amber-400/50" />}
+          icon={<AlertTriangle className="w-3 h-3 text-status-warning/50" />}
           findings={result.warnings}
           defaultOpen={result.critical.length === 0}
         />
         <SeveritySection
           label={t.templates.scan.informational_label}
-          icon={<Info className="w-3 h-3 text-blue-400/50" />}
+          icon={<Info className="w-3 h-3 text-status-info/50" />}
           findings={result.info}
           defaultOpen={false}
         />

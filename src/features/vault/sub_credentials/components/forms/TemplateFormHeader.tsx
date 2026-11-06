@@ -29,7 +29,7 @@ export function TemplateFormHeader({
         <button
           type="button"
           onClick={onBack}
-          className="p-2 -ml-2 rounded-card hover:bg-secondary/50 transition-colors"
+          className="p-2 -ml-2 rounded-card hover:bg-surface-2 transition-colors"
           aria-label={cf.back_to_catalog}
         >
           <ArrowLeft className="w-4 h-4 text-foreground" />
@@ -62,7 +62,7 @@ export function TemplateFormHeader({
           <button
             type="button"
             onClick={onDesktopDetect}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-orange-500/20 bg-orange-500/8 hover:bg-orange-500/15 text-orange-300 typo-body transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-status-warning/20 bg-status-warning/8 hover:bg-status-warning/15 text-status-warning typo-body transition-colors"
           >
             <Monitor className="w-3.5 h-3.5" />
             {cf.detect}
@@ -74,7 +74,7 @@ export function TemplateFormHeader({
             type="button"
             onClick={onAutoSetup}
             data-testid="vault-auto-add-btn"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 typo-body transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-role-highlight/20 bg-role-highlight/8 hover:bg-role-highlight/15 text-role-highlight typo-body transition-colors"
           >
             <Bot className="w-3.5 h-3.5" />
             {cf.auto_add}

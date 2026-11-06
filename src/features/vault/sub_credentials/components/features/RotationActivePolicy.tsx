@@ -87,7 +87,7 @@ export function RotationActivePolicy({
           <Button
             variant="ghost"
             size="icon-sm"
-            icon={isRemovingPolicy ? <LoadingSpinner size="xs" className="text-red-400/70" /> : <Trash2 className="w-3 h-3 text-red-400/50" />}
+            icon={isRemovingPolicy ? <LoadingSpinner size="xs" className="text-status-error/70" /> : <Trash2 className="w-3 h-3 text-status-error/50" />}
             onClick={async () => {
               setIsRemovingPolicy(true);
               onError(null);
@@ -106,7 +106,7 @@ export function RotationActivePolicy({
             disabled={isRemovingPolicy}
             data-testid="rotation-delete-policy-btn"
             title={t.vault.rotation_section.remove_policy_tooltip}
-            className="hover:bg-red-500/10"
+            className="hover:bg-status-error/10"
           />
         </div>
       </div>
@@ -167,7 +167,7 @@ export function RotationActivePolicy({
                 setIsEditingPeriod(false);
               }}
               data-testid="rotation-cancel-period-btn"
-              className="text-foreground hover:text-foreground/90"
+              className="text-foreground hover:text-ink-1"
             >
               {t.common.cancel}
             </Button>
@@ -179,7 +179,7 @@ export function RotationActivePolicy({
             iconRight={<Pencil className="w-2.5 h-2.5 text-foreground ml-0.5" />}
             onClick={() => setIsEditingPeriod(true)}
             data-testid="rotation-edit-period-btn"
-            className="bg-secondary/40 hover:bg-secondary/60 border border-primary/15 text-foreground"
+            className="bg-surface-2 hover:bg-surface-2 border border-hair text-foreground"
           >
             <span className="font-mono">{rotationStatus.rotation_interval_days ?? 90}</span>
             <span>{t.vault.rotation_section.days}</span>

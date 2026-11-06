@@ -396,21 +396,21 @@ export default function GeneratedReviewsTab({
 
 function TrendingCarouselGhost() {
   return (
-    <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0" aria-hidden="true">
+    <div className="px-4 py-3 border-b border-hair flex-shrink-0" aria-hidden="true">
       <div className="flex items-center gap-2 mb-2.5">
-        <span className="w-4 h-4 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
-        <span className="h-3 w-24 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
+        <span className="w-4 h-4 rounded-interactive bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
+        <span className="h-3 w-24 rounded-interactive bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
       </div>
       <div className="flex gap-2.5 overflow-x-auto pb-1">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="w-[200px] p-3 rounded-modal bg-primary/[0.03] border border-primary/10 flex-shrink-0 animate-fade-in"
+            className="w-[200px] p-3 rounded-modal bg-primary/[0.03] border border-hair flex-shrink-0 animate-fade-in"
             style={{ animationDelay: `${140 + i * 35}ms` }}
           >
-            <span className="block h-3.5 w-3/4 rounded bg-primary/[0.06]" />
+            <span className="block h-3.5 w-3/4 rounded-interactive bg-primary/[0.06]" />
             <div className="flex items-center gap-2 mt-2">
-              <span className="h-2.5 w-10 rounded bg-primary/[0.06]" />
+              <span className="h-2.5 w-10 rounded-interactive bg-primary/[0.06]" />
               <span className="h-5 w-5 rounded-full bg-primary/[0.06]" />
             </div>
           </div>

@@ -198,10 +198,10 @@ export function ResourcePicker({
       titleId="resource-picker-title"
       containerClassName="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       maxWidthClass="max-w-3xl"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[90vh]"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden max-h-[90vh]"
     >
       <div data-testid="resource-picker" className="contents" />
-      <header className="shrink-0 px-6 pt-5 pb-4 border-b border-primary/10 flex items-start justify-between gap-3">
+      <header className="shrink-0 px-6 pt-5 pb-4 border-b border-hair flex items-start justify-between gap-3">
         <div>
           <h2 id="resource-picker-title" className="typo-title-lg text-foreground">
             {tx(t.vault.resource_picker.scope_title, { label: connectorLabel })}
@@ -305,7 +305,7 @@ export function ResourcePicker({
                       {stalePicks.map((p) => (
                         <span
                           key={p.id}
-                          className="typo-caption px-2 py-0.5 rounded bg-status-warning/20 text-status-warning line-through"
+                          className="typo-caption px-2 py-0.5 text-status-warning line-through"
                           title={p.id}
                         >
                           {p.label}
@@ -317,7 +317,7 @@ export function ResourcePicker({
                     type="button"
                     onClick={dropStale}
                     data-testid={`resource-drop-stale-${spec.id}`}
-                    className="typo-caption px-2 py-1 rounded-interactive bg-status-warning/20 hover:bg-status-warning/30 text-status-warning transition-colors flex-shrink-0"
+                    className="typo-caption px-2 py-1 hover:bg-status-warning/30 text-status-warning transition-colors flex-shrink-0"
                   >
                     <DebtText k="auto_drop_stale_1ac8b7f6" />
                   </button>
@@ -335,10 +335,10 @@ export function ResourcePicker({
                         setSearch((s) => ({ ...s, [spec.id]: e.target.value }))
                       }
                       placeholder={tx(t.vault.resource_picker.search_placeholder, { label: spec.label.toLowerCase() })}
-                      className="w-full pl-8 pr-3 py-1.5 typo-body bg-secondary/50 border border-border rounded-input text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
+                      className="w-full pl-8 pr-3 py-1.5 typo-body bg-surface-2 border border-border rounded-input text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
                     />
                   </div>
-                  <div className="max-h-48 overflow-y-auto border border-border rounded-input bg-secondary/20 divide-y divide-border">
+                  <div className="max-h-48 overflow-y-auto border border-border rounded-input bg-surface-1 divide-y divide-border">
                     {st.loading && (
                       <p className="px-3 py-2 typo-caption text-foreground">
                         <DebtText k="auto_loading_33ce4174" />
@@ -362,7 +362,7 @@ export function ResourcePicker({
                           }`}
                         >
                           <span
-                            className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                            className={`w-4 h-4 rounded-interactive border flex items-center justify-center flex-shrink-0 ${
                               sel
                                 ? 'bg-primary border-primary'
                                 : 'border-foreground/30'
@@ -391,7 +391,7 @@ export function ResourcePicker({
         })}
       </div>
 
-      <footer className="shrink-0 px-6 py-4 border-t border-primary/10 flex items-center justify-between gap-3">
+      <footer className="shrink-0 px-6 py-4 border-t border-hair flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={handleSkip}

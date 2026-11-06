@@ -48,24 +48,24 @@ export default function DesignReviewRunner({
         onClose={() => { if (!isRunning) onClose(); }}
         titleId="design-runner-title"
         size="lg"
-        panelClassName="animate-fade-slide-in max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+        panelClassName="animate-fade-slide-in max-h-[85vh] bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden"
         staggerChildren={false}
       >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">
+          <div className="flex items-center justify-between px-4 py-4 border-b border-hair bg-primary/5">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-                <Play className="w-4 h-4 text-violet-400" />
+              <div className="w-8 h-8 rounded-card bg-role-agent/15 border border-role-agent/25 flex items-center justify-center">
+                <Play className="w-4 h-4 text-role-agent" />
               </div>
               <div>
-                <h3 id="design-runner-title" className="typo-heading text-foreground/90">{t.templates.generation.runner_title}</h3>
+                <h3 id="design-runner-title" className="typo-heading text-ink-1">{t.templates.generation.runner_title}</h3>
                 <p className="typo-body text-foreground">
                   {isRunning ? t.templates.generation.runner_running : result ? t.templates.generation.runner_complete : t.templates.generation.runner_configure}
                 </p>
               </div>
             </div>
             {!isRunning && (
-              <button type="button" onClick={onClose} className="w-8 h-8 rounded-card hover:bg-secondary/50 flex items-center justify-center transition-colors">
+              <button type="button" onClick={onClose} className="w-8 h-8 rounded-card hover:bg-surface-2 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-foreground" />
               </button>
             )}
@@ -74,22 +74,22 @@ export default function DesignReviewRunner({
           {/* Persona context banner */}
           {!state.hasStarted && (
             <div className={`px-4 py-3 border-b flex items-center gap-3 ${
-              state.hasPersona ? 'border-primary/10 bg-violet-500/5' : 'border-amber-500/20 bg-amber-500/5'
+              state.hasPersona ? 'border-hair bg-role-agent/5' : 'border-status-warning/20 bg-status-warning/5'
             }`}>
               {state.hasPersona ? (
                 <>
-                  <div className="w-7 h-7 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 rounded-card bg-role-agent/15 border border-role-agent/25 flex items-center justify-center flex-shrink-0">
                     <span className="typo-body">AI</span>
                   </div>
                   <div className="min-w-0">
-                    <p className="typo-body text-foreground/90 truncate">{personaName}</p>
+                    <p className="typo-body text-ink-1 truncate">{personaName}</p>
                     {personaDescription && <p className="typo-body text-foreground truncate">{personaDescription}</p>}
                   </div>
                 </>
               ) : (
                 <>
-                  <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <p className="typo-body text-amber-400">{t.templates.generation.no_persona_warning}</p>
+                  <AlertCircle className="w-4 h-4 text-status-warning flex-shrink-0" />
+                  <p className="typo-body text-status-warning">{t.templates.generation.no_persona_warning}</p>
                 </>
               )}
             </div>
@@ -97,7 +97,7 @@ export default function DesignReviewRunner({
 
           {/* Mode selection */}
           {!state.hasStarted && (
-            <div className="px-4 py-4 border-b border-primary/10 space-y-4">
+            <div className="px-4 py-4 border-b border-hair space-y-4">
               <ModeTabBar mode={state.mode} onModeChange={state.setMode} batchCount={state.batchTemplates.length} />
               {state.mode === 'predefined' && <TemplateSourcePanel mode="predefined" />}
               {state.mode === 'custom' && (
@@ -128,7 +128,7 @@ export default function DesignReviewRunner({
 
           {/* Progress Bar */}
           {isRunning && state.progressInfo && (
-            <div className="px-4 py-3 border-b border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
+            <div className="px-4 py-3 border-b border-hair bg-primary/5" aria-live="polite" aria-atomic="true">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="typo-body text-foreground">
                   {t.templates.generation.template_progress.replace('{current}', String(state.progressInfo.current)).replace('{total}', String(state.progressInfo.total))}
@@ -139,16 +139,16 @@ export default function DesignReviewRunner({
                 </span>
               </div>
               {state.progressInfo.currentTemplateName && (
-                <p className="typo-body text-violet-400/70 mb-2 truncate">{t.templates.generation.generating.replace('{name}', state.progressInfo.currentTemplateName!)}</p>
+                <p className="typo-body text-role-agent/70 mb-2 truncate">{t.templates.generation.generating.replace('{name}', state.progressInfo.currentTemplateName!)}</p>
               )}
-              <div className="w-full h-2 rounded-full bg-secondary/50 border border-primary/10 overflow-hidden">
+              <div className="w-full h-2 rounded-full bg-surface-2 border border-hair overflow-hidden">
                 <div
                   role="progressbar"
                   aria-valuenow={state.progressInfo.pct}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label={`Design review progress: ${state.progressInfo.pct}%`}
-                  className="animate-fade-in h-full rounded-full bg-violet-500/80"
+                  className="animate-fade-in h-full rounded-full bg-role-agent/80"
                   style={{ width: `${state.progressInfo.pct}%` }}
                 />
               </div>
@@ -162,9 +162,9 @@ export default function DesignReviewRunner({
           {result && <ResultSummary result={result} />}
 
           {/* Footer actions */}
-          <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-primary/10">
+          <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-hair">
             {isRunning ? (
-              <button type="button" onClick={onCancel} className="px-4 py-2 typo-body rounded-modal bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-2">
+              <button type="button" onClick={onCancel} className="px-4 py-2 typo-body rounded-modal bg-status-error/10 text-status-error border border-status-error/20 hover:bg-status-error/20 transition-colors flex items-center gap-2">
                 <Square className="w-3.5 h-3.5" />{t.common.cancel}
               </button>
             ) : !state.hasStarted ? (
@@ -172,7 +172,7 @@ export default function DesignReviewRunner({
                 type="button"
                 onClick={state.handleStart}
                 disabled={!state.hasPersona || (state.mode === 'custom' && state.validCustomCount === 0) || (state.mode === 'batch' && state.filteredBatchTemplates.length === 0)}
-                className="px-4 py-2 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-4 py-2 typo-body rounded-modal bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 <Play className="w-3.5 h-3.5" />
                 {state.mode === 'predefined' ? t.templates.generation.start_review_predefined
@@ -182,12 +182,12 @@ export default function DesignReviewRunner({
             ) : (
               <div className="flex items-center gap-2">
                 {lines.length > 0 && (
-                  <button type="button" onClick={state.handleCopyLog} className="px-4 py-2 typo-body rounded-modal bg-secondary/50 text-foreground border border-primary/15 hover:bg-secondary/80 hover:text-foreground/95 transition-colors flex items-center gap-2">
-                    {state.copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <button type="button" onClick={state.handleCopyLog} className="px-4 py-2 typo-body rounded-modal bg-surface-2 text-foreground border border-hair hover:bg-secondary/80 hover:text-ink-1 transition-colors flex items-center gap-2">
+                    {state.copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
                     {state.copied ? t.templates.generation.copied_log : t.templates.generation.copy_log}
                   </button>
                 )}
-                <button type="button" onClick={onClose} className="px-4 py-2 typo-body rounded-modal bg-primary/10 text-foreground border border-primary/20 hover:bg-primary/20 transition-colors">{t.common.close}</button>
+                <button type="button" onClick={onClose} className="px-4 py-2 typo-body rounded-modal bg-primary/10 text-foreground border border-hair hover:bg-primary/20 transition-colors">{t.common.close}</button>
               </div>
             )}
           </div>

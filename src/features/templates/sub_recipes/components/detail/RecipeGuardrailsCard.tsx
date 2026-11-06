@@ -29,17 +29,17 @@ export function RecipeGuardrailsCard({ recipe }: RecipeGuardrailsCardProps) {
       ? { label: t.recipes_catalog.review_mode_always, cls: 'border-status-warning/40 bg-status-warning/10 text-status-warning' }
       : reviewSetting === 'trust_llm'
         ? { label: t.recipes_catalog.review_mode_conditional, cls: 'border-primary/35 bg-primary/10 text-primary' }
-        : { label: t.recipes_catalog.review_mode_never, cls: 'border-card-border bg-secondary/40 text-foreground' };
+        : { label: t.recipes_catalog.review_mode_never, cls: 'border-card-border bg-surface-2 text-foreground' };
 
   const memorySetting = generationSettings?.memories;
   const memoryBadge = memorySetting === undefined
     ? undefined
     : memorySetting === 'on'
       ? { label: t.recipes_catalog.memory_on_label, cls: 'border-status-success/35 bg-status-success/10 text-status-success' }
-      : { label: t.recipes_catalog.memory_off_label, cls: 'border-card-border bg-secondary/40 text-foreground' };
+      : { label: t.recipes_catalog.memory_off_label, cls: 'border-card-border bg-surface-2 text-foreground' };
 
   return (
-    <section className="mx-4 mb-6 rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1" data-testid="recipe-guardrails-card">
+    <section className="mx-4 mb-6 rounded-card border border-card-border bg-surface-1 p-4 shadow-elevation-1" data-testid="recipe-guardrails-card">
       <h4 className="typo-label text-foreground mb-3">
         {t.recipes_catalog.guardrails_heading}
       </h4>
@@ -86,13 +86,13 @@ function PolicyBlock({ icon: Icon, label, badge, body }: PolicyBlockProps) {
         <Icon className="w-3.5 h-3.5 text-foreground shrink-0" />
         <span className="typo-caption text-foreground">{label}</span>
         {badge && (
-          <span className={`typo-label px-1.5 py-0.5 rounded border ${badge.cls}`}>
+          <span className={`typo-label px-1.5 py-0.5 rounded-interactive border ${badge.cls}`}>
             {badge.label}
           </span>
         )}
       </div>
       {body && (
-        <p className="typo-caption text-foreground/90">{body}</p>
+        <p className="typo-caption text-ink-1">{body}</p>
       )}
     </div>
   );

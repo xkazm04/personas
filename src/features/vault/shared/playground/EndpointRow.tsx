@@ -9,14 +9,14 @@ import { Button } from '@/features/shared/components/buttons';
 // -- Method badge colors ------------------------------------------
 
 const METHOD_STYLES: Record<string, string> = {
-  GET: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  POST: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  PUT: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  PATCH: 'bg-violet-500/15 text-violet-400 border-violet-500/25',
-  DELETE: 'bg-red-500/15 text-red-400 border-red-500/25',
+  GET: 'bg-status-success/15 text-status-success border-status-success/25',
+  POST: 'bg-status-info/15 text-status-info border-status-info/25',
+  PUT: 'bg-status-warning/15 text-status-warning border-status-warning/25',
+  PATCH: 'bg-role-agent/15 text-role-agent border-role-agent/25',
+  DELETE: 'bg-status-error/15 text-status-error border-status-error/25',
 };
 
-const DEFAULT_METHOD_STYLE = 'bg-secondary/30 text-foreground border-primary/10';
+const DEFAULT_METHOD_STYLE = 'bg-surface-1 text-foreground border-hair';
 
 // -- Component ----------------------------------------------------
 
@@ -33,11 +33,11 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
   const methodStyle = METHOD_STYLES[endpoint.method.toUpperCase()] || DEFAULT_METHOD_STYLE;
 
   return (
-    <div className="border border-primary/8 rounded-card overflow-hidden transition-colors hover:border-primary/15">
+    <div className="border border-primary/8 rounded-card overflow-hidden transition-colors hover:border-hair">
       {/* Compact row: the expander is a real button (it was a clickable
           div with role="row", unreachable by keyboard and silent about its
           state), and Try sits beside it rather than inside it. */}
-      <div className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-secondary/20 transition-colors">
+      <div className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-surface-1 transition-colors">
         <button
           type="button"
           onClick={onToggle}
@@ -51,7 +51,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
           )}
 
           <span
-            className={`px-2 py-0.5 rounded typo-heading uppercase border ${methodStyle} shrink-0 min-w-[52px] text-center`}
+            className={`px-2 py-0.5 rounded-interactive typo-heading uppercase border ${methodStyle} shrink-0 min-w-[52px] text-center`}
           >
             {endpoint.method.toUpperCase()}
           </span>
@@ -84,7 +84,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
       {/* Expanded detail */}
       {isExpanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-primary/5 bg-secondary/10 space-y-2">
+        <div className="px-3 pb-3 pt-1 border-t border-hair bg-secondary/10 space-y-2">
           {endpoint.description && (
             <p className="typo-body text-foreground">
               {endpoint.description}
@@ -96,7 +96,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               {endpoint.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-1.5 py-0.5 rounded typo-body text-foreground bg-secondary/40 border border-primary/8"
+                  className="px-1.5 py-0.5 rounded-interactive typo-body text-foreground bg-surface-2 border border-primary/8"
                 >
                   {tag}
                 </span>
@@ -106,7 +106,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.parameters.length > 0 && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase text-cyan-400/70">
+              <span className="typo-heading uppercase text-role-highlight/70">
                 {t.vault.playground.parameters}
               </span>
               <div className="space-y-0.5">
@@ -117,7 +117,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
                       {p.location}{p.required ? ` · ${t.common.required}` : ''}
                     </span>
                     {p.schema_type && (
-                      <span className="typo-body text-violet-400/60">{p.schema_type}</span>
+                      <span className="typo-body text-role-agent/60">{p.schema_type}</span>
                     )}
                     {p.description && (
                       <span className="typo-body text-foreground truncate">
@@ -132,7 +132,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.request_body && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase text-cyan-400/70">
+              <span className="typo-heading uppercase text-role-highlight/70">
                 {t.vault.shared.request_body}
               </span>
               <div className="typo-body text-foreground">
@@ -140,7 +140,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
                 {endpoint.request_body.required && ` · ${t.common.required}`}
               </div>
               {endpoint.request_body.schema_json && (
-                <pre className="typo-code text-foreground bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
+                <pre className="typo-code text-foreground bg-surface-1 rounded-interactive p-2 overflow-x-auto max-h-[120px]">
                   {prettyJson(endpoint.request_body.schema_json)}
                 </pre>
               )}
@@ -158,17 +158,17 @@ function TestBadge({ result, skipLabel }: { result: EndpointTestResult; skipLabe
   switch (result.verdict) {
     case 'running':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded typo-body text-blue-400/80 shrink-0">
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body text-status-info/80 shrink-0">
           <LoadingSpinner size="xs" />
         </span>
       );
     case 'passed':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 shrink-0">
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body bg-status-success/10 text-status-success border border-status-success/15 shrink-0">
           <CheckCircle2 className="w-3 h-3" />
           {result.httpStatus}
           {result.durationMs != null && (
-            <span className="flex items-center gap-0.5 text-emerald-400/50">
+            <span className="flex items-center gap-0.5 text-status-success/50">
               <Clock className="w-2.5 h-2.5" />
               {result.durationMs}ms
             </span>
@@ -177,11 +177,11 @@ function TestBadge({ result, skipLabel }: { result: EndpointTestResult; skipLabe
       );
     case 'failed':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded typo-body bg-red-500/10 text-red-400 border border-red-500/15 shrink-0">
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body bg-status-error/10 text-status-error border border-status-error/15 shrink-0">
           <XCircle className="w-3 h-3" />
           {result.httpStatus ?? 'ERR'}
           {result.durationMs != null && (
-            <span className="flex items-center gap-0.5 text-red-400/50">
+            <span className="flex items-center gap-0.5 text-status-error/50">
               <Clock className="w-2.5 h-2.5" />
               {result.durationMs}ms
             </span>
@@ -190,7 +190,7 @@ function TestBadge({ result, skipLabel }: { result: EndpointTestResult; skipLabe
       );
     case 'skipped':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded typo-body text-foreground shrink-0">
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body text-foreground shrink-0">
           <MinusCircle className="w-3 h-3" />
           {skipLabel}
         </span>

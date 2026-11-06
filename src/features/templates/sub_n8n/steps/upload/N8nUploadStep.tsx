@@ -52,7 +52,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   return (
     <div>
       {/* Mode tabs */}
-      <div className="flex items-center gap-1 mb-4 p-1 rounded-card bg-secondary/30 border border-primary/8">
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-card bg-surface-1 border border-primary/8">
         {modes.map((m) => (
           <button
             key={m.id}
@@ -60,8 +60,8 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             onClick={() => setMode(m.id)}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body transition-all ${
               mode === m.id
-                ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-elevation-1'
-                : 'text-foreground hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
+                ? 'bg-role-agent/15 text-role-agent border border-role-agent/25 shadow-elevation-1'
+                : 'text-foreground hover:text-ink-2 hover:bg-surface-2 border border-transparent'
             }`}
           >
             {m.icon}
@@ -144,17 +144,17 @@ function FileUploadTab({
         data-testid="n8n-upload-dropzone"
         className={`animate-fade-in relative flex flex-col items-center justify-center gap-4 p-12 rounded-modal border-2 border-dashed cursor-pointer transition-colors duration-200 ${
           isDragging
-            ? 'border-violet-400/60 bg-violet-500/10'
-            : 'border-primary/15 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30'
-        } focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            ? 'border-role-agent/60 bg-role-agent/10'
+            : 'border-hair bg-surface-1 hover:border-primary/30 hover:bg-surface-1'
+        } focus-visible:ring-2 focus-visible:ring-role-agent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
       >
         <DropZoneGlow active={isDragging} radius={12} label={t.templates.n8n.drop_file_here} />
         <div
           className={`animate-fade-in w-16 h-16 rounded-modal border flex items-center justify-center transition-colors duration-200 ${
-            isDragging ? 'bg-violet-500/25 border-violet-400/40' : 'bg-violet-500/15 border-violet-500/25'
+            isDragging ? 'bg-role-agent/25 border-role-agent/40' : 'bg-role-agent/15 border-role-agent/25'
           }`}
         >
-          <Upload className={`w-8 h-8 transition-colors duration-200 ${isDragging ? 'text-violet-300' : 'text-violet-400'}`} />
+          <Upload className={`w-8 h-8 transition-colors duration-200 ${isDragging ? 'text-role-agent' : 'text-role-agent'}`} />
         </div>
         <div className="text-center">
           <p className="typo-body text-foreground">
@@ -170,7 +170,7 @@ function FileUploadTab({
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button type="button" onClick={handleManualProceed} className="px-4 py-2.5 typo-heading rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
+          <button type="button" onClick={handleManualProceed} className="px-4 py-2.5 typo-heading rounded-modal bg-role-agent text-foreground hover:bg-role-agent transition-colors">
             {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
@@ -192,9 +192,9 @@ function PasteTab({
   const { t } = useTranslation();
   return (
     <div key="paste">
-      <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 overflow-hidden">
+      <div className="animate-fade-slide-in rounded-modal border border-hair bg-surface-1 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
-          <ClipboardPaste className="w-4 h-4 text-violet-400" />
+          <ClipboardPaste className="w-4 h-4 text-role-agent" />
           <span className="typo-body text-foreground">{t.templates.n8n.paste_workflow_json}</span>
           <span className="typo-body text-foreground ml-auto">
             {pasteText.length > 0 && formatFileSize(pasteText.length)}
@@ -217,8 +217,8 @@ function PasteTab({
             disabled={pastePreview?.kind !== 'valid'}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-modal typo-body transition-all ${
               pastePreview?.kind === 'valid'
-                ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
-                : 'bg-secondary/40 text-foreground border border-primary/10 disabled:cursor-not-allowed'
+                ? 'bg-role-agent/20 text-role-agent border border-role-agent/30 hover:bg-role-agent/30'
+                : 'bg-surface-2 text-foreground border border-hair disabled:cursor-not-allowed'
             }`}
           >
             <ChevronRight className="w-3.5 h-3.5" />
@@ -246,9 +246,9 @@ function UrlTab({
   const { t } = useTranslation();
   return (
     <div key="url">
-      <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 p-4 space-y-4">
+      <div className="animate-fade-slide-in rounded-modal border border-hair bg-surface-1 p-4 space-y-4">
         <div className="flex items-center gap-2">
-          <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
+          <Link2 className="w-4 h-4 text-role-agent flex-shrink-0" />
           <span className="typo-body text-foreground">{t.templates.n8n.import_from_url}</span>
         </div>
         <p className="typo-body text-foreground">
@@ -262,7 +262,7 @@ function UrlTab({
             onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
             aria-label={t.templates.n8n.url_aria}
             placeholder={t.templates.n8n.url_placeholder}
-            className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/15 typo-body text-foreground placeholder:text-foreground outline-none focus-visible:border-violet-500/40 transition-colors"
+            className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-hair typo-body text-foreground placeholder:text-foreground outline-none focus-visible:border-role-agent/40 transition-colors"
             data-testid="url-input"
           />
           <button
@@ -271,8 +271,8 @@ function UrlTab({
             disabled={urlFetching || !urlValue.trim()}
             className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body transition-all ${
               urlFetching || !urlValue.trim()
-                ? 'bg-secondary/40 text-foreground border border-primary/10 disabled:cursor-not-allowed'
-                : 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
+                ? 'bg-surface-2 text-foreground border border-hair disabled:cursor-not-allowed'
+                : 'bg-role-agent/20 text-role-agent border border-role-agent/30 hover:bg-role-agent/30'
             }`}
           >
             {urlFetching ? (
@@ -294,7 +294,7 @@ function UrlTab({
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button type="button" onClick={handleUrlImport} className="px-4 py-2.5 typo-heading rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
+          <button type="button" onClick={handleUrlImport} className="px-4 py-2.5 typo-heading rounded-modal bg-role-agent text-foreground hover:bg-role-agent transition-colors">
             {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>

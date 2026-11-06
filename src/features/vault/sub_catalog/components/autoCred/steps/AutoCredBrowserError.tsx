@@ -29,9 +29,9 @@ export function AutoCredBrowserError({
       className="animate-fade-slide-in space-y-4"
     >
       {/* Error banner */}
-      <div className="flex items-start gap-3 p-3 rounded-modal border border-red-500/20 bg-red-500/5">
-        <div className="w-8 h-8 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 text-red-400" />
+      <div className="flex items-start gap-3 p-3 rounded-modal border border-status-error/20 bg-status-error/5">
+        <div className="w-8 h-8 rounded-full bg-status-error/15 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-status-error" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -47,13 +47,13 @@ export function AutoCredBrowserError({
       {/* Persistent terminal log */}
       <div
         ref={scrollRef}
-        className="max-h-[26rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/30 p-3 typo-code space-y-1"
+        className="max-h-[26rem] overflow-y-auto rounded-modal border border-hair bg-black/30 p-3 typo-code space-y-1"
       >
         {logs.map((entry, i) => (
           <div key={i} className={`flex items-start gap-2 ${
-            entry.type === 'error' ? 'text-red-400' :
-            entry.type === 'warning' ? 'text-amber-400' :
-            entry.type === 'action' ? 'text-cyan-400' :
+            entry.type === 'error' ? 'text-status-error' :
+            entry.type === 'warning' ? 'text-status-warning' :
+            entry.type === 'action' ? 'text-role-highlight' :
             'text-foreground'
           }`}>
             <span className="text-foreground select-none shrink-0">
@@ -74,7 +74,7 @@ export function AutoCredBrowserError({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+            className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-surface-2 transition-colors"
           >
             {t.vault.auto_cred.setup_manually}
           </button>
@@ -82,7 +82,7 @@ export function AutoCredBrowserError({
             <button
               type="button"
               onClick={onRetry}
-              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-foreground rounded-modal typo-body transition-colors"
+              className="px-5 py-2 bg-role-highlight hover:bg-role-highlight text-foreground rounded-modal typo-body transition-colors"
             >
               {t.vault.auto_cred.retry}
             </button>

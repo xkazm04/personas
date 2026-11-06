@@ -41,16 +41,16 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
       aria-disabled={isBusy}
       onClick={() => { if (!isBusy) void onLoad(session); }}
       onKeyDown={(e) => { if (!isBusy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); void onLoad(session); } }}
-      className={`animate-fade-slide-in w-full flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 transition-colors text-left group ${isBusy ? 'opacity-50 pointer-events-none' : 'hover:bg-secondary/40 cursor-pointer'}`}
+      className={`animate-fade-slide-in w-full flex items-center gap-3 p-3 rounded-modal border border-hair bg-surface-1 transition-colors text-left group ${isBusy ? 'opacity-50 pointer-events-none' : 'hover:bg-surface-2 cursor-pointer'}`}
       data-testid={`n8n-session-card-${session.id}`}
     >
-      <div className="w-10 h-10 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
-        <span className="typo-code text-violet-400">
+      <div className="w-10 h-10 rounded-card bg-role-agent/10 border border-role-agent/15 flex items-center justify-center flex-shrink-0">
+        <span className="typo-code text-role-agent">
           {(STEP_META[session.step as N8nWizardStep]?.index ?? 0) + 1}/{WIZARD_STEPS.length}
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="typo-body text-foreground/90 truncate">
+        <p className="typo-body text-ink-1 truncate">
           {session.workflow_name}
         </p>
         <div className="flex items-center gap-2 mt-1">
@@ -69,19 +69,19 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
           type="button"
           onClick={(e) => void onDelete(e, session.id)}
           disabled={isBusy}
-          className="p-1.5 rounded-card text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
+          className="p-1.5 rounded-card text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
           title={t.templates.n8n.delete_session}
           data-testid={`n8n-session-delete-${session.id}`}
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
         {interrupted ? (
-          <span className="flex items-center gap-1 typo-body text-amber-400">
+          <span className="flex items-center gap-1 typo-body text-status-warning">
             <RotateCcw className="w-3 h-3" />
             {t.templates.n8n.retry_label}
           </span>
         ) : (
-          <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground" />
+          <ChevronRight className="w-4 h-4 text-foreground group-hover:text-ink-2" />
         )}
       </div>
     </div>
@@ -247,7 +247,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="typo-body text-foreground/90 uppercase tracking-wider">
+        <h3 className="typo-body text-ink-1 uppercase tracking-wider">
           {t.templates.n8n.previous_imports}
         </h3>
         {!showGhost && (
@@ -260,14 +260,14 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       <div className="space-y-1.5">
         {error && (
           <div
-            className="flex items-center justify-between gap-3 rounded-modal border border-red-500/20 bg-red-500/10 px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-modal border border-status-error/20 bg-status-error/10 px-3 py-2"
             aria-live="polite"
           >
-            <p className="typo-body text-red-400/80">{error}</p>
+            <p className="typo-body text-status-error/80">{error}</p>
             <button
               type="button"
               onClick={() => void fetchSessions()}
-              className="px-3 py-1.5 typo-body rounded-modal border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
+              className="px-3 py-1.5 typo-body rounded-modal border border-status-error/20 bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
             >
               {t.templates.n8n.retry_label}
             </button>
@@ -292,7 +292,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   );
 }
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 
 function SessionGhostCards() {
   return (
@@ -301,7 +301,7 @@ function SessionGhostCards() {
         <div
           key={i}
           aria-hidden="true"
-          className="w-full flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 animate-fade-in"
+          className="w-full flex items-center gap-3 p-3 rounded-modal border border-hair bg-surface-1 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <span className="w-10 h-10 rounded-card bg-primary/[0.06] flex-shrink-0" />

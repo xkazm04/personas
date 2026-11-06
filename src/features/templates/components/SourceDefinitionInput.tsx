@@ -240,7 +240,7 @@ export function SourceDefinitionInput({
               onClick={() => !disabled && setActiveKind(kind)}
               disabled={disabled}
               title={disabled ? disabledHint : undefined}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-lg border transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border transition-all ${
                 active && !disabled
                   ? 'bg-primary/20 border-primary/30 text-primary'
                   : disabled
@@ -269,13 +269,13 @@ export function SourceDefinitionInput({
                 value={parsed?.kind === 'local' ? parsed.path ?? '' : ''}
                 onChange={(e) => commit({ kind: 'local', path: e.target.value })}
                 placeholder={localPlaceholder ?? t.templates.adopt_modal.source_local_placeholder}
-                className="w-full pl-9 pr-3 py-2 typo-body rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+                className="w-full pl-9 pr-3 py-2 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
               />
             </div>
             <button
               type="button"
               onClick={handleBrowseLocal}
-              className="flex items-center gap-1.5 px-3 py-2 typo-body rounded-lg border border-primary/15 bg-background/80 text-foreground hover:border-primary/25 hover:bg-primary/5 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 typo-body rounded-card border border-hair bg-background/80 text-foreground hover:border-primary/25 hover:bg-primary/5 transition-all"
               title={t.templates.adopt_modal.source_local}
             >
               <FolderOpen className="w-3.5 h-3.5" />
@@ -291,7 +291,7 @@ export function SourceDefinitionInput({
             {t.templates.adopt_modal.source_codebase_hint}
           </p>
           {!hasCodebases ? (
-            <div className="flex items-center gap-2 typo-body text-rose-300/80 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20">
+            <div className="flex items-center gap-2 typo-body text-status-error/80 px-3 py-2 rounded-card bg-rose-500/[0.06] border border-status-error/20">
               <AlertCircle className="w-3.5 h-3.5" />
               {t.templates.adopt_modal.source_no_codebases}
             </div>
@@ -339,7 +339,7 @@ export function SourceDefinitionInput({
             {t.templates.adopt_modal.source_database_hint}
           </p>
           {!hasDatabases ? (
-            <div className="flex items-center gap-2 typo-body text-rose-300/80 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20">
+            <div className="flex items-center gap-2 typo-body text-status-error/80 px-3 py-2 rounded-card bg-rose-500/[0.06] border border-status-error/20">
               <AlertCircle className="w-3.5 h-3.5" />
               {t.templates.adopt_modal.source_no_databases}
             </div>
@@ -401,7 +401,7 @@ function SingleCodebaseCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-lg border transition-all text-left ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-card border transition-all text-left ${
         selected
           ? 'bg-primary/15 border-primary/30 text-primary'
           : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
@@ -433,7 +433,7 @@ function SingleCredentialCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-lg border transition-all text-left ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-card border transition-all text-left ${
         selected
           ? 'bg-primary/15 border-primary/30 text-primary'
           : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'

@@ -153,7 +153,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto px-3 py-1.5 rounded-interactive border border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
+            className="ml-auto px-3 py-1.5 rounded-interactive border border-card-border bg-surface-2 text-ink-1 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
           >
             {t.common.cancel}
           </button>
@@ -180,14 +180,14 @@ function NoPersonaState({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   return (
     <div className="text-center py-8">
-      <div className="typo-body text-foreground/85 mb-1">{t.recipes_catalog.no_persona_heading}</div>
+      <div className="typo-body text-ink-1 mb-1">{t.recipes_catalog.no_persona_heading}</div>
       <div className="typo-caption text-foreground mb-4">
         {t.recipes_catalog.no_persona_body}
       </div>
       <button
         type="button"
         onClick={onClose}
-        className="px-3 py-1.5 rounded-interactive border border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
+        className="px-3 py-1.5 rounded-interactive border border-card-border bg-surface-2 text-ink-1 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
       >
         {t.common.close}
       </button>
@@ -205,7 +205,7 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
           <div className="typo-label text-status-warning">
             {t.recipes_catalog.callout_setup_title}
           </div>
-          <div className="typo-caption text-foreground/85 mt-0.5">
+          <div className="typo-caption text-ink-1 mt-0.5">
             {t.recipes_catalog.callout_setup_body}
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
@@ -214,7 +214,7 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
               return (
                 <span
                   key={slug}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded border bg-secondary/40"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border bg-surface-2"
                   style={{ borderColor: m.color + '55' }}
                 >
                   <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
@@ -238,11 +238,11 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
 function IncompatibleCallout({ eligibility }: { eligibility: Eligibility & { state: 'incompatible' } }) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 px-3 py-2.5 rounded-card border border-card-border bg-secondary/40">
+    <div className="mb-4 px-3 py-2.5 rounded-card border border-card-border bg-surface-2">
       <div className="typo-label text-foreground mb-1">
         {t.recipes_catalog.callout_incompatible_title}
       </div>
-      <div className="typo-caption text-foreground/85">{eligibility.reason}</div>
+      <div className="typo-caption text-ink-1">{eligibility.reason}</div>
     </div>
   );
 }
@@ -271,7 +271,7 @@ function BindingField({ binding, value, onChange, error }: BindingFieldProps) {
   const helpEl = binding.description && (
     <div className="typo-caption text-foreground mt-1">{binding.description}</div>
   );
-  const wrapperCls = `rounded-card border bg-secondary/30 px-3 py-2.5 transition-colors ${
+  const wrapperCls = `rounded-card border bg-surface-1 px-3 py-2.5 transition-colors ${
     error ? 'border-status-warning/45 bg-status-warning/8' : 'border-card-border'
   }`;
 
@@ -296,7 +296,7 @@ interface BindingInputProps {
 
 function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
   const { t } = useTranslation();
-  const inputCls = 'w-full px-2.5 py-1.5 rounded-input border border-card-border bg-secondary/40 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/45 transition-colors';
+  const inputCls = 'w-full px-2.5 py-1.5 rounded-input border border-card-border bg-surface-2 typo-caption text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/45 transition-colors';
 
   switch (kind.type) {
     case 'slack-channel': {
@@ -472,7 +472,7 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
                     className={`px-2 py-1 rounded-full border typo-label transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-primary/15 border-primary/35 text-primary'
-                        : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
+                        : 'bg-surface-2 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
                     }`}
                   >
                     {p.label}
@@ -511,7 +511,7 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
                   className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
                     isActive
                       ? 'bg-primary/15 border-primary/35 text-primary'
-                      : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
+                      : 'bg-surface-2 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
                   }`}
                 >
                   {opt.label}
@@ -533,7 +533,7 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
                 className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
                   isActive
                     ? 'bg-primary/15 border-primary/35 text-primary'
-                    : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
+                    : 'bg-surface-2 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
                 }`}
               >
                 {opt.label}

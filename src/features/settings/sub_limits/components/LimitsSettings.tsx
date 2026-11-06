@@ -92,7 +92,7 @@ function DynamicBudgetsRow() {
       <div className="min-w-0">
         <div className="typo-body text-foreground">{s.dynamic_budgets_label}</div>
         <p className="typo-caption text-foreground">{s.dynamic_budgets_hint}</p>
-        {setting.error && <span className="typo-caption text-red-400">{setting.error}</span>}
+        {setting.error && <span className="typo-caption text-status-error">{setting.error}</span>}
       </div>
     </div>
   );
@@ -279,7 +279,7 @@ export default function LimitsSettings() {
               {tx(s.concurrency_range, { min: CONCURRENCY_MIN, max: CONCURRENCY_MAX })}
             </span>
             {concurrency.error && (
-              <span className="typo-caption text-red-400 ml-2">{concurrency.error}</span>
+              <span className="typo-caption text-status-error ml-2">{concurrency.error}</span>
             )}
           </div>
           <p className="typo-caption text-foreground">{s.concurrency_queued_note}</p>
@@ -334,7 +334,7 @@ export default function LimitsSettings() {
               {tx(s.roster_range, { min: ROSTER_MIN, max: ROSTER_MAX })}
             </span>
             {roster.error && (
-              <span className="typo-caption text-red-400 ml-2">{roster.error}</span>
+              <span className="typo-caption text-status-error ml-2">{roster.error}</span>
             )}
           </div>
           <p className="typo-caption text-foreground">{s.roster_refused_note}</p>
@@ -352,7 +352,7 @@ export default function LimitsSettings() {
     {
       id: 'ceiling',
       label: s.ceiling_section,
-      icon: <DollarSign className="w-4 h-4 text-emerald-400" />,
+      icon: <DollarSign className="w-4 h-4 text-ink-2" />,
       content: (
         <div className="space-y-3">
           {ceiling.loadFailed && <LoadFailedNote text={s.load_failed} />}
@@ -383,7 +383,7 @@ export default function LimitsSettings() {
               <span className="typo-caption text-foreground ml-2">{s.unlimited}</span>
             )}
             {ceiling.error && (
-              <span className="typo-caption text-red-400 ml-2">{ceiling.error}</span>
+              <span className="typo-caption text-status-error ml-2">{ceiling.error}</span>
             )}
           </div>
         </div>
@@ -396,7 +396,7 @@ export default function LimitsSettings() {
       content: (
         <div className="space-y-3">
           {spendFailure && (
-            <div className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2">
+            <div className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-interactive p-2">
               <AlertTriangle size={14} />
               {resolveErrorTranslated(t, extractMessage(spendFailure.raw)).message}
             </div>
@@ -406,23 +406,23 @@ export default function LimitsSettings() {
               Current month is the highlighted head; a month over the ceiling
               turns red. */}
           {monthly.length > 0 && (
-            <div className="rounded-input border border-primary/10 bg-secondary/10 divide-y divide-primary/5">
+            <div className="rounded-input border border-hair bg-secondary/10 divide-y divide-primary/5">
               {monthly.map((m, i) => {
                 const isCurrent = i === 0;
                 const pct = Math.min(100, (m.spend / maxSpend) * 100);
                 const over = ceilingNum > 0 && m.spend >= ceilingNum;
                 return (
                   <div key={m.key} className="flex items-center gap-3 px-3 py-1.5">
-                    <span className={`typo-caption w-24 shrink-0 ${isCurrent ? 'text-foreground' : 'text-foreground/70'}`}>
+                    <span className={`typo-caption w-24 shrink-0 ${isCurrent ? 'text-foreground' : 'text-ink-2'}`}>
                       {m.label}
                     </span>
-                    <div className="flex-1 h-1.5 rounded-full bg-secondary/40 overflow-hidden">
+                    <div className="flex-1 h-1.5 rounded-full bg-surface-2 overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${over ? 'bg-red-500' : isCurrent ? 'bg-emerald-500' : 'bg-primary/30'}`}
+                        className={`h-full rounded-full transition-all ${over ? 'bg-status-error' : isCurrent ? 'bg-status-success' : 'bg-primary/30'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className={`typo-caption tabular-nums w-16 text-right ${isCurrent ? 'text-foreground' : 'text-foreground/80'}`}>
+                    <span className={`typo-caption tabular-nums w-16 text-right ${isCurrent ? 'text-foreground' : 'text-ink-2'}`}>
                       {formatCost(m.spend)}
                     </span>
                   </div>
@@ -439,13 +439,13 @@ export default function LimitsSettings() {
                 {tx(s.of_ceiling, { ceiling: formatCost(ceilingNum) })}
               </p>
               {isOverBudget && (
-                <div className="flex items-start gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2">
+                <div className="flex items-start gap-2 typo-caption text-status-error bg-status-error/10 rounded-interactive p-2">
                   <AlertTriangle size={14} className="mt-px shrink-0" />
                   <span>{s.over_budget}</span>
                 </div>
               )}
               {isApproaching && (
-                <div className="flex items-start gap-2 typo-caption text-amber-400 bg-amber-400/10 rounded p-2">
+                <div className="flex items-start gap-2 typo-caption text-status-warning bg-status-warning/10 rounded-interactive p-2">
                   <AlertTriangle size={14} className="mt-px shrink-0" />
                   <span>{s.approaching_budget}</span>
                 </div>
@@ -465,7 +465,7 @@ export default function LimitsSettings() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Gauge className="w-5 h-5 text-emerald-400" />}
+        icon={<Gauge className="w-5 h-5 text-ink-2" />}
         title={s.title}
         subtitle={s.subtitle}
         actions={
@@ -475,7 +475,7 @@ export default function LimitsSettings() {
               type="button"
               onClick={() => void loadSpend()}
               disabled={spendLoading}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-secondary/40 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-surface-2 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-3 h-3 ${spendLoading ? 'animate-spin' : ''}`} />
               {s.refresh}

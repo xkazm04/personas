@@ -111,9 +111,9 @@ export function PeerDetailDrawer({
                 {peer.display_name}
               </h2>
               {isTrusted ? (
-                <TrustVerifiedIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <TrustVerifiedIcon className="w-4 h-4 text-status-success flex-shrink-0" />
               ) : (
-                <TrustUnknownIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <TrustUnknownIcon className="w-4 h-4 text-status-warning flex-shrink-0" />
               )}
             </div>
             <div className="typo-code text-foreground mt-0.5">
@@ -124,7 +124,7 @@ export function PeerDetailDrawer({
             type="button"
             onClick={onClose}
             aria-label={st.close}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -135,10 +135,10 @@ export function PeerDetailDrawer({
           {/* Connection state */}
           <div className="flex items-center gap-3">
             <span className={`typo-caption px-2 py-1 rounded-full ${
-              isConnected ? 'bg-emerald-500/10 text-emerald-400' :
-              state === 'Connecting' ? 'bg-amber-500/10 text-amber-400' :
-              state === 'Failed' ? 'bg-red-500/10 text-red-400' :
-              'bg-zinc-500/10 text-zinc-400'
+              isConnected ? 'bg-status-success/10 text-status-success' :
+              state === 'Connecting' ? 'bg-status-warning/10 text-status-warning' :
+              state === 'Failed' ? 'bg-status-error/10 text-status-error' :
+              'bg-zinc-500/10 text-ink-2'
             }`}>
               {stateLabel}
             </span>
@@ -146,7 +146,7 @@ export function PeerDetailDrawer({
               <button
                 type="button"
                 onClick={() => onDisconnect(peer.peer_id)}
-                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
               >
                 <NodeDisconnectedIcon className="w-3.5 h-3.5" />
                 {st.disconnect}
@@ -169,7 +169,7 @@ export function PeerDetailDrawer({
             <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2 typo-body">
               <div className="flex justify-between">
                 <span className="text-foreground">{st.trust_label}</span>
-                <span className={isTrusted ? 'text-emerald-400' : 'text-foreground'}>
+                <span className={isTrusted ? 'text-status-success' : 'text-foreground'}>
                   {isTrusted ? st.trusted : st.unknown}
                 </span>
               </div>
@@ -201,9 +201,9 @@ export function PeerDetailDrawer({
             <div className="space-y-2">
               {/* Sync progress bar */}
               {syncing && (
-                <div className="h-0.5 rounded-full overflow-hidden bg-secondary/20">
+                <div className="h-0.5 rounded-full overflow-hidden bg-surface-1">
                   <div
-                    className="animate-fade-in h-full bg-gradient-to-r from-violet-500 to-blue-500"
+                    className="animate-fade-in h-full bg-gradient-to-r from-role-agent to-status-info"
                   />
                 </div>
               )}
@@ -213,7 +213,7 @@ export function PeerDetailDrawer({
                   <Package className="w-3.5 h-3.5" />
                   {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (
-                    <span className="text-[10px] font-normal text-foreground">
+                    <span className="typo-caption text-foreground">
                       {tx(st.resources_synced, { count: syncProgress?.resourceCount ?? manifest.length })}
                       {syncProgress?.syncedAt && (
                         <> · {formatRelativeTime(syncProgress.syncedAt)}</>
@@ -226,7 +226,7 @@ export function PeerDetailDrawer({
                   onClick={handleSync}
                   disabled={syncing}
                   title={st.sync_manifest}
-                  className="p-1 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  className="p-1 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   {syncing ? (
                     <LoadingSpinner size="sm" />
@@ -264,16 +264,16 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground truncate">{entry.display_name}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-foreground">
+          <span className="typo-caption px-1.5 py-0.5 rounded-full bg-surface-2 text-foreground">
             {entry.resource_type}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px] text-foreground">{entry.access_level}</span>
+          <span className="typo-caption text-foreground">{entry.access_level}</span>
           {parsedTags.length > 0 && (
             <div className="flex gap-1">
               {parsedTags.slice(0, 3).map((tag) => (
-                <span key={tag} className="text-[10px] px-1 py-0.5 rounded bg-primary/10 text-primary/70">
+                <span key={tag} className="typo-caption px-1 py-0.5 rounded-interactive bg-primary/10 text-primary/70">
                   {tag}
                 </span>
               ))}
@@ -281,7 +281,7 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 text-[10px] text-foreground flex-shrink-0">
+      <div className="flex items-center gap-1 typo-caption text-foreground flex-shrink-0">
         <Clock className="w-3 h-3" />
         <AbsoluteTime timestamp={entry.synced_at} variant="date" />
       </div>

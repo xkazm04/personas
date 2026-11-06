@@ -73,12 +73,12 @@ function ThreadItem({
             <div className="typo-caption text-status-success/80 mt-1 truncate italic">
               {summarizeAnswer(answer, question.type, t)}
               {isAuto && (
-                <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand-purple/80 font-semibold not-italic">
+                <span className="ml-1.5 typo-eyebrow text-brand-purple/80 not-italic">
                   {t.templates.adopt_modal.auto_badge}
                 </span>
               )}
               {isAnsweredCurrent && (
-                <span className="ml-1.5 text-[10px] uppercase tracking-[0.18em] text-primary/80 font-semibold not-italic">
+                <span className="ml-1.5 typo-eyebrow text-primary/80 not-italic">
                   {t.templates.adopt_modal.thread_current}
                 </span>
               )}

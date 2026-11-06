@@ -23,10 +23,10 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
       disabled={disabled}
       className={`w-full text-left p-3 rounded-modal border transition-all ${
         disabled
-          ? 'opacity-40 cursor-not-allowed border-primary/5 bg-secondary/10'
+          ? 'opacity-40 cursor-not-allowed border-hair bg-secondary/10'
           : selected
-            ? 'border-orange-500/30 bg-orange-500/5'
-            : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20'
+            ? 'border-status-warning/30 bg-status-warning/5'
+            : 'border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -43,13 +43,13 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
           <div className="flex items-center gap-2">
             <span className="typo-body text-foreground">{app.label}</span>
             {app.installed && (
-              <span className="flex items-center gap-1 typo-caption text-emerald-400">
+              <span className="flex items-center gap-1 typo-caption text-status-success">
                 <CheckCircle2 className="w-3 h-3" />
                 {dd.app_installed}
               </span>
             )}
             {app.running && (
-              <span className="flex items-center gap-1 typo-caption text-cyan-400">
+              <span className="flex items-center gap-1 typo-caption text-role-highlight">
                 <CircleDot className="w-3 h-3" />
                 {dd.app_running}
               </span>

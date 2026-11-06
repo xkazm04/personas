@@ -26,10 +26,10 @@ export function CopyButton({ text, className }: { text: string; className?: stri
         type="button"
         onClick={handleCopy}
         aria-label={t.vault.design_phases.copy_to_clipboard}
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body transition-all ${
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body transition-all ${
           copied
-            ? 'text-emerald-400 bg-emerald-500/10'
-            : 'text-foreground hover:text-foreground/95 hover:bg-secondary/60'
+            ? 'text-status-success bg-status-success/10'
+            : 'text-foreground hover:text-ink-1 hover:bg-surface-2'
         } ${className ?? ''}`}
       >
         {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
@@ -50,7 +50,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
         return (
           <div className="relative group my-2">
             <code
-              className={`block p-3 bg-background/60 border border-primary/10 rounded-card typo-code overflow-x-auto ${className || ''}`}
+              className={`block p-3 bg-background/60 border border-hair rounded-card typo-code overflow-x-auto ${className || ''}`}
               {...props}
             >
               {children}
@@ -66,7 +66,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       return (
         <span className="inline-flex items-center gap-0.5">
           <code
-            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded typo-code text-amber-300"
+            className="px-1.5 py-0.5 bg-surface-2 border border-hair rounded-interactive typo-code text-status-warning"
             {...props}
           >
             {children}
@@ -116,7 +116,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       <h1 className="typo-heading text-foreground mb-1.5 mt-2">{children}</h1>
     ),
     h2: ({ children }) => (
-      <h2 className="typo-heading text-foreground/90 mb-1 mt-2">{children}</h2>
+      <h2 className="typo-heading text-ink-1 mb-1 mt-2">{children}</h2>
     ),
     h3: ({ children }) => (
       <h3 className="typo-heading uppercase text-foreground mb-1 mt-1.5">{children}</h3>
@@ -124,9 +124,9 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>
     ),
-    hr: () => <hr className="border-primary/10 my-2" />,
+    hr: () => <hr className="border-hair my-2" />,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-2 border-primary/20 pl-3 italic text-foreground/90 my-2 typo-body">
+      <blockquote className="border-l-2 border-hair pl-3 italic text-ink-1 my-2 typo-body">
         {children}
       </blockquote>
     ),

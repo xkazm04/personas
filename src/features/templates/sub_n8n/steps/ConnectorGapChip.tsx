@@ -12,9 +12,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { CredentialGapEntry } from '../edit/credentialGapAnalysis';
 
 const TONE = {
-  ready: 'text-emerald-400',
-  ambiguous: 'text-amber-400',
-  missing: 'text-red-400',
+  ready: 'text-status-success',
+  ambiguous: 'text-status-warning',
+  missing: 'text-status-error',
 } as const;
 
 const ICON = {

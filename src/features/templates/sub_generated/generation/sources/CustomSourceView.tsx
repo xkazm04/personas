@@ -30,7 +30,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5"
             title={t.templates.generation.custom_load_file_title}
           >
             <Upload className="w-3 h-3" />
@@ -39,7 +39,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           <button
             type="button"
             onClick={onAdd}
-            className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-3 h-3" />
             Add
@@ -56,7 +56,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           return (
             <div
               key={index}
-              className="rounded-modal border border-primary/10 bg-secondary/10 p-3 space-y-2"
+              className="rounded-modal border border-hair bg-secondary/10 p-3 space-y-2"
             >
               {/* Row 1: number + name + delete */}
               <div className="flex items-center gap-2">
@@ -68,15 +68,15 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   value={c.name}
                   onChange={(e) => onUpdateCase(index, 'name', e.target.value)}
                   placeholder={t.templates.generation.custom_case_name_placeholder}
-                  className={`flex-1 px-3 py-1.5 typo-body bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
-                    nameMissing ? 'border-amber-500/30' : 'border-primary/10'
+                  className={`flex-1 px-3 py-1.5 typo-body bg-surface-1 border rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors ${
+                    nameMissing ? 'border-status-warning/30' : 'border-hair'
                   }`}
                 />
                 {cases.length > 1 && (
                   <button
                     type="button"
                     onClick={() => onRemove(index)}
-                    className="p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors flex-shrink-0"
+                    className="p-1 rounded-interactive hover:bg-status-error/10 text-foreground hover:text-status-error transition-colors flex-shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -90,12 +90,12 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   onChange={(e) => onUpdateCase(index, 'instruction', e.target.value)}
                   placeholder={t.templates.generation.custom_instruction_placeholder}
                   rows={3}
-                  className={`w-full px-3 py-2 typo-body bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
-                    instrShort ? 'border-amber-500/30' : 'border-primary/10'
+                  className={`w-full px-3 py-2 typo-body bg-surface-1 border rounded-modal text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors ${
+                    instrShort ? 'border-status-warning/30' : 'border-hair'
                   }`}
                 />
                 {instrShort && (
-                  <p className="typo-body text-amber-400/80 mt-0.5">
+                  <p className="typo-body text-status-warning/80 mt-0.5">
                     {t.templates.generation.custom_short_instruction.replace('{current}', String(instrLen)).replace('{min}', String(MIN_INSTRUCTION_LENGTH))}
                   </p>
                 )}
@@ -106,7 +106,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 <select
                   value={c.category ?? ''}
                   onChange={(e) => onUpdateCase(index, 'category', e.target.value)}
-                  className="px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="px-2 py-1 typo-body bg-surface-1 border border-hair rounded-card text-foreground focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
                 >
                   <option value="">{t.templates.generation.custom_category_default}</option>
                   {CATEGORY_OPTIONS.map((cat) => (
@@ -116,7 +116,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 <select
                   value={c.trigger ?? ''}
                   onChange={(e) => onUpdateCase(index, 'trigger', e.target.value)}
-                  className="px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="px-2 py-1 typo-body bg-surface-1 border border-hair rounded-card text-foreground focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
                 >
                   <option value="">{t.templates.generation.custom_trigger_default}</option>
                   {TRIGGER_OPTIONS.map((t) => (
@@ -128,7 +128,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   value={c.tools ?? ''}
                   onChange={(e) => onUpdateCase(index, 'tools', e.target.value)}
                   placeholder={t.templates.generation.custom_connectors_placeholder}
-                  className="flex-1 min-w-[160px] px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="flex-1 min-w-[160px] px-2 py-1 typo-body bg-surface-1 border border-hair rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
                 />
               </div>
             </div>
@@ -144,13 +144,13 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
         <button
           type="button"
           onClick={() => setShowExample((v) => !v)}
-          className="typo-body text-violet-400/70 hover:text-violet-400 transition-colors flex items-center gap-1"
+          className="typo-body text-role-agent/70 hover:text-role-agent transition-colors flex items-center gap-1"
         >
           {showExample ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           {showExample ? 'Hide example' : 'Show example'}
         </button>
         {showExample && (
-          <div className="typo-body text-foreground bg-secondary/20 border border-primary/5 rounded-card p-3 mt-1">
+          <div className="typo-body text-foreground bg-surface-1 border border-hair rounded-card p-3 mt-1">
             <p className="font-medium text-foreground mb-1">{t.templates.generation.custom_example_title}</p>
             <p className="italic">
               {t.templates.generation.custom_example_body}

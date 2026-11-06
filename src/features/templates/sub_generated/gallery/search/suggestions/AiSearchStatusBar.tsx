@@ -25,7 +25,7 @@ export function AiSearchStatusBar({
       <div className={`flex items-center gap-2 px-3 py-2 rounded-modal max-w-2xl mx-auto ${
         aiSearchLoading
           ? 'bg-indigo-500/8 border border-indigo-500/15'
-          : 'bg-amber-500/8 border border-amber-500/15'
+          : 'bg-status-warning/8 border border-status-warning/15'
       }`}>
         {aiSearchLoading ? (
           <>
@@ -34,8 +34,8 @@ export function AiSearchStatusBar({
           </>
         ) : (
           <>
-            <AlertCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span className="typo-body text-amber-300/80 flex-1">{aiSearchRationale}</span>
+            <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+            <span className="typo-body text-status-warning/80 flex-1">{aiSearchRationale}</span>
           </>
         )}
       </div>

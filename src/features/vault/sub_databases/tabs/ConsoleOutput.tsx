@@ -27,7 +27,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
   const { t } = useTranslation();
   const db = t.vault.databases;
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-primary/5">
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-hair">
       {error && (
         <InlineErrorBanner key="error" message={error} className="mt-4 animate-fade-slide-in" />
       )}

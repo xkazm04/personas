@@ -1525,15 +1525,15 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           // it is injected rather than changed in place.
           <div
             role="alert"
-            className="mx-4 mt-2 flex items-center justify-between gap-3 px-3 py-2 rounded-modal border border-amber-500/25 bg-amber-500/10"
+            className="mx-4 mt-2 flex items-center justify-between gap-3 px-3 py-2 rounded-modal border border-status-warning/25 bg-status-warning/10"
           >
-            <span className="typo-body text-amber-200">
+            <span className="typo-body text-status-warning">
               {t.templates.adopt_modal.capabilities_load_failed}
             </span>
             <button
               type="button"
               onClick={retryHydration}
-              className="focus-ring inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal border border-amber-500/30 typo-body text-amber-200 hover:bg-amber-500/15 transition-colors"
+              className="focus-ring inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal border border-status-warning/30 typo-body text-status-warning hover:bg-status-warning/15 transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               {t.templates.adopt_modal.retry}

@@ -39,7 +39,7 @@ export default function DesignReviewsPage() {
   return (
     <ContentBox data-testid="templates-page">
       <ContentHeader
-        icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
+        icon={<FlaskConical className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={t.templates.page.title}
         subtitle={(() => {
@@ -65,7 +65,7 @@ export default function DesignReviewsPage() {
       {/* Error */}
       {error && (
         // eslint-disable-next-line custom/prefer-status-badge -- full-width page banner (border-b only, block layout), not an inline badge
-        <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 typo-body text-red-400">
+        <div className="px-6 py-3 bg-status-error/10 border-b border-status-error/20 typo-body text-status-error">
           {error}
         </div>
       )}

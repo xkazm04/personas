@@ -83,10 +83,10 @@ export function N8nParserResults({
             <div className="flex flex-col items-center gap-4 p-6">
               <div className="relative">
                 <div
-                  className="animate-fade-in absolute inset-0 w-14 h-14 rounded-modal bg-violet-500/20"
+                  className="animate-fade-in absolute inset-0 w-14 h-14 rounded-modal bg-role-agent/20"
                 />
-                <div className="w-14 h-14 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-                  <Sparkles className="w-7 h-7 text-violet-400" />
+                <div className="w-14 h-14 rounded-modal bg-role-agent/15 border border-role-agent/25 flex items-center justify-center">
+                  <Sparkles className="w-7 h-7 text-role-agent" />
                 </div>
               </div>
               <div className="text-center">
@@ -107,17 +107,17 @@ export function N8nParserResults({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-modal bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-modal bg-role-highlight/15 border border-role-highlight/25 flex items-center justify-center">
             {platform === 'github-actions'
-              ? <FileCode2 className="w-5 h-5 text-cyan-400" />
-              : <FileJson className="w-5 h-5 text-cyan-400" />
+              ? <FileCode2 className="w-5 h-5 text-role-highlight" />
+              : <FileJson className="w-5 h-5 text-role-highlight" />
             }
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="typo-heading text-foreground/90">{workflowName}</h3>
+              <h3 className="typo-heading text-ink-1">{workflowName}</h3>
               {platform && (
-                <span className={`typo-code uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
+                <span className={`typo-code uppercase px-1.5 py-0.5 rounded-interactive border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
                   {PLATFORM_LABELS[platform]}
                 </span>
               )}
@@ -129,7 +129,7 @@ export function N8nParserResults({
           variant="secondary"
           size="sm"
           onClick={onReset}
-          className="rounded-modal border-primary/15 text-foreground"
+          className="rounded-modal border-hair text-foreground"
         >
           {t.templates.n8n.import_another}
         </Button>
@@ -138,10 +138,10 @@ export function N8nParserResults({
       {/* Platform confirmation banner */}
       {platformNeedsConfirmation && platform && platform !== 'unknown' && (
         <div
-          className="animate-fade-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-modal border border-amber-500/20 bg-amber-500/5"
+          className="animate-fade-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-modal border border-status-warning/20 bg-status-warning/5"
         >
-          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-          <p className="flex-1 typo-body text-amber-300/90">
+          <AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0" />
+          <p className="flex-1 typo-body text-status-warning/90">
             {t.templates.n8n.platform_confirm.replace('{platform}', PLATFORM_LABELS[platform])}
           </p>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -149,7 +149,7 @@ export function N8nParserResults({
               variant="ghost"
               size="sm"
               onClick={onConfirmPlatform}
-              className="rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+              className="rounded-card border border-status-warning/25 bg-status-warning/10 text-status-warning hover:bg-status-warning/20"
             >
               {t.templates.n8n.yes_thats_right}
             </Button>
@@ -157,7 +157,7 @@ export function N8nParserResults({
               variant="ghost"
               size="sm"
               onClick={onReset}
-              className="rounded-card border border-primary/15 text-foreground hover:bg-secondary/50"
+              className="rounded-card border border-hair text-foreground hover:bg-surface-2"
             >
               {t.templates.n8n.no_reupload}
             </Button>
@@ -185,7 +185,7 @@ export function N8nParserResults({
       )}
 
       {/* Sections */}
-      <div className="rounded-modal border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
+      <div className="rounded-modal border border-hair bg-surface-1 divide-y divide-primary/10">
         <ToolsSection
           tools={parsedResult.suggested_tools}
           selectedToolIndices={selectedToolIndices}

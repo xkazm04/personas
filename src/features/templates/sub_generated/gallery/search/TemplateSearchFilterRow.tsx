@@ -140,7 +140,7 @@ export function TemplateSearchFilterRow({
           type="button"
           onClick={onSynthesizeTeam}
           data-testid="gallery-synthesize-team"
-          className="focus-ring px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5 flex-shrink-0"
+          className="focus-ring px-3 py-2 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5 flex-shrink-0"
         >
           <Users className="w-3.5 h-3.5" aria-hidden="true" />
           {t.templates.team_synthesis.synthesize_team}

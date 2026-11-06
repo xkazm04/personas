@@ -136,14 +136,14 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <h2 className="typo-body text-foreground inline-flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
+            <Check className="w-4 h-4 text-status-success" />
             {s.created_dialog_title}
           </h2>
           {acknowledged && (
             <button
               type="button"
               onClick={handleClose}
-              className="text-foreground hover:bg-secondary/60 rounded p-1 transition-colors focus-ring"
+              className="text-foreground hover:bg-surface-2 rounded-interactive p-1 transition-colors focus-ring"
               aria-label={s.close}
             >
               <X size={16} />
@@ -152,7 +152,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
         </div>
 
         <div className="p-4 space-y-4">
-          <div className="flex items-start gap-2 typo-caption text-amber-400 bg-amber-400/10 rounded p-2.5">
+          <div className="flex items-start gap-2 typo-caption text-status-warning bg-status-warning/10 rounded-interactive p-2.5">
             <AlertTriangle size={14} className="shrink-0 mt-0.5" />
             <span>{s.created_warning}</span>
           </div>
@@ -189,7 +189,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
             <label className="block typo-caption text-foreground mb-1.5">
               {s.created_mcp_config_label}
             </label>
-            <pre className="px-3 py-2 bg-background border border-border/40 rounded-input typo-code text-foreground/90 overflow-x-auto max-h-48">
+            <pre className="px-3 py-2 bg-background border border-border/40 rounded-input typo-code text-ink-1 overflow-x-auto max-h-48">
               {mcpConfig}
             </pre>
             <button
@@ -206,7 +206,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
               'flex items-start gap-2.5 cursor-pointer rounded-input p-2.5 border transition-colors',
               acknowledged
                 ? 'bg-primary/5 border-primary/30'
-                : 'border-transparent hover:bg-secondary/40',
+                : 'border-transparent hover:bg-surface-2',
             ].join(' ')}
           >
             <input

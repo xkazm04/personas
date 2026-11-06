@@ -8,8 +8,8 @@ interface DesignCheckboxProps {
 
 export function DesignCheckbox({ checked, onChange, disabled = false, color = 'primary' }: DesignCheckboxProps) {
   const checkedColor =
-    color === 'blue' ? 'bg-blue-500 border border-blue-500' :
-    color === 'purple' ? 'bg-purple-500 border border-purple-500' :
+    color === 'blue' ? 'bg-status-info border border-status-info' :
+    color === 'purple' ? 'bg-role-agent border border-role-agent' :
     'bg-primary border border-primary';
 
   return (
@@ -25,7 +25,7 @@ export function DesignCheckbox({ checked, onChange, disabled = false, color = 'p
         checked
           ? checkedColor
           : `bg-secondary/40 border ${
-              disabled ? 'border-primary/10' : 'border-primary/20 hover:border-primary/40'
+              disabled ? 'border-hair' : 'border-hair hover:border-primary/40'
             }`
       }`}
     >

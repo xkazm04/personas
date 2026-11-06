@@ -77,7 +77,7 @@ export function PowerRail({
               <button
                 type="button"
                 onClick={() => onChange(disableTimeFamily(selection))}
-                className="focus-ring p-0.5 rounded text-foreground hover:text-foreground"
+                className="focus-ring p-0.5 rounded-interactive text-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -85,7 +85,7 @@ export function PowerRail({
               <button
                 type="button"
                 onClick={() => onChange(enableTimeFamily(selection))}
-                className="focus-ring inline-flex items-center gap-1 px-2 py-0.5 rounded text-primary hover:bg-primary/10 typo-caption"
+                className="focus-ring inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive text-primary hover:bg-primary/10 typo-caption"
               >
                 <Plus className="w-3 h-3" /> enable
               </button>
@@ -103,7 +103,7 @@ export function PowerRail({
               <button
                 type="button"
                 onClick={() => onChange(disableEventFamily(selection))}
-                className="focus-ring p-0.5 rounded text-foreground hover:text-foreground"
+                className="focus-ring p-0.5 rounded-interactive text-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -111,7 +111,7 @@ export function PowerRail({
               <button
                 type="button"
                 onClick={() => onChange(enableEventFamily(selection, availableEventKeys))}
-                className="focus-ring inline-flex items-center gap-1 px-2 py-0.5 rounded text-status-info hover:bg-status-info/10 typo-caption"
+                className="focus-ring inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive text-status-info hover:bg-status-info/10 typo-caption"
               >
                 <Plus className="w-3 h-3" /> enable
               </button>

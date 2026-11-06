@@ -43,27 +43,27 @@ export function BundlePreviewContent({
       {/* Signer info */}
       <div className={`rounded-card border p-3 space-y-2 ${
         !preview.signature_valid
-          ? 'border-red-500/30 bg-red-500/5'
+          ? 'border-status-error/30 bg-status-error/5'
           : 'border-border bg-secondary/10'
       }`}>
         <div className="flex items-center gap-2">
           {preview.signature_valid ? (
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <ShieldCheck className="w-4 h-4 text-status-success" />
           ) : (
-            <ShieldOff className="w-4 h-4 text-red-400" />
+            <ShieldOff className="w-4 h-4 text-status-error" />
           )}
           <div>
             <div className="typo-body text-foreground">{preview.signer_display_name}</div>
-            <div className="text-[10px] text-foreground font-mono">
+            <div className="typo-caption text-foreground font-mono">
               {preview.signer_peer_id.slice(0, 8)}...{preview.signer_peer_id.slice(-8)}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-[10px]">
+        <div className="flex items-center gap-3 typo-caption">
           <span className={`px-1.5 py-0.5 rounded-full ${
             preview.signature_valid
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
+              ? 'bg-status-success/10 text-status-success'
+              : 'bg-status-error/10 text-status-error'
           }`}>
             {preview.signature_valid
               ? st.signature_verified
@@ -73,8 +73,8 @@ export function BundlePreviewContent({
           </span>
           <span className={`px-1.5 py-0.5 rounded-full ${
             preview.signer_trusted
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-amber-500/10 text-amber-400'
+              ? 'bg-status-success/10 text-status-success'
+              : 'bg-status-warning/10 text-status-warning'
           }`}>
             {preview.signer_trusted ? st.trusted_peer : st.unknown_peer}
           </span>
@@ -86,22 +86,22 @@ export function BundlePreviewContent({
 
       {/* Danger: signature mismatch on a trusted peer — possible tampering */}
       {!preview.signature_valid && preview.signer_trusted && (
-        <div className="rounded-card border border-red-500/30 bg-red-500/5 p-3 space-y-2">
+        <div className="rounded-card border border-status-error/30 bg-status-error/5 p-3 space-y-2">
           <div className="flex items-start gap-2">
-            <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="typo-caption text-red-400 space-y-1">
+            <ShieldOff className="w-4 h-4 text-status-error mt-0.5 flex-shrink-0" />
+            <div className="typo-caption text-status-error space-y-1">
               <p className="font-medium">{st.danger_trusted_title}</p>
-              <p className="text-red-400/80">
+              <p className="text-status-error/80">
                 {st.danger_trusted_body}
               </p>
             </div>
           </div>
-          <label className="flex items-center gap-2 typo-caption text-red-400 cursor-pointer pt-1">
+          <label className="flex items-center gap-2 typo-caption text-status-error cursor-pointer pt-1">
             <input
               type="checkbox"
               checked={dangerConfirmed === 'tamper'}
               onChange={(e) => setDangerConfirmed(e.target.checked ? 'tamper' : null)}
-              className="rounded border-red-500/40"
+              className="rounded-interactive border-status-error/40"
             />
             {st.danger_trusted_confirm}
           </label>
@@ -110,22 +110,22 @@ export function BundlePreviewContent({
 
       {/* Warning: unknown signer — signature cannot be verified */}
       {!preview.signature_valid && !preview.signer_trusted && (
-        <div className="rounded-card border border-red-500/30 bg-red-500/5 p-3 space-y-2">
+        <div className="rounded-card border border-status-error/30 bg-status-error/5 p-3 space-y-2">
           <div className="flex items-start gap-2">
-            <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="typo-caption text-red-400 space-y-1">
+            <ShieldOff className="w-4 h-4 text-status-error mt-0.5 flex-shrink-0" />
+            <div className="typo-caption text-status-error space-y-1">
               <p className="font-medium">{st.danger_unknown_title}</p>
-              <p className="text-red-400/80">
+              <p className="text-status-error/80">
                 {st.danger_unknown_body}
               </p>
             </div>
           </div>
-          <label className="flex items-center gap-2 typo-caption text-red-400 cursor-pointer pt-1">
+          <label className="flex items-center gap-2 typo-caption text-status-error cursor-pointer pt-1">
             <input
               type="checkbox"
               checked={dangerConfirmed === 'unknown'}
               onChange={(e) => setDangerConfirmed(e.target.checked ? 'unknown' : null)}
-              className="rounded border-red-500/40"
+              className="rounded-interactive border-status-error/40"
             />
             {st.danger_unknown_confirm}
           </label>
@@ -146,14 +146,14 @@ export function BundlePreviewContent({
 
       {/* Conflict options */}
       {hasConflicts && (
-        <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
-          <div className="typo-caption text-amber-400">{st.naming_conflicts_detected}</div>
+        <div className="rounded-card border border-status-warning/20 bg-status-warning/5 p-3 space-y-2">
+          <div className="typo-caption text-status-warning">{st.naming_conflicts_detected}</div>
           <label className="flex items-center gap-2 typo-caption text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={skipConflicts}
               onChange={(e) => setSkipConflicts(e.target.checked)}
-              className="rounded border-border"
+              className="rounded-interactive border-border"
             />
             {st.skip_conflicting}
           </label>
@@ -180,19 +180,19 @@ function ResourcePreviewItem({ resource }: { resource: BundleResourcePreview }) 
   return (
     <div className={`rounded-card border p-2 flex items-center gap-2 ${
       resource.conflict
-        ? 'border-amber-500/20 bg-amber-500/5'
+        ? 'border-status-warning/20 bg-status-warning/5'
         : 'border-border bg-secondary/10'
     }`}>
       <div className="min-w-0 flex-1">
         <div className="typo-body text-foreground truncate">{resource.display_name}</div>
-        <div className="text-[10px] text-foreground flex items-center gap-1.5">
+        <div className="typo-caption text-foreground flex items-center gap-1.5">
           <span>{resource.resource_type}</span>
           <span className="text-foreground">·</span>
           <span>{resource.access_level}</span>
         </div>
       </div>
       {resource.conflict && (
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 flex-shrink-0">
+        <span className="typo-caption px-1.5 py-0.5 text-status-warning flex-shrink-0">
           {st.conflict}
         </span>
       )}

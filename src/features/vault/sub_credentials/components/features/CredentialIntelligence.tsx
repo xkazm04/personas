@@ -39,11 +39,11 @@ function DependentsGhost() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-2 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-modal animate-fade-in"
+          className="flex items-center gap-2 px-3 py-2 bg-surface-1 border border-hair rounded-modal animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-primary/[0.06] shrink-0" />
-          <span className={`h-3.5 rounded bg-primary/[0.06] ${GHOST_BAR_WIDTHS[i % GHOST_BAR_WIDTHS.length]}`} />
+          <span className={`h-3.5 rounded-interactive bg-primary/[0.06] ${GHOST_BAR_WIDTHS[i % GHOST_BAR_WIDTHS.length]}`} />
         </div>
       ))}
     </div>
@@ -122,7 +122,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
             onClick={() => setTab(tabId)}
             className={tab === tabId
               ? `${AI_STATUS.bg} ${AI_STATUS.text} border ${AI_STATUS.border}`
-              : 'text-foreground hover:text-foreground/95 hover:bg-secondary/40'
+              : 'text-foreground hover:text-ink-1 hover:bg-surface-2'
             }
           >
             {tabId === 'overview' && it.tab_overview}
@@ -200,10 +200,10 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
               {dependents.map((dep) => (
                 <div
                   key={dep.persona_id}
-                  className="flex items-center justify-between px-3 py-2 bg-secondary/20 border border-primary/10 rounded-modal"
+                  className="flex items-center justify-between px-3 py-2 bg-surface-1 border border-hair rounded-modal"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-role-agent shrink-0" />
                     <span className="typo-body text-foreground truncate">{dep.persona_name}</span>
                     <span className={`typo-body px-1.5 py-0.5 rounded-card border ${
                       dep.link_type === 'tool_connector'

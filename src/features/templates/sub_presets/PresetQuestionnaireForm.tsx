@@ -114,10 +114,10 @@ export function PresetQuestionnaireForm({
 
   return (
     <section
-      className="rounded-card border border-primary/15 bg-secondary/10 px-3 py-3 space-y-2"
+      className="rounded-card border border-hair bg-secondary/10 px-3 py-3 space-y-2"
       data-testid="preset-questionnaire-form"
     >
-      <header className="flex items-center gap-2 pb-1 border-b border-primary/10">
+      <header className="flex items-center gap-2 pb-1 border-b border-hair">
         <Settings2 className="w-4 h-4 text-foreground" />
         <h3 className="typo-label text-foreground flex-1">
           {t.templates.presets.questionnaire_heading}
@@ -168,7 +168,7 @@ function MemberSection({
   return (
     <div
       className={`rounded-card border bg-background/40 transition-colors ${
-        expanded && hasQuestions ? 'border-primary/20' : 'border-primary/10'
+        expanded && hasQuestions ? 'border-hair' : 'border-hair'
       }`}
     >
       <button
@@ -195,7 +195,7 @@ function MemberSection({
         ) : (
           <span className="w-3.5 flex-shrink-0" />
         )}
-        <span className="typo-body text-foreground/90 uppercase tracking-wider text-[11px] min-w-[100px]">
+        <span className="typo-body text-ink-1 uppercase tracking-wider text-[11px] min-w-[100px]">
           {member.role}
         </span>
         <span className="typo-body text-foreground flex-1 truncate">
@@ -216,7 +216,7 @@ function MemberSection({
       </button>
 
       <Collapse open={expanded && hasQuestions} unmountWhenClosed duration={180}>
-        <div className="px-3 pb-3 pt-2 space-y-3 border-t border-primary/10">
+        <div className="px-3 pb-3 pt-2 space-y-3 border-t border-hair">
           {member.template_description && (
             <p className="typo-caption text-foreground italic">
               {member.template_description}
@@ -250,7 +250,7 @@ function QuestionField({ question, value, onChange }: QuestionFieldProps) {
 
   return (
     <div data-testid={`preset-question-${question.id}`} className="space-y-1">
-      <label className="typo-label text-foreground/85 block">{label}</label>
+      <label className="typo-label text-ink-1 block">{label}</label>
       {hint && <p className="typo-caption text-foreground">{hint}</p>}
       {typeLower === 'select' && Array.isArray(question.options) ? (
         <SelectControl
@@ -286,7 +286,7 @@ function SelectControl({
 }) {
   return (
     <select
-      className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground/90 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
+      className="w-full rounded-input bg-surface-1 border border-hair text-ink-1 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
       value={typeof value === 'string' ? value : String(value ?? '')}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -318,7 +318,7 @@ function BooleanControl({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="rounded-input border border-primary/40 bg-secondary/20"
+        className="rounded-input border border-primary/40 bg-surface-1"
       />
       <span>{checked ? 'On' : 'Off'}</span>
     </label>
@@ -364,7 +364,7 @@ function TextControl({
   return (
     <input
       type="text"
-      className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground/90 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
+      className="w-full rounded-input bg-surface-1 border border-hair text-ink-1 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
       value={typeof value === 'string' ? value : String(value ?? '')}
       onChange={(e) => onChange(e.target.value)}
     />

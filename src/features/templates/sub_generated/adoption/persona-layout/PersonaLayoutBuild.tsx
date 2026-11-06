@@ -326,7 +326,7 @@ export function PersonaLayoutBuild({
               <button
                 type="button"
                 onClick={() => setReportOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-foreground/85 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-ink-1 cursor-pointer"
               >
                 <ScrollText className="w-3.5 h-3.5" />
                 {t.templates.adopt_modal.persona_layout_build_view_logs}
@@ -335,7 +335,7 @@ export function PersonaLayoutBuild({
             <button
               type="button"
               onClick={() => void onStartTest()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-foreground/85 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-ink-1 cursor-pointer"
               title={t.templates.n8n.retest}
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -528,10 +528,10 @@ function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) 
           }}
           placeholder={t.templates.adopt_modal.persona_layout_build_refine_placeholder}
           rows={4}
-          className="w-full px-3 py-2 rounded-modal bg-primary/5 border border-primary/20 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
+          className="w-full px-3 py-2 rounded-modal bg-primary/5 border border-hair typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
         />
       </div>
-      <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-foreground/[0.02] rounded-b-modal">
+      <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-hair bg-foreground/[0.02] rounded-b-modal">
         <button
           type="button"
           onClick={onCancel}

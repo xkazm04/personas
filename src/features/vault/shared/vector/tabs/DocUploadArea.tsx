@@ -43,7 +43,7 @@ function StartControl({
       type="button"
       onClick={onClick}
       disabled={busy}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed${busy ? ' pointer-events-none' : ''}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-surface-2 hover:bg-surface-2 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed${busy ? ' pointer-events-none' : ''}`}
     >
       {icon}
       {label}
@@ -70,7 +70,7 @@ export function DocToolbar({
   const sh = t.vault.shared;
 
   return (
-    <div className="flex items-center gap-2 px-6 py-3 border-b border-primary/10 shrink-0">
+    <div className="flex items-center gap-2 px-6 py-3 border-b border-hair shrink-0">
       <h3 className="typo-body text-foreground flex-1">
         {/*
           English pluralization used to be baked into the JSX here, which no
@@ -83,7 +83,7 @@ export function DocToolbar({
       <button
         type="button"
         onClick={onRefresh}
-        className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
+        className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
         title={t.vault.databases.refresh}
       >
         <RefreshCw className="w-3.5 h-3.5" />

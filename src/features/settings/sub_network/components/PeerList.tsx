@@ -91,13 +91,13 @@ export function PeerList() {
             type="button"
             onClick={() => doFetch()}
             title={st.refresh_peer_list}
-            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             {st.refresh}
           </button>
           {lastScannedAt !== null && (
-            <span className="text-[10px] text-foreground">
+            <span className="typo-caption text-foreground">
               {st.scanned_label} <RelativeTime timestamp={lastScannedAt} showTooltip={false} />
             </span>
           )}
@@ -105,7 +105,7 @@ export function PeerList() {
       </div>
 
       {networkError && (
-        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 typo-caption text-amber-300">
+        <div className="flex items-center gap-2 rounded-card border border-status-warning/30 bg-status-warning/10 px-3 py-2 mb-2 typo-caption text-status-warning">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{st.peer_list_stale} {networkError}</span>
         </div>
@@ -234,10 +234,10 @@ function RadarEmptyState() {
         style={{ imageRendering: 'auto' }}
       />
       <div className="flex items-center gap-1.5 typo-caption text-foreground">
-        <Wifi className="w-3.5 h-3.5 text-emerald-400/50" />
+        <Wifi className="w-3.5 h-3.5 text-status-success/50" />
         {st.scanning_network}
       </div>
-      <span className="text-[11px] text-foreground text-center max-w-[260px]">
+      <span className="typo-caption text-foreground text-center max-w-[260px]">
         {st.lan_hint}
       </span>
     </div>
@@ -257,7 +257,7 @@ function PeerScanSkeleton() {
   return (
     <div className="flex flex-col items-center gap-3 py-6">
       <div className="flex items-center gap-2 typo-caption text-foreground mb-2">
-        <Wifi className="w-4 h-4 text-emerald-400/60" />
+        <Wifi className="w-4 h-4 text-status-success/60" />
         {_st.scanning_network}
       </div>
 
@@ -266,13 +266,13 @@ function PeerScanSkeleton() {
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3 animate-fade-in"
+            className="rounded-modal border border-border bg-surface-1 p-3 flex items-center gap-3 animate-fade-in"
             style={{ animationDelay: `${120 + i * 35}ms` }}
           >
             <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
             <div className="flex-1 space-y-1.5">
-              <span className="block h-3 w-2/5 rounded bg-primary/[0.06]" />
-              <span className="block h-2.5 w-3/5 rounded bg-primary/[0.06]" />
+              <span className="block h-3 w-2/5 rounded-interactive bg-primary/[0.06]" />
+              <span className="block h-2.5 w-3/5 rounded-interactive bg-primary/[0.06]" />
             </div>
           </div>
         ))}

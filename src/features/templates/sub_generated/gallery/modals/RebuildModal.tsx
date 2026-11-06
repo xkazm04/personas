@@ -73,16 +73,16 @@ export function RebuildModal({
       onClose={onClose}
       titleId="rebuild-modal-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+      panelClassName="max-h-[80vh] bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden"
     >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-hair flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-modal bg-blue-500/10 border border-blue-500/20">
-              <RefreshCw className={`w-4 h-4 text-blue-400 ${displayPhase === 'processing' ? 'animate-spin' : ''}`} />
+            <div className="p-2 rounded-modal bg-status-info/10 border border-status-info/20">
+              <RefreshCw className={`w-4 h-4 text-status-info ${displayPhase === 'processing' ? 'animate-spin' : ''}`} />
             </div>
             <div className="min-w-0">
-              <h2 id="rebuild-modal-title" className="typo-heading text-foreground/90 truncate">
+              <h2 id="rebuild-modal-title" className="typo-heading text-ink-1 truncate">
                 {t.templates.rebuild_modal.title}
               </h2>
               <p className="typo-body text-foreground truncate">
@@ -100,7 +100,7 @@ export function RebuildModal({
           {displayPhase === 'input' && (
             <div className="space-y-4">
               {/* Instruction context */}
-              <div className="bg-secondary/30 rounded-modal border border-primary/10 p-4">
+              <div className="bg-surface-1 rounded-modal border border-hair p-4">
                 <div className="typo-body text-foreground uppercase tracking-wide mb-1.5">
                   {t.templates.rebuild_modal.template_instruction}
                 </div>
@@ -118,7 +118,7 @@ export function RebuildModal({
                   value={userDirection}
                   onChange={(e) => setUserDirection(e.target.value)}
                   placeholder={t.templates.rebuild_modal.custom_direction_placeholder}
-                  className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-modal typo-body text-foreground/90 placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-violet-500/30 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
+                  className="w-full h-28 px-4 py-3 bg-surface-1 border border-hair rounded-modal typo-body text-ink-1 placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-role-agent/30 focus-visible:ring-1 focus-visible:ring-role-agent/20 transition-colors"
                 />
                 <p className="typo-body text-foreground mt-1">
                   {t.templates.rebuild_modal.custom_direction_hint}
@@ -135,13 +135,13 @@ export function RebuildModal({
 
           {displayPhase === 'processing' && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 typo-body text-blue-400/80">
+              <div className="flex items-center gap-2 typo-body text-status-info/80">
                 <LoadingSpinner size="sm" />
                 <span>{t.templates.rebuild_modal.rebuilding_with_cli}</span>
               </div>
 
               {/* Streaming output */}
-              <div className="bg-[#0d1117] rounded-modal border border-primary/10 p-4 h-64 overflow-y-auto typo-code">
+              <div className="bg-[#0d1117] rounded-modal border border-hair p-4 h-64 overflow-y-auto typo-code">
                 {lines.length === 0 && (
                   <span className="text-foreground">{t.templates.rebuild_modal.waiting_for_output}</span>
                 )}
@@ -152,7 +152,7 @@ export function RebuildModal({
                       key={i}
                       className={
                         isMilestone
-                          ? 'text-blue-400/80 font-semibold mt-2 first:mt-0'
+                          ? 'text-status-info/80 font-semibold mt-2 first:mt-0'
                           : 'text-foreground'
                       }
                     >
@@ -171,10 +171,10 @@ export function RebuildModal({
 
           {displayPhase === 'completed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20 mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              <div className="p-3 rounded-modal bg-surface-1 border border-hair mb-4">
+                <CheckCircle2 className="w-8 h-8 text-status-success" />
               </div>
-              <h3 className="typo-heading text-foreground/90 mb-1">
+              <h3 className="typo-heading text-ink-1 mb-1">
                 {t.templates.rebuild_modal.rebuild_complete}
               </h3>
               <p className="typo-body text-foreground max-w-sm">
@@ -185,10 +185,10 @@ export function RebuildModal({
 
           {displayPhase === 'failed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20 mb-4">
-                <XCircle className="w-8 h-8 text-red-400" />
+              <div className="p-3 rounded-modal bg-status-error/10 border border-status-error/20 mb-4">
+                <XCircle className="w-8 h-8 text-status-error" />
               </div>
-              <h3 className="typo-heading text-foreground/90 mb-1">
+              <h3 className="typo-heading text-ink-1 mb-1">
                 {t.templates.rebuild_modal.rebuild_failed}
               </h3>
               <p className="typo-body text-foreground max-w-sm">
@@ -199,20 +199,20 @@ export function RebuildModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-primary/10 flex items-center justify-end gap-3">
+        <div className="px-6 py-3 border-t border-hair flex items-center justify-end gap-3">
           {displayPhase === 'input' && (
             <>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 typo-body rounded-modal text-foreground hover:bg-secondary/50 transition-colors"
+                className="px-4 py-2 typo-body rounded-modal text-foreground hover:bg-surface-2 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
                 type="button"
                 onClick={() => onStartRebuild(userDirection, [...regenTargets])}
-                className="px-4 py-2 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+                className="px-4 py-2 typo-body rounded-modal bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors flex items-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 {t.templates.rebuild_modal.start_rebuild}
@@ -225,7 +225,7 @@ export function RebuildModal({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 typo-body rounded-modal text-red-400/70 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                className="px-4 py-2 typo-body rounded-modal text-status-error/70 border border-status-error/20 hover:bg-status-error/10 transition-colors flex items-center gap-2"
               >
                 <Square className="w-3 h-3" />
                 {t.templates.rebuild_modal.cancel_rebuild}
@@ -233,7 +233,7 @@ export function RebuildModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/70 transition-colors"
+                className="px-4 py-2 typo-body rounded-modal bg-surface-2 text-foreground hover:bg-secondary/70 transition-colors"
               >
                 {t.templates.rebuild_modal.run_in_background}
               </button>
@@ -244,7 +244,7 @@ export function RebuildModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/70 transition-colors"
+              className="px-4 py-2 typo-body rounded-modal bg-surface-2 text-foreground hover:bg-secondary/70 transition-colors"
             >
               {t.common.close}
             </button>

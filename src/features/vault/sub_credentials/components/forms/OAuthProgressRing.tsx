@@ -131,12 +131,12 @@ export function OAuthProgressRing({
             {phase === 'waiting' ? (
               <Shield
                 style={{ width: iconSize, height: iconSize }}
-                className="text-blue-400/80"
+                className="text-status-info/80"
               />
             ) : (
               <Shield
                 style={{ width: iconSize, height: iconSize }}
-                className="text-amber-400/80 oauth-icon-pulse"
+                className="text-status-warning/80 oauth-icon-pulse"
               />
             )}
           </div>
@@ -156,7 +156,7 @@ export function OAuthProgressRing({
         <p
           className={`typo-body text-center max-w-[220px] ${
             phase === 'success'
-              ? 'text-emerald-300'
+              ? 'text-status-success'
               : 'text-foreground'
           }`}
         >

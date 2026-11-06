@@ -52,7 +52,7 @@ const PAGE_SIZE = 20;
  *  would defeat `memo` on every such row. */
 const DEFAULT_ELIGIBILITY: Eligibility = { state: 'eligible' };
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 
 /** Delayed geometry-matched ghosts under the sticky header (loading v2 §C). */
@@ -64,10 +64,10 @@ function CatalogGhostRows() {
         const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
         return (
           <tr key={i} aria-hidden="true" className="h-10 animate-fade-in" style={{ animationDelay: delay }}>
-            <td className="pl-3 align-middle"><span className="block w-[26px] h-[26px] rounded bg-primary/[0.06]" /></td>
+            <td className="pl-3 align-middle"><span className="block w-[26px] h-[26px] rounded-interactive bg-primary/[0.06]" /></td>
             <td className="px-2 align-middle"><span className={`block h-3.5 ${nameW} max-w-[220px] ${GHOST_BAR}`} /></td>
-            <td className="px-2 align-middle"><span className="inline-block h-4 w-16 rounded border border-primary/10 bg-primary/[0.06]" /></td>
-            <td className="px-2 align-middle"><span className="inline-block w-5 h-5 rounded border border-primary/10 bg-primary/[0.06]" /></td>
+            <td className="px-2 align-middle"><span className="inline-block h-4 w-16 rounded-interactive border border-hair bg-primary/[0.06]" /></td>
+            <td className="px-2 align-middle"><span className="inline-block w-5 h-5 rounded-interactive border border-hair bg-primary/[0.06]" /></td>
             <td className="px-2 align-middle text-right"><span className={`inline-block h-3 w-10 ${GHOST_BAR}`} /></td>
             <td className="px-2 align-middle"><span className={`inline-block h-3.5 w-14 ${GHOST_BAR}`} /></td>
             <td className="pr-3 align-middle" />
@@ -190,13 +190,13 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, person
 
   return (
     <div
-      className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden flex flex-col min-h-0 h-full"
+      className="rounded-card border border-hair bg-secondary/15 overflow-hidden flex flex-col min-h-0 h-full"
       data-testid="recipes-table"
     >
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto scrollbar-thin">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
-            <tr className="border-b border-primary/10">
+            <tr className="border-b border-hair">
               <Th className="w-10 pl-3" srLabel={t.recipes_catalog.col_icon} />
               <Th sortKey="name" sort={sort} onSort={toggleSort}>
                 {t.recipes_catalog.col_recipe}
@@ -243,7 +243,7 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, person
           claim "0 of 0" about a catalog that has not arrived. */}
       {!isLoading && (
         <div
-          className="flex-shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 border-t border-primary/10 bg-background/60"
+          className="flex-shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 border-t border-hair bg-background/60"
           data-testid="recipes-table-footer"
         >
           <span className="typo-label text-foreground tabular-nums" aria-live="polite">
@@ -377,7 +377,7 @@ const RecipeRow = memo(function RecipeRow({ recipe, eligibility, highlight, pers
     <tr
       onClick={() => onOpenDetail(recipe.id)}
       data-testid={`recipe-row-${recipe.slug}`}
-      className={`group h-10 border-b border-primary/10 last:border-b-0 transition-colors cursor-pointer ${
+      className={`group h-10 border-b border-hair last:border-b-0 transition-colors cursor-pointer ${
         incompatible ? 'opacity-65 hover:bg-primary/[0.08]' : 'hover:bg-primary/[0.12]'
       }`}
     >
@@ -386,7 +386,7 @@ const RecipeRow = memo(function RecipeRow({ recipe, eligibility, highlight, pers
         {iconMeta && (
           <Tooltip content={iconMeta.label}>
             <span
-              className="inline-flex items-center justify-center rounded shrink-0"
+              className="inline-flex items-center justify-center rounded-interactive shrink-0"
               style={{
                 width: 26, height: 26,
                 background: `${iconMeta.color}1f`,
@@ -409,14 +409,14 @@ const RecipeRow = memo(function RecipeRow({ recipe, eligibility, highlight, pers
           </Tooltip>
           {adopted && stale ? (
             <Tooltip content={t.recipes_catalog.update_badge_tooltip}>
-              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label px-1 py-0.5 rounded border border-status-warning/40 bg-status-warning/10 text-status-warning">
+              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label px-1 py-0.5 text-status-warning">
                 <ArrowUpCircle className="w-2.5 h-2.5" />
                 {t.recipes_catalog.update_badge}
               </span>
             </Tooltip>
           ) : adopted ? (
             <Tooltip content={t.recipes_catalog.adopted_badge_tooltip}>
-              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label px-1 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
+              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label px-1 py-0.5 text-status-success">
                 <Check className="w-2.5 h-2.5" />
                 {t.recipes_catalog.adopted_badge}
               </span>
@@ -427,7 +427,7 @@ const RecipeRow = memo(function RecipeRow({ recipe, eligibility, highlight, pers
 
       {/* Category */}
       <td className="px-2 align-middle">
-        <span className="inline-flex typo-label px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/40 text-foreground whitespace-nowrap">
+        <span className="inline-flex typo-label px-1.5 py-0.5 rounded-interactive border border-hair bg-surface-2 text-foreground whitespace-nowrap">
           {categoryLabel(t, recipe.category)}
         </span>
       </td>
@@ -440,7 +440,7 @@ const RecipeRow = memo(function RecipeRow({ recipe, eligibility, highlight, pers
             return (
               <Tooltip key={slug} content={m.label}>
                 <span
-                  className="inline-flex items-center justify-center w-5 h-5 rounded border bg-secondary/40 shrink-0"
+                  className="inline-flex items-center justify-center w-5 h-5 rounded-interactive border bg-surface-2 shrink-0"
                   style={{ borderColor: `${m.color}4d` }}
                 >
                   <ConnectorIcon meta={m} size="w-3 h-3" />
@@ -486,7 +486,7 @@ const RecipeRow = memo(function RecipeRow({ recipe, eligibility, highlight, pers
           disabled={incompatible}
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive border typo-label transition-all cursor-pointer ${
             incompatible
-              ? 'border-primary/10 bg-secondary/40 text-foreground opacity-0'
+              ? 'border-hair bg-surface-2 text-foreground opacity-0'
               : 'border-primary/35 bg-primary/12 text-primary opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-primary/22'
           }`}
         >

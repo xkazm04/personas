@@ -9,7 +9,7 @@ const PROVIDERS: readonly WebhookProvider[] = ['slack', 'discord', 'teams', 'gen
 export const isWebhookProvider = (value: string): value is WebhookProvider =>
   (PROVIDERS as readonly string[]).includes(value);
 
-const INPUT = 'mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground';
+const INPUT = 'mt-1 w-full rounded-input border border-hair bg-surface-2 px-2 py-1 typo-body text-foreground';
 
 interface WebhookDraftFormProps {
   draft: WebhookDraft;

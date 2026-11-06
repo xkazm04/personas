@@ -72,7 +72,7 @@ export function RemoteJobsPanel({ peerId }: { peerId?: string } = {}) {
             {row.direction === 'outbound' ? (
               <ArrowUpRight className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
             ) : (
-              <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400 shrink-0" aria-hidden />
+              <ArrowDownLeft className="w-3.5 h-3.5 text-role-highlight shrink-0" aria-hidden />
             )}
             {row.direction === 'outbound' ? st.direction_outbound : st.direction_inbound}
           </span>
@@ -87,7 +87,7 @@ export function RemoteJobsPanel({ peerId }: { peerId?: string } = {}) {
             <Badge variant={row.kind === 'fleet_session' ? 'sky' : 'neutral'} size="xs" className="flex-shrink-0">
               {row.kind === 'fleet_session' ? st.job_kind_fleet_session : st.job_kind_instruction}
             </Badge>
-            <span className="typo-caption text-foreground/90 truncate" title={row.instruction}>{row.instruction}</span>
+            <span className="typo-caption text-ink-1 truncate" title={row.instruction}>{row.instruction}</span>
           </span>
         ),
       },
@@ -121,7 +121,7 @@ export function RemoteJobsPanel({ peerId }: { peerId?: string } = {}) {
     <SectionCard
       title={peerId ? st.remote_jobs_for_pc_title : st.remote_jobs_title}
       subtitle={peerId ? st.remote_jobs_for_pc_subtitle : st.remote_jobs_subtitle}
-      icon={<Radio className="w-4 h-4 text-cyan-400" />}
+      icon={<Radio className="w-4 h-4 text-ink-2" />}
       titleClassName="text-primary"
       action={
         peerId ? undefined : <RemoteJobDirectionFilter value={jobs.direction} onChange={jobs.setDirection} />
@@ -175,7 +175,7 @@ function RemoteJobDirectionFilter({
       role="radiogroup"
       aria-label={st.col_job_direction}
       data-testid="remote-jobs-direction-filter"
-      className="inline-flex rounded-interactive border border-primary/15 overflow-hidden"
+      className="inline-flex rounded-interactive border border-hair overflow-hidden"
     >
       {options.map((opt) => (
         <button
@@ -188,7 +188,7 @@ function RemoteJobDirectionFilter({
           className={`px-2.5 py-1 typo-caption transition-colors focus-ring ${
             value === opt.id
               ? 'bg-primary/15 text-primary'
-              : 'text-foreground hover:bg-secondary/50'
+              : 'text-foreground hover:bg-surface-2'
           }`}
         >
           {opt.label}

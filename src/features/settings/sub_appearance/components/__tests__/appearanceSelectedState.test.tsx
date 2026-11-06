@@ -51,7 +51,7 @@ describe('Appearance pickers announce the current choice', () => {
   });
 
   it('density (the one that already did)', () => {
-    useThemeStore.setState({ density: 'cozy' });
+    useThemeStore.setState({ density: 'comfortable' });
     render(<AppearanceDensitySettings />);
     expectExactlyOneChosen(pressedStates());
   });

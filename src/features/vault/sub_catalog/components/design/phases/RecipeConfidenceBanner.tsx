@@ -42,14 +42,14 @@ export function RecipeConfidenceBanner({ instruction }: RecipeConfidenceBannerPr
   if (!match) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-modal border bg-emerald-500/8 border-emerald-500/20 animate-fade-slide-in">
-      <BadgeCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-      <span className="typo-body text-emerald-300/90">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-modal border bg-status-success/8 border-status-success/20 animate-fade-slide-in">
+      <BadgeCheck className="w-4 h-4 text-status-success shrink-0" />
+      <span className="typo-body text-status-success/90">
         <span className="font-medium">{dp.verified_setup}</span>
         {match.usageCount > 0 && (
           <> {tx(match.usageCount === 1 ? dp.recipe_used_one : dp.recipe_used_other, { count: match.usageCount })}</>
         )}
-        <span className="text-emerald-300/60 ml-1.5">{dp.cached_recipe}</span>
+        <span className="text-status-success/60 ml-1.5">{dp.cached_recipe}</span>
       </span>
     </div>
   );

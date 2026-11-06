@@ -53,7 +53,7 @@ export function ColorRow({
         className={`focus-ring w-7 h-7 rounded-card border flex-shrink-0 transition-all cursor-pointer ${
           open
             ? 'border-primary/40 ring-2 ring-primary/20'
-            : 'border-primary/15 hover:border-primary/30 hover:scale-105'
+            : 'border-hair hover:border-primary/30 hover:scale-105'
         }`}
         style={{ backgroundColor: displayValue }}
         title={tx(t.settings.appearance.color_pick_title, { label })}
@@ -67,14 +67,14 @@ export function ColorRow({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="focus-ring p-1 rounded-input text-foreground hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
+          className="focus-ring p-1 rounded-input text-foreground hover:text-ink-2 hover:bg-primary/5 transition-colors flex-shrink-0"
           title={t.settings.appearance.reset_to_auto}
         >
           <X className="w-3 h-3" />
         </button>
       )}
       {!isOverridden && (
-        <span className="text-[10px] text-foreground flex-shrink-0">{t.settings.appearance.color_auto}</span>
+        <span className="typo-caption text-foreground flex-shrink-0">{t.settings.appearance.color_auto}</span>
       )}
 
       <AnimatePresence>

@@ -37,7 +37,7 @@ export function CompactRow({
       onKeyDown={onRowActivateKey(() => openModal({ type: 'detail', review }))}
       tabIndex={0}
       role="button"
-      className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors px-4 py-1.5"
+      className="group flex items-center border-b border-hair hover:bg-surface-1 cursor-pointer transition-colors px-4 py-1.5"
       data-testid={`template-row-${review.id}`}
     >
       <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -45,7 +45,7 @@ export function CompactRow({
           {highlightMatch(review.test_case_name, searchQuery)}
         </span>
         {isAiResult && (
-          <span className="px-1.5 py-0.5 typo-body rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
+          <span className="px-1.5 py-0.5 typo-body rounded-interactive bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
             <Sparkles className="w-2.5 h-2.5 inline -mt-px mr-0.5" />AI
           </span>
         )}
@@ -65,7 +65,7 @@ export function CompactRow({
           return (
             <Tooltip key={cat.key} content={hasIt ? `${cat.label} · ${t.templates.connector_readiness.ready}` : cat.label}>
               <div
-                className={`w-5.5 h-5.5 rounded flex items-center justify-center flex-shrink-0 ${
+                className={`w-5.5 h-5.5 rounded-interactive flex items-center justify-center flex-shrink-0 ${
                   hasIt ? '' : 'grayscale opacity-50'
                 }`}
                 style={{ backgroundColor: `${cat.color}15` }}
@@ -76,12 +76,12 @@ export function CompactRow({
           );
         })}
         {archCategories.length > 4 && (
-          <span className="text-[10px] text-foreground ml-0.5">+{archCategories.length - 4}</span>
+          <span className="typo-caption text-foreground ml-0.5">+{archCategories.length - 4}</span>
         )}
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         {review.adoption_count > 0 && (
-          <span className="inline-flex items-center gap-1 typo-code text-emerald-400/70">
+          <span className="inline-flex items-center gap-1 typo-code text-status-success/70">
             <Download className="w-2.5 h-2.5" />
             {review.adoption_count}
           </span>

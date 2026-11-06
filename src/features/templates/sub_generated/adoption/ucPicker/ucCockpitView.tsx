@@ -63,7 +63,7 @@ function CapabilityCard({ subtitle }: { subtitle: string }) {
   return (
     <Panel ariaLabel="Capability">
       <div className="flex-1 flex items-center">
-        <p className="typo-body-lg text-foreground/95">{subtitle}</p>
+        <p className="typo-body-lg text-ink-1">{subtitle}</p>
       </div>
     </Panel>
   );

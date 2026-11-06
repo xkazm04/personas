@@ -46,19 +46,19 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       titleId="ingest-text-title"
       size="md"
       containerClassName="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
-        <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
-          <Type className="w-3.5 h-3.5 text-violet-400" />
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-hair">
+        <div className="w-7 h-7 rounded-card bg-role-agent/10 border border-role-agent/15 flex items-center justify-center">
+          <Type className="w-3.5 h-3.5 text-role-agent" />
         </div>
-        <h2 id="ingest-text-title" className="typo-heading text-foreground/90 flex-1">{sh.paste_text}</h2>
+        <h2 id="ingest-text-title" className="typo-heading text-ink-1 flex-1">{sh.paste_text}</h2>
         <button
           type="button"
           onClick={onClose}
           aria-label={sh.close}
-          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
+          className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
         >
           <X className="w-4 h-4" />
         </button>
@@ -73,7 +73,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={sh.title_placeholder}
-            className="w-full px-3 py-2 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+            className="w-full px-3 py-2 typo-body bg-surface-1 border border-hair rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
             autoFocus
           />
         </div>
@@ -92,7 +92,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             onChange={(e) => setText(e.target.value)}
             placeholder={sh.content_placeholder}
             rows={12}
-            className="w-full px-3 py-2 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none"
+            className="w-full px-3 py-2 typo-code bg-surface-1 border border-hair rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors resize-none"
           />
         </div>
 
@@ -100,7 +100,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
+      <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-hair">
         <Button variant="ghost" onClick={onClose}>
           {t.common.cancel}
         </Button>

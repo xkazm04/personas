@@ -16,9 +16,9 @@ export function ForagingScanning() {
   return (
     <div
       key="scanning"
-      className="animate-fade-slide-in rounded-modal border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-role-agent/20 bg-role-agent/5 p-8 text-center space-y-3"
     >
-      <LoadingSpinner size="2xl" className="text-violet-400 mx-auto" />
+      <LoadingSpinner size="2xl" className="text-role-agent mx-auto" />
       <p className="typo-body text-foreground">{t.vault.foraging.scanning}</p>
       <p className="typo-body text-foreground">
         {t.vault.foraging.checking_env}
@@ -39,8 +39,8 @@ export function ForagingImporting({ forage }: ForagingImportingProps) {
       key="importing"
       className="animate-fade-slide-in space-y-3"
     >
-      <div className="rounded-modal border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
-        <LoadingSpinner size="xl" className="text-violet-400 mx-auto" />
+      <div className="rounded-modal border border-hair bg-surface-1 p-4 text-center space-y-2">
+        <LoadingSpinner size="xl" className="text-role-agent mx-auto" />
         <p className="typo-body text-foreground">
           {forg.importing}
         </p>
@@ -80,15 +80,15 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
   return (
     <div
       key="done"
-      className="animate-fade-slide-in rounded-modal border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-hair bg-surface-1 p-6 text-center space-y-3"
     >
-      <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+      <CheckCircle2 className="w-8 h-8 text-status-success mx-auto" />
       <div>
-        <p className="typo-body text-foreground/90">
+        <p className="typo-body text-ink-1">
           {tx(count === 1 ? forg.imported_to_vault_one : forg.imported_to_vault_other, { count })}
         </p>
         {forage.partialImportError && (
-          <p className="typo-body text-amber-400/80 mt-1">{forg.partial_import_error}</p>
+          <p className="typo-body text-status-warning/80 mt-1">{forg.partial_import_error}</p>
         )}
       </div>
       <div className="flex items-center justify-center gap-2">
@@ -96,7 +96,7 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
           variant="link"
           size="sm"
           onClick={forage.scan}
-          className="text-foreground hover:text-foreground/80"
+          className="text-foreground hover:text-ink-2"
         >
           {forg.scan_again}
         </Button>
@@ -105,7 +105,7 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
           variant="link"
           size="sm"
           onClick={onBack}
-          className="text-violet-400/80 hover:text-violet-400"
+          className="text-role-agent/80 hover:text-role-agent"
         >
           {forg.back_to_vault}
         </Button>
@@ -125,12 +125,12 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
   return (
     <div
       key="error"
-      className="animate-fade-slide-in rounded-modal border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-status-error/20 bg-status-error/5 p-6 text-center space-y-3"
     >
-      <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
+      <AlertTriangle className="w-8 h-8 text-status-error mx-auto" />
       <div>
-        <p className="typo-body text-foreground/90">{t.vault.foraging.scan_failed}</p>
-        <p className="typo-body text-red-400/70 mt-1">{translated.message}</p>
+        <p className="typo-body text-ink-1">{t.vault.foraging.scan_failed}</p>
+        <p className="typo-body text-status-error/70 mt-1">{translated.message}</p>
         {translated.suggestion && (
           <p className="typo-body text-foreground mt-1">{translated.suggestion}</p>
         )}
@@ -140,7 +140,7 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
           variant="link"
           size="sm"
           onClick={forage.scan}
-          className="text-violet-400/80 hover:text-violet-400"
+          className="text-role-agent/80 hover:text-role-agent"
         >
           {t.vault.negotiator.try_again}
         </Button>
@@ -149,7 +149,7 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
           variant="link"
           size="sm"
           onClick={onBack}
-          className="text-foreground hover:text-foreground/80"
+          className="text-foreground hover:text-ink-2"
         >
           {t.common.back}
         </Button>
