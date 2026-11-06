@@ -1,0 +1,142 @@
+{
+  "schema": "conform-run/1",
+  "worker": "82793dc7-f1fe-48cb-aace-71f6cbf9cd3f",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-11-06T00:05:00.680083+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "stores-slices-system",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/twinSlice.ts:550 The client reads the twin's settled memories out of the pending-memory table by passing status 'approved', so the pending lane is a status column on the live store, and any read that forgets the filter shows pending or rejected claims as approved.",
+      "techniques": [
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/twinSlice.ts:550 Approved memories come from listPendingMemories filtered by status. The backend door that causes this is in db-repos (twin.rs:621)."
+        }
+      ]
+    },
+    {
+      "context": "overview-manual-review",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:73 The inbox decides on persona execution reviews and Dev Tools backlog ideas and does not capture, consolidate or recall agent memory. A case-insensitive grep of sub_manual-review plus ExecutionHeatmap.tsx found 0 hits for memory, recall, episode and belief. The single 'consolidat' hit (useBacklogQueue.ts:58) is about merging data paths, not memory.",
+      "techniques": [],
+      "absenceTerms": [
+        "memory",
+        "recall",
+        "episode",
+        "belief"
+      ]
+    },
+    {
+      "context": "db-repos",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/dev_memories.rs:222 The dev-memory packer now correctly skips an item that does not fit instead of stopping (the earlier verdict's defect is fixed), but each skipped item vanishes from the rendered block with no notice of kind, count or cause, so the agent cannot tell that stored constraints or decisions were left out.",
+      "techniques": [
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:222 Skip-not-stop is right, but the dropped item leaves no in-band notice. The SQL LIMIT in get_for_injection is a second silent cut."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:249 Packing is now whole-item and skip-don't-stop, but the result never says what it considered and did not show ('the result says what it did not show')."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:183 One pure decay score reuses memory_recall's half-life table, so the dev store and persona store age the same kind of item at the same rate."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/twin.rs:621 Approval flips a status on the pending row, and the row stays as the live approved memory read by input.rs:211. Approval now also writes twin_distilled_facts, but readers still pull 'approved' rows from the pending table."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/twin.rs:609 Twin memories distilled from communications go through a human review door before consolidation into facts."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "companion-brain",
+      "reason": "evidence leans on sleep_cycle/prompts.rs, which is not a tracked file"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "settings-network",
+      "reason": "withdrawn after review: reviewer (sonnet): ExposureManager.tsx:37 is only the ACCESS_COLORS constant, so it does not show that a memory store is absent; the evidence also relies on AmbientContextPanel, which lives in src/features/settings/components and not in this context's sub_network files; and ExposureManager's RESOURCE_TYPES includes 'k"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T00:05:00.680083+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "pending-beliefs-live-apart"
+      ],
+      "deviations": 1,
+      "context": "stores-slices-system",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T00:05:00.680083+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "overview-manual-review",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T00:05:00.680083+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "settings-network",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T00:05:00.680083+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "loss-site-inventory",
+        "memory-governance",
+        "memory-value-model",
+        "pending-beliefs-live-apart",
+        "recall-injection"
+      ],
+      "deviations": 1,
+      "context": "db-repos",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

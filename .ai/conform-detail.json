@@ -13453,19 +13453,40 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:04:48.459Z",
-      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:05:00.680Z",
+      "worker": "82793dc7-f1fe-48cb-aace-71f6cbf9cd3f",
       "techniques": [
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:222 Skip-not-stop is right, but the dropped item leaves no in-band notice. The SQL LIMIT in get_for_injection is a second silent cut."
+        },
         {
           "technique": "recall-injection",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 `break` on overflow instead of skipping to the next item that fits"
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:249 Packing is now whole-item and skip-don't-stop, but the result never says what it considered and did not show ('the result says what it did not show')."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:183 One pure decay score reuses memory_recall's half-life table, so the dev store and persona store age the same kind of item at the same rate."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/twin.rs:621 Approval flips a status on the pending row, and the row stays as the live approved memory read by input.rs:211. Approval now also writes twin_distilled_facts, but readers still pull 'approved' rows from the pending table."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/twin.rs:609 Twin memories distilled from communications go through a human review door before consolidation into facts."
         },
         {
           "technique": "consolidation",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/dev_memories.rs:11 append + read only: a reversed constraint is never superseded and keeps reciting itself"
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:11 append + read only: a reversed constraint is never superseded and keeps reciting itself",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "decay-and-forgetting",
@@ -13488,6 +13509,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 render_for_prompt breaks at the first line that overflows the budget, so one fat item drops every lower-ranked item behind it (recall-injection: skip, do not stop); store is append-only with no decay or supersedence (:11) - re-confirmed at revision 51",
+          "evaluatedAt": "2026-10-16T18:04:48.459Z",
+          "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+          "reason": "replaced by 82793dc7-f1fe-48cb-aace-71f6cbf9cd3f"
         }
       ]
     },
@@ -16325,14 +16353,14 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:22:13.000Z",
-      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:05:00.680Z",
+      "worker": "82793dc7-f1fe-48cb-aace-71f6cbf9cd3f",
       "techniques": [
         {
           "technique": "pending-beliefs-live-apart",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/twin.rs:602 the status-column design the technique names as its first failure mode; at least three readers, so the one-reader exemption does not hold"
+          "evidence": "src/stores/slices/system/twinSlice.ts:550 Approved memories come from listPendingMemories filtered by status. The backend door that causes this is in db-repos (twin.rs:621)."
         },
         {
           "technique": "filter-at-the-id-door",
@@ -16355,6 +16383,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/twin.rs:602 approval flips status on twin_pending_memories instead of moving the claim to a belief store, so every live read must carry status='approved' (src-tauri/src/engine/twin_prompt/input.rs:211, src-tauri/db/src/repos/twin.rs:1751, src/stores/slices/system/twinSlice.ts:550) and one that forgets injects pending or rejected claims as settled",
+          "evaluatedAt": "2026-10-21T17:22:13.000Z",
+          "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+          "reason": "replaced by 82793dc7-f1fe-48cb-aace-71f6cbf9cd3f"
         }
       ]
     },
@@ -20722,19 +20757,21 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T00:21:27.533Z",
-      "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:05:00.680Z",
+      "worker": "82793dc7-f1fe-48cb-aace-71f6cbf9cd3f",
       "techniques": [
         {
           "technique": "memory-governance",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx:4 The pending approval holds Athena's accept/reject verdicts on backlog items. It is not a proposed belief or a rule written to her memory, so the write-lane tiering this technique governs is not in play."
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx:4 The pending approval holds Athena's accept/reject verdicts on backlog items. It is not a proposed belief or a rule written to her memory, so the write-lane tiering this technique governs is not in play.",
+          "carriedFrom": "2026-10-24"
         },
         {
           "technique": "pending-beliefs-live-apart",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:48 Review rows are keyed to executions and carry no unconfirmed belief that recall could read."
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:48 Review rows are keyed to executions and carry no unconfirmed belief that recall could read.",
+          "carriedFrom": "2026-10-24"
         }
       ],
       "superseded": [
@@ -20751,6 +20788,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by 37ccc5a0-b8db-413c-8d04-902e24c0a06b"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:73 The inbox decides on persona execution reviews and Dev Tools backlog ideas, and nothing here captures, consolidates or recalls agent memory. A case-insensitive search of sub_manual-review and sub_analytics/components found 0 hits for memory, recall, episode and belief; the single 'consolidation' and 'provenance' hits are about merging data paths and labelling where a backlog finding came from, not memory.",
+          "evaluatedAt": "2026-10-24T00:21:27.533Z",
+          "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
+          "reason": "replaced by 82793dc7-f1fe-48cb-aace-71f6cbf9cd3f"
         }
       ]
     },
@@ -20792,9 +20836,8 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:16.584Z",
-      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:05:00.680Z",
       "techniques": [],
       "superseded": [
         {
@@ -20810,8 +20853,21 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:37 RESOURCE_TYPES lists resources exposed to peers as sharing permissions; not an agent memory store or its governance",
+          "evaluatedAt": "2026-10-22T19:48:16.584Z",
+          "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+          "reason": "replaced by 82793dc7-f1fe-48cb-aace-71f6cbf9cd3f"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "82793dc7-f1fe-48cb-aace-71f6cbf9cd3f",
+        "state": "not-applicable",
+        "at": "2026-11-06T00:05:57.224990+00:00",
+        "reason": "reviewer (sonnet): ExposureManager.tsx:37 is only the ACCESS_COLORS constant, so it does not show that a memory store is absent; the evidence also relies on AmbientContextPanel, which lives in src/features/settings/components and not in this context's sub_network files; and ExposureManager's RESOURCE_TYPES includes 'k"
+      }
     },
     "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/agent-memory": {
       "context": "stores",

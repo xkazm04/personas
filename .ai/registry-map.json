@@ -11376,12 +11376,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 render_for_prompt breaks at the first line that overflows the budget, so one fat item drops every lower-ranked item behind it (recall-injection: skip, do not stop); store is append-only with no decay or supersedence (:11) - re-confirmed at revision 51",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:222 The dev-memory packer now correctly skips an item that does not fit instead of stopping (the earlier verdict's defect is fixed), but each skipped item vanishes from the rendered block with no notice of kind, count or cause, so the agent cannot tell that stored constraints or decisions were left out.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
@@ -25312,12 +25311,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:73 The inbox decides on persona execution reviews and Dev Tools backlog ideas, and nothing here captures, consolidates or recalls agent memory. A case-insensitive search of sub_manual-review and sub_analytics/components found 0 hits for memory, recall, episode and belief; the single 'consolidation' and 'provenance' hits are about merging data paths and labelling where a backlog finding came from, not memory.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:73 The inbox decides on persona execution reviews and Dev Tools backlog ideas and does not capture, consolidate or recall agent memory. A case-insensitive grep of sub_manual-review plus ExecutionHeatmap.tsx found 0 hits for memory, recall, episode and belief. The single 'consolidat' hit (useBacklogQueue.ts:58) is about merging data paths, not memory.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "triage-queues",
@@ -34393,11 +34391,7 @@
           "confidence": "strong",
           "state": "not-applicable",
           "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:37 RESOURCE_TYPES lists resources exposed to peers as sharing permissions; not an agent memory store or its governance",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-22"
         },
         {
           "subject": "test-harness",
@@ -36864,12 +36858,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/twin.rs:602 approval flips status on twin_pending_memories instead of moving the claim to a belief store, so every live read must carry status='approved' (src-tauri/src/engine/twin_prompt/input.rs:211, src-tauri/db/src/repos/twin.rs:1751, src/stores/slices/system/twinSlice.ts:550) and one that forgets injects pending or rejected claims as settled",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/system/twinSlice.ts:550 The client reads the twin's settled memories out of the pending-memory table by passing status 'approved', so the pending lane is a status column on the live store, and any read that forgets the filter shows pending or rejected claims as approved.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
