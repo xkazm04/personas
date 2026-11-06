@@ -27337,19 +27337,46 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:14:39.000Z",
-      "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:51:29.882Z",
+      "worker": "4272f6d9-7fd1-4ca4-b44c-50b04d805835",
       "techniques": [
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:1372 The cutoff and survival verdicts come from wall-clock sleeps with only ~120 ms total headroom. tokio::time::pause or start_paused would make them about the schedule. prompt_sanitizer.rs:343 (`elapsed.as_millis() < 250`) is a further wall-clock bound, a perf guard on an uncontrolled host."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:1361 Arm A re-runs the replaced behaviour and asserts that it kills the healthy stream, so the test is proved able to fail."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:781 Each DB-touching test builds its own private test pool, so nothing is inherited from a sibling test."
+        },
         {
           "technique": "live-app-harness",
           "verdict": "realized in part: test-only command compiled behind the test-automation feature, rows marked is_simulation",
-          "evidence": "src-tauri/src/commands/mod.rs:25"
+          "evidence": "src-tauri/src/commands/mod.rs:25",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "fixture-economics",
           "verdict": "not realized: seeded status written around the product write path (one-validation-door)",
-          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119"
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "registryProposal": "assert-the-schedule-not-the-stopwatch could name the async-runtime remedy explicitly (a paused/virtual runtime clock such as tokio start_paused or vitest fake timers) as the default for lease/ceiling tests, before span recording.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119 flips the seeded persona_executions row to 'completed' with a raw UPDATE, bypassing executions::update_status (src-tauri/db/src/repos/execution/executions.rs:1264) which redacts fields and owns the transition, so the fixture can hold a state the product door would shape differently",
+          "evaluatedAt": "2026-10-14T09:14:39.000Z",
+          "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+          "reason": "replaced by 4272f6d9-7fd1-4ca4-b44c-50b04d805835"
         }
       ]
     },

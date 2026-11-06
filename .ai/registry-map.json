@@ -8305,12 +8305,11 @@
           "changedAt": "2026-10-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119 flips the seeded persona_executions row to 'completed' with a raw UPDATE, bypassing executions::update_status (src-tauri/db/src/repos/execution/executions.rs:1264) which redacts fields and owns the transition, so the fixture can hold a state the product door would shape differently",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:1372 Arm B claims a slow-but-producing stream survives the shipped ceiling, using real tokio sleeps (8 x 60 ms gaps against a 200 ms lease and a 600 ms ceiling, no paused clock, no tokio test-util), so timer stretch on a loaded or coarse-timer Windows runner can turn it red with no defect present: a stopwatch, not a schedule assertion.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
