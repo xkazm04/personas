@@ -17,8 +17,8 @@ import {
   SESSION_STATE_MARK, SESSION_TINT, sessionHue, sessionSymbols, swatchHue, swatchInitial, symbolClass,
 } from '../nodeSymbols';
 
-/** `bg-blue-400` → `blue`; `bg-primary` → `primary`; `bg-foreground/30` → `foreground`. */
-const family = (cls: string) => cls.replace(/^(bg|border|text)-/, '').split(/[-/[]/)[0];
+/** `bg-status-info` → `status-info`; `bg-primary` → `primary`; `bg-foreground/30` → `foreground`. */
+const family = (cls: string) => cls.replace(/^(bg|border|text)-/, '').split(/[/[]/)[0].replace(/-\d{2,3}$/, '');
 
 describe('the session symbol list', () => {
   it('shows state · origin · elapsed · project for a running row, and never a rank or a gate', () => {
@@ -130,7 +130,7 @@ describe('the node treatment', () => {
 
   it('frames the node with the hue wash and a soft elevation — no border, so nothing to dash for a queued row', () => {
     expect(frameClass(hue)).toBe(`${NODE_SHELL} ${hue.tint}`);
-    expect(frameClass(hue)).toContain('bg-blue-500/[0.08]');
+    expect(frameClass(hue)).toContain('bg-status-info/[0.08]');
     expect(frameClass(hue)).toContain('shadow-elevation-1');
     expect(frameClass(hue)).not.toMatch(/border/);
   });

@@ -20,6 +20,7 @@ import { ShipGoalRail } from './ShipGoalRail';
 import { type ShipGoal, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { AfterCutMark, LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useProjectPlan';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** The row-level chip button. Takes an INK/BORDER class pair rather than a hex:
  *  private to this file, so there was no colour-string contract to keep. */
@@ -39,10 +40,10 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
 
   return (
     <div data-testid="ship-milestone-composer">
-      <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 typo-caption text-ink-2 hover:text-foreground transition-colors focus-ring rounded-interactive mb-3">
+      <Button variant="ghost" size="sm" type="button" onClick={onBack} className="mb-3">
         <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
         {t.ship.back_to_plan}
-      </button>
+      </Button>
 
       {/* The two-column measure is LAYOUT, not colour — a bespoke track pair
           Tailwind has no token for, so it stays inline. */}
@@ -69,13 +70,13 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                 <Target className="w-3 h-3" aria-hidden />
                 {g.name}
                 <Tooltip content={t.ship.goal_assist_tooltip}>
-                  <button type="button" onClick={() => setAssistGoal(g)} className="focus-ring rounded-full" aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
+                  <Button variant="ghost" size="icon-sm" type="button" onClick={() => setAssistGoal(g)} aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
                     <Zap className={`w-3 h-3 ${PLAN_INK.athena}`} aria-hidden />
-                  </button>
+                  </Button>
                 </Tooltip>
-                <button type="button" onClick={() => ship.removeItem(vm.id, 'goal', g.id)} className="focus-ring rounded-full" aria-label={tx(t.ship.unbind_aria, { name: g.name })}>
+                <Button variant="ghost" size="icon-sm" type="button" onClick={() => ship.removeItem(vm.id, 'goal', g.id)} aria-label={tx(t.ship.unbind_aria, { name: g.name })}>
                   <X className="w-3 h-3 opacity-60 hover:opacity-100" aria-hidden />
-                </button>
+                </Button>
               </span>
             ))}
           </div>

@@ -14,6 +14,7 @@ import {
   ConnectorSocket,
   type AssignmentMatrixProps,
 } from './matrixShared';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export default function AssignmentMatrix({
   projects,
@@ -57,16 +58,14 @@ export default function AssignmentMatrix({
             {tallies.map(([svc, n]) => {
               const b = connectorBrand(svc);
               return (
-                <span
-                  key={svc}
+                <Tooltip content={`${b.label}: ${n}`} key={svc}><span
                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border border-hair bg-background/40 typo-caption"
-                  title={`${b.label}: ${n}`}
                 >
                   {b.iconUrl ? (
                     <img src={b.iconUrl} alt="" className="w-3 h-3 rounded-[2px] object-contain" />
                   ) : null}
                   <span className="text-ink-2">{n}</span>
-                </span>
+                </span></Tooltip>
               );
             })}
           </div>

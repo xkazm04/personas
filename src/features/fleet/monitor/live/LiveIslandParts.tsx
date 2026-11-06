@@ -13,6 +13,7 @@ import {
   LiveAvatar, TYPE_ICON, authorAccent, authorName, liveAuthorLabels, liveMessageType,
   type LiveMessage, type LiveVariantProps,
 } from './liveModel';
+import Button from '@/features/shared/components/buttons/Button';
 
 export const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
 
@@ -59,14 +60,13 @@ function ActCluster({ m, onDismiss }: { m: LiveMessage; onDismiss: (id: string) 
         </span>
       </Tooltip>
       <Tooltip content={t.monitor.live_dismiss} placement="right">
-        <button
+        <Button variant="secondary" size="icon-sm"
           type="button"
           onClick={() => onDismiss(m.id)}
           aria-label={t.monitor.live_dismiss}
-          className="flex h-6 w-6 items-center justify-center rounded-full border border-hair bg-background/80 text-foreground transition-colors hover:border-status-success/40 hover:text-status-success focus-visible:text-status-success"
         >
           <Check className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </Tooltip>
     </div>
   );

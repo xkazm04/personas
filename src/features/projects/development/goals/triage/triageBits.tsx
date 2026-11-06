@@ -66,8 +66,8 @@ export function TriageHeaderBand({ icon: Icon, title, subject, awaiting, childre
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04] flex-shrink-0">
-      <Icon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
+    <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-2 flex-shrink-0">
+      <Icon className="w-4 h-4 text-ink-3 flex-shrink-0" aria-hidden />
       <span className="typo-title truncate">{title}</span>
       <span className="typo-caption text-ink-2 truncate">· {subject}</span>
       {awaiting > 0 && (

@@ -2,6 +2,7 @@ import { Folder, Wand2, X } from 'lucide-react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { FLEET_STATE_META } from '../fleetStateMeta';
 import type { QuickDispatchController } from './quickDispatchController';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Shared leaf pieces used by every Quick Dispatch variant — hoisted the moment
@@ -18,28 +19,28 @@ export function QuickDispatchChips({ c }: { c: QuickDispatchController }) {
         <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-caption rounded-interactive border bg-surface-1 border-hair text-primary">
           <Folder className="w-3 h-3" aria-hidden="true" />
           {c.projectChip.name}
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={c.removeProjectChip}
             aria-label={tx(quickT.chip_remove, { label: c.projectChip.name })}
-            className="ml-0.5 p-0.5 rounded-full hover:bg-foreground/10 transition-colors"
+            className="ml-0.5"
           >
             <X className="w-2.5 h-2.5" aria-hidden="true" />
-          </button>
+          </Button>
         </span>
       )}
       {c.skillChip && (
         <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-caption rounded-interactive border bg-surface-1 border-hair text-role-agent">
           <Wand2 className="w-3 h-3" aria-hidden="true" />
           {`/${c.skillChip.name}`}
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={c.removeSkillChip}
             aria-label={tx(quickT.chip_remove, { label: c.skillChip.name })}
-            className="ml-0.5 p-0.5 rounded-full hover:bg-foreground/10 transition-colors"
+            className="ml-0.5"
           >
             <X className="w-2.5 h-2.5" aria-hidden="true" />
-          </button>
+          </Button>
         </span>
       )}
     </>

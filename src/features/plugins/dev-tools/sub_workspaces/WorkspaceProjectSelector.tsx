@@ -177,12 +177,12 @@ export function WorkspaceProjectSelector({
           data-testid={testId}
           className={header
             ? 'flex items-center gap-2 h-9 px-3 rounded-interactive max-w-[320px] min-w-0 text-foreground bg-surface-1 border border-hair hover:bg-surface-1 transition-colors'
-            : 'flex items-center gap-1.5 h-7 px-2 rounded-lg max-w-[260px] text-foreground hover:bg-surface-1 transition-colors'}
+            : 'flex items-center gap-1.5 h-7 px-2 rounded-card max-w-[260px] text-foreground hover:bg-surface-1 transition-colors'}
         >
           <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: wsColor }} aria-hidden />
           <span className={`${header ? 'typo-body max-w-[120px]' : ' font-medium max-w-[90px]'} truncate min-w-0`}>{wsLabel}</span>
           <span className="text-ink-3 flex-shrink-0" aria-hidden>/</span>
-          <span className={`${header ? 'typo-body' : ' font-medium'} truncate min-w-0 ${activeProject ? 'text-role-agent' : 'text-ink-2'}`}>
+          <span className={`${header ? 'typo-body' : ' font-medium'} truncate min-w-0 ${activeProject ? 'text-ink-1' : 'text-ink-2'}`}>
             {activeProject?.name ?? noneLabel ?? c.workspace_pick_project}
           </span>
           <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${(placement === 'up') !== open ? 'rotate-180' : ''}`} />
@@ -237,7 +237,7 @@ export function WorkspaceProjectSelector({
               <button
                 type="button"
                 onClick={() => createWorkspace(c.workspace_new)}
-                className="w-full flex items-center gap-1.5 px-3 py-2 border-t border-hair typo-caption text-primary hover:bg-primary/5 transition-colors"
+                className="w-full flex items-center gap-1.5 px-3 py-2 border-t border-hair typo-caption text-primary hover:bg-surface-2 transition-colors"
                 data-testid={newWorkspaceTestId}
               >
                 <Plus className="w-3.5 h-3.5" aria-hidden />
@@ -257,7 +257,7 @@ export function WorkspaceProjectSelector({
                   <button
                     type="button"
                     onClick={() => { void setActiveProject(null); setOpen(false); }}
-                    className={`${row} typo-caption ${activeProjectId === null ? 'bg-role-agent/10 text-role-agent' : idle}`}
+                    className={`${row} typo-caption ${activeProjectId === null ? 'bg-sel text-ink-1' : idle}`}
                   >
                     <X className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                     <span className="flex-1 truncate">{noneLabel ?? c.workspace_no_active_project}</span>
@@ -272,7 +272,7 @@ export function WorkspaceProjectSelector({
                       type="button"
                       key={p.id}
                       onClick={() => { void setActiveProject(p.id); setOpen(false); }}
-                      className={`${row} ${isActive ? 'bg-role-agent/10 text-role-agent' : idle}`}
+                      className={`${row} ${isActive ? 'bg-sel text-ink-1' : idle}`}
                     >
                       <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                       <span className="flex-1 min-w-0">

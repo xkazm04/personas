@@ -27,7 +27,7 @@ import { autopilotReadout, autopilotTone, type AutopilotReadout } from './autopi
 import { useAutopilotStatus } from './useAutopilotStatus';
 
 const TONE_CLASS: Record<ReturnType<typeof autopilotTone>, string> = {
-  off: 'border-border bg-surface-1 text-foreground opacity-70 hover:opacity-100',
+  off: 'border-border bg-surface-1 text-ink-2 hover:text-ink-1',
   stopped: 'border-hair bg-surface-1 text-status-error',
   holding: 'border-hair bg-surface-2 text-status-warning',
   running: 'border-hair bg-surface-1 text-status-success',

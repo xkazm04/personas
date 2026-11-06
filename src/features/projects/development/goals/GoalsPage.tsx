@@ -169,15 +169,14 @@ export default function GoalsPage() {
                 <p className="typo-caption text-foreground">{dl.goal_starters_label}</p>
                 <div className="flex flex-wrap justify-center gap-1.5 max-w-lg">
                   {starters.map((s) => (
-                    <button
+                    <Button variant="secondary" size="sm"
                       key={s.title}
                       type="button"
                       disabled={starterBusy}
                       onClick={() => void addStarter(s.title, s.desc)}
-                      className="px-2.5 py-1 rounded-interactive border border-hair bg-surface-1 typo-caption text-ink-2 hover:border-primary hover:text-ink-1 transition-colors disabled:opacity-50"
                     >
                       {s.title}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>

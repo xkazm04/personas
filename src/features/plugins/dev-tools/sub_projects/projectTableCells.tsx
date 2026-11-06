@@ -78,7 +78,7 @@ export function MembersCell({ project, rosters, personaIndex, teamCounts, onEnte
   const teamId = project.teamId;
   if (!teamId) {
     return (
-      <span className="typo-caption text-foreground opacity-40" aria-label={t.plugins.dev_projects.no_team_yet}>
+      <span className="typo-caption text-ink-3 " aria-label={t.plugins.dev_projects.no_team_yet}>
         &mdash;
       </span>
     );

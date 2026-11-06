@@ -20,6 +20,7 @@ import { isOngoing, isComplete, goalStatusMeta, goalStatusLabel, GOAL_STATUSES }
 import { GoalAtmosphere } from './goalsTheme';
 import { GoalDetailDrawer } from './GoalDetailDrawer';
 import { GoalEditorModal } from './GoalEditorModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 export const DAY = 86400000;
 
@@ -300,15 +301,14 @@ export function AddGoalButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button variant="secondary" size="icon-sm"
       type="button"
       onClick={onClick}
       aria-label={`${label} — ${projectName}`}
       style={{ width: NODE_PX, height: NODE_PX }}
-      className="flex items-center justify-center rounded-[5px] border border-dashed border-hair text-foreground transition-colors hover:border-primary hover:bg-sel hover:text-ink-1 focus-ring"
     >
       <Plus className="w-3 h-3" />
-    </button>
+    </Button>
   );
 }
 
@@ -363,11 +363,11 @@ export function ProgressGhost() {
             style={{ width: GHOST_LEFT_W }}
           >
             <span
-              className="h-3 w-28 rounded bg-primary/[0.06] animate-fade-in"
+              className="h-3 w-28 rounded-interactive bg-surface-2 animate-fade-in"
               style={{ animationDelay: `${120 + r * 35}ms` }}
             />
             <span
-              className="h-2.5 w-16 rounded bg-primary/[0.06] animate-fade-in"
+              className="h-2.5 w-16 rounded-interactive bg-surface-2 animate-fade-in"
               style={{ animationDelay: `${120 + r * 35}ms` }}
             />
           </div>
@@ -380,7 +380,7 @@ export function ProgressGhost() {
               return (
                 <span
                   key={i}
-                  className="block rounded-[5px] bg-primary/[0.06] animate-fade-in"
+                  className="block rounded-[5px] bg-surface-2 animate-fade-in"
                   style={{
                     width: NODE_PX,
                     height: NODE_PX,

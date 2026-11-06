@@ -7,6 +7,7 @@ import { FolderInput } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { assignProject, type Workspace } from './workspaceStore';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function MoveToWorkspaceButton({ workspaces, selectedIds, onMoved }: {
   workspaces: Workspace[];
@@ -40,15 +41,14 @@ export function MoveToWorkspaceButton({ workspaces, selectedIds, onMoved }: {
 
   return (
     <div ref={ref} className="relative">
-      <button
+      <Button variant="secondary" size="sm"
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive typo-caption text-ink-2 border border-hair hover:bg-primary/5 hover:text-foreground transition-colors focus-ring"
         data-testid="workspace-move-selected"
       >
         <FolderInput className="w-3 h-3" aria-hidden />
         {COPY.move}
-      </button>
+      </Button>
       {open && (
         <div className="absolute top-full right-0 mt-1 z-40 w-[200px] py-1 rounded-card border border-hair bg-surface-1 backdrop-blur-sm shadow-elevation-4">
           <div className="px-3 py-1.5 border-b border-hair bg-surface-1">
@@ -61,7 +61,7 @@ export function MoveToWorkspaceButton({ workspaces, selectedIds, onMoved }: {
               onClick={() => move(w.id)}
               className="w-full flex items-center gap-2 px-3 py-2 typo-body text-left text-ink-2 hover:bg-surface-1 hover:text-foreground transition-colors"
             >
-              <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: w.color }} aria-hidden />
+              <span className="w-2.5 h-2.5 rounded-interactive flex-shrink-0" style={{ background: w.color }} aria-hidden />
               <span className="truncate">{w.name}</span>
             </button>
           ))}
@@ -70,7 +70,7 @@ export function MoveToWorkspaceButton({ workspaces, selectedIds, onMoved }: {
             onClick={() => move(null)}
             className="w-full flex items-center gap-2 px-3 py-2 typo-body text-left text-ink-2 hover:bg-surface-1 hover:text-foreground transition-colors border-t border-hair"
           >
-            <span className="w-2.5 h-2.5 rounded-sm border border-dashed border-foreground/30 flex-shrink-0" aria-hidden />
+            <span className="w-2.5 h-2.5 rounded-interactive border border-dashed border-foreground/30 flex-shrink-0" aria-hidden />
             {COPY.none}
           </button>
         </div>

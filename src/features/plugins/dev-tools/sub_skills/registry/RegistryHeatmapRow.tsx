@@ -50,7 +50,7 @@ export const RegistryHeatmapRow = memo(function RegistryHeatmapRow({
       role="row"
       {...FOLD}
       transition={transition}
-      className="group/row col-span-full grid grid-cols-subgrid items-stretch overflow-clip border-b border-primary/[0.06] transition-colors hover:bg-primary/[0.04]"
+      className="group/row col-span-full grid grid-cols-subgrid items-stretch overflow-clip border-b border-primary/[0.06] transition-colors hover:bg-surface-2"
       data-testid={`registry-row-${skill.name}`}
     >
       <SkillLabel d={d} skill={skill} r={r} total={columns.length} tabIndex={activeCol === LABEL_COL ? 0 : -1} onOpenInfo={onOpenInfo} />

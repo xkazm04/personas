@@ -110,9 +110,9 @@ export function TriageRuleForm({ projectId, onClose }: { projectId: string; onCl
             className={`w-20 ${FIELD_CLASS}`}
           />
           {conditions.length > 1 && (
-            <button type="button" aria-label={t.common.delete} onClick={() => setConditions(conditions.filter((_, i) => i !== idx))} className="text-foreground hover:text-status-error">
+            <Button variant="ghost" size="icon-sm" type="button" aria-label={t.common.delete} onClick={() => setConditions(conditions.filter((_, i) => i !== idx))}>
               <Trash2 className="w-3 h-3" />
-            </button>
+            </Button>
           )}
         </div>
       ))}

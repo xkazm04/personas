@@ -66,6 +66,21 @@ export function fanoutBTapes({ RECORDED_AT, PERSONAS }) {
 
   return {
     builders: {
+      'plugins/dev-tools/skills': () => withCalls('plugins/dev-tools/skills', 'Synthetic: Factory landing base; registry and memory coverage answered empty.', [
+        { cmd: 'dev_tools_registry_snapshot', response: { registries: [], links: [], knowledgeRoot: null } },
+        { cmd: 'dev_tools_memory_skill_coverage', response: [
+          { skill: 'perfect', coveredContexts: 7, freshNodes: 31, latestAt: iso(2 * H) },
+          { skill: 'research', coveredContexts: 3, freshNodes: 9, latestAt: iso(2 * D) },
+        ] },
+        { cmd: 'dev_tools_memory_coverage', response: { contexts: 12, covered: 8, windowDays: 30, unanchored: 2 } },
+      ]),
+      'plugins/dev-tools/workspaces': () => withCalls('plugins/dev-tools/workspaces', 'Synthetic: two workspaces over the Factory landing projects.', [
+        { cmd: 'dev_tools_workspace_list', response: [
+          { id: 'ws-1', name: 'Product', color: '#6366f1', description: 'Customer-facing apps', adopt_default_skills: true, last_working_version: false, created_at: sql(30 * D), updated_at: sql(D) },
+          { id: 'ws-2', name: 'Internal tools', color: '#14b8a6', description: null, adopt_default_skills: false, last_working_version: false, created_at: sql(20 * D), updated_at: sql(2 * D) },
+        ] },
+      ]),
+      'plugins/dev-tools/llm-overview': () => withCalls('plugins/dev-tools/llm-overview', 'Synthetic: Factory landing base.', []),
       'projects/goals': goals,
       'plugins/dev-tools/task-runner': taskRunner,
       'plugins/dev-tools/project-manager': () => withCalls('plugins/dev-tools/project-manager', 'Synthetic: the Factory landing projects as the Manage table.', []),

@@ -19,6 +19,7 @@ import {
   useWorkspaces,
   type Workspace,
 } from './workspaceStore';
+import Button from '@/features/shared/components/buttons/Button';
 
 // -- data --------------------------------------------------------------------
 
@@ -195,14 +196,14 @@ function ProjectRow({
     >
       <span className="typo-body text-foreground truncate min-w-0 flex-1">{project.name}</span>
       <TechIconStrip techStack={project.tech_stack} />
-      <button
+      <Button variant="ghost" size="sm"
         type="button"
         aria-label={actionLabel}
         onClick={onAction}
-        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-ink-2 hover:text-foreground rounded-interactive p-1 hover:bg-primary/10 transition-all"
+        className="group-hover:opacity-100"
       >
         {actionIcon}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -235,13 +236,13 @@ export function CreateWorkspaceInline({ autoFocus }: { autoFocus?: boolean }) {
           autoFocus={autoFocus}
           onChange={(e) => setName(e.target.value)}
         />
-        <button
+        <Button variant="secondary" size="md"
           type="submit"
           disabled={!name.trim()}
-          className="typo-body shrink-0 rounded-interactive border border-hair bg-surface-1 px-3 py-2 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
+          className="shrink-0"
         >
           {tw.create}
-        </button>
+        </Button>
       </div>
       {/* Consent to seed the app's preset scan skills into member projects. */}
       <label className="flex items-start gap-2 cursor-pointer select-none">

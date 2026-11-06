@@ -180,7 +180,7 @@ export function SelfHealingPanel({
               onChange={(e) => setAutoHealEnabled(e.target.checked)}
               data-testid="self-healing-auto"
               aria-label={t.plugins.dev_runner.auto_heal}
-              className="rounded"
+              className="rounded-interactive"
             />
             {t.plugins.dev_runner.auto_heal}
           </label>
@@ -191,7 +191,7 @@ export function SelfHealingPanel({
               icon={<RefreshCw className="w-3.5 h-3.5" />}
               onClick={handleHealAll}
             >
-              {t.plugins.dev_runner.heal_all}{autoFixable.length})
+              {t.plugins.dev_runner.heal_all} <span className="num">{autoFixable.length}</span>
             </Button>
           )}
         </div>

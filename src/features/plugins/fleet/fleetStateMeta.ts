@@ -31,20 +31,20 @@ export interface FleetStateMeta {
  * "needs you" in the same place.
  */
 export const FLEET_STATE_META: ReadonlyArray<FleetStateMeta> = [
-  { id: 'awaiting_input', dot: 'bg-violet-400',  text: 'text-violet-300',  chip: 'bg-violet-500/15',  labelKey: 'state_awaiting_input' },
-  { id: 'running',        dot: 'bg-blue-400',    text: 'text-blue-300',    chip: 'bg-blue-500/15',    labelKey: 'state_working' },
+  { id: 'awaiting_input', dot: 'bg-role-agent',  text: 'text-role-agent',  chip: 'bg-role-agent/15',  labelKey: 'state_awaiting_input' },
+  { id: 'running',        dot: 'bg-status-info',    text: 'text-status-info',    chip: 'bg-status-info/15',    labelKey: 'state_working' },
   // Queued — admitted by the dispatch queue, holding no process, waiting for a
   // slot. Slate: a muted blue-grey that reads as "not yet", distinct from the
   // saturated live hues AND from exited's darker zinc. It sits BEFORE spawning
   // so a column reads in dispatch order: what is being started next, then what
   // is starting now.
-  { id: 'queued',         dot: 'bg-slate-400',   text: 'text-slate-300',   chip: 'bg-slate-500/15',   labelKey: 'state_queued' },
-  { id: 'spawning',       dot: 'bg-cyan-400',    text: 'text-cyan-300',    chip: 'bg-cyan-500/15',    labelKey: 'state_spawning' },
-  { id: 'idle',           dot: 'bg-emerald-400', text: 'text-emerald-300', chip: 'bg-emerald-500/15', labelKey: 'state_idle' },
-  { id: 'stale',          dot: 'bg-orange-400',  text: 'text-orange-300',  chip: 'bg-orange-500/15',  labelKey: 'state_stale' },
-  { id: 'finished',       dot: 'bg-teal-400',    text: 'text-teal-300',    chip: 'bg-teal-500/15',    labelKey: 'state_finished' },
-  { id: 'hibernated',     dot: 'bg-indigo-400',  text: 'text-indigo-300',  chip: 'bg-indigo-500/15',  labelKey: 'state_hibernated' },
-  { id: 'exited',         dot: 'bg-zinc-500',    text: 'text-foreground',  chip: 'bg-secondary/60',   labelKey: 'state_exited' },
+  { id: 'queued',         dot: 'bg-ink-3',   text: 'text-ink-3',   chip: 'bg-surface-2',   labelKey: 'state_queued' },
+  { id: 'spawning',       dot: 'bg-status-info',    text: 'text-status-info',    chip: 'bg-status-info/15',    labelKey: 'state_spawning' },
+  { id: 'idle',           dot: 'bg-status-success', text: 'text-status-success', chip: 'bg-status-success/15', labelKey: 'state_idle' },
+  { id: 'stale',          dot: 'bg-status-warning',  text: 'text-status-warning',  chip: 'bg-status-warning/15',  labelKey: 'state_stale' },
+  { id: 'finished',       dot: 'bg-role-external',    text: 'text-role-external',    chip: 'bg-role-external/15',    labelKey: 'state_finished' },
+  { id: 'hibernated',     dot: 'bg-role-agent',  text: 'text-role-agent',  chip: 'bg-role-agent/15',  labelKey: 'state_hibernated' },
+  { id: 'exited',         dot: 'bg-ink-3',    text: 'text-foreground',  chip: 'bg-secondary/60',   labelKey: 'state_exited' },
   // Expired - waited past `fleet.queued_expiry_ms` and was retired WITHOUT
   // ever running. Last, and in stone rather than exited's zinc: both are
   // terminal and both are quiet, but they are different facts (one ran and
@@ -53,7 +53,7 @@ export const FLEET_STATE_META: ReadonlyArray<FleetStateMeta> = [
   // rule `raw-palette-text-colour` ratchets raw palette TEXT classes and a
   // new row must not raise it. The dot and chip carry the stone hue, which
   // is what distinguishes expired from exited at a glance anyway.
-  { id: 'expired',        dot: 'bg-stone-500',   text: 'text-foreground',  chip: 'bg-stone-500/15',   labelKey: 'state_expired' },
+  { id: 'expired',        dot: 'bg-ink-3',   text: 'text-foreground',  chip: 'bg-surface-2',   labelKey: 'state_expired' },
 ];
 
 /**
@@ -118,10 +118,10 @@ export const FLEET_LANE_LABEL_KEY: Record<FleetAttentionLane, keyof FleetTransla
 };
 
 export const FLEET_LANE_TONE: Record<FleetAttentionLane, string> = {
-  needs_you: 'text-violet-300',
-  working: 'text-blue-300',
-  parked: 'text-emerald-300',
-  done: 'text-foreground opacity-50',
+  needs_you: 'text-role-agent',
+  working: 'text-status-info',
+  parked: 'text-status-success',
+  done: 'text-ink-3 ',
 };
 
 /** Zero-filled tally — every state present, so consumers never guard on undefined. */

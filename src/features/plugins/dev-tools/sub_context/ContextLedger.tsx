@@ -272,8 +272,8 @@ function ContextLedgerGhost() {
       {[0, 1].map((g) => (
         <div key={g}>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-1 border-b border-hair animate-fade-in" style={{ animationDelay: `${120 + g * 70}ms` }}>
-            <span className="w-2.5 h-2.5 rounded-full bg-primary/[0.08]" />
-            <span className="h-3 w-24 rounded bg-primary/[0.06]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-surface-2" />
+            <span className="h-3 w-24 rounded-interactive bg-surface-2" />
           </div>
           <div className="divide-y divide-hair">
             {[0, 1, 2].map((r) => {
@@ -284,7 +284,7 @@ function ContextLedgerGhost() {
                   className="flex items-center gap-2.5 px-3 py-1.5 animate-fade-in"
                   style={{ animationDelay: `${120 + i * 35}ms` }}
                 >
-                  <span className={`h-2.5 rounded bg-primary/[0.06] ${['w-40', 'w-28', 'w-36', 'w-32', 'w-44', 'w-24'][i % 6]}`} />
+                  <span className={`h-2.5 rounded-interactive bg-surface-2 ${['w-40', 'w-28', 'w-36', 'w-32', 'w-44', 'w-24'][i % 6]}`} />
                 </div>
               );
             })}

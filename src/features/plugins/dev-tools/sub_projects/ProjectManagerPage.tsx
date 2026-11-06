@@ -126,7 +126,7 @@ export default function ProjectManagerPage() {
       <ContentBody>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <h3 className="typo-eyebrow text-ink-3">{dp.all_projects}<span className="num">{projects.length}</span>)</h3>
+            <h3 className="typo-eyebrow text-ink-3">{dp.all_projects} <span className="num">{projects.length}</span></h3>
             {selection.selectedIds.size > 0 && (
               <ProjectsBulkBar
                 count={selection.selectedIds.size}

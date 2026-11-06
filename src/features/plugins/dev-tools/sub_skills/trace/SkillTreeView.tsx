@@ -17,6 +17,7 @@ import { LessonsPanel } from './LessonsPanel';
 import { layoutTree, pointOnCubic, CORE_X, CORE_Y, TREE_H, TREE_W } from './treeGeometry';
 import type { SkillTreeModel } from './traceTypes';
 import { VersionTimelinePanel } from './VersionTimelinePanel';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface SkillTreeViewProps {
   model: SkillTreeModel;
@@ -49,19 +50,18 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
     <div className="flex flex-col min-h-0 h-full overflow-auto">
       {/* title band */}
       <div className="flex items-center gap-3 pb-1">
-        <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-primary transition-colors">
+        <Button variant="ghost" size="sm" type="button" onClick={onBack}>
           <ArrowLeft size={13} />
           {t.plugins.dev_tools.trace_back}
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="sm"
           type="button"
           onClick={() => onOpenInfo(model.skillName)}
-          className="inline-flex items-center gap-2 hover:text-primary transition-colors"
-          title={model.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
+          tooltip={model.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
         >
           <Icon size={18} style={accent ? { color: accent } : undefined} />
           <span className="typo-title">{model.skillName}</span>
-        </button>
+        </Button>
         <span className="typo-caption text-foreground">
           {tx(t.plugins.dev_tools.trace_tree_stats, { projects: model.branches.length, invokes: model.totalInvokes })}
         </span>

@@ -49,7 +49,7 @@ export function ContextPickerModal({ skillName, projectId, initial, onConfirm, o
   return (
     <BaseModal isOpen onClose={onClose} titleId="ctx-picker-title" size="6xl" portal staggerChildren={false}>
       <div className="flex flex-col h-[80vh]" data-testid="context-picker-modal">
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-hair bg-primary/[0.04] flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-hair bg-surface-2 flex-shrink-0">
           <SlidersHorizontal className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="ctx-picker-title" className="typo-title truncate">
             {tx(d.ctx_picker_title, { name: skillName })}

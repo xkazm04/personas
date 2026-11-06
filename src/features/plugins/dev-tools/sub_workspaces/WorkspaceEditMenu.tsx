@@ -7,6 +7,7 @@ import { Check, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS, type Workspace } from './workspaceStore';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
   ws: Workspace;
@@ -64,12 +65,12 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
       />
       <div className="flex items-center gap-1.5 flex-wrap">
         {WORKSPACE_COLORS.map((c) => (
-          <button
+          <Button variant="secondary" size="xs"
             key={c}
             type="button"
             onClick={() => recolorWorkspace(ws.id, c)}
             aria-label={`Colour ${c}`}
-            className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 focus-ring"
+            className="w-5"
             style={{ background: c, borderColor: ws.color === c ? 'var(--foreground)' : 'transparent' }}
           />
         ))}
@@ -91,14 +92,14 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
           <Trash2 className="w-3.5 h-3.5" aria-hidden />
           {confirming ? COPY.deleteConfirm : COPY.delete}
         </button>
-        <button
+        <Button variant="ghost" size="icon-sm"
           type="button"
           onClick={() => { commitName(); onClose(); }}
           aria-label={COPY.done}
-          className="ml-auto p-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring"
+          className="ml-auto"
         >
           <Check className="w-4 h-4" aria-hidden />
-        </button>
+        </Button>
       </div>
     </div>
   );

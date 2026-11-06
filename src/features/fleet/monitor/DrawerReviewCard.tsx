@@ -173,18 +173,15 @@ export function DrawerReviewCard({
         >
           <span className="typo-heading">{t.monitor.reject}</span>
         </Button>
-        <button
+        <Button variant={showNotes ? "secondary" : "ghost"} size="md"
           type="button"
           onClick={() => setShowNotes((s) => !s)}
           aria-pressed={showNotes}
           aria-label={t.monitor.toggle_notes}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${
-            showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-hair bg-surface-1 text-foreground hover:text-foreground'
-          }`}
         >
           <MessageSquare className="w-4 h-4" />
           <span className="typo-heading">{t.monitor.notes}</span>
-        </button>
+        </Button>
         <Button
           variant="accent"
           tone="success"

@@ -26,7 +26,7 @@ export function ConversationGhostRows({ count = GHOST_BUBBLES.length }: { count?
       {GHOST_BUBBLES.slice(0, count).map((g, i) => (
         <div key={i} className={`flex ${g.mine ? 'justify-end' : 'justify-start'}`}>
           <div
-            className={`${g.w} rounded-card bg-primary/[0.06] animate-fade-in`}
+            className={`${g.w} rounded-card bg-surface-2 animate-fade-in`}
             style={{ height: g.h, animationDelay: `${120 + i * 35}ms` }}
           />
         </div>

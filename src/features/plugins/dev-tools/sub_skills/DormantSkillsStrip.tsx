@@ -15,6 +15,7 @@ import { Moon, Play } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { DormantSkillFinding } from './dormantSkillFindings';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface Props {
   findings: DormantSkillFinding[];
@@ -62,15 +63,15 @@ export function DormantSkillsStrip({ findings, installedNames, onUse }: Props) {
                 )}
               </span>
             </span>
-            <button
+            <Button variant="secondary" size="sm"
               type="button"
               onClick={() => onUse(f.skillName)}
               data-testid={`dormant-skill-use-${f.skillName}`}
-              className="shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-hair typo-caption text-foreground hover:bg-primary/10 focus-ring"
+              className="shrink-0"
             >
               <Play className="w-3 h-3" aria-hidden />
               {dt.skills_dormant_use}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

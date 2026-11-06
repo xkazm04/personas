@@ -174,7 +174,7 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
                 type="checkbox"
                 checked={overwrite}
                 onChange={(e) => setOverwrite(e.target.checked)}
-                className="rounded"
+                className="rounded-interactive"
               />
               {fleet.skill_install_overwrite}
             </label>

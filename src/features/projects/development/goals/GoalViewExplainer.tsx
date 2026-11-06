@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Info, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 // Same key the per-view explainer used for Progress, so a dismissal carries over.
 const STORAGE_KEY = 'personas.goals.explainer.progress';
@@ -34,17 +35,16 @@ export function GoalViewExplainer({ text }: { text: string }) {
 
   return (
     <div className="flex items-start gap-2 px-3 py-2 rounded-card border border-hair bg-surface-1">
-      <Info className="w-3.5 h-3.5 text-primary/70 mt-0.5 flex-shrink-0" />
+      <Info className="w-3.5 h-3.5 text-ink-3 mt-0.5 flex-shrink-0" />
       <p className="typo-caption text-foreground flex-1">{text}</p>
-      <button
+      <Button variant="ghost" size="icon-sm"
         type="button"
         onClick={dismiss}
         aria-label={t.common.dismiss}
-        title={t.common.dismiss}
-        className="p-0.5 rounded text-foreground hover:text-ink-2 transition-colors flex-shrink-0"
+        tooltip={t.common.dismiss}
       >
         <X className="w-3.5 h-3.5" />
-      </button>
+      </Button>
     </div>
   );
 }

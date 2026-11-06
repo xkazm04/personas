@@ -11,6 +11,7 @@ import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { TRACK_COLOR } from '@/features/teams/sub_kpis/kpiMeta';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import type { ContextItem } from './contextMapTypes';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export default function ContextDetail({
   ctx,
@@ -192,11 +193,10 @@ export default function ContextDetail({
           <ul className="space-y-1.5">
             {linkedGoals.map(({ goal, tasksTotal, tasksDone }) => (
               <li key={goal.id}>
-                <button
+                <Tooltip content={t.plugins.dev_tools.context_detail_goal_jump_tooltip}><button
                   type="button"
                   onClick={() => handleGoalJump(goal.id)}
-                  title={t.plugins.dev_tools.context_detail_goal_jump_tooltip}
-                  className="w-full text-left rounded-modal border border-hair bg-surface-1 px-2.5 py-2 hover:border-hair hover:bg-primary/5 transition-colors"
+                  className="w-full text-left rounded-modal border border-hair bg-surface-1 px-2.5 py-2 hover:border-hair hover:bg-surface-2 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <span className="typo-caption text-foreground truncate flex-1">{goal.title}</span>
@@ -208,7 +208,7 @@ export default function ContextDetail({
                       {tx(t.plugins.dev_tools.context_detail_task_summary, { done: tasksDone, total: tasksTotal })}
                     </p>
                   )}
-                </button>
+                </button></Tooltip>
               </li>
             ))}
           </ul>
@@ -222,14 +222,13 @@ export default function ContextDetail({
             <Gauge className="w-3 h-3" />
             {t.kpis.context_kpis_title} ({linkedKpis.length})
           </h4>
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             onClick={() => setAdding((a) => !a)}
-            className="typo-caption text-primary hover:underline inline-flex items-center gap-1"
           >
             <Plus className="w-3 h-3" />
             {t.kpis.add_kpi_for_context}
-          </button>
+          </Button>
         </div>
 
         {adding && (
@@ -250,33 +249,21 @@ export default function ContextDetail({
                   {t.kpis.kpi_scope_label}
                 </p>
                 <div className="flex flex-wrap gap-1">
-                  <button
+                  <Button variant={kpiScopeUseCaseId === null ? "secondary" : "ghost"} size="xs"
                     type="button"
                     onClick={() => setKpiScopeUseCaseId(null)}
                     aria-pressed={kpiScopeUseCaseId === null}
-                    className={`typo-caption px-2 py-0.5 rounded-interactive border transition-colors ${
-                      kpiScopeUseCaseId === null
-                        ? 'border-primary/50 bg-primary/15 text-foreground'
-                        : 'border-hair bg-surface-1 text-foreground hover:border-primary/30'
-                    }`}
                   >
                     {t.kpis.kpi_scope_this_context}
-                  </button>
+                  </Button>
                   {activeUseCases.map((uc) => (
-                    <button
-                      key={uc.id}
+                    <Tooltip content={tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })} key={uc.id}><Button variant={kpiScopeUseCaseId === uc.id ? "secondary" : "ghost"} size="xs"
                       type="button"
                       onClick={() => setKpiScopeUseCaseId(uc.id)}
                       aria-pressed={kpiScopeUseCaseId === uc.id}
-                      title={tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })}
-                      className={`typo-caption px-2 py-0.5 rounded-interactive border transition-colors ${
-                        kpiScopeUseCaseId === uc.id
-                          ? 'border-hair bg-surface-1 text-status-info'
-                          : 'border-hair bg-surface-1 text-foreground hover:border-primary/30'
-                      }`}
                     >
                       {uc.name}
-                    </button>
+                    </Button></Tooltip>
                   ))}
                 </div>
               </div>

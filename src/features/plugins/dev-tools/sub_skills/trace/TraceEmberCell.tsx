@@ -9,6 +9,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { TraceCell } from './traceTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 const BOX = 30;
 
@@ -68,14 +69,13 @@ function TraceEmberCellImpl({ cell, accent, onClick }: TraceEmberCellProps) {
 
   return (
     <Tooltip content={tooltip}>
-      <button
+      <Button variant="ghost" size="sm"
         type="button"
         onClick={onClick}
         aria-label={tierLabel}
-        className="flex items-center justify-center rounded-interactive hover:bg-surface-1 transition-colors"
       >
         {body}
-      </button>
+      </Button>
     </Tooltip>
   );
 }

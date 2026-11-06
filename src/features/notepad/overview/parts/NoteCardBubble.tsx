@@ -145,15 +145,15 @@ export function NoteCardBubble({
           <span aria-hidden className="text-ink-2">·</span>
           <span className="truncate text-ink-2">{threadEntryLabel(entry, t.notepad)}</span>
         </div>
-        <button
+        <Button variant="ghost" size="icon-sm"
           type="button"
           onClick={onDismiss}
           aria-label={t.notepad.bubble_dismiss}
           data-testid="notepad-card-bubble-dismiss"
-          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-input flex items-center justify-center text-foreground hover:bg-surface-1 focus-ring"
+          className="absolute top-1.5 right-1.5"
         >
           <X className="w-3 h-3" aria-hidden />
-        </button>
+        </Button>
         {body && <p className="typo-body text-foreground line-clamp-3 break-words">{body}</p>}
 
         {replying ? (

@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { silentCatch } from '@/lib/silentCatch';
 import { useFleetOrphanScan } from './useFleetOrphanScan';
 import { resumeAllOrphans } from './resumeAllOrphans';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
@@ -114,16 +115,16 @@ export default function FleetPage() {
           );
         })}
         {orphanCount > 0 && (
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             data-testid="fleet-orphan-badge"
             onClick={() => setConfirmResume(true)}
-            title={f.orphans_resume_title}
-            className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded-interactive bg-status-warning/20 text-status-warning typo-caption hover:bg-status-warning/30 transition-colors"
+            tooltip={f.orphans_resume_title}
+            className="ml-1"
           >
             <Unplug className="w-3 h-3" />
             {tx(orphanCount === 1 ? f.orphans_badge_one : f.orphans_badge_other, { count: orphanCount })}
-          </button>
+          </Button>
         )}
       </div>
 

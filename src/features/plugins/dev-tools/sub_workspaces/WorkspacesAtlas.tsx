@@ -11,7 +11,7 @@
 // authority now, wired per workspace in the registry section below.
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Landmark, Plus, Trash2, Wand2 } from 'lucide-react';
+import { Plus, Trash2, Wand2 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -24,6 +24,8 @@ import {
 import { WorkspaceRegistrySection } from './registry/WorkspaceRegistrySection';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export default function WorkspacesAtlas() {
   const { t, tx } = useTranslation();
@@ -63,21 +65,16 @@ export default function WorkspacesAtlas() {
                 isOpen ? 'border-primary/40 bg-surface-1' : 'border-hair hover:bg-surface-1'
               }`}
             >
-              <Landmark
-                className="absolute -right-4 -bottom-4 w-24 h-24 opacity-[0.06]"
-                style={{ color: ws.color }}
-              />
               <div className="flex items-center gap-2 mb-3">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ws.color }} />
                 <span className="typo-title truncate">{ws.name}</span>
                 {ws.adoptDefaultSkills && (
-                  <span
-                    className="ml-auto inline-flex items-center gap-1 typo-label text-primary/80 border border-hair bg-surface-1 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
-                    title={tw.adopt_skills_badge_tip}
+                  <Tooltip content={tw.adopt_skills_badge_tip}><span
+                    className="ml-auto inline-flex items-center gap-1 typo-label text-ink-2 border border-hair bg-surface-1 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
                   >
                     <Wand2 className="w-3 h-3" aria-hidden />
                     {tw.adopt_skills_badge}
-                  </span>
+                  </span></Tooltip>
                 )}
               </div>
               <div className="flex items-baseline gap-4 mb-3">
@@ -155,14 +152,14 @@ export default function WorkspacesAtlas() {
                   ))}
                 </div>
               </div>
-              <button
+              <Button variant="ghost" size="icon-sm"
                 type="button"
                 onClick={() => setConfirmDelete(open.id)}
                 aria-label={tw.delete_workspace}
-                className="shrink-0 rounded-interactive p-2 text-ink-2 hover:text-status-error hover:bg-status-error/10 transition-colors"
+                className="shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
-              </button>
+              </Button>
             </header>
 
             <MembershipPanel workspace={open} projects={center.projects} />

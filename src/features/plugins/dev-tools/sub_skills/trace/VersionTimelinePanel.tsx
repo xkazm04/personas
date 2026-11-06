@@ -15,7 +15,7 @@ export function VersionTimelinePanel({ timeline, loading }: { timeline: SkillRev
       {loading && timeline.length === 0 ? (
         <div aria-hidden className="flex flex-col gap-1.5">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-5 rounded-interactive bg-primary/[0.06] animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
+            <div key={i} className="h-5 rounded-interactive bg-surface-2 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
           ))}
         </div>
       ) : timeline.length === 0 ? (

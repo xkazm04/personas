@@ -18,6 +18,7 @@ import {
   type GitHubRepo,
   type RepoCredState,
 } from './githubRepoPaging';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Parse a repo URL into owner/name. Accepts any http(s) host with at least a
@@ -269,7 +270,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                     key={repo.full_name}
                     type="button"
                     onClick={() => handleSelect(repo)}
-                    className={`w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-primary/5 transition-colors ${
+                    className={`w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-surface-2 transition-colors ${
                       value === repo.html_url ? 'bg-surface-1' : ''
                     }`}
                   >
@@ -303,17 +304,16 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                 {t.plugins.dev_projects.repo_private}
               </StatusBadge>
             )}
-            <a
+            <Tooltip content={t.plugins.dev_projects.open_repo}><a
               href={value}
               target="_blank"
               rel="noopener noreferrer"
-              title={t.plugins.dev_projects.open_repo}
               aria-label={t.plugins.dev_projects.open_repo}
               className="flex-shrink-0 text-foreground hover:text-primary transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            </a></Tooltip>
           </div>
           {selectedRepo?.description && (
             <p className="typo-caption text-foreground mt-1 line-clamp-2">{selectedRepo.description}</p>

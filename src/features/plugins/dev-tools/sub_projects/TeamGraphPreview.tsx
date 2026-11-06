@@ -8,6 +8,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TeamGraphPreviewProps {
   members: PersonaTeamMember[];
@@ -257,15 +258,14 @@ export function TeamGraphPreview({
         )}
         <span className="ml-auto flex items-center gap-2">
           {isTransformed && (
-            <button
+            <Button variant="ghost" size="xs"
               type="button"
               onClick={resetView}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-foreground hover:text-ink-2 hover:bg-surface-1 rounded-card transition-colors"
-              title={t.plugins.dev_projects.team_preview_canvas_reset_title}
+              tooltip={t.plugins.dev_projects.team_preview_canvas_reset_title}
             >
               <Maximize2 className="w-3 h-3" />
               {t.plugins.dev_projects.team_preview_canvas_reset}
-            </button>
+            </Button>
           )}
           <span className="typo-caption text-foreground font-mono num">
             {Math.round(scale * 100)}%

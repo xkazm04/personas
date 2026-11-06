@@ -83,21 +83,21 @@ interface SeverityMeta {
 export const SEVERITY_META: Record<SeverityBucket, SeverityMeta> = {
   critical: {
     rank: 0, icon: AlertCircle,
-    chip: 'bg-red-500/10 text-red-400 border-red-500/30',
-    badge: 'bg-red-500/15 text-red-300 border-red-500/30',
-    dot: 'bg-red-400', text: 'text-red-400',
+    chip: 'bg-status-error/10 text-status-error border-status-error/30',
+    badge: 'bg-status-error/15 text-status-error border-status-error/30',
+    dot: 'bg-status-error', text: 'text-status-error',
   },
   warning: {
     rank: 1, icon: AlertTriangle,
-    chip: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-    dot: 'bg-amber-400', text: 'text-amber-400',
+    chip: 'bg-status-warning/10 text-status-warning border-status-warning/30',
+    badge: 'bg-status-warning/15 text-status-warning border-status-warning/30',
+    dot: 'bg-status-warning', text: 'text-status-warning',
   },
   info: {
     rank: 2, icon: Info,
-    chip: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
-    dot: 'bg-blue-400', text: 'text-blue-400',
+    chip: 'bg-status-info/10 text-status-info border-status-info/30',
+    badge: 'bg-status-info/15 text-status-info border-status-info/30',
+    dot: 'bg-status-info', text: 'text-status-info',
   },
 };
 
@@ -124,11 +124,11 @@ export interface ProcessStatusMeta {
  */
 export const PROCESS_STATUS_META: Record<ActiveProcessStatus, ProcessStatusMeta> = {
   running: { dot: 'bg-primary', text: 'text-primary', pulse: true },
-  queued: { dot: 'bg-amber-400', text: 'text-amber-400', pulse: false },
-  input_required: { dot: 'bg-orange-400', text: 'text-orange-400', pulse: true },
-  draft_ready: { dot: 'bg-violet-400', text: 'text-violet-400', pulse: false },
-  completed: { dot: 'bg-green-400', text: 'text-green-400', pulse: false },
-  failed: { dot: 'bg-red-400', text: 'text-red-400', pulse: false },
+  queued: { dot: 'bg-status-warning', text: 'text-status-warning', pulse: false },
+  input_required: { dot: 'bg-status-warning', text: 'text-status-warning', pulse: true },
+  draft_ready: { dot: 'bg-role-agent', text: 'text-role-agent', pulse: false },
+  completed: { dot: 'bg-status-success', text: 'text-status-success', pulse: false },
+  failed: { dot: 'bg-status-error', text: 'text-status-error', pulse: false },
   cancelled: { dot: 'bg-foreground/40', text: 'text-foreground', pulse: false },
 };
 

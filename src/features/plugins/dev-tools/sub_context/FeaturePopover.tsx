@@ -28,6 +28,7 @@ import { councilFleetKey } from './councilDispatch';
 import { FeaturePopoverRow, type FeatureRowModel } from './FeaturePopoverRow';
 import type { FeatureChipContext } from './featureChipContext';
 import { useCouncilStates } from './useCouncilStates';
+import Button from '@/features/shared/components/buttons/Button';
 
 const PANEL_WIDTH = 460;
 const VIEWPORT_MARGIN = 8;
@@ -126,14 +127,13 @@ export function FeaturePopover({
     >
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-hair bg-surface-1">
         <span className="typo-caption text-foreground truncate">{title}</span>
-        <button
+        <Button variant="ghost" size="icon-sm"
           type="button"
           onClick={onClose}
           aria-label={t.council_close}
-          className="p-0.5 rounded-interactive text-foreground hover:bg-surface-1 transition-colors focus-ring"
         >
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* A read that FAILED says so. The features below are still real; only
@@ -162,7 +162,7 @@ export function FeaturePopover({
       {loading && (
         <div className="px-3 py-2 space-y-2" aria-hidden="true">
           {[0, 1].map((i) => (
-            <span key={i} className="block h-2.5 w-40 rounded bg-primary/[0.06] animate-fade-in" />
+            <span key={i} className="block h-2.5 w-40 rounded-interactive bg-surface-2 animate-fade-in" />
           ))}
         </div>
       )}

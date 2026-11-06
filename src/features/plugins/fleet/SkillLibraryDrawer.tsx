@@ -179,7 +179,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
         {/* Skill list */}
         <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5" data-testid="fleet-drawer-list">
           {filtered.length === 0 ? (
-            <div className="text-center py-8 typo-caption text-foreground opacity-70">
+            <div className="text-center py-8 typo-caption text-ink-2 ">
               <AlertCircle className="w-5 h-5 mx-auto mb-1.5 opacity-60" aria-hidden="true" />
               {f.skills_drawer_empty}
             </div>

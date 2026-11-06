@@ -149,7 +149,7 @@ function ColumnHeader({ column: c, dot, index, selected, hint, coverageHint, act
           data-nav={navId(HEAD_ROW, c.id)} data-nav-r={0} data-nav-c={index + 1}
           data-testid={`registry-column-${c.id}`}
           className={`group/col relative flex h-[6.5rem] w-full flex-col items-center justify-end gap-1.5 rounded-t-interactive pb-2 transition-colors ${FOCUS} ${
-            selected ? 'bg-primary/15' : 'hover:bg-primary/5'
+            selected ? 'bg-primary/15' : 'hover:bg-surface-2'
           }`}
         >
           <span

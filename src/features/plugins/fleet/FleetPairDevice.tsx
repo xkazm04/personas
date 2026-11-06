@@ -16,6 +16,7 @@ import {
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useNowTick, formatAgo } from './relativeAgo';
 import { extractMessage } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * "Pair a device" — the real pairing flow for Fleet Command Anywhere.
@@ -182,7 +183,7 @@ export function FleetPairDevice() {
             className="flex h-32 w-32 shrink-0 flex-col items-center justify-center gap-1.5 rounded-modal border border-dashed border-hair bg-background/60 text-center"
             aria-hidden="true"
           >
-            <QrCode className="w-8 h-8 text-foreground opacity-40" />
+            <QrCode className="w-8 h-8 text-ink-3 " />
             <span className="px-2 typo-caption text-foreground">
               {t.plugins.fleet.pair_qr_placeholder}
             </span>
@@ -190,15 +191,14 @@ export function FleetPairDevice() {
         )}
 
         <div className="min-w-0 flex-1 space-y-2">
-          <button
+          <Button variant="secondary" size="sm"
             type="button"
             data-testid="fleet-pair-generate"
             onClick={generate}
             disabled={busy}
-            className="rounded-interactive border border-hair bg-surface-1 px-3 py-1.5 typo-body text-primary transition-colors hover:bg-primary/15 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
           >
             {busy ? t.plugins.fleet.pair_generating : t.plugins.fleet.pair_generate}
-          </button>
+          </Button>
           {/* role="alert" so a screen-reader user is TOLD the pairing failed.
               Without it the only signal is a colour change they cannot see. */}
           {error ? (
@@ -217,20 +217,20 @@ export function FleetPairDevice() {
                   <code className="truncate rounded-input border border-hair bg-background/60 px-2 py-1 typo-caption text-foreground">
                     {pair.url}
                   </code>
-                  <button
+                  <Button variant="ghost" size="sm"
                     type="button"
                     data-testid="fleet-pair-copy"
                     onClick={copy}
                     aria-label={copied ? t.plugins.fleet.pair_copied : t.plugins.fleet.pair_copy}
-                    title={copied ? t.plugins.fleet.pair_copied : t.plugins.fleet.pair_copy}
-                    className="shrink-0 rounded-interactive p-1.5 text-foreground transition-colors hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                    tooltip={copied ? t.plugins.fleet.pair_copied : t.plugins.fleet.pair_copy}
+                    className="shrink-0"
                   >
                     {copied ? (
                       <Check className="w-3.5 h-3.5 text-status-success" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )}
-                  </button>
+                  </Button>
                 </div>
                 <p className="mt-1 typo-caption text-foreground">{t.plugins.fleet.pair_token_once}</p>
               </div>
@@ -271,26 +271,26 @@ export function FleetPairDevice() {
               >
                 <div className="min-w-0">
                   <span className="typo-body text-foreground">{d.name}</span>
-                  <span className="ml-2 typo-caption text-foreground opacity-70">
+                  <span className="ml-2 typo-caption text-ink-2 ">
                     {d.lastSeenMs > 0
                       ? formatAgo(t, d.lastSeenMs, now)
                       : t.plugins.fleet.pair_never_connected}
                   </span>
                 </div>
                 {d.revoked ? (
-                  <span className="shrink-0 rounded-interactive border border-hair px-1.5 py-0.5 typo-eyebrow text-foreground opacity-60">
+                  <span className="shrink-0 rounded-interactive border border-hair px-1.5 py-0.5 typo-eyebrow text-ink-2 ">
                     {t.plugins.fleet.pair_revoked_badge}
                   </span>
                 ) : (
-                  <button
+                  <Button variant="danger" size="xs"
                     type="button"
                     data-testid={`fleet-pair-revoke-${d.id}`}
                     onClick={() => revoke(d.id)}
-                    className="flex shrink-0 items-center gap-1 rounded-interactive border border-hair bg-surface-1 px-2 py-0.5 typo-caption text-status-error transition-colors hover:bg-status-error/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                    className="shrink-0"
                   >
                     <ShieldOff className="w-3 h-3" aria-hidden="true" />
                     {t.plugins.fleet.pair_revoke}
-                  </button>
+                  </Button>
                 )}
               </li>
             ))}

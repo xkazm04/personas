@@ -203,11 +203,11 @@ export function VariantFrame({
         </div>
 
         {pinMode && (
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             aria-label={s.frame_pin_mode_hint}
             onClick={onCapture}
-            className="absolute inset-0 cursor-crosshair bg-transparent focus-ring"
+            className="absolute inset-0"
             data-testid={`contest-frame-pin-layer-${variant.key}`}
           />
         )}

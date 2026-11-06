@@ -125,8 +125,8 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
   const top = sorted[0];
 
   return (
-    <section className="rounded-card border border-hair bg-secondary/[0.12]" data-testid="skill-scoreboard">
-      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card">
+    <section className="rounded-card border border-hair bg-surface-1" data-testid="skill-scoreboard">
+      <div className="flex items-baseline gap-2 px-3 py-2 bg-surface-2 border-b border-hair rounded-t-card">
         <span className="typo-body text-foreground">{d.skills_scoreboard_title}</span>
         {top && top.invokes30d > 0 && (
           <span className="ml-auto inline-flex items-center gap-1 typo-label text-ink-3">

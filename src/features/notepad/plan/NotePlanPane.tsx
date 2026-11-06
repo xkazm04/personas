@@ -224,14 +224,14 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
             the note's dispatch bar — that bar is where the note LEAVES the pad,
             and composing scope never leaves anything. */}
         {vm && editable && tab === 'plan' && !composing && (
-          <button
+          <Button variant="secondary" size="sm"
             type="button"
             onClick={() => setComposing(true)}
-            className="self-start mt-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-hair text-ink-2 transition-colors hover:bg-surface-1 focus-ring"
+            className="self-start mt-4"
             data-testid="note-plan-compose"
           >
             {t.ship.compose_scope}
-          </button>
+          </Button>
         )}
       </div>
     </div>

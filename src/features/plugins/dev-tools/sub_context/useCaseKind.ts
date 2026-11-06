@@ -25,15 +25,15 @@ export function kindMeta(kind: string): KindMeta {
 /** Static class maps — Tailwind's JIT can't see an interpolated stem, so these
  *  are looked up rather than built as `text-${stem}-300` at runtime. */
 export const KIND_TEXT: Record<string, string> = {
-  violet: 'text-violet-300',
-  sky: 'text-sky-300',
-  emerald: 'text-emerald-300',
-  amber: 'text-amber-300',
+  violet: 'text-role-agent',
+  sky: 'text-status-info',
+  emerald: 'text-status-success',
+  amber: 'text-status-warning',
 };
 
 export const KIND_DOT: Record<string, string> = {
-  violet: 'bg-violet-400',
-  sky: 'bg-sky-400',
-  emerald: 'bg-emerald-400',
-  amber: 'bg-amber-400',
+  violet: 'bg-role-agent',
+  sky: 'bg-status-info',
+  emerald: 'bg-status-success',
+  amber: 'bg-status-warning',
 };

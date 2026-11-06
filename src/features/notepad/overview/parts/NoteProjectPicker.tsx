@@ -9,6 +9,7 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 import { ProjectLabel } from './NoteCardBits';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Past this many projects the popover grows a type-ahead filter. */
 const SEARCH_AFTER = 6;
@@ -80,7 +81,7 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
       className="min-w-0"
       menuClassName="animate-fade-slide-in min-w-64 max-h-80 overflow-y-auto py-1 rounded-card border border-hair bg-background/95 backdrop-blur-md shadow-elevation-3"
       renderTrigger={({ isOpen, toggle }) => (
-        <button
+        <Button variant="ghost" size="sm"
           type="button"
           onClick={() => {
             if (!isOpen) setQuery('');
@@ -90,11 +91,11 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
           aria-expanded={isOpen}
           aria-label={t.notepad.overview_project_pick}
           data-testid={`notepad-card-project-${note.id}`}
-          className="min-w-0 max-w-full flex items-center gap-1 -mx-1 px-1 rounded-input hover:bg-surface-1 focus-ring transition-colors"
+          className="min-w-0 max-w-full -mx-1"
         >
           <ProjectLabel projectId={note.projectId} projects={projects} className="typo-label" />
           <ChevronDown className={`w-3 h-3 flex-shrink-0 text-ink-2 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
-        </button>
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (
@@ -122,7 +123,7 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
                   index === focusIndex ? 'bg-surface-1' : 'hover:bg-surface-1'
                 }`}
               >
-                <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${row.id ? 'text-foreground opacity-70' : 'text-foreground opacity-40'}`} aria-hidden />
+                <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${row.id ? 'text-ink-2 ' : 'text-ink-3 '}`} aria-hidden />
                 <span className="flex-1 min-w-0 flex flex-col">
                   <span className="typo-body text-foreground truncate">{row.label}</span>
                   {row.path && <span className="typo-caption text-ink-2 truncate">{row.path}</span>}

@@ -5,6 +5,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { installHooks } from '@/api/fleet/fleet';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 /**
@@ -55,27 +57,25 @@ export function FleetHooksPill() {
 
   if (installed) {
     return (
-      <span
+      <Tooltip content={`Claude Code hooks routed to http://127.0.0.1:${port}/fleet/hooks/*`}><span
         data-testid="fleet-hooks-pill-installed"
         className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card border border-hair bg-surface-1 typo-caption text-status-success"
-        title={`Claude Code hooks routed to http://127.0.0.1:${port}/fleet/hooks/*`}
       >
         <CheckCircle2 className="w-3 h-3" />
         <DebtText k="auto_hooks_c32c426b" />{port}
-      </span>
+      </span></Tooltip>
     );
   }
 
   return (
-    <button
+    <Button variant="secondary" size="sm"
       type="button"
       data-testid="fleet-hooks-pill-install"
       onClick={handleInstall}
-      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card border border-hair bg-surface-1 hover:bg-primary/10 typo-caption text-foreground hover:text-foreground transition-colors"
-      title={debtText("auto_install_hooks_into_claude_settings_json_so_240d2895")}
+      tooltip={debtText("auto_install_hooks_into_claude_settings_json_so_240d2895")}
     >
       <AlertCircle className="w-3 h-3" />
       <DebtText k="auto_install_hooks_38a73c04" />
-    </button>
+    </Button>
   );
 }

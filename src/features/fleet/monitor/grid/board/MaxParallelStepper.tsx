@@ -57,7 +57,7 @@ export function MaxParallelStepper({
   const hint = over
     ? tx(s.queue_cap_over_hint, { running, cap, over: overAdmitted })
     : tx(s.queue_cap_hint, { running, cap });
-  const btn = 'focus-ring flex h-5 w-5 items-center justify-center rounded-interactive text-foreground opacity-70 transition-colors hover:bg-surface-1 hover:opacity-100 disabled:opacity-25 disabled:hover:bg-transparent';
+  const btn = 'focus-ring flex h-5 w-5 items-center justify-center rounded-interactive text-ink-2 transition-colors hover:bg-surface-1 hover:text-ink-1 disabled:opacity-25 disabled:hover:bg-transparent';
   const canEdit = setting.loaded && !disabled;
 
   return (

@@ -187,7 +187,7 @@ export function DevToolsProjectDropdown({
                       isFocused
                         ? 'bg-surface-1'
                         : isSelected
-                          ? 'bg-primary/[0.06]'
+                          ? 'bg-surface-2'
                           : 'hover:bg-surface-1'
                     }`}
                   >

@@ -121,7 +121,7 @@ function ScanContextButton({
         }}
         disabled={scanBusy}
         aria-label={t.context_scan_ideas_tooltip}
-        className={`shrink-0 grid place-items-center rounded-full border border-hair bg-surface-1 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`shrink-0 grid place-items-center rounded-full border border-hair bg-surface-1 text-foreground hover:bg-surface-2 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           size === 'sm' ? 'ml-auto w-5 h-5' : 'w-6 h-6'
         }`}
       >
@@ -190,7 +190,7 @@ export const LedgerRow = memo(function LedgerRow({
       {/* the context record */}
       <div className="flex items-center gap-2.5 min-w-0 pr-3">
         {ctx.pinned && (
-          <span className="w-1 h-3.5 rounded-full bg-status-warning/70 shrink-0" title={t.context_pinned} />
+          <Tooltip content={t.context_pinned}><span className="w-1 h-3.5 rounded-full bg-status-warning/70 shrink-0" /></Tooltip>
         )}
         <button
           type="button"
@@ -235,7 +235,7 @@ export const LedgerRow = memo(function LedgerRow({
         return (
           <span
             key={uc.id}
-            className={`flex items-center justify-center h-full ${colSelected ? 'bg-primary/[0.07]' : ''}`}
+            className={`flex items-center justify-center h-full ${colSelected ? 'bg-surface-2' : ''}`}
           >
             {isMember ? (
               <span

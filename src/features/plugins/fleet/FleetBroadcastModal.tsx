@@ -273,10 +273,10 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             type="checkbox"
             checked={pressEnter}
             onChange={(e) => setPressEnter(e.target.checked)}
-            className="rounded"
+            className="rounded-interactive"
           />
           {t.plugins.fleet.broadcast_append}{' '}
-          <code className="font-mono px-1 py-0.5 bg-surface-1 rounded">↵</code>{' '}
+          <code className="font-mono px-1 py-0.5 bg-surface-1 rounded-interactive">↵</code>{' '}
           {t.plugins.fleet.broadcast_append_suffix}
         </label>
 
@@ -346,7 +346,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
                       isSel ? 'bg-surface-1 border border-hair' : 'hover:bg-surface-1 border border-transparent'
                     }`}
                   >
-                    <input type="checkbox" checked={isSel} onChange={() => toggle(s.id)} className="rounded" />
+                    <input type="checkbox" checked={isSel} onChange={() => toggle(s.id)} className="rounded-interactive" />
                     <FleetStatusDots state={s.state} reason={s.stateReason} />
                     <span className="typo-caption truncate flex-1 min-w-0">{s.projectLabel}</span>
                   </label>

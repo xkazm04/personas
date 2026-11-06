@@ -3,6 +3,7 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetTransition } from '@/stores/slices/system/fleetSlice';
 import type { FleetLabelKey } from './FleetStatusDots';
 import { formatAgo } from './relativeAgo';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Tiny inline timeline of a session's recent lifecycle transitions — one
@@ -46,11 +47,9 @@ export function FleetStateSparkline({ transitions }: { transitions: FleetTransit
       {recent.map((tr, i) => {
         const cfg = STATE_BAR[tr.state];
         return (
-          <span
-            key={`${tr.at}-${i}`}
-            title={`${t.plugins.fleet[cfg.labelKey]} · ${formatAgo(t, tr.at, now)}`}
+          <Tooltip content={`${t.plugins.fleet[cfg.labelKey]} · ${formatAgo(t, tr.at, now)}`} key={`${tr.at}-${i}`}><span
             className={`h-3 w-0.5 rounded-full ${cfg.bg} ${i === recent.length - 1 ? '' : 'opacity-60'}`}
-          />
+          /></Tooltip>
         );
       })}
     </span>

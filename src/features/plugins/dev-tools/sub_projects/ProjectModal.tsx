@@ -351,7 +351,7 @@ export function ProjectModal({
               >
                 {createConnector
                   ? <CheckCircle2 className="w-4 h-4 text-ink-2 flex-shrink-0 mt-0.5" />
-                  : <span className="w-4 h-4 rounded border border-primary/30 flex-shrink-0 mt-0.5" />}
+                  : <span className="w-4 h-4 rounded-interactive border border-primary/30 flex-shrink-0 mt-0.5" />}
                 <span className="min-w-0">
                   <span className="typo-caption text-foreground">{dp.create_codebase_connector_label}</span>
                   <span className="block typo-caption text-foreground mt-0.5">

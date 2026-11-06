@@ -9,6 +9,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { presetVisual, SWEEP_SKILL_NAME } from '../constants/presetSkills';
 import type { WsRow } from './SkillsManagerPage';
 import { LastUsed, UsageCount } from './skillsManagerBits';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
   row: WsRow;
@@ -22,16 +24,15 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
   const visual = presetVisual(SWEEP_SKILL_NAME);
 
   return (
-    <div className="rounded-card border border-hair bg-primary/[0.05] px-3 py-2.5 mt-2" data-testid="sweep-hero-row">
+    <div className="rounded-card border border-hair bg-surface-2 px-3 py-2.5 mt-2" data-testid="sweep-hero-row">
       <div className="flex items-center gap-2.5">
         {visual && (
-          <span
+          <Tooltip content={visual.label}><span
             className="inline-flex items-center justify-center w-6 h-6 rounded-interactive border flex-shrink-0"
             style={{ color: visual.color, borderColor: `${visual.color}40`, backgroundColor: `${visual.color}14` }}
-            title={visual.label}
           >
             <visual.icon className="w-3.5 h-3.5" aria-hidden strokeWidth={1.75} />
-          </span>
+          </span></Tooltip>
         )}
         <button
           type="button"
@@ -45,21 +46,20 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
         <UsageCount usage={row.usage} />
         <LastUsed usage={row.usage} />
         {row.installed ? (
-          <span title={tx(d.skills_installed_in, { name: projectName })} className="inline-flex p-1 flex-shrink-0">
+          <Tooltip content={tx(d.skills_installed_in, { name: projectName })}><span className="inline-flex p-1 flex-shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5 text-status-success" aria-label={tx(d.skills_installed_in, { name: projectName })} />
-          </span>
+          </span></Tooltip>
         ) : (
-          <button
+          <Button variant="secondary" size="icon-sm"
             type="button"
             onClick={() => onAdopt(row.entry)}
             disabled={busy}
-            title={tx(d.skills_adopt_hint, { name: projectName })}
+            tooltip={tx(d.skills_adopt_hint, { name: projectName })}
             aria-label={tx(d.skills_adopt_hint, { name: projectName })}
-            className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-hair transition-colors disabled:opacity-30 flex-shrink-0"
             data-testid="skills-manager-adopt-scan-sweep"
           >
             <ArrowDownToLine className="w-3.5 h-3.5" aria-hidden />
-          </button>
+          </Button>
         )}
       </div>
       <p className="typo-caption mt-1.5">{d.skills_sweep_hero_hint}</p>

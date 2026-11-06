@@ -213,15 +213,15 @@ export function NoteCardFooter({
           </Button>
         )}
         <Tooltip content={t.notepad.overview_open}>
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={onOpen}
             aria-label={t.notepad.overview_open}
             data-testid={`notepad-card-open-${note.id}`}
-            className="shrink-0 w-7 h-7 rounded-input flex items-center justify-center text-ink-2 hover:text-foreground hover:bg-surface-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity focus-ring"
+            className="shrink-0 group-hover:opacity-100"
           >
             <Maximize2 className="w-3.5 h-3.5" aria-hidden />
-          </button>
+          </Button>
         </Tooltip>
       </div>
     </footer>

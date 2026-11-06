@@ -118,8 +118,8 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
   };
 
   return (
-    <section className="rounded-card border border-hair bg-secondary/[0.12]" data-testid="coverage-pipeline">
-      <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card">
+    <section className="rounded-card border border-hair bg-surface-1" data-testid="coverage-pipeline">
+      <div className="flex items-center gap-2 px-3 py-2 bg-surface-2 border-b border-hair rounded-t-card">
         <Workflow className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
         <Tooltip content={d.skills_pipeline_subtitle} placement="top">
           <span className="inline-flex items-center gap-1.5 typo-body text-foreground">

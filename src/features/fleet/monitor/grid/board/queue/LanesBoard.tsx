@@ -34,7 +34,7 @@ function Lane({ title, count, children, testId }: { title: string; count: number
     <section className="flex min-h-0 min-w-0 flex-1 flex-col rounded-card border border-border/60 bg-foreground/[0.01]" data-testid={testId}>
       <header className="flex flex-shrink-0 items-center gap-2 border-b border-border/60 px-2 py-1.5">
         <span className="typo-label text-foreground">{title}</span>
-        <span className="typo-caption num text-foreground opacity-60"><Numeric value={count} /></span>
+        <span className="typo-caption num text-ink-2 "><Numeric value={count} /></span>
       </header>
       <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-2">{children}</div>
     </section>

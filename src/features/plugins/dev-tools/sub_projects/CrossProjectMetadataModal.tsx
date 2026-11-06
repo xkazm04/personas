@@ -53,7 +53,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
   return (
     <div className={`rounded-modal border p-4 transition-colors ${
       hasContexts
-        ? 'border-hair bg-surface-1 hover:bg-primary/8'
+        ? 'border-hair bg-surface-1 hover:bg-surface-2'
         : 'border-hair bg-surface-2'
     }`}>
       {/* Header */}
@@ -80,13 +80,12 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
           <p className="typo-body text-foreground mt-0.5 truncate">{project.root_path}</p>
         </div>
         {hasContexts && (
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="typo-body text-primary/70 hover:text-primary px-2 py-1 rounded-card hover:bg-primary/10 flex-shrink-0"
           >
             {expanded ? t.plugins.dev_tools.collapse : t.plugins.dev_tools.details}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -165,7 +164,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.keywords.map((kw) => (
-                      <span key={kw} className="rounded px-1.5 py-0.5 typo-body bg-background/60 text-foreground border border-hair">
+                      <span key={kw} className="rounded-interactive px-1.5 py-0.5 typo-body bg-background/60 text-foreground border border-hair">
                         {kw}
                       </span>
                     ))}
@@ -221,7 +220,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.hot_directories.map((d) => (
-                      <span key={d} className="rounded px-1.5 py-0.5 typo-body bg-background/60 text-foreground border border-hair">
+                      <span key={d} className="rounded-interactive px-1.5 py-0.5 typo-body bg-background/60 text-foreground border border-hair">
                         {d}
                       </span>
                     ))}
@@ -331,13 +330,13 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
             >
               {map ? t.plugins.dev_tools.regenerate : t.plugins.dev_tools.generate}
             </Button>
-            <button
+            <Button variant="ghost" size="sm"
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-card hover:bg-primary/10 flex items-center justify-center text-foreground hover:text-foreground transition-colors"
+              className="w-8"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
 

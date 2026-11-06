@@ -117,7 +117,7 @@ export function SessionRecapModal({
         )}
 
         {settledEmpty && (
-          <p className="typo-body text-foreground opacity-55">
+          <p className="typo-body text-ink-3 ">
             {claudeSessionId ? t.monitor.grid_session_recap_empty : t.monitor.grid_session_recap_unbound}
           </p>
         )}
@@ -142,7 +142,7 @@ export function SessionRecapModal({
           <RecapField label={t.monitor.grid_session_recap_pending_tool}>
             <span className="typo-body text-foreground">{recap.pendingTool}</span>
             {recap.pendingToolSince && (
-              <span className="ml-2 typo-caption text-foreground opacity-55">
+              <span className="ml-2 typo-caption text-ink-3 ">
                 <RelativeTime timestamp={recap.pendingToolSince} />
               </span>
             )}
@@ -151,12 +151,12 @@ export function SessionRecapModal({
 
         <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3">
           <RecapField label={t.monitor.grid_session_recap_started}>
-            <span className="typo-caption text-foreground opacity-70">
+            <span className="typo-caption text-ink-2 ">
               <RelativeTime timestamp={Number(session.createdAtMs)} />
             </span>
           </RecapField>
           <RecapField label={t.monitor.grid_session_recap_last_activity}>
-            <span className="typo-caption text-foreground opacity-70">
+            <span className="typo-caption text-ink-2 ">
               <RelativeTime timestamp={Number(session.lastActivityMs)} />
             </span>
           </RecapField>
@@ -169,7 +169,7 @@ export function SessionRecapModal({
         {/* Say so when the window did not reach the whole file: "no summary
             found" and "I did not look that far back" are different answers. */}
         {recap?.truncated && (
-          <p className="typo-caption text-foreground opacity-45">
+          <p className="typo-caption text-ink-3 ">
             {t.monitor.grid_session_recap_truncated}
           </p>
         )}

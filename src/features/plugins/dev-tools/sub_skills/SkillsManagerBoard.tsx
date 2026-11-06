@@ -18,6 +18,8 @@ import { CoverageBar, LastUsed, MemoryBindingButton, UsageCount } from './skills
 import { SkillActionConfirm } from './SkillActionConfirm';
 import { SweepHeroRow } from './SweepHeroRow';
 import { UseSkillDialog } from './UseSkillDialog';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; skill: SkillEntry; tracked: boolean };
 
@@ -79,8 +81,8 @@ function Panel({ title, count, header, footer, children }: {
   title: string; count: number; header: React.ReactNode; footer: string; children: React.ReactNode;
 }) {
   return (
-    <section className="min-h-0 flex flex-col rounded-card border border-hair bg-secondary/[0.12]">
-      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card flex-shrink-0">
+    <section className="min-h-0 flex flex-col rounded-card border border-hair bg-surface-1">
+      <div className="flex items-baseline gap-2 px-3 py-2 bg-surface-2 border-b border-hair rounded-t-card flex-shrink-0">
         <span className="typo-body text-foreground truncate">{title}</span>
         <span className="typo-label text-ink-3 num flex-shrink-0">{count}</span>
       </div>
@@ -143,17 +145,16 @@ function ActionIcon({ icon: Icon, title, onClick, disabled, testid }: {
   icon: typeof Play; title: string; onClick: () => void; disabled?: boolean; testid: string;
 }) {
   return (
-    <button
+    <Button variant="secondary" size="icon-sm"
       type="button"
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       disabled={disabled}
-      title={title}
+      tooltip={title}
       aria-label={title}
-      className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-hair transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
       data-testid={testid}
     >
       <Icon className="w-3.5 h-3.5" aria-hidden />
-    </button>
+    </Button>
   );
 }
 
@@ -277,9 +278,9 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
       <span className="flex justify-end">
         {r.tracked
           ? (
-            <button type="button" onClick={() => onOpenContexts(r.entry.name)} className="hover:opacity-80 transition-opacity" data-testid={`skills-manager-coverage-${r.entry.name}`}>
+            <Button variant="ghost" size="sm" type="button" onClick={() => onOpenContexts(r.entry.name)} data-testid={`skills-manager-coverage-${r.entry.name}`}>
               <CoverageBar row={r.coverage} total={totalContexts} />
-            </button>
+            </Button>
           )
           : <span className="typo-label text-ink-3">—</span>}
       </span>
@@ -339,13 +340,12 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
                 <li key={entry.name} className={`${COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
                   <span className="flex items-center gap-2 min-w-0">
                     {visual && (
-                      <span
+                      <Tooltip content={visual.label}><span
                         className="inline-flex items-center justify-center w-5 h-5 rounded-interactive border flex-shrink-0"
                         style={{ color: visual.color, borderColor: `${visual.color}40`, backgroundColor: `${visual.color}14` }}
-                        title={visual.label}
                       >
                         <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
-                      </span>
+                      </span></Tooltip>
                     )}
                     <button type="button" onClick={() => onOpenInfo(entry.name)}
                       className={`typo-caption truncate text-left hover:text-primary transition-colors ${installed ? 'text-ink-3' : 'text-foreground'}`}
@@ -357,9 +357,9 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
                   <LastUsed usage={usage} />
                   <span className="flex items-center justify-end">
                     {installed ? (
-                      <span title={tx(d.skills_installed_in, { name: projectName })} className="inline-flex p-1">
+                      <Tooltip content={tx(d.skills_installed_in, { name: projectName })}><span className="inline-flex p-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-status-success" aria-label={tx(d.skills_installed_in, { name: projectName })} />
-                      </span>
+                      </span></Tooltip>
                     ) : (
                       <ActionIcon icon={ArrowDownToLine} title={tx(d.skills_adopt_hint, { name: projectName })} onClick={() => setPending({ kind: 'adopt', skill: entry })} disabled={busy} testid={`skills-manager-adopt-${entry.name}`} />
                     )}

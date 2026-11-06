@@ -58,7 +58,7 @@ export function EmptyProviderRow({ provider }: { provider: ProviderModel }) {
     >
       <ProviderMark provider={provider} />
       <Tooltip content={cliReasonHint(t, reason)}>
-        <span className="min-w-0 flex-1 truncate typo-body text-foreground opacity-60">{label}</span>
+        <span className="min-w-0 flex-1 truncate typo-body text-ink-2 ">{label}</span>
       </Tooltip>
       <WeekBorder w={null} />
     </div>
@@ -97,7 +97,7 @@ export function WindowCluster({
         <span
           role="img"
           aria-label={t.monitor.usage_window_none}
-          className={`${CLUSTER_BOX} text-foreground opacity-40`}
+          className={`${CLUSTER_BOX} text-ink-3 `}
           data-testid="fleet-usage-window"
           data-window={slot}
           data-empty

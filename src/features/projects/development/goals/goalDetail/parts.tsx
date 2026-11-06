@@ -32,7 +32,7 @@ export function Section({ icon: Icon, label, children, flush = false }: {
   return (
     <div className={flush ? '' : 'pt-3 mt-3 border-t border-hair'}>
       <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-3.5 h-3.5 text-primary" />
+        <Icon className="w-3.5 h-3.5 text-ink-3" />
         <h3 className={MODAL_SECTION_HEAD}>{label}</h3>
       </div>
       {children}

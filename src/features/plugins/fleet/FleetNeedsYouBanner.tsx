@@ -3,6 +3,8 @@ import { Hourglass, MessageSquare, Send, X, SkipForward } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useNowTick, formatAgo, waitTier, type WaitTier } from './relativeAgo';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // Escalating chip accents by how long a session has been blocked: violet
 // while fresh, amber past 5 minutes, red past 15. Driven by the banner's
@@ -101,16 +103,16 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
         <Hourglass className="w-3.5 h-3.5 text-role-agent shrink-0" aria-hidden="true" />
         <span className="typo-caption text-ink-1 mr-1">{label}</span>
         {waiting.length > 1 && (
-          <button
+          <Button variant="secondary" size="icon-sm"
             type="button"
             data-testid="fleet-needs-you-cycle-next"
             onClick={onCycleNext}
             aria-label={t.plugins.fleet.jump_next}
-            title={t.plugins.fleet.jump_next}
-            className="mr-1 flex items-center rounded-interactive border border-hair bg-surface-2 p-1 text-ink-1 transition-colors hover:bg-sel focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60"
+            tooltip={t.plugins.fleet.jump_next}
+            className="mr-1"
           >
             <SkipForward className="w-3 h-3" aria-hidden="true" />
-          </button>
+          </Button>
         )}
         <div className="flex flex-wrap items-center gap-1.5">
           {waiting.map((s) => {
@@ -123,11 +125,10 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
                 data-wait-tier={tier}
                 className={`flex items-center overflow-hidden rounded-interactive border typo-caption ${tc.chip}`}
               >
-                <button
+                <Tooltip content={s.stateReason ? `${name} — ${s.stateReason}` : t.plugins.fleet.jump_to_session}><button
                   type="button"
                   data-testid={`fleet-needs-you-chip-${s.id}`}
                   onClick={() => onJump(s.id)}
-                  title={s.stateReason ? `${name} — ${s.stateReason}` : t.plugins.fleet.jump_to_session}
                   className={`flex items-center gap-1 px-2 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60`}
                 >
                   <span className="truncate max-w-[140px]">{name}</span>
@@ -138,17 +139,16 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
                     <span className={`truncate max-w-[220px] ${tc.age}`}>· {s.stateReason}</span>
                   )}
                   <span className={`whitespace-nowrap ${tc.age}`}>· {formatAgo(t, Number(s.lastActivityMs), now)}</span>
-                </button>
-                <button
+                </button></Tooltip>
+                <Tooltip content={tx(t.plugins.fleet.reply_to, { name })}><button
                   type="button"
                   data-testid={`fleet-needs-you-reply-${s.id}`}
                   onClick={() => { setReplyTo(s.id); setText(''); }}
                   aria-label={tx(t.plugins.fleet.reply_to, { name })}
-                  title={tx(t.plugins.fleet.reply_to, { name })}
                   className={`border-l ${tc.divider} px-1.5 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60`}
                 >
                   <MessageSquare className="w-3 h-3" aria-hidden="true" />
-                </button>
+                </button></Tooltip>
               </span>
             );
           })}
@@ -169,24 +169,22 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
             autoFocus
             className="min-w-0 flex-1 rounded-input border border-hair bg-surface-1 px-2 py-1 typo-body text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60"
           />
-          <button
+          <Button variant="primary" size="sm"
             type="submit"
             data-testid="fleet-reply-send"
             disabled={!text.trim() || sending}
-            className="flex items-center gap-1 rounded-interactive bg-primary px-2 py-1 typo-caption text-btn-primary-fg transition-colors hover:brightness-110 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60"
           >
             <Send className="w-3 h-3" aria-hidden="true" />
             {sending ? t.plugins.fleet.reply_sending : t.plugins.fleet.reply_send}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => { setReplyTo(null); setText(''); }}
             aria-label={t.plugins.fleet.reply_cancel}
-            title={t.plugins.fleet.reply_cancel}
-            className="rounded-interactive p-1 text-foreground transition-colors hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+            tooltip={t.plugins.fleet.reply_cancel}
           >
             <X className="w-3.5 h-3.5" aria-hidden="true" />
-          </button>
+          </Button>
         </form>
       )}
     </div>

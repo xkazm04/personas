@@ -7,6 +7,7 @@ import { Play, TerminalSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { DispatchTarget } from './UseSkillDialog';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function SkillDescription({ description }: { description: string | null }) {
   const { t } = useTranslation();
@@ -56,23 +57,21 @@ export function DialogFooter({ target, busy, onConfirm, onClose }: {
   const Icon = target === 'cmd' ? TerminalSquare : Play;
   return (
     <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-hair bg-surface-1">
-      <button
+      <Button variant="ghost" size="sm"
         type="button"
         onClick={onClose}
-        className="px-2.5 py-1 rounded-interactive typo-caption text-ink-2 hover:text-foreground hover:bg-primary/10 transition-colors"
       >
         {t.common.cancel}
-      </button>
-      <button
+      </Button>
+      <Button variant="secondary" size="sm"
         type="button"
         onClick={onConfirm}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         data-testid="use-skill-confirm"
       >
         <Icon className="w-3 h-3" aria-hidden />
         {target === 'cmd' ? t.plugins.dev_tools.skills_use_launch_cta : t.plugins.dev_tools.skills_confirm_use_cta}
-      </button>
+      </Button>
     </div>
   );
 }

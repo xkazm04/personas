@@ -37,7 +37,7 @@ export function SkillContextsModal({ projectId, projectName, skill, totalContext
   return (
     <BaseModal isOpen onClose={onClose} titleId="skill-contexts-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col max-h-[70vh]">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-2">
           <MapIcon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="skill-contexts-title" className="typo-title truncate">
             {tx(t.plugins.dev_tools.skills_contexts_heading, { skill })}

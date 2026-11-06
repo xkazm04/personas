@@ -16,6 +16,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { PRESET_SKILLS, presetVisual } from '../constants/presetSkills';
 import { commandVariations, metaFromPreset, metaFromSkillMd, type SkillMeta } from './skillMeta';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Read a skill's SKILL.md, trying the project copy then the global one, and
  *  both filename casings (SKILL.md / skill.md live in the wild). */
@@ -36,7 +37,7 @@ async function loadSkillMd(name: string, projectId: string | null): Promise<stri
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="inline-flex items-center gap-1 typo-label text-ink-3 border border-hair bg-primary/[0.05] rounded-interactive px-1.5 py-0.5">{children}</span>;
+  return <span className="inline-flex items-center gap-1 typo-label text-ink-3 border border-hair bg-surface-2 rounded-interactive px-1.5 py-0.5">{children}</span>;
 }
 
 export function SkillInfoModal({ skillName, projectId, onClose }: {
@@ -74,7 +75,7 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
   return (
     <BaseModal isOpen onClose={onClose} titleId="skill-info-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid="skill-info-modal">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-2">
           <Icon className="w-4 h-4 flex-shrink-0" style={hue ? { color: hue } : undefined} aria-hidden />
           <span id="skill-info-title" className="typo-title truncate">{skillName}</span>
           {meta?.category && <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{meta.category}</span>}
@@ -129,10 +130,10 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-hair bg-surface-1">
-          <button type="button" onClick={onClose}
-            className="px-2.5 py-1 rounded-interactive typo-caption text-ink-2 hover:text-foreground hover:bg-primary/10 transition-colors">
+          <Button variant="ghost" size="sm" type="button" onClick={onClose}
+           >
             {t.common.close}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>

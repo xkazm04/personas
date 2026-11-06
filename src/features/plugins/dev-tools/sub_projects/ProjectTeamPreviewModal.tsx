@@ -19,6 +19,7 @@ import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const RECENT_RUN_LIMIT = 6;
 
@@ -310,14 +311,13 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                           )}
                         </div>
                         <div className="pt-1">
-                          <button
+                          <Button variant="accent" tone="agent" size="sm"
                             type="button"
                             onClick={() => handleOpenInEditor(persona.id)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-hair bg-surface-1 text-role-agent hover:bg-role-agent/20 typo-caption transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" />
                             {t.plugins.dev_projects.team_preview_member_open}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -341,16 +341,15 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
               </span>
             )}
             {isPulsing && (
-              <span
+              <Tooltip content={t.plugins.dev_projects.team_preview_live_label}><span
                 className="ml-auto inline-flex items-center gap-1.5 typo-caption text-status-success"
-                title={t.plugins.dev_projects.team_preview_live_label}
               >
                 <span className="relative flex w-2 h-2">
                   <span className="absolute inline-flex w-full h-full rounded-full bg-status-success/70 opacity-70 animate-ping" />
                   <span className="relative inline-flex w-2 h-2 rounded-full bg-status-success" />
                 </span>
                 {t.plugins.dev_projects.team_preview_live_label}
-              </span>
+              </span></Tooltip>
             )}
           </div>
           {loading && (
@@ -390,12 +389,11 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                       {dateStr}
                     </span>
                     {isFinished && r.error_message && (
-                      <span
+                      <Tooltip content={r.error_message}><span
                         className="typo-caption text-status-error truncate max-w-[40%]"
-                        title={r.error_message}
                       >
                         {r.error_message}
-                      </span>
+                      </span></Tooltip>
                     )}
                   </li>
                 );

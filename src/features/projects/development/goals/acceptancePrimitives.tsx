@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { Check, RotateCcw, Send } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Accept is the primary affordance; reject opens a comment field (rejection
@@ -33,7 +35,6 @@ export function AcceptRejectControls({
   const dl = t.plugins.dev_lifecycle;
   const [rejecting, setRejecting] = useState(false);
   const [comment, setComment] = useState('');
-  const pad = size === 'sm' ? 'px-2 py-1' : 'px-2.5 py-1.5';
 
   if (rejecting) {
     return (
@@ -47,21 +48,19 @@ export function AcceptRejectControls({
           className="w-full px-2 py-1.5 typo-caption bg-surface-1 rounded-input text-foreground placeholder:text-ink-3 focus-ring resize-none"
         />
         <div className="flex items-center gap-1.5">
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             disabled={!comment.trim()}
             onClick={() => onReject(comment.trim())}
-            className="inline-flex items-center gap-1 typo-caption rounded-interactive px-2 py-1 text-[var(--destructive)] bg-[var(--destructive)]/15 hover:bg-[var(--destructive)]/25 transition-colors disabled:opacity-40"
           >
             <Send className="w-3 h-3" /> {dl.accept_send_back}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="sm"
             type="button"
             onClick={() => { setRejecting(false); setComment(''); }}
-            className="typo-caption rounded-interactive px-2 py-1 text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors"
           >
             {dl.accept_cancel}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -69,22 +68,19 @@ export function AcceptRejectControls({
 
   return (
     <div className="flex items-center gap-1.5">
-      <button
+      <Button variant="accent" tone="success" size={size === 'sm' ? 'xs' : 'sm'}
         type="button"
         onClick={onAccept}
-        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-[var(--success)] bg-[var(--success)]/15 hover:bg-[var(--success)]/25 transition-colors`}
       >
         <Check className="w-3.5 h-3.5" /> {dl.accept_accept}
-      </button>
-      <button
+      </Button>
+      <Tooltip content={dl.accept_send_back}><Button variant="ghost" size={size === 'sm' ? 'xs' : 'sm'}
         type="button"
         onClick={() => (onSendBackIntent ? onSendBackIntent() : setRejecting(true))}
         aria-label={dl.accept_send_back}
-        title={dl.accept_send_back}
-        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-ink-3 bg-surface-1 hover:text-[var(--destructive)] hover:bg-[var(--destructive)]/15 transition-colors`}
       >
         <RotateCcw className="w-3.5 h-3.5" /> {dl.accept_send_back}
-      </button>
+      </Button></Tooltip>
     </div>
   );
 }

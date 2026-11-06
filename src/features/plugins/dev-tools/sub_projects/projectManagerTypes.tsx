@@ -55,12 +55,12 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
 export type ProjectType = 'react' | 'nodejs' | 'fastapi' | 'rust' | 'python' | 'combined' | 'other';
 
 export const PROJECT_TYPES: { id: ProjectType; label: string; icon: string; color: string }[] = [
-  { id: 'react', label: 'React', icon: '⚛️', color: 'bg-cyan-500/15 border-cyan-500/25 text-cyan-400' },
-  { id: 'nodejs', label: 'NodeJS', icon: '🟢', color: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' },
-  { id: 'fastapi', label: 'FastAPI', icon: '⚡', color: 'bg-teal-500/15 border-teal-500/25 text-teal-400' },
-  { id: 'rust', label: 'Rust', icon: '🦀', color: 'bg-orange-500/15 border-orange-500/25 text-orange-400' },
-  { id: 'python', label: 'Python', icon: '🐍', color: 'bg-yellow-500/15 border-yellow-500/25 text-yellow-400' },
-  { id: 'combined', label: 'Combined', icon: '🔗', color: 'bg-violet-500/15 border-violet-500/25 text-violet-400' },
+  { id: 'react', label: 'React', icon: '⚛️', color: 'bg-status-info/15 border-status-info/25 text-status-info' },
+  { id: 'nodejs', label: 'NodeJS', icon: '🟢', color: 'bg-status-success/15 border-status-success/25 text-status-success' },
+  { id: 'fastapi', label: 'FastAPI', icon: '⚡', color: 'bg-role-external/15 border-role-external/25 text-role-external' },
+  { id: 'rust', label: 'Rust', icon: '🦀', color: 'bg-status-warning/15 border-status-warning/25 text-status-warning' },
+  { id: 'python', label: 'Python', icon: '🐍', color: 'bg-status-warning/15 border-status-warning/25 text-status-warning' },
+  { id: 'combined', label: 'Combined', icon: '🔗', color: 'bg-role-agent/15 border-role-agent/25 text-role-agent' },
   { id: 'other', label: 'Other', icon: '📁', color: 'bg-primary/10 border-primary/20 text-foreground' },
 ];
 
@@ -69,13 +69,13 @@ export const PROJECT_TYPES: { id: ProjectType; label: string; icon: string; colo
 // ---------------------------------------------------------------------------
 
 export const STATUS_STYLES: Record<string, string> = {
-  active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+  active: 'bg-status-success/15 text-status-success border-status-success/25',
   archived: 'bg-primary/10 text-foreground border-primary/15',
-  paused: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
+  paused: 'bg-status-warning/15 text-status-warning border-status-warning/25',
   open: 'bg-primary/10 text-foreground border-primary/15',
-  'in-progress': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  done: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  blocked: 'bg-red-500/15 text-red-400 border-red-500/25',
+  'in-progress': 'bg-status-info/15 text-status-info border-status-info/25',
+  done: 'bg-status-success/15 text-status-success border-status-success/25',
+  blocked: 'bg-status-error/15 text-status-error border-status-error/25',
 };
 
 const STATUS_TO_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {

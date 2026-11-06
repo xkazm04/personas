@@ -25,6 +25,7 @@ import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { Persona } from '@/lib/bindings/Persona';
 import { TeamReadinessChip } from '@/features/teams/components/TeamReadinessChip';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface Props {
   steps: TeamAssignmentStep[];
@@ -124,9 +125,8 @@ function OwnerCell({ persona, fallback }: { persona: Persona | null; fallback: s
     return <span className="justify-self-end typo-caption text-ink-3">{fallback}</span>;
   }
   return (
-    <span
+    <Tooltip content={persona.name}><span
       className="justify-self-end inline-flex items-center gap-1 max-w-[160px] typo-caption text-foreground"
-      title={persona.name}
     >
       <span
         className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -135,7 +135,7 @@ function OwnerCell({ persona, fallback }: { persona: Persona | null; fallback: s
       />
       <span className="truncate">{persona.name}</span>
       <TeamReadinessChip setupStatus={persona.setup_status} />
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -181,9 +181,9 @@ function StepRow({
             </Button>
           </span>
         ) : (
-          <span className="shrink-0 w-12 text-right typo-eyebrow text-ink-3 truncate" title={statusLabel}>
+          <Tooltip content={statusLabel}><span className="shrink-0 w-12 text-right typo-eyebrow text-ink-3 truncate">
             {statusLabel}
-          </span>
+          </span></Tooltip>
         )}
       </div>
       {open && hasOutput && (
@@ -209,7 +209,7 @@ function AdhocRow({
   return (
     <li className="group border-b border-hair last:border-b-0">
       <div className={`${GRID} px-2.5 py-2`}>
-        <button
+        <Button variant="ghost" size="sm"
           type="button"
           onClick={() => onToggle(item)}
           className="shrink-0"
@@ -218,20 +218,20 @@ function AdhocRow({
           {item.done
             ? <CheckCircle2 className="w-4 h-4 text-status-success" />
             : <Circle className="w-4 h-4 text-ink-3 hover:text-ink-2 transition-colors" />}
-        </button>
+        </Button>
         <span className={`min-w-0 truncate typo-body ${item.done ? 'text-ink-3 line-through' : 'text-foreground'}`}>
           {item.title}
         </span>
         <span className="justify-self-end typo-caption text-ink-3">{youLabel}</span>
         <span className="shrink-0 w-12 flex justify-end">
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => onDelete(item.id)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-ink-2 hover:text-status-error"
+            className="group-hover:opacity-100"
             aria-label={deleteLabel}
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </span>
       </div>
     </li>

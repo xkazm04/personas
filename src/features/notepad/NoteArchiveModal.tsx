@@ -11,6 +11,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 import { formatSpanCompact } from '@/lib/utils/formatters';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface NoteArchiveModalProps {
   notes: DevNote[];
@@ -109,14 +110,13 @@ export function NoteArchiveModal({
                           {t.notepad.restore}
                         </AsyncButton>,
                       )}
-                      <button
+                      <Button variant="ghost" size="icon-sm"
                         type="button"
                         onClick={() => onDelete(note)}
                         aria-label={t.notepad.delete_permanently}
-                        className="w-7 h-7 rounded-input flex items-center justify-center text-status-error/70 hover:text-status-error hover:bg-status-error/10 transition-colors focus-ring"
                       >
                         <Trash2 className="w-3.5 h-3.5" aria-hidden />
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>

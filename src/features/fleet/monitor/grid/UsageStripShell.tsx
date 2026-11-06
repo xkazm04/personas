@@ -66,7 +66,7 @@ export function StripFrame({
       className="flex flex-shrink-0 flex-col border-b border-border bg-foreground/[0.01]"
     >
       <div className="flex h-7 items-center gap-2 border-b border-border/60 px-3 typo-caption text-foreground">
-        <span className="inline-flex flex-shrink-0 items-center gap-1.5 uppercase tracking-wider opacity-70">
+        <span className="inline-flex flex-shrink-0 items-center gap-1.5 typo-eyebrow text-ink-3">
           <Gauge className="h-3 w-3" aria-hidden />
           {t.monitor.usage_title}
         </span>
@@ -96,7 +96,7 @@ export function StripFrame({
  * so a warm strip never shows it.
  */
 export function GhostRow() {
-  const bar = 'h-[0.7em] rounded bg-primary/[0.06]';
+  const bar = 'h-[0.7em] rounded-interactive bg-surface-2';
   return (
     <div
       aria-hidden
@@ -104,7 +104,7 @@ export function GhostRow() {
       style={{ animationDelay: '150ms' }}
       data-testid="fleet-usage-ghost-row"
     >
-      <span className="h-4 w-4 flex-shrink-0 rounded-interactive bg-primary/[0.06]" />
+      <span className="h-4 w-4 flex-shrink-0 rounded-interactive bg-surface-2" />
       <span className={`min-w-0 flex-1 ${bar}`} />
       <span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
         <span className={`w-12 ${bar}`} />

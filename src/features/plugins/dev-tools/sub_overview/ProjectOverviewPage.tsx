@@ -36,6 +36,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 
@@ -309,15 +310,14 @@ export default function ProjectOverviewPage() {
                   <RelativeTime timestamp={lastLoadedAt} className="num" />
                 </span>
               )}
-              <button
+              <Button variant="ghost" size="icon-sm"
                 type="button"
                 onClick={() => refresh()}
-                title={t.common.refresh}
+                tooltip={t.common.refresh}
                 aria-label={t.common.refresh}
-                className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-foreground ${statsLoading ? 'animate-spin' : ''}`} />
-              </button>
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -429,19 +429,18 @@ export default function ProjectOverviewPage() {
                       {repoState === 'empty' ? po.go_to_connections : po.go_to_projects}
                     </Button>
                   )}
-                  <button
+                  <Button variant="ghost" size="icon-sm"
                     type="button"
                     onClick={() => setShowRepoChain((v) => !v)}
-                    className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
-                    title={debtText("auto_show_connection_chain_c0a20250")}
+                    tooltip={debtText("auto_show_connection_chain_c0a20250")} aria-label={debtText("auto_show_connection_chain_c0a20250")}
                   >
                     <Settings className="w-3.5 h-3.5 text-foreground" />
-                  </button>
+                  </Button>
                 </div>
               }
             />
             {showRepoChain && (
-              <div className="px-4 py-3 bg-primary/[0.03]">
+              <div className="px-4 py-3 bg-surface-2">
                 {(repoState === 'connected' || repoState === 'error' || repoState === 'unmapped') ? (
                   <ConnectorChain
                     projectName={activeProject.name}
@@ -490,19 +489,18 @@ export default function ProjectOverviewPage() {
                       {po.go_to_connections}
                     </Button>
                   )}
-                  <button
+                  <Button variant="ghost" size="icon-sm"
                     type="button"
                     onClick={() => setShowMonitorChain((v) => !v)}
-                    className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
-                    title={debtText("auto_show_connection_chain_c0a20250")}
+                    tooltip={debtText("auto_show_connection_chain_c0a20250")} aria-label={debtText("auto_show_connection_chain_c0a20250")}
                   >
                     <Settings className="w-3.5 h-3.5 text-foreground" />
-                  </button>
+                  </Button>
                 </div>
               }
             />
             {showMonitorChain && (
-              <div className="px-4 py-3 bg-primary/[0.03]">
+              <div className="px-4 py-3 bg-surface-2">
                 {(monitorState === 'connected' || monitorState === 'error' || monitorState === 'unmapped') && (
                   <MonitoringChain
                     projectName={activeProject.name}
@@ -591,7 +589,7 @@ function VitalTile({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 6) * 0.05, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div
+      <Tooltip content={actionLabel}><div
         draggable={draggable}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
@@ -603,7 +601,6 @@ function VitalTile({
         } : undefined}
         role={onActivate ? 'button' : undefined}
         tabIndex={onActivate ? 0 : undefined}
-        title={actionLabel}
         aria-label={onActivate && actionLabel ? `${label} — ${actionLabel}` : undefined}
         className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-all ${
           draggable ? 'cursor-grab active:cursor-grabbing' : ''
@@ -620,7 +617,7 @@ function VitalTile({
         <div className="h-[1.75rem] flex items-center">
           {loading ? (
             <span
-              className="block h-6 w-12 rounded bg-primary/[0.06] animate-fade-in"
+              className="block h-6 w-12 rounded-interactive bg-surface-2 animate-fade-in"
               style={{ animationDelay: '150ms' }}
               aria-hidden="true"
             />
@@ -637,7 +634,7 @@ function VitalTile({
           )}
         </div>
         <p className="typo-caption text-foreground truncate mt-1">{label}</p>
-      </div>
+      </div></Tooltip>
     </motion.div>
   );
 }
@@ -749,7 +746,7 @@ function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: Acti
         <button
           type="button"
           onClick={() => onJump(event)}
-          className="w-full text-left hover:bg-primary/5 transition-colors"
+          className="w-full text-left hover:bg-surface-2 transition-colors"
         >
           {inner}
         </button>

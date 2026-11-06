@@ -10,6 +10,7 @@ import {
   type FleetStateMeta, type FleetAttentionLane, type FleetTranslations,
 } from '../fleetStateMeta';
 import type { MonitorTerminal } from './monitorTypes';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /** State → icon, complementing `FLEET_STATE_META`'s colour/label palette. */
 export const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
@@ -66,17 +67,17 @@ export function ScreenHealthGlyph({ health }: { health: ScreenHealth | null }) {
   const { t } = useTranslation();
   if (!health) {
     return (
-      <span className="typo-caption text-foreground opacity-30" title={t.plugins.fleet.monitor_screen_unmeasured}>
+      <Tooltip content={t.plugins.fleet.monitor_screen_unmeasured}><span className="typo-caption text-ink-3 ">
         -
-      </span>
+      </span></Tooltip>
     );
   }
   const { Icon, tone, hintKey } = SCREEN_HEALTH_META[health];
   const hint = t.plugins.fleet[hintKey];
   return (
-    <span className="inline-flex" title={hint} aria-label={hint} role="img">
+    <Tooltip content={hint}><span className="inline-flex" aria-label={hint} role="img">
       <Icon className={`w-3.5 h-3.5 ${tone}`} aria-hidden="true" />
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -125,13 +126,12 @@ export function MicroStat({
 }) {
   const zero = value === 0 || value === '0';
   return (
-    <span
-      className={`inline-flex items-center gap-0.5 typo-caption ${zero && dimZero ? 'text-foreground opacity-40' : tone ?? 'text-foreground opacity-80'}`}
-      title={title}
+    <Tooltip content={title}><span
+      className={`inline-flex items-center gap-0.5 typo-caption ${zero && dimZero ? 'text-ink-3 ' : tone ?? 'text-ink-2 '}`}
     >
       <Icon className="w-3 h-3" aria-hidden="true" />
       <span className="font-data" style={{ fontVariantNumeric: 'num' }}>{value}</span>
-    </span>
+    </span></Tooltip>
   );
 }
 

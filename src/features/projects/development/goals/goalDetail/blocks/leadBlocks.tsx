@@ -76,7 +76,7 @@ export function ProgressNudge() {
   if (!showNudge || !progress || !goal) return null;
   return (
     <div className="rounded-card border border-hair bg-surface-1 px-4 py-3 flex items-center gap-3">
-      <Activity className="w-4 h-4 text-primary shrink-0" />
+      <Activity className="w-4 h-4 text-ink-3 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="typo-body text-foreground">
           {dl.goal_progress_suggested_label}{' '}

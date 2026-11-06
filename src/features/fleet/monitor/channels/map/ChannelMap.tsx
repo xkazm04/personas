@@ -21,6 +21,7 @@ import {
   type MapMemberInput, type MapNode,
 } from './mapModel';
 import { hexPath, hasRoleGlyph, CoreReactor, RoleGlyph } from './mapGlyphs';
+import Button from '@/features/shared/components/buttons/Button';
 
 /* ----------------------------------------------------------------------------
  * CONSTELLATION MAP — the Channels' third surface. The Stream answers "what
@@ -167,18 +168,15 @@ export function ChannelMap({
           {teams.map((tm) => {
             const on = tm.teamId === activeId;
             return (
-              <button
+              <Button variant={on ? "secondary" : "ghost"} size="xs"
                 key={tm.teamId}
                 type="button"
                 onClick={() => setActiveId(tm.teamId)}
-                aria-pressed={on}
-                className={`flex-shrink-0 px-2 py-0.5 rounded-interactive border typo-caption transition-colors ${
-                  on ? 'border-transparent text-foreground' : 'border-border text-foreground opacity-55 hover:opacity-90'
-                }`}
+                aria-pressed={on} className="flex-shrink-0"
                 style={on ? { backgroundColor: `${tm.teamColor}26`, boxShadow: `inset 0 0 0 1px ${tm.teamColor}66` } : undefined}
               >
                 {cleanName(tm.teamName)}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -193,7 +191,7 @@ export function ChannelMap({
                 {tx(t.monitor.dc_hub_peek_failed, { label: team ? cleanName(team.teamName) : '' })}
               </span>
             ) : topology === 'ready' || !activeId ? (
-              <span className="hud-empty typo-label text-foreground opacity-60">{t.monitor.map_empty}</span>
+              <span className="hud-empty typo-label text-ink-2 ">{t.monitor.map_empty}</span>
             ) : null}
           </div>
         ) : (
@@ -351,23 +349,23 @@ export function ChannelMap({
         {nodes.length > 0 && team && (
           <>
             <div className="absolute top-2 left-3 z-10 font-mono pointer-events-none">
-              <p className="typo-label text-foreground opacity-45">{t.monitor.stream_group_channel}</p>
+              <p className="typo-label text-ink-3 ">{t.monitor.stream_group_channel}</p>
               <p className="typo-eyebrow text-ink-3 opacity-85">{cleanName(team.teamName)}</p>
             </div>
             <div className="absolute top-2 right-3 z-10 font-mono text-right pointer-events-none">
-              <p className="typo-label text-foreground opacity-45">{t.monitor.map_members}</p>
-              <p className="typo-data text-foreground opacity-85">{nodes.length}</p>
+              <p className="typo-label text-ink-3 ">{t.monitor.map_members}</p>
+              <p className="typo-data text-ink-2 ">{nodes.length}</p>
             </div>
             <div className="absolute bottom-2 right-3 z-10 font-mono text-right pointer-events-none flex items-center gap-2">
-              <span className="typo-label text-foreground opacity-45">{t.monitor.presence_working}</span>
-              <span className={`typo-data ${workingCount > 0 ? 'text-status-warning' : 'text-foreground opacity-85'}`}>
+              <span className="typo-label text-ink-3 ">{t.monitor.presence_working}</span>
+              <span className={`typo-data ${workingCount > 0 ? 'text-status-warning' : 'text-ink-2 '}`}>
                 {workingCount}
               </span>
               <span
                 className={`px-1.5 rounded-pill border typo-label ${
                   isLive
                     ? 'border-status-success/40 text-status-success animate-pulse'
-                    : 'border-border text-foreground opacity-50'
+                    : 'border-border text-ink-3 '
                 }`}
               >
                 {isLive ? t.monitor.map_live : t.monitor.presence_idle}
@@ -380,12 +378,12 @@ export function ChannelMap({
         {nodes.length > 0 && (
           <div className="absolute bottom-2 left-3 z-10 flex items-center gap-3 px-2.5 py-1 rounded-interactive border border-border bg-background/70 backdrop-blur-sm">
             {legend.map((l) => (
-              <span key={l.key} className="inline-flex items-center gap-1.5 typo-caption text-foreground opacity-75">
+              <span key={l.key} className="inline-flex items-center gap-1.5 typo-caption text-ink-2 ">
                 <span className={`w-2 h-2 rounded-full ${l.cls}`} />
                 {l.label}
               </span>
             ))}
-            <span className="inline-flex items-center gap-1.5 typo-caption text-foreground opacity-75">
+            <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2 ">
               <span className="inline-block w-5 border-t border-dashed border-status-warning" />
               {t.monitor.map_legend_traffic}
             </span>

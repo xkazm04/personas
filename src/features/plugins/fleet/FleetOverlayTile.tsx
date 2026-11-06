@@ -11,6 +11,8 @@ import { FleetTileAthenaBar } from './FleetTileAthenaBar';
 import { sessionAttention, attentionClass, type FleetTileApproval } from './fleetAttention';
 import { isTombstoneState } from './fleetStateMeta';
 import { FleetKillConfirm } from './FleetKillConfirm';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface Props {
   session: FleetSession;
@@ -72,46 +74,44 @@ export function FleetOverlayTile({
         <FleetStatusDots state={s.state} reason={s.stateReason} />
         <span className="typo-caption truncate flex-1 min-w-0 text-foreground">{s.name ?? s.title ?? s.projectLabel}</span>
         {s.dozing && (
-          <span
+          <Tooltip content={t.plugins.fleet.doze_tooltip}><span
             data-testid={`fleet-tile-dozing-${s.id}`}
             className="shrink-0 inline-flex"
-            title={t.plugins.fleet.doze_tooltip}
             aria-label={t.plugins.fleet.doze_tooltip}
           >
             <MoonStar className="w-3 h-3 text-role-agent" aria-hidden="true" />
-          </span>
+          </span></Tooltip>
         )}
         {s.mode === 'headless' && (
-          <span
-            className="shrink-0 rounded-card border border-hair bg-surface-1 px-1.5 py-0.5 typo-caption text-foreground opacity-80"
-            title={t.plugins.fleet.headless_no_terminal}
+          <Tooltip content={t.plugins.fleet.headless_no_terminal}><span
+            className="shrink-0 rounded-card border border-hair bg-surface-1 px-1.5 py-0.5 typo-caption text-ink-2 "
           >
             {t.plugins.fleet.headless_badge}
-          </span>
+          </span></Tooltip>
         )}
-        <button
+        <Button variant="ghost" size="sm"
           type="button"
           data-testid={`fleet-tile-view-${s.id}`}
           aria-pressed={showInsights}
           aria-label={showInsights ? t.plugins.fleet.view_terminal : t.plugins.fleet.view_insights}
-          title={showInsights ? t.plugins.fleet.view_terminal : t.plugins.fleet.view_insights}
+          tooltip={showInsights ? t.plugins.fleet.view_terminal : t.plugins.fleet.view_insights}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => onToggleInsight(s.id)}
-          className="shrink-0 p-0.5 rounded text-foreground hover:bg-surface-1 transition-colors"
+          className="shrink-0"
         >
           {showInsights ? <TerminalIcon className="w-3 h-3" /> : <BarChart3 className="w-3 h-3" />}
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="icon-sm"
           type="button"
           data-testid={`fleet-tile-kill-${s.id}`}
           aria-label={tombstone ? t.plugins.fleet.dismiss_session : t.plugins.fleet.kill_session}
-          title={tombstone ? t.plugins.fleet.dismiss_session : t.plugins.fleet.kill_session}
+          tooltip={tombstone ? t.plugins.fleet.dismiss_session : t.plugins.fleet.kill_session}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => (tombstone ? onKill(s.id) : setConfirmKill(true))}
-          className="shrink-0 p-0.5 rounded text-foreground hover:bg-status-error/20 hover:text-status-error transition-colors"
+          className="shrink-0"
         >
           <Trash2 className="w-3 h-3" />
-        </button>
+        </Button>
       </div>
       <div className="flex-1 min-h-0">
         {showInsights ? (

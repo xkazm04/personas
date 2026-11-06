@@ -9,6 +9,7 @@ import { ArrowDownToLine, ArrowUpFromLine, Play } from 'lucide-react';
 import { BaseModal } from '@/features/shared/components/modals';
 import { skillCommand, usageHint } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export type SkillActionKind = 'adopt' | 'share' | 'use';
 
@@ -47,7 +48,7 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
   return (
     <BaseModal isOpen onClose={onClose} titleId="skill-action-confirm-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid={`skill-action-confirm-${kind}`}>
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-2">
           <Icon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="skill-action-confirm-title" className="typo-title truncate">{skill.name}</span>
           <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{kindLabel}</span>
@@ -94,23 +95,21 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-hair bg-surface-1">
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             onClick={onClose}
-            className="px-2.5 py-1 rounded-interactive typo-caption text-ink-2 hover:text-foreground hover:bg-primary/10 transition-colors"
           >
             {t.common.cancel}
-          </button>
-          <button
+          </Button>
+          <Button variant="secondary" size="sm"
             type="button"
             onClick={() => onConfirm(args)}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="skill-action-confirm-cta"
           >
             <Icon className="w-3 h-3" aria-hidden />
             {cta}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>

@@ -37,15 +37,15 @@ export function RecapField({ label, value, children, emphasis }: RecapFieldProps
   const absent = value == null || value.trim() === '';
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <span className="typo-caption text-foreground opacity-45">{label}</span>
+      <span className="typo-caption text-ink-3 ">{label}</span>
       {children ?? (
         <p
           className={`whitespace-pre-wrap break-words ${
             absent
-              ? 'typo-caption text-foreground opacity-40'
+              ? 'typo-caption text-ink-3 '
               : emphasis
                 ? 'typo-body text-foreground'
-                : 'typo-caption text-foreground opacity-80'
+                : 'typo-caption text-ink-2 '
           }`}
         >
           {absent ? ABSENT : value}

@@ -7,6 +7,7 @@ import type { TriageRule } from '@/lib/bindings/TriageRule';
 import type { RuleSuggestion } from './triageRuleSuggestions';
 import { ruleActionTone, TONE_CHIP } from './triageTones';
 import { PrimarySoftButton } from './PrimarySoftButton';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function ActionChip({ action }: { action: string }) {
   return (
@@ -32,33 +33,31 @@ export function RuleRow({ rule, onToggle, onDelete }: {
   return (
     <div className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-surface-1 typo-caption">
       {/* The switch keeps the theme primary for "on" (identity); AccessibleToggle's on-state is fixed success green. */}
-      <button
+      <Button variant="ghost" size="sm"
         type="button"
         role="switch"
         aria-checked={rule.enabled}
         aria-label={rule.name}
         onClick={() => onToggle(rule)}
-        className="flex-shrink-0 focus-ring rounded-interactive"
       >
         {rule.enabled
           ? <ToggleRight className="w-4 h-4 text-primary" />
           : <ToggleLeft className="w-4 h-4 text-foreground" />
         }
-      </button>
+      </Button>
       <div className="flex-1 min-w-0">
         <span className="font-medium text-foreground">{rule.name}</span>
         <span className="text-foreground ml-2">{summarizeConditions(rule.conditions)}</span>
         <ActionChip action={rule.action} />
       </div>
       <span className="num">{rule.times_fired}x</span>
-      <button
+      <Button variant="ghost" size="icon-sm"
         type="button"
         aria-label={t.common.delete}
         onClick={() => onDelete(rule.id)}
-        className="text-foreground hover:text-status-error transition-colors focus-ring rounded-interactive"
       >
         <Trash2 className="w-3 h-3" />
-      </button>
+      </Button>
     </div>
   );
 }

@@ -31,6 +31,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from '@/lib/log';
 import { MonitorRunSheet } from './MonitorRunSheet';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const logger = createLogger('monitor-capabilities');
 
@@ -117,15 +118,13 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
         const runnable = uc.mode !== 'non_executable' && uc.health !== 'disabled';
         const disabled = isExecuting || !runnable;
         return (
-          <button
-            key={uc.id}
+          <Tooltip content={uc.title} key={uc.id}><button
             type="button"
             disabled={disabled}
             onClick={() => setPrompting(uc)}
-            title={uc.title}
             className={`group relative flex flex-col items-center gap-2 rounded-card border px-3 py-3 transition-colors ${
               isExecuting
-                ? 'border-primary/40 bg-primary/[0.07]'
+                ? 'border-primary/40 bg-surface-2'
                 : runnable
                   ? 'border-hair bg-surface-1 hover:bg-surface-1 cursor-pointer'
                   : 'border-hair bg-surface-1 cursor-default'
@@ -170,7 +169,7 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
             <span className={`typo-caption ${isExecuting ? 'text-primary' : runnable ? 'text-ink-3' : 'text-ink-3'}`}>
               {isExecuting ? t.monitor.executing : runnable ? t.monitor.run : uc.connector}
             </span>
-          </button>
+          </button></Tooltip>
         );
       })}
     </div>

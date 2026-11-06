@@ -54,7 +54,7 @@ export function StaticScanCard({ projectId }: { projectId: string }) {
   }, [running, parsedConfig, runNow]);
 
   return (
-    <div className="flex items-center gap-3 rounded-card border border-hair bg-secondary/[0.12] px-3 py-2">
+    <div className="flex items-center gap-3 rounded-card border border-hair bg-surface-1 px-3 py-2">
       <Zap className="w-4 h-4 text-status-success flex-shrink-0" aria-hidden />
       <span className="min-w-0 flex-1">
         <Tooltip content={d.skills_static_subtitle} placement="top">

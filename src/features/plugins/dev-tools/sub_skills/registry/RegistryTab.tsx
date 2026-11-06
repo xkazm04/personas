@@ -30,7 +30,7 @@ import { useSkillAdoption } from './useSkillAdoption';
 function Hint({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-full flex items-center justify-center">
-      <p className="typo-caption text-foreground opacity-60 text-center max-w-sm">{children}</p>
+      <p className="typo-caption text-ink-2 text-center max-w-sm">{children}</p>
     </div>
   );
 }

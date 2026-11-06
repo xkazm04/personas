@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { NODE_H } from './CircuitWires';
 import type { ProjectLaunchCell } from './launchTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
   cell: ProjectLaunchCell;
@@ -71,18 +72,17 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
   if (status === 'needs_adopt') {
     return (
       <div style={style} className={`${frame} border-hair bg-surface-1 opacity-70`}>
-        {nameRow(<CircleDashed className="w-3 h-3 text-foreground opacity-40" aria-hidden />)}
+        {nameRow(<CircleDashed className="w-3 h-3 text-ink-3 " aria-hidden />)}
         <span className="flex items-center gap-2 min-w-0 w-full">
           <Tooltip content={d.launch_needs_adopt_hint}>
-            <button
+            <Button variant="secondary" size="xs"
               type="button"
               onClick={onAdopt}
               aria-label={`${d.launch_action_adopt}: ${project.name}`}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-primary bg-surface-1 hover:bg-primary/20 border border-hair transition-colors"
             >
               <ArrowDownToLine className="w-3 h-3" aria-hidden />
               {d.launch_action_adopt}
-            </button>
+            </Button>
           </Tooltip>
           {versions}
         </span>

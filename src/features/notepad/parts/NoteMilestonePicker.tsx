@@ -25,6 +25,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 
 import { useNotepadPlanSummaries, useNotepadStatus } from '../useNotepad';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
   /** Null when the note has no project — the caller renders the blocked
@@ -94,17 +95,16 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
       itemCount={open.length + 1}
       onSelectFocused={(i) => (i === 0 ? onCreate() : onPick(open[i - 1]!.id))}
       renderTrigger={({ toggle, isOpen }) => (
-        <button
+        <Button variant="secondary" size="sm"
           type="button"
           disabled={disabled}
           aria-expanded={isOpen}
           onClick={() => { if (!isOpen) fetchRows(); toggle(); }}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-hair text-ink-2 transition-colors hover:bg-surface-1 focus-ring disabled:is-disabled"
           data-testid="notepad-milestone-picker"
         >
           <Target className="w-3.5 h-3.5" aria-hidden />
           {t.notepad.milestone_picker_label}
-        </button>
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (

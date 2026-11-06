@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { CircleDot, Square } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFleetDebugLog } from './useFleetDebugLog';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Arm/disarm the fleet debug recorder from the grid header (DEV builds only).
@@ -34,13 +35,12 @@ export function FleetDebugLogButton() {
   const label = active ? t.plugins.fleet.debug_log_stop : t.plugins.fleet.debug_log_start;
 
   return (
-    <button
+    <Tooltip content={active ? (path ?? label) : t.plugins.fleet.debug_log_start_title}><button
       type="button"
       data-testid="fleet-debug-log-toggle"
       onClick={toggle}
       disabled={busy}
       aria-pressed={active}
-      title={active ? (path ?? label) : t.plugins.fleet.debug_log_start_title}
       className={`flex items-center gap-1.5 rounded-interactive border px-2 py-1 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
         active
           ? 'border-hair bg-surface-1 text-status-error hover:bg-status-error/20'
@@ -63,6 +63,6 @@ export function FleetDebugLogButton() {
           {label}
         </>
       )}
-    </button>
+    </button></Tooltip>
   );
 }

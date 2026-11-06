@@ -25,16 +25,16 @@ export interface NodeHue {
  * see the class verbatim; the lockstep test keeps them honest.
  */
 export const SESSION_TINT: Record<FleetSessionState, string> = {
-  awaiting_input: 'bg-violet-500/[0.08]',
-  running: 'bg-blue-500/[0.08]',
-  queued: 'bg-slate-500/[0.08]',
-  spawning: 'bg-cyan-500/[0.08]',
-  idle: 'bg-emerald-500/[0.08]',
-  stale: 'bg-orange-500/[0.08]',
-  finished: 'bg-teal-500/[0.08]',
-  hibernated: 'bg-indigo-500/[0.08]',
-  exited: 'bg-zinc-500/[0.08]',
-  expired: 'bg-stone-500/[0.08]',
+  awaiting_input: 'bg-role-agent/[0.08]',
+  running: 'bg-status-info/[0.08]',
+  queued: 'bg-ink-3/[0.08]',
+  spawning: 'bg-status-info/[0.08]',
+  idle: 'bg-status-success/[0.08]',
+  stale: 'bg-status-warning/[0.08]',
+  finished: 'bg-role-external/[0.08]',
+  hibernated: 'bg-role-agent/[0.08]',
+  exited: 'bg-ink-3/[0.08]',
+  expired: 'bg-ink-3/[0.08]',
 };
 
 export function sessionHue(state: FleetSessionState): NodeHue {
@@ -49,8 +49,8 @@ export function sessionHue(state: FleetSessionState): NodeHue {
  */
 export const PERSONA_HUE: Record<SquareState, NodeHue> = {
   running:   { dot: SQUARE_VISUAL.running.accent,   tint: 'bg-primary/[0.08]' },
-  attention: { dot: SQUARE_VISUAL.attention.accent, tint: 'bg-amber-500/[0.08]' },
-  failed:    { dot: SQUARE_VISUAL.failed.accent,    tint: 'bg-red-500/[0.08]' },
+  attention: { dot: SQUARE_VISUAL.attention.accent, tint: 'bg-status-warning/[0.08]' },
+  failed:    { dot: SQUARE_VISUAL.failed.accent,    tint: 'bg-status-error/[0.08]' },
   idle:      { dot: SQUARE_VISUAL.idle.accent,      tint: 'bg-foreground/[0.03]' },
 };
 

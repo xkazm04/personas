@@ -441,7 +441,7 @@ export function PrBridge({ task }: { task: DevTask }) {
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2 transition-colors text-left"
         aria-expanded={expanded}
       >
         <div className="w-7 h-7 rounded-card bg-surface-1 border border-hair flex items-center justify-center flex-shrink-0">
@@ -585,15 +585,15 @@ export function PrBridge({ task }: { task: DevTask }) {
               </Button>
             </ActionWithCheck>
             {doneSteps.size > 0 && (
-              <button
+              <Button variant="ghost" size="sm"
                 type="button"
                 onClick={resetSteps}
-                title={dt.pr_bridge_reset_steps_tooltip}
-                className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground transition-colors"
+                tooltip={dt.pr_bridge_reset_steps_tooltip}
+                className="ml-auto"
               >
                 <RotateCcw className="w-3 h-3" />
                 {dt.pr_bridge_reset_steps}
-              </button>
+              </Button>
             )}
           </div>
 

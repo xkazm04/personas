@@ -35,16 +35,16 @@ export const QueuedPromptRow = memo(function QueuedPromptRow({
         className={`max-w-[78%] px-3 py-2 rounded-card border border-dashed ${
           failed
             ? 'border-status-error/40 bg-status-error/[0.06]'
-            : 'border-hair bg-primary/[0.07]'
+            : 'border-hair bg-surface-2'
         }`}
       >
-        <p className="typo-body text-foreground opacity-75 whitespace-pre-wrap break-words">
+        <p className="typo-body text-ink-2 whitespace-pre-wrap break-words">
           {prompt.text}
         </p>
 
         <div className="mt-0.5 flex items-center gap-1.5 typo-caption">
           {prompt.phase === 'queued' && (
-            <span className="flex items-center gap-1 text-foreground opacity-45">
+            <span className="flex items-center gap-1 text-ink-3 ">
               <Clock className="w-3 h-3" aria-hidden />
               {t.monitor.conv_queued_waiting}
             </span>
@@ -53,7 +53,7 @@ export const QueuedPromptRow = memo(function QueuedPromptRow({
             // No spinner: this is a SURFACE row reporting on itself, not a
             // control the operator is holding down. The phase word is the
             // state, and the row's own dashed edge is the pending affordance.
-            <span className="flex items-center gap-1 text-foreground opacity-45">
+            <span className="flex items-center gap-1 text-ink-3 ">
               {prompt.goal ? (
                 <Wand2 className="w-3 h-3" aria-hidden />
               ) : (

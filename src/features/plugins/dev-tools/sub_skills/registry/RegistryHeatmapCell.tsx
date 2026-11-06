@@ -82,7 +82,7 @@ export function RegistryHeatmapCell({ d, skill, column, cell, r, c, projectMode,
         className={`group/cell flex h-7 w-full items-center justify-center rounded-interactive border border-dashed text-primary transition-colors ${FOCUS} ${
           blocked
             ? 'cursor-not-allowed border-status-info/40'
-            : "border-hair [[data-theme^='light']_&]:border-primary/30 hover:border-primary/45 hover:bg-primary/[0.07] focus-visible:bg-primary/[0.07]"
+            : "border-hair [[data-theme^='light']_&]:border-primary/30 hover:border-primary/45 hover:bg-surface-2 focus-visible:bg-surface-2"
         }`}
       >
         {blocked

@@ -429,15 +429,15 @@ export default function NotepadOverlayHost() {
               outside the breadcrumb on purpose: the two arrows then read as two
               distances — this one leaves the pad, the crumb inside it goes back
               to the desk. */}
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={close}
             aria-label={t.notepad.close}
             data-testid="notepad-close"
-            className="w-7 h-7 -ml-1 shrink-0 rounded-input flex items-center justify-center text-ink-2 hover:text-foreground hover:bg-surface-1 transition-colors focus-ring"
+            className="-ml-1 shrink-0"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden />
-          </button>
+          </Button>
           {view === 'editor' && (
             // ONE control, two readings. On an ordinary note it is the back
             // button it has always been; on a PLAN note it is the first crumb of
@@ -449,22 +449,22 @@ export default function NotepadOverlayHost() {
               aria-label={t.notepad.crumb_desk}
               className="flex items-center gap-1.5 min-w-0 typo-caption"
             >
-              <button
+              <Button variant="ghost" size="sm"
                 type="button"
                 onClick={backToOverview}
                 data-testid="notepad-back-overview"
-                className="h-7 px-2 -ml-2 rounded-input flex items-center gap-1.5 text-ink-2 hover:text-foreground hover:bg-surface-1 transition-colors focus-ring"
+                className="-ml-2"
               >
                 <ArrowLeft className="w-4 h-4" aria-hidden />
                 {planNote ? t.notepad.crumb_desk : t.notepad.overview_back}
-              </button>
+              </Button>
               {planNote && active && (
                 <>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground opacity-50" aria-hidden />
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-3 " aria-hidden />
                   <span className="truncate max-w-[24ch] text-ink-2" data-testid="notepad-crumb-note">
                     {active.title}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground opacity-50" aria-hidden />
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-3 " aria-hidden />
                   <span aria-current="page" className="text-foreground" data-testid="notepad-crumb-tab">
                     {PLAN_TAB_LABEL[planTab](t)}
                   </span>

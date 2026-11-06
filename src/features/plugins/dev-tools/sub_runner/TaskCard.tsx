@@ -15,6 +15,7 @@ import { TaskOutputPanel } from './TaskOutputPanel';
 import { PrBridge } from './PrBridge';
 import { normalizeStatus, type TaskStatus } from './useTaskQueue';
 import type { DevTask } from '@/lib/bindings/DevTask';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // ---------------------------------------------------------------------------
 // Status styling
@@ -46,13 +47,12 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
 function RetryLineageChip({ attempt, parentTitle }: { attempt: number; parentTitle?: string | null }) {
   const { t, tx } = useTranslation();
   return (
-    <span
+    <Tooltip content={parentTitle ? tx(t.plugins.dev_runner.retry_of, { title: parentTitle }) : undefined}><span
       className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border border-hair-2 text-ink-2"
-      title={parentTitle ? tx(t.plugins.dev_runner.retry_of, { title: parentTitle }) : undefined}
     >
       <GitBranch className="w-2.5 h-2.5" />
       {tx(t.plugins.dev_runner.attempt_chip, { attempt })}
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -127,13 +127,12 @@ export const TaskCard = memo(function TaskCard({
               <RetryLineageChip attempt={task.attempt} parentTitle={parentTitle} />
             )}
             {hasWarnings && (
-              <span
+              <Tooltip content={contextWarnings.join('\n')}><span
                 className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border border-status-warning/40 text-status-warning"
-                title={contextWarnings.join('\n')}
               >
                 <AlertTriangle className="w-2.5 h-2.5" />
                 {t.plugins.dev_tools.partial_context}
-              </span>
+              </span></Tooltip>
             )}
             {task.depth && task.depth !== 'quick' && (
               <span className="typo-eyebrow text-ink-3">
@@ -150,12 +149,11 @@ export const TaskCard = memo(function TaskCard({
                   <span className="inline-flex items-center gap-1.5 min-w-0">
                     <span className="typo-caption text-ink-3 shrink-0">{t.plugins.dev_runner.source_label}</span>
                     {sourceAgentEmoji && <span className="typo-caption shrink-0">{sourceAgentEmoji}</span>}
-                    <span
+                    <Tooltip content={sourceIdea.description ?? sourceIdea.title}><span
                       className="typo-caption text-ink-2 truncate max-w-[220px]"
-                      title={sourceIdea.description ?? sourceIdea.title}
                     >
                       {sourceIdea.title}
-                    </span>
+                    </span></Tooltip>
                     <ValueBadge idea={{ impact: sourceIdea.impact ?? 5, effort: sourceIdea.effort ?? 5, risk: sourceIdea.risk ?? 5 }} />
                   </span>
                 ) : (
@@ -163,15 +161,15 @@ export const TaskCard = memo(function TaskCard({
                 )
               )}
               {goal && (
-                <button
+                <Button variant="secondary" size="xs"
                   type="button"
                   onClick={openGoalsBoard}
-                  title={t.plugins.dev_runner.goal_pill_tooltip}
-                  className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border border-hair-2 text-ink-2 hover:border-primary hover:text-ink-1 transition-colors max-w-[200px]"
+                  tooltip={t.plugins.dev_runner.goal_pill_tooltip}
+                  className="max-w-[200px]"
                 >
                   <Target className="w-2.5 h-2.5 shrink-0" />
                   <span className="truncate">{goal.title}</span>
-                </button>
+                </Button>
               )}
             </div>
           )}

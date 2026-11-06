@@ -22,6 +22,7 @@ import { SentryProjectPicker } from '../sub_overview/OverviewParts';
 import AssignmentMatrix from './AssignmentMatrix';
 import { useMonitoringPinpoints } from './useMonitoringPinpoints';
 import type { AssignmentMatrixProps } from './matrixShared';
+import Button from '@/features/shared/components/buttons/Button';
 
 // monCreds comes from the parent's single useMonitoringPinpoints instance —
 // calling the hook here too ran the whole load() chain (vault listCredentials
@@ -102,8 +103,8 @@ function MonitoringStatsGhost() {
           className="rounded-card border border-hair bg-surface-1 px-3 py-2.5 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="block h-3 w-20 rounded bg-primary/[0.06] mb-2" />
-          <span className="block h-6 w-12 rounded bg-primary/[0.06]" />
+          <span className="block h-3 w-20 rounded-interactive bg-surface-2 mb-2" />
+          <span className="block h-6 w-12 rounded-interactive bg-surface-2" />
         </div>
       ))}
     </div>
@@ -123,15 +124,15 @@ export default function MonitoringSection() {
         <div className="px-4 py-2 border-b border-hair flex items-center gap-2">
           <Shield className="w-3.5 h-3.5 text-status-error" />
           <span className="typo-caption text-foreground truncate">{activeProject?.name ?? '—'}</span>
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => reload()}
-            className="ml-auto p-1 rounded-interactive text-ink-2 hover:text-foreground hover:bg-primary/8 focus-ring"
-            title={dt.mon_refresh}
+            className="ml-auto"
+            tooltip={dt.mon_refresh}
             aria-label={dt.mon_refresh}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
 
         {!activeProject ? (

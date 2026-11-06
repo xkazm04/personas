@@ -76,7 +76,7 @@ function FilmstripRow({
   return (
     <div
       data-testid={`progress-row-${row.projectId}`}
-      className="flex items-stretch border-b border-hair last:border-b-0 transition-colors hover:bg-primary/[0.03]"
+      className="flex items-stretch border-b border-hair last:border-b-0 transition-colors hover:bg-surface-2"
       onContextMenu={onContextMenu}
       onKeyDown={onKeyDown}
       tabIndex={-1}

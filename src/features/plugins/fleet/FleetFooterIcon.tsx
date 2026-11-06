@@ -7,6 +7,7 @@ import { FleetFooterPopover } from './FleetFooterPopover';
 import { FLEET_STATE_META, fleetStateCounts } from './fleetStateMeta';
 import { requestGridView } from './fleetGridView';
 import { arriveAtDevTools } from '@/features/plugins/pluginArrival';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Fleet status cluster in the desktop footer (DEV-only surface).
@@ -92,14 +93,13 @@ export default function FleetFooterIcon() {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <button
+      <Tooltip content={label}><button
         type="button"
         onClick={handleClick}
         onFocus={() => setHovered(true)}
         onBlur={() => setHovered(false)}
         data-testid="footer-fleet-toggle"
         aria-label={label}
-        title={label}
         className={`h-7 pl-1.5 pr-1 rounded-input flex items-center gap-1.5 transition-colors ${
           needsYou > 0
             ? 'text-role-agent bg-role-agent/15 hover:bg-role-agent/25'
@@ -130,7 +130,7 @@ export default function FleetFooterIcon() {
             ))}
           </span>
         )}
-      </button>
+      </button></Tooltip>
 
       {hovered && (
         <FleetFooterPopover

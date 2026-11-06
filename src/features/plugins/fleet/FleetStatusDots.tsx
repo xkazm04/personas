@@ -1,6 +1,7 @@
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { Translations } from '@/i18n/generated/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Two-axis status indicator: console (process) state + business (Claude) state.
@@ -60,12 +61,12 @@ interface DotProps {
 
 function Dot({ bg, pulse, title }: DotProps) {
   return (
-    <span title={title} className="relative inline-flex h-2 w-2" aria-label={title}>
+    <Tooltip content={title}><span className="relative inline-flex h-2 w-2" aria-label={title}>
       {pulse && (
         <span className={`absolute inset-0 rounded-full opacity-60 animate-ping ${bg}`} />
       )}
       <span className={`relative h-2 w-2 rounded-full ${bg}`} />
-    </span>
+    </span></Tooltip>
   );
 }
 

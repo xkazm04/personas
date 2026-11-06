@@ -23,7 +23,7 @@ async function quietly(label: string, run: () => Promise<unknown>): Promise<void
   }
 }
 
-async function prepareProjects(devToolsTab: 'overview' | 'context-map' | 'task-runner' | 'fleet' = 'overview') {
+async function prepareProjects(devToolsTab: 'overview' | 'context-map' | 'task-runner' | 'fleet' | 'llm-overview' | 'workspaces' | 'skills' = 'overview') {
   useSystemStore.setState({ sidebarSection: 'plugins', devToolsTab });
   await quietly('fetchProjects', () => useSystemStore.getState().fetchProjects());
   useSystemStore.setState({ activeProjectId: PROJECT });
@@ -41,6 +41,18 @@ export const FANOUT_B_MODULES: Record<string, HarnessModule> = {
   'plugins/dev-tools/task-runner': {
     load: () => import('@/features/plugins/dev-tools/sub_runner/RunDeskPage'),
     prepare: () => prepareProjects('task-runner'),
+  },
+  'plugins/dev-tools/skills': {
+    load: () => import('@/features/plugins/dev-tools/sub_skills/SkillsManagerPage'),
+    prepare: () => prepareProjects('skills'),
+  },
+  'plugins/dev-tools/workspaces': {
+    load: () => import('@/features/plugins/dev-tools/sub_workspaces/WorkspacesPage'),
+    prepare: () => prepareProjects('workspaces'),
+  },
+  'plugins/dev-tools/llm-overview': {
+    load: () => import('@/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage'),
+    prepare: () => prepareProjects('llm-overview'),
   },
   'projects/goals': {
     load: () => import('@/features/projects/development/goals/GoalsPage'),

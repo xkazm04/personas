@@ -80,7 +80,7 @@ export function MonitorLedger({
                   <span className={`typo-label ${LANE_TONE[lane]}`}>
                     {t.plugins.fleet[LANE_LABEL_KEY[lane]]}
                   </span>
-                  <span className="ml-2 typo-caption text-foreground opacity-40 font-data">{terms.length}</span>
+                  <span className="ml-2 typo-caption text-ink-3 font-data">{terms.length}</span>
                 </td>
               </tr>,
               ...terms.map((term) => (

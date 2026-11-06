@@ -34,6 +34,7 @@ import { SQUARE_STATE_ORDER, SQUARE_VISUAL, type SquareState } from '../fleetGri
 import { AutopilotSwitch } from './AutopilotSwitch';
 import { MaxParallelStepper } from './MaxParallelStepper';
 import { BOARD_VARIANTS, type BoardVariant } from './queue/boardVariant';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** The layout strip's id prefix; the board body declares itself its panel. */
 export const BOARD_TABS_PREFIX = 'fleet-board';
@@ -126,15 +127,14 @@ export function GridHeader({
         <AutopilotSwitch />
         <MaxParallelStepper running={queueRunning} overAdmitted={queueOverAdmitted} disabled={simulated} />
         <Tooltip content={s.queue_open_orchestration}>
-          <button
+          <Button variant="secondary" size="icon-sm"
             type="button"
             onClick={onOpenOrchestration}
             aria-label={s.queue_open_orchestration}
             data-testid="fleet-grid-orchestration"
-            className="focus-ring inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-interactive border border-border bg-surface-1 text-foreground transition-colors hover:bg-surface-1"
           >
             <ListOrdered className="h-3.5 w-3.5" aria-hidden />
-          </button>
+          </Button>
         </Tooltip>
         <SegmentedTabs
           size="sm"

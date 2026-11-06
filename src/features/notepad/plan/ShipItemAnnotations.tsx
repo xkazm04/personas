@@ -16,6 +16,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { PLAN_INK } from './planInk';
 import { itemVerdict } from '@/lib/milestone/shipDuality';
+import Button from '@/features/shared/components/buttons/Button';
 
 const STARS = [1, 2, 3, 4, 5] as const;
 
@@ -34,12 +35,11 @@ function StarRating({ name, testid, rating, onRate, disabled }: {
         {STARS.map((v) => {
           const filled = rating !== null && v <= rating;
           return (
-            <button
+            <Button variant="ghost" size="icon-sm"
               key={v}
               type="button"
               disabled={disabled}
               onClick={() => onRate(rating === v ? null : v)}
-              className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring disabled:pointer-events-none disabled:opacity-50"
               aria-label={tx(t.ship.rating_aria, { name, value: v })}
               aria-pressed={filled}
             >
@@ -51,7 +51,7 @@ function StarRating({ name, testid, rating, onRate, disabled }: {
                 fill={filled ? 'currentColor' : 'none'}
                 aria-hidden
               />
-            </button>
+            </Button>
           );
         })}
       </span>

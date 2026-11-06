@@ -37,6 +37,7 @@ import { LLM_COST_THRESHOLD_USD } from '../sub_triage/findings/findingConfig';
 import type { AssignmentMatrixProps } from './matrixShared';
 import AssignmentMatrix from './AssignmentMatrix';
 import MonitoringSection from './MonitoringSection';
+import Button from '@/features/shared/components/buttons/Button';
 
 type ObsTab = 'llm' | 'monitoring';
 
@@ -136,9 +137,9 @@ function LlmPinpointsGhost() {
           className="flex items-center gap-3 px-3 border-b border-hair animate-fade-in"
           style={{ height: 40, animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className={`h-2.5 rounded bg-primary/[0.06] ${GHOST_ROW_WIDTHS[i % GHOST_ROW_WIDTHS.length]}`} />
-          <span className="h-2.5 w-16 rounded bg-primary/[0.06] ml-auto" />
-          <span className="h-2.5 w-20 rounded bg-primary/[0.06]" />
+          <span className={`h-2.5 rounded-interactive bg-surface-2 ${GHOST_ROW_WIDTHS[i % GHOST_ROW_WIDTHS.length]}`} />
+          <span className="h-2.5 w-16 rounded-interactive bg-surface-2 ml-auto" />
+          <span className="h-2.5 w-20 rounded-interactive bg-surface-2" />
         </div>
       ))}
     </div>
@@ -301,7 +302,7 @@ export default function LlmOverviewPage() {
                     onClick={() => void proposeUseCase(name)}
                     disabled={busy}
                     aria-label={tx(dt.llm_propose_aria, { name })}
-                    className="shrink-0 grid place-items-center w-4 h-4 rounded-full border border-hair text-ink-3 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition disabled:opacity-40 focus-ring"
+                    className="shrink-0 grid place-items-center w-4 h-4 rounded-full border border-hair text-ink-3 hover:text-primary hover:border-primary/40 hover:bg-surface-2 transition disabled:opacity-40 focus-ring"
                   >
                     {busy ? <LoadingSpinner size="xs" /> : <Plus className="w-2.5 h-2.5" />}
                   </button>
@@ -399,15 +400,14 @@ export default function LlmOverviewPage() {
                   fullWidth={false}
                   ariaLabel={dt.llm_aria_window}
                 />
-                <button
+                <Button variant="ghost" size="icon-sm"
                   type="button"
                   onClick={reload}
-                  className="p-1.5 rounded-interactive text-ink-2 hover:text-foreground hover:bg-primary/8 focus-ring"
-                  title={dt.llm_refresh}
+                  tooltip={dt.llm_refresh}
                   aria-label={dt.llm_refresh}
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </>
             )}
           </>
@@ -432,15 +432,15 @@ export default function LlmOverviewPage() {
           <span className="text-foreground min-w-0 truncate">
             {tx(dt.llm_context_filter_label, { context: contextFilter.contextName })}
           </span>
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => setContextFilter(null)}
             data-testid="llm-context-filter-clear"
             aria-label={dt.llm_context_filter_clear}
-            className="ml-auto shrink-0 p-0.5 rounded-interactive text-foreground hover:bg-primary/10 focus-ring"
+            className="ml-auto shrink-0"
           >
             <X className="w-3 h-3" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -523,13 +523,12 @@ export default function LlmOverviewPage() {
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>{dt.llm_truncated_note}</span>
                 {timeWindow !== '24h' && (
-                  <button
+                  <Button variant="ghost" size="sm"
                     type="button"
                     onClick={() => setTimeWindow('24h')}
-                    className="underline underline-offset-2 hover:text-status-warning focus-ring rounded-interactive"
                   >
                     {dt.llm_truncated_cta}
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

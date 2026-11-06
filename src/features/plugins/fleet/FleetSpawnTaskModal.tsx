@@ -88,7 +88,7 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
               data-testid="fleet-spawn-task-headless"
             />
             {headless && (
-              <p className="mt-1 typo-caption text-foreground opacity-70">
+              <p className="mt-1 typo-caption text-ink-2 ">
                 {t.plugins.fleet.spawn_headless_hint}
               </p>
             )}

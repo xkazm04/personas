@@ -37,12 +37,12 @@ function GhostRow({ width = TILE_W }: { width?: number }) {
         style={{ width, height: TILE_H }}
       >
         <span className="flex items-center" style={{ height: TITLE_ROW_H }}>
-          <span className="h-[0.6em] w-24 rounded bg-primary/[0.06] typo-body" />
+          <span className="h-[0.6em] w-24 rounded-interactive bg-surface-2 typo-body" />
         </span>
         <span className="h-px bg-foreground/[0.05]" />
         <span className="flex items-center gap-1" style={{ height: SYMBOL_ROW_H }}>
           {Array.from({ length: GHOST_SYMBOLS }, (_, i) => (
-            <span key={i} className="h-3 w-3 rounded-full bg-primary/[0.05]" />
+            <span key={i} className="h-3 w-3 rounded-full bg-surface-2" />
           ))}
         </span>
       </div>
@@ -100,7 +100,7 @@ export function BoardGhost({ width = TILE_W }: { width?: number }) {
           <section key={c} className="flex h-full min-h-0 flex-shrink-0 flex-col gap-1.5" style={{ width }}>
             <div className="flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
               <div className="flex items-baseline gap-1.5 px-1 py-0.5 typo-label">
-                <span className="h-[0.7em] w-24 rounded bg-primary/[0.06]" />
+                <span className="h-[0.7em] w-24 rounded-interactive bg-surface-2" />
               </div>
               <span aria-hidden className="h-0.5 w-full rounded-full bg-foreground/10" />
             </div>

@@ -30,6 +30,7 @@ import {
   threadEntryLabel,
   threadVerdictLabel,
 } from './threadLabels';
+import Button from '@/features/shared/components/buttons/Button';
 
 const WIDTH = 368;
 const GAP = 6;
@@ -153,15 +154,14 @@ export function NoteThreadPopover({
           <p className="typo-label text-foreground">{t.notepad.thread_title}</p>
           <p className="typo-caption text-ink-2 truncate">{noteTitle}</p>
         </div>
-        <button
+        <Button variant="ghost" size="icon-sm"
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
           data-testid="notepad-thread-close"
-          className="w-7 h-7 rounded-input flex items-center justify-center text-foreground hover:bg-surface-1 transition-colors focus-ring"
         >
           <X className="w-3.5 h-3.5" aria-hidden />
-        </button>
+        </Button>
       </header>
 
       <ol ref={listRef} onScroll={onListScroll} className="flex flex-col gap-2 px-3.5 py-3 max-h-96 overflow-y-auto" aria-busy={showGhost}>

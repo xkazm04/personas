@@ -3,6 +3,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import { attentionLane } from './monitorMeta';
 import type { MonitorTerminal } from './monitorTypes';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface Totals {
   sessions: number;
@@ -45,7 +46,7 @@ function Total({ label, children, tone }: { label: string; children: React.React
   return (
     <span className="inline-flex items-baseline gap-1">
       <Numeric className={`typo-caption ${tone ?? 'text-foreground'}`}>{children}</Numeric>
-      <span className="typo-caption text-foreground opacity-50">{label}</span>
+      <span className="typo-caption text-ink-3 ">{label}</span>
     </span>
   );
 }
@@ -57,11 +58,10 @@ export function MonitorTotals({ fleet }: { fleet: MonitorTerminal[] }) {
   const f = t.plugins.fleet;
 
   return (
-    <div
+    <Tooltip content={f.monitor_totals_hint}><div
       className="flex items-center gap-4 px-4 py-1.5 border-b border-hair shrink-0"
       role="group"
       aria-label={f.monitor_totals_aria}
-      title={f.monitor_totals_hint}
     >
       <Total label={f.monitor_totals_sessions}>{totals.sessions}</Total>
       <Total label={f.monitor_totals_working} tone="text-status-info">{totals.working}</Total>
@@ -79,6 +79,6 @@ export function MonitorTotals({ fleet }: { fleet: MonitorTerminal[] }) {
       <Total label={f.monitor_totals_mem}>
         <Numeric value={totals.memGb} precision={1} />
       </Total>
-    </div>
+    </div></Tooltip>
   );
 }

@@ -170,7 +170,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
 
   return (
     <>
-    <button
+    <Tooltip content={session.cwd}><button
       type="button"
       onClick={handleOpen}
       onPointerEnter={refreshProvenance}
@@ -181,18 +181,16 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           ? 'border-primary/30 bg-surface-1'
           : 'border-transparent hover:border-hair hover:bg-surface-1'
       }`}
-      title={session.cwd}
     >
       <FleetStatusDots state={session.state} reason={provenance} />
       {session.dozing && (
-        <span
+        <Tooltip content={t.plugins.fleet.doze_tooltip}><span
           data-testid={`fleet-session-dozing-${session.id}`}
           className="shrink-0 inline-flex"
-          title={t.plugins.fleet.doze_tooltip}
           aria-label={t.plugins.fleet.doze_tooltip}
         >
           <MoonStar className="w-3 h-3 text-role-agent" aria-hidden="true" />
-        </span>
+        </span></Tooltip>
       )}
 
       {/* Label area — either the static "project · name" or the inline edit input. */}
@@ -215,7 +213,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           }}
           onBlur={() => commitEdit()}
           placeholder={debtText("auto_name_d84da4a2")}
-          className="typo-caption flex-1 min-w-0 bg-background border border-primary/30 rounded px-1.5 py-0 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          className="typo-caption flex-1 min-w-0 bg-background border border-primary/30 rounded-interactive px-1.5 py-0 focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
       ) : (
         <span className="typo-caption truncate flex-1 min-w-0 flex items-baseline gap-1.5">
@@ -240,11 +238,10 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
 
       {!editing && (
         <>
-          <span
+          <Tooltip content={session.name ? 'Rename session' : 'Add session name'}><span
             role="button"
             tabIndex={0}
             aria-label={session.name ? 'Rename session' : 'Add session name'}
-            title={session.name ? 'Rename session' : 'Add session name'}
             onClick={beginEdit}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -252,11 +249,11 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
                 beginEdit(e as unknown as React.MouseEvent);
               }
             }}
-            className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-primary transition-opacity p-0.5 rounded flex-shrink-0"
+            className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-primary transition-opacity p-0.5 rounded-interactive flex-shrink-0"
             data-testid={`fleet-session-rename-${session.id}`}
           >
             <Pencil className="w-3 h-3" />
-          </span>
+          </span></Tooltip>
           {canHibernate && (
             // The hint rides the shared Tooltip rather than a native `title`:
             // a native tooltip has no keyboard path, no touch path and no
@@ -273,7 +270,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
                   handleHibernate(e as unknown as React.MouseEvent);
                 }
               }}
-              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-role-agent transition-opacity p-0.5 rounded flex-shrink-0"
+              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-role-agent transition-opacity p-0.5 rounded-interactive flex-shrink-0"
               data-testid={`fleet-session-hibernate-${session.id}`}
             >
               <MoonStar className="w-3 h-3" />
@@ -292,13 +289,13 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
                 handleClose(e as unknown as React.MouseEvent);
               }
             }}
-            className="opacity-40 group-hover:opacity-100 hover:text-status-error transition-opacity p-0.5 rounded -mr-0.5 flex-shrink-0"
+            className="opacity-40 group-hover:opacity-100 hover:text-status-error transition-opacity p-0.5 rounded-interactive -mr-0.5 flex-shrink-0"
           >
             <X className="w-3 h-3" />
           </span>
         </>
       )}
-    </button>
+    </button></Tooltip>
     {confirmKill && (
       <FleetKillConfirm
         label={session.name ?? session.projectLabel}

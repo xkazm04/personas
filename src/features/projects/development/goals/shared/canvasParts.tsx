@@ -175,7 +175,7 @@ export function UnassignedLane({ projectId, count, children }: {
       {...canvas.drop.propsFor(key, null)}
       data-testid={`progress-lane-none-${projectId}`}
       className={`flex items-center gap-1.5 rounded-input border border-dashed px-2 py-1 transition-colors ${
-        over ? 'border-primary/40 bg-primary/[0.06]' : 'border-hair'
+        over ? 'border-primary/40 bg-surface-2' : 'border-hair'
       }`}
       style={{ minHeight: NODE_PX + 8 }}
     >

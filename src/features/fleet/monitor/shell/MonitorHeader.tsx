@@ -5,6 +5,8 @@ import { X, Activity, MessagesSquare, Bell, LayoutGrid, Orbit, DraftingCompass, 
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { MonitorView } from './monitorRouter';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export function MonitorHeader({ activeTab, onSelect, onClose }: {
   activeTab: MonitorView;
@@ -43,49 +45,35 @@ export function MonitorHeader({ activeTab, onSelect, onClose }: {
             const Icon = v.icon;
             const on = activeTab === v.id;
             return (
-              <button
-                key={v.id}
+              <Tooltip content={v.hint} key={v.id}><Button variant={on ? "secondary" : "ghost"} size="sm"
                 type="button"
                 onClick={() => onSelect(v.id)}
                 aria-pressed={on}
-                title={v.hint}
                 data-testid={`monitor-view-${v.id}`}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive border typo-body-lg transition-colors ${
-                  on
-                    ? 'border-primary/45 bg-primary/15 text-primary'
-                    : 'border-hair bg-surface-1 text-foreground hover:bg-surface-1'
-                }`}
               >
                 <Icon className="w-3 h-3" />
                 {v.label}
-              </button>
+              </Button></Tooltip>
             );
           })}
         </div>
         {/* Live-mode pop-ups on/off — icon-only, always reachable here. */}
-        <button
+        <Tooltip content={t.monitor.live_toggle_hint}><Button variant={liveMode ? "accent" : "ghost"} tone="success" size="icon-sm"
           type="button"
           onClick={toggleLiveMode}
           aria-pressed={liveMode}
-          aria-label={t.monitor.live_toggle}
-          title={t.monitor.live_toggle_hint}
-          className={`ml-1 inline-flex items-center justify-center p-1.5 rounded-full border transition-colors ${
-            liveMode
-              ? 'border-hair bg-surface-1 text-status-success'
-              : 'border-hair bg-surface-1 text-foreground hover:bg-surface-1'
-          }`}
+          aria-label={t.monitor.live_toggle} className="ml-1"
         >
           <Bell className="w-3.5 h-3.5" />
-        </button>
-        <button
+        </Button></Tooltip>
+        <Button variant="secondary" size="icon-sm"
           type="button"
           onClick={onClose}
-          className="p-1.5 rounded-modal border border-hair text-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
           aria-label={t.monitor.close}
-          title={t.monitor.close_hint}
+          tooltip={t.monitor.close_hint}
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

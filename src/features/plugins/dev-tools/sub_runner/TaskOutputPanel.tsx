@@ -3,6 +3,7 @@ import { Code2, FileText } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TaskOutputPanelProps {
   taskId: string;
@@ -36,18 +37,18 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
               {t.plugins.dev_runner.output_streaming}
             </span>
           )}
-          <button
+          <Button variant="ghost" size="xs"
             type="button"
             onClick={() => setViewMode(viewMode === 'raw' ? 'rendered' : 'raw')}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption text-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
-            title={viewMode === 'raw' ? t.plugins.dev_runner.output_show_rendered : t.plugins.dev_runner.output_show_raw}
+            aria-label={viewMode === 'raw' ? t.plugins.dev_runner.output_show_rendered : t.plugins.dev_runner.output_show_raw}
+            tooltip={viewMode === 'raw' ? t.plugins.dev_runner.output_show_rendered : t.plugins.dev_runner.output_show_raw}
           >
             {viewMode === 'raw' ? (
               <FileText className="w-3 h-3" />
             ) : (
               <Code2 className="w-3 h-3" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

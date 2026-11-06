@@ -9,6 +9,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS } from '../../constants/scanAgents';
 import { presetVisual } from '../../constants/presetSkills';
 import type { SkillRunRow } from './useSkillsAnalytics';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const GRID = 'grid grid-cols-[minmax(0,1.6fr)_5.5rem_4rem_6rem_4.5rem_5rem_2.5rem] items-center gap-3';
 
@@ -93,8 +95,8 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
   );
 
   return (
-    <section className="rounded-card border border-hair bg-secondary/[0.12]" data-testid="skill-history">
-      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card">
+    <section className="rounded-card border border-hair bg-surface-1" data-testid="skill-history">
+      <div className="flex items-baseline gap-2 px-3 py-2 bg-surface-2 border-b border-hair rounded-t-card">
         <span className="typo-body text-foreground">{d.skills_history_title}</span>
         <span className="typo-label text-ink-3 num">{runs.length}</span>
       </div>
@@ -115,12 +117,11 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
           {runs.slice(0, reveal.count).map((row) => (
             <li key={`${row.kind}-${row.id}`} className={`${GRID} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
               <SkillCell row={row} onOpenInfo={onOpenInfo} />
-              <span
+              <Tooltip content={row.statusReason ?? undefined}><span
                 className={`typo-label truncate ${STATUS_TONE[row.status] ?? 'text-ink-2'}`}
-                title={row.statusReason ?? undefined}
               >
                 {statusLabel(row.status)}
-              </span>
+              </span></Tooltip>
               <span className="typo-caption text-ink-2 num text-right">
                 {row.ideaCount != null ? row.ideaCount : '—'}
               </span>
@@ -133,16 +134,15 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
               </span>
               <span className="flex justify-end">
                 {row.kind === 'fleet' && onRerun && (
-                  <button
+                  <Button variant="secondary" size="icon-sm"
                     type="button"
                     onClick={() => onRerun(row.skill, row.args)}
-                    title={d.skills_history_rerun}
+                    tooltip={d.skills_history_rerun}
                     aria-label={d.skills_history_rerun}
-                    className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-hair transition-colors"
                     data-testid={`skill-history-rerun-${row.skill}`}
                   >
                     <RotateCcw className="w-3 h-3" aria-hidden />
-                  </button>
+                  </Button>
                 )}
               </span>
             </li>

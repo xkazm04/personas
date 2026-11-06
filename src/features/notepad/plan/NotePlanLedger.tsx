@@ -22,12 +22,13 @@ import {
   type ScopeBucket, type ShipMilestoneVM,
 } from '@/lib/milestone/shipModel';
 
-import { PLAN_BORDER, PLAN_INK } from './planInk';
+import { PLAN_INK } from './planInk';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import {
   AfterCutMark, KindMark, LedgerEmpty, LedgerHeader, LedgerList, LedgerRow, StatusMark, UnassignedMark,
 } from './shipRows';
 import type { ShipData } from './useProjectPlan';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** One row of the outside-the-cut pool, whichever kind it is. `status` is
  *  present only on goals — a feature's standing is the automation's readiness
@@ -42,32 +43,19 @@ interface PoolRow {
   status?: string;
 }
 
-/** Later / Never. The SELECTED one takes the bucket's own border; the rest sit
- *  on structural grey. A role rather than a colour — private to this file, so
- *  `BUCKET_HUE`'s hexes bought nothing a token cannot do. */
-const BUCKET_BORDER: Record<ScopeBucket, string> = {
-  core: PLAN_BORDER.accent,
-  later: PLAN_BORDER.neutral,
-  never: PLAN_BORDER.neutral,
-};
-
-function BucketBtn({ label, on, onClick, bucket }: {
+/** Later / Never: the selected one is the secondary press, the rest sit quiet. */
+function BucketBtn({ label, on, onClick }: {
   label: string;
   on?: boolean;
   onClick: () => void;
-  /** Which bucket this button SETS — only read when `on`. */
-  bucket?: ScopeBucket;
 }) {
   return (
-    <button
+    <Button variant={on ? "secondary" : "ghost"} size="xs"
       type="button"
       onClick={onClick}
-      className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${
-        on ? 'text-foreground' : 'text-ink-2 hover:text-ink-2'
-      } ${on && bucket ? BUCKET_BORDER[bucket] : 'border-status-neutral/15'}`}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -260,17 +248,16 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                 actions={editable && (
                   <>
                     <Tooltip content={t.ship.promote_cut_tooltip}>
-                      <button
+                      <Button variant="secondary" size="xs"
                         type="button"
                         onClick={() => ship.setItem(vm.id, row.kind, row.id, 'core')}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
                       >
                         <ArrowUp className="w-3 h-3" aria-hidden />
                         {t.ship.promote_cut}
-                      </button>
+                      </Button>
                     </Tooltip>
                     {(['later', 'never'] as const).map((b) => (
-                      <BucketBtn key={b} label={bucketLabel(t, b)} on={row.bucket === b} bucket={b}
+                      <BucketBtn key={b} label={bucketLabel(t, b)} on={row.bucket === b}
                         onClick={() => ship.setItem(vm.id, row.kind, row.id, b)} />
                     ))}
                   </>

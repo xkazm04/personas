@@ -12,7 +12,7 @@ import { swatchHue, swatchInitial, type NodeSymbolId, type StateMark } from './n
  * with the cluster, full on its own hover / focus. Owned here so every board's
  * affordances are dressed alike.
  */
-export const AFFORDANCE_BTN = 'focus-ring flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-foreground opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 disabled:opacity-25';
+export const AFFORDANCE_BTN = 'focus-ring flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-ink-2 transition-opacity hover:text-ink-1 hover:text-ink-1 disabled:opacity-25';
 
 const SYMBOL_BOX = 'inline-flex h-4 w-4 flex-shrink-0 items-center justify-center';
 export const GLYPH = 'h-2.5 w-2.5 flex-shrink-0';

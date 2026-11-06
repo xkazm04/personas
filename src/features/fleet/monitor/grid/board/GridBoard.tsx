@@ -132,7 +132,7 @@ export function GridBoard({
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
         <div className="relative">
           <div className="absolute inset-0 -m-6 rounded-full bg-surface-1 blur-2xl" />
-          <Users className="relative h-8 w-8 text-foreground opacity-70" />
+          <Users className="relative h-8 w-8 text-ink-2 " />
         </div>
         <p className="typo-body text-foreground">
           {model.filtered ? t.monitor.grid_filter_empty : t.monitor.channels_combined_quiet}
@@ -181,8 +181,8 @@ export function GridBoard({
       {(model.ungrouped.length > 0 || model.traySessions.length > 0) && (
         <div className="flex max-h-[32%] flex-shrink-0 flex-col gap-2 border-t border-border px-3 py-2">
           <div className="flex items-center gap-1.5">
-            <Users className="h-3 w-3 text-foreground opacity-40" />
-            <span className="typo-label text-foreground opacity-50">{t.monitor.grid_ungrouped}</span>
+            <Users className="h-3 w-3 text-ink-3 " />
+            <span className="typo-label text-ink-3 ">{t.monitor.grid_ungrouped}</span>
           </div>
           <UngroupedTray
             cards={model.ungrouped}

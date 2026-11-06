@@ -106,7 +106,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
   return (
     <BaseModal isOpen onClose={onClose} titleId="use-skill-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid="use-skill-dialog">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-2">
           <Wand2 className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="use-skill-title" className="typo-title truncate">{skill.name}</span>
           <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{d.skills_kind_use}</span>
@@ -184,7 +184,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
                   <button
                     type="button"
                     onClick={() => setPickerOpen(true)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair bg-secondary/[0.12] hover:border-primary/40 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair bg-surface-1 hover:border-primary/40 transition-colors text-left"
                     data-testid="use-skill-open-picker"
                   >
                     <span className="typo-caption text-foreground truncate flex-1 min-w-0">

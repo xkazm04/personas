@@ -80,7 +80,7 @@ export function StaticScanConfigModal({
     // header band with icon + title, spaced body, secondary-tinted footer.
     <BaseModal isOpen={open} onClose={onClose} titleId="static-scan-config" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid="static-scan-config-modal">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-2">
           <Binary className="w-4 h-4 text-status-success flex-shrink-0" aria-hidden />
           <span id="static-scan-config" className="typo-title truncate">{ds.static_config_title}</span>
           <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{d.skills_static_title}</span>

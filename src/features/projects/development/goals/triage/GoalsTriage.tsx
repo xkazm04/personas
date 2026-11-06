@@ -27,6 +27,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { AcceptRejectControls } from '../acceptancePrimitives';
 import { GoalStatusChip, GoalStatusDot, KpiGauge, TriageEmpty } from './triageBits';
 import { bucketize, byLane, relTime, toRows, type GoalKpi, type GoalRow, type TriageGoal } from './triageModel';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface GoalsTriageProps {
   goals: TriageGoal[];
@@ -74,14 +75,14 @@ export function GoalsTriage({ goals, kpis, busyIds, groupByProject, onAccept, on
               {tx(pending.length === 1 ? dl.triage_headline_one : dl.triage_headline_other, { count: pending.length })}
             </p>
             {pending.length > 1 && (
-              <button
+              <Button variant="ghost" size="sm"
                 type="button"
                 onClick={() => onAcceptAll(pending.map((r) => r.goal.id))}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-[var(--status-success)] bg-[var(--status-success)]/15 hover:bg-[var(--status-success)]/25 transition-colors shrink-0"
+                className="shrink-0"
                 data-testid="goals-triage-accept-all"
               >
                 <Check className="w-3.5 h-3.5" /> {dl.accept_accept_all}
-              </button>
+              </Button>
             )}
           </div>
 
@@ -92,7 +93,7 @@ export function GoalsTriage({ goals, kpis, busyIds, groupByProject, onAccept, on
               <section key={`${b.project ?? ''}:${b.kpi?.id ?? '__standalone'}:${i}`}>
                 {showProject && (
                   <div className="flex items-center gap-2 pb-2">
-                    <FolderGit2 className="w-4 h-4 text-primary shrink-0" aria-hidden />
+                    <FolderGit2 className="w-4 h-4 text-ink-3 shrink-0" aria-hidden />
                     <span className="typo-section-title truncate">{b.project}</span>
                   </div>
                 )}
@@ -183,7 +184,7 @@ function ContextStrip({ label, rows }: { label: string; rows: GoalRow[] }) {
         {open ? <ChevronDown className="w-3.5 h-3.5 text-ink-2" /> : <ChevronRight className="w-3.5 h-3.5 text-ink-2" />}
         <span className="typo-label text-ink-3">{label}</span>
         <span className="typo-caption text-ink-2 num">{rows.length}</span>
-        <span className="h-px flex-1 bg-primary/[0.07]" />
+        <span className="h-px flex-1 bg-surface-2" />
       </button>
       {open && (
         <ul className="pl-6 pr-2 pb-1 space-y-0.5">

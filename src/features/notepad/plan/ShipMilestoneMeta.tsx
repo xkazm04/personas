@@ -30,6 +30,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { PLAN_INK } from './planInk';
 import type { DualitySummary } from '@/lib/milestone/shipDuality';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * The objective's length bound, in characters.
@@ -215,15 +216,15 @@ export function ShipDescriptionField({ name, description, editable, onSave }: {
       </div>
       {editable && (
         <Tooltip content={tx(t.ship.description_edit_aria, { name })}>
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => setEditing(true)}
             aria-label={tx(t.ship.description_edit_aria, { name })}
-            className="shrink-0 mt-0.5 p-1 rounded-interactive opacity-0 group-hover:opacity-60 focus-visible:opacity-100 transition-opacity hover:bg-foreground/[0.06] focus-ring"
+            className="shrink-0 mt-0.5 group-hover:opacity-60"
             data-testid="ship-milestone-description-edit"
           >
             <Pencil className="w-3 h-3" aria-hidden />
-          </button>
+          </Button>
         </Tooltip>
       )}
     </div>

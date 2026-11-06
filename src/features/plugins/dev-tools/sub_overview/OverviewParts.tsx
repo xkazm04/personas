@@ -97,16 +97,15 @@ export function ConnectorChain({
         </span>
         <ChevronArrow />
 
-        <button
+        <Button variant="ghost" size="sm"
           type="button"
           onClick={onEditUrl}
-          className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-primary transition-colors"
-          title={debtText("auto_edit_project_to_change_the_repo_url_73afcda3")}
+          tooltip={debtText("auto_edit_project_to_change_the_repo_url_73afcda3")}
         >
           <GitBranch className="w-3 h-3 text-status-info" />
           {url ? <span className="font-mono truncate max-w-[260px]">{url}</span> : <span className="text-status-warning"><DebtText k="auto_no_repo_url_599e20cc" /></span>}
           <ExternalLink className="w-3 h-3 opacity-60" />
-        </button>
+        </Button>
         <ChevronArrow />
 
         {credentials.length === 0 ? (
@@ -373,17 +372,16 @@ export function SentryProjectPicker({
         </div>
       )}
 
-      <button
+      <Button variant="ghost" size="sm"
         type="button"
         onClick={() => {
           setManualMode((m) => !m);
           setDiscoveryError(null);
           setOrgSlug(''); setProjectSlug('');
         }}
-        className="typo-caption text-foreground hover:text-foreground underline-offset-2 hover:underline"
       >
         {manualMode ? po.try_auto_discovery : po.enter_slugs_manually}
-      </button>
+      </Button>
 
       <div className="flex justify-end">
         <Button

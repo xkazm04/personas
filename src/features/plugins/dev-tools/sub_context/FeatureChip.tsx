@@ -19,6 +19,7 @@ import { buildCouncilDispatch } from './councilDispatch';
 import type { FeatureChipContext } from './featureChipContext';
 import type { FeatureRowModel } from './FeaturePopoverRow';
 import { FeaturePopover } from './FeaturePopover';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function FeatureChip({
   contextName,
@@ -86,7 +87,7 @@ export function FeatureChip({
   return (
     <>
       <Tooltip content={interpolate(t.council_chip_tooltip, { count })}>
-        <button
+        <Button variant="ghost" size="sm"
           ref={triggerRef}
           type="button"
           aria-expanded={open}
@@ -100,11 +101,10 @@ export function FeatureChip({
             e.stopPropagation();
             setOpen((v) => !v);
           }}
-          className="inline-flex items-center gap-1 num typo-caption text-status-info rounded-interactive hover:underline underline-offset-2 focus-ring"
         >
           <Layers className="w-3 h-3" />
           {count}
-        </button>
+        </Button>
       </Tooltip>
 
       {open && (

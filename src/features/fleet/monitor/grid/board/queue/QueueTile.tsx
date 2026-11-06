@@ -117,7 +117,7 @@ export const QueueTile = memo(function QueueTile({
     ) : null
   ) : (
     <Tooltip content={s.queue_locked}>
-      <span className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center text-foreground opacity-70" aria-label={s.queue_locked} role="img" data-testid="fleet-queue-lock">
+      <span className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center text-ink-2 " aria-label={s.queue_locked} role="img" data-testid="fleet-queue-lock">
         <Lock className="h-2.5 w-2.5" aria-hidden />
       </span>
     </Tooltip>

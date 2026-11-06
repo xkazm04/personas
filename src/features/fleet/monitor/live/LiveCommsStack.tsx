@@ -33,6 +33,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { liveSourceFor } from './liveExternal';
 import { LIVE_LIFETIME_MS, authorAccent, type LiveVariantProps } from './liveModel';
 import { IslandCapsule, IslandCard, makeOpen, mix } from './LiveIslandParts';
+import Button from '@/features/shared/components/buttons/Button';
 
 const MAX_VISIBLE = 3;
 
@@ -119,13 +120,12 @@ function SignalIsland({
               {messages.length > 1 && (
                 <div className="flex items-center justify-end gap-3 px-1">
                   {overflow > 0 && <span className="typo-caption text-foreground">{tx(t.monitor.live_more, { count: overflow })}</span>}
-                  <button
+                  <Button variant="secondary" size="sm"
                     type="button"
                     onClick={onDismissAll}
-                    className="typo-caption rounded-interactive border border-hair bg-background/90 px-2.5 py-1 text-primary transition-colors hover:text-primary/80"
                   >
                     {t.monitor.live_clear_all}
-                  </button>
+                  </Button>
                 </div>
               )}
             </motion.div>

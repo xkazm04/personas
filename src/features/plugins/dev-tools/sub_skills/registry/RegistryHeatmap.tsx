@@ -117,7 +117,7 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo, b
               <motion.div
                 key="band" layout="position" aria-hidden
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={fold}
-                className="pointer-events-none absolute inset-0 -z-10 border-x border-hair bg-primary/[0.06]"
+                className="pointer-events-none absolute inset-0 -z-10 border-x border-hair bg-surface-2"
                 style={{ gridColumn: `${filterIndex + 2} / span 1` }}
               />
             )}
@@ -173,8 +173,8 @@ function GhostRows({ columns, label }: { columns: number; label: string }) {
       <span className="sr-only">{label}</span>
       {Array.from({ length: 6 }, (_, r) => (
         <div key={r} aria-hidden className="col-span-full grid animate-fade-in grid-cols-subgrid items-center" style={{ animationDelay: `${120 + r * 35}ms` }}>
-          <span className="mx-3 my-2.5 h-3.5 rounded-interactive bg-primary/[0.06]" />
-          {Array.from({ length: columns }, (_, c) => <span key={c} className="mx-0.5 my-[3px] h-7 rounded-interactive bg-primary/[0.04]" />)}
+          <span className="mx-3 my-2.5 h-3.5 rounded-interactive bg-surface-2" />
+          {Array.from({ length: columns }, (_, c) => <span key={c} className="mx-0.5 my-[3px] h-7 rounded-interactive bg-surface-2" />)}
         </div>
       ))}
     </div>

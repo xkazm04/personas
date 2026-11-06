@@ -58,7 +58,7 @@ export function WorkspaceFrame() {
     <span
       aria-hidden
       data-testid="fleet-grid-workspace-frame"
-      className="pointer-events-none absolute -inset-x-1 -inset-y-1.5 z-0 rounded-card border border-hair bg-primary/[0.06] shadow-elevation-1"
+      className="pointer-events-none absolute -inset-x-1 -inset-y-1.5 z-0 rounded-card border border-hair bg-surface-2 shadow-elevation-1"
     />
   );
 }
@@ -90,7 +90,7 @@ export function WorkspaceInvitation({ text }: { text: string }) {
   return (
     <p
       data-testid="fleet-grid-workspace-invite"
-      className="relative z-10 px-1 pb-1 typo-caption text-foreground opacity-70"
+      className="relative z-10 px-1 pb-1 typo-caption text-ink-2 "
     >
       {text}
     </p>
