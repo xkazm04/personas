@@ -25,12 +25,12 @@ export interface ActivityItem {
 }
 
 export const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
-  execution: { icon: Play, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-  event: { icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  memory: { icon: Brain, color: 'text-violet-400', bg: 'bg-violet-500/10' },
-  review: { icon: AlertTriangle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-  message: { icon: MessageSquare, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-  attention: { icon: Eye, color: 'text-teal-400', bg: 'bg-teal-500/10' },
+  execution: { icon: Play, color: 'text-status-info', bg: 'bg-status-info/10' },
+  event: { icon: Zap, color: 'text-status-warning', bg: 'bg-status-warning/10' },
+  memory: { icon: Brain, color: 'text-role-agent', bg: 'bg-role-agent/10' },
+  review: { icon: AlertTriangle, color: 'text-status-error', bg: 'bg-status-error/10' },
+  message: { icon: MessageSquare, color: 'text-role-external', bg: 'bg-role-external/10' },
+  attention: { icon: Eye, color: 'text-role-external', bg: 'bg-role-external/10' },
 };
 
 /** The type-tab strip. `labelKey` names the `agents.activity_filters` entry;

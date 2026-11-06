@@ -39,7 +39,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
               it used to render as "armed" and simply never run. */}
           {armState === 'unschedulable' && (
             <span
-              className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-card border border-amber-400/25 bg-amber-500/10 text-amber-300/90"
+              className="flex items-center gap-1 typo-body text-status-warning"
               title={t.triggers.arm_state.unschedulable_title}
             >
               <CalendarX className="w-3 h-3" />
@@ -48,7 +48,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
           )}
           {armState === 'sleeping' && (
             <span
-              className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-card border border-indigo-400/25 bg-indigo-500/10 text-indigo-300/90"
+              className="flex items-center gap-1 typo-body text-role-agent"
               title={t.triggers.arm_state.sleeping_title}
             >
               <Moon className="w-3 h-3" />
@@ -57,13 +57,13 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
           )}
           {/* Budget badges */}
           {budgetStatus === 'stale' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-muted-foreground/20 bg-muted/10 text-foreground" title={t.triggers.list.budget_unavailable}>
+            <span className="flex items-center gap-1 typo-body border-muted-foreground/20 text-ink-1" title={t.triggers.list.budget_unavailable}>
               <ShieldAlert className="w-3 h-3" />
               {t.triggers.unknown_budget_label}
             </span>
           )}
           {budgetStatus === 'exceeded' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title={t.triggers.list.budget_exceeded}>
+            <span className="flex items-center gap-1 typo-body text-status-error" title={t.triggers.list.budget_exceeded}>
               <ShieldAlert className="w-3 h-3" />
               Budget
             </span>
@@ -74,17 +74,17 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
             tabIndex={0}
             onClick={(e) => { e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); } }}
-            className="p-0.5 hover:bg-secondary/60 rounded-card transition-colors"
+            className="p-0.5 hover:bg-surface-2 rounded-card transition-colors"
             title={trigger.enabled ? tx(t.common.disable_item, { name: '' }) : tx(t.common.enable_item, { name: '' })}
           >
             {trigger.enabled ? (
-              <ToggleRight className="w-5 h-5 text-emerald-400" />
+              <ToggleRight className="w-5 h-5 text-status-success" />
             ) : (
-              <ToggleLeft className="w-5 h-5 text-foreground" />
+              <ToggleLeft className="w-5 h-5 text-ink-1" />
             )}
           </span>
 
-          <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-ink-1 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
         </span>
       </button>
     </div>

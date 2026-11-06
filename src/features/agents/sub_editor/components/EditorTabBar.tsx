@@ -37,18 +37,18 @@ function TabBadge({ variant, count, srLabel }: { variant: TabBadgeVariant; count
   const sr = srLabel ? <span className="sr-only">{srLabel}</span> : null;
   if (variant === 'error') {
     return (
-      <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption text-center">
+      <span className="ml-auto min-w-4 text-status-error typo-data text-center">
         {count ?? '!'}{sr}
       </span>
     );
   }
-  return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse">{sr}</span>;
+  return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-status-warning">{sr}</span>;
 }
 
 const GRADE_TONE: Record<'healthy' | 'degraded' | 'unhealthy', string> = {
-  healthy:   'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
-  degraded:  'border-amber-500/25 bg-amber-500/10 text-amber-400',
-  unhealthy: 'border-red-500/25 bg-red-500/10 text-red-400',
+  healthy:   'text-status-success',
+  degraded:  'text-status-warning',
+  unhealthy: 'text-status-error',
 };
 
 function HealthBadge() {
@@ -66,7 +66,7 @@ function HealthBadge() {
     ? GRADE_TONE.unhealthy
     : score
       ? GRADE_TONE[score.grade]
-      : 'border-primary/15 bg-secondary/40 text-foreground';
+      : 'text-ink-2';
   const badgeLabel = running
     ? labels.design_health_checking
     : failed
@@ -81,7 +81,7 @@ function HealthBadge() {
       disabled={running || !selectedPersona}
       title={labels.design_health_run}
       data-testid="editor-health-badge"
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card border typo-body transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap ${badgeTone} hover:opacity-90`}
+      className={`flex items-center gap-1.5 h-[var(--control-h)] px-2.5 rounded-interactive border border-hair typo-code transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap hover:bg-surface-2 ${badgeTone}`}
     >
       <HeartPulse className="w-3.5 h-3.5" />
       <span>{badgeLabel}</span>
@@ -101,7 +101,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
   // SegmentedTabs for the same pattern).
   const layoutIdInstance = useId();
   return (
-    <div className="border-b border-primary/10 bg-primary/5">
+    <div className="border-b border-hair bg-surface-1">
       <div className={`flex items-center ${IS_MOBILE ? 'px-1' : 'px-6'}`}>
         <div className={`flex overflow-x-auto flex-1 min-w-0 ${IS_MOBILE ? 'gap-0' : 'gap-1'} scrollbar-none`}>
           {tabDefs.filter((td) => !td.minTier || tier.isVisible(td.minTier)).map((tab) => {
@@ -120,7 +120,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                 aria-label={IS_MOBILE ? label : undefined}
                 title={label}
                 className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
-                  isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
+                  isActive ? 'text-primary' : 'text-ink-1 hover:text-ink-1'
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />

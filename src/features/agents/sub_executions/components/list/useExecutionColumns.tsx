@@ -22,7 +22,7 @@ export type StatusFilter = (typeof STATUS_FILTERS)[number];
 // A run that failed before any model call has 0 tokens: the ledger shows that as absent.
 const formatLedgerTokens = (n: number) => fmtTokens(n, { zeroAs: '-' });
 
-const CHIP = 'inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card border';
+const CHIP = 'inline-flex items-center gap-1 typo-code';
 
 interface ExecutionColumnsArgs {
   capabilityTitle: (id: string | null) => string | null;
@@ -52,7 +52,7 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
       {
         key: 'status',
         label: e.col_status,
-        width: '180px',
+        width: '150px',
         filterOptions: STATUS_FILTERS.map((s) => ({
           value: s,
           label: s === 'all' ? t.overview.activity.all_statuses : tokenLabel(t, 'execution', s),
@@ -64,14 +64,14 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
             <ExecutionStatusPill status={row.status} />
             {row.retry_count > 0 && (
               <Tooltip content={tx(e.healing_retry, { count: row.retry_count })}>
-                <span className={`${CHIP} bg-status-info/10 text-status-info border-status-info/20`}>
+                <span className={`${CHIP} text-status-info`}>
                   <RefreshCw className="w-2.5 h-2.5" />#{row.retry_count}
                 </span>
               </Tooltip>
             )}
             {row.is_simulation && (
               <Tooltip content={e.simulated_badge_tooltip}>
-                <span className={`${CHIP} bg-status-neutral/10 text-status-neutral border-status-neutral/20`}>
+                <span className={`${CHIP} text-ink-3`}>
                   <FlaskConical className="w-2.5 h-2.5" />
                 </span>
               </Tooltip>
@@ -88,10 +88,10 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
         onFilterChange: a.onCapabilityFilter,
         render: (row) => {
           const title = a.capabilityTitle(row.use_case_id);
-          if (!title) return <span className="block typo-body truncate text-foreground italic">{e.capability_unattributed}</span>;
+          if (!title) return <span className="block typo-body truncate text-ink-1 italic">{e.capability_unattributed}</span>;
           return (
             <Tooltip content={title}>
-              <span className="block typo-body truncate text-foreground">{title}</span>
+              <span className="block typo-body truncate text-ink-1">{title}</span>
             </Tooltip>
           );
         },
@@ -99,13 +99,13 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
       {
         key: 'origin',
         label: e.origin_filter_label,
-        width: '150px',
+        width: '140px',
         filterComponent: <OriginFilterDropdown value={a.originFilter} onChange={a.onOriginFilter} />,
         render: (row) => {
           const o = deriveExecutionOrigin(row);
           // The badge stays silent for the unmarked origins; a ledger cell still names them.
           if (o.origin === 'manual' || o.origin === 'simulation') {
-            return <span className="typo-body text-foreground">{originLabel(t, o.origin)}</span>;
+            return <span className="typo-body text-ink-1">{originLabel(t, o.origin)}</span>;
           }
           return <OriginBadge origin={o.origin} lane={o.lane} />;
         },
@@ -113,7 +113,7 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
       {
         key: 'verdict',
         label: e.verdict_field,
-        width: '140px',
+        width: '120px',
         render: (row) => (
           <div className="flex items-center gap-1.5 min-w-0">
             <ExecutionValueBadges businessOutcome={row.business_outcome} />
@@ -123,7 +123,7 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
       {
         key: 'tokens',
         label: e.col_tokens,
-        width: '110px',
+        width: '140px',
         align: 'right',
         sortable: true,
         sortFn: (x, y) => (x.input_tokens + x.output_tokens) - (y.input_tokens + y.output_tokens),
@@ -132,7 +132,7 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
       {
         key: 'cost',
         label: e.col_cost,
-        width: '90px',
+        width: '110px',
         align: 'right',
         sortable: true,
         sortFn: (x, y) => (x.cost_usd ?? -1) - (y.cost_usd ?? -1),
@@ -141,7 +141,7 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
       {
         key: 'duration',
         label: e.col_duration,
-        width: '90px',
+        width: '110px',
         align: 'right',
         sortable: true,
         sortFn: (x, y) => (x.duration_ms ?? -1) - (y.duration_ms ?? -1),
@@ -170,7 +170,7 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
               type="button"
               aria-label={e.compare_with_original}
               onClick={(ev) => { ev.stopPropagation(); onCompareRetry(row.id); }}
-              className="p-1 rounded-interactive text-foreground hover:text-accent hover:bg-accent/10 transition-colors"
+              className="p-1 rounded-interactive text-ink-1 hover:text-accent hover:bg-accent/10 transition-colors"
             >
               <ArrowLeftRight className="w-3.5 h-3.5" />
             </button>

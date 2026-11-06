@@ -19,19 +19,19 @@ interface FieldRuleRowsProps {
   emptyHint?: string;
 }
 
-const SMALL_INPUT = `${INPUT_FIELD} !py-1.5 text-sm`;
+const SMALL_INPUT = `${INPUT_FIELD} !py-1.5 typo-body`;
 
 export function FieldRuleRows({ fields, updateField, removeField, addField, emptyHint }: FieldRuleRowsProps) {
   return (
     <div className="flex flex-col gap-2">
       {fields.length === 0 && (
-        <p className="rounded-interactive border border-dashed border-primary/15 px-3 py-4 text-center typo-caption text-muted-foreground">
+        <p className="rounded-interactive border border-dashed border-hair px-3 py-4 text-center typo-caption text-ink-3">
           {emptyHint ?? 'No fields yet — add one, or describe them for Claude to build.'}
         </p>
       )}
 
       {fields.map((f) => (
-        <div key={f.id} className="rounded-interactive border border-primary/10 bg-background/40 p-2.5">
+        <div key={f.id} className="rounded-interactive border border-hair bg-background/40 p-2.5">
           <div className="flex items-center gap-2">
             <input
               className={`${SMALL_INPUT} w-40 font-mono`}
@@ -52,7 +52,7 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
             <button
               type="button"
               onClick={() => removeField(f.id)}
-              className="rounded-interactive p-1 text-muted-foreground hover:bg-status-error/10 hover:text-status-error transition-colors"
+              className="rounded-interactive p-1 text-ink-3 hover:bg-status-error/10 hover:text-status-error transition-colors"
               aria-label="Remove field"
             >
               <X className="size-4" />
@@ -76,7 +76,7 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
                   placeholder="attr"
                   title="Attribute to read (e.g. href); blank = text"
                 />
-                <label className="flex shrink-0 items-center gap-1.5 typo-caption text-muted-foreground">
+                <label className="flex shrink-0 items-center gap-1.5 typo-caption text-ink-3">
                   <input
                     type="checkbox"
                     checked={f.all}
@@ -118,7 +118,7 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
       <button
         type="button"
         onClick={addField}
-        className="flex items-center justify-center gap-1 rounded-interactive border border-dashed border-primary/20 py-2 typo-caption text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+        className="flex items-center justify-center gap-1 rounded-interactive border border-dashed border-hair py-2 typo-caption text-ink-3 hover:border-primary/40 hover:text-ink-1 transition-colors"
       >
         <Plus className="size-3.5" /> Add field
       </button>

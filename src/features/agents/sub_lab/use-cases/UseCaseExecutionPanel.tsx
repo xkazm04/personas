@@ -12,8 +12,8 @@ import { useUseCaseExecution } from './useUseCaseExecution';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  e2e:  { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
-  mock: { label: 'MOCK', bg: 'bg-amber-500/10 border-amber-500/20',   text: 'text-amber-400/80' },
+  e2e:  { label: 'E2E',  bg: 'bg-status-success/10 border-status-success/20', text: 'text-status-success' },
+  mock: { label: 'MOCK', bg: 'bg-status-warning/10 border-status-warning/20',   text: 'text-status-warning' },
 };
 
 interface UseCaseExecutionPanelProps {
@@ -33,29 +33,29 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
   }
 
   return (
-    <div className="border border-primary/15 rounded-xl bg-secondary/20 overflow-hidden">
+    <div className="border border-hair rounded-card bg-surface-1 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-hair">
         <div className="flex items-center gap-2">
-          <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
+          <span className={`px-1.5 py-0.5 typo-label rounded-interactive border ${modeBadge.bg} ${modeBadge.text}`}>
             {modeBadge.label}
           </span>
           {exec.isExecuting && exec.isThisUseCaseExecution && (
-            <div className="flex items-center gap-1.5 text-foreground">
+            <div className="flex items-center gap-1.5 text-ink-1">
               <Clock className="w-3 h-3" />
               <span className="typo-code">{formatElapsed(exec.elapsedMs)}</span>
             </div>
           )}
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-foreground hover:text-foreground/80">
+        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-ink-1 hover:text-ink-1">
           <X className="w-3.5 h-3.5" />
         </Button>
       </div>
 
       {/* Input editor */}
-      <div className="p-3 border-b border-primary/10 space-y-2">
+      <div className="p-3 border-b border-hair space-y-2">
         {useCase.time_filter && (
-          <div className="flex items-center gap-1.5 typo-body text-cyan-400/70">
+          <div className="flex items-center gap-1.5 typo-body text-role-external">
             <Timer className="w-3 h-3" />
             <span>{useCase.time_filter.description} {t.shared.use_cases_extra.window_prefix} {useCase.time_filter.default_window})</span>
           </div>
@@ -71,7 +71,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           </div>
         ) : (
           <>
-            <p className="typo-label text-foreground">{t.shared.use_cases_extra.input_data}</p>
+            <p className="typo-label text-ink-1">{t.shared.use_cases_extra.input_data}</p>
             <JsonEditor
               value={exec.inputData}
               onChange={(v) => { exec.setInputData(v); if (exec.jsonError) exec.setJsonError(null); }}
@@ -79,11 +79,11 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
             />
           </>
         )}
-        {exec.jsonError && <p className="text-red-400/80 typo-body mt-1">{exec.jsonError}</p>}
+        {exec.jsonError && <p className="text-status-error typo-body mt-1">{exec.jsonError}</p>}
       </div>
 
       {/* Execute/Stop button */}
-      <div className="p-3 border-b border-primary/10">
+      <div className="p-3 border-b border-hair">
         <Button
           variant={exec.isExecuting && exec.isThisUseCaseExecution ? 'danger' : 'accent'}
           size="md"
@@ -93,7 +93,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           disabled={exec.isExecuting && !exec.isThisUseCaseExecution}
           className={exec.isExecuting && exec.isThisUseCaseExecution
             ? 'shadow-elevation-3 shadow-red-500/10'
-            : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/10'
+            : 'bg-surface-1 hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/10'
           }
         >
           {exec.isExecuting && exec.isThisUseCaseExecution ? 'Stop Execution' : 'Execute Use Case'}

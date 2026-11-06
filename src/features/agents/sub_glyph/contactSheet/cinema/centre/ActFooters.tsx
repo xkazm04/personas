@@ -11,9 +11,10 @@ import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { GlyphPromotePreview } from "@/features/agents/sub_glyph/GlyphPromotePreview";
 import type { PromoteView } from "@/features/agents/sub_glyph/promotePreviewModel";
 import { COPY } from "../copy";
+import { Kbd } from '@/features/shared/components/display/Kbd';
 
 export function Note({ children }: { children: React.ReactNode }) {
-  return <span className="typo-body text-foreground">{children}</span>;
+  return <span className="typo-body text-ink-1">{children}</span>;
 }
 
 /** The dry-run (BuildSimulatePanel), reachable from the draft and the verdict. */
@@ -30,7 +31,7 @@ function SimulateButton({ onSimulate }: { onSimulate?: () => void }) {
   );
 }
 
-const Enter = () => <kbd className="ml-1 font-mono typo-caption opacity-70">↵</kbd>;
+const Enter = () => <Kbd>↵</Kbd>;
 
 interface DraftActionsProps {
   onStartTest: () => void | Promise<void>;
@@ -59,7 +60,7 @@ export function ScreeningBody({ lines }: { lines: string[] }) {
   return (
     <div className="w-full" aria-live="polite">
       {tail.length > 0 && (
-        <div className="w-full rounded-input border border-card-border bg-background/60 px-3 py-1.5 font-mono typo-caption text-foreground">
+        <div className="w-full rounded-input border border-card-border bg-background/60 px-3 py-1.5 font-mono typo-caption text-ink-1">
           {tail.map((l, i) => <div key={`${i}-${l}`} className="truncate">{l}</div>)}
         </div>
       )}
@@ -82,13 +83,13 @@ function ToolChips({ results }: { results: ToolTestResult[] }) {
       {results.slice(0, 6).map((r) => {
         const tint = TINT[r.status];
         return (
-          <span key={r.tool_name} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-card-border bg-background/50 typo-caption text-foreground">
+          <span key={r.tool_name} className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: tint }} />
             {r.tool_name}
           </span>
         );
       })}
-      {results.length > 6 && <span className="typo-caption text-foreground">+{results.length - 6}</span>}
+      {results.length > 6 && <span className="typo-caption text-ink-2">+{results.length - 6}</span>}
     </div>
   );
 }
@@ -115,7 +116,7 @@ export function VerdictPromotePreview({ view }: { view: PromoteView }) {
   if (!view.canPromote) return <GlyphPromotePreview view={view} />;
   return (
     <details className="group w-full min-w-0" data-testid="sheet-promote-preview">
-      <summary className="cursor-pointer list-none typo-caption text-foreground [&::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none typo-caption text-ink-1 [&::-webkit-details-marker]:hidden">
         <span className="underline decoration-dotted decoration-foreground/40 underline-offset-2 group-open:no-underline">{copy.heading}</span>
         {view.needsSetup.length > 0 && (
           <span className="text-status-warning">{" · "}{tx(copy.needs_setup, { connectors: view.needsSetup.join(", ") })}</span>

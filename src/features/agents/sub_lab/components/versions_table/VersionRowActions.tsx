@@ -37,8 +37,8 @@ function IconBtn({
           active
             ? 'text-primary bg-primary/10'
             : danger
-              ? 'text-foreground hover:text-red-400 hover:bg-red-500/10'
-              : 'text-foreground hover:text-primary hover:bg-secondary/40'
+              ? 'text-ink-1 hover:text-status-error hover:bg-status-error/10'
+              : 'text-ink-1 hover:text-primary hover:bg-surface-2'
         }`}
       >
         {children}

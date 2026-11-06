@@ -50,12 +50,12 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
   return (
     <div
       data-testid="pending-trigger-approvals"
-      className="mb-3 rounded-card border border-amber-500/25 bg-amber-500/5 p-3 space-y-2"
+      className="mb-3 rounded-card border border-status-warning/25 bg-status-warning/5 p-3 space-y-2"
     >
       <div className="flex items-center gap-2 flex-wrap">
-        <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-        <span className="typo-body text-amber-300">{p.title}</span>
-        <span className="typo-caption text-foreground">
+        <ShieldAlert className="w-4 h-4 text-status-warning shrink-0" />
+        <span className="typo-body text-status-warning">{p.title}</span>
+        <span className="typo-caption text-ink-2">
           {tx(pending.length === 1 ? p.subtitle_one : p.subtitle_other, { count: pending.length })}
         </span>
       </div>
@@ -91,14 +91,14 @@ function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: Pending
     <div className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-background/40">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="typo-body text-foreground truncate">{personaName}</span>
+          <span className="typo-body text-ink-1 truncate">{personaName}</span>
           {trigger && (
-            <span className="typo-caption px-1.5 py-0.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground shrink-0">
+            <span className="inline-flex items-center typo-caption text-ink-2 shrink-0">
               {getTriggerTypeLabel(trigger.trigger_type, t)}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5 typo-caption text-foreground min-w-0">
+        <div className="flex items-center gap-1.5 typo-caption text-ink-2 min-w-0">
           <span className="truncate">{fire.event_type}</span>
           <span aria-hidden="true">·</span>
           <RelativeTime timestamp={fire.created_at} className="shrink-0" />
@@ -117,7 +117,7 @@ function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: Pending
         type="button"
         disabled={busy}
         onClick={() => onResolve(fire.id, false)}
-        className="px-2 py-1 rounded-card text-foreground hover:bg-secondary/40 disabled:opacity-50"
+        className="px-2 py-1 rounded-card text-ink-1 hover:bg-surface-2 disabled:opacity-50"
         title={p.discard}
         aria-label={p.discard}
       >

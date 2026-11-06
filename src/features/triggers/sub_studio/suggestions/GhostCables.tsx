@@ -39,7 +39,7 @@ export function GhostCables({ sug, personas }: {
     // Honest empty line, never a stretched inference. Distinguish "miner is
     // off" from "miner is watching but the bar isn't met yet".
     return (
-      <div className="flex items-center gap-2 px-4 py-2 typo-caption text-foreground opacity-60">
+      <div className="flex items-center gap-2 px-4 py-2 typo-caption text-ink-2 opacity-60">
         <Sparkles className="w-3.5 h-3.5 shrink-0" />
         <span>
           {feed.minerEnabled
@@ -52,7 +52,7 @@ export function GhostCables({ sug, personas }: {
 
   return (
     <>
-      <div className="pt-1 pb-1 px-1 flex items-center gap-1.5 typo-caption uppercase tracking-wide text-foreground opacity-80">
+      <div className="pt-1 pb-1 px-1 flex items-center gap-1.5 typo-eyebrow text-ink-1 opacity-80">
         <Sparkles className="w-3.5 h-3.5 text-primary" />
         {st.ghost_section_title}
       </div>
@@ -77,9 +77,9 @@ function GhostCableRow({ s, sug, personas }: {
   const busy = sug.busy.has(s.id);
 
   return (
-    <div className="rounded-card border border-dashed border-primary/40 bg-primary/5 max-w-[calc(100%-50px)]">
+    <div className="rounded-card border border-dashed border-primary/40 bg-surface-1 max-w-[calc(100%-50px)]">
       <div className="group flex items-center gap-3 px-4 py-2.5">
-        <span className="flex items-center gap-1.5 min-w-0 shrink text-foreground">
+        <span className="flex items-center gap-1.5 min-w-0 shrink text-ink-1">
           <EventIcon className="w-4 h-4 shrink-0 text-primary" />
           <span className="typo-body truncate max-w-[10rem]">{template?.label ?? s.eventType}</span>
         </span>
@@ -100,7 +100,7 @@ function GhostCableRow({ s, sug, personas }: {
         </div>
         <span className="flex items-center gap-2 min-w-0 shrink">
           <PersonaIcon icon={persona?.icon} color={persona?.color} display="framed" frameSize="sm" />
-          <span className="typo-body text-foreground truncate">
+          <span className="typo-body text-ink-1 truncate">
             {persona?.name ?? s.personaId.slice(0, 8)}
           </span>
         </span>
@@ -122,7 +122,7 @@ function GhostCableRow({ s, sug, personas }: {
             disabled={busy}
             title={st.ghost_reject_hint}
             aria-label={st.ghost_reject}
-            className="p-1.5 rounded-interactive text-foreground opacity-60 hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-interactive text-ink-1 opacity-60 hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -137,10 +137,10 @@ function GhostCableRow({ s, sug, personas }: {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="overflow-hidden border-t border-dashed border-primary/20"
+            className="overflow-hidden border-t border-dashed border-hair"
           >
             <div className="px-4 py-2.5 space-y-1.5">
-              <div className="typo-caption text-foreground opacity-70">
+              <div className="typo-caption text-ink-2 opacity-70">
                 {tx(st.ghost_evidence_summary, {
                   matched: s.occurrenceCount,
                   total: s.manualRunCount,
@@ -148,7 +148,7 @@ function GhostCableRow({ s, sug, personas }: {
                 })}
               </div>
               {s.evidence.map((ev) => (
-                <div key={`${ev.eventId}-${ev.executionId}`} className="flex items-center gap-2 typo-caption text-foreground">
+                <div key={`${ev.eventId}-${ev.executionId}`} className="flex items-center gap-2 typo-caption text-ink-2">
                   <EventIcon className="w-3 h-3 shrink-0 text-primary opacity-70" />
                   <span className="opacity-80">{formatTs(ev.eventAt)}</span>
                   <ArrowRight className="w-3 h-3 shrink-0 opacity-50" />

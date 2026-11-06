@@ -9,9 +9,9 @@ import { useIsDarkTheme } from '@/stores/themeStore';
 type AvatarSize = 'sm' | 'md' | 'lg';
 
 const SIZE_CONFIG = {
-  sm: { img: 'w-6 h-6 rounded', emoji: 'text-2xl leading-none', fallback: 'w-10 h-10 rounded-xl typo-heading', iconSize: 'w-4 h-4' },
-  md: { img: 'w-8 h-8', emoji: 'text-2xl leading-8 w-8 h-8 flex items-center justify-center', fallback: 'w-8 h-8 rounded-lg', iconSize: 'w-4 h-4' },
-  lg: { img: 'w-12 h-12 rounded-xl opacity-60', emoji: 'text-4xl leading-none opacity-60', fallback: 'w-12 h-12 rounded-xl typo-heading-lg opacity-50', iconSize: 'w-5 h-5' },
+  sm: { img: 'w-6 h-6 rounded-interactive', emoji: 'text-2xl leading-none', fallback: 'w-10 h-10 rounded-card typo-heading', iconSize: 'w-4 h-4' },
+  md: { img: 'w-8 h-8', emoji: 'text-2xl leading-8 w-8 h-8 flex items-center justify-center', fallback: 'w-8 h-8 rounded-card', iconSize: 'w-4 h-4' },
+  lg: { img: 'w-12 h-12 rounded-card opacity-60', emoji: 'text-4xl leading-none opacity-60', fallback: 'w-12 h-12 rounded-card typo-heading-lg opacity-50', iconSize: 'w-5 h-5' },
 } as const;
 
 interface PersonaAvatarProps {

@@ -107,29 +107,29 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
       role="dialog"
       aria-label={`${m.routing_title} — ${entry.name}`}
       style={{ top: pos?.top ?? anchor.bottom + 6, left: pos?.left ?? anchor.left, width: WIDTH, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed z-[9995] rounded-modal border border-hair bg-background shadow-elevation-4 overflow-hidden"
     >
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-primary/[0.04]">
         <Route className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground truncate">{m.routing_title} — {entry.name}</span>
+        <span className="typo-caption text-ink-2 truncate">{m.routing_title} — {entry.name}</span>
         <button
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
-          className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors"
+          className="ml-auto p-0.5 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <p className="px-3 pt-2 typo-caption text-foreground/90">{m.routing_hint}</p>
+      <p className="px-3 pt-2 typo-caption text-ink-2">{m.routing_hint}</p>
 
       {loadFailed ? (
         <p className="px-3 py-4 typo-caption text-status-error text-center">{m.routing_load_failed}</p>
       ) : projects === null ? (
-        <p className="px-3 py-4 typo-caption text-foreground/90 text-center">{m.routing_loading}</p>
+        <p className="px-3 py-4 typo-caption text-ink-2 text-center">{m.routing_loading}</p>
       ) : projects.length === 0 ? (
-        <p className="px-3 py-4 typo-caption text-foreground/90 text-center">{m.routing_empty}</p>
+        <p className="px-3 py-4 typo-caption text-ink-2 text-center">{m.routing_empty}</p>
       ) : (
         <ul className="max-h-52 overflow-y-auto p-1.5">
           {projects.map((r) => (
@@ -146,14 +146,14 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
                   className="w-3.5 h-3.5 flex-shrink-0 cursor-pointer"
                   style={{ accentColor: 'var(--primary)' }}
                 />
-                <span className="typo-caption text-foreground truncate">{r.name}</span>
+                <span className="typo-caption text-ink-2 truncate">{r.name}</span>
               </label>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="flex items-center justify-end gap-1.5 px-3 py-2 border-t border-primary/10 bg-secondary/10">
+      <div className="flex items-center justify-end gap-1.5 px-3 py-2 border-t border-hair bg-surface-1">
         <AsyncButton size="xs" variant="primary" onClick={save} disabled={projects === null} loadingText={m.routing_saving}>
           {m.routing_save}
         </AsyncButton>

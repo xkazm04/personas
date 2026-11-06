@@ -63,22 +63,22 @@ export function AnomalyTile({ anomaly }: { anomaly: AnomalyStrip }) {
                   className={`rounded-input border px-2.5 py-2 ${
                     c.value > 0
                       ? 'border-status-warning/40 bg-status-warning/10'
-                      : 'border-primary/10 bg-secondary/20'
+                      : 'border-hair bg-surface-1'
                   }`}
                   data-testid={`brain-anomaly-${c.id}`}
                 >
                   <Numeric
-                    className={`typo-heading ${c.value > 0 ? 'text-status-warning' : 'text-foreground/85'}`}
+                    className={`typo-heading ${c.value > 0 ? 'text-status-warning' : 'text-ink-1'}`}
                     value={c.value}
                     unit="plain"
                   />
-                  <p className="typo-caption text-foreground/85 mt-0.5">{c.label}</p>
+                  <p className="typo-caption text-ink-2 mt-0.5">{c.label}</p>
                 </div>
               </Tooltip>
             </li>
           ))}
         </ul>
-        <p className="mt-2 typo-caption text-foreground/85">
+        <p className="mt-2 typo-caption text-ink-2">
           {clear ? b.anomaly_all_clear : b.anomaly_act}
         </p>
       </div>

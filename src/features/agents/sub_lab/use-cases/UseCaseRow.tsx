@@ -6,18 +6,18 @@ import { debtText } from '@/i18n/DebtText';
 
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
-  notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
-  'data-sync':    { bg: 'bg-cyan-500/10 border-cyan-500/15',   text: 'text-cyan-400/70' },
-  monitoring:     { bg: 'bg-amber-500/10 border-amber-500/15', text: 'text-amber-400/70' },
-  automation:     { bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
-  communication:  { bg: 'bg-blue-500/10 border-blue-500/15',   text: 'text-blue-400/70' },
-  reporting:      { bg: 'bg-emerald-500/10 border-emerald-500/15', text: 'text-emerald-400/70' },
+  notification:   { bg: 'bg-status-error/10 border-status-error/15',   text: 'text-status-error' },
+  'data-sync':    { bg: 'bg-role-external/10 border-role-external/15',   text: 'text-role-external' },
+  monitoring:     { bg: 'bg-status-warning/10 border-status-warning/15', text: 'text-status-warning' },
+  automation:     { bg: 'bg-role-agent/10 border-role-agent/15', text: 'text-role-agent' },
+  communication:  { bg: 'bg-status-info/10 border-status-info/15',   text: 'text-status-info' },
+  reporting:      { bg: 'bg-status-success/10 border-status-success/15', text: 'text-status-success' },
 };
 
 const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  e2e:            { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
-  mock:           { label: 'MOCK', bg: 'bg-amber-500/10 border-amber-500/20',   text: 'text-amber-400/80' },
-  non_executable: { label: 'INFO', bg: 'bg-secondary/50 border-primary/15',     text: 'text-foreground' },
+  e2e:            { label: 'E2E',  bg: 'bg-status-success/10 border-status-success/20', text: 'text-status-success' },
+  mock:           { label: 'MOCK', bg: 'bg-status-warning/10 border-status-warning/20',   text: 'text-status-warning' },
+  non_executable: { label: 'INFO', bg: 'bg-surface-2 border-hair',     text: 'text-ink-1' },
 };
 
 interface UseCaseRowProps {
@@ -76,10 +76,10 @@ export function UseCaseRow({
 
   return (
     <div
-      className={`rounded-xl border overflow-hidden transition-opacity ${
+      className={`rounded-card border overflow-hidden transition-opacity ${
         isEnabled
-          ? 'border-primary/10 bg-secondary/20'
-          : 'border-primary/5 bg-secondary/10 opacity-60'
+          ? 'border-hair bg-surface-1'
+          : 'border-hair bg-surface-1 opacity-60'
       }`}
       data-use-case-id={useCase.id}
       data-enabled={isEnabled}
@@ -87,29 +87,29 @@ export function UseCaseRow({
       <div className="p-3.5">
         <div className="flex items-start gap-3">
           {/* Index number */}
-          <span className="typo-heading text-foreground mt-0.5 w-5 text-right flex-shrink-0">
+          <span className="typo-heading text-ink-1 mt-0.5 w-5 text-right flex-shrink-0">
             {index + 1}.
           </span>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="typo-heading text-foreground/95">{useCase.title}</p>
+              <p className="typo-heading text-ink-1">{useCase.title}</p>
               {useCase.category && catStyle && (
-                <span className={`px-1.5 py-0.5 typo-label rounded border ${catStyle.bg} ${catStyle.text}`}>
+                <span className={`px-1.5 py-0.5 typo-label rounded-interactive border ${catStyle.bg} ${catStyle.text}`}>
                   {useCase.category.replace('-', ' ')}
                 </span>
               )}
-              <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
+              <span className={`px-1.5 py-0.5 typo-label rounded-interactive border ${modeBadge.bg} ${modeBadge.text}`}>
                 {modeBadge.label}
               </span>
               {!isEnabled && (
-                <span className="px-1.5 py-0.5 typo-label rounded border bg-secondary/50 border-primary/20 text-foreground">
+                <span className="inline-flex items-center typo-label text-ink-1">
                   PAUSED
                 </span>
               )}
             </div>
-            <p className="typo-body text-foreground mt-1">{summary}</p>
+            <p className="typo-body text-ink-2 mt-1">{summary}</p>
             {/* Override indicators */}
             {hasAnyConfig && (
               <div className="flex items-center gap-2 mt-1.5">
@@ -119,7 +119,7 @@ export function UseCaseRow({
                   </span>
                 )}
                 {hasNotifications && (
-                  <span className="flex items-center gap-1 typo-caption text-amber-400/60">
+                  <span className="flex items-center gap-1 typo-caption text-status-warning">
                     <Bell className="w-2.5 h-2.5" /> Notifications
                   </span>
                 )}
@@ -136,10 +136,10 @@ export function UseCaseRow({
                 onClick={() => onToggleEnabled(useCase.id, !isEnabled)}
                 disabled={toggling}
                 data-testid={`use-case-toggle-${useCase.id}`}
-                className={`p-1.5 rounded-lg border transition-colors ${
+                className={`p-1.5 rounded-card border transition-colors ${
                   isEnabled
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/80 hover:bg-emerald-500/20'
-                    : 'bg-secondary/40 border-primary/15 text-foreground hover:text-foreground/80 hover:border-primary/25'
+                    ? 'bg-status-success/10 border-status-success/20 text-status-success hover:bg-status-success/20'
+                    : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25'
                 } ${toggling ? 'opacity-50 cursor-wait' : ''}`}
                 title={
                   isEnabled
@@ -158,12 +158,12 @@ export function UseCaseRow({
               onClick={() => onExecute(useCase.id, useCase.sample_input ?? undefined)}
               disabled={playDisabled}
               data-testid={`use-case-run-${useCase.id}`}
-              className={`p-1.5 rounded-lg border transition-colors ${
+              className={`p-1.5 rounded-card border transition-colors ${
                 isActive
                   ? 'bg-primary/20 border-primary/30 text-primary'
                   : playDisabled
-                    ? 'bg-secondary/30 border-primary/10 text-foreground cursor-not-allowed'
-                    : 'bg-secondary/40 border-primary/15 text-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/25'
+                    ? 'bg-surface-1 border-hair text-ink-1 cursor-not-allowed'
+                    : 'bg-surface-2 border-hair text-ink-1 hover:bg-surface-2 hover:text-primary hover:border-primary/25'
               }`}
               title={
                 mode === 'non_executable'
@@ -194,10 +194,10 @@ export function UseCaseRow({
                 onClick={() => onSimulate(useCase.id)}
                 disabled={simulateDisabled}
                 data-testid={`use-case-simulate-${useCase.id}`}
-                className={`p-1.5 rounded-lg border transition-colors ${
+                className={`p-1.5 rounded-card border transition-colors ${
                   simulateDisabled
-                    ? 'bg-secondary/30 border-primary/10 text-foreground cursor-not-allowed'
-                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400/80 hover:bg-amber-500/20 hover:text-amber-400'
+                    ? 'bg-surface-1 border-hair text-ink-1 cursor-not-allowed'
+                    : 'bg-status-warning/10 border-status-warning/20 text-status-warning hover:bg-status-warning/20 hover:text-status-warning'
                 }`}
                 title={
                   simulateDisabled
@@ -214,10 +214,10 @@ export function UseCaseRow({
             <button
               type="button"
               onClick={() => onToggleHistory(useCase.id)}
-              className={`p-1.5 rounded-lg border transition-colors ${
+              className={`p-1.5 rounded-card border transition-colors ${
                 historyExpanded
-                  ? 'bg-primary/10 border-primary/20 text-primary/80'
-                  : 'bg-secondary/40 border-primary/15 text-foreground hover:text-foreground/70 hover:border-primary/25'
+                  ? 'bg-primary/10 border-hair text-primary/80'
+                  : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-2 hover:border-primary/25'
               }`}
               title={t.shared.use_cases_extra.toggle_history}
             >
@@ -229,12 +229,12 @@ export function UseCaseRow({
               <button
                 type="button"
                 onClick={() => onToggleConfig(useCase.id)}
-                className={`p-1.5 rounded-lg border transition-colors ${
+                className={`p-1.5 rounded-card border transition-colors ${
                   configExpanded
-                    ? 'bg-violet-500/15 border-violet-500/25 text-violet-400'
+                    ? 'bg-role-agent/15 border-role-agent/25 text-role-agent'
                     : hasAnyConfig
-                      ? 'bg-secondary/40 border-primary/15 text-violet-400/60 hover:text-violet-400 hover:border-violet-500/25'
-                      : 'bg-secondary/40 border-primary/15 text-foreground hover:text-foreground/70 hover:border-primary/25'
+                      ? 'bg-surface-2 border-hair text-role-agent hover:text-role-agent hover:border-role-agent/25'
+                      : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-2 hover:border-primary/25'
                 }`}
                 title={t.shared.use_cases_extra.configure_model}
               >
@@ -247,14 +247,14 @@ export function UseCaseRow({
 
       {/* Inline history slot */}
       {historyExpanded && historyContent && (
-        <div className="border-t border-primary/10 bg-background/30">
+        <div className="border-t border-hair bg-background/30">
           {historyContent}
         </div>
       )}
 
       {/* Inline config slot */}
       {configExpanded && configContent && (
-        <div className="border-t border-violet-500/15 bg-violet-500/3 p-3.5">
+        <div className="border-t border-role-agent/15 bg-role-agent/3 p-3.5">
           {configContent}
         </div>
       )}

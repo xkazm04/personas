@@ -37,14 +37,14 @@ export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRe
         placeholder={debtText("auto_tell_the_agent_what_to_change_b0741749")}
         rows={3}
         autoFocus
-        className="w-full px-3 py-2 rounded-modal bg-foreground/5 border border-primary/20 typo-body text-foreground placeholder:text-foreground/40 resize-none focus:outline-none focus:border-primary/60"
+        className="w-full px-3 py-2 rounded-modal bg-surface-1 border border-hair typo-body text-ink-1 placeholder:text-ink-3 resize-none focus:outline-none focus:border-primary/60"
       />
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => { const v = text.trim(); if (v) onSubmit(v); }}
           disabled={!text.trim()}
-          className="flex-1 px-3 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5"
+          className="flex-1 px-3 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-ink-1 disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.common.refine}
@@ -52,7 +52,7 @@ export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRe
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-full border border-border/40 hover:border-foreground/30 typo-body text-foreground"
+          className="px-3 py-1.5 rounded-full border border-hair hover:border-hair-2 typo-body text-ink-1"
         >
           {t.common.cancel}
         </button>

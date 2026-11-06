@@ -172,20 +172,20 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         {/* Aggregate status banner */}
         <div className={`flex items-center justify-between px-4 py-3 rounded-modal border ${
           activeCount > 0
-            ? 'bg-purple-500/5 border-purple-500/15'
-            : 'bg-secondary/30 border-border/30'
+            ? 'bg-role-agent/5 border-role-agent/15'
+            : 'bg-surface-1 border-hair'
         }`}>
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${
-              activeCount > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/30'
+              activeCount > 0 ? 'bg-status-success animate-pulse' : 'bg-muted-foreground/30'
             }`} />
-            <span className="typo-body text-foreground">
+            <span className="typo-body text-ink-1">
               {activeCount > 0
                 ? tx(activeCount === 1 ? t.triggers.relay_active_one : t.triggers.relay_active_other, { count: activeCount })
                 : t.triggers.no_active_relays}
             </span>
             {totalRelayed > 0 && (
-              <span className="typo-caption text-purple-400/70">
+              <span className="typo-caption text-role-agent">
                 {tx(totalRelayed === 1 ? t.triggers.relay_events_relayed_one : t.triggers.relay_events_relayed_other, { count: totalRelayed })}
               </span>
             )}
@@ -194,7 +194,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             <button
               type="button"
               onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNew"))}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
               title={t.triggers.smee_open_new_title}
             >
               <ExternalLink className="w-3 h-3" />
@@ -204,7 +204,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               <button
                 type="button"
                 onClick={onSwitchToLiveStream}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-role-external hover:text-role-external hover:bg-role-external/10 transition-colors"
               >
                 {t.triggers.live_stream}
               </button>
@@ -214,13 +214,13 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
         {/* Header + Add button */}
         <div className="flex items-center justify-between">
-          <h3 className="typo-code text-foreground uppercase tracking-wider">
+          <h3 className="typo-eyebrow text-ink-1">
             {t.triggers.smee_relays}
           </h3>
           <button
             type="button"
             onClick={() => { setShowAdd(!showAdd); if (showAdd) setTouchedFields(new Set()); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/15 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-role-agent/10 text-role-agent border border-role-agent/20 hover:bg-role-agent/15 transition-colors"
           >
             {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             {showAdd ? t.common.cancel : t.triggers.add_relay}
@@ -229,10 +229,10 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
         {/* Add relay form */}
         {showAdd && (
-          <div className="rounded-modal border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
+          <div className="rounded-modal border border-role-agent/20 bg-role-agent/5 p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block typo-caption text-foreground mb-1.5">
+                <label className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.relay_label_field}
                 </label>
                 <div className="relative">
@@ -242,27 +242,27 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     onChange={(e) => setAddLabel(e.target.value)}
                     onBlur={() => markTouched('label')}
                     placeholder={t.triggers.relay_label_placeholder}
-                    className={`w-full px-3 py-2 pr-8 typo-body rounded-card border bg-secondary/30 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 transition-colors ${
+                    className={`w-full px-3 py-2 pr-8 typo-body rounded-card border bg-surface-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 transition-colors ${
                       labelError
-                        ? 'border-red-500/40 focus:ring-red-500/40'
+                        ? 'border-status-error/40 focus:ring-status-error/40'
                         : labelValid && touchedFields.has('label')
-                          ? 'border-emerald-500/40 focus:ring-emerald-500/40'
-                          : 'border-border/40 focus:ring-purple-500/40'
+                          ? 'border-status-success/40 focus:ring-status-success/40'
+                          : 'border-hair focus:ring-role-agent/40'
                     }`}
                   />
                   {touchedFields.has('label') && labelValid && (
-                    <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-status-success" />
                   )}
                 </div>
                 {labelError && (
-                  <p className="mt-1 typo-caption text-red-400 flex items-center gap-1">
+                  <p className="mt-1 typo-caption text-status-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3 flex-shrink-0" />
                     {labelError}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block typo-caption text-foreground mb-1.5">
+                <label className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.relay_channel_url_field}
                 </label>
                 <div className="relative">
@@ -272,28 +272,28 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     onChange={(e) => { setAddUrl(e.target.value); setCreateError(null); }}
                     onBlur={() => markTouched('url')}
                     placeholder={t.triggers.relay_channel_url_placeholder}
-                    className={`w-full px-3 py-2 pr-8 typo-code rounded-card border bg-secondary/30 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 transition-colors ${
+                    className={`w-full px-3 py-2 pr-8 typo-code rounded-card border bg-surface-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 transition-colors ${
                       urlError
-                        ? 'border-red-500/40 focus:ring-red-500/40'
+                        ? 'border-status-error/40 focus:ring-status-error/40'
                         : urlValid && touchedFields.has('url')
-                          ? 'border-emerald-500/40 focus:ring-emerald-500/40'
-                          : 'border-border/40 focus:ring-purple-500/40'
+                          ? 'border-status-success/40 focus:ring-status-success/40'
+                          : 'border-hair focus:ring-role-agent/40'
                     }`}
                   />
                   {touchedFields.has('url') && urlValid && (
-                    <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-status-success" />
                   )}
                 </div>
                 {urlError && (
-                  <p className="mt-1 typo-caption text-red-400 flex items-center gap-1">
+                  <p className="mt-1 typo-caption text-status-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3 flex-shrink-0" />
                     {urlError}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block typo-caption text-foreground mb-1.5">
-                  {t.triggers.relay_route_to_agent} <span className="text-foreground">{t.triggers.optional_suffix}</span>
+                <label className="block typo-caption text-ink-2 mb-1.5">
+                  {t.triggers.relay_route_to_agent} <span className="text-ink-1">{t.triggers.optional_suffix}</span>
                 </label>
                 <ThemedSelect
                   value={addPersonaId}
@@ -306,21 +306,21 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 </ThemedSelect>
               </div>
               <div>
-                <label className="block typo-caption text-foreground mb-1.5">
-                  {t.triggers.relay_event_filter_field} <span className="text-foreground">{t.triggers.relay_event_filter_note}</span>
+                <label className="block typo-caption text-ink-2 mb-1.5">
+                  {t.triggers.relay_event_filter_field} <span className="text-ink-1">{t.triggers.relay_event_filter_note}</span>
                 </label>
                 <input
                   type="text"
                   value={addFilter}
                   onChange={(e) => setAddFilter(e.target.value)}
                   placeholder={t.triggers.relay_filter_placeholder}
-                  className="w-full px-3 py-2 typo-code rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/40"
+                  className="w-full px-3 py-2 typo-code rounded-card border border-hair bg-surface-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-role-agent/40"
                 />
               </div>
             </div>
 
             {createError && (
-              <div className="flex items-center gap-2 typo-caption text-red-400">
+              <div className="flex items-center gap-2 typo-caption text-status-error">
                 <AlertCircle className="w-3 h-3" />
                 {inlineErrorCopy(t, createError.raw, t.triggers.relay_create_failed)}
               </div>
@@ -331,13 +331,13 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 type="button"
                 onClick={handleCreate}
                 disabled={isCreating || !addLabel.trim() || !urlValid}
-                className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-purple-500/15 text-purple-400 border border-purple-500/25 hover:bg-purple-500/25 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 disabled:opacity-50 transition-colors"
               >
                 {isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
                 {t.triggers.create_relay}
               </button>
-              <p className="typo-caption text-foreground">
-                {t.triggers.get_channel_url_prompt} <button type="button" onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline"><DebtText k="auto_smee_io_new_7ce5f637" /></button>
+              <p className="typo-caption text-ink-2">
+                {t.triggers.get_channel_url_prompt} <button type="button" onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-role-agent hover:text-role-agent underline"><DebtText k="auto_smee_io_new_7ce5f637" /></button>
               </p>
             </div>
           </div>
@@ -384,10 +384,10 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                   transition={{ duration: 0.25, ease: 'easeInOut' }}
                   className={`rounded-modal border p-4 transition-[border-color,background-color] duration-300 ${
                     isError
-                      ? 'border-red-500/20 bg-red-500/3'
+                      ? 'border-status-error/20 bg-status-error/3'
                       : isPaused
-                        ? 'border-border/20 bg-secondary/5'
-                        : 'border-purple-500/15 bg-secondary/10'
+                        ? 'border-hair bg-surface-1'
+                        : 'border-role-agent/15 bg-surface-1'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -396,43 +396,43 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                       <div className="flex items-center gap-2 mb-1">
                         {/* Status dot */}
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-[background-color] duration-300 ${
-                          isActive ? 'bg-emerald-400 animate-pulse' : isPaused ? 'bg-amber-400' : 'bg-red-400'
+                          isActive ? 'bg-status-success animate-pulse' : isPaused ? 'bg-status-warning' : 'bg-status-error'
                         }`} />
-                        <span className="typo-heading text-foreground/90 truncate">
+                        <span className="typo-heading text-ink-1 truncate">
                           {relay.label}
                         </span>
-                        <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-input transition-[color,background-color,border-color] duration-300 ${
-                          isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : isPaused ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                        <span className={`typo-eyebrow px-1.5 py-0.5 rounded-input transition-[color,background-color,border-color] duration-300 ${
+                          isActive ? 'bg-status-success/10 text-status-success border border-status-success/20'
+                            : isPaused ? 'bg-status-warning/10 text-status-warning border border-status-warning/20'
+                            : 'bg-status-error/10 text-status-error border border-status-error/20'
                         }`}>
                           {relay.status}
                         </span>
                       </div>
-                      <p className="typo-code text-foreground truncate mb-2">
+                      <p className="typo-code text-ink-1 truncate mb-2">
                         {relay.channelUrl}
                       </p>
 
                       {/* Metadata row */}
                       <div className="flex items-center gap-3 flex-wrap">
                         {relay.eventsRelayed > 0 && (
-                          <span className="typo-caption text-purple-400/60">
+                          <span className="typo-caption text-role-agent">
                             {Number(relay.eventsRelayed)} event{Number(relay.eventsRelayed) !== 1 ? 's' : ''}
                           </span>
                         )}
                         {relay.lastEventAt && (
-                          <span className="typo-caption text-foreground">
+                          <span className="typo-caption text-ink-2">
                             {t.triggers.relay_last_event} {formatRelativeTime(relay.lastEventAt)}
                           </span>
                         )}
                         {persona && (
-                          <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+                          <span className="inline-flex items-center gap-1 typo-caption text-ink-2">
                             <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
                             {persona.name}
                           </span>
                         )}
                         {filters.length > 0 && (
-                          <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+                          <span className="inline-flex items-center gap-1 typo-caption text-ink-2">
                             <Filter className="w-3 h-3" />
                             {filters.join(', ')}
                           </span>
@@ -441,7 +441,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
                       {/* Error message */}
                       {isError && relay.error && (
-                        <div className="mt-2 flex items-start gap-1.5 typo-caption text-red-400/80">
+                        <div className="mt-2 flex items-start gap-1.5 typo-caption text-status-error">
                           <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
                           <span className="break-words">{relay.error}</span>
                         </div>
@@ -456,8 +456,8 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                         onClick={() => handleToggleStatus(relay)}
                         className={`p-1.5 rounded-card transition-colors ${
                           isActive
-                            ? 'text-amber-400/60 hover:text-amber-400 hover:bg-amber-500/10'
-                            : 'text-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-500/10'
+                            ? 'text-status-warning hover:text-status-warning hover:bg-status-warning/10'
+                            : 'text-status-success hover:text-status-success hover:bg-status-success/10'
                         }`}
                         title={isActive ? t.triggers.pause_relay : t.triggers.resume_relay}
                       >
@@ -468,14 +468,14 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                           <button
                             type="button"
                             onClick={() => handleDelete(relay.id)}
-                            className="px-2 py-1 rounded-card typo-caption text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                            className="px-2 py-1 rounded-card typo-caption text-status-error bg-status-error/10 border border-status-error/20 hover:bg-status-error/20 transition-colors"
                           >
                             {t.common.confirm}
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground transition-colors"
+                            className="px-2 py-1 rounded-card typo-caption text-ink-1 hover:text-ink-1 transition-colors"
                           >
                             {t.common.cancel}
                           </button>
@@ -484,7 +484,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(relay.id)}
-                          className="p-1.5 rounded-card text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-card text-status-error hover:text-status-error hover:bg-status-error/10 transition-colors"
                           title={t.triggers.relay_delete_title}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -515,25 +515,25 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 function SetupGuide() {
   const { t } = useTranslation();
   return (
-    <div className="rounded-modal border border-border/20 bg-secondary/5 p-5 space-y-3">
-      <h4 className="typo-label text-foreground">
+    <div className="rounded-modal border border-hair bg-surface-1 p-5 space-y-3">
+      <h4 className="typo-label text-ink-1">
         {t.triggers.how_it_works}
       </h4>
-      <div className="space-y-2 typo-body text-foreground">
+      <div className="space-y-2 typo-body text-ink-1">
         <div className="flex items-start gap-2.5">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">1</span>
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-role-agent/10 border border-role-agent/20 flex items-center justify-center typo-caption text-role-agent">1</span>
           <p>{t.triggers.setup_guide_step1}</p>
         </div>
         <div className="flex items-start gap-2.5">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">2</span>
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-role-agent/10 border border-role-agent/20 flex items-center justify-center typo-caption text-role-agent">2</span>
           <p>{t.triggers.setup_guide_step2}</p>
         </div>
         <div className="flex items-start gap-2.5">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">3</span>
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-role-agent/10 border border-role-agent/20 flex items-center justify-center typo-caption text-role-agent">3</span>
           <p>{t.triggers.setup_guide_step3}</p>
         </div>
         <div className="flex items-start gap-2.5">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">4</span>
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-role-agent/10 border border-role-agent/20 flex items-center justify-center typo-caption text-role-agent">4</span>
           <p>{t.triggers.setup_guide_step4}</p>
         </div>
       </div>

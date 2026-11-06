@@ -44,18 +44,18 @@ export function StepProgress({
             onClick={() => onJump(i)}
             data-testid={`tour-step-${step.id}`}
             className={`group flex items-center gap-2.5 px-1 py-1.5 text-left rounded-card transition-colors ${
-              i > 0 ? 'border-t border-primary/5' : ''
-            } ${isCurrent ? '' : 'hover:bg-secondary/20'}`}
+              i > 0 ? 'border-t border-hair' : ''
+            } ${isCurrent ? '' : 'hover:bg-surface-1'}`}
             aria-current={isCurrent ? 'step' : undefined}
             title={step.title}
           >
             <span
               className={`flex items-center justify-center w-5 h-5 rounded-full typo-caption flex-shrink-0 border ${
                 isCompleted
-                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  ? 'bg-status-success/15 border-status-success/30 text-status-success'
                   : isCurrent
                     ? `${colors.subtle} ${colors.accent} ${colors.text}`
-                    : 'bg-secondary/30 border-primary/10 text-foreground'
+                    : 'bg-surface-1 border-hair text-ink-1'
               }`}
             >
               {isCompleted ? <Check className="w-3 h-3" /> : i + 1}
@@ -65,8 +65,8 @@ export function StepProgress({
                 isCurrent
                   ? `${colors.text}`
                   : isCompleted
-                    ? 'text-foreground/80'
-                    : 'text-foreground'
+                    ? 'text-ink-1'
+                    : 'text-ink-1'
               }`}
             >
               {step.title}

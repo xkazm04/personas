@@ -31,31 +31,31 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
   const hasPayload = exec.input_data || exec.output_data || exec.error_message;
 
   return (
-    <div className="rounded-modal bg-background/30 border border-primary/5 overflow-hidden">
+    <div className="rounded-modal bg-background/30 border border-hair overflow-hidden">
       {/* Summary row */}
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-secondary/20 transition-colors"
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-surface-1 transition-colors"
       >
         {hasPayload ? (
           isExpanded
-            ? <ChevronDown className="w-3 h-3 text-foreground flex-shrink-0" />
-            : <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />
+            ? <ChevronDown className="w-3 h-3 text-ink-1 flex-shrink-0" />
+            : <ChevronRight className="w-3 h-3 text-ink-1 flex-shrink-0" />
         ) : (
           <div className="w-3 h-3 flex-shrink-0" />
         )}
         <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusEntry.text} ${statusEntry.pulse ? 'animate-pulse' : ''}`} />
-        <span className={`px-1.5 py-0.5 rounded typo-body ${badgeClass(statusEntry)}`}>
+        <span className={`px-1.5 py-0.5 rounded-interactive typo-body ${badgeClass(statusEntry)}`}>
           {statusEntry.label}
         </span>
-        <span className="text-foreground font-mono">
+        <span className="text-ink-1 font-mono">
           {formatDuration(exec.duration_ms)}
         </span>
         {exec.retry_count > 0 && (
-          <span className="text-amber-400/70 typo-body">{t.triggers.retry_hash}{exec.retry_count}</span>
+          <span className="text-status-warning typo-body">{t.triggers.retry_hash}{exec.retry_count}</span>
         )}
-        <span className="text-foreground ml-auto typo-body">
+        <span className="text-ink-1 ml-auto typo-body">
           {formatRelativeTime(exec.started_at)}
         </span>
       </button>
@@ -65,9 +65,9 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
           <div
             className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
+            <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-hair">
               {/* Metadata line */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 typo-body text-foreground">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 typo-body text-ink-1">
                 <span className="font-mono">{exec.id.slice(0, 12)}</span>
                 {exec.model_used && <span>{t.triggers.model_colon} {exec.model_used}</span>}
                 {(exec.input_tokens > 0 || exec.output_tokens > 0) && (
@@ -81,8 +81,8 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
               <JsonPayloadBlock label="Output" data={exec.output_data} labelClassName="typo-body" />
               {exec.error_message && (
                 <div className="space-y-1">
-                  <div className="typo-body text-red-400/70 uppercase tracking-wide">Error</div>
-                  <div className="px-2.5 py-2 rounded-card bg-red-500/5 border border-red-500/10 typo-code text-red-400/90 whitespace-pre-wrap break-all">
+                  <div className="typo-eyebrow text-status-error">Error</div>
+                  <div className="px-2.5 py-2 rounded-card bg-status-error/5 border border-status-error/10 typo-code text-status-error whitespace-pre-wrap break-all">
                     {exec.error_message}
                   </div>
                 </div>
@@ -94,7 +94,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
-                  className="flex items-center gap-1.5 px-2.5 py-1 typo-body text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 px-2.5 py-1 typo-body text-role-external hover:text-role-external hover:bg-role-external/10 rounded-card border border-role-external/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   title={t.triggers.replay_button_title}
                 >
                   {isReplaying
@@ -103,7 +103,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                   {isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}
                 </button>
                 {replayResult && (
-                  <span className={`flex items-center gap-1 typo-body ${replayResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`flex items-center gap-1 typo-body ${replayResult.success ? 'text-status-success' : 'text-status-error'}`}>
                     {replayResult.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                     {replayResult.message}
                   </span>
@@ -150,13 +150,13 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
       <button
         type="button"
         onClick={toggle}
-        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
+        className="flex items-center gap-1.5 pt-1 border-t border-hair typo-body text-ink-1 hover:text-ink-3 transition-colors w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <History className="w-3 h-3" />
         {t.triggers.execution_history}
         {history.stats.totalRuns > 0 && (
-          <span className="text-foreground ml-1">({history.stats.totalRuns})</span>
+          <span className="text-ink-1 ml-1">({history.stats.totalRuns})</span>
         )}
       </button>
 
@@ -166,18 +166,18 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
           >
             <div className="space-y-1.5 pt-1">
               {history.loading ? (
-                <div className="flex items-center gap-2 py-2 typo-body text-foreground">
+                <div className="flex items-center gap-2 py-2 typo-body text-ink-1">
                   <LoadingSpinner size="xs" />
                   {t.triggers.loading_history}
                 </div>
               ) : history.error ? (
-                <div className="flex items-center gap-2 py-2 typo-body text-amber-400/90">
+                <div className="flex items-center gap-2 py-2 typo-body text-status-warning">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
                   {t.triggers.could_not_load_history}
                   <button
                     type="button"
                     onClick={() => void history.fetch()}
-                    className="ml-auto flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
+                    className="ml-auto flex items-center gap-1 typo-body text-ink-1 hover:text-ink-1 transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />
                     Retry
@@ -204,7 +204,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                     type="button"
                     onClick={() => void history.fetch()}
                     disabled={history.loading}
-                    className="flex items-center gap-1.5 w-full justify-center py-1.5 typo-body text-foreground hover:text-muted-foreground/90 transition-colors"
+                    className="flex items-center gap-1.5 w-full justify-center py-1.5 typo-body text-ink-1 hover:text-ink-3 transition-colors"
                   >
                     <RefreshCw className={`w-3 h-3 ${history.loading ? 'animate-spin' : ''}`} />
                     Refresh

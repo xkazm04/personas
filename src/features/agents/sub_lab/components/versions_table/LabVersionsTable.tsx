@@ -213,14 +213,14 @@ export function LabVersionsTable() {
         render: (row) => (
           <Tooltip content={row.version.change_summary ?? ''}>
             <span className="inline-flex items-center gap-1.5">
-              {row.isBaseline && <Star className="w-3 h-3 text-amber-300 fill-amber-300" aria-hidden />}
-              <span className="font-mono typo-body text-foreground">v{row.versionNumber}</span>
+              {row.isBaseline && <Star className="w-3 h-3 text-status-warning fill-amber-300" aria-hidden />}
+              <span className="font-mono typo-body text-ink-1">v{row.versionNumber}</span>
             </span>
           </Tooltip>
         ),
       },
       { key: 'model', label: lab.vr_col_model, width: '150px', render: (row) => (
-        <span className="typo-body text-foreground">{modelLabel(row.modelId)}</span>
+        <span className="typo-body text-ink-1">{modelLabel(row.modelId)}</span>
       ) },
       { key: 'rating', label: lab.vr_col_rating, width: '110px', align: 'right',
         sortable: true, sortFn: (a, b) => (a.composite ?? -1) - (b.composite ?? -1),
@@ -229,12 +229,12 @@ export function LabVersionsTable() {
         render: (row) => <DeltaCell delta={row.deltaVsBaseline} /> },
       { key: 'cost', label: lab.vr_col_cost, width: '90px', align: 'right',
         render: (row) => (
-          <span className="typo-caption text-foreground tabular-nums">
+          <span className="typo-caption text-ink-2 tabular-nums">
             {!row.rating ? '—' : row.rating.costUnknown ? (
               // Ollama et al. report a hardcoded $0 — surface "not tracked" rather
               // than a misleading $0.000 that reads as "free".
               <Tooltip content={lab.vr_cost_unknown_tooltip}>
-                <span className="text-foreground/70">{lab.vr_cost_unknown}</span>
+                <span className="text-ink-2">{lab.vr_cost_unknown}</span>
               </Tooltip>
             ) : (
               <>$<Numeric value={row.rating.costUsd} precision={3} /></>
@@ -247,7 +247,7 @@ export function LabVersionsTable() {
         sortable: true,
         sortFn: (a, b) => totalTokens(a) - totalTokens(b),
         render: (row) => (
-          <span className="typo-caption text-foreground tabular-nums">
+          <span className="typo-caption text-ink-2 tabular-nums">
             {row.rating ? (
               <Tooltip
                 content={tx(lab.vr_tokens_tooltip, {
@@ -275,7 +275,7 @@ export function LabVersionsTable() {
   );
 
   if (!personaId) {
-    return <div className="typo-body text-foreground text-center py-8">{t.agents.lab.no_persona_selected}</div>;
+    return <div className="typo-body text-ink-1 text-center py-8">{t.agents.lab.no_persona_selected}</div>;
   }
 
   return (
@@ -284,7 +284,7 @@ export function LabVersionsTable() {
         <GitBranch className="w-4 h-4 text-primary/70" />
         <div className="min-w-0">
           <h3 className="typo-section-title">{lab.vr_title}</h3>
-          <p className="typo-caption text-foreground">{lab.vr_subtitle}</p>
+          <p className="typo-caption text-ink-2">{lab.vr_subtitle}</p>
         </div>
         {/* Export a client-presentable "v3 vs v4" comparison from the measured
             ratings — the billable artifact (UAT 2026-07-20, FA-AGY-LAB-03).
@@ -300,7 +300,7 @@ export function LabVersionsTable() {
                 const safe = name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
                 downloadHtmlReport(html, `${safe}-version-comparison.html`);
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-ink-1 bg-surface-2 hover:bg-surface-2 border border-hair transition-colors"
             >
               <FileDown className="w-3.5 h-3.5" />
               {t.agent_lab.export_download_html}
@@ -314,7 +314,7 @@ export function LabVersionsTable() {
                 setReportCopied(true);
                 setTimeout(() => setReportCopied(false), 2000);
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-ink-1 bg-surface-2 hover:bg-surface-2 border border-hair transition-colors"
             >
               {reportCopied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
               {reportCopied ? t.agent_lab.export_copied : t.agent_lab.export_copy_markdown}
@@ -333,7 +333,7 @@ export function LabVersionsTable() {
         emptyArt="archive"
         emptyTitle={lab.vr_empty_title}
         emptyDescription={lab.vr_empty_desc}
-        rowAccent={(row) => (row.isActive ? 'border-l-primary' : row.isBaseline ? 'border-l-amber-400' : undefined)}
+        rowAccent={(row) => (row.isActive ? 'border-l-primary' : row.isBaseline ? 'border-l-status-warning' : undefined)}
       />
 
       <BaseModal isOpen={!!diffRow} onClose={() => setDiffRow(null)} titleId="vr-diff-modal" maxWidthClass="max-w-3xl">
@@ -344,7 +344,7 @@ export function LabVersionsTable() {
           {diffRow && activeVersion ? (
             <DiffViewer versionA={activeVersion} versionB={diffRow.version} />
           ) : (
-            <p className="typo-body text-foreground">{lab.vr_diff_no_active}</p>
+            <p className="typo-body text-ink-1">{lab.vr_diff_no_active}</p>
           )}
         </div>
       </BaseModal>
@@ -381,13 +381,13 @@ export function LabVersionsTable() {
 }
 
 function DeltaCell({ delta }: { delta: number | null }) {
-  if (delta == null) return <span className="typo-caption text-foreground">—</span>;
+  if (delta == null) return <span className="typo-caption text-ink-2">—</span>;
   const rounded = Math.round(delta);
-  if (rounded === 0) return <span className="typo-caption text-foreground tabular-nums">0</span>;
+  if (rounded === 0) return <span className="typo-caption text-ink-2 tabular-nums">0</span>;
   const positive = rounded > 0;
   const regression = rounded <= -REGRESSION_DROP;
   return (
-    <span className={`inline-flex items-center gap-1 typo-caption tabular-nums ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
+    <span className={`inline-flex items-center gap-1 typo-caption tabular-nums ${positive ? 'text-status-success' : 'text-status-error'}`}>
       {regression && <AlertTriangle className="w-3 h-3" aria-hidden />}
       {positive ? `+${rounded}` : rounded}
     </span>

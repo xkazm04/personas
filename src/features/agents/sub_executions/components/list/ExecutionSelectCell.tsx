@@ -26,7 +26,7 @@ export function ExecutionSelectCell({ row, bulk, compare }: ExecutionSelectCellP
     );
   }
   const label = compare.compareLeft === row.id ? 'A' : compare.compareRight === row.id ? 'B' : null;
-  if (!label) return <span className="block w-5 h-5 rounded-card border border-primary/20 bg-background/30" />;
+  if (!label) return <span className="block w-5 h-5 rounded-card border border-hair bg-background/30" />;
   // Cool (A) / warm (B) split on semantic status tokens.
   const tone = label === 'A'
     ? 'bg-status-info/20 text-status-info border-status-info/30'

@@ -6,10 +6,10 @@ import type { CredentialMetadata } from '@/lib/types/types';
 
 export function channelIcon(type: string) {
   switch (type) {
-    case 'slack': return <Hash className="w-4 h-4 text-purple-400" />;
-    case 'telegram': return <Send className="w-4 h-4 text-blue-400" />;
-    case 'email': return <Mail className="w-4 h-4 text-amber-400" />;
-    default: return <Bell className="w-4 h-4 text-foreground" />;
+    case 'slack': return <Hash className="w-4 h-4 text-role-agent" />;
+    case 'telegram': return <Send className="w-4 h-4 text-status-info" />;
+    case 'email': return <Mail className="w-4 h-4 text-status-warning" />;
+    default: return <Bell className="w-4 h-4 text-ink-1" />;
   }
 }
 
@@ -43,18 +43,18 @@ export function CredentialPicker({
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-modal typo-body text-foreground focus-ring transition-all"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-hair rounded-modal typo-body text-ink-1 focus-ring transition-all"
         >
           {selected ? (
             <>
               {channelIcon(selected.service_type)}
               <span className="flex-1 text-left truncate">{selected.name}</span>
-              <span className="typo-body text-foreground">{selected.service_type}</span>
+              <span className="typo-body text-ink-1">{selected.service_type}</span>
             </>
           ) : (
-            <span className="flex-1 text-left text-foreground">{t.agents.connectors.cp_select}</span>
+            <span className="flex-1 text-left text-ink-1">{t.agents.connectors.cp_select}</span>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-ink-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
       )}
     >
@@ -66,10 +66,10 @@ export function CredentialPicker({
             aria-selected={!selectedId}
             onClick={() => { onChange(''); close(); }}
             className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
-              focusIndex === 0 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
-            } ${!selectedId ? 'text-foreground' : 'text-foreground'}`}
+              focusIndex === 0 ? 'bg-surface-2' : 'hover:bg-surface-2'
+            } ${!selectedId ? 'text-ink-1' : 'text-ink-1'}`}
           >
-            <span className="text-foreground">&mdash;</span>
+            <span className="text-ink-1">&mdash;</span>
             <span>{t.common.none}</span>
           </button>
           {creds.map((cred, i) => (
@@ -80,17 +80,17 @@ export function CredentialPicker({
               aria-selected={cred.id === selectedId}
               onClick={() => { onChange(cred.id); close(); }}
               className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
-                focusIndex === i + 1 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
-              } ${cred.id === selectedId ? 'text-foreground' : 'text-foreground'}`}
+                focusIndex === i + 1 ? 'bg-surface-2' : 'hover:bg-surface-2'
+              } ${cred.id === selectedId ? 'text-ink-1' : 'text-ink-1'}`}
             >
               {channelIcon(cred.service_type)}
               <span className="flex-1 text-left truncate">{cred.name}</span>
-              <span className="typo-body text-foreground">{cred.service_type}</span>
-              {cred.id === selectedId && <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
+              <span className="typo-body text-ink-1">{cred.service_type}</span>
+              {cred.id === selectedId && <Check className="w-3 h-3 text-status-success flex-shrink-0" />}
             </button>
           ))}
           {creds.length === 0 && (
-            <div className="px-3 py-2 typo-body text-foreground">{t.agents.connectors.cp_no_creds}</div>
+            <div className="px-3 py-2 typo-body text-ink-1">{t.agents.connectors.cp_no_creds}</div>
           )}
         </>
       )}

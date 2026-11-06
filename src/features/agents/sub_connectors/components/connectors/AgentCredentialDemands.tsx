@@ -118,13 +118,13 @@ export function AgentCredentialDemands() {
   return (
     <div className="space-y-3">
       {/* Summary banner */}
-      <div className="flex items-start gap-2.5 p-3 rounded-modal bg-violet-500/5 border border-violet-500/15">
-        <Key className="w-4 h-4 text-violet-400/70 flex-shrink-0 mt-0.5" />
+      <div className="flex items-start gap-2.5 p-3 rounded-modal bg-role-agent/5 border border-role-agent/15">
+        <Key className="w-4 h-4 text-role-agent flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="typo-body text-violet-400/80">
+          <p className="typo-body text-role-agent">
             {tx(t.agents.connectors.dm_needed, { count: unfulfilledCount })}
           </p>
-          <p className="typo-caption text-violet-400/50 mt-0.5">
+          <p className="typo-caption text-role-agent mt-0.5">
             {tx(t.agents.connectors.dm_fulfilled, { fulfilled: fulfilledCount, total: totalDemands })}
             {reusableCount > 0 && (
               <span> &middot; {tx(t.agents.connectors.dm_reuse_hint, { count: reusableCount })}</span>
@@ -162,11 +162,11 @@ export function AgentCredentialDemands() {
 
       {/* Design modal */}
       {designOpen && (
-        <div className="mt-3 border border-violet-500/20 rounded-modal overflow-hidden">
+        <div className="mt-3 border border-role-agent/20 rounded-modal overflow-hidden">
           {designQueue.length > 1 && (
             <p
               data-testid="fulfill-queue-progress"
-              className="px-3 py-1.5 typo-caption text-violet-400/70 border-b border-violet-500/15"
+              className="px-3 py-1.5 typo-caption text-role-agent border-b border-role-agent/15"
             >
               {tx(t.agents.connectors.dm_queue_progress, {
                 remaining: designQueue.length,
@@ -208,7 +208,7 @@ function DemandCard({
   const hasReusable = demand.matchingCredentials.length > 0;
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         {/* Connector icon */}
         <div
@@ -221,10 +221,10 @@ function DemandCard({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="typo-body text-foreground/85">{demand.connectorLabel}</span>
-            <AlertTriangle className="w-3 h-3 text-amber-400/60" />
+            <span className="typo-body text-ink-1">{demand.connectorLabel}</span>
+            <AlertTriangle className="w-3 h-3 text-status-warning" />
           </div>
-          <p className="typo-caption text-foreground truncate">
+          <p className="typo-caption text-ink-2 truncate">
             {t.agents.connectors.dm_required_by}
           </p>
         </div>
@@ -238,8 +238,8 @@ function DemandCard({
               aria-expanded={isLinking}
               className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border transition-colors cursor-pointer ${
                 isLinking
-                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
-                  : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'
+                  ? 'bg-status-info/15 text-status-info border-status-info/25'
+                  : 'border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1'
               }`}
             >
               <ArrowRight className="w-3 h-3" />
@@ -249,7 +249,7 @@ function DemandCard({
           <button
             type="button"
             onClick={onProvision}
-            className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border border-role-agent/20 bg-role-agent/10 text-role-agent hover:bg-role-agent/20 transition-colors cursor-pointer"
           >
             <Sparkles className="w-3 h-3" />
             {t.agents.connectors.dm_create}
@@ -262,8 +262,8 @@ function DemandCard({
           <div
             className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="px-3 pb-2.5 pt-1 border-t border-primary/10 space-y-1">
-              <p className="typo-caption text-foreground mb-1.5">
+            <div className="px-3 pb-2.5 pt-1 border-t border-hair space-y-1">
+              <p className="typo-caption text-ink-2 mb-1.5">
                 {t.agents.connectors.dm_link_existing}
               </p>
               {demand.matchingCredentials.map((cred) => (
@@ -271,15 +271,15 @@ function DemandCard({
                   key={cred.id}
                   type="button"
                   onClick={() => onReuse(cred.id)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card hover:bg-surface-2 transition-colors text-left cursor-pointer"
                 >
-                  <Key className="w-3 h-3 text-emerald-400/60" />
-                  <span className="typo-caption text-foreground flex-1 truncate">{cred.name}</span>
+                  <Key className="w-3 h-3 text-status-success" />
+                  <span className="typo-caption text-ink-2 flex-1 truncate">{cred.name}</span>
                   {isCredentialVerified(cred) && (
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400/60" />
+                    <CheckCircle2 className="w-3 h-3 text-status-success" />
                   )}
                   {cred.healthcheck_last_success === false && (
-                    <AlertTriangle className="w-3 h-3 text-red-400/60" />
+                    <AlertTriangle className="w-3 h-3 text-status-error" />
                   )}
                 </button>
               ))}

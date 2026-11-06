@@ -86,7 +86,7 @@ export function WatchToggle({ entryId, subscription, subscribe, unsubscribe }: C
         size="sm"
         label={subscribed ? m.watching : m.watch}
       />
-      <span className={`typo-caption ${subscribed ? 'text-status-success' : 'text-foreground/60'}`}>
+      <span className={`typo-caption ${subscribed ? 'text-status-success' : 'text-ink-2'}`}>
         {subscribed ? m.watching : m.watch}
       </span>
     </div>

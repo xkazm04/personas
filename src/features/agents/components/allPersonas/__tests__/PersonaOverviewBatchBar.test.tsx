@@ -120,7 +120,7 @@ describe('PersonaOverviewBatchBar', () => {
     );
     const raw = /text-(indigo|amber|emerald)-300|text-red-400/;
     for (const btn of screen.getAllByRole('button')) expect(btn.className).not.toMatch(raw);
-    expect(screen.getByRole('button', { name: /^delete$/i }).className).toMatch(/bg-red-600/);
+    expect(screen.getByRole('button', { name: /^delete$/i }).className).toMatch(/text-status-error/);
   });
 
   it('fires restore once for two clicks while the first is in flight', async () => {

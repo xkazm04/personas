@@ -60,7 +60,7 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
               PNG fallback was retired with the originals: every webview Tauri
               targets (WebView2, WKWebView, WebKitGTK) decodes WebP. */}
           <link rel="preload" as="image" href={webpSrc} type="image/webp" />
-          <div className="animate-fade-slide-in absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-2xl">
+          <div className="animate-fade-slide-in absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-card">
             <img
               src={webpSrc}
               alt=""

@@ -65,7 +65,7 @@ export function TriggersPage() {
               useOverviewStore.getState().setOverviewTab('events')
             );
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
           title={t.triggers.full_event_log}
         >
           <ExternalLink className="w-3 h-3" />
@@ -162,12 +162,12 @@ export function TriggersPage() {
 }
 
 const ICON_TEXT_COLORS: Record<IconColor, string> = {
-  cyan: 'text-cyan-400',
-  violet: 'text-violet-400',
-  emerald: 'text-emerald-400',
-  amber: 'text-amber-400',
-  blue: 'text-blue-400',
-  indigo: 'text-indigo-400',
-  red: 'text-red-400',
+  cyan: 'text-role-external',
+  violet: 'text-role-agent',
+  emerald: 'text-status-success',
+  amber: 'text-status-warning',
+  blue: 'text-status-info',
+  indigo: 'text-role-agent',
+  red: 'text-status-error',
   primary: 'text-primary',
 };

@@ -62,7 +62,7 @@ export function ActionPanel({ slate, children, actions, hint, alert }: ActionPan
           style={drafting ? { borderTop: "1px dashed var(--ink-faint)" } : undefined}
         >
           {actions}
-          {hint && <span className="ml-auto typo-caption text-foreground">{hint}</span>}
+          {hint && <span className="ml-auto typo-caption text-ink-2">{hint}</span>}
         </div>
       )}
     </section>

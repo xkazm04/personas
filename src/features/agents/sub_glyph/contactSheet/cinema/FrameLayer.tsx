@@ -53,7 +53,7 @@ function FramePrint({ dim, value, isCompose }: { dim: GlyphDimension; value: Fra
           {value ? <FramePicture dim={dim} value={value} compact={false} /> : <DimAuraMark dim={dim} size={56} lit={false} />}
         </span>
       </div>
-      <figcaption className="typo-body text-foreground truncate pl-2" style={{ borderLeft: `3px solid ${color}` }}>
+      <figcaption className="typo-body text-ink-1 truncate pl-2" style={{ borderLeft: `3px solid ${color}` }}>
         {value?.caption ?? (isCompose ? COPY.frame.preLaunchNote : COPY.loupe.empty)}
       </figcaption>
     </figure>
@@ -68,12 +68,12 @@ export function FrameLayer({ dim, label, desc, value, isCompose, item, rows }: F
         {isCompose && item && hasQuickSetup(item) ? (
           <>
             <QuickSetup item={item} label={label} />
-            {desc && <p className="typo-body text-foreground">{desc}</p>}
+            {desc && <p className="typo-body text-ink-1">{desc}</p>}
           </>
         ) : (
           <>
-            {desc && <p className="typo-body-lg text-foreground">{desc}</p>}
-            {isCompose && <p className="typo-body text-foreground">{dim === "task" ? COPY.frame.preLaunchNote : COPY.frame.decidedLater}</p>}
+            {desc && <p className="typo-body-lg text-ink-1">{desc}</p>}
+            {isCompose && <p className="typo-body text-ink-1">{dim === "task" ? COPY.frame.preLaunchNote : COPY.frame.decidedLater}</p>}
           </>
         )}
         {!isCompose && value && <DecidedSetup dim={dim} apps={value.apps} lines={value.lines} />}

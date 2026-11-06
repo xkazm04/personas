@@ -47,7 +47,7 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="p-1 rounded-interactive text-foreground hover:bg-primary/[0.06] transition-colors focus-ring cursor-pointer"
+        className="p-1 rounded-interactive text-ink-1 hover:bg-primary/[0.06] transition-colors focus-ring cursor-pointer"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
@@ -56,7 +56,7 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
           ref={menuRef}
           role="menu"
           aria-label={t.agents.persona_list.more_actions}
-          className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card border border-primary/15 bg-background shadow-elevation-3 p-1"
+          className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card border border-hair bg-background shadow-elevation-3 p-1"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={onKeyDown}
         >

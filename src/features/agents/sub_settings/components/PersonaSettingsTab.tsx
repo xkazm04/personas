@@ -80,10 +80,10 @@ export function PersonaSettingsTab({
       {/* Identity -- relative z-10 so color picker popup renders above cards below */}
       <div className="space-y-3 relative z-10">
         <h4 className="flex items-center gap-2.5 typo-submodule-header">
-          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
+          <span className="w-6 h-[2px] bg-surface-1 rounded-full" />
           {t.agents.settings_status.identity}
         </h4>
-        <div className="relative bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3 overflow-hidden">
+        <div className="relative bg-surface-2 backdrop-blur-sm border border-hair rounded-modal p-3 space-y-3 overflow-hidden">
           {/* Semi-transparent icon watermark. Renders behind the form fields
               when the persona has an art icon selected; positioned right-edge
               so it reads as accent art without obscuring inputs.
@@ -97,7 +97,7 @@ export function PersonaSettingsTab({
             </div>
           )}
           <div className="relative">
-            <label htmlFor="persona-name" className="block typo-body text-foreground mb-1">{t.agents.settings_status.label_name}</label>
+            <label htmlFor="persona-name" className="block typo-body text-ink-1 mb-1">{t.agents.settings_status.label_name}</label>
             <input
               id="persona-name"
               type="text"
@@ -111,11 +111,11 @@ export function PersonaSettingsTab({
               className={inputFieldClass(draft.name.trim() === '')}
             />
             {draft.name.trim() === '' && (
-              <p id="persona-name-error" className="mt-1 typo-caption text-red-400">{t.agents.creation.name_required}</p>
+              <p id="persona-name-error" className="mt-1 typo-caption text-status-error">{t.agents.creation.name_required}</p>
             )}
           </div>
           <div className="relative">
-            <label htmlFor="persona-description" className="block typo-body text-foreground mb-1">{t.agents.settings_status.label_description}</label>
+            <label htmlFor="persona-description" className="block typo-body text-ink-1 mb-1">{t.agents.settings_status.label_description}</label>
             <textarea
               id="persona-description"
               value={draft.description}
@@ -127,24 +127,24 @@ export function PersonaSettingsTab({
           </div>
           <div className="relative flex items-center gap-4">
             <div>
-              <label htmlFor="persona-icon-btn" className="block typo-body text-foreground mb-2">{t.agents.settings_status.label_icon}</label>
+              <label htmlFor="persona-icon-btn" className="block typo-body text-ink-1 mb-2">{t.agents.settings_status.label_icon}</label>
               <button
                 id="persona-icon-btn"
                 type="button"
                 onClick={() => setIconPickerOpen(true)}
                 title={t.shared.forms_extra.choose_icon}
                 aria-label={t.shared.forms_extra.choose_icon}
-                className="w-10 h-10 rounded-card border border-primary/15 bg-background/50 hover:border-primary/30 hover:bg-secondary/40 flex items-center justify-center transition-all cursor-pointer"
+                className="w-10 h-10 rounded-card border border-hair bg-background/50 hover:border-primary/30 hover:bg-surface-2 flex items-center justify-center transition-all cursor-pointer"
               >
                 {hasIcon ? (
                   <PersonaIcon icon={draft.icon} color={draft.color} size="w-7 h-7" />
                 ) : (
-                  <ImagePlus className="w-4 h-4 text-foreground" />
+                  <ImagePlus className="w-4 h-4 text-ink-1" />
                 )}
               </button>
             </div>
             <div>
-              <label className="block typo-body text-foreground mb-2">{t.agents.settings_status.label_color}</label>
+              <label className="block typo-body text-ink-1 mb-2">{t.agents.settings_status.label_color}</label>
               <PopupColorPicker
                 value={draft.color}
                 onChange={(color) => patch({ color })}
@@ -168,14 +168,14 @@ export function PersonaSettingsTab({
       {/* Execution */}
       <div className="space-y-3">
         <h4 className="flex items-center gap-2.5 typo-submodule-header">
-          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
+          <span className="w-6 h-[2px] bg-surface-1 rounded-full" />
           {t.agents.settings_status.execution}
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
+        <div className="bg-surface-2 backdrop-blur-sm border border-hair rounded-modal p-3 space-y-3">
           {!isSimple && (
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block typo-body text-foreground mb-1">
+                <label className="block typo-body text-ink-1 mb-1">
                   {t.agents.settings_status.max_concurrent}
                   <FieldHint
                     text={t.agents.settings_status.max_concurrent_hint}
@@ -193,7 +193,7 @@ export function PersonaSettingsTab({
                 />
               </div>
               <div className="flex-1">
-                <label className="block typo-body text-foreground mb-1">
+                <label className="block typo-body text-ink-1 mb-1">
                   {t.agents.settings_status.timeout_sec}
                   <FieldHint
                     text={tx(t.agents.settings_status.timeout_hint, { seconds: MAX_PERSONA_TIMEOUT_S, minutes: Math.round(MAX_PERSONA_TIMEOUT_S / 60) })}
@@ -218,7 +218,7 @@ export function PersonaSettingsTab({
 
           {!isSimple && (
             <div className="flex-1">
-              <label className="block typo-body text-foreground mb-1">
+              <label className="block typo-body text-ink-1 mb-1">
                 {t.agents.settings_status.execution_retention}
                 <FieldHint
                   text={t.agents.settings_status.retention_hint}
@@ -240,7 +240,7 @@ export function PersonaSettingsTab({
           )}
 
           <div className="flex items-center justify-between gap-3 py-1">
-            <span className="typo-body text-foreground">{t.agents.settings_status.persona_enabled}</span>
+            <span className="typo-body text-ink-1">{t.agents.settings_status.persona_enabled}</span>
             <AccessibleToggle
               checked={draft.enabled}
               onChange={() => patch({ enabled: !draft.enabled })}
@@ -254,7 +254,7 @@ export function PersonaSettingsTab({
           {!isSimple && (
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
-                <span className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview}</span>
+                <span className="typo-body text-ink-1">{t.agents.settings_status.sensitive_preview}</span>
                 <p id="persona-sensitive-preview-desc" className="typo-caption">{t.agents.settings_status.sensitive_preview_desc}</p>
               </div>
               <AccessibleToggle
@@ -271,7 +271,7 @@ export function PersonaSettingsTab({
           {!isSimple && (
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
-                <span className="typo-body text-foreground">{t.agents.settings_status.cli_awareness}</span>
+                <span className="typo-body text-ink-1">{t.agents.settings_status.cli_awareness}</span>
                 <p id="persona-cli-awareness-desc" className="typo-caption">{t.agents.settings_status.cli_awareness_desc}</p>
               </div>
               <AccessibleToggle

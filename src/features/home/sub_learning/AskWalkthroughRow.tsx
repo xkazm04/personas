@@ -69,7 +69,7 @@ export function AskWalkthroughRow({ onComposed }: { onComposed: () => void }) {
       >
         <input
           type="text"
-          className="typo-body flex-1 min-w-0 h-9 px-3 rounded-input border border-primary/15 bg-transparent"
+          className="typo-body flex-1 min-w-0 h-9 px-3 rounded-input border border-hair bg-transparent"
           data-testid="learning-ask-walkthrough-input"
           aria-label={ht.ask_title}
           placeholder={ht.ask_placeholder}

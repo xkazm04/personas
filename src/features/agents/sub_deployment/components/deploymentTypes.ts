@@ -103,11 +103,11 @@ export type SortDir = 'asc' | 'desc';
 
 export function statusBadge(s: DeployStatus): string {
   const colors: Record<DeployStatus, string> = {
-    active: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    paused: 'bg-amber-500/10 border-amber-500/25 text-amber-400',
-    failed: 'bg-red-500/10 border-red-500/20 text-red-400',
-    'file-based': 'bg-sky-500/10 border-sky-500/20 text-sky-400',
-    unknown: 'bg-secondary/40 border-primary/15 text-foreground',
+    active: 'bg-status-success/10 border-status-success/20 text-status-success',
+    paused: 'bg-status-warning/10 border-status-warning/25 text-status-warning',
+    failed: 'bg-status-error/10 border-status-error/20 text-status-error',
+    'file-based': 'bg-status-info/10 border-status-info/20 text-status-info',
+    unknown: 'bg-surface-2 border-hair text-ink-1',
   };
   return colors[s];
 }

@@ -120,13 +120,13 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 w-full typo-body text-foreground hover:text-muted-foreground transition-colors"
+        className="flex items-center gap-1.5 w-full typo-body text-ink-1 hover:text-ink-3 transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Clock className="w-3 h-3" />
         {t.triggers.active_hours}
         {aw.enabled && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-sky-500/15 text-sky-400">
+          <span className="inline-flex items-center ml-1 typo-body text-status-info">
             {summaryLabel}
           </span>
         )}
@@ -145,7 +145,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                   onChange={(e) => update({ enabled: e.target.checked })}
                   className="accent-sky-500"
                 />
-                <span className="typo-body text-foreground">
+                <span className="typo-body text-ink-1">
                   {t.triggers.only_fire_during_active}
                 </span>
               </label>
@@ -163,8 +163,8 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           title={d.label}
                           className={`w-7 h-7 rounded-card typo-caption transition-colors ${
                             aw.days.includes(d.key)
-                              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-                              : 'bg-secondary/30 text-foreground border border-primary/5 hover:border-primary/15'
+                              ? 'bg-status-info/20 text-status-info border border-status-info/30'
+                              : 'bg-surface-1 text-ink-1 border border-hair hover:border-hair'
                           }`}
                         >
                           {d.short}
@@ -177,8 +177,8 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         onClick={() => applyPreset(WEEKDAY_PRESET)}
                         className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
                           isWeekdays
-                            ? 'bg-sky-500/15 text-sky-400'
-                            : 'text-foreground hover:text-muted-foreground/70 bg-secondary/20'
+                            ? 'bg-status-info/15 text-status-info'
+                            : 'text-ink-1 hover:text-ink-3 bg-surface-1'
                         }`}
                       >
                         Weekdays
@@ -188,8 +188,8 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         onClick={() => applyPreset(EVERYDAY_PRESET)}
                         className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
                           isEveryday
-                            ? 'bg-sky-500/15 text-sky-400'
-                            : 'text-foreground hover:text-muted-foreground/70 bg-secondary/20'
+                            ? 'bg-status-info/15 text-status-info'
+                            : 'text-ink-1 hover:text-ink-3 bg-surface-1'
                         }`}
                       >
                         {t.triggers.active_hours_every_day}
@@ -208,9 +208,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           update({ start_hour: h, start_minute: m });
                         }
                       }}
-                      className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
+                      className="px-2 py-1 typo-body bg-background/50 border border-hair rounded-card text-ink-1 focus-ring"
                     />
-                    <span className="text-foreground typo-caption">to</span>
+                    <span className="text-ink-2 typo-caption">to</span>
                     <input
                       type="time"
                       value={timeToInput(aw.end_hour, aw.end_minute)}
@@ -220,13 +220,13 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           update({ end_hour: h, end_minute: m });
                         }
                       }}
-                      className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
+                      className="px-2 py-1 typo-body bg-background/50 border border-hair rounded-card text-ink-1 focus-ring"
                     />
                   </div>
 
                   {/* Timezone */}
                   <div className="flex items-center gap-2">
-                    <Globe className="w-3 h-3 text-foreground" />
+                    <Globe className="w-3 h-3 text-ink-1" />
                     <input
                       type="text"
                       value={aw.timezone ?? ''}
@@ -235,9 +235,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const val = e.target.value.trim();
                         update({ timezone: val || undefined });
                       }}
-                      className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring w-48"
+                      className="px-2 py-1 typo-body bg-background/50 border border-hair rounded-card text-ink-1 focus-ring w-48"
                     />
-                    <span className="text-foreground typo-caption">
+                    <span className="text-ink-2 typo-caption">
                       {aw.timezone ? aw.timezone : `System: ${resolvedTimezoneLabel()}`}
                     </span>
                   </div>

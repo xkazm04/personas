@@ -8,7 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 hljs.registerLanguage('json', jsonLang);
 
-const PRE_BASE = 'p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto';
+const PRE_BASE = 'p-4 bg-background/50 border border-hair rounded-modal typo-code overflow-x-auto';
 
 /**
  * Payload viewer for span/execution input & output.
@@ -40,7 +40,7 @@ export function HighlightedJsonBlock({ raw }: { raw: string | null }) {
   return (
     <div className="space-y-1">
       {parseError && (
-        <div className="flex items-start gap-1.5 typo-code text-amber-400">
+        <div className="flex items-start gap-1.5 typo-code text-status-warning">
           <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
           <span className="break-words min-w-0">{tx(e.payload_not_parseable, { reason: parseError })}</span>
         </div>
@@ -52,7 +52,7 @@ export function HighlightedJsonBlock({ raw }: { raw: string | null }) {
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
-          <pre className={`${PRE_BASE} text-foreground/90`}>{raw ?? ''}</pre>
+          <pre className={`${PRE_BASE} text-ink-1`}>{raw ?? ''}</pre>
         )}
         {raw && (
           <CopyButton

@@ -30,16 +30,16 @@ export function StudioTriggerCommitModal({ open, link, personas, onCreate, onClo
   return (
     <BaseModal isOpen={open} onClose={onClose} titleId="studio-trigger-commit" size="md">
       <div className="flex flex-col">
-        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border">
+        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-hair">
           <Zap className="w-4 h-4 text-status-warning" />
           <div className="flex-1 min-w-0">
-            <h2 id="studio-trigger-commit" className="typo-heading text-foreground">{st.form_commit_title}</h2>
-            <p className="typo-caption text-foreground truncate">
+            <h2 id="studio-trigger-commit" className="typo-heading text-ink-1">{st.form_commit_title}</h2>
+            <p className="typo-caption text-ink-2 truncate">
               {tx(st.form_commit_subtitle, { persona: personaName(link.targetPersonaId, personas, st.unknown_persona) })}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label={t.common.cancel}
-            className="p-1 rounded-interactive text-foreground hover:bg-secondary/50 transition-colors">
+            className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>

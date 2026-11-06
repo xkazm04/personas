@@ -44,9 +44,9 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
     `flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${
       activeTab === tab
         ? special
-          ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
-          : 'bg-primary/15 text-foreground/90 border border-primary/30'
-        : 'text-foreground hover:text-foreground/95 border border-transparent'
+          ? 'bg-role-agent/15 text-role-agent border border-role-agent/25'
+          : 'bg-primary/15 text-ink-1 border border-primary/30'
+        : 'text-ink-1 hover:text-ink-1 border border-transparent'
     }`;
 
   // Only the tabs that are actually rendered take part in arrow-key navigation.
@@ -95,7 +95,7 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
       ref={listRef}
       role="tablist"
       onKeyDown={handleKeyDown}
-      className="flex gap-1 p-1 rounded-modal bg-secondary/40 border border-primary/10 w-fit"
+      className="flex gap-1 p-1 rounded-modal bg-surface-2 border border-hair w-fit"
     >
       {tabs.map((tab) => (
         <button

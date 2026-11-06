@@ -30,13 +30,13 @@ export function AutomationSetupModal({
       onClose={handleClose}
       titleId="automation-setup-title"
       size="lg"
-      panelClassName="bg-background border border-border/60 rounded-2xl shadow-elevation-4 overflow-hidden"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-hair">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-accent" />
-          <h2 id="automation-setup-title" className="typo-heading text-foreground/90">
+          <h2 id="automation-setup-title" className="typo-heading text-ink-1">
             {s.phase === 'idle' && (s.editAutomation ? t.agents.connectors.auto_modal_configure : t.agents.connectors.auto_modal_add)}
             {s.phase === 'analyzing' && t.agents.connectors.auto_modal_designing}
             {s.phase === 'preview' && t.agents.connectors.auto_modal_review}
@@ -45,7 +45,7 @@ export function AutomationSetupModal({
             {s.phase === 'error' && t.agents.connectors.auto_modal_failed}
           </h2>
         </div>
-        <button type="button" onClick={handleClose} aria-label={t.common.close} className="text-foreground hover:text-foreground transition-colors">
+        <button type="button" onClick={handleClose} aria-label={t.common.close} className="text-ink-1 hover:text-ink-1 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -106,14 +106,14 @@ export function AutomationSetupModal({
 
       {/* Footer -- only in preview phase */}
       {s.phase === 'preview' && (
-        <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-border/60">
+        <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-hair">
           <button
             type="button"
             onClick={() => { s.design.reset(); s.setDescription(''); s.setLocalPhase(null); s.setDeployError(null); }}
-            className="typo-body text-foreground hover:text-foreground transition-colors"
+            className="typo-body text-ink-1 hover:text-ink-1 transition-colors"
           >{t.agents.connectors.auto_start_over}</button>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={handleClose} className="btn-md border border-border text-foreground hover:bg-secondary/50 transition-colors">{t.common.cancel}</button>
+            <button type="button" onClick={handleClose} className="btn-md border border-hair text-ink-1 hover:bg-surface-2 transition-colors">{t.common.cancel}</button>
             <Tooltip
               content={
                 !s.name.trim()
@@ -132,7 +132,7 @@ export function AutomationSetupModal({
                 // out-of-range timeout and a deploy already in flight, which this
                 // inline test used to ignore.
                 disabled={!s.canDeploy || (!s.hasPlatformCredential && s.needsCredential)}
-                className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Rocket className="w-3.5 h-3.5" />
                 {t.agents.connectors.auto_deploy_save}

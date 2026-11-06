@@ -72,26 +72,26 @@ export function PersonaSelector({
           onClick={() => { setSearch(''); toggle(); }}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all min-w-[180px] ${isOpen
-              ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
-              : 'border-primary/15 bg-secondary/20 hover:border-primary/25 hover:bg-secondary/30'
+          className={`flex items-center gap-2 px-3 py-2 rounded-card border transition-all min-w-[180px] ${isOpen
+              ? 'border-primary/30 bg-surface-1 ring-1 ring-primary/20'
+              : 'border-hair bg-surface-1 hover:border-primary/25 hover:bg-surface-1'
             }`}
         >
           {selected ? (
             <>
               <PersonaIcon icon={selected.icon} color={selected.color} frameSize={"lg"} />
-              <span className="typo-body text-foreground/85 truncate flex-1 text-left">{selected.name}</span>
+              <span className="typo-body text-ink-1 truncate flex-1 text-left">{selected.name}</span>
             </>
           ) : (
             <>
-              <Bot className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-              <span className="typo-body text-foreground flex-1 text-left">{showAll ? t.common.all_personas : placeholder}</span>
+              <Bot className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
+              <span className="typo-body text-ink-1 flex-1 text-left">{showAll ? t.common.all_personas : placeholder}</span>
             </>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-ink-1 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
       )}
-      menuClassName="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-full min-w-[240px] max-h-[320px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 overflow-y-auto flex flex-col"
+      menuClassName="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-full min-w-[240px] max-h-[320px] rounded-card border border-hair bg-background shadow-elevation-3 shadow-black/20 overflow-y-auto flex flex-col"
     >
       {({ close, focusIndex }) => (
         <div className="flex-1 py-1">
@@ -101,10 +101,10 @@ export function PersonaSelector({
               role="option"
               aria-selected={!value}
               onClick={() => { pick(''); close(); }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${!value ? 'bg-primary/8 text-foreground/90' : 'text-foreground hover:bg-secondary/30'
-                } ${focusIndex === 0 ? 'bg-secondary/40' : ''}`}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${!value ? 'bg-primary/8 text-ink-1' : 'text-ink-1 hover:bg-surface-1'
+                } ${focusIndex === 0 ? 'bg-surface-2' : ''}`}
             >
-              <Bot className="w-4 h-4 text-foreground flex-shrink-0" />
+              <Bot className="w-4 h-4 text-ink-1 flex-shrink-0" />
               <span className="typo-body flex-1">{t.common.all_personas}</span>
               {!value && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
             </button>
@@ -119,14 +119,14 @@ export function PersonaSelector({
                 role="option"
                 aria-selected={isActive}
                 onClick={() => { pick(p.id); close(); }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 text-foreground/90' : 'text-foreground hover:bg-secondary/30'
-                  } ${focusIndex === idx + offset ? 'bg-secondary/40' : ''}`}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 text-ink-1' : 'text-ink-1 hover:bg-surface-1'
+                  } ${focusIndex === idx + offset ? 'bg-surface-2' : ''}`}
               >
                 <PersonaIcon icon={p.icon} color={p.color} />
                 <div className="flex-1 min-w-0">
                   <span className="typo-body truncate block">{p.name}</span>
                   {showDescription && p.description && (
-                    <span className="text-[11px] text-foreground truncate block">{p.description.slice(0, 60)}</span>
+                    <span className="typo-caption text-ink-2 truncate block">{p.description.slice(0, 60)}</span>
                   )}
                 </div>
                 {isActive && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
@@ -135,7 +135,7 @@ export function PersonaSelector({
           })}
 
           {filtered.length === 0 && search && (
-            <div className="px-3 py-4 typo-caption text-foreground text-center">{t.common.no_personas_matching.replace('{query}', search)}</div>
+            <div className="px-3 py-4 typo-caption text-ink-2 text-center">{t.common.no_personas_matching.replace('{query}', search)}</div>
           )}
         </div>
       )}

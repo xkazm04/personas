@@ -57,7 +57,7 @@ export function TourPanelBody({
     <>
       {/* Step list - the tour's table of contents */}
       <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2.5" data-testid="tour-step-progress">
-        <span className="typo-caption text-foreground uppercase tracking-wider px-1">
+        <span className="typo-eyebrow text-ink-1 px-1">
           {t.onboarding.tour_steps_heading}
         </span>
         <div className="mt-1.5">
@@ -76,7 +76,7 @@ export function TourPanelBody({
         {hasSubSteps && (
           <div className="mt-4" data-testid="tour-substep-checklist">
             <div className="flex items-center justify-between px-1">
-              <span className="typo-caption text-foreground uppercase tracking-wider">
+              <span className="typo-eyebrow text-ink-1">
                 {t.onboarding.what_to_explore}
               </span>
               {currentStep.subSteps.length > 1 && (
@@ -88,7 +88,7 @@ export function TourPanelBody({
                       disabled={subStepIndex <= 0}
                       data-testid="tour-substep-prev"
                       aria-label={t.onboarding.tour_substep_prev}
-                      className="p-1 rounded-card text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-1 rounded-card text-ink-1 hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <ChevronLeft className="w-3 h-3" />
                     </button>
@@ -100,7 +100,7 @@ export function TourPanelBody({
                       disabled={subStepIndex >= currentStep.subSteps.length - 1}
                       data-testid="tour-substep-next"
                       aria-label={t.onboarding.tour_substep_next}
-                      className="p-1 rounded-card text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-1 rounded-card text-ink-1 hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <ChevronRight className="w-3 h-3" />
                     </button>
@@ -118,7 +118,7 @@ export function TourPanelBody({
                     key={sub.id}
                     data-testid={`tour-substep-${sub.id}`}
                     className={`flex items-center gap-2 rounded-card border transition-all ${
-                      active ? `${colors.subtle} ${colors.accent}` : 'border-primary/8 bg-secondary/10'
+                      active ? `${colors.subtle} ${colors.accent}` : 'border-primary/8 bg-surface-1'
                     }`}
                   >
                     <button
@@ -127,11 +127,11 @@ export function TourPanelBody({
                       className="flex items-center gap-2 flex-1 min-w-0 px-2 py-1.5 text-left"
                     >
                       {done ? (
-                        <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                        <Check className="w-3 h-3 text-status-success flex-shrink-0" />
                       ) : (
                         <span
                           className={`w-3 h-3 rounded-full border flex-shrink-0 ${
-                            active ? `${colors.accent} ${colors.subtle}` : 'border-primary/15'
+                            active ? `${colors.accent} ${colors.subtle}` : 'border-hair'
                           }`}
                         />
                       )}
@@ -140,7 +140,7 @@ export function TourPanelBody({
                           (keyboard- and touch-unreachable, and untranslated by
                           the user agent). */}
                       <Tooltip content={sub.label} placement="right">
-                        <span className={`typo-caption truncate ${active ? colors.text : 'text-foreground'}`}>
+                        <span className={`typo-caption truncate ${active ? colors.text : 'text-ink-1'}`}>
                           {sub.label}
                         </span>
                       </Tooltip>
@@ -152,7 +152,7 @@ export function TourPanelBody({
                           onClick={() => focusTourHighlight(sub.highlightTestId)}
                           aria-label={t.onboarding.tour_locate_title}
                           data-testid={`tour-locate-${sub.id}`}
-                          className={`flex-shrink-0 mr-1 p-1 rounded-card ${colors.text} hover:bg-secondary/40 transition-colors`}
+                          className={`flex-shrink-0 mr-1 p-1 rounded-card ${colors.text} hover:bg-surface-2 transition-colors`}
                         >
                           <Crosshair className="w-3 h-3" />
                         </button>
@@ -167,13 +167,13 @@ export function TourPanelBody({
       </div>
 
       {/* Footer navigation */}
-      <div className="flex items-center justify-between gap-2 px-3 py-3 border-t border-primary/8 bg-secondary/5">
+      <div className="flex items-center justify-between gap-2 px-3 py-3 border-t border-primary/8 bg-surface-1">
         <button
           type="button"
           onClick={onPrev}
           disabled={currentIndex === 0}
           data-testid="tour-btn-prev"
-          className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border border-primary/10 text-foreground hover:bg-secondary/50 hover:text-foreground/70 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           {t.onboarding.back}
@@ -183,7 +183,7 @@ export function TourPanelBody({
             type="button"
             onClick={onComplete}
             data-testid="tour-btn-finish"
-            className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors min-w-0"
+            className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25 transition-colors min-w-0"
           >
             <Check className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">{t.onboarding.complete_tour}</span>
@@ -211,7 +211,7 @@ export function TourPanelBody({
               type="button"
               onClick={onNext}
               data-testid="tour-btn-skip"
-              className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card text-foreground opacity-70 hover:opacity-100 hover:bg-secondary/50 transition-all min-w-0"
+              className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 opacity-70 hover:opacity-100 hover:bg-surface-2 transition-all min-w-0"
             >
               <span className="truncate">{t.onboarding.tour_skip_step}</span>
             </button>
@@ -220,7 +220,7 @@ export function TourPanelBody({
               disabled
               aria-disabled="true"
               data-testid="tour-btn-next"
-              className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal border border-primary/10 text-foreground opacity-40 cursor-not-allowed min-w-0"
+              className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal border border-hair text-ink-1 opacity-40 cursor-not-allowed min-w-0"
             >
               <span className="truncate">{t.onboarding.continue_button}</span>
               <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />

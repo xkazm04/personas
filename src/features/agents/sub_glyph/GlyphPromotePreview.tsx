@@ -30,8 +30,8 @@ export function GlyphPromotePreview({ view }: GlyphPromotePreviewProps) {
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-status-error" />
         <div className="min-w-0 flex flex-col gap-0.5">
           <span className="typo-label text-status-error">{copy.refused}</span>
-          {view.reason && <p className="typo-caption text-foreground break-words">{view.reason}</p>}
-          <p className="typo-caption text-foreground">{copy.refused_hint}</p>
+          {view.reason && <p className="typo-caption text-ink-2 break-words">{view.reason}</p>}
+          <p className="typo-caption text-ink-2">{copy.refused_hint}</p>
         </div>
       </div>
     );
@@ -40,9 +40,9 @@ export function GlyphPromotePreview({ view }: GlyphPromotePreviewProps) {
   return (
     <div
       data-testid="glyph-promote-preview"
-      className="w-full rounded-card border border-card-border bg-secondary/30 px-3 py-2 flex flex-col gap-1.5 text-left"
+      className="w-full rounded-card border border-card-border bg-surface-1 px-3 py-2 flex flex-col gap-1.5 text-left"
     >
-      <span className="typo-label text-foreground">{copy.heading}</span>
+      <span className="typo-label text-ink-1">{copy.heading}</span>
       {view.fires.length > 0 && (
         <ul className="flex flex-col gap-0.5">
           {view.fires.map((fire, i) => (
@@ -58,13 +58,13 @@ export function GlyphPromotePreview({ view }: GlyphPromotePreviewProps) {
       )}
       {view.repairs.length > 0 && (
         <div className="flex flex-col gap-0.5">
-          <span className="typo-caption text-foreground flex items-center gap-1.5">
+          <span className="typo-caption text-ink-2 flex items-center gap-1.5">
             <Wrench className="w-3.5 h-3.5 shrink-0" />
             {copy.repaired}
           </span>
           <ul className="pl-5 flex flex-col gap-0.5">
             {view.repairs.map((note) => (
-              <li key={note} className="typo-caption text-foreground break-words list-disc">
+              <li key={note} className="typo-caption text-ink-2 break-words list-disc">
                 {note}
               </li>
             ))}
@@ -86,7 +86,7 @@ function FireRow({ fire }: { fire: PromoteFireView }) {
       : tx(copy.runs_on_event, { type: fire.triggerType });
   const Icon = fire.nextFireAt ? CalendarClock : Zap;
   return (
-    <li className="typo-caption text-foreground flex items-center gap-1.5">
+    <li className="typo-caption text-ink-2 flex items-center gap-1.5">
       <Icon className="w-3.5 h-3.5 shrink-0" />
       <span className="min-w-0 truncate">
         {label}

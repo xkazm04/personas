@@ -457,29 +457,29 @@ export function DeadLetterTab() {
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Archive className="w-5 h-5 text-red-400" />
+            <Archive className="w-5 h-5 text-status-error" />
             <h3 className="typo-heading">{t.triggers.tab_dead_letter}</h3>
-            <span className="typo-caption text-foreground">
+            <span className="typo-caption text-ink-2">
               ({tx(shownTotal === 1 ? t.triggers.dead_letter_group_singular : t.triggers.dead_letter_group_plural, { count: shownTotal })})
             </span>
             {windowed && (
-              <span className="typo-caption text-foreground">
+              <span className="typo-caption text-ink-2">
                 · {tx(t.triggers.dead_letter_filtered_summary, { visible: totalEvents, total: shownTotal })}
               </span>
             )}
             {filtersDirty && (
-              <span className="typo-caption text-foreground">
+              <span className="typo-caption text-ink-2">
                 · {tx(t.triggers.dead_letter_filtered_summary, { visible: filtered.length, total: totalEvents })}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="flex items-center rounded-card border border-border/50 overflow-hidden">
+            <div className="flex items-center rounded-card border border-hair overflow-hidden">
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption transition-colors ${
-                  viewMode === 'list' ? 'bg-secondary text-foreground' : 'text-foreground/70 hover:bg-secondary/50'
+                  viewMode === 'list' ? 'bg-secondary text-ink-1' : 'text-ink-2 hover:bg-surface-2'
                 }`}
               >
                 <ListChecks className="w-3 h-3" />
@@ -489,7 +489,7 @@ export function DeadLetterTab() {
                 type="button"
                 onClick={() => setViewMode('grouped')}
                 className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption transition-colors ${
-                  viewMode === 'grouped' ? 'bg-secondary text-foreground' : 'text-foreground/70 hover:bg-secondary/50'
+                  viewMode === 'grouped' ? 'bg-secondary text-ink-1' : 'text-ink-2 hover:bg-surface-2'
                 }`}
               >
                 <Layers className="w-3 h-3" />
@@ -501,8 +501,8 @@ export function DeadLetterTab() {
               onClick={() => setFiltersOpen((v) => !v)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card transition-colors ${
                 filtersOpen || filtersDirty
-                  ? 'bg-secondary text-foreground'
-                  : 'text-foreground hover:bg-secondary/50'
+                  ? 'bg-secondary text-ink-1'
+                  : 'text-ink-1 hover:bg-surface-2'
               }`}
             >
               <Filter className="w-3 h-3" />
@@ -511,7 +511,7 @@ export function DeadLetterTab() {
             <button
               type="button"
               onClick={() => void loadEvents()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-foreground hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:bg-surface-2 transition-colors"
             >
               <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
               {t.triggers.dead_letter_refresh}
@@ -519,36 +519,36 @@ export function DeadLetterTab() {
           </div>
         </div>
 
-        <p className="typo-caption text-foreground">{t.triggers.dead_letter_help}</p>
+        <p className="typo-caption text-ink-2">{t.triggers.dead_letter_help}</p>
 
         {filtersOpen && (
-          <div className="rounded-card border border-border/50 bg-secondary/30 p-3 space-y-2">
+          <div className="rounded-card border border-hair bg-surface-1 p-3 space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <input
                 type="text"
                 value={filters.eventType}
                 onChange={(e) => setFilters((f) => ({ ...f, eventType: e.target.value }))}
                 placeholder={t.triggers.dead_letter_filter_event_type_placeholder}
-                className="px-2.5 py-1.5 typo-caption rounded-input bg-background border border-border/50 focus:outline-none focus:border-primary"
+                className="px-2.5 py-1.5 typo-caption rounded-input bg-background border border-hair focus:outline-none focus:border-primary"
               />
               <input
                 type="text"
                 value={filters.sourceType}
                 onChange={(e) => setFilters((f) => ({ ...f, sourceType: e.target.value }))}
                 placeholder={t.triggers.dead_letter_filter_source_type_placeholder}
-                className="px-2.5 py-1.5 typo-caption rounded-input bg-background border border-border/50 focus:outline-none focus:border-primary"
+                className="px-2.5 py-1.5 typo-caption rounded-input bg-background border border-hair focus:outline-none focus:border-primary"
               />
               <input
                 type="text"
                 value={filters.errorContains}
                 onChange={(e) => setFilters((f) => ({ ...f, errorContains: e.target.value }))}
                 placeholder={t.triggers.dead_letter_filter_error_placeholder}
-                className="px-2.5 py-1.5 typo-caption rounded-input bg-background border border-border/50 focus:outline-none focus:border-primary"
+                className="px-2.5 py-1.5 typo-caption rounded-input bg-background border border-hair focus:outline-none focus:border-primary"
               />
             </div>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="typo-caption text-foreground">
+                <span className="typo-caption text-ink-2">
                   {t.triggers.dead_letter_filter_age}:
                 </span>
                 {(['any', '15m', '1h', '24h', 'old'] as const).map((age) => (
@@ -559,7 +559,7 @@ export function DeadLetterTab() {
                     className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
                       filters.age === age
                         ? 'bg-primary/20 text-primary'
-                        : 'bg-secondary/50 text-foreground/70 hover:bg-secondary'
+                        : 'bg-surface-2 text-ink-2 hover:bg-secondary'
                     }`}
                   >
                     {t.triggers[`dead_letter_filter_age_${age}` as const]}
@@ -570,7 +570,7 @@ export function DeadLetterTab() {
                 <button
                   type="button"
                   onClick={() => setFilters(EMPTY_FILTERS)}
-                  className="flex items-center gap-1 px-2 py-0.5 typo-caption text-foreground hover:text-foreground"
+                  className="flex items-center gap-1 px-2 py-0.5 typo-caption text-ink-1 hover:text-ink-1"
                 >
                   <X className="w-3 h-3" />
                   {t.triggers.dead_letter_filters_clear}
@@ -581,8 +581,8 @@ export function DeadLetterTab() {
         )}
 
         {visibleSelectedCount > 0 && (
-          <div className="flex items-center justify-between gap-2 rounded-card border border-primary/30 bg-primary/10 px-3 py-2">
-            <span className="typo-caption text-foreground">
+          <div className="flex items-center justify-between gap-2 rounded-card border border-primary/30 bg-surface-1 px-3 py-2">
+            <span className="typo-caption text-ink-2">
               {tx(t.triggers.dead_letter_selected_count, { count: visibleSelectedCount })}
             </span>
             <div className="flex items-center gap-1.5">
@@ -591,7 +591,7 @@ export function DeadLetterTab() {
                 onClick={() => void runBulkRetry(Array.from(selected).filter((id) => filteredIds.has(id)))}
                 disabled={bulkInFlight}
                 title={t.triggers.dead_letter_bulk_retry_title}
-                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-info/20 text-status-info hover:bg-status-info/30 disabled:opacity-50 transition-colors"
               >
                 <RefreshCw className={`w-3 h-3 ${bulkInFlight ? 'animate-spin' : ''}`} />
                 {tx(t.triggers.dead_letter_bulk_retry, { count: visibleSelectedCount })}
@@ -601,7 +601,7 @@ export function DeadLetterTab() {
                 onClick={() => runBulkDiscard(Array.from(selected).filter((id) => filteredIds.has(id)))}
                 disabled={bulkInFlight}
                 title={t.triggers.dead_letter_bulk_discard_title}
-                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
                 {tx(t.triggers.dead_letter_bulk_discard, { count: visibleSelectedCount })}
@@ -609,7 +609,7 @@ export function DeadLetterTab() {
               <button
                 type="button"
                 onClick={clearSelection}
-                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input text-foreground hover:bg-secondary/50 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input text-ink-1 hover:bg-surface-2 transition-colors"
               >
                 <X className="w-3 h-3" />
                 {t.triggers.dead_letter_clear_selection}
@@ -659,10 +659,10 @@ export function DeadLetterTab() {
                   type="checkbox"
                   checked={allFilteredVisibleSelected}
                   onChange={(e) => (e.target.checked ? selectVisible() : clearSelection())}
-                  className="rounded-input border-border accent-primary"
+                  className="rounded-input border-hair accent-primary"
                   aria-label={t.triggers.dead_letter_select_visible}
                 />
-                <span className="typo-caption text-foreground">
+                <span className="typo-caption text-ink-2">
                   {t.triggers.dead_letter_select_visible}
                 </span>
               </div>
@@ -680,7 +680,7 @@ export function DeadLetterTab() {
                     exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0, overflow: 'hidden' }}
                     transition={{ duration: 0.25, ease: 'easeInOut' }}
                     className={`rounded-card border p-4 space-y-2 ${
-                      isSelected ? 'border-primary/50 bg-primary/5' : 'border-red-500/20 bg-red-500/5'
+                      isSelected ? 'border-primary/50 bg-surface-1' : 'border-status-error/20 bg-status-error/5'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -690,23 +690,23 @@ export function DeadLetterTab() {
                           checked={isSelected}
                           onChange={() => toggleOne(evt.id)}
                           disabled={exhausted}
-                          className="mt-1 rounded-input border-border accent-primary disabled:opacity-40"
+                          className="mt-1 rounded-input border-hair accent-primary disabled:opacity-40"
                           aria-label={`Select event ${evt.id}`}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-status-error shrink-0" />
                             <span className="typo-body truncate">{evt.event_type}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 ${
+                            <span className={`typo-caption px-1.5 py-0.5 rounded-interactive font-mono shrink-0 ${
                               exhausted
-                                ? 'bg-orange-500/20 text-orange-300'
-                                : 'bg-red-500/20 text-red-300'
+                                ? 'bg-status-warning/20 text-status-warning'
+                                : 'bg-status-error/20 text-status-error'
                             }`}>
                               {evt.retry_count}/{maxManualRetries} retries
                               {exhausted && ' — exhausted'}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 typo-caption text-foreground">
+                          <div className="flex items-center gap-3 typo-caption text-ink-2">
                             <span>{t.triggers.dead_letter_source} {evt.source_type}</span>
                             {evt.source_id && <span>{t.triggers.dead_letter_id} {evt.source_id}</span>}
                             <span>{formatDate(evt.created_at)}</span>
@@ -716,7 +716,7 @@ export function DeadLetterTab() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         {exhausted ? (
                           <span
-                            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-orange-500/10 text-orange-400 cursor-not-allowed"
+                            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-warning/10 text-status-warning cursor-not-allowed"
                             title={t.triggers.dead_letter_retry_exhausted_title}
                           >
                             <Ban className="w-3 h-3" />
@@ -727,7 +727,7 @@ export function DeadLetterTab() {
                             type="button"
                             onClick={() => void handleRetry(evt.id)}
                             disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-info/20 text-status-info hover:bg-status-info/30 disabled:opacity-50 transition-colors"
                             title={t.triggers.dead_letter_retry_title}
                           >
                             <RefreshCw className={`w-3 h-3 ${actionsInProgress.has(evt.id) ? 'animate-spin' : ''}`} />
@@ -738,7 +738,7 @@ export function DeadLetterTab() {
                           type="button"
                           onClick={() => handleDiscard(evt)}
                           disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                          className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary disabled:opacity-50 transition-colors"
+                          className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
                           title={t.triggers.dead_letter_discard_title}
                         >
                           <Trash2 className="w-3 h-3" />
@@ -770,7 +770,7 @@ export function DeadLetterTab() {
                 .map((e) => e.id);
               const allEventIds = group.events.map((e) => e.id);
               return (
-                <div key={group.key} className="rounded-card border border-red-500/20 bg-red-500/5">
+                <div key={group.key} className="rounded-card border border-status-error/20 bg-status-error/5">
                   <div className="flex items-center justify-between gap-3 p-3">
                     <button
                       type="button"
@@ -779,13 +779,13 @@ export function DeadLetterTab() {
                       title={expanded ? t.triggers.dead_letter_group_collapse : t.triggers.dead_letter_group_expand}
                     >
                       {expanded ? (
-                        <ChevronDown className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
+                        <ChevronDown className="w-4 h-4 text-ink-1 shrink-0 mt-0.5" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
+                        <ChevronRight className="w-4 h-4 text-ink-1 shrink-0 mt-0.5" />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-status-error shrink-0" />
                           <span className="typo-body truncate">
                             {tx(
                               group.events.length === 1
@@ -804,7 +804,7 @@ export function DeadLetterTab() {
                       <button
                         type="button"
                         onClick={() => selectGroup(group)}
-                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary transition-colors"
                       >
                         <ListChecks className="w-3 h-3" />
                         {t.triggers.dead_letter_select_all}
@@ -813,7 +813,7 @@ export function DeadLetterTab() {
                         type="button"
                         onClick={() => void runBulkRetry(eligibleIds)}
                         disabled={eligibleIds.length === 0 || bulkInFlight}
-                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-info/20 text-status-info hover:bg-status-info/30 disabled:opacity-50 transition-colors"
                       >
                         <RefreshCw className={`w-3 h-3 ${bulkInFlight ? 'animate-spin' : ''}`} />
                         {t.triggers.dead_letter_group_retry}
@@ -822,7 +822,7 @@ export function DeadLetterTab() {
                         type="button"
                         onClick={() => runBulkDiscard(allEventIds)}
                         disabled={bulkInFlight}
-                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
                       >
                         <Trash2 className="w-3 h-3" />
                         {t.triggers.dead_letter_group_discard}
@@ -830,7 +830,7 @@ export function DeadLetterTab() {
                     </div>
                   </div>
                   {expanded && (
-                    <div className="border-t border-red-500/10 px-3 py-2 space-y-1.5">
+                    <div className="border-t border-status-error/10 px-3 py-2 space-y-1.5">
                       {group.events.map((evt) => {
                         const exhausted = evt.retry_count >= maxManualRetries;
                         const isSelected = selected.has(evt.id);
@@ -838,7 +838,7 @@ export function DeadLetterTab() {
                           <div
                             key={evt.id}
                             className={`flex items-center gap-2 px-2 py-1 rounded-input ${
-                              isSelected ? 'bg-primary/10' : ''
+                              isSelected ? 'bg-surface-1' : ''
                             }`}
                           >
                             <input
@@ -846,17 +846,17 @@ export function DeadLetterTab() {
                               checked={isSelected}
                               onChange={() => toggleOne(evt.id)}
                               disabled={exhausted}
-                              className="rounded-input border-border accent-primary disabled:opacity-40"
+                              className="rounded-input border-hair accent-primary disabled:opacity-40"
                             />
                             <span className="typo-caption truncate flex-1">{evt.event_type}</span>
-                            <span className="typo-caption text-foreground">
+                            <span className="typo-caption text-ink-2">
                               {evt.source_type} · {evt.retry_count}/{maxManualRetries}
                             </span>
-                            <span className="typo-caption text-foreground hidden md:inline">
+                            <span className="typo-caption text-ink-2 hidden md:inline">
                               {formatDate(evt.created_at)}
                             </span>
                             {exhausted ? (
-                              <span className="flex items-center gap-1 px-1.5 py-0.5 typo-caption rounded-input bg-orange-500/10 text-orange-400">
+                              <span className="flex items-center gap-1 px-1.5 py-0.5 typo-caption rounded-input bg-status-warning/10 text-status-warning">
                                 <Ban className="w-3 h-3" />
                                 {t.triggers.exhausted_label}
                               </span>
@@ -865,7 +865,7 @@ export function DeadLetterTab() {
                                 type="button"
                                 onClick={() => void handleRetry(evt.id)}
                                 disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                                className="px-1.5 py-0.5 typo-caption rounded-input text-blue-300 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
+                                className="px-1.5 py-0.5 typo-caption rounded-input text-status-info hover:bg-status-info/20 disabled:opacity-50 transition-colors"
                               >
                                 {t.triggers.dead_letter_retry}
                               </button>
@@ -874,7 +874,7 @@ export function DeadLetterTab() {
                               type="button"
                               onClick={() => handleDiscard(evt)}
                               disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                              className="px-1.5 py-0.5 typo-caption rounded-input text-foreground hover:bg-secondary disabled:opacity-50 transition-colors"
+                              className="px-1.5 py-0.5 typo-caption rounded-input text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
                             >
                               {t.triggers.dead_letter_discard}
                             </button>
@@ -908,11 +908,11 @@ function LazyPayload({ payload, summaryLabel }: { payload: string; summaryLabel:
       className="typo-caption"
       onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
     >
-      <summary className="text-foreground cursor-pointer hover:text-foreground transition-colors">
+      <summary className="text-ink-1 cursor-pointer hover:text-ink-1 transition-colors">
         {summaryLabel}
       </summary>
       {open && pretty !== null && (
-        <pre className="mt-1 p-2 rounded bg-secondary/50 text-foreground overflow-x-auto text-[11px] max-h-32">
+        <pre className="mt-1 p-2 rounded-interactive bg-surface-2 text-ink-1 overflow-x-auto typo-caption max-h-32">
           {pretty}
         </pre>
       )}

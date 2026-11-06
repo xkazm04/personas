@@ -47,28 +47,28 @@ export function SystemEventAutomationsPanel({
   };
 
   return (
-    <div className="mt-2 rounded-card border border-violet-500/20 bg-violet-500/[0.04]">
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-violet-500/15">
-        <Cog className="w-3.5 h-3.5 text-violet-400" />
-        <span className="typo-label text-foreground">{st.automations_title}</span>
-        <span className="typo-caption text-foreground tabular-nums">{automations.length}</span>
+    <div className="mt-2 rounded-card border border-role-agent/20 bg-role-agent/[0.04]">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-role-agent/15">
+        <Cog className="w-3.5 h-3.5 text-role-agent" />
+        <span className="typo-label text-ink-1">{st.automations_title}</span>
+        <span className="typo-caption text-ink-2 tabular-nums">{automations.length}</span>
       </div>
       <ul className="divide-y divide-violet-500/10">
         {automations.map((a) => (
           <li key={a.id} className="flex items-center gap-3 px-4 py-2.5">
-            <span className="w-7 h-7 rounded-input bg-secondary/60 flex items-center justify-center shrink-0 text-violet-400">
+            <span className="w-7 h-7 rounded-input bg-surface-2 flex items-center justify-center shrink-0 text-role-agent">
               {a.triggerKind === 'schedule' ? <Clock className="w-3.5 h-3.5" /> : <Radio className="w-3.5 h-3.5" />}
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="typo-body text-foreground truncate">
+                <span className="typo-body text-ink-1 truncate">
                   {projectName(a) ?? a.opKind}
                 </span>
-                <span className="typo-caption font-mono text-foreground truncate">
+                <span className="typo-caption font-mono text-ink-1 truncate">
                   {a.triggerKind === 'schedule' ? a.cron : a.listenEventType}
                 </span>
               </div>
-              <div className="typo-caption text-foreground">
+              <div className="typo-caption text-ink-2">
                 {a.lastRunAt ? (
                   <>
                     {runStatusLabel(a.lastStatus)}{' '}
@@ -84,7 +84,7 @@ export function SystemEventAutomationsPanel({
               onClick={() => onRun(a.id)}
               title={st.automation_run_now}
               aria-label={st.automation_run_now}
-              className="p-1.5 rounded-interactive text-foreground hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
+              className="p-1.5 rounded-interactive text-ink-1 hover:text-role-agent hover:bg-role-agent/10 transition-colors"
             >
               <Play className="w-3.5 h-3.5" />
             </button>
@@ -94,7 +94,7 @@ export function SystemEventAutomationsPanel({
               onClick={() => onDelete(a.id)}
               title={st.automation_delete}
               aria-label={st.automation_delete}
-              className="p-1.5 rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors"
+              className="p-1.5 rounded-interactive text-ink-1 hover:text-status-error hover:bg-status-error/10 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

@@ -49,7 +49,7 @@ export function AutomationTriggerStep({
   const selectedCredential = platformCredentials.find((c) => c.id === platformCredentialId) ?? null;
   return (
     <div key="idle" className="animate-fade-slide-in space-y-4">
-      <p className="typo-body text-foreground">
+      <p className="typo-body text-ink-1">
         {t.agents.connectors.auto_describe}
       </p>
 
@@ -59,7 +59,7 @@ export function AutomationTriggerStep({
         onChange={(e) => setDescription(e.target.value)}
         rows={4}
         autoFocus
-        className="w-full px-3.5 py-3 typo-body rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground focus-ring resize-none"
+        className="w-full px-3.5 py-3 typo-body rounded-modal border border-hair bg-surface-1 text-ink-1 placeholder:text-ink-3 focus-ring resize-none"
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && canDesign) {
             e.preventDefault();
@@ -70,7 +70,7 @@ export function AutomationTriggerStep({
 
       {/* Platform selector */}
       <div className="flex items-center gap-3">
-        <label className="typo-body text-foreground">{t.agents.connectors.auto_target_platform}</label>
+        <label className="typo-body text-ink-1">{t.agents.connectors.auto_target_platform}</label>
         {editAutomation ? (
           <span className={`inline-flex items-center px-2.5 py-1 typo-body rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
             {PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform}
@@ -85,7 +85,7 @@ export function AutomationTriggerStep({
                 className={`px-2.5 py-1 typo-body rounded-modal border transition-colors ${
                   platform === p
                     ? `${PLATFORM_CONFIG[p]?.bg ?? ''} ${PLATFORM_CONFIG[p]?.color ?? ''} border-current/30`
-                    : 'border-border/60 text-foreground hover:text-muted-foreground hover:border-border'
+                    : 'border-hair text-ink-1 hover:text-ink-3 hover:border-hair'
                 }`}
               >
                 {PLATFORM_CONFIG[p] ? t.agents.connectors[PLATFORM_CONFIG[p].labelKey] : p}
@@ -98,7 +98,7 @@ export function AutomationTriggerStep({
       {/* Capability scope (Phase C4) — optional; persona-wide by default */}
       {availableUseCases.length > 0 && (
         <div className="flex items-center gap-3">
-          <label className="typo-body text-foreground"><DebtText k="auto_capability_scope_ef5ef511" /></label>
+          <label className="typo-body text-ink-1"><DebtText k="auto_capability_scope_ef5ef511" /></label>
           <ThemedSelect
             wrapperClassName="flex-1"
             value={useCaseId ?? ''}
@@ -117,13 +117,13 @@ export function AutomationTriggerStep({
         <div className="flex items-start gap-3 p-3.5 rounded-modal bg-brand-amber/5 border border-brand-amber/15">
           <KeyRound className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="typo-body text-foreground">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
-            <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
+            <p className="typo-body text-ink-1">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
+            <p className="typo-body text-ink-2 mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
             {platformConnector && (
               <button
                 type="button"
                 onClick={() => { window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } })); }}
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground hover:bg-brand-amber/25 transition-colors"
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-ink-1 hover:bg-brand-amber/25 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
                 {tx(t.agents.connectors.auto_add_creds, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}
@@ -139,7 +139,7 @@ export function AutomationTriggerStep({
         <div className="flex items-center gap-2.5 p-3 rounded-modal bg-brand-emerald/5 border border-brand-emerald/15">
           <CheckCircle2 className="w-4 h-4 text-brand-emerald/70 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="typo-body text-foreground">
+            <p className="typo-body text-ink-1">
               <span className="font-medium text-brand-emerald">{tx(t.agents.connectors.auto_connected, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</span>
               {' -- '}
               {/* The SELECTED credential, not the first one: with two n8n
@@ -147,7 +147,7 @@ export function AutomationTriggerStep({
                   first while deploy used the second. Bound, with its own
                   absence arm (entity-picker golden path): a selection whose
                   row is gone must not render as if the first were chosen. */}
-              <span className="text-foreground">{selectedCredential ? selectedCredential.name : t.agents.connectors.auto_none_selected}</span>
+              <span className="text-ink-1">{selectedCredential ? selectedCredential.name : t.agents.connectors.auto_none_selected}</span>
             </p>
           </div>
           {platformCredentials.length > 1 && (
@@ -169,13 +169,13 @@ export function AutomationTriggerStep({
       )}
 
       <div className="flex items-center justify-between">
-        <span className="typo-body text-foreground">{canDesign ? t.agents.connectors.auto_ctrl_enter : ''}</span>
+        <span className="typo-body text-ink-1">{canDesign ? t.agents.connectors.auto_ctrl_enter : ''}</span>
         <button
           type="button"
           onClick={onDesign}
           disabled={!canDesign}
           title={!canDesign ? t.agents.connectors.auto_complete_fields : undefined}
-          className="flex items-center gap-2 px-4 py-2.5 typo-body rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2.5 typo-body rounded-modal bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-3.5 h-3.5" />
           {t.agents.connectors.auto_design_ai}

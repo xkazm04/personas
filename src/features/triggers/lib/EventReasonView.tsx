@@ -35,7 +35,7 @@ export function EventReasonChip({ event }: { event: ReasonEvent }) {
   if (reason.kind === 'unknown') {
     return (
       <span
-        className="inline-flex items-center gap-1 typo-caption text-foreground"
+        className="inline-flex items-center gap-1 typo-caption text-ink-1"
         title={t.triggers.event_reason_unknown_hint}
       >
         <HelpCircle className="w-3 h-3 shrink-0" />
@@ -46,7 +46,7 @@ export function EventReasonChip({ event }: { event: ReasonEvent }) {
 
   if (reason.kind === 'text') {
     return (
-      <span className="typo-caption text-red-400/90 truncate" title={reason.text}>
+      <span className="typo-caption text-status-error truncate" title={reason.text}>
         {reason.text}
       </span>
     );
@@ -57,7 +57,7 @@ export function EventReasonChip({ event }: { event: ReasonEvent }) {
       {reason.tokens.map((token) => (
         <span
           key={token}
-          className="typo-caption px-1.5 py-0.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground truncate"
+          className="inline-flex items-center typo-caption text-ink-1 truncate"
         >
           {label(token)}
         </span>
@@ -78,7 +78,7 @@ export function EventReasonNote({ event }: { event: ReasonEvent }) {
 
   if (reason.kind === 'text') {
     return (
-      <div className="typo-code text-red-300/80 bg-red-500/10 rounded px-2.5 py-1.5 break-all">
+      <div className="typo-code text-status-error bg-status-error/10 rounded-interactive px-2.5 py-1.5 break-all">
         {reason.text}
       </div>
     );
@@ -86,10 +86,10 @@ export function EventReasonNote({ event }: { event: ReasonEvent }) {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="typo-caption text-foreground">{t.triggers.event_reason_label}</span>
+      <span className="typo-caption text-ink-2">{t.triggers.event_reason_label}</span>
       {reason.kind === 'unknown' ? (
         <span
-          className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground"
+          className="inline-flex items-center gap-1 typo-caption text-ink-1"
           title={t.triggers.event_reason_unknown_hint}
         >
           <HelpCircle className="w-3 h-3 shrink-0" />
@@ -99,7 +99,7 @@ export function EventReasonNote({ event }: { event: ReasonEvent }) {
         reason.tokens.map((token) => (
           <span
             key={token}
-            className="typo-caption px-1.5 py-0.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground"
+            className="inline-flex items-center typo-caption text-ink-1"
           >
             {label(token)}
           </span>

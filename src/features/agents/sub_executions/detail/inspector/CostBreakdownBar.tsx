@@ -40,9 +40,9 @@ export function CostBreakdownBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="typo-code text-foreground uppercase tracking-wider">{e.cost_breakdown}</div>
+        <div className="typo-eyebrow text-ink-1">{e.cost_breakdown}</div>
         {estimated && (
-          <span className="typo-heading px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80">
+          <span className="inline-flex items-center typo-heading text-status-warning">
             {e.unknown_model_pricing}
           </span>
         )}
@@ -50,27 +50,27 @@ export function CostBreakdownBar({
       <div className="flex items-center gap-3 typo-code">
         {canSplit && (
           <>
-            <span className="text-blue-400">{tx(e.input_label, { cost: formatCost(totalCost * inputShare) })}</span>
-            <span className="text-foreground">|</span>
-            <span className="text-amber-400">{tx(e.output_label, { cost: formatCost(totalCost * (1 - inputShare)) })}</span>
-            <span className="text-foreground">|</span>
+            <span className="text-status-info">{tx(e.input_label, { cost: formatCost(totalCost * inputShare) })}</span>
+            <span className="text-ink-1">|</span>
+            <span className="text-status-warning">{tx(e.output_label, { cost: formatCost(totalCost * (1 - inputShare)) })}</span>
+            <span className="text-ink-1">|</span>
           </>
         )}
-        <span className="text-foreground/90">{tx(e.total_label, { cost: formatCost(totalCost) })}</span>
+        <span className="text-ink-1">{tx(e.total_label, { cost: formatCost(totalCost) })}</span>
       </div>
       {canSplit && (
         <>
-          <div className="h-2.5 rounded-full overflow-hidden bg-secondary/60 border border-primary/10 flex">
+          <div className="h-2.5 rounded-full overflow-hidden bg-surface-2 border border-hair flex">
             <div
-              className="h-full bg-blue-500/40 transition-all"
+              className="h-full bg-status-info/40 transition-all"
               style={{ width: `${inputPct}%` }}
             />
             <div
-              className="h-full bg-amber-500/40 transition-all"
+              className="h-full bg-status-warning/40 transition-all"
               style={{ width: `${outputPct}%` }}
             />
           </div>
-          <div className="flex justify-between typo-code text-foreground">
+          <div className="flex justify-between typo-code text-ink-1">
             <span>{tx(e.input_pct, { percent: inputPct.toFixed(0) })}</span>
             <span>{tx(e.output_pct, { percent: outputPct.toFixed(0) })}</span>
           </div>
@@ -82,7 +82,7 @@ export function CostBreakdownBar({
           models are real per-token spend). This is a reframe of the SAME
           number, not a second computation — so it can't double-count. */}
       {isSubscriptionModel(model) && totalCost > 0 && !estimated && (
-        <div className="typo-caption text-emerald-400" data-testid="subscription-cost-note">
+        <div className="typo-caption text-status-success" data-testid="subscription-cost-note">
           {tx(e.subscription_cost_note, { cost: formatCost(totalCost) })}
         </div>
       )}

@@ -16,5 +16,5 @@ export function SectionHeader({ id, children }: { id?: string; children: React.R
 
 /** Field marker — a quiet uppercase overline, deliberately below the content. */
 export function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="typo-label text-foreground/85">{children}</span>;
+  return <span className="typo-label text-ink-1">{children}</span>;
 }

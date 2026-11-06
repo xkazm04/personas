@@ -50,14 +50,14 @@ export function PromoteReceiptCard({ receipt, onConnect, onLater, onRetry, onDis
       >
         <AlertTriangle className="w-4 h-4 mt-0.5 text-status-warning flex-shrink-0" aria-hidden />
         <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <span className="typo-heading text-foreground">{m.promote_receipt_needs_setup_title}</span>
+          <span className="typo-heading text-ink-1">{m.promote_receipt_needs_setup_title}</span>
           {receipt.connectors.length > 0 && (
-            <span className="typo-caption text-foreground">
+            <span className="typo-caption text-ink-2">
               {interpolate(m.promote_receipt_connectors, { names: receipt.connectors.join(", ") })}
             </span>
           )}
           {receipt.unverified && (
-            <span className="typo-caption text-foreground">{m.promote_receipt_unverified}</span>
+            <span className="typo-caption text-ink-2">{m.promote_receipt_unverified}</span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -81,9 +81,9 @@ export function PromoteReceiptCard({ receipt, onConnect, onLater, onRetry, onDis
       >
         <XCircle className="w-4 h-4 mt-0.5 text-status-error flex-shrink-0" aria-hidden />
         <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <span className="typo-heading text-foreground">{m.promote_receipt_failed_title}</span>
+          <span className="typo-heading text-ink-1">{m.promote_receipt_failed_title}</span>
           {receipt.message && (
-            <span className="typo-caption text-foreground break-words">{receipt.message}</span>
+            <span className="typo-caption text-ink-2 break-words">{receipt.message}</span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">

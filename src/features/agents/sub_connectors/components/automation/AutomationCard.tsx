@@ -62,11 +62,11 @@ export function AutomationCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-body text-foreground truncate" title={automation.name}>{automation.name}</p>
+            <p className="typo-body text-ink-1 truncate" title={automation.name}>{automation.name}</p>
             <AutomationStatusBadge automationId={automation.id} status={automation.deploymentStatus} />
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className={`inline-flex items-center px-1.5 py-0 typo-body rounded border ${platformConfig.bg} ${platformConfig.color}`}>{t.agents.connectors[platformConfig.labelKey]}</span>
+            <span className={`inline-flex items-center px-1.5 py-0 typo-body rounded-interactive border ${platformConfig.bg} ${platformConfig.color}`}>{t.agents.connectors[platformConfig.labelKey]}</span>
             {capabilityTitle && (
               <StatusBadge
                 accent="cyan"
@@ -77,11 +77,11 @@ export function AutomationCard({
                 {capabilityTitle}
               </StatusBadge>
             )}
-            {automation.lastTriggeredAt && <span className="typo-body text-foreground">{tx(t.agents.connectors.auto_last_run, { time: formatRelativeTime(automation.lastTriggeredAt) })}</span>}
-            {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_never_triggered}</span>}
-            {automation.deploymentStatus === 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_not_deployed}</span>}
+            {automation.lastTriggeredAt && <span className="typo-body text-ink-1">{tx(t.agents.connectors.auto_last_run, { time: formatRelativeTime(automation.lastTriggeredAt) })}</span>}
+            {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-ink-1">{t.agents.connectors.auto_never_triggered}</span>}
+            {automation.deploymentStatus === 'draft' && <span className="typo-body text-ink-1">{t.agents.connectors.auto_not_deployed}</span>}
             {automation.fallbackMode === 'connector' && (
-              <span className="inline-flex items-center gap-0.5 typo-body text-foreground" title={debtText("auto_falls_back_to_direct_connector_on_failure_ba68aca9")}>
+              <span className="inline-flex items-center gap-0.5 typo-body text-ink-1" title={debtText("auto_falls_back_to_direct_connector_on_failure_ba68aca9")}>
                 <ShieldCheck className="w-3 h-3" /> {t.agents.connectors.auto_fallback}
               </span>
             )}
@@ -96,11 +96,11 @@ export function AutomationCard({
           )}
           {automation.deploymentStatus === 'draft' && (
             <button type="button" onClick={() => onEdit(automation.id)}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-accent/25 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
+              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-accent/25 text-ink-1 bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
           )}
           {sanitizeExternalUrl(automation.platformUrl) && (
             <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
-              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
+              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1 transition-colors`}
               title={tx(t.agents.connectors.auto_open_in_platform, { platform: t.agents.connectors[platformConfig.labelKey] })}><ExternalLink className="w-3 h-3" /></a>
           )}
           <AutomationCardActions automation={automation} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />

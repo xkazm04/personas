@@ -20,7 +20,7 @@ export function cloudTokenState(hasClaudeToken: boolean, oauth: CloudOAuthStatus
 const LOOK: Record<CloudTokenState, { icon: typeof Check; ring: string; ink: string }> = {
   valid: { icon: Check, ring: 'bg-status-success/20', ink: 'text-status-success' },
   expired: { icon: AlertTriangle, ring: 'bg-status-warning/20', ink: 'text-status-warning' },
-  unknown: { icon: HelpCircle, ring: 'bg-secondary/60', ink: 'text-foreground' },
+  unknown: { icon: HelpCircle, ring: 'bg-surface-2', ink: 'text-ink-1' },
   missing: { icon: X, ring: 'bg-status-error/20', ink: 'text-status-error' },
 };
 
@@ -43,12 +43,12 @@ export function CloudTokenIndicator({ hasClaudeToken, oauthStatus }: {
     <div
       data-testid="cloud-status-token"
       data-token-state={state}
-      className="flex items-center gap-2 p-3 rounded-card bg-secondary/30 border border-primary/10"
+      className="flex items-center gap-2 p-3 rounded-card bg-surface-1 border border-hair"
     >
       <div className={`w-5 h-5 rounded-full ${ring} flex items-center justify-center`}>
         <Icon className={`w-3 h-3 ${ink}`} strokeWidth={3} aria-hidden="true" />
       </div>
-      <span className="typo-body text-foreground">{label}</span>
+      <span className="typo-body text-ink-1">{label}</span>
     </div>
   );
 }

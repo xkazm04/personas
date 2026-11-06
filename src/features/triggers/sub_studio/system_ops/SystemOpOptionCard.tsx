@@ -22,14 +22,14 @@ export function SystemOpOptionCard({
         onClick={onPick}
         className={`w-full text-left rounded-card border transition-all flex items-center gap-3 px-2.5 py-1.5 ${
           active
-            ? 'bg-primary/10 border-primary/40 shadow-elevation-1'
-            : 'bg-background/80 border-border hover:bg-foreground/[0.04] hover:border-foreground/20'
+            ? 'bg-surface-1 border-primary/40 shadow-elevation-1'
+            : 'bg-background/80 border-hair hover:bg-surface-1 hover:border-hair-2'
         }`}
       >
-        <div className="rounded-input flex items-center justify-center shrink-0 bg-secondary/60 w-7 h-7 text-violet-400">
+        <div className="rounded-input flex items-center justify-center shrink-0 bg-surface-2 w-7 h-7 text-role-agent">
           <Cog className="w-4 h-4" />
         </div>
-        <div className="typo-body text-foreground truncate min-w-0 flex-1">{kind.label}</div>
+        <div className="typo-body text-ink-1 truncate min-w-0 flex-1">{kind.label}</div>
       </button>
     </Tooltip>
   );

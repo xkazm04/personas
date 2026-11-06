@@ -4,17 +4,17 @@ import { isPipelineStage, isSystemOperation, STAGE_META } from '@/lib/execution/
 
 /** Styling config for backend engine span types. */
 export const SPAN_TYPE_CONFIG: Record<SpanType, { label: string; color: string; bg: string; border: string }> = {
-  execution:             { label: 'Execution',      color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
-  prompt_assembly:       { label: 'Prompt',          color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
-  credential_resolution: { label: 'Credentials',     color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
-  cli_spawn:             { label: 'CLI Spawn',       color: 'text-cyan-400',    bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25' },
-  tool_call:             { label: 'Tool Call',       color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  protocol_dispatch:     { label: 'Protocol',        color: 'text-pink-400',    bg: 'bg-pink-500/15',    border: 'border-pink-500/25' },
-  chain_evaluation:      { label: 'Chain Eval',      color: 'text-orange-400',  bg: 'bg-orange-500/15',  border: 'border-orange-500/25' },
-  stream_processing:     { label: 'Stream',          color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/25' },
-  outcome_assessment:    { label: 'Outcome',         color: 'text-lime-400',    bg: 'bg-lime-500/15',    border: 'border-lime-500/25' },
-  healing_analysis:      { label: 'Healing',         color: 'text-red-400',     bg: 'bg-red-500/15',     border: 'border-red-500/25' },
-  pipeline_stage:        { label: 'Pipeline Stage',  color: 'text-teal-400',    bg: 'bg-teal-500/15',    border: 'border-teal-500/25' },
+  execution:             { label: 'Execution',      color: 'text-status-info',    bg: 'bg-status-info/15',    border: 'border-status-info/25' },
+  prompt_assembly:       { label: 'Prompt',          color: 'text-role-agent',  bg: 'bg-role-agent/15',  border: 'border-role-agent/25' },
+  credential_resolution: { label: 'Credentials',     color: 'text-status-warning',   bg: 'bg-status-warning/15',   border: 'border-status-warning/25' },
+  cli_spawn:             { label: 'CLI Spawn',       color: 'text-role-external',    bg: 'bg-role-external/15',    border: 'border-role-external/25' },
+  tool_call:             { label: 'Tool Call',       color: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
+  protocol_dispatch:     { label: 'Protocol',        color: 'text-role-highlight',    bg: 'bg-role-highlight/15',    border: 'border-role-highlight/25' },
+  chain_evaluation:      { label: 'Chain Eval',      color: 'text-status-warning',  bg: 'bg-status-warning/15',  border: 'border-status-warning/25' },
+  stream_processing:     { label: 'Stream',          color: 'text-status-info',     bg: 'bg-status-info/15',     border: 'border-status-info/25' },
+  outcome_assessment:    { label: 'Outcome',         color: 'text-status-success',    bg: 'bg-status-success/15',    border: 'border-status-success/25' },
+  healing_analysis:      { label: 'Healing',         color: 'text-status-error',     bg: 'bg-status-error/15',     border: 'border-status-error/25' },
+  pipeline_stage:        { label: 'Pipeline Stage',  color: 'text-role-external',    bg: 'bg-role-external/15',    border: 'border-role-external/25' },
 };
 
 /**
@@ -27,39 +27,39 @@ export const SPAN_TYPE_CONFIG: Record<SpanType, { label: string; color: string; 
  * stage, so a renamed stage renames everywhere at once.
  */
 const PIPELINE_STAGE_COLORS: Record<PipelineStage, { color: string; bg: string; border: string }> = {
-  initiate:          { color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
-  validate:          { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  create_record:     { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  spawn_engine:      { color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
-  stream_output:     { color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
-  finalize_status:   { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  frontend_complete: { color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+  initiate:          { color: 'text-status-info',    bg: 'bg-status-info/15',    border: 'border-status-info/25' },
+  validate:          { color: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
+  create_record:     { color: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
+  spawn_engine:      { color: 'text-status-warning',   bg: 'bg-status-warning/15',   border: 'border-status-warning/25' },
+  stream_output:     { color: 'text-status-warning',   bg: 'bg-status-warning/15',   border: 'border-status-warning/25' },
+  finalize_status:   { color: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
+  frontend_complete: { color: 'text-status-info',    bg: 'bg-status-info/15',    border: 'border-status-info/25' },
 };
 
 /** Styling config for system operation span types. */
 /** Recipe execution and generation read as one family; they differ by label only. */
-const RECIPE_OPERATION_STYLE = { color: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/25' };
+const RECIPE_OPERATION_STYLE = { color: 'text-status-warning', bg: 'bg-status-warning/15', border: 'border-status-warning/25' };
 
 export const SYSTEM_OPERATION_CONFIG: Record<SystemOperationType, { label: string; color: string; bg: string; border: string }> = {
-  design_conversation:    { label: 'Design Chat',       color: 'text-indigo-400',  bg: 'bg-indigo-500/15',  border: 'border-indigo-500/25' },
-  credential_design:      { label: 'Cred Design',       color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
-  credential_negotiation: { label: 'Cred Negotiation',  color: 'text-yellow-400',  bg: 'bg-yellow-500/15',  border: 'border-yellow-500/25' },
-  credential_healthcheck: { label: 'Cred Health',       color: 'text-green-400',   bg: 'bg-green-500/15',   border: 'border-green-500/25' },
-  template_generation:    { label: 'Template Gen',      color: 'text-purple-400',  bg: 'bg-purple-500/15',  border: 'border-purple-500/25' },
-  template_adoption:      { label: 'Template Adopt',    color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/15', border: 'border-fuchsia-500/25' },
-  template_review:        { label: 'Template Review',   color: 'text-rose-400',    bg: 'bg-rose-500/15',    border: 'border-rose-500/25' },
-  subscription_evaluation:{ label: 'Subscription',      color: 'text-teal-400',    bg: 'bg-teal-500/15',    border: 'border-teal-500/25' },
-  automation_design:      { label: 'Automation Design', color: 'text-cyan-400',    bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25' },
-  kb_ingest:              { label: 'KB Ingest',         color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  design_conversation:    { label: 'Design Chat',       color: 'text-role-agent',  bg: 'bg-role-agent/15',  border: 'border-role-agent/25' },
+  credential_design:      { label: 'Cred Design',       color: 'text-status-warning',   bg: 'bg-status-warning/15',   border: 'border-status-warning/25' },
+  credential_negotiation: { label: 'Cred Negotiation',  color: 'text-status-warning',  bg: 'bg-status-warning/15',  border: 'border-status-warning/25' },
+  credential_healthcheck: { label: 'Cred Health',       color: 'text-status-success',   bg: 'bg-status-success/15',   border: 'border-status-success/25' },
+  template_generation:    { label: 'Template Gen',      color: 'text-role-agent',  bg: 'bg-role-agent/15',  border: 'border-role-agent/25' },
+  template_adoption:      { label: 'Template Adopt',    color: 'text-role-highlight', bg: 'bg-role-highlight/15', border: 'border-role-highlight/25' },
+  template_review:        { label: 'Template Review',   color: 'text-status-error',    bg: 'bg-status-error/15',    border: 'border-status-error/25' },
+  subscription_evaluation:{ label: 'Subscription',      color: 'text-role-external',    bg: 'bg-role-external/15',    border: 'border-role-external/25' },
+  automation_design:      { label: 'Automation Design', color: 'text-role-external',    bg: 'bg-role-external/15',    border: 'border-role-external/25' },
+  kb_ingest:              { label: 'KB Ingest',         color: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
   recipe_execution:       { label: 'Recipe',            ...RECIPE_OPERATION_STYLE },
   recipe_generation:      { label: 'Recipe Gen',        ...RECIPE_OPERATION_STYLE },
-  recipe_versioning:      { label: 'Recipe Version',    color: 'text-orange-300',  bg: 'bg-orange-400/15',  border: 'border-orange-400/25' },
-  schema_proposal:        { label: 'Schema Proposal',   color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/25' },
-  query_debug:            { label: 'Query Debug',       color: 'text-slate-400',   bg: 'bg-slate-500/15',   border: 'border-slate-500/25' },
-  nl_query:               { label: 'NL Query',          color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
-  setup_install:          { label: 'Setup',             color: 'text-lime-400',    bg: 'bg-lime-500/15',    border: 'border-lime-500/25' },
-  context_generation:     { label: 'Context Gen',       color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
-  task_execution:         { label: 'Task Exec',         color: 'text-pink-400',    bg: 'bg-pink-500/15',    border: 'border-pink-500/25' },
+  recipe_versioning:      { label: 'Recipe Version',    color: 'text-status-warning',  bg: 'bg-status-warning/15',  border: 'border-status-warning/25' },
+  schema_proposal:        { label: 'Schema Proposal',   color: 'text-status-info',     bg: 'bg-status-info/15',     border: 'border-status-info/25' },
+  query_debug:            { label: 'Query Debug',       color: 'text-ink-3',   bg: 'bg-surface-2',   border: 'border-hair' },
+  nl_query:               { label: 'NL Query',          color: 'text-status-info',    bg: 'bg-status-info/15',    border: 'border-status-info/25' },
+  setup_install:          { label: 'Setup',             color: 'text-status-success',    bg: 'bg-status-success/15',    border: 'border-status-success/25' },
+  context_generation:     { label: 'Context Gen',       color: 'text-role-agent',  bg: 'bg-role-agent/15',  border: 'border-role-agent/25' },
+  task_execution:         { label: 'Task Exec',         color: 'text-role-highlight',    bg: 'bg-role-highlight/15',    border: 'border-role-highlight/25' },
 };
 
 /** Get styling config for any unified span type (pipeline stage, engine span, or system operation). */
@@ -70,7 +70,7 @@ export function getSpanConfig(spanType: UnifiedSpanType): { label: string; color
   if (isSystemOperation(spanType)) {
     return SYSTEM_OPERATION_CONFIG[spanType];
   }
-  return SPAN_TYPE_CONFIG[spanType as SpanType] ?? { label: spanType, color: 'text-gray-400', bg: 'bg-gray-500/15', border: 'border-gray-500/25' };
+  return SPAN_TYPE_CONFIG[spanType as SpanType] ?? { label: spanType, color: 'text-ink-3', bg: 'bg-surface-2', border: 'border-hair' };
 }
 
 export interface SpanNode {

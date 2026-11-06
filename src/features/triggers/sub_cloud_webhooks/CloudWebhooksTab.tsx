@@ -184,26 +184,26 @@ export function CloudWebhooksTab() {
     <div className="flex-1 overflow-y-auto">
       <div className="p-6 space-y-6">
         {/* Status banner */}
-        <div className="flex items-center justify-between px-4 py-3 rounded-modal bg-blue-500/5 border border-blue-500/15">
+        <div className="flex items-center justify-between px-4 py-3 rounded-modal bg-status-info/5 border border-status-info/15">
           <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
-            <span className="typo-body text-foreground">
+            <div className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-status-success animate-pulse' : 'bg-muted-foreground/40'}`} />
+            <span className="typo-body text-ink-1">
               {relay.connected ? t.triggers.cloud_relay_active : t.common.connecting}
             </span>
             {relay.activeWebhookTriggers > 0 && (
-              <span className="typo-caption text-foreground">
+              <span className="typo-caption text-ink-2">
                 {relay.activeWebhookTriggers} webhook{relay.activeWebhookTriggers !== 1 ? 's' : ''}
               </span>
             )}
             {relay.totalRelayed > 0 && (
-              <span className="typo-caption text-blue-400/70">
+              <span className="typo-caption text-status-info">
                 {Number(relay.totalRelayed)} relayed
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
             {relay.lastPollAt && (
-              <span className="typo-caption text-foreground">
+              <span className="typo-caption text-ink-2">
                 {t.triggers.last_poll_label} <RelativeTime timestamp={relay.lastPollAt} />
               </span>
             )}
@@ -213,7 +213,7 @@ export function CloudWebhooksTab() {
                 setRefreshing(true);
                 void fetchWebhookTriggers().finally(() => setRefreshing(false));
               }}
-              className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
               title={t.triggers.refresh_label}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -226,7 +226,7 @@ export function CloudWebhooksTab() {
 
         {/* Header + Create button */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
+          <h3 className="typo-eyebrow text-ink-1">
             {t.triggers.cloud_webhook_triggers}
           </h3>
           <Button variant="accent" tone="info" onClick={() => setShowCreate(!showCreate)} icon={<Plus className="w-3.5 h-3.5" />}>
@@ -236,9 +236,9 @@ export function CloudWebhooksTab() {
 
         {/* Create form */}
         {showCreate && (
-          <div className="rounded-modal border border-blue-500/20 bg-blue-500/5 p-4 space-y-3">
+          <div className="rounded-modal border border-status-info/20 bg-status-info/5 p-4 space-y-3">
             <div>
-              <label className="block typo-caption text-foreground mb-1.5">
+              <label className="block typo-caption text-ink-2 mb-1.5">
                 {t.triggers.deployed_persona_label}
               </label>
               <ThemedSelect
@@ -306,8 +306,8 @@ export function CloudWebhooksTab() {
                 key={row.trigger.id}
                 className={`rounded-modal border p-4 transition-colors cursor-pointer ${
                   selectedTriggerId === row.trigger.id
-                    ? 'border-blue-500/30 bg-blue-500/5'
-                    : 'border-border/30 bg-secondary/10 hover:bg-secondary/20'
+                    ? 'border-status-info/30 bg-status-info/5'
+                    : 'border-hair bg-surface-1 hover:bg-surface-1'
                 }`}
                 onClick={() => setSelectedTriggerId(
                   selectedTriggerId === row.trigger.id ? null : row.trigger.id
@@ -316,20 +316,20 @@ export function CloudWebhooksTab() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="w-8 h-8 rounded-card flex items-center justify-center typo-body border border-primary/15 flex-shrink-0"
+                      className="w-8 h-8 rounded-card flex items-center justify-center typo-body border border-hair flex-shrink-0"
                       style={{ backgroundColor: colorWithAlpha(row.personaColor || '#6366f1', 0.08) }}
                     >
-                      {row.personaIcon || <Cloud className="w-4 h-4 text-foreground" />}
+                      {row.personaIcon || <Cloud className="w-4 h-4 text-ink-1" />}
                     </div>
                     <div className="min-w-0">
-                      <p className="typo-body text-foreground/90 truncate">{row.personaName}</p>
-                      <p className="text-xs text-foreground font-mono truncate">{row.webhookUrl}</p>
+                      <p className="typo-body text-ink-1 truncate">{row.personaName}</p>
+                      <p className="typo-caption text-ink-1 font-mono truncate">{row.webhookUrl}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {row.trigger.lastTriggeredAt && (
-                      <span className="typo-caption text-foreground">
+                      <span className="typo-caption text-ink-2">
                         {t.triggers.last_label} <RelativeTime timestamp={row.trigger.lastTriggeredAt} />
                       </span>
                     )}
@@ -354,7 +354,7 @@ export function CloudWebhooksTab() {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); handleDelete(row.trigger.id); }}
-                      className="p-1.5 rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-card text-status-error hover:text-status-error hover:bg-status-error/10 transition-colors"
                       title={t.triggers.delete_webhook_title}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -369,38 +369,38 @@ export function CloudWebhooksTab() {
         {/* Firing history for selected trigger */}
         {selectedTriggerId && (
           <div className="space-y-3">
-            <h4 className="text-sm font-mono text-foreground uppercase tracking-wider">
+            <h4 className="typo-eyebrow text-ink-1">
               {t.triggers.recent_firings}
             </h4>
             {firingsLoading ? (
               <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
-                <ListSkeleton calm rows={3} rowHeight={40} leading={false} className="border border-border/30 rounded-modal overflow-hidden" />
+                <ListSkeleton calm rows={3} rowHeight={40} leading={false} className="border border-hair rounded-modal overflow-hidden" />
               </div>
             ) : firings.length === 0 ? (
               <EmptyState art="stream" size="sm" title={t.triggers.no_firings} />
             ) : (
-              <div className="border border-border/30 rounded-modal overflow-hidden">
-                <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-foreground uppercase tracking-wider">
+              <div className="border border-hair rounded-modal overflow-hidden">
+                <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-surface-1 border-b border-hair typo-eyebrow text-ink-1">
                   <span>{t.triggers.status_col_label}</span>
                   <span>{t.triggers.fired_at_label}</span>
                   <span>{t.triggers.duration_col_label}</span>
                   <span className="text-right">{t.triggers.cost_col_label}</span>
                 </div>
                 {firings.map((f) => (
-                  <div key={f.id} className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2.5 border-b border-border/10 last:border-b-0 typo-body">
+                  <div key={f.id} className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2.5 border-b border-hair last:border-b-0 typo-body">
                     <span className={`font-medium ${
-                      f.status === 'completed' ? 'text-emerald-400' :
-                      f.status === 'failed' ? 'text-red-400' : 'text-amber-400'
+                      f.status === 'completed' ? 'text-status-success' :
+                      f.status === 'failed' ? 'text-status-error' : 'text-status-warning'
                     }`}>
                       {tokenLabel(t, 'execution', f.status)}
                     </span>
-                    <span className="text-foreground">
+                    <span className="text-ink-1">
                       <RelativeTime timestamp={f.firedAt ?? null} fallback="—" />
                     </span>
-                    <span className="text-foreground">
+                    <span className="text-ink-1">
                       {f.durationMs != null ? `${f.durationMs}ms` : '—'}
                     </span>
-                    <span className="text-right text-foreground">
+                    <span className="text-right text-ink-1">
                       {f.costUsd != null ? <Numeric value={f.costUsd} unit="usd" /> : '—'}
                     </span>
                   </div>

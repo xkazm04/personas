@@ -65,12 +65,12 @@ export function PersonaSelectorModal({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/15 bg-secondary/20 hover:border-primary/25 hover:bg-secondary/30 transition-all min-w-[180px]"
+          className="flex items-center gap-2 px-3 py-2 rounded-card border border-hair bg-surface-1 hover:border-primary/25 hover:bg-surface-1 transition-all min-w-[180px]"
         >
-          <span className="typo-body text-foreground/85 truncate flex-1 text-left">
+          <span className="typo-body text-ink-1 truncate flex-1 text-left">
             {selected ? selected.name : showAll ? t.shared.persona_all : placeholder}
           </span>
-          <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
         </button>
       )}
 
@@ -81,28 +81,28 @@ export function PersonaSelectorModal({
         titleId="persona-selector-modal"
         maxWidthClass="max-w-2xl"
         portal
-        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[70vh]"
+        panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden max-h-[70vh]"
       >
         {/* Header */}
-        <div className="px-5 pt-5 pb-3 border-b border-primary/10 space-y-3">
+        <div className="px-5 pt-5 pb-3 border-b border-hair space-y-3">
           <div className="flex items-center justify-between">
-            <h3 id="persona-selector-modal" className="typo-heading text-foreground uppercase">{t.shared.persona_modal_title}</h3>
-            <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
+            <h3 id="persona-selector-modal" className="typo-heading text-ink-1 uppercase">{t.shared.persona_modal_title}</h3>
+            <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-card hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/10 bg-secondary/20">
-            <Search className="w-3.5 h-3.5 text-foreground" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-hair bg-surface-1">
+            <Search className="w-3.5 h-3.5 text-ink-1" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.shared.search_ellipsis}
-              className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground outline-none"
+              className="flex-1 bg-transparent typo-body text-ink-1 placeholder:text-ink-3 outline-none"
               autoFocus
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} aria-label={t.common.clear} className="text-foreground hover:text-foreground">
+              <button type="button" onClick={() => setSearch('')} aria-label={t.common.clear} className="text-ink-1 hover:text-ink-1">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -116,10 +116,10 @@ export function PersonaSelectorModal({
               <button
                 type="button"
                 onClick={() => handleSelect('')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-card text-left transition-colors ${
                   !value
                     ? 'bg-primary/8 text-primary'
-                    : 'text-foreground hover:bg-secondary/40'
+                    : 'text-ink-1 hover:bg-surface-2'
                 }`}
               >
                 <span className="typo-body truncate">{t.shared.forms_extra.all_prefix}{personas.length})</span>
@@ -134,10 +134,10 @@ export function PersonaSelectorModal({
                   key={p.id}
                   type="button"
                   onClick={() => handleSelect(p.id)}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-card text-left transition-colors ${
                     isActive
                       ? 'bg-primary/8 text-primary'
-                      : 'text-foreground hover:bg-secondary/40'
+                      : 'text-ink-1 hover:bg-surface-2'
                   }`}
                 >
                   <span className="typo-body truncate">{p.name}</span>
@@ -148,7 +148,7 @@ export function PersonaSelectorModal({
           </div>
 
           {filtered.length === 0 && search && (
-            <div className="py-6 text-center typo-body text-foreground">{t.shared.persona_no_match.replace('{query}', search)}</div>
+            <div className="py-6 text-center typo-body text-ink-1">{t.shared.persona_no_match.replace('{query}', search)}</div>
           )}
         </div>
       </BaseModal>

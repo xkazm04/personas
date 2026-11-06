@@ -43,7 +43,7 @@ export function RespCadenceFields({
       {cadence.attentionEnabled && (
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <p className="typo-label text-foreground/85 mb-1">{life.resp_cadence_interval}</p>
+            <p className="typo-label text-ink-1 mb-1">{life.resp_cadence_interval}</p>
             <NumberStepper
               value={asNumber(cadence.intervalMinutes)}
               onChange={(v) =>
@@ -54,7 +54,7 @@ export function RespCadenceFields({
             />
           </div>
           <div>
-            <p className="typo-label text-foreground/85 mb-1">{life.resp_cadence_max_runs}</p>
+            <p className="typo-label text-ink-1 mb-1">{life.resp_cadence_max_runs}</p>
             <NumberStepper
               value={asNumber(cadence.maxRunsPerDay)}
               onChange={(v) =>
@@ -65,7 +65,7 @@ export function RespCadenceFields({
             />
           </div>
           <div>
-            <p className="typo-label text-foreground/85 mb-1">{life.resp_cadence_quiet}</p>
+            <p className="typo-label text-ink-1 mb-1">{life.resp_cadence_quiet}</p>
             <input
               value={cadence.quietHours ?? ''}
               onChange={(e) => onCadence({ ...cadence, quietHours: e.target.value || undefined })}
@@ -77,7 +77,7 @@ export function RespCadenceFields({
       )}
 
       <div className="max-w-[14rem]">
-        <p className="typo-label text-foreground/85 mb-1">{life.resp_budget_label}</p>
+        <p className="typo-label text-ink-1 mb-1">{life.resp_budget_label}</p>
         <NumberStepper
           value={budgetMonthlyUsd ?? null}
           onChange={(v) => onBudget(v ?? undefined)}

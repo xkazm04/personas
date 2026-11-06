@@ -106,13 +106,13 @@ export function DeepFanoutToggle({
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-card border border-primary/20 bg-secondary/40 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-card border border-hair bg-surface-2 px-3 py-2">
       <div className="space-y-0.5 min-w-0">
-        <div className="typo-body text-foreground flex items-center gap-1.5">
+        <div className="typo-body text-ink-1 flex items-center gap-1.5">
           <Network className="w-3.5 h-3.5 shrink-0" />
           {e.deep_fanout}
         </div>
-        <div className="typo-caption text-foreground/90">
+        <div className="typo-caption text-ink-2">
           {probeFailed
             ? e.deep_fanout_probe_failed
             : available === false ? e.deep_fanout_unavailable : e.deep_fanout_hint}

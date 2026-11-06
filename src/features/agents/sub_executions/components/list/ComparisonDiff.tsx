@@ -102,12 +102,12 @@ export function OutputDiffSection({
         type="button"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        className="flex items-center gap-2 typo-body text-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-2 typo-body text-ink-1 hover:text-ink-1 transition-colors"
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {e.terminal_output_diff}
         {diff.length > 0 && (
-          <span className="typo-body text-foreground">
+          <span className="typo-body text-ink-1">
             {tx(e.differences_count, { count: diff.filter(d => d.type !== 'same').length })}
           </span>
         )}
@@ -129,7 +129,7 @@ export function OutputDiffSection({
             ) : diffFailed ? (
               <p className="typo-body text-status-error py-3">{e.diff_failed}</p>
             ) : diff.length === 0 ? (
-              <p className="typo-body text-foreground py-3">{e.no_log_data}</p>
+              <p className="typo-body text-ink-1 py-3">{e.no_log_data}</p>
             ) : (
               <>
               {clipped && (
@@ -137,7 +137,7 @@ export function OutputDiffSection({
                   {tx(e.diff_clipped, { count: LOG_PAGE_SIZE })}
                 </p>
               )}
-              <div className="max-h-64 overflow-y-auto rounded-card border border-primary/10 bg-background/50 typo-code">
+              <div className="max-h-64 overflow-y-auto rounded-card border border-hair bg-background/50 typo-code">
                 {diff.reduce<{ elements: React.ReactNode[]; leftLine: number; rightLine: number }>(
                   (acc, d, i) => {
                     const ln = d.type === 'added' ? undefined : ++acc.leftLine;
@@ -148,13 +148,13 @@ export function OutputDiffSection({
                         className={`grid grid-cols-[40px_40px_1fr] ${
                           d.type === 'added' ? 'text-status-success bg-status-success/5'
                             : d.type === 'removed' ? 'text-status-error bg-status-error/5'
-                              : 'text-foreground'
+                              : 'text-ink-1'
                         }`}
                       >
-                        <span className="select-none text-right pr-2 tabular-nums text-foreground">
+                        <span className="select-none text-right pr-2 tabular-nums text-ink-1">
                           {ln ?? ''}
                         </span>
-                        <span className="select-none text-right pr-2 tabular-nums text-foreground border-r border-primary/8">
+                        <span className="select-none text-right pr-2 tabular-nums text-ink-1 border-r border-primary/8">
                           {rn ?? ''}
                         </span>
                         <span className="pl-2">
@@ -222,7 +222,7 @@ export function JsonDiffSection({
         type="button"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        className="flex items-center gap-2 typo-body text-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-2 typo-body text-ink-1 hover:text-ink-1 transition-colors"
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {label}
@@ -233,7 +233,7 @@ export function JsonDiffSection({
             {tx(diffs.length === 1 ? e.diff_count_one : e.diff_count_other, { count: diffs.length })}
           </span>
         ) : (
-          <span className="typo-body text-foreground">{e.identical}</span>
+          <span className="typo-body text-ink-1">{e.identical}</span>
         )}
       </button>
 
@@ -246,14 +246,14 @@ export function JsonDiffSection({
             ) : diffState === 'failed' ? (
               <p className="typo-body text-status-error py-2">{e.diff_failed}</p>
             ) : diffs.length === 0 ? (
-              <p className="typo-body text-foreground py-2">{e.no_differences}</p>
+              <p className="typo-body text-ink-1 py-2">{e.no_differences}</p>
             ) : (
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {diffs.map((d, i) => (
                   <div key={i} className="grid grid-cols-[auto_1fr_1fr] gap-2 typo-code items-start">
-                    <span className="text-foreground py-1">{d.path}</span>
-                    <div className="px-2 py-1 rounded bg-status-error/5 text-status-error/80 break-all">{d.left}</div>
-                    <div className="px-2 py-1 rounded bg-status-success/5 text-status-success/80 break-all">{d.right}</div>
+                    <span className="text-ink-1 py-1">{d.path}</span>
+                    <div className="px-2 py-1 rounded-interactive bg-status-error/5 text-status-error/80 break-all">{d.left}</div>
+                    <div className="px-2 py-1 rounded-interactive bg-status-success/5 text-status-success/80 break-all">{d.right}</div>
                   </div>
                 ))}
               </div>

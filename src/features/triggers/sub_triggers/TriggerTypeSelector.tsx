@@ -33,7 +33,7 @@ export function TriggerTypeSelector({
 
   return (
     <div>
-      <label className="block typo-body text-foreground mb-1.5">
+      <label className="block typo-body text-ink-1 mb-1.5">
         {t.triggers.type_selector.trigger_type}
       </label>
       <div
@@ -72,17 +72,17 @@ export function TriggerTypeSelector({
               }}
               className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all focus-ring ${
                 isSelected
-                  ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
-                  : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
+                  ? 'border-primary/30 bg-surface-1 ring-1 ring-primary/20'
+                  : 'border-hair bg-background/50 hover:border-primary/25 hover:bg-surface-1'
               }`}
             >
               <div className="flex items-center gap-2">
                 <Icon className={`w-4 h-4 ${colorClass}`} />
-                <span className="typo-body text-foreground/90">
+                <span className="typo-body text-ink-1">
                   {option.label}
                 </span>
               </div>
-              <span className="typo-caption text-foreground">
+              <span className="typo-caption text-ink-2">
                 {option.description}
               </span>
             </button>

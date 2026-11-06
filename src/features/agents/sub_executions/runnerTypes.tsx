@@ -36,10 +36,10 @@ export interface PhaseEntry {
 
 /** Duration color for tool-call dots -- mirrors ExecutionInspector's durationColor. */
 export function dotColor(ms: number | undefined): string {
-  if (ms === undefined) return 'bg-blue-400/70'; // still running
-  if (ms < 2000) return 'bg-emerald-400';
-  if (ms < 10000) return 'bg-amber-400';
-  return 'bg-red-400';
+  if (ms === undefined) return 'bg-status-info/70'; // still running
+  if (ms < 2000) return 'bg-status-success';
+  if (ms < 10000) return 'bg-status-warning';
+  return 'bg-status-error';
 }
 
 /**

@@ -58,20 +58,20 @@ export function CloudConnectionForm({
     return (
       <div className={DEPLOYMENT_TOKENS.panelSpacing}>
         <div className={`flex items-center gap-3 p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}>
-          <Wifi className="w-5 h-5 text-emerald-400" />
+          <Wifi className="w-5 h-5 text-status-success" />
           <div>
-            <p className="typo-body text-emerald-400">{dt.connected}</p>
+            <p className="typo-body text-status-success">{dt.connected}</p>
             {/* The backend stores the validated URL WITH its scheme
                 (cloud_connect -> store_cloud_config(normalized)); a prefix
                 here doubled it and claimed https for an http orchestrator. */}
-            <p className="typo-body text-foreground mt-0.5">{config?.url}</p>
+            <p className="typo-body text-ink-2 mt-0.5">{config?.url}</p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={onDisconnect}
-          className="px-4 py-2 typo-body rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+          className="px-4 py-2 typo-body rounded-modal bg-status-error/10 border border-status-error/20 text-status-error hover:bg-status-error/20 transition-colors cursor-pointer"
         >
           {dt.disconnect}
         </button>
@@ -96,7 +96,7 @@ export function CloudConnectionForm({
               urlValidation.onChange(e.target.value);
             }}
             placeholder={dt.orchestrator_url_placeholder}
-            className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
+            className={`${INPUT_FIELD} ${isConnecting ? 'border-role-agent/35 bg-role-agent/5' : ''}`}
           />
         )}
       </FormField>
@@ -108,7 +108,7 @@ export function CloudConnectionForm({
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={dt.enter_api_key}
-            inputClassName={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
+            inputClassName={`${INPUT_FIELD} ${isConnecting ? 'border-role-agent/35 bg-role-agent/5' : ''}`}
           />
         )}
       </FormField>
@@ -152,15 +152,15 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
     <div
       className={`p-4 rounded-modal border ${
         allPassed
-          ? 'bg-emerald-500/5 border-emerald-500/20'
-          : 'bg-red-500/5 border-red-500/20'
+          ? 'bg-status-success/5 border-status-success/20'
+          : 'bg-status-error/5 border-status-error/20'
       }`}
     >
       <div className="flex items-center justify-between mb-3">
-        <p className={`typo-body ${allPassed ? 'text-emerald-400' : 'text-red-400'}`}>
+        <p className={`typo-body ${allPassed ? 'text-status-success' : 'text-status-error'}`}>
           {dt.diagnostics_title}
         </p>
-        <div className="flex items-center gap-1 typo-caption text-foreground">
+        <div className="flex items-center gap-1 typo-caption text-ink-2">
           <Clock className="w-3 h-3" />
           {diagnostics.totalDurationMs}ms
         </div>
@@ -170,16 +170,16 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
         {diagnostics.steps.map((step, i) => (
           <li key={i} className="flex items-start gap-2.5">
             {step.passed ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-status-success mt-0.5 shrink-0" />
             ) : (
-              <XCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+              <XCircle className="w-4 h-4 text-status-error mt-0.5 shrink-0" />
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="typo-body text-foreground/90">{step.label}</span>
-                <span className="typo-caption text-foreground">{step.durationMs}ms</span>
+                <span className="typo-body text-ink-1">{step.label}</span>
+                <span className="typo-caption text-ink-2">{step.durationMs}ms</span>
               </div>
-              <p className={`typo-caption mt-0.5 ${step.passed ? 'text-foreground' : 'text-red-400/80'}`}>
+              <p className={`typo-caption mt-0.5 ${step.passed ? 'text-ink-1' : 'text-status-error'}`}>
                 {step.detail}
               </p>
             </div>

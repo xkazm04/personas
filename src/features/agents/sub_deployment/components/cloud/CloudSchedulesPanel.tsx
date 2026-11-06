@@ -186,7 +186,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
       {/* No deployments notice — settled-only, never flashes while the
           parent deployments list is still fetching. */}
       {!isFetchingDeployments && deployments.filter((d) => d.status === 'active').length === 0 && (
-        <p className="typo-body text-foreground py-6 text-center">
+        <p className="typo-body text-ink-1 py-6 text-center">
           {ds.deploy_first}
         </p>
       )}
@@ -204,7 +204,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
       {showGhost ? (
         <TriggerListGhosts />
       ) : triggers.length === 0 && deployedPersonaIds.size > 0 && failedCount === 0 ? (
-        <p className="typo-body text-foreground py-6 text-center">
+        <p className="typo-body text-ink-1 py-6 text-center">
           {ds.empty}
         </p>
       ) : (
@@ -253,11 +253,11 @@ function TriggerListGhosts() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10 animate-fade-in"
+          className="flex items-center gap-3 px-3 py-2 rounded-card bg-surface-1 border border-hair animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="w-3.5 h-3.5 rounded bg-primary/[0.06]" />
-          <span className="h-3.5 flex-1 max-w-[10rem] rounded bg-primary/[0.06]" />
+          <span className="w-3.5 h-3.5 rounded-interactive bg-primary/[0.06]" />
+          <span className="h-3.5 flex-1 max-w-[10rem] rounded-interactive bg-primary/[0.06]" />
           <span className="h-5 w-14 rounded-card bg-primary/[0.06]" />
         </div>
       ))}

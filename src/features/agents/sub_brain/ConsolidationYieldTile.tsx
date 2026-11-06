@@ -126,12 +126,12 @@ function YieldLegend({
   return (
     <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
       {series.map((sd, i) => (
-        <li key={sd.key} className="flex items-center gap-1.5 typo-caption text-foreground/85">
+        <li key={sd.key} className="flex items-center gap-1.5 typo-caption text-ink-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[i] }} aria-hidden />
           {sd.label}
         </li>
       ))}
-      <li className="flex items-center gap-1.5 typo-caption text-foreground/85">
+      <li className="flex items-center gap-1.5 typo-caption text-ink-2">
         <span className="w-3 h-[2px] rounded-pill" style={{ backgroundColor: FED_STROKE }} aria-hidden />
         {fedLabel}
       </li>
@@ -159,7 +159,7 @@ function YieldTotals({ summary }: { summary: ReturnType<typeof summarizeConsolid
       // passes produced nothing, when in fact they were never given anything.
       node:
         summary.yieldRatio == null ? (
-          <span className="text-foreground/85">{b.value_unmeasured}</span>
+          <span className="text-ink-1">{b.value_unmeasured}</span>
         ) : (
           <Numeric value={summary.yieldRatio * 100} unit="percent" precision={0} />
         ),
@@ -169,7 +169,7 @@ function YieldTotals({ summary }: { summary: ReturnType<typeof summarizeConsolid
       // Absent, not zero: the subscription lane reports no cost at all.
       node:
         summary.costUsd == null ? (
-          <span className="text-foreground/85">{b.yield_cost_unreported}</span>
+          <span className="text-ink-1">{b.yield_cost_unreported}</span>
         ) : (
           <Numeric value={summary.costUsd} unit="usd" />
         ),
@@ -177,13 +177,13 @@ function YieldTotals({ summary }: { summary: ReturnType<typeof summarizeConsolid
   ];
   return (
     <dl
-      className="mt-3 pt-3 border-t border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2"
+      className="mt-3 pt-3 border-t border-hair grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2"
       data-testid="brain-yield-totals"
     >
       {cells.map((c) => (
         <div key={c.label}>
-          <dt className="typo-eyebrow text-foreground/85 truncate">{c.label}</dt>
-          <dd className="typo-body text-foreground">{c.node}</dd>
+          <dt className="typo-eyebrow text-ink-1 truncate">{c.label}</dt>
+          <dd className="typo-body text-ink-1">{c.node}</dd>
         </div>
       ))}
     </dl>

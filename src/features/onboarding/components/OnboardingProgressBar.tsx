@@ -34,18 +34,18 @@ export default function OnboardingProgressBar() {
     <div
       className="animate-fade-slide-in mx-3 mb-2"
     >
-      <div className="rounded-modal border border-violet-500/20 bg-violet-500/5 p-3 space-y-2.5">
+      <div className="rounded-modal border border-role-agent/20 bg-role-agent/5 p-3 space-y-2.5">
         {/* Header */}
         <div className="flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-          <span className="typo-heading text-violet-300">{t.onboarding.getting_started}</span>
-          <span className="ml-auto typo-body text-violet-400/60">{completedCount}/{STEP_ORDER.length}</span>
+          <Sparkles className="w-3.5 h-3.5 text-role-agent" />
+          <span className="typo-heading text-role-agent">{t.onboarding.getting_started}</span>
+          <span className="ml-auto typo-body text-role-agent">{completedCount}/{STEP_ORDER.length}</span>
         </div>
 
         {/* Progress bar */}
-        <div className="w-full h-1.5 bg-violet-500/10 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-role-agent/10 rounded-full overflow-hidden">
           <div
-            className="animate-fade-in h-full bg-violet-500 rounded-full" style={{ width: `${progressPct}%` }}
+            className="animate-fade-in h-full bg-role-agent rounded-full" style={{ width: `${progressPct}%` }}
           />
         </div>
 
@@ -58,23 +58,23 @@ export default function OnboardingProgressBar() {
             return (
               <div key={step} className="flex items-center gap-2">
                 {isCompleted ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-status-success" />
                 ) : (
                   <div
                     className={`w-3 h-3 rounded-full border ${
                       isCurrent
-                        ? 'border-violet-400 bg-violet-500/20'
-                        : 'border-primary/15 bg-transparent'
+                        ? 'border-role-agent bg-role-agent/20'
+                        : 'border-hair bg-transparent'
                     }`}
                   />
                 )}
                 <span
                   className={`typo-body ${
                     isCompleted
-                      ? 'text-emerald-400/70 line-through'
+                      ? 'text-status-success line-through'
                       : isCurrent
-                        ? 'text-violet-300'
-                        : 'text-foreground'
+                        ? 'text-role-agent'
+                        : 'text-ink-1'
                   }`}
                 >
                   {STEP_LABELS[step]}

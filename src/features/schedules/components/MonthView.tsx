@@ -27,11 +27,11 @@ export function MonthView({
   }
 
   return (
-    <div className="border border-primary/10 rounded-modal overflow-hidden">
+    <div className="border border-hair rounded-modal overflow-hidden">
       {/* Weekday headers */}
-      <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-primary/10 bg-primary/[0.02]">
+      <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-hair bg-primary/[0.02]">
         {Array.from({ length: 7 }, (_, i) => (
-          <div key={i} className="px-2 py-1.5 text-center text-[10px] font-medium text-foreground uppercase tracking-wider">
+          <div key={i} className="px-2 py-1.5 text-center typo-eyebrow text-ink-1">
             {weekdayShort(i)}
           </div>
         ))}
@@ -39,7 +39,7 @@ export function MonthView({
 
       {/* Week rows */}
       {weeks.map((week, wi) => (
-        <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-primary/5 last:border-b-0">
+        <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-hair last:border-b-0">
           {week.map((day) => {
             const MAX_VISIBLE = 3;
             const visibleEvents = day.events.slice(0, MAX_VISIBLE);
@@ -50,11 +50,11 @@ export function MonthView({
             return (
               <div
                 key={day.date.toISOString()}
-                className={`min-h-[80px] min-w-0 px-1 py-1 border-l border-primary/5 first:border-l-0 transition-colors relative ${
+                className={`min-h-[80px] min-w-0 px-1 py-1 border-l border-hair first:border-l-0 transition-colors relative ${
                   day.isToday
-                    ? 'bg-blue-500/[0.04]'
+                    ? 'bg-status-info/[0.04]'
                     : dayConflictCount > 0
-                      ? 'bg-amber-500/[0.04]'
+                      ? 'bg-status-warning/[0.04]'
                       : day.isCurrentMonth
                         ? 'bg-transparent'
                         : 'bg-primary/[0.01] opacity-50'
@@ -63,14 +63,14 @@ export function MonthView({
                 {/* Day number + conflict badge */}
                 <div className={`flex items-center justify-between typo-caption mb-0.5 ${
                   day.isToday
-                    ? 'text-blue-400'
+                    ? 'text-status-info'
                     : day.isCurrentMonth
-                      ? 'text-foreground'
-                      : 'text-foreground'
+                      ? 'text-ink-1'
+                      : 'text-ink-1'
                 }`}>
                   <span>
                     {day.isToday ? (
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/20">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-status-info/20">
                         {day.date.getDate()}
                       </span>
                     ) : (
@@ -79,11 +79,11 @@ export function MonthView({
                   </span>
                   {dayConflictCount > 0 && (
                     <span
-                      className="flex items-center gap-0.5 px-1 py-px rounded-full bg-amber-500/20 border border-amber-500/30"
+                      className="flex items-center gap-0.5 px-1 py-px rounded-full bg-status-warning/20 border border-status-warning/30"
                       title={`${dayConflictCount} overlapping executions`}
                     >
-                      <AlertTriangle className="w-2.5 h-2.5 text-amber-400" />
-                      <span className="text-[8px] font-bold text-amber-400">{dayConflictCount}</span>
+                      <AlertTriangle className="w-2.5 h-2.5 text-status-warning" />
+                      <span className="typo-caption text-status-warning">{dayConflictCount}</span>
                     </span>
                   )}
                 </div>
@@ -101,7 +101,7 @@ export function MonthView({
                     />
                   ))}
                   {overflow > 0 && (
-                    <span className="text-[9px] text-foreground pl-1">
+                    <span className="typo-caption text-ink-2 pl-1">
                       +{overflow} more
                     </span>
                   )}

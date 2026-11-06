@@ -51,7 +51,7 @@ export function AutomationConditionStep({
     <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
         <div className="px-3.5 py-2.5 rounded-modal bg-accent/5 border border-accent/15">
-          <p className="typo-body text-foreground">
+          <p className="typo-body text-ink-1">
             <span className="font-medium text-accent">{t.agents.connectors.auto_ai_recommendation}</span>{' '}
             {designResult.platform_reasoning}
           </p>
@@ -61,12 +61,12 @@ export function AutomationConditionStep({
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor={nameId} className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
+            <label htmlFor={nameId} className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_name_label}</label>
             <input id={nameId} type="text" value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full mt-1.5 px-3 py-2 typo-body rounded-modal border border-border bg-secondary/20 text-foreground focus-ring" />
+              className="w-full mt-1.5 px-3 py-2 typo-body rounded-modal border border-hair bg-surface-1 text-ink-1 focus-ring" />
           </div>
           <div>
-            <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_platform_label}</label>
+            <label className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_platform_label}</label>
             <div className="mt-1.5">
               <span className={`inline-flex items-center px-2.5 py-1 typo-body rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
                 {PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform}
@@ -75,48 +75,48 @@ export function AutomationConditionStep({
           </div>
           {platform === 'n8n' && (
             <div className="px-3 py-2.5 rounded-modal bg-brand-amber/5 border border-brand-amber/15">
-              <p className="typo-body text-foreground"><Rocket className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />{t.agents.connectors.auto_n8n_hint}</p>
+              <p className="typo-body text-ink-1"><Rocket className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />{t.agents.connectors.auto_n8n_hint}</p>
             </div>
           )}
           {platform === 'github_actions' && githubRepo && (
-            <div className="px-3 py-2.5 rounded-modal bg-primary/5 border border-primary/20">
-              <p className="typo-body text-foreground"><GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />{tx(t.agents.connectors.auto_github_hint, { repo: githubRepo ?? '' })}</p>
+            <div className="px-3 py-2.5 rounded-modal bg-surface-1 border border-hair">
+              <p className="typo-body text-ink-1"><GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />{tx(t.agents.connectors.auto_github_hint, { repo: githubRepo ?? '' })}</p>
               {designResult.workflow_definition && !!(designResult.workflow_definition as Record<string, unknown>).event_type && (
-                <p className="typo-body text-foreground mt-1">{tx(t.agents.connectors.auto_event_type, { eventType: String((designResult.workflow_definition as Record<string, unknown>).event_type) })}</p>
+                <p className="typo-body text-ink-2 mt-1">{tx(t.agents.connectors.auto_event_type, { eventType: String((designResult.workflow_definition as Record<string, unknown>).event_type) })}</p>
               )}
             </div>
           )}
           {platform === 'zapier' && (
             <div className="px-3 py-2.5 rounded-modal bg-brand-amber/5 border border-brand-amber/15">
-              <p className="typo-body text-foreground"><Zap className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />{t.agents.connectors.auto_zapier_hint}</p>
+              <p className="typo-body text-ink-1"><Zap className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />{t.agents.connectors.auto_zapier_hint}</p>
             </div>
           )}
           {platform === 'custom' && (
-            <div className="px-3 py-2.5 rounded-modal bg-secondary/20 border border-border/40">
-              <p className="typo-body text-foreground">{t.agents.connectors.auto_custom_hint}</p>
+            <div className="px-3 py-2.5 rounded-modal bg-surface-1 border border-hair">
+              <p className="typo-body text-ink-1">{t.agents.connectors.auto_custom_hint}</p>
             </div>
           )}
           <div>
-            <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_credential_label}</label>
+            <label className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_credential_label}</label>
             {hasPlatformCredential ? (
               <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-modal bg-brand-emerald/5 border border-brand-emerald/15">
                 <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald/70 flex-shrink-0" />
-                <span className="typo-body text-foreground">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? t.agents.connectors.auto_none_selected}</span>
+                <span className="typo-body text-ink-1">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? t.agents.connectors.auto_none_selected}</span>
               </div>
             ) : (
-              <p className="mt-1.5 typo-body text-foreground">{t.agents.connectors.auto_none_selected}</p>
+              <p className="mt-1.5 typo-body text-ink-2">{t.agents.connectors.auto_none_selected}</p>
             )}
           </div>
         </div>
         <div className="space-y-4">
           {designResult.setup_steps && designResult.setup_steps.length > 0 && (
             <div>
-              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_what_will_happen}</label>
+              <label className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_what_will_happen}</label>
               <div className="mt-1.5 space-y-1.5">
                 {designResult.setup_steps.map((step, i) => (
-                  <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-modal bg-secondary/20 border border-border/40">
+                  <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-modal bg-surface-1 border border-hair">
                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center typo-heading text-primary mt-0.5">{i + 1}</span>
-                    <p className="typo-body text-foreground">{step}</p>
+                    <p className="typo-body text-ink-1">{step}</p>
                   </div>
                 ))}
               </div>
@@ -124,10 +124,10 @@ export function AutomationConditionStep({
           )}
           {designResult.handles_connectors && designResult.handles_connectors.length > 0 && (
             <div>
-              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_replaces}</label>
+              <label className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_replaces}</label>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {designResult.handles_connectors.map((c) => (
-                  <span key={c} className="px-2 py-0.5 typo-body rounded-card bg-secondary/40 border border-border/40 text-foreground">{c}</span>
+                  <span key={c} className="inline-flex items-center typo-body text-ink-1">{c}</span>
                 ))}
               </div>
             </div>
@@ -136,7 +136,7 @@ export function AutomationConditionStep({
       </div>
 
       <button type="button" onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors">
+        className="flex items-center gap-1.5 typo-body text-ink-1 hover:text-ink-1 transition-colors">
         <Pencil className="w-3.5 h-3.5" />
         {showAdvanced ? t.agents.connectors.auto_hide_advanced : t.agents.connectors.auto_show_advanced}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
@@ -145,26 +145,26 @@ export function AutomationConditionStep({
       {showAdvanced && (
           <div className="animate-fade-slide-in overflow-hidden space-y-4">
             <div>
-              <label htmlFor={schemaId} className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_input_schema}</label>
+              <label htmlFor={schemaId} className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_input_schema}</label>
               <textarea id={schemaId} placeholder={t.agents.connectors.auto_input_schema_placeholder} value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
-                className="w-full mt-1.5 px-3 py-2 typo-code rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground focus-ring resize-none" />
+                className="w-full mt-1.5 px-3 py-2 typo-code rounded-modal border border-hair bg-surface-1 text-ink-1 placeholder:text-ink-3 focus-ring resize-none" />
             </div>
             <div>
-              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_on_failure}</label>
+              <label className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_on_failure}</label>
               <div className="mt-1.5 space-y-1.5">
                 {FALLBACK_OPTIONS.map((opt) => (
-                  <label key={opt.value} className={`flex items-start gap-2.5 p-2.5 rounded-card border cursor-pointer transition-colors ${fallbackMode === opt.value ? 'border-primary/30 bg-primary/5' : 'border-border/60 hover:border-border'}`}>
+                  <label key={opt.value} className={`flex items-start gap-2.5 p-2.5 rounded-card border cursor-pointer transition-colors ${fallbackMode === opt.value ? 'border-primary/30 bg-surface-1' : 'border-hair hover:border-hair'}`}>
                     <input type="radio" name="fallbackMode" checked={fallbackMode === opt.value} onChange={() => setFallbackMode(opt.value)} className="mt-0.5 accent-primary" />
                     <div>
-                      <p className="typo-body text-foreground">{t.agents.connectors[opt.labelKey]}</p>
-                      <p className="typo-body text-foreground">{t.agents.connectors[opt.descriptionKey]}</p>
+                      <p className="typo-body text-ink-1">{t.agents.connectors[opt.labelKey]}</p>
+                      <p className="typo-body text-ink-1">{t.agents.connectors[opt.descriptionKey]}</p>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
             <div>
-              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_timeout}</label>
+              <label className="typo-eyebrow text-ink-1">{t.agents.connectors.auto_timeout}</label>
               <div className="flex items-center gap-2 mt-1.5">
                 <NumberStepper
                   value={timeoutSecs}

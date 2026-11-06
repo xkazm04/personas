@@ -96,7 +96,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
   return (
     <div
       data-testid={`tool-card-${tool.name}`}
-      className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden"
+      className="rounded-modal border border-hair bg-surface-1 overflow-hidden"
     >
       {/* Header */}
       <button
@@ -105,16 +105,16 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
         aria-controls={bodyId}
-        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
+        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-surface-1 transition-colors"
       >
         {expanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-1" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
+          <ChevronRight className="w-3.5 h-3.5 text-ink-1" />
         )}
-        <Wrench className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-body text-foreground truncate">{tool.name}</span>
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-primary/10 bg-secondary/30 text-foreground">
+        <Wrench className="w-3.5 h-3.5 text-ink-1" />
+        <span className="typo-body text-ink-1 truncate">{tool.name}</span>
+        <span className="inline-flex items-center gap-1 typo-body text-ink-1">
           <TypeIcon className="w-2.5 h-2.5" />
           {t.agents.tool_runner[`kind_${toolType}`]}
         </span>
@@ -122,7 +122,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
             has to tell idle, running and an IPC-level error apart too - not only
             a settled result. */}
         {isRunning && (
-          <span className="ml-auto inline-flex items-center gap-1 typo-body text-foreground">
+          <span className="ml-auto inline-flex items-center gap-1 typo-body text-ink-1">
             <Clock className="w-3 h-3" />
             {t.agents.tool_runner.running}
           </span>
@@ -134,7 +134,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
           </span>
         )}
         {!isRunning && !error && result && (
-          <span className={`ml-auto inline-flex items-center gap-1 typo-body ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`ml-auto inline-flex items-center gap-1 typo-body ${result.success ? 'text-status-success' : 'text-status-error'}`}>
             {result.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
             <Numeric value={Number(result.duration_ms)} unit="ms" />
           </span>
@@ -147,9 +147,9 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
             id={bodyId}
             className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
+            <div className="border-t border-hair px-3.5 py-3 space-y-3">
               {tool.description && (
-                <p className="typo-body text-foreground">{tool.description}</p>
+                <p className="typo-body text-ink-1">{tool.description}</p>
               )}
 
               {/* builtin:// tools have no direct-invoke path — explain instead
@@ -157,7 +157,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
               {isBuiltin && (
                 <p
                   data-testid={`tool-builtin-note-${tool.name}`}
-                  className="typo-body text-foreground rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2"
+                  className="typo-body text-ink-1 rounded-modal border border-hair bg-surface-1 px-3 py-2"
                 >
                   {t.agents.tool_runner.builtin_note}
                 </p>
@@ -166,7 +166,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
               {strategyProblem && (
                 <p
                   data-testid={`tool-strategy-note-${tool.name}`}
-                  className="typo-body text-foreground rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2"
+                  className="typo-body text-ink-1 rounded-modal border border-hair bg-surface-1 px-3 py-2"
                 >
                   {strategyProblem === 'conflict' ? t.agents.tool_runner.conflict_note : t.agents.tool_runner.no_strategy_note}
                 </p>
@@ -174,10 +174,10 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
 
               {canOfferRun && schemaFields.length > 0 && (
                 <div data-testid={`tool-schema-${tool.name}`}>
-                  <p className="typo-heading text-foreground uppercase mb-1">{t.agents.tool_runner.schema_title}</p>
+                  <p className="typo-heading text-ink-1 uppercase mb-1">{t.agents.tool_runner.schema_title}</p>
                   <ul className="space-y-1 max-h-40 overflow-y-auto">
                     {schemaFields.map((f) => (
-                      <li key={f.name} className="typo-body text-foreground">
+                      <li key={f.name} className="typo-body text-ink-1">
                         <span className="typo-code">{f.name}</span>
                         {f.type && <span className="ml-1.5 typo-code">{f.type}</span>}
                         {f.required && <span className="ml-1.5">({t.agents.tool_runner.schema_required})</span>}
@@ -194,7 +194,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
               {/* Input */}
               {canOfferRun && (
               <div>
-                <label htmlFor={`tool-input-${tool.id}`} className="typo-heading text-foreground uppercase mb-1 block">
+                <label htmlFor={`tool-input-${tool.id}`} className="typo-heading text-ink-1 uppercase mb-1 block">
                   {t.agents.tool_runner.input_json}
                 </label>
                 <textarea
@@ -202,16 +202,16 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className={`w-full rounded-modal border bg-background/60 px-3 py-2 typo-code text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 resize-y ${
+                  className={`w-full rounded-modal border bg-background/60 px-3 py-2 typo-code text-ink-1 placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 resize-y ${
                     jsonError
-                      ? 'border-red-500/40 focus-visible:ring-red-500/30'
-                      : 'border-primary/20 focus-visible:ring-violet-500/30'
+                      ? 'border-status-error/40 focus-visible:ring-status-error/30'
+                      : 'border-hair focus-visible:ring-role-agent/30'
                   }`}
                   placeholder={t.agents.tool_runner.input_json_placeholder}
                   aria-invalid={!!jsonError}
                 />
                 {jsonError && (
-                  <p className="mt-1 typo-body text-red-400">
+                  <p className="mt-1 typo-body text-status-error">
                     {t.agents.tool_runner.invalid_json}
                     <span className="ml-1 typo-code opacity-70">{jsonError}</span>
                   </p>
@@ -264,7 +264,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
     return (
       <div
         data-testid={`tool-result-${toolName}`}
-        className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400"
+        className="rounded-modal border border-status-error/15 bg-status-error/5 px-3 py-2 typo-body text-status-error"
       >
         <div role="alert" className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
@@ -287,19 +287,19 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
       data-testid={`tool-result-${toolName}`}
       className={`rounded-modal border px-3 py-2 typo-body ${
       result.success
-        ? 'border-emerald-500/15 bg-emerald-500/5'
-        : 'border-red-500/15 bg-red-500/5'
+        ? 'border-status-success/15 bg-status-success/5'
+        : 'border-status-error/15 bg-status-error/5'
     }`}>
       <div role="status" className="flex items-center gap-2 mb-1.5">
         {result.success ? (
-          <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+          <CheckCircle2 className="w-3 h-3 text-status-success flex-shrink-0" />
         ) : (
-          <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+          <XCircle className="w-3 h-3 text-status-error flex-shrink-0" />
         )}
-        <span className={`font-medium ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
+        <span className={`font-medium ${result.success ? 'text-status-success' : 'text-status-error'}`}>
           {result.success ? t.agents.tool_runner.success : t.agents.tool_runner.failed}
         </span>
-        <span className="ml-auto flex items-center gap-1 text-foreground typo-body">
+        <span className="ml-auto flex items-center gap-1 text-ink-1 typo-body">
           <Clock className="w-2.5 h-2.5" />
           <Numeric value={Number(result.duration_ms)} unit="ms" />
         </span>
@@ -312,31 +312,31 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
       {!result.success && (result.error_kind || result.http_status != null) && (
         <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
           {result.error_kind && (
-            <span className="inline-flex items-center px-1.5 py-0.5 typo-body rounded border border-red-500/25 bg-red-500/10 text-red-300">
+            <span className="inline-flex items-center typo-body text-status-error">
               {tToken(t, 'tool_error_kind', result.error_kind)}
             </span>
           )}
           {result.http_status != null && (
-            <span className="inline-flex items-center px-1.5 py-0.5 typo-code rounded border border-primary/15 bg-secondary/30 text-foreground">
+            <span className="inline-flex items-center typo-code text-ink-1">
               {tx(t.agents.tool_runner.http_status_label, { status: result.http_status })}
             </span>
           )}
           {result.retryable && (
-            <span className="typo-body text-foreground">{t.agents.tool_runner.retryable_hint}</span>
+            <span className="typo-body text-ink-1">{t.agents.tool_runner.retryable_hint}</span>
           )}
         </div>
       )}
 
       {result.output && (
-        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
+        <pre className="typo-code text-ink-1 whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
           {formattedOutput}
         </pre>
       )}
       {result.output_truncated && (
-        <p className="mt-1 typo-body text-amber-400/80">{t.agents.tool_runner.output_truncated}</p>
+        <p className="mt-1 typo-body text-status-warning">{t.agents.tool_runner.output_truncated}</p>
       )}
       {result.error && (
-        <pre className="typo-code text-red-400/80 whitespace-pre-wrap break-all mt-1">
+        <pre className="typo-code text-status-error whitespace-pre-wrap break-all mt-1">
           {result.error}
         </pre>
       )}

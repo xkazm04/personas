@@ -19,31 +19,31 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" /> {e.total_duration}
         </div>
-        <div className="typo-code text-foreground/90">{formatDuration(totalMs)}</div>
+        <div className="typo-code text-ink-1">{formatDuration(totalMs)}</div>
       </div>
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" /> {e.cost}
         </div>
-        <div className="typo-code text-foreground/90">
+        <div className="typo-code text-ink-1">
           {execution.cost_usd != null && execution.cost_usd > 0 ? <>$<Numeric value={execution.cost_usd} precision={4} /></> : '-'}
         </div>
       </div>
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" /> {e.stages}
         </div>
-        <div className="typo-code text-foreground/90">{stagesHit} / {PIPELINE_STAGES.length}</div>
+        <div className="typo-code text-ink-1">{stagesHit} / {PIPELINE_STAGES.length}</div>
       </div>
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" /> {e.errors}
         </div>
-        <div className={`typo-code ${errors > 0 ? 'text-red-400' : 'text-foreground/90'}`}>{errors}</div>
+        <div className={`typo-code ${errors > 0 ? 'text-status-error' : 'text-ink-1'}`}>{errors}</div>
       </div>
     </div>
   );

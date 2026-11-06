@@ -43,26 +43,26 @@ export function InlineDiffPreview({ older, newer }: InlineDiffPreviewProps) {
   }, [older.structured_prompt, newer.structured_prompt]);
 
   if (changes.length === 0) {
-    return <p className="text-[11px] text-foreground italic">{t.agents.lab.no_prompt_changes}</p>;
+    return <p className="typo-caption text-ink-2 italic">{t.agents.lab.no_prompt_changes}</p>;
   }
 
   return (
     <div className="space-y-1">
       {changes.map((change) => (
-        <div key={change.key} className="flex items-center gap-2 text-[11px]">
+        <div key={change.key} className="flex items-center gap-2 typo-caption">
           <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-            change.type === 'added' ? 'bg-emerald-400' :
-            change.type === 'removed' ? 'bg-red-400' : 'bg-amber-400'
+            change.type === 'added' ? 'bg-status-success' :
+            change.type === 'removed' ? 'bg-status-error' : 'bg-status-warning'
           }`} />
-          <span className="text-foreground font-medium capitalize">{change.key}</span>
-          <span className="text-foreground">
+          <span className="text-ink-1 font-medium capitalize">{change.key}</span>
+          <span className="text-ink-1">
             {change.type === 'added' && `+${change.addedWords} words`}
             {change.type === 'removed' && `−${change.removedWords} words`}
             {change.type === 'modified' && (
               <>
-                {change.addedWords > 0 && <span className="text-emerald-400/70">+{change.addedWords}</span>}
+                {change.addedWords > 0 && <span className="text-status-success">+{change.addedWords}</span>}
                 {change.addedWords > 0 && change.removedWords > 0 && ' '}
-                {change.removedWords > 0 && <span className="text-red-400/70">−{change.removedWords}</span>}
+                {change.removedWords > 0 && <span className="text-status-error">−{change.removedWords}</span>}
               </>
             )}
           </span>

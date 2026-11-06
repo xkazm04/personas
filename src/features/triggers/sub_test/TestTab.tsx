@@ -217,13 +217,13 @@ export function TestTab() {
   return (
     <ContentBody centered>
       <div className="mx-auto w-full max-w-6xl space-y-5">
-        <p className="typo-body text-foreground">{t.triggers.publish_test_desc}</p>
+        <p className="typo-body text-ink-1">{t.triggers.publish_test_desc}</p>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* Config card — who fires it, and which event */}
-          <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5 space-y-4">
+          <section className="rounded-modal border border-primary/8 bg-surface-1 p-5 space-y-4">
             <div>
-              <label className="block typo-caption text-foreground mb-1.5">
+              <label className="block typo-caption text-ink-2 mb-1.5">
                 {t.triggers.test_source_persona_label}
               </label>
               <PersonaSelector
@@ -234,11 +234,11 @@ export function TestTab() {
                 showDescription={false}
                 placeholder={t.triggers.test_select_persona_placeholder}
               />
-              <p className="typo-caption text-foreground">{t.triggers.test_source_persona_help}</p>
+              <p className="typo-caption text-ink-2">{t.triggers.test_source_persona_help}</p>
             </div>
 
             <div>
-              <label className="block typo-caption text-foreground mb-1.5">
+              <label className="block typo-caption text-ink-2 mb-1.5">
                 {t.triggers.test_output_event_label}
               </label>
               <ThemedSelect
@@ -249,9 +249,9 @@ export function TestTab() {
                 placeholder={t.triggers.test_select_event_placeholder}
                 wrapperClassName={`w-full ${hasPersona ? '' : 'opacity-50 pointer-events-none'}`}
               />
-              <p className="typo-caption text-foreground">{t.triggers.test_output_event_help}</p>
+              <p className="typo-caption text-ink-2">{t.triggers.test_output_event_help}</p>
               {hasPersona && !vocabLoading && !eventOptionsAvailable && (
-                <p className="typo-caption text-amber-400/90 mt-1.5 flex items-start gap-1.5">
+                <p className="typo-caption text-status-warning mt-1.5 flex items-start gap-1.5">
                   <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                   <span>{t.triggers.test_no_emitted_events}</span>
                 </p>
@@ -260,7 +260,7 @@ export function TestTab() {
 
             {isCustomPicked && (
               <div>
-                <label className="block typo-caption text-foreground mb-1.5">
+                <label className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.test_custom_event_label}
                 </label>
                 <input
@@ -268,22 +268,22 @@ export function TestTab() {
                   value={customEventType}
                   onChange={(e) => setCustomEventType(e.target.value)}
                   placeholder={t.triggers.test_event_type_placeholder}
-                  className="w-full px-3 py-2 typo-body rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className="w-full px-3 py-2 typo-body rounded-card border border-hair bg-surface-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-primary/40"
                 />
               </div>
             )}
           </section>
 
           {/* Payload card — edit + fire */}
-          <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5 space-y-4">
+          <section className="rounded-modal border border-primary/8 bg-surface-1 p-5 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="typo-caption text-foreground">{t.triggers.payload_json_label}</label>
+                <label className="typo-caption text-ink-2">{t.triggers.payload_json_label}</label>
                 {payloadSource === 'history' && historyEvent && (
                   <button
                     type="button"
                     onClick={() => refreshPrefill(selectedPersonaId, activeEventType)}
-                    className="flex items-center gap-1 typo-caption text-foreground transition-colors"
+                    className="flex items-center gap-1 typo-caption text-ink-1 transition-colors"
                     title={t.triggers.test_payload_reset}
                   >
                     <RotateCcw className="w-3 h-3" />
@@ -295,23 +295,23 @@ export function TestTab() {
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
                 rows={8}
-                className="w-full px-3 py-2 typo-code rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y"
+                className="w-full px-3 py-2 typo-code rounded-card border border-hair bg-surface-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y"
               />
               <div className="mt-1.5 typo-caption flex items-start gap-1.5">
                 {payloadSource === 'history' && historyEvent ? (
-                  <span className="text-emerald-400/90 flex items-start gap-1.5">
+                  <span className="text-status-success flex items-start gap-1.5">
                     <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     {tx(t.triggers.test_payload_from_history, { ago: formatRelativeTime(historyEvent.created_at) })}
                   </span>
                 ) : (
-                  <span className="text-foreground flex items-start gap-1.5">
+                  <span className="text-ink-1 flex items-start gap-1.5">
                     <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     {t.triggers.test_payload_no_history}
                   </span>
                 )}
               </div>
               {isInvalidJson && (
-                <p className="typo-caption text-amber-400/90 mt-1">{t.triggers.test_payload_invalid_json}</p>
+                <p className="typo-caption text-status-warning mt-1">{t.triggers.test_payload_invalid_json}</p>
               )}
             </div>
 
@@ -319,7 +319,7 @@ export function TestTab() {
               type="button"
               onClick={handleTestFire}
               disabled={!canFire}
-              className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />
               {isTesting ? t.triggers.publishing_label : t.triggers.publish_event}
@@ -336,9 +336,9 @@ export function TestTab() {
         />
 
         {testResult && (
-          <section className="rounded-modal border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.05] to-transparent p-5 space-y-2">
-            <p className="typo-body text-emerald-400">{t.triggers.event_published}</p>
-            <div className="typo-code text-foreground space-y-1">
+          <section className="rounded-modal border border-status-success/20 bg-surface-1 p-5 space-y-2">
+            <p className="typo-body text-status-success">{t.triggers.event_published}</p>
+            <div className="typo-code text-ink-1 space-y-1">
               <p>{t.triggers.result_id_prefix} {testResult.id}</p>
               <p>{t.triggers.result_type_prefix} {testResult.event_type}</p>
               <p>{t.triggers.result_status_prefix} {testResult.status}</p>

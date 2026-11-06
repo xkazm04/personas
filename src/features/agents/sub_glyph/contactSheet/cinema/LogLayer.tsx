@@ -21,7 +21,7 @@ export function LogLayer({ lines }: { lines: string[] }) {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3 max-w-[980px] w-full mx-auto">
-      <p className="typo-body-lg text-foreground">{COPY.buildLogHint}</p>
+      <p className="typo-body-lg text-ink-1">{COPY.buildLogHint}</p>
       <div
         ref={box}
         onScroll={(e) => {
@@ -33,10 +33,10 @@ export function LogLayer({ lines }: { lines: string[] }) {
         data-testid="sheet-cinema-build-log"
       >
         {tail.length === 0 ? (
-          <span className="typo-body text-foreground">{COPY.buildLogEmpty}</span>
+          <span className="typo-body text-ink-1">{COPY.buildLogEmpty}</span>
         ) : (
           tail.map((line, i) => (
-            <div key={`${lines.length - tail.length + i}`} className="font-mono typo-caption text-foreground leading-snug whitespace-pre-wrap break-words">
+            <div key={`${lines.length - tail.length + i}`} className="font-mono typo-caption text-ink-1 leading-snug whitespace-pre-wrap break-words">
               {line}
             </div>
           ))

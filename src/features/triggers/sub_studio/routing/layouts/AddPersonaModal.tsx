@@ -124,32 +124,32 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
       onClose={onClose}
       titleId={TITLE_ID}
       maxWidthClass="max-w-[1040px]"
-      panelClassName="max-h-[70vh] flex flex-col rounded-2xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden"
+      panelClassName="max-h-[70vh] flex flex-col rounded-card bg-card border border-hair shadow-elevation-4 overflow-hidden"
       staggerChildren={false}
     >
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-hair">
           {capabilityStep ? (
             <button
               type="button"
               onClick={() => setCapabilityStep(null)}
-              className="p-1 rounded-card hover:bg-secondary/60 text-foreground"
+              className="p-1 rounded-card hover:bg-surface-2 text-ink-1"
               aria-label={debtText("auto_back_to_personas_10208a8d")}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
           ) : (
-            <Users className="w-4 h-4 text-emerald-400" />
+            <Users className="w-4 h-4 text-status-success" />
           )}
           <div className="flex-1">
-            <h3 id={TITLE_ID} className="typo-heading text-foreground">
+            <h3 id={TITLE_ID} className="typo-heading text-ink-1">
               {capabilityStep
                 ? tx(t.triggers.add_persona_scope_title, { name: capabilityStep.name })
                 : eventLabel
                   ? tx(t.triggers.add_persona_connect_title, { event: eventLabel })
                   : t.triggers.add_persona_title}
             </h3>
-            <p className="text-[10px] text-foreground">
+            <p className="typo-caption text-ink-2">
               {capabilityStep
                 ? t.triggers.add_persona_scope_hint
                 : tx(t.triggers.add_persona_available, { count: availableCount })}
@@ -165,19 +165,19 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
             <button
               type="button"
               onClick={() => handleCapabilityPick(null)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-card border border-primary/10 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-card border border-hair hover:border-status-success/40 hover:bg-status-success/5 transition-colors text-left"
             >
-              <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
-                <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="icon-frame bg-status-success/10 flex-shrink-0">
+                <Users className="w-3.5 h-3.5 text-status-success" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-medium text-foreground"><DebtText k="auto_persona_wide_8f9b90e5" /></div>
-                <div className="text-[9px] text-foreground"><DebtText k="auto_all_capabilities_run_for_this_event_18d928d7" /></div>
+                <div className="typo-caption text-ink-2"><DebtText k="auto_persona_wide_8f9b90e5" /></div>
+                <div className="typo-caption text-ink-2"><DebtText k="auto_all_capabilities_run_for_this_event_18d928d7" /></div>
               </div>
             </button>
             {capabilityOptions.length > 0 && (
               <div className="pt-1">
-                <div className="px-2 py-1 text-[10px] font-semibold text-foreground uppercase tracking-wider">
+                <div className="px-2 py-1 typo-eyebrow text-ink-1">
                   <DebtText k="auto_scope_to_a_capability_dd2f86c8" />
                 </div>
                 <div className="space-y-1">
@@ -186,15 +186,15 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                       type="button"
                       key={uc.id}
                       onClick={() => handleCapabilityPick(uc.id)}
-                      className="w-full flex items-start gap-3 px-3 py-2 rounded-modal bg-card border border-primary/8 hover:border-cyan-400/40 hover:bg-cyan-500/5 transition-colors text-left"
+                      className="w-full flex items-start gap-3 px-3 py-2 rounded-modal bg-card border border-primary/8 hover:border-role-external/40 hover:bg-role-external/5 transition-colors text-left"
                     >
-                      <div className="icon-frame bg-cyan-500/10 flex-shrink-0 mt-0.5">
-                        <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                      <div className="icon-frame bg-role-external/10 flex-shrink-0 mt-0.5">
+                        <Layers className="w-3.5 h-3.5 text-role-external" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-medium text-foreground truncate">{uc.title}</div>
+                        <div className="typo-caption text-ink-2 truncate">{uc.title}</div>
                         {uc.description && (
-                          <div className="text-[9px] text-foreground line-clamp-2">{uc.description}</div>
+                          <div className="typo-caption text-ink-2 line-clamp-2">{uc.description}</div>
                         )}
                       </div>
                     </button>
@@ -207,15 +207,15 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
 
         {!capabilityStep && <>
         {/* Search + filters */}
-        <div className="px-4 py-2.5 border-b border-primary/5 space-y-2">
+        <div className="px-4 py-2.5 border-b border-hair space-y-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-1" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={t.triggers.search_personas_placeholder}
-              className="w-full pl-8 pr-3 py-1.5 typo-caption bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
+              className="w-full pl-8 pr-3 py-1.5 typo-caption bg-surface-1 border border-hair rounded-card text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-role-external/40"
               autoFocus
             />
           </div>
@@ -225,7 +225,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
               <button
                 type="button"
                 onClick={() => setSelectedGroupId(null)}
-                className={`px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${!selectedGroupId ? 'bg-cyan-500/15 text-cyan-400' : 'text-foreground hover:text-foreground hover:bg-secondary/40'}`}
+                className={`px-2 py-0.5 rounded-input typo-caption transition-colors ${!selectedGroupId ? 'bg-role-external/15 text-role-external' : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2'}`}
               >
                 {t.common.all}
               </button>
@@ -234,7 +234,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                   type="button"
                   key={g.id}
                   onClick={() => setSelectedGroupId(selectedGroupId === g.id ? null : g.id)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${selectedGroupId === g.id ? 'bg-cyan-500/15 text-cyan-400' : 'text-foreground hover:text-foreground hover:bg-secondary/40'}`}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-input typo-caption transition-colors ${selectedGroupId === g.id ? 'bg-role-external/15 text-role-external' : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2'}`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: g.color }} />
                   {g.name}
@@ -247,7 +247,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
         {/* Persona list */}
         <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
           {grouped.length === 0 && (
-            <div className="text-center py-8 typo-caption text-foreground">
+            <div className="text-center py-8 typo-caption text-ink-2">
               {search ? (
                 <div className="flex flex-col items-center gap-2">
                   <span>{t.triggers.no_matching_personas_found}</span>
@@ -271,12 +271,12 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                   {group ? (
                     <>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: group.color }} />
-                      <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{group.name}</span>
+                      <span className="typo-eyebrow text-ink-1">{group.name}</span>
                     </>
                   ) : (
-                    <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{t.triggers.add_persona_ungrouped}</span>
+                    <span className="typo-eyebrow text-ink-1">{t.triggers.add_persona_ungrouped}</span>
                   )}
-                  <span className="text-[9px] text-foreground ml-auto">{ps.length}</span>
+                  <span className="typo-caption text-ink-2 ml-auto">{ps.length}</span>
                 </div>
               )}
 
@@ -286,15 +286,15 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                     type="button"
                     key={p.id}
                     onClick={() => handlePersonaPick(p)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card border border-primary/8 hover:border-status-success/40 hover:bg-status-success/5 transition-colors text-left group"
                   >
-                    <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
+                    <div className="icon-frame bg-status-success/10 flex-shrink-0">
                       <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed frameSize={"lg"} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body-lg text-foreground truncate">{p.name}</div>
+                      <div className="typo-body-lg text-ink-1 truncate">{p.name}</div>
                     </div>
-                    <Plus className="w-3.5 h-3.5 text-emerald-400/40 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+                    <Plus className="w-3.5 h-3.5 text-status-success group-hover:text-status-success transition-colors flex-shrink-0" />
                   </button>
                 ))}
               </div>

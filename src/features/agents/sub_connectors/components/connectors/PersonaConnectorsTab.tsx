@@ -27,7 +27,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
 
   if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-foreground">{t.agents.connectors.ct_no_persona}</div>;
+    return <div className="flex items-center justify-center py-8 text-ink-1">{t.agents.connectors.ct_no_persona}</div>;
   }
 
   const connectorNames = extractConnectorNames(selectedPersona, 10);
@@ -42,9 +42,9 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
             {connectorNames.map((name, i) => {
               const meta = getConnectorMeta(name);
               return (
-                <div key={`${name}-${i}`} className="flex items-center gap-1.5 px-2.5 py-1 rounded-card bg-secondary/30 border border-primary/10" title={meta.label}>
+                <div key={`${name}-${i}`} className="flex items-center gap-1.5 px-2.5 py-1 rounded-card bg-surface-1 border border-hair" title={meta.label}>
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
-                  <span className="typo-caption text-foreground">{meta.label}</span>
+                  <span className="typo-caption text-ink-2">{meta.label}</span>
                 </div>
               );
             })}

@@ -37,7 +37,7 @@ export function PersonaOverviewTemplateMatches({
 
   return (
     <div className="mx-auto w-full max-w-xl space-y-3 pb-8">
-      <p className="typo-label text-foreground text-center">
+      <p className="typo-label text-ink-1 text-center">
         {t.home.setup.describe_goal}
       </p>
       <input
@@ -50,7 +50,7 @@ export function PersonaOverviewTemplateMatches({
         data-testid="roster-empty-intent"
         aria-label={t.home.setup.describe_goal}
         placeholder={t.agents.glyph_intent_placeholder}
-        className="w-full px-3 py-2 typo-body rounded-input bg-secondary/40 border border-primary/15 text-foreground placeholder:text-foreground/60 focus-visible:outline-none focus-visible:border-primary/40 transition-colors"
+        className="w-full px-3 py-2 typo-body rounded-input bg-surface-2 border border-hair text-ink-1 placeholder:text-ink-2 focus-visible:outline-none focus-visible:border-primary/40 transition-colors"
       />
       {/* The live region is mounted with the field, not with its first result:
           a region created together with its content announces nothing. */}
@@ -58,7 +58,7 @@ export function PersonaOverviewTemplateMatches({
         {trimmed.length > 0 && (
           <>
             {matches.length > 0 && (
-              <p className="typo-caption uppercase tracking-wide text-primary/80">
+              <p className="typo-eyebrow text-primary/80">
                 {t.agents.build_template_match_label}
               </p>
             )}
@@ -68,18 +68,18 @@ export function PersonaOverviewTemplateMatches({
                 type="button"
                 data-testid={`roster-empty-template-${m.id}`}
                 onClick={() => onStart(trimmed, m)}
-                className="w-full flex items-start gap-2.5 rounded-card border border-primary/15 bg-secondary/25 px-3 py-2 text-left hover:bg-secondary/40 hover:border-primary/30 transition-colors focus-ring cursor-pointer"
+                className="w-full flex items-start gap-2.5 rounded-card border border-hair bg-surface-1 px-3 py-2 text-left hover:bg-surface-2 hover:border-primary/30 transition-colors focus-ring cursor-pointer"
               >
                 <Sparkles
                   className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary"
                   aria-hidden
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block typo-body text-foreground truncate">
+                  <span className="block typo-body text-ink-1 truncate">
                     {m.name}
                   </span>
                   {m.snippet && (
-                    <span className="block typo-caption text-foreground/85 line-clamp-2">
+                    <span className="block typo-caption text-ink-2 line-clamp-2">
                       {m.snippet}
                     </span>
                   )}
@@ -93,7 +93,7 @@ export function PersonaOverviewTemplateMatches({
                 type="button"
                 data-testid="roster-empty-start-from-intent"
                 onClick={submit}
-                className="w-full rounded-card border border-primary/15 bg-secondary/25 px-3 py-2 typo-body text-foreground text-left hover:bg-secondary/40 transition-colors focus-ring cursor-pointer"
+                className="w-full rounded-card border border-hair bg-surface-1 px-3 py-2 typo-body text-ink-1 text-left hover:bg-surface-2 transition-colors focus-ring cursor-pointer"
               >
                 {t.agents.editor_empty.create}
               </button>

@@ -39,9 +39,9 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
   const { t } = useTranslation();
 
   const RATING_OPTIONS = [
-    { value: -1, icon: ThumbsDown, label: t.agents.lab.thumbs_down, activeColor: 'text-red-400', activeBg: 'bg-red-500/15 border-red-500/30' },
-    { value: 0, icon: Minus, label: t.agents.lab.neutral_rating, activeColor: 'text-foreground', activeBg: 'bg-secondary/50 border-primary/20' },
-    { value: 1, icon: ThumbsUp, label: t.agents.lab.thumbs_up, activeColor: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/30' },
+    { value: -1, icon: ThumbsDown, label: t.agents.lab.thumbs_down, activeColor: 'text-status-error', activeBg: 'bg-status-error/15 border-status-error/30' },
+    { value: 0, icon: Minus, label: t.agents.lab.neutral_rating, activeColor: 'text-ink-1', activeBg: 'bg-surface-2 border-hair' },
+    { value: 1, icon: ThumbsUp, label: t.agents.lab.thumbs_up, activeColor: 'text-status-success', activeBg: 'bg-status-success/15 border-status-success/30' },
   ] as const;
   const [selected, setSelected] = useState<number | undefined>(scoreToThumb(currentRating));
   const [feedback, setFeedback] = useState(currentFeedback ?? '');
@@ -68,7 +68,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <span className={`typo-label text-foreground ${compact ? 'mr-1' : 'mr-2'}`}>
+        <span className={`typo-label text-ink-1 ${compact ? 'mr-1' : 'mr-2'}`}>
           Rate
         </span>
         {RATING_OPTIONS.map((opt) => {
@@ -85,7 +85,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
               className={`${btnPad} rounded-card border transition-colors ${
                 isActive
                   ? `${opt.activeBg} ${opt.activeColor}`
-                  : 'border-transparent text-foreground hover:text-muted-foreground/70 hover:bg-secondary/30'
+                  : 'border-transparent text-ink-1 hover:text-ink-3 hover:bg-surface-1'
               }`}
             >
               <Icon className={iconSize} />
@@ -97,7 +97,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           <button
             type="button"
             onClick={() => { void handleSave(); }}
-            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
+            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption bg-primary/15 text-primary border border-hair hover:bg-primary/25 transition-colors"
           >
             <Send className="w-3 h-3" />
             Save
@@ -105,7 +105,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
         )}
 
         {saved && (
-          <span className="ml-1 typo-caption text-foreground">{t.agents.lab.saved_label}</span>
+          <span className="ml-1 typo-caption text-ink-2">{t.agents.lab.saved_label}</span>
         )}
       </div>
 
@@ -115,7 +115,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           value={feedback}
           onChange={(e) => { setFeedback(e.target.value); setSaved(false); }}
           placeholder={t.agents.lab.what_went_wrong}
-          className={`w-full rounded-card border border-primary/10 bg-secondary/20 typo-body text-foreground placeholder:text-foreground px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 ${compact ? 'typo-caption' : ''}`}
+          className={`w-full rounded-card border border-hair bg-surface-1 typo-body text-ink-1 placeholder:text-ink-3 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 ${compact ? 'typo-caption' : ''}`}
         />
       )}
     </div>

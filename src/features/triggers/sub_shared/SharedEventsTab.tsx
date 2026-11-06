@@ -82,7 +82,7 @@ export function SharedEventsTab() {
       render: (e) => (
         <div className="flex items-center gap-2.5 min-w-0">
           <FeedIcon entry={e} className="w-8 h-8" />
-          <span className="typo-body text-foreground truncate">{e.name}</span>
+          <span className="typo-body text-ink-1 truncate">{e.name}</span>
         </div>
       ),
     },
@@ -97,7 +97,7 @@ export function SharedEventsTab() {
       ],
       filterValue: catFilter,
       onFilterChange: setCatFilter,
-      render: (e) => <span className="typo-caption text-foreground/80 capitalize">{e.category}</span>,
+      render: (e) => <span className="typo-caption text-ink-2 capitalize">{e.category}</span>,
     },
     {
       key: 'routing',
@@ -119,7 +119,7 @@ export function SharedEventsTab() {
             className={`inline-flex items-center justify-center min-w-7 px-2 py-0.5 rounded-full typo-caption border transition-colors ${
               count > 0
                 ? 'bg-primary/10 text-primary border-primary/25 hover:bg-primary/20'
-                : 'bg-secondary/40 text-foreground/90 border-primary/10 hover:bg-secondary/60'
+                : 'bg-surface-2 text-ink-1 border-hair hover:bg-surface-2'
             }`}
           >
             {count > 0 ? count : '—'}
@@ -168,15 +168,15 @@ export function SharedEventsTab() {
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Filter bar */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-primary/5">
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-hair">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground/50" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-ink-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t.triggers.search_feeds}
-            className="w-full pl-8 pr-7 py-1.5 typo-caption rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="w-full pl-8 pr-7 py-1.5 typo-caption rounded-input bg-surface-2 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
           {search && (
             <button
@@ -185,7 +185,7 @@ export function SharedEventsTab() {
               aria-label={t.triggers.clear_search_label}
               className="absolute right-2 top-1/2 -translate-y-1/2"
             >
-              <X className="w-3 h-3 text-foreground/60 hover:text-foreground" />
+              <X className="w-3 h-3 text-ink-2 hover:text-ink-1" />
             </button>
           )}
         </div>
@@ -196,13 +196,13 @@ export function SharedEventsTab() {
             size="sm"
             label={m.watching_only}
           />
-          <span className="typo-caption text-foreground/70">{m.watching_only}</span>
+          <span className="typo-caption text-ink-2">{m.watching_only}</span>
         </div>
         <button
           type="button"
           onClick={refresh}
           disabled={loading}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:bg-surface-2 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           {t.common.refresh}
@@ -224,7 +224,7 @@ export function SharedEventsTab() {
           emptyGlyph={FEEDS_GLYPH}
           defaultSortKey="last_change"
           defaultSortDir="desc"
-          rowAccent={(e) => (subByEntryId.has(e.id) ? 'border-l-emerald-400' : undefined)}
+          rowAccent={(e) => (subByEntryId.has(e.id) ? 'border-l-status-success' : undefined)}
           rowReveal={{ resetKey: 'shared-events-marketplace' }}
         />
       </div>

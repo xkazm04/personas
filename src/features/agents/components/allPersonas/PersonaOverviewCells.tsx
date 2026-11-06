@@ -37,7 +37,7 @@ export const SelectCell = memo(function SelectCell({
       className="w-full h-full flex items-center justify-center transition-colors rounded-card hover:bg-primary/[0.04] cursor-pointer"
     >
       <div
-        className={`w-4 h-4 shrink-0 rounded border transition-all flex items-center justify-center ${
+        className={`w-4 h-4 shrink-0 rounded-interactive border transition-all flex items-center justify-center ${
           selected ? 'bg-primary/80 border-primary/60' : 'border-primary/25 hover:border-primary/50'
         }`}
       >
@@ -45,7 +45,7 @@ export const SelectCell = memo(function SelectCell({
           {selected && (
             <motion.svg
               key="check"
-              className="w-3 h-3 text-foreground"
+              className="w-3 h-3 text-ink-1"
               viewBox="0 0 12 12"
               fill="none"
               initial={{ scale: 0.8 }}
@@ -90,11 +90,11 @@ export const FavoriteCell = memo(function FavoriteCell({
           e.stopPropagation();
           onToggle(persona.id);
         }}
-        className="flex items-center justify-center p-0.5 rounded transition-colors hover:bg-amber-500/10"
+        className="flex items-center justify-center p-0.5 rounded-interactive transition-colors hover:bg-status-warning/10"
       >
         <Star
           className={`w-3.5 h-3.5 transition-colors ${
-            isFavorite ? 'text-amber-400 fill-amber-400' : 'text-foreground hover:text-amber-400/50'
+            isFavorite ? 'text-status-warning fill-amber-400' : 'text-ink-1 hover:text-status-warning'
           }`}
         />
       </button>
@@ -109,7 +109,7 @@ export const NameCell = memo(function NameCell({ persona, onClick }: { persona: 
   return (
     <div className="flex items-center gap-3 min-w-0 w-full group">
       <div
-        className="icon-frame icon-frame-pop bg-primary/10 border border-primary/15 flex-shrink-0"
+        className="icon-frame icon-frame-pop bg-surface-1 border border-hair flex-shrink-0"
         style={persona.color ? { borderColor: `${persona.color}30`, backgroundColor: `${persona.color}15` } : undefined}
       >
         <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" framed frameSize="sm" />
@@ -122,7 +122,7 @@ export const NameCell = memo(function NameCell({ persona, onClick }: { persona: 
           // A system persona (the Director) is found by its name; the backend
           // refuses the rename, so the roster does not offer it.
           disabled={persona.trust_origin === 'system'}
-          className="text-md text-foreground/90 max-w-full"
+          className="typo-caption text-ink-1 max-w-full"
           parentGroup
         />
       </div>
@@ -147,7 +147,7 @@ export const ConnectorsCell = memo(function ConnectorsCell({
   if (connectors.length === 0) {
     return (
       <Tooltip content={t.agents.persona_list.no_connectors_configured}>
-        <span className="text-foreground">
+        <span className="text-ink-1">
           <Plug className="w-3.5 h-3.5" />
         </span>
       </Tooltip>
@@ -161,7 +161,7 @@ export const ConnectorsCell = memo(function ConnectorsCell({
         return (
           <Tooltip key={`${name}-${i}`} content={meta.label}>
             <div
-              className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center flex-shrink-0 cursor-help transition-colors hover:bg-secondary/60 hover:border-primary/25"
+              className="w-6 h-6 rounded-input bg-surface-1 border border-hair flex items-center justify-center flex-shrink-0 cursor-help transition-colors hover:bg-surface-2 hover:border-primary/25"
             >
               <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
             </div>
@@ -170,7 +170,7 @@ export const ConnectorsCell = memo(function ConnectorsCell({
       })}
       {connectors.length > MAX_VISIBLE_CONNECTORS && (
         <Tooltip content={connectors.slice(MAX_VISIBLE_CONNECTORS).map((n) => getConnectorMeta(n).label).join(', ')}>
-          <span className="text-md text-foreground ml-0.5 cursor-help">
+          <span className="typo-caption text-ink-2 ml-0.5 cursor-help">
             +{connectors.length - MAX_VISIBLE_CONNECTORS}
           </span>
         </Tooltip>

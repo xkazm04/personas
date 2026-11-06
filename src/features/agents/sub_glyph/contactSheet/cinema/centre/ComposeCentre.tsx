@@ -10,6 +10,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { PersonaCoreEntry, type PersonaCore } from "@/features/agents/sub_glyph/personaCore";
 import { EASE } from "../cinemaMotion";
 import { COPY } from "../copy";
+import { Kbd } from '@/features/shared/components/display/Kbd';
 
 interface ComposeCentreProps {
   intentText: string;
@@ -49,7 +50,7 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
       transition={{ duration: 0.5, ease: EASE }}
       className="w-full h-full flex flex-col items-center justify-center gap-3 text-center"
     >
-      <h2 className="typo-title-lg text-foreground">{COPY.heroAsk}</h2>
+      <h2 className="typo-title-lg text-ink-1">{COPY.heroAsk}</h2>
       <div className="@container w-full max-w-[520px] rounded-card border border-card-border bg-background/85 backdrop-blur-md px-3 pt-3 pb-2.5 text-left shadow-elevation-3 focus-within:border-[color:var(--cinema-accent)]">
         <label htmlFor="sheet-cinema-intent" className="sr-only">{COPY.heroAsk}</label>
         <textarea
@@ -66,7 +67,7 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
             }
           }}
           placeholder={COPY.placeholder}
-          className="w-full min-h-[64px] resize-none bg-transparent outline-none typo-body-lg text-foreground placeholder:text-foreground/35 leading-relaxed"
+          className="w-full min-h-[64px] resize-none bg-transparent outline-none typo-body-lg text-ink-1 placeholder:text-ink-3 leading-relaxed"
         />
         {/* One row: identity and context on the left, Launch on the right.
             Nothing in it shrinks or wraps. At 1280 x 800 with the nav open the
@@ -82,7 +83,7 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
               type="button"
               onClick={(e) => onOpenContext(e.currentTarget)}
               aria-label={contextLabel}
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 h-8 px-2.5 rounded-interactive border border-card-border typo-body text-foreground hover:text-foreground hover:bg-foreground/5"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 h-8 px-2.5 rounded-interactive border border-card-border typo-body text-ink-1 hover:text-ink-1 hover:bg-surface-1"
             >
               <FileText className="w-3.5 h-3.5 shrink-0" aria-hidden />
               <span className="hidden @[30rem]:inline">{contextLabel}</span>
@@ -101,7 +102,7 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
             data-testid="agent-launch-btn"
           >
             {COPY.launch}
-            <kbd className="ml-1 font-mono typo-caption opacity-70">↵</kbd>
+            <Kbd>↵</Kbd>
           </Button>
         </div>
         {error && (

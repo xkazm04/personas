@@ -197,16 +197,16 @@ export function BuildSimulatePanel({
       size="lg"
       portal
     >
-      <div className="bg-secondary/95 border border-border/40 rounded-modal shadow-elevation-3 overflow-hidden">
-        <header className="flex items-start justify-between p-5 border-b border-border/30">
+      <div className="bg-surface-2 border border-hair rounded-modal shadow-elevation-3 overflow-hidden">
+        <header className="flex items-start justify-between p-5 border-b border-hair">
           <div>
             <h2
               id="build-simulate-title"
-              className="typo-title-lg text-foreground"
+              className="typo-title-lg text-ink-1"
             >
               {t.agents.build_simulate.title}
             </h2>
-            <p className="typo-body text-foreground mt-1">
+            <p className="typo-body text-ink-2 mt-1">
               {t.agents.build_simulate.subtitle}
             </p>
           </div>
@@ -214,7 +214,7 @@ export function BuildSimulatePanel({
             type="button"
             onClick={onClose}
             aria-label={t.agents.build_simulate.close}
-            className="text-foreground hover:text-foreground p-1 rounded-interactive"
+            className="text-ink-1 hover:text-ink-1 p-1 rounded-interactive"
           >
             <X className="w-4 h-4" />
           </button>
@@ -222,20 +222,20 @@ export function BuildSimulatePanel({
 
         <div className="p-5 space-y-4">
           {useCases.length === 0 ? (
-            <p className="typo-body text-foreground">
+            <p className="typo-body text-ink-1">
               {t.agents.build_simulate.no_use_cases}
             </p>
           ) : (
             <>
               <label className="block">
-                <span className="typo-label text-foreground mb-1.5 block">
+                <span className="typo-label text-ink-1 mb-1.5 block">
                   {t.agents.build_simulate.select_capability}
                 </span>
                 <select
                   data-testid="build-simulate-uc-select"
                   value={selectedId ?? ""}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full bg-background/60 border border-border/40 rounded-input px-3 py-2 typo-body text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className="w-full bg-background/60 border border-hair rounded-input px-3 py-2 typo-body text-ink-1 focus:outline-none focus:ring-1 focus:ring-primary/40"
                 >
                   {useCases.map((uc) => (
                     <option key={uc.id} value={uc.id}>
@@ -244,14 +244,14 @@ export function BuildSimulatePanel({
                   ))}
                 </select>
                 {selectedUseCase?.description && (
-                  <p className="typo-caption text-foreground mt-1">
+                  <p className="typo-caption text-ink-2 mt-1">
                     {selectedUseCase.description}
                   </p>
                 )}
               </label>
 
               <label className="block">
-                <span className="typo-label text-foreground mb-1.5 block">
+                <span className="typo-label text-ink-1 mb-1.5 block">
                   {t.agents.build_simulate.input_label}
                 </span>
                 <textarea
@@ -263,7 +263,7 @@ export function BuildSimulatePanel({
                     t.agents.build_simulate.input_placeholder
                   }
                   rows={4}
-                  className="w-full bg-background/60 border border-border/40 rounded-input px-3 py-2 typo-body font-mono text-foreground/90 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className="w-full bg-background/60 border border-hair rounded-input px-3 py-2 typo-body font-mono text-ink-1 focus:outline-none focus:ring-1 focus:ring-primary/40"
                 />
               </label>
 
@@ -273,7 +273,7 @@ export function BuildSimulatePanel({
                   data-testid="build-simulate-run"
                   onClick={() => void handleRun()}
                   disabled={isRunning || !selectedId || !sessionId}
-                  className="px-4 py-2 rounded-interactive bg-primary/30 hover:bg-primary/45 disabled:opacity-50 disabled:cursor-not-allowed border border-primary/50 typo-body text-foreground flex items-center gap-2"
+                  className="px-4 py-2 rounded-interactive bg-primary/30 hover:bg-primary/45 disabled:opacity-50 disabled:cursor-not-allowed border border-primary/50 typo-body text-ink-1 flex items-center gap-2"
                 >
                   {isRunning ? (
                     <>
@@ -292,7 +292,7 @@ export function BuildSimulatePanel({
               {error && (
                 <div
                   role="alert"
-                  className="p-3 rounded-card border border-orange-400/40 bg-orange-500/10 typo-body text-orange-200"
+                  className="p-3 rounded-card border border-status-warning/40 bg-status-warning/10 typo-body text-status-warning"
                 >
                   <strong>{t.agents.build_simulate.error_label}:</strong>{" "}
                   {simulateErrorCopy(t, error.raw)}
@@ -366,11 +366,11 @@ function ArtefactsPreview({
   return (
     <section
       data-testid="build-simulate-artefacts"
-      className="border border-border/30 rounded-card p-4 bg-background/40"
+      className="border border-hair rounded-card p-4 bg-background/40"
     >
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="typo-heading text-foreground">{artefactsTitleLabel}</h3>
-        <div className="flex gap-3 typo-caption text-foreground">
+        <h3 className="typo-heading text-ink-1">{artefactsTitleLabel}</h3>
+        <div className="flex gap-3 typo-caption text-ink-2">
           <span>
             {executionLabel}: <code>{execution.id.slice(0, 8)}…</code>
           </span>
@@ -381,37 +381,37 @@ function ArtefactsPreview({
       </header>
 
       {isEmpty ? (
-        <p className="typo-body text-foreground">{noArtefactsLabel}</p>
+        <p className="typo-body text-ink-1">{noArtefactsLabel}</p>
       ) : (
         <div className="space-y-4">
           <div>
-            <h4 className="typo-label text-foreground mb-2">
+            <h4 className="typo-label text-ink-1 mb-2">
               {reviewsHeading}
             </h4>
             {reviews.length === 0 ? (
-              <p className="typo-body text-foreground">{noReviewsLabel}</p>
+              <p className="typo-body text-ink-1">{noReviewsLabel}</p>
             ) : (
               <ul className="space-y-1.5">
                 {reviews.map((r) => (
                   <li
                     key={r.id}
-                    className="p-2 rounded-input bg-secondary/40 border border-border/20"
+                    className="p-2 rounded-input bg-surface-2 border border-hair"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="typo-body font-medium text-foreground">
+                      <span className="typo-body font-medium text-ink-1">
                         {r.title}
                       </span>
-                      <code className="typo-caption text-foreground">
+                      <code className="typo-caption text-ink-1">
                         {r.status}
                       </code>
                     </div>
                     {r.description && (
-                      <p className="typo-caption text-foreground mt-1 line-clamp-2">
+                      <p className="typo-caption text-ink-2 mt-1 line-clamp-2">
                         {r.description}
                       </p>
                     )}
                     {r.reviewer_notes && (
-                      <p className="typo-caption text-foreground mt-1 italic">
+                      <p className="typo-caption text-ink-2 mt-1 italic">
                         {r.reviewer_notes}
                       </p>
                     )}
@@ -422,29 +422,29 @@ function ArtefactsPreview({
           </div>
 
           <div>
-            <h4 className="typo-label text-foreground mb-2">
+            <h4 className="typo-label text-ink-1 mb-2">
               {memoriesHeading}
             </h4>
             {memories.length === 0 ? (
-              <p className="typo-body text-foreground">{noMemoriesLabel}</p>
+              <p className="typo-body text-ink-1">{noMemoriesLabel}</p>
             ) : (
               <ul className="space-y-1.5">
                 {memories.map((m) => (
                   <li
                     key={m.id}
-                    className="p-2 rounded-input bg-secondary/40 border border-border/20"
+                    className="p-2 rounded-input bg-surface-2 border border-hair"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="typo-body font-medium text-foreground">
+                      <span className="typo-body font-medium text-ink-1">
                         {m.title}
                       </span>
                       {m.category && (
-                        <code className="typo-caption text-foreground">
+                        <code className="typo-caption text-ink-1">
                           {m.category}
                         </code>
                       )}
                     </div>
-                    <p className="typo-caption text-foreground mt-1 line-clamp-2">
+                    <p className="typo-caption text-ink-2 mt-1 line-clamp-2">
                       {m.content}
                     </p>
                   </li>

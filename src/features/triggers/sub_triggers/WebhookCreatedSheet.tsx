@@ -56,10 +56,10 @@ export function WebhookCreatedSheet({ triggerId, secret, onClose, onOpenRelay }:
         <div className="flex items-start gap-2.5 px-4 py-3 border-b border-card-border/60 shrink-0">
           <CheckCircle2 className="w-4 h-4 text-status-success mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
-            <h2 id="webhook-created-title" className="typo-label text-foreground">
+            <h2 id="webhook-created-title" className="typo-label text-ink-1">
               {t.triggers.webhook_created_title}
             </h2>
-            <p className="typo-caption text-foreground/85 mt-0.5">
+            <p className="typo-caption text-ink-2 mt-0.5">
               {t.triggers.webhook_created_once_warning}
             </p>
           </div>
@@ -74,12 +74,12 @@ export function WebhookCreatedSheet({ triggerId, secret, onClose, onOpenRelay }:
 
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="typo-label text-foreground">{t.triggers.webhook_created_curl_label}</span>
+              <span className="typo-label text-ink-1">{t.triggers.webhook_created_curl_label}</span>
               <CopyButton text={curl} tooltip={t.triggers.webhook_created_copy_curl} />
             </div>
             <pre
               data-testid="webhook-created-curl"
-              className="px-3 py-2 rounded-card border border-card-border bg-secondary/40 typo-code text-foreground overflow-x-auto whitespace-pre"
+              className="px-3 py-2 rounded-card border border-card-border bg-surface-2 typo-code text-ink-1 overflow-x-auto whitespace-pre"
             >
               {curl}
             </pre>
@@ -94,7 +94,7 @@ export function WebhookCreatedSheet({ triggerId, secret, onClose, onOpenRelay }:
                 <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="typo-label text-status-warning">{t.triggers.webhook_created_local_title}</div>
-                  <div className="typo-caption text-foreground/85 mt-0.5">
+                  <div className="typo-caption text-ink-2 mt-0.5">
                     {t.triggers.webhook_created_local_body}
                   </div>
                   {onOpenRelay && (
@@ -125,12 +125,12 @@ function CopyableLine({ label, text, testId }: { label: string; text: string; te
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
-        <span className="typo-label text-foreground">{label}</span>
+        <span className="typo-label text-ink-1">{label}</span>
         <CopyButton text={text} />
       </div>
       <div
         data-testid={testId}
-        className="px-3 py-2 rounded-input border border-card-border bg-secondary/40 typo-code text-foreground break-all select-all"
+        className="px-3 py-2 rounded-input border border-card-border bg-surface-2 typo-code text-ink-1 break-all select-all"
       >
         {text}
       </div>

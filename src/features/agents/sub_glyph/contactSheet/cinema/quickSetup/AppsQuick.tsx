@@ -25,14 +25,14 @@ function AppTile({ tile, on, onToggle }: { tile: VaultTile; on: boolean; onToggl
       onClick={onToggle}
       aria-pressed={on}
       className={`relative flex items-center gap-2.5 p-2 rounded-card border text-left transition-colors ${
-        on ? "" : "border-card-border hover:bg-secondary/40"
+        on ? "" : "border-card-border hover:bg-surface-2"
       } ${tile.usable || on ? "" : "opacity-60 hover:opacity-100"}`}
       style={on ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.1) } : undefined}
     >
       <BrandMark meta={tile.meta} size={32} />
       <span className="flex flex-col min-w-0 flex-1">
-        <span className="typo-body text-foreground truncate">{tile.meta.label}</span>
-        <span className={`typo-caption truncate ${tile.usable ? "text-foreground" : "text-status-warning"}`}>
+        <span className="typo-body text-ink-1 truncate">{tile.meta.label}</span>
+        <span className={`typo-caption truncate ${tile.usable ? "text-ink-1" : "text-status-warning"}`}>
           {QS.health[tile.health] ?? tile.health}
         </span>
       </span>
@@ -53,7 +53,7 @@ export function AppsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMore:
   if (tiles.length === 0) {
     return (
       <div className="flex flex-col gap-3 items-start">
-        <p className="typo-body text-foreground">{QS.noApps}</p>
+        <p className="typo-body text-ink-1">{QS.noApps}</p>
         <MoreButton label={QS.moreApps(0)} onClick={onMore} />
       </div>
     );
@@ -75,7 +75,7 @@ export function AppsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMore:
       </div>
       {dbSelected.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="typo-card-label uppercase tracking-[0.1em] text-foreground">{t.agents.glyph_db_scope_heading}</span>
+          <span className="typo-card-label uppercase tracking-[0.1em] text-ink-1">{t.agents.glyph_db_scope_heading}</span>
           {dbSelected.map((tl) => (
             <ConnectorTableScopeRow
               key={tl.name}

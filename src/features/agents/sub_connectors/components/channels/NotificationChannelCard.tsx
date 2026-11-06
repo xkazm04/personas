@@ -85,7 +85,7 @@ export function NotificationChannelCard({
       {/* Header row */}
       <div className="flex items-center gap-3">
         {channelIcon(type)}
-        <span className="typo-body text-foreground flex-1 capitalize">{type}</span>
+        <span className="typo-body text-ink-1 flex-1 capitalize">{type}</span>
         <AccessibleToggle
           checked={enabled}
           onChange={onToggleEnabled}
@@ -96,7 +96,7 @@ export function NotificationChannelCard({
           type="button"
           onClick={onRemove}
           aria-label={t.common.delete}
-          className="p-1 text-foreground hover:text-red-400 transition-colors"
+          className="p-1 text-ink-1 hover:text-status-error transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -108,7 +108,7 @@ export function NotificationChannelCard({
         const fieldId = `${fieldIdPrefix}-${field.key}`;
         return (
           <div key={field.key}>
-            <label htmlFor={fieldId} className="block typo-body text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
+            <label htmlFor={fieldId} className="block typo-body text-ink-1 mb-1">{t.agents.connectors[field.labelKey]}</label>
             <input
               id={fieldId}
               type={field.public ? 'text' : 'password'}
@@ -118,7 +118,7 @@ export function NotificationChannelCard({
               placeholder={field.placeholderIsExample
                 ? tx(t.agents.connectors.ch_placeholder_example, { value: field.placeholder })
                 : field.placeholder}
-              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-modal typo-body text-foreground placeholder:text-foreground focus-ring ${isEmpty ? 'border-red-500/50' : TOOLS_BORDER}`}
+              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-modal typo-body text-ink-1 placeholder:text-ink-3 focus-ring ${isEmpty ? 'border-status-error/50' : TOOLS_BORDER}`}
             />
           </div>
         );
@@ -126,16 +126,16 @@ export function NotificationChannelCard({
 
       {/* Credential picker */}
       <div>
-        <label className="block typo-body text-foreground mb-1">{t.agents.connectors.ch_credential}</label>
+        <label className="block typo-body text-ink-1 mb-1">{t.agents.connectors.ch_credential}</label>
         <CredentialPicker
           credentials={matchingCredentials}
           selectedId={credentialId}
           onChange={onCredentialChange}
         />
         {credentialId ? (
-          <span className="typo-body text-emerald-400/70 mt-0.5 block">{t.agents.connectors.ch_connected}</span>
+          <span className="typo-body text-status-success mt-0.5 block">{t.agents.connectors.ch_connected}</span>
         ) : (
-          <span className="typo-body text-amber-400/70 mt-0.5 block">{t.agents.connectors.ch_cred_needed}</span>
+          <span className="typo-body text-status-warning mt-0.5 block">{t.agents.connectors.ch_cred_needed}</span>
         )}
       </div>
 
@@ -164,7 +164,7 @@ export function NotificationChannelCard({
               : t.agents.connectors.ch_test}
         </Button>
         {testStatus === 'error' && testError && (
-          <p className="typo-caption text-red-400/80 mt-1 truncate" title={testError}>{testError}</p>
+          <p className="typo-caption text-status-error mt-1 truncate" title={testError}>{testError}</p>
         )}
       </div>
     </div>

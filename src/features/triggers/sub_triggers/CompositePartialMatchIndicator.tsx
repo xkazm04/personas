@@ -40,16 +40,16 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
 
   // Color coding: green if fired, amber for near-miss (>0 met), muted for nothing
   const color = fired
-    ? 'text-emerald-400'
+    ? 'text-status-success'
     : conditionsMet > 0
-      ? 'text-amber-400'
-      : 'text-foreground';
+      ? 'text-status-warning'
+      : 'text-ink-1';
 
   const bgColor = fired
-    ? 'bg-emerald-500/10 border-emerald-500/15'
+    ? 'bg-status-success/10 border-status-success/15'
     : conditionsMet > 0
-      ? 'bg-amber-500/10 border-amber-500/15'
-      : 'bg-secondary/30 border-border/30';
+      ? 'bg-status-warning/10 border-status-warning/15'
+      : 'bg-surface-1 border-hair';
 
   return (
     <div ref={containerRef} className={`rounded-modal border p-2.5 space-y-2 ${bgColor}`}>
@@ -58,11 +58,11 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
         <span className={`typo-body ${color}`}>
           {tx(t.triggers.conditions_met, { met: conditionsMet, total: conditionsTotal })}
         </span>
-        <span className="typo-caption text-foreground ml-auto">
+        <span className="typo-caption text-ink-2 ml-auto">
           {operator.toUpperCase()}
         </span>
         {suppressed && (
-          <span className="typo-caption text-foreground italic">{t.triggers.suppressed_label}</span>
+          <span className="typo-caption text-ink-2 italic">{t.triggers.suppressed_label}</span>
         )}
       </div>
 
@@ -70,7 +70,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       <div className="h-1.5 rounded-full bg-background/30 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${
-            fired ? 'bg-emerald-400' : conditionsMet > 0 ? 'bg-amber-400' : 'bg-muted-foreground/20'
+            fired ? 'bg-status-success' : conditionsMet > 0 ? 'bg-status-warning' : 'bg-muted-foreground/20'
           }`}
           style={{ width: `${ratio * 100}%` }}
         />
@@ -80,17 +80,17 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       <div className="space-y-0.5">
         {conditionDetails.map((c, i) => (
           <div key={i} className="flex items-center gap-1.5 typo-caption">
-            <span className={c.matched ? 'text-emerald-400' : 'text-foreground'}>
+            <span className={c.matched ? 'text-status-success' : 'text-ink-1'}>
               {c.matched ? '\u2713' : '\u2717'}
             </span>
-            <span className={`font-mono ${c.matched ? 'text-foreground' : 'text-foreground'}`}>
+            <span className={`font-mono ${c.matched ? 'text-ink-1' : 'text-ink-1'}`}>
               {c.eventType}
             </span>
             {c.sourceFilter && (
-              <span className="text-foreground">({c.sourceFilter})</span>
+              <span className="text-ink-1">({c.sourceFilter})</span>
             )}
             {c.matched && c.matchedEventCount > 1 && (
-              <span className="text-foreground">&times;{c.matchedEventCount}</span>
+              <span className="text-ink-1">&times;{c.matchedEventCount}</span>
             )}
           </div>
         ))}

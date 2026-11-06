@@ -42,13 +42,13 @@ type PageTab = 'personas' | 'config';
 
 /** The grid's rendering of the shared accent rule (`rowAccentTone`). */
 const GRID_ACCENT_CLASS: Record<RowAccentTone, string> = {
-  building: 'border-l-violet-400/60',
-  draft: 'border-l-zinc-400/40',
-  failing: 'border-l-red-400/60',
-  degraded: 'border-l-amber-400/60',
+  building: 'border-l-role-agent/60',
+  draft: 'border-l-hair',
+  failing: 'border-l-status-error/60',
+  degraded: 'border-l-status-warning/60',
   dormant: 'border-l-foreground/20',
   unknown: 'border-l-foreground/20',
-  healthy: 'border-l-emerald-400/40',
+  healthy: 'border-l-status-success/40',
 };
 
 export default function PersonaOverviewPage() {
@@ -273,7 +273,7 @@ export default function PersonaOverviewPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Bot className="w-5 h-5 text-violet-400" />}
+        icon={<Bot className="w-5 h-5 text-role-agent" />}
         iconColor="violet"
         title={t.agents.persona_list.all_personas}
         subtitle={subtitle}
@@ -302,7 +302,7 @@ export default function PersonaOverviewPage() {
         ) : undefined}
       />
       <ContentBody>
-        <div className="px-3 py-2 border-b border-primary/5 flex items-center gap-3 flex-wrap">
+        <div className="px-3 py-2 border-b border-hair flex items-center gap-3 flex-wrap">
           <SegmentedTabs<PageTab>
             variant="segment"
             ariaLabel={t.agents.persona_list.all_personas}

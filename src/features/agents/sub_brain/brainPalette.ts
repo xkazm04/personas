@@ -4,7 +4,7 @@ import { useIsDarkTheme } from '@/stores/themeStore';
  * The Brain dashboard's chart palette — **computed, not eyeballed**.
  *
  * Every value below was run through the `dataviz` skill's
- * `scripts/validate_palette.js` against this surface (`bg-secondary/20` over
+ * `scripts/validate_palette.js` against this surface (`bg-surface-1` over
  * the app background: `#101520` dark, `#eaecf1` light) and only kept once all
  * checks passed:
  *

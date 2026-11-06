@@ -85,30 +85,30 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
       className="group"
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex items-center gap-1.5 typo-label text-foreground cursor-pointer hover:text-muted-foreground/80">
+      <summary className="flex items-center gap-1.5 typo-label text-ink-1 cursor-pointer hover:text-ink-3">
         <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
         {t.agents.lab.event_stream}
       </summary>
-      <div ref={scrollRef} className="mt-2 rounded-card border border-primary/10 bg-background/50 max-h-[320px] overflow-y-auto">
+      <div ref={scrollRef} className="mt-2 rounded-card border border-hair bg-background/50 max-h-[320px] overflow-y-auto">
         {loading && events === null && (
           <div role="status" aria-label={t.agents.lab.event_stream_loading} className="px-3 py-3 space-y-2">
             {['w-[78%]', 'w-[52%]', 'w-[91%]', 'w-[41%]', 'w-[67%]'].map((width, i) => (
               <div
                 key={i}
                 aria-hidden="true"
-                className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${width}`}
+                className={`h-3 rounded-interactive bg-primary/[0.06] animate-fade-in ${width}`}
                 style={{ animationDelay: `${120 + i * 35}ms` }}
               />
             ))}
           </div>
         )}
         {error != null && !loading && (
-          <div className="px-3 py-3 typo-caption text-red-400">
+          <div className="px-3 py-3 typo-caption text-status-error">
             {t.agents.lab.event_stream_failed}: {resolveErrorTranslated(t, extractMessage(error)).message}
           </div>
         )}
         {!loading && error == null && events !== null && events.length === 0 && (
-          <div className="px-3 py-3 typo-caption text-foreground">
+          <div className="px-3 py-3 typo-caption text-ink-2">
             {t.agents.lab.event_stream_empty}
           </div>
         )}
@@ -162,35 +162,35 @@ function EventRow({
     case 'assistant_text':
       return (
         <li className="px-3 py-2.5 flex gap-2.5">
-          <MessageSquare className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
+          <MessageSquare className="w-3.5 h-3.5 text-status-success mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="typo-caption text-foreground/90">{tEventAssistant}</span>
-              <span className="typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
+              <span className="typo-caption text-ink-2">{tEventAssistant}</span>
+              <span className="typo-caption text-ink-2 tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
             </div>
-            <p className="typo-caption text-foreground whitespace-pre-wrap">{ev.textPreview ?? ''}</p>
+            <p className="typo-caption text-ink-2 whitespace-pre-wrap">{ev.textPreview ?? ''}</p>
           </div>
         </li>
       );
     case 'tool_use':
       return (
         <li className="px-3 py-2.5 flex gap-2.5">
-          <Wrench className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
+          <Wrench className="w-3.5 h-3.5 text-status-info mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="typo-caption text-foreground/90">{tEventToolUse}</span>
-              <code className="typo-caption px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300/90">{ev.toolName ?? '?'}</code>
-              <span className="typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
+              <span className="typo-caption text-ink-2">{tEventToolUse}</span>
+              <code className="inline-flex items-center typo-caption text-status-info">{ev.toolName ?? '?'}</code>
+              <span className="typo-caption text-ink-2 tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
               {tool?.durationMs != null && (
-                <span className="typo-caption px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300/90 tabular-nums">
+                <span className="inline-flex items-center typo-caption text-status-warning tabular-nums">
                   +{renderDuration(tool.durationMs)}
                 </span>
               )}
             </div>
             {ev.toolArgsPreview && (
               <details>
-                <summary className="typo-caption text-foreground cursor-pointer hover:text-foreground/80">{tArgsLabel}</summary>
-                <pre className="mt-1 typo-caption text-foreground bg-background/40 rounded p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+                <summary className="typo-caption text-ink-1 cursor-pointer hover:text-ink-1">{tArgsLabel}</summary>
+                <pre className="mt-1 typo-caption text-ink-1 bg-background/40 rounded-interactive p-2 border border-hair max-h-[120px] overflow-y-auto whitespace-pre-wrap">
                   {ev.toolArgsPreview}
                 </pre>
               </details>
@@ -201,14 +201,14 @@ function EventRow({
     case 'tool_result':
       return (
         <li className="px-3 py-2.5 flex gap-2.5">
-          <ArrowRight className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
+          <ArrowRight className="w-3.5 h-3.5 text-role-agent mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="typo-caption text-foreground/90">{tEventToolResult}</span>
-              <span className="typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
+              <span className="typo-caption text-ink-2">{tEventToolResult}</span>
+              <span className="typo-caption text-ink-2 tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
             </div>
             {ev.toolResultPreview && (
-              <pre className="typo-caption text-foreground bg-background/40 rounded p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+              <pre className="typo-caption text-ink-1 bg-background/40 rounded-interactive p-2 border border-hair max-h-[120px] overflow-y-auto whitespace-pre-wrap">
                 {ev.toolResultPreview}
               </pre>
             )}
@@ -218,18 +218,18 @@ function EventRow({
     case 'system_init':
       return (
         <li className="px-3 py-2 flex items-center gap-2.5">
-          <Sparkles className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-          <span className="typo-caption text-foreground">{tEventSystemInit}</span>
-          {ev.textPreview && <code className="typo-caption px-1.5 py-0.5 rounded bg-secondary/40 text-foreground">{ev.textPreview}</code>}
-          <span className="ml-auto typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
+          <Sparkles className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
+          <span className="typo-caption text-ink-2">{tEventSystemInit}</span>
+          {ev.textPreview && <code className="inline-flex items-center typo-caption text-ink-1">{ev.textPreview}</code>}
+          <span className="ml-auto typo-caption text-ink-2 tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
         </li>
       );
     case 'result':
       return (
         <li className="px-3 py-2 flex items-center gap-2.5">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-          <span className="typo-caption text-foreground">{tEventResult}</span>
-          <span className="ml-auto typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
+          <CheckCircle2 className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
+          <span className="typo-caption text-ink-2">{tEventResult}</span>
+          <span className="ml-auto typo-caption text-ink-2 tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
         </li>
       );
     default:

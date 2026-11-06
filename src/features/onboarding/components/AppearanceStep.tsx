@@ -51,8 +51,8 @@ export function AppearanceStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading text-foreground/90 mb-1">{t.onboarding.appearance_heading}</h3>
-        <p className="typo-body text-foreground">
+        <h3 className="typo-heading text-ink-1 mb-1">{t.onboarding.appearance_heading}</h3>
+        <p className="typo-body text-ink-1">
           {t.onboarding.appearance_description}
         </p>
       </div>
@@ -60,8 +60,8 @@ export function AppearanceStep() {
       {/* Language - only when more than one UI locale ships (SHIPPED_UI_LOCALES). */}
       {UI_LANGUAGE_PICKER_ENABLED && <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Languages className="w-4 h-4 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.language_label}</span>
+          <Languages className="w-4 h-4 text-ink-1" />
+          <span className="typo-body text-ink-1">{t.onboarding.language_label}</span>
         </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
           {ONBOARDING_LANGUAGES.map((lang) => {
@@ -79,8 +79,8 @@ export function AppearanceStep() {
                 aria-pressed={isActive}
                 className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors typo-body ${
                   isActive
-                    ? 'border-primary/30 bg-primary/5 text-foreground/90'
-                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5 text-foreground'
+                    ? 'border-primary/30 bg-surface-1 text-ink-1'
+                    : 'border-hair hover:border-hair hover:bg-surface-2 text-ink-1'
                 }`}
               >
                 <span>{lang.flag}</span>
@@ -95,8 +95,8 @@ export function AppearanceStep() {
       {/* Text size */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Type className="w-4 h-4 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.text_size_label}</span>
+          <Type className="w-4 h-4 text-ink-1" />
+          <span className="typo-body text-ink-1">{t.onboarding.text_size_label}</span>
         </div>
         <TextScalePicker textScale={textScale} setTextScale={setTextScale} />
       </div>
@@ -104,28 +104,28 @@ export function AppearanceStep() {
       {/* Density */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Rows2 className="w-4 h-4 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.density_label}</span>
+          <Rows2 className="w-4 h-4 text-ink-1" />
+          <span className="typo-body text-ink-1">{t.onboarding.density_label}</span>
         </div>
         <DensityToggle density={density} onChange={setDensity} scopeId="onboarding" />
       </div>
 
       {/* Dark themes */}
       <div className="space-y-2">
-        <span className="typo-body text-foreground">{t.onboarding.dark_label}</span>
+        <span className="typo-body text-ink-1">{t.onboarding.dark_label}</span>
         <SimpleThemePicker themes={darkThemes} themeId={themeId} setTheme={setTheme} />
       </div>
 
       {/* Light themes */}
       <div className="space-y-2">
-        <span className="typo-body text-foreground">{t.onboarding.light_label}</span>
+        <span className="typo-body text-ink-1">{t.onboarding.light_label}</span>
         <SimpleThemePicker themes={lightThemes} themeId={themeId} setTheme={setTheme} />
       </div>
 
       {/* Brightness */}
       <div className="space-y-2">
-        <span className="typo-body text-foreground">{t.onboarding.brightness_label}</span>
-        <p className="typo-body text-foreground">{t.onboarding.brightness_hint}</p>
+        <span className="typo-body text-ink-1">{t.onboarding.brightness_label}</span>
+        <p className="typo-body text-ink-1">{t.onboarding.brightness_hint}</p>
         <BrightnessPicker
           levels={brightnessLevels}
           brightness={brightness}

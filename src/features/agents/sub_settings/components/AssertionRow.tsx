@@ -37,10 +37,10 @@ export function AssertionRow({
 
   return (
     <div
-      className={`rounded-card border border-primary/10 bg-background/30 px-2.5 py-1.5 ${row.enabled ? '' : 'opacity-60'}`}
+      className={`rounded-card border border-hair bg-background/30 px-2.5 py-1.5 ${row.enabled ? '' : 'opacity-60'}`}
     >
       <div className="flex items-center gap-2">
-        <span className="typo-body text-foreground truncate flex-1">{row.name}</span>
+        <span className="typo-body text-ink-1 truncate flex-1">{row.name}</span>
         {row.severity === 'critical' && (
           <span className="typo-caption rounded-input border border-status-error/30 bg-status-error/10 px-1.5 text-status-error">
             {a.severity_critical}
@@ -51,7 +51,7 @@ export function AssertionRow({
             {a.paused}
           </span>
         )}
-        <span className="typo-caption text-foreground">{typeLabels[row.assertionType] ?? row.assertionType}</span>
+        <span className="typo-caption text-ink-2">{typeLabels[row.assertionType] ?? row.assertionType}</span>
         <ThemedSelect
           value={row.onFailure}
           onChange={(e) => onUpdate(row.id, { onFailure: e.target.value as AssertionFailureAction })}
@@ -72,13 +72,13 @@ export function AssertionRow({
           type="button"
           onClick={() => onDelete(row)}
           aria-label={a.delete}
-          className="p-1 rounded-input text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="p-1 rounded-input text-ink-1 hover:text-status-error hover:bg-status-error/10 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
       {/* The hit rate lives where the gate is managed, not only in executions. */}
-      <p className="typo-caption text-foreground" data-testid="assertion-stats">
+      <p className="typo-caption text-ink-2" data-testid="assertion-stats">
         <Numeric value={row.passCount} /> {a.stat_pass} / <Numeric value={row.failCount} /> {a.stat_fail}
         {' - '}
         {row.lastEvaluatedAt ? (

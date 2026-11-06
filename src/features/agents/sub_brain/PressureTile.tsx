@@ -39,7 +39,7 @@ export function PressureTile({ pressure }: { pressure: PressureGauge }) {
             "waiting" and "of <threshold>" is not the same in every language,
             so a fragment cannot be translated correctly at all. */}
         <div className="flex items-baseline gap-2" data-testid="brain-pressure-waiting">
-          <span className="typo-heading text-foreground">
+          <span className="typo-heading text-ink-1">
             {b.pressure_waiting
               .replace('{waiting}', formatCompactNumber(charsWaiting))
               .replace('{threshold}', formatCompactNumber(threshold))}
@@ -47,7 +47,7 @@ export function PressureTile({ pressure }: { pressure: PressureGauge }) {
         </div>
 
         <div
-          className="mt-2 h-2 w-full rounded-pill bg-secondary/40 overflow-hidden"
+          className="mt-2 h-2 w-full rounded-pill bg-surface-2 overflow-hidden"
           role="meter"
           aria-valuenow={charsWaiting}
           aria-valuemin={0}
@@ -60,17 +60,17 @@ export function PressureTile({ pressure }: { pressure: PressureGauge }) {
           />
         </div>
 
-        <p className="mt-2 typo-caption text-foreground/85">
+        <p className="mt-2 typo-caption text-ink-2">
           {over ? b.pressure_over : charsWaiting === 0 ? b.pressure_idle : b.pressure_building}
         </p>
 
-        <div className="mt-3 pt-3 border-t border-primary/10 flex items-center gap-2">
-          <span className="typo-eyebrow text-foreground/85">{b.pressure_last_cycle}</span>
+        <div className="mt-3 pt-3 border-t border-hair flex items-center gap-2">
+          <span className="typo-eyebrow text-ink-1">{b.pressure_last_cycle}</span>
           {lastCycleAt ? (
-            <RelativeTime timestamp={lastCycleAt} className="typo-caption text-foreground" />
+            <RelativeTime timestamp={lastCycleAt} className="typo-caption text-ink-1" />
           ) : (
             // Honest absence — no pass has ever completed.
-            <span className="typo-caption text-foreground/85">{b.pressure_never}</span>
+            <span className="typo-caption text-ink-2">{b.pressure_never}</span>
           )}
         </div>
       </div>

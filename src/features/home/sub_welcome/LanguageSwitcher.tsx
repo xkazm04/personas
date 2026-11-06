@@ -88,10 +88,10 @@ export function LanguageCardGrid() {
               onPointerDown={() => prefetchNow(lang.code)}
               onClick={() => choose(lang.code)}
               className={`group relative overflow-hidden rounded-modal border transition-all ${
-                isActive || isPending ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-primary/10 hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
+                isActive || isPending ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-hair hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
               } ${isPending ? 'opacity-60' : ''} ${pending && !isPending ? 'opacity-40' : ''}`}
             >
-              <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
+              <div className="relative aspect-[4/3] bg-surface-1 overflow-hidden">
                 <img src={langIllustration(lang.code)} alt="" width={240} height={180} loading="eager" decoding="async"
                   className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${isActive ? 'opacity-90 scale-100' : 'opacity-30 scale-105 group-hover:opacity-85 group-hover:scale-100'}`} />
                 <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity ${isActive ? 'opacity-80' : 'opacity-40 group-hover:opacity-70'}`} />

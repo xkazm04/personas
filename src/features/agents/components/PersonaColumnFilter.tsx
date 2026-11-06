@@ -29,17 +29,17 @@ export function PersonaColumnFilter({ value, onChange, personas, label = 'Person
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
+        className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} transition-colors ${isFiltered ? 'text-primary' : 'text-ink-1 hover:text-ink-1'}`}
       >
         <span>{selected ? selected.name : label}</span>
-        {!selected && <Filter className="w-3 h-3 text-foreground" />}
+        {!selected && <Filter className="w-3 h-3 text-ink-1" />}
       </button>
       {selected && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onChange(''); }}
           aria-label={t.common.clear}
-          className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
+          className="p-0.5 rounded-interactive hover:bg-surface-2 text-ink-1 hover:text-ink-1"
         >
           <X className="w-3 h-3" />
         </button>

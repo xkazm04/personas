@@ -37,27 +37,27 @@ export default function TourHandoffOffer() {
       aria-labelledby="tour-handoff-title"
       data-testid="tour-handoff-offer"
       className="animate-fade-slide-in fixed bottom-6 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2
-        rounded-modal border border-violet-500/25 bg-background p-5 shadow-elevation-4"
+        rounded-modal border border-role-agent/25 bg-background p-5 shadow-elevation-4"
     >
       <button
         type="button"
         onClick={dismissTourHandoff}
         aria-label={t.onboarding.tour_handoff_dismiss}
         title={t.onboarding.tour_handoff_dismiss}
-        className="absolute right-3 top-3 rounded-card p-1.5 text-foreground transition-colors hover:bg-secondary/50 hover:text-foreground/80"
+        className="absolute right-3 top-3 rounded-card p-1.5 text-ink-1 transition-colors hover:bg-surface-2 hover:text-ink-1"
       >
         <X className="h-4 w-4" />
       </button>
 
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-modal border border-violet-500/25 bg-violet-500/15">
-          <Map className="h-[18px] w-[18px] text-violet-400" />
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-modal border border-role-agent/25 bg-role-agent/15">
+          <Map className="h-[18px] w-[18px] text-role-agent" />
         </div>
         <div className="min-w-0 flex-1 pr-6">
-          <h3 id="tour-handoff-title" className="typo-heading text-foreground/90">
+          <h3 id="tour-handoff-title" className="typo-heading text-ink-1">
             {t.onboarding.tour_handoff_title}
           </h3>
-          <p className="typo-body mt-1 text-foreground">{t.onboarding.tour_handoff_body}</p>
+          <p className="typo-body mt-1 text-ink-2">{t.onboarding.tour_handoff_body}</p>
         </div>
       </div>
 

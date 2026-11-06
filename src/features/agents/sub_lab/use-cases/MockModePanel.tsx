@@ -11,19 +11,19 @@ interface MockModePanelProps {
 export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProps) {
   const { t } = useTranslation();
   return (
-    <div className="border border-amber-500/20 rounded-xl bg-amber-500/5 overflow-hidden">
+    <div className="border border-status-warning/20 rounded-card bg-status-warning/5 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-amber-500/15">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-status-warning/15">
         <div className="flex items-center gap-2">
-          <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
+          <span className={`px-1.5 py-0.5 typo-label rounded-interactive border ${modeBadge.bg} ${modeBadge.text}`}>
             {modeBadge.label}
           </span>
-          <span className="typo-body text-amber-400/70">{t.shared.use_cases_extra.example_output}</span>
+          <span className="typo-body text-status-warning">{t.shared.use_cases_extra.example_output}</span>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded hover:bg-secondary/60 text-foreground hover:text-foreground/80 transition-colors"
+          className="p-1 rounded-interactive hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -31,7 +31,7 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
 
       {/* Mock output */}
       <div className="p-3">
-        <pre className="typo-code text-foreground bg-background/40 rounded-lg p-3 overflow-auto max-h-64 border border-amber-500/10">
+        <pre className="typo-code text-ink-1 bg-background/40 rounded-card p-3 overflow-auto max-h-64 border border-status-warning/10">
           {useCase.sample_input
             ? JSON.stringify(useCase.sample_input, null, 2)
             : '// No sample data provided'}

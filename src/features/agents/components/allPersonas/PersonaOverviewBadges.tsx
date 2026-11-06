@@ -1,6 +1,5 @@
 import { ShieldCheck } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import { getTrustTier } from '@/lib/personas/personaThresholds';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -10,15 +9,15 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 export type HealthLabelKey = 'healthy' | 'degraded' | 'failing' | 'dormant' | 'unknown';
 
-export const HEALTH_STYLES: Record<string, { bg: string; text: string; labelKey: HealthLabelKey }> = {
-  healthy: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', labelKey: 'healthy' },
-  degraded: { bg: 'bg-amber-500/10', text: 'text-amber-400', labelKey: 'degraded' },
-  failing: { bg: 'bg-red-500/10', text: 'text-red-400', labelKey: 'failing' },
+export const HEALTH_STYLES: Record<string, { state: StateMarkState; labelKey: HealthLabelKey }> = {
+  healthy: { state: 'success', labelKey: 'healthy' },
+  degraded: { state: 'warning', labelKey: 'degraded' },
+  failing: { state: 'error', labelKey: 'failing' },
   // Never ran: no verdict either way, so it must not read as a verified Healthy.
-  dormant: { bg: 'bg-foreground/10', text: 'text-foreground', labelKey: 'dormant' },
+  dormant: { state: 'neutral', labelKey: 'dormant' },
   // No health entry at all (summaries not loaded yet, or the read failed): no
   // verdict was reached, so it is neutral like dormant - never a green Healthy.
-  unknown: { bg: 'bg-foreground/10', text: 'text-foreground', labelKey: 'unknown' },
+  unknown: { state: 'neutral', labelKey: 'unknown' },
 };
 
 /** The health key a persona is shown and filtered under: a missing entry, or a
@@ -60,7 +59,7 @@ export function TrustScoreBar({ score }: { score: number }) {
   const tier = getTrustTier(score);
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <div className={`flex items-center gap-1 text-md font-semibold ${tier.color}`}>
+      <div className={`flex items-center gap-1 typo-code text-ink-2`}>
         <ShieldCheck className="w-3.5 h-3.5" />
         {tier.label}
       </div>
@@ -68,7 +67,7 @@ export function TrustScoreBar({ score }: { score: number }) {
   );
 }
 
-/* -- Status badge ----------------------------------------------------- */
+/* -- Status mark ------------------------------------------------------ */
 
 export function StatusBadge({
   enabled,
@@ -82,47 +81,16 @@ export function StatusBadge({
   isArchived?: boolean;
 }) {
   const { t } = useTranslation();
-  if (isArchived) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">
-        {t.agents.persona_list.badge_archived}
-      </span>
-    );
-  }
-  if (isDraft) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">
-        {t.agents.persona_list.badge_draft}
-      </span>
-    );
-  }
-  if (!enabled) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">
-        {t.agents.persona_list.badge_disabled}
-      </span>
-    );
-  }
-  const healthStatus = healthKeyOf(health);
-  const style = HEALTH_STYLES[healthStatus]!;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium ${style.bg} ${style.text} border border-current/15`}
-    >
-      <StatusShape status={mapToShapeStatus(healthStatus)} size="xs" colorClass="" />
-      {t.agents.status[style.labelKey]}
-    </span>
-  );
+  if (isArchived) return <StateMark state="skipped" label={t.agents.persona_list.badge_archived} />;
+  if (isDraft) return <StateMark state="blank" label={t.agents.persona_list.badge_draft} />;
+  if (!enabled) return <StateMark state="skipped" label={t.agents.persona_list.badge_disabled} />;
+  const style = HEALTH_STYLES[healthKeyOf(health)]!;
+  return <StateMark state={style.state} label={t.agents.status[style.labelKey]} />;
 }
 
-/* -- Building badge --------------------------------------------------- */
+/* -- Building mark ---------------------------------------------------- */
 
 export function BuildingBadge() {
   const { t } = useTranslation();
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15">
-      <LoadingSpinner size="xs" />
-      {t.agents.persona_list.badge_building}
-    </span>
-  );
+  return <StateMark state="running" label={t.agents.persona_list.badge_building} />;
 }

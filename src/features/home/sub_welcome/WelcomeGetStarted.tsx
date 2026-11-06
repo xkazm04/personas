@@ -55,15 +55,15 @@ export default function WelcomeGetStarted() {
   return (
     <div
       data-testid="welcome-get-started"
-      className="animate-fade-slide-in motion-reduce:animate-none rounded-2xl border border-role-agent/25 bg-gradient-to-br from-role-agent/10 to-primary/5 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+      className="animate-fade-slide-in motion-reduce:animate-none rounded-card border border-role-agent/25 bg-surface-1 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
       style={{ animationDelay: '150ms' }}
     >
       <div className="w-11 h-11 shrink-0 rounded-modal bg-role-agent/15 border border-role-agent/25 flex items-center justify-center">
         <Sparkles className="w-5 h-5 text-role-agent" />
       </div>
       <div className="flex-1 min-w-0">
-        <h2 className="typo-heading text-foreground">{g.title}</h2>
-        <p className="typo-body text-foreground">{g.subtitle}</p>
+        <h2 className="typo-heading text-ink-1">{g.title}</h2>
+        <p className="typo-body text-ink-1">{g.subtitle}</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Button variant="primary" size="md" icon={<Bot className="w-4 h-4" />} onClick={build}>

@@ -59,12 +59,12 @@ export function CoverageTile({
       align: 'right',
       render: (row) =>
         row.count != null && row.count > 0 ? (
-          <Numeric className="text-foreground" value={row.count} unit="plain" align="right" />
+          <Numeric className="text-ink-1" value={row.count} unit="plain" align="right" />
         ) : (
           // Never a bare zero, and never a blank: an unmeasured charter
           // (`count === null`) states the absence in the same words a measured
           // empty one does, because to the operator both mean "nothing here".
-          <span className="typo-caption text-foreground/85">{b.coverage_nothing}</span>
+          <span className="typo-caption text-ink-2">{b.coverage_nothing}</span>
         ),
     },
   ];
@@ -79,7 +79,7 @@ export function CoverageTile({
       status={gaps > 0 ? 'warning' : undefined}
     >
       <div data-testid="brain-coverage">
-        <p className="typo-caption text-foreground/85 mb-2" data-testid="brain-coverage-summary">
+        <p className="typo-caption text-ink-2 mb-2" data-testid="brain-coverage-summary">
           {chartersFailed
             ? b.coverage_roster_unavailable
             : charters.length === 0
@@ -130,15 +130,15 @@ function CoverageName({ row }: { row: CoverageRow }) {
   const { t } = useTranslation();
   const b = t.agents.brain;
   if (row.kind === 'unassigned') {
-    return <span className="typo-caption text-foreground/85">{b.coverage_unassigned}</span>;
+    return <span className="typo-caption text-ink-2">{b.coverage_unassigned}</span>;
   }
   if (row.kind === 'orphan') {
     return (
       <span className="flex items-center gap-1.5 min-w-0">
-        <span className="typo-caption text-foreground/85 shrink-0">{b.coverage_orphan}</span>
+        <span className="typo-caption text-ink-2 shrink-0">{b.coverage_orphan}</span>
         <UuidLabel value={row.key} />
       </span>
     );
   }
-  return <span className="typo-caption text-foreground truncate">{row.title}</span>;
+  return <span className="typo-caption text-ink-2 truncate">{row.title}</span>;
 }

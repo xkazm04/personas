@@ -94,7 +94,7 @@ export function DesignHub() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="flex items-center border-b border-primary/10 px-1">
+      <div className="flex items-center border-b border-hair px-1">
         <div
           ref={tablistRef}
           role="tablist"
@@ -119,7 +119,7 @@ export function DesignHub() {
                 onClick={() => setDesignSubTab(tab.id)}
                 onKeyDown={(e) => handleTabKeyDown(e, index)}
                 className={`relative flex items-center gap-1.5 px-3 py-2 typo-body transition-colors whitespace-nowrap ${
-                  isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
+                  isActive ? 'text-primary' : 'text-ink-1 hover:text-ink-1'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />

@@ -28,7 +28,7 @@ export function hasQuickSetup(item: ComposeConfigItem | undefined): boolean {
 export function QuickSetup({ item, label }: { item: ComposeConfigItem; label: string }) {
   if (item.kind === "toggle") {
     return (
-      <label className="flex items-center gap-3 typo-body text-foreground">
+      <label className="flex items-center gap-3 typo-body text-ink-1">
         <AccessibleToggle checked={item.active} onChange={item.onClick} label={label} />
         {item.summary[0] ?? label}
       </label>
@@ -52,7 +52,7 @@ export function DecidedSetup({ dim, apps, lines }: { dim: GlyphDimension; apps?:
   if (!showApps && lines.length <= 1) return null;
   return (
     <div className="flex flex-col gap-2">
-      <span className="typo-card-label uppercase tracking-[0.1em] text-foreground">{QS.decided}</span>
+      <span className="typo-card-label uppercase tracking-[0.1em] text-ink-1">{QS.decided}</span>
       {showApps ? (
         <ul className="m-0 p-0 list-none flex flex-wrap gap-2">
           {apps!.map((name) => {
@@ -62,8 +62,8 @@ export function DecidedSetup({ dim, apps, lines }: { dim: GlyphDimension; apps?:
               <li key={name} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-card border border-card-border">
                 <BrandMark meta={meta} size={28} />
                 <span className="flex flex-col">
-                  <span className="typo-body text-foreground">{meta.label}</span>
-                  {tile && <span className={`typo-caption ${tile.usable ? "text-foreground" : "text-status-warning"}`}>{QS.health[tile.health]}</span>}
+                  <span className="typo-body text-ink-1">{meta.label}</span>
+                  {tile && <span className={`typo-caption ${tile.usable ? "text-ink-1" : "text-status-warning"}`}>{QS.health[tile.health]}</span>}
                 </span>
               </li>
             );
@@ -71,7 +71,7 @@ export function DecidedSetup({ dim, apps, lines }: { dim: GlyphDimension; apps?:
         </ul>
       ) : (
         <ul className="flex flex-col gap-1.5">
-          {lines.map((l) => <li key={l} className="typo-body text-foreground">{l}</li>)}
+          {lines.map((l) => <li key={l} className="typo-body text-ink-1">{l}</li>)}
         </ul>
       )}
     </div>

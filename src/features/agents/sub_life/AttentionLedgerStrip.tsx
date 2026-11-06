@@ -64,7 +64,7 @@ export function AttentionLedgerStrip({ personaId }: { personaId: string }) {
             // Calm geometry-matched ghost under the permanent card chrome.
             <div className="space-y-1.5" aria-hidden>
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-8 rounded-input bg-secondary/30 animate-pulse" />
+                <div key={i} className="h-8 rounded-input bg-surface-1 animate-pulse" />
               ))}
             </div>
           ) : (
@@ -74,11 +74,11 @@ export function AttentionLedgerStrip({ personaId }: { personaId: string }) {
           <ul className="space-y-1" data-testid="life-resp-ledger-rows">
             {entries.map((e, i) => (
               <RevealItem key={e.id} as="li" revealId={e.id} order={i} {...tracker}>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded-input hover:bg-secondary/30 transition-colors">
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded-input hover:bg-surface-1 transition-colors">
                   <StatusBadge size="sm" accent={e.kind === 'consolidation' ? 'violet' : 'cyan'}>
                     {e.kind === 'consolidation' ? life.ledger_kind_consolidation : life.ledger_kind_attention}
                   </StatusBadge>
-                  {e.lane && <span className="typo-code text-foreground/85">{e.lane}</span>}
+                  {e.lane && <span className="typo-code text-ink-1">{e.lane}</span>}
                   <StatusBadge size="sm" variant={VERDICT_VARIANT[e.verdict] ?? 'neutral'}>
                     {verdictLabels[e.verdict] ?? e.verdict}
                   </StatusBadge>

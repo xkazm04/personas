@@ -119,21 +119,21 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
         >
           <div className="p-4 space-y-3">
             <div>
-              <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.attention_detail_reason}</div>
-              <p className="typo-body text-foreground whitespace-pre-wrap">{selectedAttention.reason}</p>
+              <div className="typo-code text-ink-1 uppercase mb-1">{t.agents.activity.attention_detail_reason}</div>
+              <p className="typo-body text-ink-1 whitespace-pre-wrap">{selectedAttention.reason}</p>
             </div>
             <div>
-              <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.col_verdict}</div>
-              <p className="typo-body text-foreground">{selectedAttention.verdict}</p>
+              <div className="typo-code text-ink-1 uppercase mb-1">{t.agents.activity.col_verdict}</div>
+              <p className="typo-body text-ink-1">{selectedAttention.verdict}</p>
             </div>
             <div>
-              <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.attention_detail_started}</div>
-              <p className="typo-body text-foreground"><AbsoluteTime timestamp={selectedAttention.startedAt} /></p>
+              <div className="typo-code text-ink-1 uppercase mb-1">{t.agents.activity.attention_detail_started}</div>
+              <p className="typo-body text-ink-1"><AbsoluteTime timestamp={selectedAttention.startedAt} /></p>
             </div>
             {selectedAttention.completedAt && (
               <div>
-                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.attention_detail_completed}</div>
-                <p className="typo-body text-foreground"><AbsoluteTime timestamp={selectedAttention.completedAt} /></p>
+                <div className="typo-code text-ink-1 uppercase mb-1">{t.agents.activity.attention_detail_completed}</div>
+                <p className="typo-body text-ink-1"><AbsoluteTime timestamp={selectedAttention.completedAt} /></p>
               </div>
             )}
           </div>
@@ -149,18 +149,18 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
           <div className="p-4 space-y-3">
             {selectedReview.description && (
               <div>
-                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.description}</div>
-                <p className="typo-body text-foreground whitespace-pre-wrap">{selectedReview.description}</p>
+                <div className="typo-code text-ink-1 uppercase mb-1">{t.agents.activity.description}</div>
+                <p className="typo-body text-ink-1 whitespace-pre-wrap">{selectedReview.description}</p>
               </div>
             )}
             {selectedReview.context_data && (
               <div>
-                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.context}</div>
-                <pre className="typo-body text-foreground bg-secondary/30 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
+                <div className="typo-code text-ink-1 uppercase mb-1">{t.agents.activity.context}</div>
+                <pre className="typo-body text-ink-1 bg-surface-1 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
               </div>
             )}
             {selectedReview.status === 'pending' && (
-              <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
+              <div className="flex items-center gap-2 pt-2 border-t border-hair">
                 <Button
                   variant="accent"
                   tone="success"
@@ -189,8 +189,8 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             )}
             {selectedReview.reviewer_notes && (
               <div>
-                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
-                <p className="typo-body text-foreground italic">{selectedReview.reviewer_notes}</p>
+                <div className="typo-code text-ink-1 uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
+                <p className="typo-body text-ink-1 italic">{selectedReview.reviewer_notes}</p>
               </div>
             )}
           </div>

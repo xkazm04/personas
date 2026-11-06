@@ -61,52 +61,52 @@ export function TraceSummary({ trace, model, errorCount, spanCount }: { trace: E
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
           {e.duration}
         </div>
-        <div className="typo-code text-foreground/90">
+        <div className="typo-code text-ink-1">
           {formatDuration(trace.total_duration_ms)}
         </div>
       </div>
 
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" />
           {e.cost}
         </div>
-        <div className="typo-code text-foreground/90" data-testid="trace-cost">
+        <div className="typo-code text-ink-1" data-testid="trace-cost">
           {stats.totalCost != null ? <>$<Numeric value={stats.totalCost} precision={4} /></> : '-'}
         </div>
       </div>
 
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" />
           {e.tokens}
         </div>
-        <div className="typo-code text-foreground/90" data-testid="trace-tokens">
+        <div className="typo-code text-ink-1" data-testid="trace-tokens">
           {stats.totalTokens != null ? <Numeric value={stats.totalTokens} /> : '-'}
         </div>
       </div>
 
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <Activity className="w-2.5 h-2.5" />
           {e.spans}
         </div>
-        <div className="typo-code text-foreground/90" data-testid="trace-span-count">
+        <div className="typo-code text-ink-1" data-testid="trace-span-count">
           {spanCount}
         </div>
       </div>
 
-      <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+      <div className="rounded-card border border-hair bg-surface-2 p-3 space-y-1">
+        <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" />
           {e.errors}
         </div>
-        <div className={`typo-code ${errorCount > 0 ? 'text-red-400' : 'text-foreground/90'}`} data-testid="trace-error-count">
+        <div className={`typo-code ${errorCount > 0 ? 'text-status-error' : 'text-ink-1'}`} data-testid="trace-error-count">
           {errorCount}
         </div>
       </div>
@@ -122,7 +122,7 @@ export function TraceSummary({ trace, model, errorCount, spanCount }: { trace: E
           so it still falls through to the estimate — behaviour unchanged by
           the null/zero split above. */}
       {model && stats.totalTokens != null && stats.totalTokens > 0 && (
-        <div className="col-span-2 md:col-span-5 rounded-card border border-primary/20 bg-secondary/40 p-3">
+        <div className="col-span-2 md:col-span-5 rounded-card border border-hair bg-surface-2 p-3">
           <CostBreakdownBar
             model={model}
             inputTokens={stats.totalInput ?? 0}
@@ -133,9 +133,9 @@ export function TraceSummary({ trace, model, errorCount, spanCount }: { trace: E
       )}
 
       {evicted > 0 && (
-        <div className="col-span-2 md:col-span-5 rounded-card border border-yellow-500/40 bg-yellow-500/10 p-3 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
-          <span className="typo-body text-yellow-200/90">
+        <div className="col-span-2 md:col-span-5 rounded-card border border-status-warning/40 bg-status-warning/10 p-3 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-status-warning shrink-0" />
+          <span className="typo-body text-status-warning">
             {tx(evicted === 1 ? e.trace_incomplete : e.trace_incomplete_other, {
               count: formatCount(evicted, { language, precision: 0 }),
               limit: formatCount(MAX_TRACE_SPANS, { language, precision: 0 }),

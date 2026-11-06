@@ -27,14 +27,14 @@ export function QuestionsSummary({ qs, note = true }: { qs: BuildQuestion[]; not
         {qs.map((q, i) => {
           const { dim, name } = frameName(q);
           return (
-            <li key={`${q.cellKey}-${i}`} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-card-border bg-background/50 typo-caption text-foreground">
+            <li key={`${q.cellKey}-${i}`} className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
               <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: dim ? DIM_META[dim].color : "var(--status-warning)" }} />
               {name}
             </li>
           );
         })}
       </ul>
-      {note && <span className="typo-body text-foreground">{COPY.questionsNote}</span>}
+      {note && <span className="typo-body text-ink-1">{COPY.questionsNote}</span>}
     </>
   );
 }
@@ -59,12 +59,12 @@ export function AnswersList({ stage, qs, draftOf, onOpen }: AnswersListProps) {
               type="button"
               disabled={sending}
               onClick={() => onOpen(i)}
-              className="w-full flex items-baseline gap-3 px-3 py-2 rounded-input border border-card-border bg-background/50 text-left hover:bg-foreground/[0.04] disabled:opacity-60"
+              className="w-full flex items-baseline gap-3 px-3 py-2 rounded-input border border-card-border bg-background/50 text-left hover:bg-surface-1 disabled:opacity-60"
             >
               <span className="typo-caption font-mono w-[92px] flex-shrink-0 truncate" style={{ color: dim ? DIM_META[dim].color : undefined }}>
                 {name}
               </span>
-              <span className="typo-body text-foreground truncate">{draftOf(q)}</span>
+              <span className="typo-body text-ink-1 truncate">{draftOf(q)}</span>
             </button>
           </li>
         );

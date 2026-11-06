@@ -44,18 +44,18 @@ export function FileWatcherConfig({
               placeholder={t.triggers.file_watcher_path_placeholder}
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'watch-paths-error' : undefined}
-              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
-                validationError ? 'border-red-500/30' : 'border-primary/15'
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-ink-1 typo-code placeholder-ink-3 focus-ring transition-all ${
+                validationError ? 'border-status-error/30' : 'border-hair'
               }`}
             />
             {watchPaths.length > 1 && (
-              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-ink-1 hover:text-status-error transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 typo-body text-orange-400/80 hover:text-orange-400 transition-colors">
+        <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 typo-body text-status-warning hover:text-status-warning transition-colors">
           <Plus className="w-3.5 h-3.5" /> {t.triggers.file_watcher.add_path}
         </button>
       </TriggerFieldGroup>
@@ -68,8 +68,8 @@ export function FileWatcherConfig({
               onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
               className={`px-2.5 py-1 rounded-modal typo-body transition-all border ${
                 watchEvents.includes(evt)
-                  ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
-                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
+                  ? 'bg-status-warning/15 text-status-warning border-status-warning/30'
+                  : 'bg-surface-1 text-ink-1 border-hair hover:bg-surface-2'
               }`}
             >
               {eventLabels[evt]}
@@ -79,8 +79,8 @@ export function FileWatcherConfig({
       </TriggerFieldGroup>
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded border-primary/30" />
-          <span className="typo-body text-foreground">{t.triggers.watch_subdirs}</span>
+          <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded-interactive border-primary/30" />
+          <span className="typo-body text-ink-1">{t.triggers.watch_subdirs}</span>
         </label>
       </div>
       <TriggerFieldGroup label={t.triggers.file_watcher.glob_filter} optional>
@@ -89,7 +89,7 @@ export function FileWatcherConfig({
           value={globFilter}
           onChange={(e) => setGlobFilter(e.target.value)}
           placeholder={t.triggers.file_watcher_pattern_placeholder}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-ink-1 typo-code placeholder-ink-3 focus-ring transition-all"
         />
       </TriggerFieldGroup>
     </div>

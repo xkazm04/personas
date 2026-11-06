@@ -21,7 +21,7 @@ export const AUTOMATION_STATUS_CONFIG = {
   draft: {
     labelKey: "auto_status_draft",
     color: "text-primary",
-    bg: "bg-primary/10 border-primary/20",
+    bg: "bg-surface-1 border-hair",
   },
   paused: {
     labelKey: "auto_status_paused",
@@ -47,8 +47,8 @@ export const PLATFORM_CONFIG = {
   },
   github_actions: {
     labelKey: "platform_github_actions",
-    color: "text-foreground",
-    bg: "bg-secondary/40 border-border/60",
+    color: "text-ink-1",
+    bg: "bg-surface-2 border-hair",
   },
   zapier: {
     labelKey: "platform_zapier",

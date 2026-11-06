@@ -191,7 +191,7 @@ export function ActPanel({ p, s, a, tight, questionViews = CINEMA_QUESTION_VIEWS
         </Button>
       }
     >
-      {p.buildError && <p className="typo-body text-foreground line-clamp-4">{p.buildError}</p>}
+      {p.buildError && <p className="typo-body text-ink-1 line-clamp-4">{p.buildError}</p>}
     </ActionPanel>
   );
 }

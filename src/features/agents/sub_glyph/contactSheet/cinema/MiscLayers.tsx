@@ -8,7 +8,7 @@ import { GlyphCapabilityPreview } from "@/features/agents/sub_glyph/GlyphCapabil
 import { COPY } from "./copy";
 
 function Lead({ text }: { text: string }) {
-  return <p className="typo-body-lg text-foreground">{text}</p>;
+  return <p className="typo-body-lg text-ink-1">{text}</p>;
 }
 
 export function ContextLayer({ value, onChange, onDone }: { value: string; onChange?: (v: string) => void; onDone: () => void }) {
@@ -21,7 +21,7 @@ export function ContextLayer({ value, onChange, onDone }: { value: string; onCha
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={COPY.contextPlaceholder}
         aria-label={COPY.context}
-        className="flex-1 min-h-[160px] w-full rounded-input border border-card-border bg-card-bg p-3.5 typo-body text-foreground leading-relaxed outline-none resize-none focus:border-foreground/30"
+        className="flex-1 min-h-[160px] w-full rounded-input border border-card-border bg-card-bg p-3.5 typo-body text-ink-1 leading-relaxed outline-none resize-none focus:border-hair-2"
       />
       <div className="flex justify-end">
         <Button variant="primary" size="md" onClick={onDone}>{COPY.done}</Button>

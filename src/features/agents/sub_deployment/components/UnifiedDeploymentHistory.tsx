@@ -44,18 +44,18 @@ export function UnifiedDeploymentHistory() {
   const enter = useRevealTracker('unified-deployment-history');
 
   return (
-    <div className="border-t border-primary/10 flex-shrink-0" data-testid="unified-deploy-history">
+    <div className="border-t border-hair flex-shrink-0" data-testid="unified-deploy-history">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full flex items-center gap-2 px-6 py-2.5 typo-caption text-foreground hover:text-foreground/90 transition-colors cursor-pointer"
+        className="w-full flex items-center gap-2 px-6 py-2.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors cursor-pointer"
       >
         {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        <History className="w-3.5 h-3.5 text-foreground" />
+        <History className="w-3.5 h-3.5 text-ink-1" />
         <span className="font-medium">{dt.history_title}</span>
         {history.length > 0 && (
-          <span className="ml-1 text-foreground">
+          <span className="ml-1 text-ink-1">
             <Numeric value={history.length} className="typo-caption" />
           </span>
         )}
@@ -73,7 +73,7 @@ export function UnifiedDeploymentHistory() {
               </Button>
             </div>
           ) : history.length === 0 ? (
-            <p className="py-4 typo-caption text-foreground">{dt.history_empty}</p>
+            <p className="py-4 typo-caption text-ink-2">{dt.history_empty}</p>
           ) : (
             <ul className="space-y-1">
               {history.map((r, index) => {
@@ -106,7 +106,7 @@ export function UnifiedDeploymentHistory() {
                       <TargetIcon className="w-3 h-3" />
                       {tb.label}
                     </span>
-                    <span className="font-medium text-foreground/90 truncate max-w-[16rem]">
+                    <span className="font-medium text-ink-1 truncate max-w-[16rem]">
                       {r.personaName}
                     </span>
                     {isFailed && (
@@ -119,15 +119,15 @@ export function UnifiedDeploymentHistory() {
                     )}
                     {isRollback && (
                       <Tooltip content={t.gitlab.rollback}>
-                        <RotateCcw className="w-3 h-3 text-amber-400" />
+                        <RotateCcw className="w-3 h-3 text-status-warning" />
                       </Tooltip>
                     )}
                     {r.snapshotPrompt && (
                       <Tooltip content={dt.history_snapshot}>
-                        <FileText className="w-3 h-3 text-sky-400" data-testid={`history-snapshot-${r.id}`} />
+                        <FileText className="w-3 h-3 text-status-info" data-testid={`history-snapshot-${r.id}`} />
                       </Tooltip>
                     )}
-                    <span className="ml-auto text-foreground tabular-nums">
+                    <span className="ml-auto text-ink-1 tabular-nums">
                       <RelativeTime timestamp={r.createdAt} />
                     </span>
                   </RevealItem>
@@ -163,8 +163,8 @@ function HistoryGhostRows() {
             style={{ height: HISTORY_ROW_HEIGHT, animationDelay: delay }}
           >
             <span className="inline-block h-5 w-16 rounded-card bg-primary/[0.06]" />
-            <span className={`h-3 ${nameW} max-w-full rounded bg-primary/[0.06]`} />
-            <span className="ml-auto h-3 w-12 rounded bg-primary/[0.06]" />
+            <span className={`h-3 ${nameW} max-w-full rounded-interactive bg-primary/[0.06]`} />
+            <span className="ml-auto h-3 w-12 rounded-interactive bg-primary/[0.06]" />
           </li>
         );
       })}

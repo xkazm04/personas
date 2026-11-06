@@ -19,20 +19,20 @@ export function ReadinessWarnings({ unlinked, unhealthy }: ReadinessWarningsProp
   return (
     <>
       {unlinked > 0 && (
-        <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-amber-500/5 border border-amber-500/15">
-          <AlertTriangle className="w-4 h-4 text-amber-400/70 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-status-warning/5 border border-status-warning/15">
+          <AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" />
           <div className="typo-body">
-            <p className="font-medium text-amber-400/80">{tx(t.agents.connectors.st_unlinked_warn, { count: unlinked })}</p>
-            <p className="text-amber-400/50 mt-0.5">{t.agents.connectors.st_unlinked_hint}</p>
+            <p className="font-medium text-status-warning">{tx(t.agents.connectors.st_unlinked_warn, { count: unlinked })}</p>
+            <p className="text-status-warning mt-0.5">{t.agents.connectors.st_unlinked_hint}</p>
           </div>
         </div>
       )}
       {unlinked === 0 && unhealthy > 0 && (
-        <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-red-500/5 border border-red-500/15">
-          <AlertCircle className="w-4 h-4 text-red-400/70 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-status-error/5 border border-status-error/15">
+          <AlertCircle className="w-4 h-4 text-status-error flex-shrink-0 mt-0.5" />
           <div className="typo-body">
-            <p className="font-medium text-red-400/80">{tx(t.agents.connectors.st_unhealthy_warn, { count: unhealthy })}</p>
-            <p className="text-red-400/50 mt-0.5">{t.agents.connectors.st_unhealthy_hint}</p>
+            <p className="font-medium text-status-error">{tx(t.agents.connectors.st_unhealthy_warn, { count: unhealthy })}</p>
+            <p className="text-status-error mt-0.5">{t.agents.connectors.st_unhealthy_hint}</p>
           </div>
         </div>
       )}
@@ -170,7 +170,7 @@ export function ConnectorsSection({
           // items[0].name is a unique fallback.
           <div key={group.roleLabel || group.items[0]?.name} className="space-y-2">
             {group.roleLabel && group.items.length > 1 && (
-              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider px-1 pt-1">{group.roleLabel}</p>
+              <p className="typo-eyebrow text-ink-1 px-1 pt-1">{group.roleLabel}</p>
             )}
             {group.items.map((status) => (
               <ConnectorStatusCard

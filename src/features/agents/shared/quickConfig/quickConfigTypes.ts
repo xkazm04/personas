@@ -12,7 +12,7 @@ const DAY_LABELS: Record<string, string> = {
   fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
 };
 
-export const INPUT_CLS = 'h-9 px-3 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none focus-visible:border-primary/30 transition-colors';
+export const INPUT_CLS = 'h-9 px-3 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 outline-none focus-visible:border-primary/30 transition-colors';
 
 export interface EventSubscription {
   personaId: string;

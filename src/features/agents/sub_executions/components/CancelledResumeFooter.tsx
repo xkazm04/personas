@@ -16,12 +16,12 @@ interface CancelledResumeFooterProps {
 export function CancelledResumeFooter({ lastTool, onResume }: CancelledResumeFooterProps) {
   const { t } = useTranslation();
   return (
-    <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
+    <div className="mt-3 pt-3 border-t border-status-warning/15 space-y-3">
       {lastTool && (
-        <div className="flex items-center gap-2 typo-body text-foreground">
-          <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
+        <div className="flex items-center gap-2 typo-body text-ink-1">
+          <Wrench className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
           <span>{t.agents.executions.stopped_while_running}</span>
-          <code className="px-1.5 py-0.5 rounded-card bg-amber-500/10 text-amber-300/80 typo-code">
+          <code className="inline-flex items-center text-status-warning typo-code">
             {lastTool}
           </code>
         </div>
@@ -29,7 +29,7 @@ export function CancelledResumeFooter({ lastTool, onResume }: CancelledResumeFoo
       <button
         type="button"
         onClick={onResume}
-        className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
+        className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-status-warning/10 text-status-warning border border-status-warning/20 hover:bg-status-warning/20 hover:text-status-warning transition-colors"
       >
         <RotateCw className="w-3.5 h-3.5" />
         {t.agents.executions.resume_from_here}

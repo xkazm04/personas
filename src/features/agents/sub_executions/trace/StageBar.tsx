@@ -49,7 +49,7 @@ export function StageBar({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="grid grid-cols-[180px_1fr_70px] gap-2 items-center px-3 py-1.5 hover:bg-secondary/30 rounded transition-colors">
+      <div className="grid grid-cols-[180px_1fr_70px] gap-2 items-center px-3 py-1.5 hover:bg-surface-1 rounded-interactive transition-colors">
         {/* Left: stage label */}
         <div className="flex items-center gap-1.5 min-w-0">
           {hasSubSpans ? (
@@ -58,21 +58,21 @@ export function StageBar({
               onClick={onToggle}
               aria-label={meta.label}
               aria-expanded={isExpanded}
-              className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0"
+              className="p-0.5 rounded-interactive hover:bg-surface-2 flex-shrink-0"
             >
               {isExpanded ? (
-                <ChevronDown className="w-3 h-3 text-foreground" />
+                <ChevronDown className="w-3 h-3 text-ink-1" />
               ) : (
-                <ChevronRight className="w-3 h-3 text-foreground" />
+                <ChevronRight className="w-3 h-3 text-ink-1" />
               )}
             </button>
           ) : (
             <span className="w-4 flex-shrink-0" />
           )}
-          <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.text} ${config.border} flex-shrink-0`}>
+          <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded-interactive border ${config.bg} ${config.text} ${config.border} flex-shrink-0`}>
             {config.category}
           </span>
-          <span className="typo-heading text-foreground/85 truncate">{meta.label}</span>
+          <span className="typo-heading text-ink-1 truncate">{meta.label}</span>
           {isEstimated && (
             <span
               className="typo-code text-status-warning flex-shrink-0"
@@ -81,12 +81,12 @@ export function StageBar({
               {t.agents.executions.stage_estimated}
             </span>
           )}
-          {entry.error && <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />}
+          {entry.error && <AlertCircle className="w-3 h-3 text-status-error flex-shrink-0" />}
         </div>
 
         {/* Center: waterfall bar */}
         <div className="relative h-6 w-full">
-          <div className="absolute inset-0 bg-primary/5 rounded" />
+          <div className="absolute inset-0 bg-surface-1 rounded-interactive" />
           <div
             className={`absolute top-1 bottom-1 rounded-full ${entry.error ? 'bg-status-error/50' : `${config.barGradient} ${config.barShadow}`} transition-all`}
             style={{
@@ -98,25 +98,25 @@ export function StageBar({
           {/* Hover tooltip */}
           {hovered && (
             <div
-              className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
+              className="absolute z-20 bottom-full mb-1 bg-background/95 border border-hair rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
               style={{ left: `${Math.min(leftPct, 70)}%` }}
             >
-              <p className="typo-heading text-foreground/90 mb-1">{meta.label}</p>
-              <p className="typo-body text-foreground mb-1">{meta.boundary}</p>
+              <p className="typo-heading text-ink-1 mb-1">{meta.label}</p>
+              <p className="typo-body text-ink-2 mb-1">{meta.boundary}</p>
               {isEstimated && (
                 <p className="typo-body text-status-warning mb-1 max-w-[240px] whitespace-normal">
                   {t.agents.executions.stage_estimated_hint}
                 </p>
               )}
               <div className="flex items-center gap-3 typo-body">
-                <span className="font-mono text-foreground">{formatDuration(durationMs)}</span>
-                <span className="text-foreground">{t.agents.executions.offset_prefix} {formatDuration(offsetMs)}</span>
+                <span className="font-mono text-ink-1">{formatDuration(durationMs)}</span>
+                <span className="text-ink-1">{t.agents.executions.offset_prefix} {formatDuration(offsetMs)}</span>
               </div>
               {entry.metadata && Object.keys(entry.metadata).length > 0 && (
                 <div className="mt-1 space-y-0.5">
                   {Object.entries(entry.metadata).map(([k, v]) => (
-                    <div key={k} className="typo-body text-foreground">
-                      <span className="text-foreground">{k}:</span>{' '}
+                    <div key={k} className="typo-body text-ink-1">
+                      <span className="text-ink-1">{k}:</span>{' '}
                       <span className="font-mono">{String(v)}</span>
                     </div>
                   ))}
@@ -127,7 +127,7 @@ export function StageBar({
         </div>
 
         {/* Right: duration */}
-        <span className="typo-code text-foreground text-right">
+        <span className="typo-code text-ink-1 text-right">
           {formatDuration(durationMs)}
         </span>
       </div>

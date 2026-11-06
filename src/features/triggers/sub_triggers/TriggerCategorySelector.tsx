@@ -22,7 +22,7 @@ export function TriggerCategorySelector({
   const categories = useMemo(() => getTriggerCategories(t), [t]);
   return (
     <div>
-      <label className="block typo-body text-foreground mb-1.5">
+      <label className="block typo-body text-ink-1 mb-1.5">
         {t.triggers.category_section_label}
       </label>
       <div className="grid grid-cols-2 gap-2">
@@ -41,15 +41,15 @@ export function TriggerCategorySelector({
               className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all cursor-pointer ${
                 isActive
                   ? `${cat.bgColor} ${cat.borderColor} ring-1 ring-primary/15`
-                  : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
+                  : 'border-hair bg-background/50 hover:border-primary/25 hover:bg-surface-1'
               }`}
             >
               <div className="flex items-center gap-2">
                 <CatIcon className={`w-4 h-4 ${cat.color}`} />
-                <span className="typo-heading text-foreground/90">{cat.label}</span>
-                <span className="ml-auto typo-caption text-foreground">{cat.types.length}</span>
+                <span className="typo-heading text-ink-1">{cat.label}</span>
+                <span className="ml-auto typo-caption text-ink-2">{cat.types.length}</span>
               </div>
-              <span className="typo-caption text-foreground">{cat.description}</span>
+              <span className="typo-caption text-ink-2">{cat.description}</span>
             </button>
           );
         })}
@@ -62,15 +62,15 @@ export function TriggerCategorySelector({
           }}
           className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all cursor-pointer ${
             selectedCategory === 'manual'
-              ? 'bg-emerald-500/10 border-emerald-500/20 ring-1 ring-primary/15'
-              : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
+              ? 'bg-status-success/10 border-status-success/20 ring-1 ring-primary/15'
+              : 'border-hair bg-background/50 hover:border-primary/25 hover:bg-surface-1'
           }`}
         >
           <div className="flex items-center gap-2">
-            {(() => { const ManualIcon = TRIGGER_TYPE_META.manual?.Icon ?? Zap; return <ManualIcon className="w-4 h-4 text-emerald-400" />; })()}
-            <span className="typo-heading text-foreground/90">{t.triggers.category_manual}</span>
+            {(() => { const ManualIcon = TRIGGER_TYPE_META.manual?.Icon ?? Zap; return <ManualIcon className="w-4 h-4 text-status-success" />; })()}
+            <span className="typo-heading text-ink-1">{t.triggers.category_manual}</span>
           </div>
-          <span className="typo-caption text-foreground">{t.triggers.category_manual_hint}</span>
+          <span className="typo-caption text-ink-2">{t.triggers.category_manual_hint}</span>
         </button>
       </div>
     </div>

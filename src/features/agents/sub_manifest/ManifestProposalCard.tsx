@@ -54,13 +54,13 @@ export function ManifestProposalCard({ proposalId, createdAt, previews, onDecide
       tone="violet"
       icon={<GitPullRequestArrow />}
       title={m.proposal_title}
-      trailing={<RelativeTime timestamp={createdAt} className="typo-caption text-foreground" />}
+      trailing={<RelativeTime timestamp={createdAt} className="typo-caption text-ink-1" />}
       data-testid={`manifest-proposal-${proposalId}`}
     >
       <div className="space-y-2">
         {previews.map((p, i) => (
           <div key={`${p.section}-${i}`} className="space-y-1">
-            {p.section && <p className="typo-label text-violet-400">{p.section}</p>}
+            {p.section && <p className="typo-label text-role-agent">{p.section}</p>}
             {/* Same renderer and the same page prose as a content row, so the
                 proposed line reads exactly as it will once accepted — the
                 owner saw `typo-body-lg` here drift from the rows above it. */}

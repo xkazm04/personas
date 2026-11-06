@@ -110,10 +110,10 @@ export function PersonaOverviewFilterHeader({
         // so a filterable column header is typographically identical to the
         // plain and sortable headers it sits beside. `-mx-1.5` cancels the
         // button's own padding, keeping the label on the cell's text x-axis.
-        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input typo-caption font-mono uppercase tracking-widest transition-colors ${
+        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input typo-eyebrow transition-colors ${
           isFiltered
             ? 'text-primary bg-primary/8 hover:bg-primary/12'
-            : 'text-foreground hover:text-foreground hover:bg-secondary/40'
+            : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2'
         }`}
       >
         <Filter className={`w-3 h-3 ${isFiltered ? 'opacity-100' : 'opacity-50 group-hover:opacity-80'}`} />
@@ -130,7 +130,7 @@ export function PersonaOverviewFilterHeader({
             role="menu"
             aria-label={label}
             onKeyDown={onMenuKeyDown}
-            className="min-w-[180px] rounded-card border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1 max-h-64 overflow-y-auto animate-fade-slide-in"
+            className="min-w-[180px] rounded-card border border-hair bg-background shadow-elevation-3 shadow-black/20 py-1 max-h-64 overflow-y-auto animate-fade-slide-in"
           >
             {options.map((opt) => {
               const selected = value === opt.value;
@@ -144,10 +144,10 @@ export function PersonaOverviewFilterHeader({
                     onChange(opt.value);
                     setOpen(false);
                   }}
-                  className={`w-full px-3 py-1.5 text-md text-left transition-colors flex items-center gap-2 ${
+                  className={`w-full px-3 py-1.5 typo-caption text-left transition-colors flex items-center gap-2 ${
                     selected
                       ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-foreground hover:bg-secondary/50'
+                      : 'text-ink-1 hover:bg-surface-2'
                   }`}
                 >
                   {opt.icon && <span className="flex-shrink-0">{opt.icon}</span>}

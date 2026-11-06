@@ -21,11 +21,11 @@ export function LogLine({ lines, onOpen }: { lines: string[]; onOpen: (el: HTMLE
       onClick={(e) => onOpen(e.currentTarget)}
       aria-label={COPY.buildLog}
       data-testid="sheet-cinema-build-log-open"
-      className="w-full flex items-center gap-2 h-8 px-2.5 rounded-interactive border border-card-border bg-background/60 text-left hover:bg-foreground/5"
+      className="w-full flex items-center gap-2 h-8 px-2.5 rounded-interactive border border-card-border bg-background/60 text-left hover:bg-surface-1"
     >
-      <Terminal className="w-3.5 h-3.5 shrink-0 text-foreground" aria-hidden />
-      <span className="flex-1 min-w-0 truncate font-mono typo-caption text-foreground">{latest}</span>
-      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground" aria-hidden />
+      <Terminal className="w-3.5 h-3.5 shrink-0 text-ink-1" aria-hidden />
+      <span className="flex-1 min-w-0 truncate font-mono typo-caption text-ink-1">{latest}</span>
+      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-1" aria-hidden />
     </button>
   );
 }
@@ -43,12 +43,12 @@ export function BuildAside({ picked, lines, tight = false, onOpenLog }: BuildAsi
   return (
     <div className="w-full flex flex-col gap-1.5">
       {!tight && (
-        <span className="typo-body text-foreground">
+        <span className="typo-body text-ink-1">
           {undash(debtText("auto_you_can_use_the_app_freely_while_this_buil_c0d5f08b"))}
         </span>
       )}
       {picked && (
-        <span className="inline-flex items-center gap-1.5 typo-caption text-foreground min-w-0" data-testid="sheet-cinema-recipe-provenance">
+        <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2 min-w-0" data-testid="sheet-cinema-recipe-provenance">
           <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--cinema-accent)" }} aria-hidden />
           <span className="truncate">{COPY.recipes.buildingOn} · {picked.name}</span>
         </span>

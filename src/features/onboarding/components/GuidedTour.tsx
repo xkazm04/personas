@@ -298,30 +298,30 @@ export default function GuidedTour() {
               <div className={`w-8 h-8 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
                 <Sparkles className={`w-4 h-4 ${colors.text}`} />
               </div>
-              <h3 className="typo-heading text-foreground/90">{tourDef.title}</h3>
+              <h3 className="typo-heading text-ink-1">{tourDef.title}</h3>
             </div>
             <Button variant="ghost" size="icon-sm" onClick={() => handleFinishTour()} title={t.onboarding.end_tour} aria-label={t.onboarding.end_tour} data-testid="tour-completion-dismiss">
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto flex flex-col items-center gap-4 px-6 pt-8 pb-4 text-center">
-            <div className="animate-success-pop w-14 h-14 rounded-modal bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-              <Check className="w-7 h-7 text-emerald-400" />
+            <div className="animate-success-pop w-14 h-14 rounded-modal bg-status-success/15 border border-status-success/30 flex items-center justify-center">
+              <Check className="w-7 h-7 text-status-success" />
             </div>
             <div>
-              <p className="typo-heading text-foreground/90">{t.onboarding.tour_complete_title}</p>
-              <p className="typo-body text-foreground mt-1">{tx(t.onboarding.tour_complete_recap, { total: visibleSteps.length })}</p>
+              <p className="typo-heading text-ink-1">{t.onboarding.tour_complete_title}</p>
+              <p className="typo-body text-ink-2 mt-1">{tx(t.onboarding.tour_complete_recap, { total: visibleSteps.length })}</p>
             </div>
             {nextTour && (
               <div className={`w-full rounded-modal ${colors.subtle} border ${colors.accent} p-3 text-left`}>
-                <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_up_next}</span>
+                <span className="typo-eyebrow text-ink-1">{t.onboarding.tour_complete_up_next}</span>
                 <p className={`typo-heading ${colors.text} mt-1`}>{nextTour.title}</p>
-                <p className="typo-body text-foreground mt-0.5">{nextTour.description}</p>
+                <p className="typo-body text-ink-2 mt-0.5">{nextTour.description}</p>
               </div>
             )}
             {otherTours.length > 0 && (
               <div className="w-full text-left">
-                <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_more}</span>
+                <span className="typo-eyebrow text-ink-1">{t.onboarding.tour_complete_more}</span>
                 <div className="mt-1.5 flex flex-col gap-1">
                   {otherTours.map((td) => {
                     const done = completionMap[td.id];
@@ -331,13 +331,13 @@ export default function GuidedTour() {
                         type="button"
                         onClick={() => handleFinishTour(td.id)}
                         data-testid={`tour-complete-jump-${td.id}`}
-                        className="group flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-primary/10 hover:bg-secondary/30 transition-colors text-left"
+                        className="group flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-hair hover:bg-surface-1 transition-colors text-left"
                       >
-                        <span className={`flex items-center justify-center w-5 h-5 rounded-full border flex-shrink-0 ${done ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'border-primary/15 text-foreground'}`}>
+                        <span className={`flex items-center justify-center w-5 h-5 rounded-full border flex-shrink-0 ${done ? 'bg-status-success/15 border-status-success/30 text-status-success' : 'border-hair text-ink-1'}`}>
                           {done ? <Check className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
                         </span>
-                        <span className="typo-body text-foreground truncate flex-1">{td.title}</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-foreground opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" />
+                        <span className="typo-body text-ink-1 truncate flex-1">{td.title}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-ink-1 opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" />
                       </button>
                     );
                   })}
@@ -378,8 +378,8 @@ export default function GuidedTour() {
                 <Sparkles className={`w-4 h-4 ${colors.text}`} />
               </div>
               <div>
-                <h3 className="typo-heading text-foreground/90">{tourDef.title}</h3>
-                <p className="typo-caption text-foreground">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
+                <h3 className="typo-heading text-ink-1">{tourDef.title}</h3>
+                <p className="typo-caption text-ink-2">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
               </div>
             </div>
             <Button variant="ghost" size="icon-sm" onClick={dismissTour} title={t.onboarding.end_tour} data-testid="tour-resume-dismiss">
@@ -393,8 +393,8 @@ export default function GuidedTour() {
                 <MapPin className={`w-6 h-6 ${colors.text}`} />
               </div>
               <div>
-                <p className="typo-heading text-foreground/90">{t.onboarding.resume_continue_title}</p>
-                <p className="typo-caption text-foreground mt-1">
+                <p className="typo-heading text-ink-1">{t.onboarding.resume_continue_title}</p>
+                <p className="typo-caption text-ink-2 mt-1">
                   {tx(t.onboarding.tour_progress_done, { completed: completedCount, total: visibleSteps.length })}
                 </p>
               </div>
@@ -450,7 +450,7 @@ export default function GuidedTour() {
         <span className={colors.text}>
           <TourProgressArc completed={completedCount} total={visibleSteps.length} />
         </span>
-        <span className="typo-caption text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
+        <span className="typo-caption text-ink-2 [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
       </button>
     );
   }
@@ -485,9 +485,9 @@ export default function GuidedTour() {
               </div>
               <div className="min-w-0">
                 <Tooltip content={tourDef.title} placement="right">
-                  <h3 className="typo-heading text-foreground/90 truncate">{tourDef.title}</h3>
+                  <h3 className="typo-heading text-ink-1 truncate">{tourDef.title}</h3>
                 </Tooltip>
-                <p className="typo-caption text-foreground truncate">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
+                <p className="typo-caption text-ink-2 truncate">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
               </div>
             </div>
             <div className="flex items-center gap-0.5 flex-shrink-0">

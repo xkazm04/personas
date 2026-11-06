@@ -104,7 +104,7 @@ export function TourNarrativeDeck({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="typo-heading text-foreground/90">{currentStep.title}</h4>
+              <h4 className="typo-heading text-ink-1">{currentStep.title}</h4>
               {isStepCompleted && (
                 <StatusBadge
                   variant="success"
@@ -115,7 +115,7 @@ export function TourNarrativeDeck({
                 </StatusBadge>
               )}
             </div>
-            <p className="typo-caption text-foreground mt-0.5">
+            <p className="typo-caption text-ink-2 mt-0.5">
               {tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: totalSteps })}
             </p>
           </div>
@@ -139,7 +139,7 @@ export function TourNarrativeDeck({
               data-testid="tour-deck-toggle"
               aria-label={collapsed ? t.onboarding.tour_deck_expand : t.onboarding.tour_deck_collapse}
               aria-expanded={!collapsed}
-              className="flex-shrink-0 p-1 rounded-card text-foreground hover:bg-secondary/50 transition-colors"
+              className="flex-shrink-0 p-1 rounded-card text-ink-1 hover:bg-surface-2 transition-colors"
             >
               {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </button>
@@ -157,10 +157,10 @@ export function TourNarrativeDeck({
             {highlightMissing && (
               <div
                 data-testid="tour-target-missing"
-                className="flex items-start gap-2 rounded-modal border border-amber-500/25 bg-amber-500/10 p-2.5"
+                className="flex items-start gap-2 rounded-modal border border-status-warning/25 bg-status-warning/10 p-2.5"
               >
-                <EyeOff className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                <p className="typo-body text-foreground">{t.onboarding.tour_target_offscreen}</p>
+                <EyeOff className="w-3.5 h-3.5 text-status-warning mt-0.5 flex-shrink-0" />
+                <p className="typo-body text-ink-1">{t.onboarding.tour_target_offscreen}</p>
               </div>
             )}
 
@@ -169,10 +169,10 @@ export function TourNarrativeDeck({
             {narrationCaption && (
               <div
                 data-testid="tour-narration-caption"
-                className="flex items-start gap-2 rounded-modal border border-primary/10 bg-secondary/15 p-2.5"
+                className="flex items-start gap-2 rounded-modal border border-hair bg-surface-1 p-2.5"
               >
                 <Volume2 className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${colors.text} animate-pulse`} />
-                <p className="typo-body text-foreground italic">{narrationCaption}</p>
+                <p className="typo-body text-ink-1 italic">{narrationCaption}</p>
               </div>
             )}
 
@@ -180,7 +180,7 @@ export function TourNarrativeDeck({
               <TourIntroCard tourId={tourId} stepCount={steps.length} />
             )}
 
-            <p className="typo-body text-foreground">{currentStep.description}</p>
+            <p className="typo-body text-ink-1">{currentStep.description}</p>
 
             {activeHint && (
               <div className={`rounded-modal ${colors.subtle} border ${colors.accent} p-3`}>
@@ -192,7 +192,7 @@ export function TourNarrativeDeck({
             )}
 
             {hasSpecialContent && (
-              <Suspense fallback={<div className="py-4 text-center text-foreground typo-body">{t.onboarding.tour_loading}</div>}>
+              <Suspense fallback={<div className="py-4 text-center text-ink-1 typo-body">{t.onboarding.tour_loading}</div>}>
                 {currentStep.id === 'appearance-setup' && <TourAppearanceContent />}
                 {currentStep.id === 'credentials-intro' && <CredentialsTourContent subStepIndex={subStepIndex} />}
                 {currentStep.id === 'persona-creation' && <PersonaCreationCoach subStepIndex={subStepIndex} />}
@@ -202,7 +202,7 @@ export function TourNarrativeDeck({
             {!hasSpecialContent && (
               showAcknowledgeButton ? (
                 <div className="flex flex-col items-center gap-2 pt-1">
-                  <p className="typo-caption text-foreground italic text-center">
+                  <p className="typo-caption text-ink-2 italic text-center">
                     {t.onboarding.tour_explore_to_continue}
                   </p>
                   <button
@@ -216,7 +216,7 @@ export function TourNarrativeDeck({
                   </button>
                 </div>
               ) : (
-                <p className="typo-caption text-foreground italic text-center">
+                <p className="typo-caption text-ink-2 italic text-center">
                   {t.onboarding.auto_complete_hint}
                 </p>
               )

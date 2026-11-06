@@ -22,14 +22,14 @@ const APP_ICONS: Record<string, string> = {
 function riskBadge(hasHighRisk: boolean, labels: { review: string; reviewTooltip: string; safe: string; safeTooltip: string }) {
   if (hasHighRisk) {
     return (
-      <span className="flex items-center gap-1 typo-caption text-amber-400/80" title={labels.reviewTooltip}>
+      <span className="flex items-center gap-1 typo-caption text-status-warning" title={labels.reviewTooltip}>
         <AlertTriangle className="w-3 h-3" />
         {labels.review}
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 typo-caption text-emerald-400/80" title={labels.safeTooltip}>
+    <span className="flex items-center gap-1 typo-caption text-status-success" title={labels.safeTooltip}>
       <ShieldCheck className="w-3 h-3" />
       {labels.safe}
     </span>
@@ -75,8 +75,8 @@ export function DesktopDiscoveryStep({
   if (scanState.phase === 'scanning') {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <LoadingSpinner size="xl" className="text-violet-400" />
-        <span className="typo-body text-foreground">{t.onboarding.scanning_desktop}</span>
+        <LoadingSpinner size="xl" className="text-role-agent" />
+        <span className="typo-body text-ink-1">{t.onboarding.scanning_desktop}</span>
       </div>
     );
   }
@@ -84,9 +84,9 @@ export function DesktopDiscoveryStep({
   if (scanState.phase === 'error') {
     return (
       <div className="text-center py-16">
-        <AlertCircle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
-        <p className="typo-body text-foreground">{t.onboarding.desktop_scan_error}</p>
-        <p className="typo-body text-foreground mt-1">
+        <AlertCircle className="w-10 h-10 mx-auto text-status-warning mb-3" />
+        <p className="typo-body text-ink-1">{t.onboarding.desktop_scan_error}</p>
+        <p className="typo-body text-ink-2 mt-1">
           {scanState.error
             ? resolveErrorTranslated(t, extractMessage(scanState.error.raw)).message
             : t.onboarding.desktop_scan_error_hint}
@@ -94,7 +94,7 @@ export function DesktopDiscoveryStep({
         <button
           type="button"
           onClick={onRetry}
-          className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+          className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.onboarding.desktop_scan_retry}
@@ -108,9 +108,9 @@ export function DesktopDiscoveryStep({
   if (installed.length === 0) {
     return (
       <div className="text-center py-16">
-        <Monitor className="w-10 h-10 mx-auto text-foreground mb-3" />
-        <p className="typo-body text-foreground">{t.onboarding.desktop_empty}</p>
-        <p className="typo-body text-foreground mt-1">
+        <Monitor className="w-10 h-10 mx-auto text-ink-1 mb-3" />
+        <p className="typo-body text-ink-1">{t.onboarding.desktop_empty}</p>
+        <p className="typo-body text-ink-2 mt-1">
           {t.onboarding.desktop_empty_hint}
         </p>
       </div>
@@ -120,10 +120,10 @@ export function DesktopDiscoveryStep({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="typo-heading-lg text-foreground/90 mb-1">
+        <h3 className="typo-heading-lg text-ink-1 mb-1">
           {t.onboarding.desktop_title}
         </h3>
-        <p className="typo-body text-foreground">
+        <p className="typo-body text-ink-1">
           {t.onboarding.desktop_description}
         </p>
       </div>
@@ -138,26 +138,26 @@ export function DesktopDiscoveryStep({
               key={app.connector_name}
               className={`flex items-center gap-3 rounded-modal border p-3.5 transition-all ${
                 isApproved
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : 'bg-secondary/30 border-primary/10'
+                  ? 'bg-status-success/5 border-status-success/20'
+                  : 'bg-surface-1 border-hair'
               }`}
             >
-              <div className="w-9 h-9 rounded-card bg-secondary/50 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                <Monitor className="w-[18px] h-[18px] text-foreground" />
+              <div className="w-9 h-9 rounded-card bg-surface-2 border border-hair flex items-center justify-center flex-shrink-0">
+                <Monitor className="w-[18px] h-[18px] text-ink-1" />
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="typo-heading text-foreground/90">
+                  <span className="typo-heading text-ink-1">
                     {app.label || APP_ICONS[app.connector_name] || app.connector_name}
                   </span>
                   {app.running && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" title={t.onboarding.app_running_tooltip} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-status-success flex-shrink-0" title={t.onboarding.app_running_tooltip} />
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   {app.version && (
-                    <span className="typo-caption text-foreground">v{app.version}</span>
+                    <span className="typo-caption text-ink-2">v{app.version}</span>
                   )}
                   {riskBadge(hasHighRisk, riskLabels)}
                 </div>
@@ -169,10 +169,10 @@ export function DesktopDiscoveryStep({
                 disabled={isApproved || isApproving}
                 className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-card transition-colors flex-shrink-0 ${
                   isApproved
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default'
+                    ? 'bg-status-success/10 text-status-success border border-status-success/20 cursor-default'
                     : isApproving
-                      ? 'bg-violet-500/10 text-violet-300 border border-violet-500/20 cursor-wait'
-                      : 'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25'
+                      ? 'bg-role-agent/10 text-role-agent border border-role-agent/20 cursor-wait'
+                      : 'bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25'
                 }`}
               >
                 {isApproved ? (

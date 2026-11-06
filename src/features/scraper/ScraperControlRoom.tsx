@@ -13,6 +13,7 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 
 import { DatasetInspector } from './DatasetInspector';
 import { PreviewResults } from './PreviewResults';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import {
   cadenceLabel,
   parseStatus,
@@ -64,7 +65,7 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
   return (
     <div className="space-y-5">
       {/* Stat bar — static chrome, always renders. */}
-      <div className="flex items-center justify-between rounded-card border border-primary/10 bg-secondary/30 px-5 py-4">
+      <div className="flex items-center justify-between rounded-card border border-hair bg-surface-1 px-5 py-4">
         <div className="flex items-center gap-8">
           <StatChip label={sc.stat_scrapes} value={data.configs.length} />
           <StatChip label={sc.stat_scheduled} value={scheduled} accent="info" />
@@ -85,7 +86,7 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
       ) : data.configs.length === 0 ? (
         loadFailed ? null : <EmptyRow onNew={onNew} />
       ) : (
-        <div className="overflow-hidden rounded-card border border-primary/10">
+        <div className="overflow-hidden rounded-card border border-hair">
           <table className="w-full text-left">
             <TableHead />
             <tbody className="divide-y divide-primary/8">
@@ -114,7 +115,7 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
       {/* Datasets strip */}
       {data.datasets.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="typo-label text-muted-foreground flex items-center gap-1.5">
+          <span className="typo-label text-ink-3 flex items-center gap-1.5">
             <Database className="size-3.5" /> {sc.stat_datasets}
           </span>
           {data.datasets.map((d) => {
@@ -127,12 +128,12 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
                 onClick={() => setOpenDataset(open ? null : d.name)}
                 className={`rounded-interactive border px-2.5 py-1 typo-caption transition-colors ${
                   open
-                    ? 'border-primary/40 bg-primary/10 text-foreground'
-                    : 'border-primary/12 bg-secondary/40 text-foreground/90 hover:bg-secondary/60'
+                    ? 'border-primary/40 bg-surface-1 text-ink-1'
+                    : 'border-primary/12 bg-surface-2 text-ink-1 hover:bg-surface-2'
                 }`}
               >
                 {d.name}
-                <span className="text-muted-foreground"> · {d.count}</span>
+                <span className="text-ink-3"> · {d.count}</span>
               </button>
             );
           })}
@@ -213,26 +214,26 @@ function Row({
       order={order}
       hasEntered={hasEntered}
       markEntered={markEntered}
-      className="group hover:bg-secondary/20 transition-colors"
+      className="group hover:bg-surface-1 transition-colors"
     >
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {!config.enabled && (
             <span className="size-1.5 rounded-full bg-muted-foreground/40" title={t.common.disabled} />
           )}
-          <span className="text-foreground">{config.name}</span>
+          <span className="text-ink-1">{config.name}</span>
         </div>
         {config.description ? (
-          <span className="block max-w-[280px] truncate typo-caption text-muted-foreground" title={config.description}>
+          <span className="block max-w-[280px] truncate typo-caption text-ink-3" title={config.description}>
             {config.description}
           </span>
         ) : (
-          <span className="typo-caption text-muted-foreground">→ {config.dataset}</span>
+          <span className="typo-caption text-ink-3">→ {config.dataset}</span>
         )}
       </td>
-      <td className="px-4 py-3 text-foreground/80">
+      <td className="px-4 py-3 text-ink-1">
         <span className="inline-flex items-center gap-1">
-          <Globe className="size-3.5 text-muted-foreground" /> {config.urls.length}
+          <Globe className="size-3.5 text-ink-3" /> {config.urls.length}
         </span>
       </td>
       <td className="px-4 py-3">
@@ -243,13 +244,13 @@ function Row({
           className={`rounded-interactive px-2 py-0.5 typo-caption ${
             config.cron
               ? 'bg-status-info/12 text-status-info'
-              : 'bg-secondary/50 text-muted-foreground'
+              : 'bg-surface-2 text-ink-3'
           }`}
         >
           {cadenceLabel(config.cron)}
         </span>
       </td>
-      <td className="px-4 py-3 typo-caption text-muted-foreground">
+      <td className="px-4 py-3 typo-caption text-ink-3">
         {config.lastRunAt ? <RelativeTime timestamp={config.lastRunAt} /> : '—'}
       </td>
       <td className="px-4 py-3">
@@ -275,8 +276,8 @@ function Row({
     {testOpen && (
       <tr>
         <td colSpan={7} className="bg-background/30 px-4 pb-3">
-          <div className="rounded-interactive border border-primary/10 bg-secondary/15 p-3">
-            <div className="mb-2 flex items-center gap-1.5 typo-label text-muted-foreground">
+          <div className="rounded-interactive border border-hair bg-surface-1 p-3">
+            <div className="mb-2 flex items-center gap-1.5 typo-label text-ink-3">
               <FlaskConical className="size-3.5" /> {t.plugins.scraper.test_heading}
             </div>
             {testError !== null ? (
@@ -285,7 +286,7 @@ function Row({
                 <span>{inlineErrorCopy(t, testError)}</span>
               </div>
             ) : testing ? (
-              <span className="typo-caption text-muted-foreground">{tx(t.plugins.scraper.test_fetching, { url: config.urls[0] ?? '' })}</span>
+              <span className="typo-caption text-ink-3">{tx(t.plugins.scraper.test_fetching, { url: config.urls[0] ?? '' })}</span>
             ) : testRows ? (
               <PreviewResults rows={testRows} fieldNames={fields} />
             ) : null}
@@ -307,22 +308,22 @@ function StatChip({
   accent?: 'info' | 'success';
 }) {
   const color =
-    accent === 'info' ? 'text-status-info' : accent === 'success' ? 'text-status-success' : 'text-foreground';
+    accent === 'info' ? 'text-status-info' : accent === 'success' ? 'text-status-success' : 'text-ink-1';
   return (
     <div className="flex flex-col">
       <span className={`typo-data-lg ${color}`}>{value}</span>
-      <span className="typo-label text-muted-foreground">{label}</span>
+      <span className="typo-label text-ink-3">{label}</span>
     </div>
   );
 }
 
-const STATUS_DOT: Record<ScrapeStatusTone, string> = {
-  ok: 'bg-status-success',
-  error: 'bg-status-error',
+const STATUS_STATE: Record<ScrapeStatusTone, StateMarkState> = {
+  ok: 'success',
+  error: 'error',
   // Collapse is not an error the run reported; it is a success that harvested
   // nothing into a dataset that already had records. Amber, never green.
-  collapsed: 'bg-status-warning',
-  unknown: 'bg-muted-foreground/40',
+  collapsed: 'warning',
+  unknown: 'neutral',
 };
 
 function StatusPill({
@@ -334,30 +335,27 @@ function StatusPill({
 }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 typo-caption text-foreground/80"
+      className="inline-flex items-center"
       data-testid={status.collapsed ? 'scrape-status-collapsed' : 'scrape-status'}
       title={status.collapsed ? collapsedLabel : status.text}
     >
-      <span className={`size-1.5 rounded-full ${STATUS_DOT[status.tone]}`} />
-      <span className={`max-w-[180px] truncate ${status.collapsed ? 'text-status-warning' : ''}`}>
-        {status.text}
-      </span>
+      <StateMark state={STATUS_STATE[status.tone]} label={status.text} className="max-w-[180px]" />
     </span>
   );
 }
 
 function FieldChips({ fields }: { fields: string[] }) {
-  if (fields.length === 0) return <span className="typo-caption text-muted-foreground">—</span>;
+  if (fields.length === 0) return <span className="typo-caption text-ink-3">—</span>;
   const shown = fields.slice(0, 3);
   return (
     <span className="flex flex-wrap gap-1">
       {shown.map((f) => (
-        <span key={f} className="rounded bg-primary/8 px-1.5 py-0.5 font-mono typo-caption text-foreground/80">
+        <span key={f} className="inline-flex items-center font-mono typo-caption text-ink-1">
           {f}
         </span>
       ))}
       {fields.length > shown.length && (
-        <span className="typo-caption text-muted-foreground">+{fields.length - shown.length}</span>
+        <span className="typo-caption text-ink-3">+{fields.length - shown.length}</span>
       )}
     </span>
   );
@@ -366,8 +364,8 @@ function FieldChips({ fields }: { fields: string[] }) {
 function EmptyRow({ onNew }: { onNew: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-primary/15 py-16">
-      <p className="typo-body text-muted-foreground">{t.plugins.scraper.empty_title}</p>
+    <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-hair py-16">
+      <p className="typo-body text-ink-3">{t.plugins.scraper.empty_title}</p>
       <Button variant="primary" onClick={onNew}>
         <Plus className="size-4" /> {t.plugins.scraper.new_scrape}
       </Button>
@@ -381,14 +379,14 @@ function TableHead() {
   const sc = t.plugins.scraper;
   return (
     <thead>
-      <tr className="border-b border-primary/10 bg-secondary/20 typo-label text-muted-foreground">
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_scrape}</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_sources}</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_fields}</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_schedule}</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_last_run}</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.common.status}</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground" />
+      <tr className="border-b border-hair bg-surface-1 typo-label text-ink-3">
+        <th className="px-4 py-2.5 typo-eyebrow text-ink-1">{sc.col_scrape}</th>
+        <th className="px-4 py-2.5 typo-eyebrow text-ink-1">{sc.col_sources}</th>
+        <th className="px-4 py-2.5 typo-eyebrow text-ink-1">{sc.col_fields}</th>
+        <th className="px-4 py-2.5 typo-eyebrow text-ink-1">{sc.col_schedule}</th>
+        <th className="px-4 py-2.5 typo-eyebrow text-ink-1">{sc.col_last_run}</th>
+        <th className="px-4 py-2.5 typo-eyebrow text-ink-1">{t.common.status}</th>
+        <th className="px-4 py-2.5 typo-eyebrow text-ink-1" />
       </tr>
     </thead>
   );
@@ -404,13 +402,13 @@ function TableHead() {
 // No `animate-pulse` — the entrance stagger is the only motion.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 /** Deterministic width variation so ghosts read as rows, not a barcode. */
 const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 
 function ScraperGhostTable() {
   return (
-    <div className="overflow-hidden rounded-card border border-primary/10" aria-hidden="true">
+    <div className="overflow-hidden rounded-card border border-hair" aria-hidden="true">
       <table className="w-full text-left">
         <TableHead />
         <tbody className="divide-y divide-primary/8">
@@ -423,7 +421,7 @@ function ScraperGhostTable() {
                   <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
                 </td>
                 <td className="px-4 py-3"><span className={`inline-block h-3.5 w-8 ${GHOST_BAR}`} /></td>
-                <td className="px-4 py-3"><span className={`inline-block h-5 w-24 rounded ${GHOST_BAR}`} /></td>
+                <td className="px-4 py-3"><span className={`inline-block h-5 w-24 rounded-interactive ${GHOST_BAR}`} /></td>
                 <td className="px-4 py-3"><span className={`inline-block h-5 w-20 rounded-interactive ${GHOST_BAR}`} /></td>
                 <td className="px-4 py-3"><span className={`inline-block h-3.5 w-16 ${GHOST_BAR}`} /></td>
                 <td className="px-4 py-3"><span className={`inline-block h-3.5 w-20 ${GHOST_BAR}`} /></td>

@@ -37,7 +37,7 @@ export function BrainChart({
       <ChartErrorBoundary key={resetKey}>
         <LazyChart
           // A calm hold, never a spinner: the chunk arrives in a frame or two.
-          fallback={<div className="h-full w-full rounded-input bg-secondary/20" aria-hidden />}
+          fallback={<div className="h-full w-full rounded-input bg-surface-1" aria-hidden />}
           render={(R) => (
             <R.ResponsiveContainer width="100%" height="100%">
               {children(R)}
@@ -89,8 +89,8 @@ export function BrainChartTooltip({
   if (!active || !payload?.length) return null;
   const shown = payload.filter((e) => (e.value ?? 0) !== 0);
   return (
-    <div className="bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
-      {label && <p className="typo-caption text-foreground mb-1">{label}</p>}
+    <div className="bg-background/95 border border-hair rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
+      {label && <p className="typo-caption text-ink-2 mb-1">{label}</p>}
       {(shown.length > 0 ? shown : payload).map((entry, i) => (
         <div key={`${entry.name ?? i}`} className="flex items-center gap-2 typo-caption">
           <span
@@ -98,8 +98,8 @@ export function BrainChartTooltip({
             style={{ backgroundColor: entry.color }}
             aria-hidden
           />
-          <span className="text-foreground/85">{entry.name}</span>
-          <Numeric className="ml-auto text-foreground" value={entry.value ?? 0} unit="plain" />
+          <span className="text-ink-1">{entry.name}</span>
+          <Numeric className="ml-auto text-ink-1" value={entry.value ?? 0} unit="plain" />
         </div>
       ))}
     </div>

@@ -80,10 +80,10 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
             <div
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-body transition-all duration-300 ${
                 done
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                  ? 'bg-status-success/15 text-status-success border border-status-success/25'
                   : active
-                    ? 'bg-primary/10 text-foreground border border-primary/20'
-                    : 'bg-primary/5 text-foreground border border-primary/8'
+                    ? 'bg-surface-1 text-ink-1 border border-hair'
+                    : 'bg-surface-1 text-ink-1 border border-primary/8'
               }`}
             >
               {done ? <Check className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
@@ -110,8 +110,8 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">{isSimple ? ss.your_profile : ss.choose_role}</h3>
-        <p className="typo-body text-foreground mt-1">{isSimple ? ss.simple_hint : ss.tailor_hint}</p>
+        <h3 className="typo-heading-lg text-ink-1">{isSimple ? ss.your_profile : ss.choose_role}</h3>
+        <p className="typo-body text-ink-2 mt-1">{isSimple ? ss.simple_hint : ss.tailor_hint}</p>
       </div>
       <div className={`grid gap-4 ${isSimple ? 'grid-cols-1 max-w-xs mx-auto' : 'grid-cols-3'}`}>
         {visibleRoles.map((role) => {
@@ -130,7 +130,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               className={`group relative flex flex-col items-center text-center rounded-modal border-2 p-5 transition-all duration-300 cursor-pointer ${
                 isSelected
                   ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
-                  : 'border-primary/10 bg-primary/3 hover:border-primary/20 hover:bg-primary/5'
+                  : 'border-hair bg-primary/3 hover:border-hair hover:bg-surface-2'
               }`}
             >
               {/* Illustration — darken for light themes for better contrast */}
@@ -147,17 +147,17 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               </div>
 
               {/* Label */}
-              <span className="typo-body-lg text-foreground">{label}</span>
-              <span className="typo-body text-foreground mt-0.5">{subtitle}</span>
+              <span className="typo-body-lg text-ink-1">{label}</span>
+              <span className="typo-body text-ink-1 mt-0.5">{subtitle}</span>
 
               {/* Selection indicator */}
               {isSelected && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center"
+                  className="absolute top-3 right-3 w-5 h-5 rounded-full bg-status-success/20 border border-status-success/40 flex items-center justify-center"
                 >
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-status-success" />
                 </motion.div>
               )}
             </motion.button>
@@ -190,8 +190,8 @@ function ToolStep({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">{ss.pick_tool}</h3>
-        <p className="typo-body text-foreground mt-1">
+        <h3 className="typo-heading-lg text-ink-1">{ss.pick_tool}</h3>
+        <p className="typo-body text-ink-2 mt-1">
           {ss.tool_hint}
         </p>
       </div>
@@ -209,7 +209,7 @@ function ToolStep({
               className={`group relative flex flex-col items-center text-center rounded-modal border-2 p-6 transition-all duration-300 cursor-pointer ${
                 isSelected
                   ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
-                  : 'border-primary/10 bg-primary/3 hover:border-primary/20 hover:bg-primary/5'
+                  : 'border-hair bg-primary/3 hover:border-hair hover:bg-surface-2'
               }`}
             >
               {/* Icon */}
@@ -226,15 +226,15 @@ function ToolStep({
                 )}
               </div>
 
-              <span className="typo-heading text-foreground">{meta.label}</span>
+              <span className="typo-heading text-ink-1">{meta.label}</span>
 
               {isSelected && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center"
+                  className="absolute top-3 right-3 w-5 h-5 rounded-full bg-status-success/20 border border-status-success/40 flex items-center justify-center"
                 >
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-status-success" />
                 </motion.div>
               )}
             </motion.button>
@@ -255,8 +255,8 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">{ss.automate_title}</h3>
-        <p className="typo-body text-foreground mt-1">
+        <h3 className="typo-heading-lg text-ink-1">{ss.automate_title}</h3>
+        <p className="typo-body text-ink-2 mt-1">
           {ss.automate_hint}
         </p>
       </div>
@@ -265,10 +265,10 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
         onChange={(e) => onChange(e.target.value)}
         placeholder={ss.automate_placeholder}
         rows={5}
-        className="w-full rounded-modal border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-foreground focus-ring focus-visible:border-primary/30 resize-none transition-all"
+        className="w-full rounded-modal border border-hair bg-surface-1 px-4 py-3 typo-body text-ink-1 placeholder:text-ink-3 focus-ring focus-visible:border-primary/30 resize-none transition-all"
       />
       <div className="flex items-center justify-between">
-        <span className="typo-body text-foreground">
+        <span className="typo-body text-ink-1">
           {value.trim().length < 10 ? tx(ss.min_chars, { current: value.trim().length }) : ss.ready_to_save}
         </span>
       </div>
@@ -353,13 +353,13 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
   };
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} titleId="setup-stepper" maxWidthClass="max-w-2xl" panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden">
+    <BaseModal isOpen={isOpen} onClose={onClose} titleId="setup-stepper" maxWidthClass="max-w-2xl" panelClassName="max-h-[85vh] bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden">
       <div className="p-6 flex flex-col" style={{ minHeight: '480px' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <StepIndicator current={step} completed={completed} />
-          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-primary/10 transition-colors">
-            <X className="w-4 h-4 text-foreground" />
+          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-surface-2 transition-colors">
+            <X className="w-4 h-4 text-ink-1" />
           </button>
         </div>
 
@@ -389,7 +389,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
             type="button"
             onClick={goBack}
             disabled={step === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-heading text-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-heading text-ink-1 hover:text-ink-1 hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
           >
             <ChevronLeft className="w-4 h-4" />
             {ss.back}
@@ -398,7 +398,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
             type="button"
             onClick={goNext}
             disabled={!canNext}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-modal typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-modal typo-heading bg-primary/15 border border-hair text-ink-1 hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {step === 2 ? ss.finish : ss.next}
             {step < 2 && <ChevronRight className="w-4 h-4" />}
@@ -437,9 +437,9 @@ const CARD_DEFS: CardMeta[] = [
     descriptionKey: 'step_role_hint',
     gradFrom: 'from-violet-500/8',
     gradTo: 'to-purple-500/4',
-    glowColor: 'bg-violet-500/20',
-    accentBorder: 'border-violet-500/15',
-    iconText: 'text-violet-400',
+    glowColor: 'bg-role-agent/20',
+    accentBorder: 'border-role-agent/15',
+    iconText: 'text-role-agent',
   },
   {
     id: 'tool',
@@ -449,9 +449,9 @@ const CARD_DEFS: CardMeta[] = [
     descriptionKey: 'step_tool_hint',
     gradFrom: 'from-cyan-500/8',
     gradTo: 'to-blue-500/4',
-    glowColor: 'bg-cyan-500/20',
-    accentBorder: 'border-cyan-500/15',
-    iconText: 'text-cyan-400',
+    glowColor: 'bg-role-external/20',
+    accentBorder: 'border-role-external/15',
+    iconText: 'text-role-external',
   },
   {
     id: 'goal',
@@ -461,9 +461,9 @@ const CARD_DEFS: CardMeta[] = [
     descriptionKey: 'step_goal_hint',
     gradFrom: 'from-amber-500/8',
     gradTo: 'to-orange-500/4',
-    glowColor: 'bg-amber-500/20',
-    accentBorder: 'border-amber-500/15',
-    iconText: 'text-amber-400',
+    glowColor: 'bg-status-warning/20',
+    accentBorder: 'border-status-warning/15',
+    iconText: 'text-status-warning',
   },
 ];
 
@@ -526,22 +526,22 @@ function SetupCardItem({
         {/* Lock overlay */}
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10">
-            <Lock className="w-6 h-6 text-foreground" />
+            <Lock className="w-6 h-6 text-ink-1" />
           </div>
         )}
 
         {/* Title overlaid at bottom */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-8 bg-gradient-to-t dark:from-black/40 from-transparent to-transparent pointer-events-none z-10">
-          <h3 className="typo-heading-lg uppercase dark:text-white text-foreground/85 drop-shadow-elevation-1">
+          <h3 className="typo-heading-lg uppercase dark:text-white text-ink-1">
             {displayTitle}
           </h3>
         </div>
 
         {/* Completed badge */}
         {completed && (
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-            <Check className="w-3 h-3 text-emerald-400" />
-            <span className="typo-body text-emerald-400 max-w-[80px] truncate">
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-full bg-status-success/20 border border-status-success/30">
+            <Check className="w-3 h-3 text-status-success" />
+            <span className="typo-body text-status-success max-w-[80px] truncate">
               {value}
             </span>
           </div>
@@ -555,7 +555,7 @@ function SetupCardItem({
 
       {/* Description below */}
       <div className="mt-2 px-1 h-[64px] flex items-start">
-        <p className="typo-body dark:text-foreground text-foreground line-clamp-3">
+        <p className="typo-body dark:text-ink-1 text-ink-1 line-clamp-3">
           {locked
             ? card.id === 'tool'
               ? setup.select_role_first

@@ -31,6 +31,7 @@ import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerBrandIcon } from "./ComposerBrandIcon";
 import { useOnOpen } from "./useOnOpen";
 import { DebtText } from '@/i18n/DebtText';
+import { Kbd } from '@/features/shared/components/display/Kbd';
 import {
   BUILT_IN_INBOX,
   DESTINATION_FIELDS,
@@ -255,11 +256,11 @@ export function ComposerMessagingPickerModal({
       solid={solid}
       footer={
         <>
-          <kbd className="typo-caption text-foreground"><DebtText k="auto_enter_b0d98854" /></kbd>
+          <Kbd><DebtText k="auto_enter_b0d98854" /></Kbd>
           <button
             type="button"
             onClick={applyNow}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body transition-colors"
+            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-ink-1 typo-body transition-colors"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
           >
             {externalCount === 0
@@ -283,10 +284,10 @@ export function ComposerMessagingPickerModal({
                 <Inbox className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className="typo-body text-foreground">
+                <div className="typo-body text-ink-1">
                   {t.agents.messaging_picker.builtin_label}
                 </div>
-                <div className="typo-caption text-foreground">
+                <div className="typo-caption text-ink-2">
                   {t.agents.messaging_picker.builtin_help}
                 </div>
               </div>
@@ -298,7 +299,7 @@ export function ComposerMessagingPickerModal({
                 aria-label={t.agents.messaging_picker.builtin_always_on}
               >
                 {(pinBuiltIn || builtInSelected) && (
-                  <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
+                  <Check className="w-3 h-3 text-ink-1" strokeWidth={3} />
                 )}
               </span>
             </>
@@ -306,7 +307,7 @@ export function ComposerMessagingPickerModal({
           const cls = `rounded-card border p-3 flex items-center gap-3 ${
             pinBuiltIn || builtInSelected
               ? "border-primary/40 bg-primary/[0.06]"
-              : "border-border/25 bg-foreground/[0.02]"
+              : "border-hair bg-surface-1"
           }`;
           return pinBuiltIn ? (
             <div className={cls}>{content}</div>
@@ -327,11 +328,11 @@ export function ComposerMessagingPickerModal({
         {selectedRender.length > 0 && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <div className="typo-label text-foreground">
+              <div className="typo-label text-ink-1">
                 {t.agents.messaging_picker.section_configured}
               </div>
               {incompleteCount > 0 && (
-                <span className="inline-flex items-center gap-1 typo-caption text-amber-400/90">
+                <span className="inline-flex items-center gap-1 typo-caption text-status-warning">
                   <AlertCircle className="w-3 h-3" />
                   {t.agents.messaging_picker.incomplete_warning.replace(
                     "{count}",
@@ -349,10 +350,10 @@ export function ComposerMessagingPickerModal({
                 return (
                   <div
                     key={key}
-                    className={`rounded-card border bg-foreground/[0.02] p-3 flex flex-col gap-3 ${
+                    className={`rounded-card border bg-surface-1 p-3 flex flex-col gap-3 ${
                       complete
                         ? "border-primary/40"
-                        : "border-amber-400/40"
+                        : "border-status-warning/40"
                     }`}
                     style={
                       complete
@@ -379,10 +380,10 @@ export function ComposerMessagingPickerModal({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="typo-body text-foreground truncate">
+                        <div className="typo-body text-ink-1 truncate">
                           {meta.label}
                         </div>
-                        <div className="typo-caption text-foreground truncate">
+                        <div className="typo-caption text-ink-2 truncate">
                           {spec.type}
                         </div>
                       </div>
@@ -393,7 +394,7 @@ export function ComposerMessagingPickerModal({
                           "{name}",
                           meta.label,
                         )}
-                        className="shrink-0 text-foreground hover:text-foreground p-1.5 rounded-interactive hover:bg-foreground/10"
+                        className="shrink-0 text-ink-1 hover:text-ink-1 p-1.5 rounded-interactive hover:bg-surface-2"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -411,7 +412,7 @@ export function ComposerMessagingPickerModal({
                               key={field.key}
                               className="flex flex-col gap-1"
                             >
-                              <span className="typo-caption text-foreground">
+                              <span className="typo-caption text-ink-2">
                                 {
                                   t.agents.messaging_picker.field_labels[
                                     field.labelKey
@@ -434,7 +435,7 @@ export function ComposerMessagingPickerModal({
                                     field.placeholderKey
                                   ]
                                 }
-                                className="px-2.5 py-1.5 rounded-interactive border border-border/30 bg-foreground/[0.04] typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/50 transition-colors"
+                                className="px-2.5 py-1.5 rounded-interactive border border-hair bg-surface-1 typo-body text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-primary/50 transition-colors"
                               />
                             </label>
                           );
@@ -471,9 +472,9 @@ export function ComposerMessagingPickerModal({
                           className="mt-0.5 accent-primary"
                           data-testid={`discord-poll-inbound-${spec.credential_id ?? ''}`}
                         />
-                        <span className="typo-caption text-foreground">
-                          <span className="font-medium text-foreground/90">{t.agents.messaging_picker.discord_poll_inbound_label}</span>
-                          <span className="block text-foreground">{t.agents.messaging_picker.discord_poll_inbound_help}</span>
+                        <span className="typo-caption text-ink-2">
+                          <span className="font-medium text-ink-1">{t.agents.messaging_picker.discord_poll_inbound_label}</span>
+                          <span className="block text-ink-1">{t.agents.messaging_picker.discord_poll_inbound_help}</span>
                         </span>
                       </label>
                     )}
@@ -507,14 +508,14 @@ export function ComposerMessagingPickerModal({
                           className="mt-0.5 accent-primary"
                           data-testid={`slack-poll-inbound-${spec.credential_id ?? ''}`}
                         />
-                        <span className="typo-caption text-foreground">
-                          <span className="font-medium text-foreground/90">{t.agents.messaging_picker.slack_poll_inbound_label}</span>
-                          <span className="block text-foreground">{t.agents.messaging_picker.slack_poll_inbound_help}</span>
+                        <span className="typo-caption text-ink-2">
+                          <span className="font-medium text-ink-1">{t.agents.messaging_picker.slack_poll_inbound_label}</span>
+                          <span className="block text-ink-1">{t.agents.messaging_picker.slack_poll_inbound_help}</span>
                         </span>
                       </label>
                     )}
                     {!complete && (
-                      <p className="typo-caption text-amber-400/80">
+                      <p className="typo-caption text-status-warning">
                         {t.agents.messaging_picker.fallback_hint}
                       </p>
                     )}
@@ -528,19 +529,19 @@ export function ComposerMessagingPickerModal({
         {/* Available (unselected) channels grid */}
         {pickable.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <div className="w-14 h-14 rounded-full bg-foreground/5 flex items-center justify-center">
-              <Plug className="w-6 h-6 text-foreground" />
+            <div className="w-14 h-14 rounded-full bg-surface-1 flex items-center justify-center">
+              <Plug className="w-6 h-6 text-ink-1" />
             </div>
-            <div className="typo-body text-foreground/85">
+            <div className="typo-body text-ink-1">
               {t.agents.messaging_picker.empty_title}
             </div>
-            <p className="typo-caption text-foreground max-w-xs">
+            <p className="typo-caption text-ink-2 max-w-xs">
               {t.agents.messaging_picker.empty_help}
             </p>
           </div>
         ) : unselectedPickables.length > 0 ? (
           <>
-            <div className="typo-label text-foreground">
+            <div className="typo-label text-ink-1">
               {selectedRender.length > 0
                 ? t.agents.messaging_picker.section_available
                 : t.agents.messaging_picker.section_external}
@@ -553,7 +554,7 @@ export function ComposerMessagingPickerModal({
                     key={p.key}
                     type="button"
                     onClick={() => toggle(p)}
-                    className="group relative flex items-center gap-3 p-3 rounded-card border transition-all text-left border-border/25 bg-foreground/[0.02] hover:border-primary/35 hover:bg-primary/[0.04]"
+                    className="group relative flex items-center gap-3 p-3 rounded-card border transition-all text-left border-hair bg-surface-1 hover:border-primary/35 hover:bg-primary/[0.04]"
                   >
                     <div
                       className="shrink-0 w-10 h-10 rounded-interactive flex items-center justify-center overflow-hidden"
@@ -570,10 +571,10 @@ export function ComposerMessagingPickerModal({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body text-foreground truncate">
+                      <div className="typo-body text-ink-1 truncate">
                         {meta.label}
                       </div>
-                      <div className="typo-caption text-foreground truncate">
+                      <div className="typo-caption text-ink-2 truncate">
                         {p.channelType}
                       </div>
                     </div>
@@ -581,7 +582,7 @@ export function ComposerMessagingPickerModal({
                 );
               })}
             </div>
-            <p className="typo-caption text-foreground">
+            <p className="typo-caption text-ink-2">
               {t.agents.messaging_picker.fanout_help}
             </p>
           </>

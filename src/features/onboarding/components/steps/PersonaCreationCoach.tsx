@@ -62,12 +62,12 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
             <div
               key={step.id}
               data-testid={`tour-coach-substep-${step.id}`}
-              className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-card text-[11px] transition-all ${
+              className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-card typo-caption transition-all ${
                 isComplete
-                  ? 'bg-emerald-500/10 text-emerald-400'
+                  ? 'bg-status-success/10 text-status-success'
                   : isCurrent
-                    ? 'bg-emerald-500/5 text-emerald-300 font-medium border border-emerald-500/20'
-                    : 'bg-secondary/20 text-foreground'
+                    ? 'bg-status-success/5 text-status-success border border-status-success/20'
+                    : 'bg-surface-1 text-ink-1'
               }`}
             >
               {isComplete ? <Check className="w-2.5 h-2.5 flex-shrink-0" /> : <step.icon className="w-2.5 h-2.5 flex-shrink-0" />}
@@ -78,34 +78,34 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
       </div>
 
       {/* Build phase indicator */}
-      <div className="flex items-center gap-2 p-2 rounded-card bg-secondary/20 border border-primary/8" data-testid="tour-coach-phase">
+      <div className="flex items-center gap-2 p-2 rounded-card bg-surface-1 border border-primary/8" data-testid="tour-coach-phase">
         <div className={`w-2 h-2 rounded-full ${
-          buildPhase === 'promoted' ? 'bg-emerald-400' :
-          buildPhase === 'test_complete' ? (buildTestPassed ? 'bg-emerald-400' : 'bg-red-400') :
-          buildPhase === 'failed' ? 'bg-red-400' :
-          'bg-amber-400 animate-pulse'
+          buildPhase === 'promoted' ? 'bg-status-success' :
+          buildPhase === 'test_complete' ? (buildTestPassed ? 'bg-status-success' : 'bg-status-error') :
+          buildPhase === 'failed' ? 'bg-status-error' :
+          'bg-status-warning animate-pulse'
         }`} />
-        <span className="text-[11px] text-foreground capitalize">{buildPhase.replace(/_/g, ' ')}</span>
+        <span className="typo-caption text-ink-2 capitalize">{buildPhase.replace(/_/g, ' ')}</span>
         {buildProgress > 0 && buildProgress < 100 && (
-          <span className="text-[11px] text-foreground ml-auto">{Math.round(buildProgress)}%</span>
+          <span className="typo-caption text-ink-2 ml-auto">{Math.round(buildProgress)}%</span>
         )}
       </div>
 
       {/* Dynamic content per sub-step */}
       {effectiveSubStep === 0 && (
         <div className="space-y-3">
-          <p className="typo-body text-foreground">
+          <p className="typo-body text-ink-1">
             {t.onboarding.describe_intent}
           </p>
           <div className="space-y-1.5">
-            <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.example_intents_label}</span>
+            <span className="typo-eyebrow text-ink-1">{t.onboarding.example_intents_label}</span>
             {EXAMPLE_INTENT_KEYS.map((key) => (
-              <div key={key} className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/10 typo-body text-emerald-300/70">
+              <div key={key} className="px-3 py-2 rounded-card bg-status-success/5 border border-status-success/10 typo-body text-status-success">
                 "{t.onboarding[key]}"
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-foreground italic">
+          <p className="typo-caption text-ink-2 italic">
             {t.onboarding.intent_field_hint}
           </p>
         </div>
@@ -113,20 +113,20 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
 
       {effectiveSubStep === 1 && (
         <div className="space-y-3">
-          <p className="typo-body text-foreground">
+          <p className="typo-body text-ink-1">
             {t.onboarding.analyzing_hint}
           </p>
           {pendingQuestions.length > 0 && (
-            <div className="p-3 rounded-modal bg-amber-500/5 border border-amber-500/15">
-              <p className="typo-body text-amber-300/80">
+            <div className="p-3 rounded-modal bg-status-warning/5 border border-status-warning/15">
+              <p className="typo-body text-status-warning">
                 {tx(pendingQuestions.length === 1 ? t.onboarding.questions_waiting_one : t.onboarding.questions_waiting_other, { count: pendingQuestions.length })}
               </p>
-              <p className="text-[11px] text-foreground mt-1">
+              <p className="typo-caption text-ink-2 mt-1">
                 {t.onboarding.answer_questions_hint}
               </p>
             </div>
           )}
-          <p className="text-[11px] text-foreground italic">
+          <p className="typo-caption text-ink-2 italic">
             {t.onboarding.answers_help_hint}
           </p>
         </div>
@@ -135,8 +135,8 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
       {effectiveSubStep === 2 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="typo-body text-foreground">{t.onboarding.matrix_heading}</p>
-            <span className="text-[11px] text-emerald-400 font-medium" data-testid="tour-coach-completeness">
+            <p className="typo-body text-ink-1">{t.onboarding.matrix_heading}</p>
+            <span className="typo-caption text-status-success" data-testid="tour-coach-completeness">
               {tx(t.onboarding.matrix_completeness, { pct: completeness })}
             </span>
           </div>
@@ -148,16 +148,16 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
                 <div
                   key={dim.key}
                   data-testid={`tour-coach-matrix-cell-${dim.key}`}
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-card text-[11px] ${
-                    isResolved ? 'bg-emerald-500/5' : 'bg-secondary/10'
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption ${
+                    isResolved ? 'bg-status-success/5' : 'bg-surface-1'
                   }`}
                 >
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dim.color }} />
-                  <span className={isResolved ? 'text-foreground font-medium' : 'text-foreground'}>
+                  <span className={isResolved ? 'text-ink-1 font-medium' : 'text-ink-1'}>
                     {t.onboarding[dim.labelKey]}
                   </span>
-                  <span className="text-foreground ml-auto truncate max-w-[120px]">{t.onboarding[dim.descKey]}</span>
-                  {isResolved && <Check className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />}
+                  <span className="text-ink-1 ml-auto truncate max-w-[120px]">{t.onboarding[dim.descKey]}</span>
+                  {isResolved && <Check className="w-2.5 h-2.5 text-status-success flex-shrink-0" />}
                 </div>
               );
             })}
@@ -168,48 +168,48 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
       {effectiveSubStep === 3 && (
         <div className="space-y-3">
           {buildTestPassed === true ? (
-            <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
-              <p className="typo-body text-emerald-300">{t.onboarding.all_tests_passed}</p>
-              <p className="text-[11px] text-foreground mt-1">
+            <div className="p-3 rounded-modal bg-status-success/10 border border-status-success/20">
+              <p className="typo-body text-status-success">{t.onboarding.all_tests_passed}</p>
+              <p className="typo-caption text-ink-2 mt-1">
                 {t.onboarding.promote_hint}
               </p>
             </div>
           ) : buildTestPassed === false ? (
-            <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20">
-              <p className="typo-body text-red-300">{t.onboarding.some_tests_failed}</p>
-              <p className="text-[11px] text-foreground mt-1">
+            <div className="p-3 rounded-modal bg-status-error/10 border border-status-error/20">
+              <p className="typo-body text-status-error">{t.onboarding.some_tests_failed}</p>
+              <p className="typo-caption text-ink-2 mt-1">
                 {t.onboarding.refine_hint}
               </p>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="typo-body text-foreground">
+              <p className="typo-body text-ink-1">
                 {t.onboarding.testing_description}
               </p>
-              <div className="p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/15">
+              <div className="p-3 rounded-modal bg-status-success/5 border border-status-success/15">
                 <div className="flex items-center gap-2">
-                  <FlaskConical className="w-4 h-4 text-emerald-400" />
-                  <p className="typo-body text-emerald-300/80">{t.onboarding.what_testing_checks}</p>
+                  <FlaskConical className="w-4 h-4 text-status-success" />
+                  <p className="typo-body text-status-success">{t.onboarding.what_testing_checks}</p>
                 </div>
-                <ul className="mt-2 space-y-1 text-[11px] text-foreground">
+                <ul className="mt-2 space-y-1 typo-caption text-ink-1">
                   <li>• {t.onboarding.test_check_api}</li>
                   <li>• {t.onboarding.test_check_creds}</li>
                   <li>• {t.onboarding.test_check_format}</li>
                 </ul>
               </div>
-              <p className="text-[11px] text-foreground italic">
+              <p className="typo-caption text-ink-2 italic">
                 {t.onboarding.run_test_hint}
               </p>
             </div>
           )}
 
           {buildPhase === 'promoted' && (
-            <div className="p-3 rounded-modal bg-emerald-500/15 border border-emerald-500/25">
+            <div className="p-3 rounded-modal bg-status-success/15 border border-status-success/25">
               <div className="flex items-center gap-2">
-                <Rocket className="w-4 h-4 text-emerald-400" />
-                <p className="typo-body text-emerald-300">{t.onboarding.agent_promoted}</p>
+                <Rocket className="w-4 h-4 text-status-success" />
+                <p className="typo-body text-status-success">{t.onboarding.agent_promoted}</p>
               </div>
-              <p className="text-[11px] text-foreground mt-1">
+              <p className="typo-caption text-ink-2 mt-1">
                 {t.onboarding.agent_promoted_hint}
               </p>
             </div>
@@ -224,7 +224,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           onClick={() => {
             useTourStore.getState().emitTourEvent('tour:persona-promoted');
           }}
-          className="w-full text-center text-[11px] text-foreground hover:text-muted-foreground/60 transition-colors py-1"
+          className="w-full text-center typo-caption text-ink-1 hover:text-ink-3 transition-colors py-1"
           data-testid="tour-coach-skip"
         >
           {t.onboarding.skip_build}

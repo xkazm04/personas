@@ -74,7 +74,7 @@ export function LlmRuleBuilder({ urls, hasFields, onRules, compact }: LlmRuleBui
         }
       />
       <div className="flex items-center justify-between gap-2">
-        <span className="typo-caption text-muted-foreground">
+        <span className="typo-caption text-ink-3">
           {urls.length
             ? 'Reads the first URL’s HTML to match real selectors.'
             : 'No URL yet — Claude will infer from your description.'}

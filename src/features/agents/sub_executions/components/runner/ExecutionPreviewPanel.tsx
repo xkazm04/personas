@@ -41,7 +41,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
       <button
         type="button"
         onClick={loadPreview}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card bg-surface-2 text-ink-1 hover:text-ink-1 hover:bg-surface-2 border border-hair transition-colors"
         title={e.preview}
       >
         <Eye className="w-3 h-3" />
@@ -52,7 +52,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
 
   if (loading) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption text-foreground">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption text-ink-2">
         <div className="w-3 h-3 border border-primary/30 border-t-primary rounded-full animate-spin" />
         {e.estimating}
       </div>
@@ -61,7 +61,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
 
   if (error) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption text-red-400/70">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption text-status-error">
         <AlertTriangle className="w-3 h-3" />
         {error}
       </div>
@@ -77,70 +77,70 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
   const nearBudget = budgetPct > 80;
 
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-card border border-hair bg-surface-1 overflow-hidden">
       {/* Compact summary row */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-3 px-3 py-2 typo-caption hover:bg-secondary/30 transition-colors"
+        className="w-full flex items-center gap-3 px-3 py-2 typo-caption hover:bg-surface-1 transition-colors"
       >
-        <div className="flex items-center gap-1.5 text-foreground">
-          <DollarSign className="w-3 h-3 text-emerald-400" />
+        <div className="flex items-center gap-1.5 text-ink-1">
+          <DollarSign className="w-3 h-3 text-status-success" />
           <span className="font-mono font-medium">{fmtCost(preview.estimated_total_cost)}</span>
-          <span className="text-foreground">{e.est}</span>
+          <span className="text-ink-1">{e.est}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-foreground">
+        <div className="flex items-center gap-1.5 text-ink-1">
           <Zap className="w-3 h-3" />
           <span className="font-mono">{fmtTokens(Number(preview.estimated_input_tokens))}</span>
           <span>in</span>
           <span className="font-mono">{fmtTokens(Number(preview.estimated_output_tokens))}</span>
           <span>out</span>
         </div>
-        <div className="flex items-center gap-1.5 text-foreground">
+        <div className="flex items-center gap-1.5 text-ink-1">
           <Brain className="w-3 h-3" />
           <span>{preview.memory_count}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-foreground">
+        <div className="flex items-center gap-1.5 text-ink-1">
           <Wrench className="w-3 h-3" />
           <span>{preview.tool_count}</span>
         </div>
         {(overBudget || nearBudget) && (
-          <div className={`flex items-center gap-1 ${overBudget ? 'text-red-400' : 'text-amber-400'}`}>
+          <div className={`flex items-center gap-1 ${overBudget ? 'text-status-error' : 'text-status-warning'}`}>
             <AlertTriangle className="w-3 h-3" />
             <span>{tx(e.of_budget, { percent: Math.round(budgetPct) })}</span>
           </div>
         )}
-        <div className="ml-auto text-foreground">
+        <div className="ml-auto text-ink-1">
           {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </div>
       </button>
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="px-3 py-2 border-t border-primary/5 space-y-2">
+        <div className="px-3 py-2 border-t border-hair space-y-2">
           <div className="grid grid-cols-2 gap-2 typo-caption">
             <div>
-              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.model}</span>
-              <div className="text-foreground font-mono truncate">{preview.model}</div>
+              <span className="text-ink-1 typo-eyebrow">{e.model}</span>
+              <div className="text-ink-1 font-mono truncate">{preview.model}</div>
             </div>
             <div>
-              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.monthly_spend}</span>
-              <div className="text-foreground font-mono">{fmtCost(preview.monthly_spend)} / {preview.budget_limit > 0 ? fmtCost(preview.budget_limit) : e.unlimited}</div>
+              <span className="text-ink-1 typo-eyebrow">{e.monthly_spend}</span>
+              <div className="text-ink-1 font-mono">{fmtCost(preview.monthly_spend)} / {preview.budget_limit > 0 ? fmtCost(preview.budget_limit) : e.unlimited}</div>
             </div>
             <div>
-              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.input_cost}</span>
-              <div className="text-foreground font-mono">{fmtCost(preview.estimated_input_cost)}</div>
+              <span className="text-ink-1 typo-eyebrow">{e.input_cost}</span>
+              <div className="text-ink-1 font-mono">{fmtCost(preview.estimated_input_cost)}</div>
             </div>
             <div>
-              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.output_cost_est}</span>
-              <div className="text-foreground font-mono">{fmtCost(preview.estimated_output_cost)}</div>
+              <span className="text-ink-1 typo-eyebrow">{e.output_cost_est}</span>
+              <div className="text-ink-1 font-mono">{fmtCost(preview.estimated_output_cost)}</div>
             </div>
           </div>
 
           {/* Prompt preview (first 500 chars) */}
           <div>
-            <span className="text-foreground uppercase tracking-wider text-[10px]">{e.prompt_preview}</span>
-            <pre className="mt-1 text-[11px] font-mono text-foreground leading-relaxed bg-black/10 rounded-input p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
+            <span className="text-ink-1 typo-eyebrow">{e.prompt_preview}</span>
+            <pre className="mt-1 typo-caption font-mono text-ink-1 leading-relaxed bg-black/10 rounded-input p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
               {preview.prompt_preview.slice(0, 500)}{preview.prompt_preview.length > 500 ? '...' : ''}
             </pre>
           </div>

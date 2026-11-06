@@ -28,8 +28,8 @@ export function ClipboardConfig({
               onClick={() => setClipboardContentType(ct)}
               className={`px-3 py-1.5 rounded-modal typo-body transition-all border capitalize ${
                 clipboardContentType === ct
-                  ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
-                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
+                  ? 'bg-role-highlight/15 text-role-highlight border-role-highlight/30'
+                  : 'bg-surface-1 text-ink-1 border-hair hover:bg-surface-2'
               }`}
             >
               {ct}
@@ -38,7 +38,7 @@ export function ClipboardConfig({
         </div>
       </TriggerFieldGroup>
       <TriggerFieldGroup
-        label={<>{t.triggers.text_pattern_label} <span className="text-foreground">{t.triggers.optional_regex_label}</span></>}
+        label={<>{t.triggers.text_pattern_label} <span className="text-ink-1">{t.triggers.optional_regex_label}</span></>}
         helpText={t.triggers.text_pattern_help}
       >
         <input
@@ -46,7 +46,7 @@ export function ClipboardConfig({
           value={clipboardPattern}
           onChange={(e) => setClipboardPattern(e.target.value)}
           placeholder={t.triggers.clipboard_pattern_placeholder}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-ink-1 typo-code placeholder-ink-3 focus-ring transition-all"
         />
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.poll_interval_label}>

@@ -182,7 +182,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   }, [live]);
 
   if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-foreground">{e.no_persona_selected}</div>;
+    return <div className="flex items-center justify-center py-8 text-ink-1">{e.no_persona_selected}</div>;
   }
   if (compare.showComparison && compare.left && compare.right) {
     return <ExecutionComparison left={compare.left} right={compare.right} onClose={compare.exit} />;
@@ -261,7 +261,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
               onClick={() => { void paging.loadMore(); }}
               disabled={paging.loadingMore}
               aria-busy={paging.loadingMore}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2 typo-heading rounded-modal bg-secondary/30 text-foreground border border-primary/15 hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-2 typo-heading rounded-modal bg-surface-1 text-ink-1 border border-hair hover:bg-surface-2 disabled:opacity-60 transition-colors"
             >
               {paging.loadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {tx(e.load_more, { count: EXECUTION_PAGE_SIZE })}

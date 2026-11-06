@@ -13,7 +13,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
     case 'select':
       return (
         <div className="flex items-center gap-2">
-          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
+          <label className="typo-heading text-ink-1 w-24 flex-shrink-0">{field.label}</label>
           <ThemedSelect
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
@@ -31,7 +31,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
       const num = raw === '' || raw == null ? null : Number(raw);
       return (
         <div className="flex items-center gap-2">
-          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
+          <label className="typo-heading text-ink-1 w-24 flex-shrink-0">{field.label}</label>
           <NumberStepper
             value={num != null && Number.isFinite(num) ? num : null}
             onChange={(v) => onChange(v == null ? '' : v)}
@@ -45,14 +45,14 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
     case 'boolean':
       return (
         <div className="flex items-center gap-2">
-          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
+          <label className="typo-heading text-ink-1 w-24 flex-shrink-0">{field.label}</label>
           <button
             type="button"
             onClick={() => onChange(!value)}
             className={`px-2.5 py-1 rounded-modal typo-heading border transition-all ${
               value
                 ? 'bg-primary/10 border-primary/25 text-primary'
-                : 'bg-secondary/40 border-primary/10 text-foreground'
+                : 'bg-surface-2 border-hair text-ink-1'
             }`}
           >
             {value ? 'Yes' : 'No'}
@@ -66,12 +66,12 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
       // UAT 2026-07-20). `field-sizing-content` keeps it compact for short values.
       return (
         <div className="flex items-start gap-2">
-          <label className="typo-heading text-foreground w-24 flex-shrink-0 pt-1.5">{field.label}</label>
+          <label className="typo-heading text-ink-1 w-24 flex-shrink-0 pt-1.5">{field.label}</label>
           <textarea
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
             rows={2}
-            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-card typo-body text-foreground placeholder:text-foreground focus-ring resize-y min-h-[2rem]"
+            className="flex-1 px-2 py-1 bg-background/50 border border-hair rounded-card typo-body text-ink-1 placeholder:text-ink-3 focus-ring resize-y min-h-[2rem]"
           />
         </div>
       );

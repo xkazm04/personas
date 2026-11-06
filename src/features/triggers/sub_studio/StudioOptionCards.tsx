@@ -32,14 +32,14 @@ export function TriggerOptionCard({
           dense ? 'px-2.5 py-1.5' : 'px-4 py-2'
         } ${
           active
-            ? 'bg-primary/10 border-primary/40 shadow-elevation-1'
-            : 'bg-background/80 border-border hover:bg-foreground/[0.04] hover:border-foreground/20'
+            ? 'bg-surface-1 border-primary/40 shadow-elevation-1'
+            : 'bg-background/80 border-hair hover:bg-surface-1 hover:border-hair-2'
         }`}
       >
-        <div className={`rounded-input flex items-center justify-center shrink-0 bg-secondary/60 ${dense ? 'w-7 h-7' : 'w-9 h-9'} ${template.color}`}>
+        <div className={`rounded-input flex items-center justify-center shrink-0 bg-surface-2 ${dense ? 'w-7 h-7' : 'w-9 h-9'} ${template.color}`}>
           <Icon className={dense ? 'w-4 h-4' : 'w-5 h-5'} />
         </div>
-        <div className={`${dense ? 'typo-body' : 'typo-body-lg'} text-foreground truncate min-w-0 flex-1`}>{copy.label}</div>
+        <div className={`${dense ? 'typo-body' : 'typo-body-lg'} text-ink-1 truncate min-w-0 flex-1`}>{copy.label}</div>
       </button>
     </Tooltip>
   );
@@ -66,14 +66,14 @@ export function PersonaOptionCard({
           dense ? 'px-2.5 py-1.5' : 'px-4 py-2'
         } ${
           active
-            ? 'bg-primary/10 border-primary/40 shadow-elevation-1'
-            : 'bg-background/80 border-border hover:bg-foreground/[0.04] hover:border-foreground/20'
+            ? 'bg-surface-1 border-primary/40 shadow-elevation-1'
+            : 'bg-background/80 border-hair hover:bg-surface-1 hover:border-hair-2'
         }`}
       >
         <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize={dense ? 'sm' : 'md'} />
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className={`${dense ? 'typo-body' : 'typo-body-lg'} text-foreground truncate`}>{persona.name}</span>
-          {persona.headless && <EyeOff className="w-3 h-3 text-foreground shrink-0" />}
+          <span className={`${dense ? 'typo-body' : 'typo-body-lg'} text-ink-1 truncate`}>{persona.name}</span>
+          {persona.headless && <EyeOff className="w-3 h-3 text-ink-1 shrink-0" />}
         </div>
       </button>
     </Tooltip>

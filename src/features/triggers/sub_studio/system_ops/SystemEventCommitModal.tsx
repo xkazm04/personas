@@ -165,10 +165,10 @@ export function SystemEventCommitModal({
   return (
     <BaseModal isOpen={open} onClose={onClose} titleId="system-event-commit" size="sm">
       <div className="flex flex-col">
-        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border">
-          <Cog className="w-4 h-4 text-violet-400" />
-          <h2 id="system-event-commit" className="typo-heading text-foreground flex-1">{st.system_event_commit_title}</h2>
-          <button type="button" onClick={onClose} aria-label={t.common.cancel} className="p-1 rounded-interactive text-foreground hover:bg-secondary/50 transition-colors">
+        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-hair">
+          <Cog className="w-4 h-4 text-role-agent" />
+          <h2 id="system-event-commit" className="typo-heading text-ink-1 flex-1">{st.system_event_commit_title}</h2>
+          <button type="button" onClick={onClose} aria-label={t.common.cancel} className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -176,9 +176,9 @@ export function SystemEventCommitModal({
         <div className="px-5 py-4 space-y-4">
           {needsProject && (
             <div className="space-y-1.5">
-              <label className="typo-caption text-foreground">{st.commit_project_label}</label>
+              <label className="typo-caption text-ink-2">{st.commit_project_label}</label>
               {projects.length === 0 ? (
-                <p className="typo-caption text-foreground">
+                <p className="typo-caption text-ink-2">
                   {!requestedProjectsForOpen.current || projectsLoading ? t.common.loading : st.commit_no_projects}
                 </p>
               ) : (
@@ -191,7 +191,7 @@ export function SystemEventCommitModal({
 
           {isReflection && (
             <div className="space-y-1.5">
-              <label className="typo-caption text-foreground">{st.reflect_scope_label}</label>
+              <label className="typo-caption text-ink-2">{st.reflect_scope_label}</label>
               <div className="grid grid-cols-2 gap-2">
                 <ThemedSelect value={reflectScope} onValueChange={(v) => setReflectScope(v === 'team' ? 'team' : 'agent')}>
                   <option value="agent">{st.reflect_scope_agent}</option>
@@ -209,13 +209,13 @@ export function SystemEventCommitModal({
                   </ThemedSelect>
                 )}
               </div>
-              <p className="typo-caption text-foreground opacity-70">{st.reflect_scope_hint}</p>
+              <p className="typo-caption text-ink-2 opacity-70">{st.reflect_scope_hint}</p>
             </div>
           )}
 
           {isSchedule ? (
             <div className="space-y-1.5">
-              <label className="typo-caption text-foreground">{st.commit_cadence_label}</label>
+              <label className="typo-caption text-ink-2">{st.commit_cadence_label}</label>
               <ThemedSelect value={cadence} onValueChange={setCadence}>
                 <option value="weekly">{st.cadence_weekly}</option>
                 <option value="daily">{st.cadence_daily}</option>
@@ -228,13 +228,13 @@ export function SystemEventCommitModal({
                   onChange={(e) => { setCustomCron(e.target.value); setFormError(null); }}
                   aria-invalid={formError?.kind === 'cron' || undefined}
                   placeholder="0 3 * * 1"
-                  className="w-full px-3 py-2 typo-body font-mono bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/40 focus-ring"
+                  className="w-full px-3 py-2 typo-body font-mono bg-surface-2 border border-hair rounded-input text-ink-1 placeholder:text-ink-3 focus-ring"
                 />
               )}
             </div>
           ) : (
             <div className="space-y-1.5">
-              <label className="typo-caption text-foreground">{st.commit_event_label}</label>
+              <label className="typo-caption text-ink-2">{st.commit_event_label}</label>
               {/* Typed picker over the event registry — free text here produced
                   permanently-silent automations on the first typo. */}
               <ThemedSelect value={eventType} onValueChange={setEventType}>
@@ -248,7 +248,7 @@ export function SystemEventCommitModal({
 
           {isDispatch && (
             <div className="space-y-1.5">
-              <label className="typo-caption text-foreground">{t.triggers.unattended.title}</label>
+              <label className="typo-caption text-ink-2">{t.triggers.unattended.title}</label>
               <ThemedSelect
                 value={unattendedMode}
                 onValueChange={(v) => setUnattendedMode(v === 'approval' ? 'approval' : 'auto')}
@@ -256,7 +256,7 @@ export function SystemEventCommitModal({
                 <option value="auto">{t.triggers.unattended.auto}</option>
                 <option value="approval">{t.triggers.unattended.approval}</option>
               </ThemedSelect>
-              <p className="typo-caption text-foreground opacity-70">
+              <p className="typo-caption text-ink-2 opacity-70">
                 {unattendedMode === 'approval'
                   ? t.triggers.unattended.approval_desc
                   : t.triggers.unattended.auto_desc}
@@ -266,7 +266,7 @@ export function SystemEventCommitModal({
 
           {isContextScan && (
             <div className="flex items-center justify-between gap-3">
-              <span className="typo-caption text-foreground">{st.commit_delta_label}</span>
+              <span className="typo-caption text-ink-2">{st.commit_delta_label}</span>
               <AccessibleToggle checked={delta} onChange={() => setDelta((v) => !v)} label={st.commit_delta_label} size="sm" />
             </div>
           )}
@@ -280,7 +280,7 @@ export function SystemEventCommitModal({
           </p>
         )}
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-border">
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-hair">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           <AsyncButton variant="accent" tone="agent" size="sm" onClick={handleCreate} disabled={!canCreate}>
             {st.commit_create}

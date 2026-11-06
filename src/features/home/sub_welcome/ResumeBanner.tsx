@@ -20,22 +20,22 @@ export default function ResumeBanner() {
   // flex row, not a button nested inside a button.
   return (
     <div
-      className={`animate-fade-slide-in motion-reduce:animate-none w-full flex items-center gap-2 px-4 py-2.5 rounded-modal border ${accent} bg-secondary/30 backdrop-blur-sm transition-colors`}
+      className={`animate-fade-slide-in motion-reduce:animate-none w-full flex items-center gap-2 px-4 py-2.5 rounded-modal border ${accent} bg-surface-1 backdrop-blur-sm transition-colors`}
     >
       <button
         type="button"
         onClick={action.resume}
         data-testid="resume-banner"
-        className="group flex flex-1 min-w-0 items-center gap-3 rounded-input outline-none hover:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-colors"
+        className="group flex flex-1 min-w-0 items-center gap-3 rounded-input outline-none hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-colors"
       >
         <Icon className="w-4 h-4 flex-shrink-0" />
-        <span className="flex-1 text-left typo-body text-foreground truncate">{action.label}</span>
-        <ChevronRight className="w-4 h-4 text-foreground opacity-60 group-hover:translate-x-0.5 transition-transform" />
+        <span className="flex-1 text-left typo-body text-ink-1 truncate">{action.label}</span>
+        <ChevronRight className="w-4 h-4 text-ink-1 opacity-60 group-hover:translate-x-0.5 transition-transform" />
       </button>
       <button
         type="button"
         onClick={action.dismiss}
-        className="flex-shrink-0 p-1 rounded-input text-foreground opacity-50 outline-none hover:opacity-100 hover:bg-secondary/40 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-opacity"
+        className="flex-shrink-0 p-1 rounded-input text-ink-1 opacity-50 outline-none hover:opacity-100 hover:bg-surface-2 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-opacity"
         aria-label={debtText("auto_dismiss_resume_banner_ccff3f60")}
       >
         <X className="w-3.5 h-3.5" />

@@ -108,26 +108,26 @@ export function DeploymentTable({
   const enter = useRevealTracker(revealResetKey);
   return (
     <table className="w-full typo-body">
-      <thead className="sticky top-0 z-10 bg-secondary/60 backdrop-blur-sm border-b border-primary/10">
+      <thead className="sticky top-0 z-10 bg-surface-2 backdrop-blur-sm border-b border-hair">
         <tr>
-          <th className="px-4 py-2.5 w-10 typo-caption font-mono uppercase tracking-widest text-foreground">
+          <th className="px-4 py-2.5 w-10 typo-eyebrow text-ink-1">
             <input
               type="checkbox"
               aria-label={dt.select_all}
               checked={allSelected}
               ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
               onChange={onToggleSelectAll}
-              className="w-3.5 h-3.5 rounded border-primary/30 bg-secondary/30 accent-primary cursor-pointer"
+              className="w-3.5 h-3.5 rounded-interactive border-primary/30 bg-surface-1 accent-primary cursor-pointer"
             />
           </th>
           <SortHeader label={dt.col_name} sortKey="name" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_target} sortKey="target" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_status} sortKey="status" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_invocations} sortKey="invocations" current={sortKey} dir={sortDir} onToggle={toggleSort} align="right" />
-          <th className="px-4 py-2.5 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{dt.col_health}</th>
+          <th className="px-4 py-2.5 text-left typo-eyebrow text-ink-1">{dt.col_health}</th>
           <SortHeader label={dt.col_last_activity} sortKey="lastActivity" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_created} sortKey="createdAt" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <th className="px-4 py-2.5 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{dt.col_actions}</th>
+          <th className="px-4 py-2.5 text-left typo-eyebrow text-ink-1">{dt.col_actions}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-primary/5">
@@ -150,7 +150,7 @@ export function DeploymentTable({
               order={index}
               hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
               markEntered={enter.markEntered}
-              className={`hover:bg-primary/5 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''}`}
+              className={`hover:bg-surface-2 transition-colors ${selectedIds.has(row.id) ? 'bg-surface-1' : ''}`}
             >
               <td className="px-4 py-3">
                 <input
@@ -158,11 +158,11 @@ export function DeploymentTable({
                   aria-label={tx(dt.select_row, { name: row.name })}
                   checked={selectedIds.has(row.id)}
                   onChange={() => onToggleSelect(row.id)}
-                  className="w-3.5 h-3.5 rounded border-primary/30 bg-secondary/30 accent-primary cursor-pointer"
+                  className="w-3.5 h-3.5 rounded-interactive border-primary/30 bg-surface-1 accent-primary cursor-pointer"
                 />
               </td>
               <td className="px-4 py-3">
-                <span className="typo-body text-foreground/90">{row.name}</span>
+                <span className="typo-body text-ink-1">{row.name}</span>
               </td>
               <td className="px-4 py-3">
                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption rounded-card border ${tb.cls}`}>
@@ -180,7 +180,7 @@ export function DeploymentTable({
                   {tokenLabel(t, 'deployment', row.status)}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right typo-data text-foreground">
+              <td className="px-4 py-3 text-right typo-data text-ink-1">
                 {row.invocations > 0 ? <Numeric value={row.invocations} align="right" /> : '-'}
               </td>
               <td className="px-4 py-3">
@@ -189,16 +189,16 @@ export function DeploymentTable({
                   if (health) return <DeploymentHealthSparkline daily={health} />;
                   const state = healthCellState(row.target, healthLoading);
                   return (
-                    <span className="typo-caption text-foreground" data-health-state={state}>
+                    <span className="typo-caption text-ink-2" data-health-state={state}>
                       {state === 'loading' ? t.common.loading : state === 'no-data' ? dt.no_data : '-'}
                     </span>
                   );
                 })()}
               </td>
-              <td className="px-4 py-3 text-foreground tabular-nums">
+              <td className="px-4 py-3 text-ink-1 tabular-nums">
                 {timeAgo(row.lastActivity)}
               </td>
-              <td className="px-4 py-3 text-foreground tabular-nums">
+              <td className="px-4 py-3 text-ink-1 tabular-nums">
                 {timeAgo(row.createdAt)}
               </td>
               <td className="px-4 py-3">
@@ -212,15 +212,15 @@ export function DeploymentTable({
                       disabled={isBusy}
                       isLoading={testState?.running ?? false}
                       icon={<FlaskConical className="w-3.5 h-3.5" />}
-                      className="hover:!text-blue-400 hover:!bg-blue-500/10"
+                      className="hover:!text-status-info hover:!bg-status-info/10"
                     />
                   )}
                   {testResult && (
                     <span
                       className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption rounded-card border ${
                         testResult.status === 'pass'
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : 'bg-red-500/10 border-red-500/20 text-red-400'
+                          ? 'bg-status-success/10 border-status-success/20 text-status-success'
+                          : 'bg-status-error/10 border-status-error/20 text-status-error'
                       }`}
                       title={testResult.error ?? testResultTitle(
                         testResult.status === 'pass' ? t.deployment.deploy_card.test_title_pass : t.deployment.deploy_card.test_title_fail,
@@ -229,14 +229,14 @@ export function DeploymentTable({
                     >
                       {testResult.status === 'pass' ? t.deployment.deploy_card.test_pass : t.deployment.deploy_card.test_fail}
                       {testResult.durationMs != null && (
-                        <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />
+                        <Numeric value={testResult.durationMs} unit="ms" className="text-ink-1" />
                       )}
                       {onDismissTest && (
                         <button
                           type="button"
                           aria-label={t.common.dismiss}
                           onClick={() => onDismissTest(row.id)}
-                          className="p-0 ml-0.5 hover:text-foreground/80 transition-colors cursor-pointer"
+                          className="p-0 ml-0.5 hover:text-ink-1 transition-colors cursor-pointer"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>
@@ -247,7 +247,7 @@ export function DeploymentTable({
                     <ActionButton
                       title={dt.action_pause}
                       icon={Pause}
-                      hoverColor="hover:text-amber-400 hover:bg-amber-500/10"
+                      hoverColor="hover:text-status-warning hover:bg-status-warning/10"
                       busy={isBusy}
                       onClick={() => handleAction(row.id, () => cloudPauseDeploy(row._cloud!.id))}
                     />
@@ -256,7 +256,7 @@ export function DeploymentTable({
                     <ActionButton
                       title={dt.action_resume}
                       icon={Play}
-                      hoverColor="hover:text-emerald-400 hover:bg-emerald-500/10"
+                      hoverColor="hover:text-status-success hover:bg-status-success/10"
                       busy={isBusy}
                       onClick={() => handleAction(row.id, () => cloudResumeDeploy(row._cloud!.id))}
                     />
@@ -265,7 +265,7 @@ export function DeploymentTable({
                     <ActionButton
                       title={dt.action_undeploy}
                       icon={Trash2}
-                      hoverColor="hover:text-red-400 hover:bg-red-500/10"
+                      hoverColor="hover:text-status-error hover:bg-status-error/10"
                       busy={isBusy}
                       onClick={() => handleAction(row.id, () => cloudRemoveDeploy(row._cloud!.id))}
                     />
@@ -274,7 +274,7 @@ export function DeploymentTable({
                     <ActionButton
                       title={dt.action_undeploy}
                       icon={Trash2}
-                      hoverColor="hover:text-red-400 hover:bg-red-500/10"
+                      hoverColor="hover:text-status-error hover:bg-status-error/10"
                       busy={isBusy}
                       onClick={() => handleAction(row.id, () => gitlabUndeployAgent(row._gitlabProjectId!, row._gitlab!.id))}
                     />
@@ -285,7 +285,7 @@ export function DeploymentTable({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={row.target === 'gitlab' ? dt.open_gitlab : dt.open_endpoint}
-                      className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
+                      className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
@@ -311,7 +311,7 @@ export function DeploymentTable({
 // (docs/design/overview-loading.md §C)
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 /** Deterministic width variation so ghosts read as rows, not a barcode. */
 const GHOST_NAME_WIDTHS = ['w-36', 'w-24', 'w-32', 'w-28'];
 const GHOST_ROW_COUNT = 8;
@@ -325,7 +325,7 @@ function DeploymentGhostRows() {
         return (
           <tr key={i} aria-hidden="true" className="animate-fade-in" style={{ animationDelay: delay }}>
             <td className="px-4 py-3">
-              <span className="block w-3.5 h-3.5 rounded bg-primary/[0.06]" />
+              <span className="block w-3.5 h-3.5 rounded-interactive bg-primary/[0.06]" />
             </td>
             <td className="px-4 py-3">
               <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />

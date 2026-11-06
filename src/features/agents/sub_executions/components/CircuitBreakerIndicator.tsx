@@ -156,14 +156,14 @@ export function CircuitBreakerIndicator() {
   if (!hasIssue && totalTrips1h === 0) return null;
 
   const borderColor = status.globalPaused
-    ? 'border-red-500/20'
+    ? 'border-status-error/20'
     : hasIssue
-      ? 'border-amber-500/20'
+      ? 'border-status-warning/20'
       : 'border-muted-foreground/10';
   const bgColor = status.globalPaused
-    ? 'bg-red-500/5'
+    ? 'bg-status-error/5'
     : hasIssue
-      ? 'bg-amber-500/5'
+      ? 'bg-status-warning/5'
       : 'bg-muted-foreground/5';
   const pulseRing = pulse ? 'cb-trip-pulse' : '';
 
@@ -189,17 +189,17 @@ export function CircuitBreakerIndicator() {
         className="flex items-center gap-2 w-full px-3 py-2 text-left"
       >
         {status.globalPaused ? (
-          <ShieldAlert className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+          <ShieldAlert className="w-3.5 h-3.5 text-status-error" />
         ) : hasIssue ? (
-          <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+          <ShieldAlert className="w-3.5 h-3.5 text-status-warning" />
         ) : (
-          <ShieldCheck className="w-3.5 h-3.5 text-foreground" />
+          <ShieldCheck className="w-3.5 h-3.5 text-ink-1" />
         )}
 
         <span className={
-          status.globalPaused ? 'text-red-400 font-medium'
-            : hasIssue ? 'text-amber-400 font-medium'
-              : 'text-foreground font-medium'
+          status.globalPaused ? 'text-status-error font-medium'
+            : hasIssue ? 'text-status-warning font-medium'
+              : 'text-ink-1 font-medium'
         }>
           {status.globalPaused
             ? e.cb_all_paused
@@ -208,35 +208,35 @@ export function CircuitBreakerIndicator() {
               : tx(totalTrips1h !== 1 ? e.cb_interruptions_other : e.cb_interruptions_one, { count: totalTrips1h })}
         </span>
 
-        <span className="ml-auto text-foreground">
+        <span className="ml-auto text-ink-1">
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </span>
       </button>
 
       {/* Expanded detail — three titled sections with 12px gap */}
       {expanded && (
-        <div className="px-3 pb-3 pt-2 border-t border-red-500/10 flex flex-col gap-3">
+        <div className="px-3 pb-3 pt-2 border-t border-status-error/10 flex flex-col gap-3">
           {/* Global section */}
           <section>
-            <h4 className="typo-caption uppercase tracking-wide text-foreground mb-1.5">
+            <h4 className="typo-eyebrow text-ink-1 mb-1.5">
               {e.cb_section_global}
             </h4>
             <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 typo-body">
-              <span className="text-foreground">{e.cb_label_state}</span>
-              <span className={`tabular-nums ${status.globalPaused ? 'text-red-400' : 'text-foreground'}`}>
+              <span className="text-ink-1">{e.cb_label_state}</span>
+              <span className={`tabular-nums ${status.globalPaused ? 'text-status-error' : 'text-ink-1'}`}>
                 {status.globalPaused ? e.cb_paused : e.cb_connected}
               </span>
-              <span className="text-foreground">{e.cb_label_failures}</span>
-              <span className="tabular-nums text-foreground">{status.globalFailureCount}</span>
+              <span className="text-ink-1">{e.cb_label_failures}</span>
+              <span className="tabular-nums text-ink-1">{status.globalFailureCount}</span>
               {status.globalPaused && status.globalCooldownRemainingSecs > 0 && (
                 <>
-                  <span className="text-foreground">{e.cb_label_cooldown}</span>
-                  <span className="tabular-nums text-foreground">{Math.ceil(status.globalCooldownRemainingSecs)}s</span>
+                  <span className="text-ink-1">{e.cb_label_cooldown}</span>
+                  <span className="tabular-nums text-ink-1">{Math.ceil(status.globalCooldownRemainingSecs)}s</span>
                 </>
               )}
             </div>
             {status.globalPaused && (
-              <div className="mt-1.5 px-2 py-1.5 bg-red-500/10 border border-red-500/15 rounded-card typo-body text-red-400">
+              <div className="mt-1.5 px-2 py-1.5 bg-status-error/10 border border-status-error/15 rounded-card typo-body text-status-error">
                 {tx(e.cb_global_paused_detail, { count: status.globalFailureCount })}
                 {status.globalCooldownRemainingSecs > 0 &&
                   ` ${tx(e.cb_resuming_in, { seconds: Math.ceil(status.globalCooldownRemainingSecs) })}`}
@@ -246,7 +246,7 @@ export function CircuitBreakerIndicator() {
 
           {/* Providers section */}
           <section>
-            <h4 className="typo-caption uppercase tracking-wide text-foreground mb-1.5">
+            <h4 className="typo-eyebrow text-ink-1 mb-1.5">
               {e.cb_section_providers}
             </h4>
             <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 typo-body">
@@ -256,36 +256,36 @@ export function CircuitBreakerIndicator() {
                 let labelColor: string;
                 let valueNode: React.ReactNode;
                 if (p.isOpen) {
-                  icon = <ShieldAlert className="w-3 h-3 text-red-400 shrink-0" />;
-                  labelColor = 'text-red-400';
+                  icon = <ShieldAlert className="w-3 h-3 text-status-error shrink-0" />;
+                  labelColor = 'text-status-error';
                   valueNode = (
-                    <span className="tabular-nums text-foreground">
+                    <span className="tabular-nums text-ink-1">
                       {tx(e.cb_errors_retrying, { count: p.consecutiveFailures, seconds: Math.ceil(p.cooldownRemainingSecs) })}
                       {p.tripCount1h > 0 && (
-                        <span className="ml-1 text-foreground">
+                        <span className="ml-1 text-ink-1">
                           {tx(p.tripCount1h === 1 ? t.execution.interruptions_per_hour_one : t.execution.interruptions_per_hour_other, { count: p.tripCount1h })}
                         </span>
                       )}
                     </span>
                   );
                 } else if (p.consecutiveFailures > 0) {
-                  icon = <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />;
-                  labelColor = 'text-amber-400';
+                  icon = <ShieldCheck className="w-3 h-3 text-status-warning shrink-0" />;
+                  labelColor = 'text-status-warning';
                   valueNode = (
-                    <span className="tabular-nums text-foreground">
+                    <span className="tabular-nums text-ink-1">
                       {tx(e.cb_errors, { count: p.consecutiveFailures })}
                       {p.tripCount1h > 0 && (
-                        <span className="ml-1 text-foreground">
+                        <span className="ml-1 text-ink-1">
                           {tx(p.tripCount1h === 1 ? t.execution.interruptions_per_hour_one : t.execution.interruptions_per_hour_other, { count: p.tripCount1h })}
                         </span>
                       )}
                     </span>
                   );
                 } else {
-                  icon = <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />;
-                  labelColor = 'text-emerald-400';
+                  icon = <ShieldCheck className="w-3 h-3 text-status-success shrink-0" />;
+                  labelColor = 'text-status-success';
                   valueNode = (
-                    <span className="tabular-nums text-foreground">
+                    <span className="tabular-nums text-ink-1">
                       {e.cb_healthy}
                       {p.tripCount1h > 0 && (
                         <span className="ml-1">
@@ -312,14 +312,14 @@ export function CircuitBreakerIndicator() {
           {status.recentTransitions.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-1.5">
-                <h4 className="typo-caption uppercase tracking-wide text-foreground">
+                <h4 className="typo-eyebrow text-ink-1">
                   {e.cb_section_transitions}
                 </h4>
                 <button
                   type="button"
                   onClick={() => setShowHistory((v) => !v)}
                   aria-expanded={showHistory}
-                  className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground"
+                  className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1"
                 >
                   <History className="w-3 h-3" />
                   {showHistory ? tx(e.cb_hide_activity, { count: status.recentTransitions.length }) : tx(e.cb_show_activity, { count: status.recentTransitions.length })}
@@ -329,12 +329,12 @@ export function CircuitBreakerIndicator() {
                 <div className="grid grid-cols-[auto_auto_1fr_auto] gap-x-3 gap-y-0.5 typo-code max-h-40 overflow-y-auto">
                   {status.recentTransitions.slice(0, 20).map((tr, i) => (
                     <div key={i} className="contents">
-                      <span className="tabular-nums text-foreground">{formatTransitionTime(tr.timestamp)}</span>
-                      <span className="font-mono text-foreground">{providerLabel(tr.provider)}</span>
-                      <span className="text-foreground">
+                      <span className="tabular-nums text-ink-1">{formatTransitionTime(tr.timestamp)}</span>
+                      <span className="font-mono text-ink-1">{providerLabel(tr.provider)}</span>
+                      <span className="text-ink-1">
                         {STATE_LABELS[tr.fromState] ?? tr.fromState} → {STATE_LABELS[tr.toState] ?? tr.toState}
                       </span>
-                      <span className="tabular-nums text-foreground text-right">
+                      <span className="tabular-nums text-ink-1 text-right">
                         {tr.failureCount > 0 ? tr.failureCount : ''}
                       </span>
                     </div>

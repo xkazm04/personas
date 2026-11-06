@@ -15,31 +15,31 @@ export interface EventTypeMeta {
 
 export const EVENT_TYPE_META: Record<string, EventTypeMeta> = {
   // Success events -- green
-  build_complete:   { Icon: CheckCircle2,  text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
-  test_passed:      { Icon: CheckCircle2,  text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
-  chain_completed:  { Icon: Link,          text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
-  deploy:           { Icon: Rocket,        text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
+  build_complete:   { Icon: CheckCircle2,  text: 'text-status-success', bg: 'bg-status-success/12', border: 'border-status-success/20' },
+  test_passed:      { Icon: CheckCircle2,  text: 'text-status-success', bg: 'bg-status-success/12', border: 'border-status-success/20' },
+  chain_completed:  { Icon: Link,          text: 'text-status-success', bg: 'bg-status-success/12', border: 'border-status-success/20' },
+  deploy:           { Icon: Rocket,        text: 'text-status-success', bg: 'bg-status-success/12', border: 'border-status-success/20' },
   // Error events -- red
-  test_failed:      { Icon: XCircle,       text: 'text-red-400',     bg: 'bg-red-500/12',     border: 'border-red-500/20' },
-  error:            { Icon: XCircle,       text: 'text-red-400',     bg: 'bg-red-500/12',     border: 'border-red-500/20' },
+  test_failed:      { Icon: XCircle,       text: 'text-status-error',     bg: 'bg-status-error/12',     border: 'border-status-error/20' },
+  error:            { Icon: XCircle,       text: 'text-status-error',     bg: 'bg-status-error/12',     border: 'border-status-error/20' },
   // Alert events -- amber
-  alert:            { Icon: AlertTriangle, text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
+  alert:            { Icon: AlertTriangle, text: 'text-status-warning',   bg: 'bg-status-warning/12',   border: 'border-status-warning/20' },
   // Webhook events -- blue
-  webhook_received: { Icon: Webhook,       text: 'text-blue-400',    bg: 'bg-blue-500/12',    border: 'border-blue-500/20' },
-  cloud_webhook:    { Icon: Cloud,         text: 'text-blue-400',    bg: 'bg-blue-500/12',    border: 'border-blue-500/20' },
-  smee_webhook:     { Icon: Unplug,        text: 'text-purple-400',  bg: 'bg-purple-500/12',  border: 'border-purple-500/20' },
+  webhook_received: { Icon: Webhook,       text: 'text-status-info',    bg: 'bg-status-info/12',    border: 'border-status-info/20' },
+  cloud_webhook:    { Icon: Cloud,         text: 'text-status-info',    bg: 'bg-status-info/12',    border: 'border-status-info/20' },
+  smee_webhook:     { Icon: Unplug,        text: 'text-role-agent',  bg: 'bg-role-agent/12',  border: 'border-role-agent/20' },
   // Schedule events -- amber/clock
-  schedule_fired:   { Icon: Clock,         text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
+  schedule_fired:   { Icon: Clock,         text: 'text-status-warning',   bg: 'bg-status-warning/12',   border: 'border-status-warning/20' },
   // File events -- cyan
-  file_changed:     { Icon: FileEdit,      text: 'text-cyan-400',    bg: 'bg-cyan-500/12',    border: 'border-cyan-500/20' },
+  file_changed:     { Icon: FileEdit,      text: 'text-role-external',    bg: 'bg-role-external/12',    border: 'border-role-external/20' },
   // System ops -- dev-tools context-scan lifecycle (amber starting, emerald done)
-  'dev_tools.context_scan_started':   { Icon: ScanSearch, text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
-  'dev_tools.context_scan_completed': { Icon: ScanSearch, text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
+  'dev_tools.context_scan_started':   { Icon: ScanSearch, text: 'text-status-warning',   bg: 'bg-status-warning/12',   border: 'border-status-warning/20' },
+  'dev_tools.context_scan_completed': { Icon: ScanSearch, text: 'text-status-success', bg: 'bg-status-success/12', border: 'border-status-success/20' },
   // Findings loop — a sensor raised something / a verdict landed on shipped work.
-  'signal.raised':                    { Icon: Radar,      text: 'text-violet-400',  bg: 'bg-violet-500/12',  border: 'border-violet-500/20' },
-  'signal.verified':                  { Icon: BadgeCheck, text: 'text-sky-400',     bg: 'bg-sky-500/12',     border: 'border-sky-500/20' },
+  'signal.raised':                    { Icon: Radar,      text: 'text-role-agent',  bg: 'bg-role-agent/12',  border: 'border-role-agent/20' },
+  'signal.verified':                  { Icon: BadgeCheck, text: 'text-status-info',     bg: 'bg-status-info/12',     border: 'border-status-info/20' },
 };
 
 export const DEFAULT_EVENT_META: EventTypeMeta = {
-  Icon: Zap, text: 'text-violet-400', bg: 'bg-violet-500/12', border: 'border-violet-500/20',
+  Icon: Zap, text: 'text-role-agent', bg: 'bg-role-agent/12', border: 'border-role-agent/20',
 };

@@ -79,18 +79,18 @@ export function MemoryTiersTile({
                     style={{ backgroundColor: palette.ordinal[i] }}
                     aria-hidden
                   />
-                  <span className="text-foreground/85 truncate">{label[key]}</span>
-                  <Numeric className="ml-auto text-foreground" value={tiers[key]} unit="plain" />
+                  <span className="text-ink-1 truncate">{label[key]}</span>
+                  <Numeric className="ml-auto text-ink-1" value={tiers[key]} unit="plain" />
                 </li>
               ))}
             </ul>
           </>
         )}
 
-        <div className="mt-4 pt-3 border-t border-primary/10">
-          <p className="typo-eyebrow text-foreground/85 mb-2">{b.categories_title}</p>
+        <div className="mt-4 pt-3 border-t border-hair">
+          <p className="typo-eyebrow text-ink-1 mb-2">{b.categories_title}</p>
           {categories.length === 0 ? (
-            <p className="typo-caption text-foreground/85">{b.categories_empty}</p>
+            <p className="typo-caption text-ink-2">{b.categories_empty}</p>
           ) : (
             <CategoryBars categories={categories} color={palette.ordinal[1]!} />
           )}
@@ -108,14 +108,14 @@ function CategoryBars({ categories, color }: { categories: CategoryCount[]; colo
     <ul className="space-y-1.5" data-testid="brain-categories">
       {rows.map((c) => (
         <li key={c.category} className="flex items-center gap-2">
-          <span className="typo-caption text-foreground/85 w-24 truncate">{c.category}</span>
-          <span className="flex-1 h-1.5 rounded-pill bg-secondary/40 overflow-hidden">
+          <span className="typo-caption text-ink-2 w-24 truncate">{c.category}</span>
+          <span className="flex-1 h-1.5 rounded-pill bg-surface-2 overflow-hidden">
             <span
               className="block h-full rounded-pill"
               style={{ width: `${(c.count / max) * 100}%`, backgroundColor: color }}
             />
           </span>
-          <Numeric className="typo-caption text-foreground w-8 text-right" value={c.count} unit="plain" />
+          <Numeric className="typo-caption text-ink-1 w-8 text-right" value={c.count} unit="plain" />
         </li>
       ))}
     </ul>

@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import Button from "@/features/shared/components/buttons/Button";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { COPY } from "./copy";
+import { Kbd } from '@/features/shared/components/display/Kbd';
 
 export interface LoupeHead {
   /** Edge number, "01".."08", or "00" for the centre frame's pages. */
@@ -21,7 +22,7 @@ export interface LoupeHead {
 function StatusChip({ label, strong, color }: { label: string; strong: boolean; color: string }) {
   return (
     <span
-      className="typo-caption px-2 py-0.5 rounded-full border whitespace-nowrap"
+      className="inline-flex items-center typo-caption whitespace-nowrap"
       style={strong
         ? { color, borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.12) }
         : { color: "var(--foreground)", borderColor: "color-mix(in srgb, var(--foreground) 18%, transparent)" }}
@@ -38,7 +39,7 @@ export function LoupeHeader({ head, color, onClose }: { head: LoupeHead; color: 
       style={{ background: `linear-gradient(90deg, ${colorWithAlpha(color, 0.16)}, ${colorWithAlpha(color, 0.04)} 55%, transparent)` }}
     >
       <Button variant="secondary" size="sm" icon={<ArrowLeft className="w-4 h-4" />} onClick={onClose} aria-label={COPY.back}>
-        <kbd className="font-mono typo-caption px-1.5 rounded-[4px] border border-card-border text-foreground">{COPY.loupe.esc}</kbd>
+        <Kbd>{COPY.loupe.esc}</Kbd>
       </Button>
       <span className="font-mono typo-body tracking-[0.14em]" style={{ color }} aria-hidden>
         {`▸ ${head.code}`}
@@ -47,7 +48,7 @@ export function LoupeHeader({ head, color, onClose }: { head: LoupeHead; color: 
         {head.title}
       </h2>
       {head.status && <StatusChip label={head.status.label} strong={head.status.strong} color={color} />}
-      <span className="ml-auto hidden md:inline font-mono typo-caption uppercase tracking-[0.12em] text-foreground whitespace-nowrap">
+      <span className="ml-auto hidden md:inline typo-eyebrow text-ink-1 whitespace-nowrap">
         {head.context}
       </span>
     </header>

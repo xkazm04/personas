@@ -22,8 +22,8 @@ export function TriggerModeBadge({ trigger, className = '' }: TriggerModeBadgePr
     <span
       className={`typo-code px-1.5 py-0.5 rounded-card border ${
         isApproval
-          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
-          : 'bg-amber-500/15 text-amber-400 border-amber-500/20'
+          ? 'bg-status-success/15 text-status-success border-status-success/20'
+          : 'bg-status-warning/15 text-status-warning border-status-warning/20'
       } ${className}`}
       title={isApproval ? t.triggers.unattended.approval_desc : t.triggers.unattended.dry_run_desc}
     >

@@ -16,9 +16,9 @@ interface BulkRerunReportProps {
 const EM_DASH = '—';
 
 function deltaTone(delta: number | null, lowerIsBetter = true): string {
-  if (delta === null || Math.abs(delta) < 1e-6) return 'text-foreground';
+  if (delta === null || Math.abs(delta) < 1e-6) return 'text-ink-1';
   const good = lowerIsBetter ? delta < 0 : delta > 0;
-  return good ? 'text-emerald-400' : 'text-amber-400';
+  return good ? 'text-status-success' : 'text-status-warning';
 }
 
 export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkRerunReportProps) {
@@ -51,12 +51,12 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary/70" />
-          <h3 className="typo-heading text-foreground">{e.bulk_rerun_report_title}</h3>
+          <h3 className="typo-heading text-ink-1">{e.bulk_rerun_report_title}</h3>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="p-1 text-foreground hover:text-muted-foreground/80 transition-colors"
+          className="p-1 text-ink-1 hover:text-ink-3 transition-colors"
           aria-label={e.bulk_rerun_close}
         >
           <X className="w-4 h-4" />
@@ -68,19 +68,19 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
           label={e.bulk_rerun_success_rate}
           value={`${successRate}%`}
           sub={tx(e.bulk_rerun_count_of_total, { n: cohort.successCount, total: cohort.total })}
-          tone={successRate >= 50 ? 'text-emerald-400' : 'text-amber-400'}
+          tone={successRate >= 50 ? 'text-status-success' : 'text-status-warning'}
         />
         <SummaryCard
           label={e.bulk_rerun_recovered}
           value={String(cohort.recoveredCount)}
           sub={e.bulk_rerun_recovered_sub}
-          tone="text-emerald-400"
+          tone="text-status-success"
         />
         <SummaryCard
           label={e.bulk_rerun_regressions}
           value={String(cohort.regressionCount)}
           sub={e.bulk_rerun_regressions_sub}
-          tone={cohort.regressionCount > 0 ? 'text-amber-400' : 'text-foreground'}
+          tone={cohort.regressionCount > 0 ? 'text-status-warning' : 'text-ink-1'}
         />
         <SummaryCard
           label={e.bulk_rerun_mean_cost_delta}
@@ -106,7 +106,7 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
         <KvCell
           label={e.bulk_rerun_failed_count}
           value={String(cohort.failedCount)}
-          tone={cohort.failedCount > 0 ? 'text-red-400' : 'text-foreground'}
+          tone={cohort.failedCount > 0 ? 'text-status-error' : 'text-ink-1'}
         />
       </div>
 
@@ -139,13 +139,13 @@ interface SummaryCardProps {
 
 function SummaryCard({ label, value, sub, tone, icon }: SummaryCardProps) {
   return (
-    <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2">
-      <div className="typo-code uppercase text-foreground tracking-wider">{label}</div>
+    <div className="bg-surface-1 border border-hair rounded-modal px-3 py-2">
+      <div className="typo-eyebrow text-ink-1">{label}</div>
       <div className={`typo-heading mt-1 flex items-center gap-1.5 ${tone}`}>
         {icon}
         <span>{value}</span>
       </div>
-      <div className="typo-body text-foreground mt-0.5">{sub}</div>
+      <div className="typo-body text-ink-1 mt-0.5">{sub}</div>
     </div>
   );
 }
@@ -158,12 +158,12 @@ interface KvCellProps {
   note?: string;
 }
 
-function KvCell({ label, value, tone = 'text-foreground', note }: KvCellProps) {
+function KvCell({ label, value, tone = 'text-ink-1', note }: KvCellProps) {
   return (
-    <div className="px-3 py-2 bg-secondary/20 border border-primary/10 rounded-card">
-      <div className="typo-code uppercase text-foreground tracking-wider">{label}</div>
+    <div className="px-3 py-2 bg-surface-1 border border-hair rounded-card">
+      <div className="typo-eyebrow text-ink-1">{label}</div>
       <div className={`typo-code mt-0.5 ${tone}`}>{value}</div>
-      {note && <div className="typo-body text-foreground mt-0.5">{note}</div>}
+      {note && <div className="typo-body text-ink-1 mt-0.5">{note}</div>}
     </div>
   );
 }
@@ -177,10 +177,10 @@ interface SectionProps {
 function Section({ title, tone, children }: SectionProps) {
   const headerTone =
     tone === 'amber'
-      ? 'text-amber-400'
+      ? 'text-status-warning'
       : tone === 'emerald'
-        ? 'text-emerald-400'
-        : 'text-foreground';
+        ? 'text-status-success'
+        : 'text-ink-1';
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -200,35 +200,35 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
   const { t } = useTranslation();
   const e = t.agents.executions;
   return (
-    <div className="rounded-modal border border-primary/10 overflow-hidden">
+    <div className="rounded-modal border border-hair overflow-hidden">
       {rows.map((it) => {
         // No delta without BOTH costs: an unrecorded original is not a $0
         // original, and subtracting from it would invent the whole saving.
         const costDelta =
           it.newCost !== null && it.origCost !== null ? it.newCost - it.origCost : null;
-        const costTone = costDelta === null ? 'text-foreground' : deltaTone(costDelta, true);
+        const costTone = costDelta === null ? 'text-ink-1' : deltaTone(costDelta, true);
         const canDrill = !!it.newExecutionId;
         return (
           <div
             key={it.originalId}
-            className="grid grid-cols-12 gap-2 px-3 py-2 border-b border-primary/5 bg-background/30 hover:bg-secondary/20 transition-colors"
+            className="grid grid-cols-12 gap-2 px-3 py-2 border-b border-hair bg-background/30 hover:bg-surface-1 transition-colors"
           >
-            <div className="col-span-3 flex items-center gap-2 typo-code text-foreground/90">
+            <div className="col-span-3 flex items-center gap-2 typo-code text-ink-1">
               <span>#{it.originalId.slice(0, 8)}</span>
-              <span className="text-foreground">→</span>
+              <span className="text-ink-1">→</span>
               {it.newExecutionId ? (
-                <span className="text-foreground/90">#{it.newExecutionId.slice(0, 8)}</span>
+                <span className="text-ink-1">#{it.newExecutionId.slice(0, 8)}</span>
               ) : (
-                <span className="text-foreground">—</span>
+                <span className="text-ink-1">—</span>
               )}
             </div>
             <div className="col-span-3 flex items-center gap-1.5 typo-body">
-              <span className="text-foreground">{getStatusEntry(it.origStatus).label}</span>
-              <span className="text-foreground">→</span>
+              <span className="text-ink-1">{getStatusEntry(it.origStatus).label}</span>
+              <span className="text-ink-1">→</span>
               {/* A dispatched-but-not-yet-landed re-run has no status, cost or
                   duration yet — say "running", never a dash that reads as
                   "nothing happened" next to a $0.00 cost column. */}
-              <span className="text-foreground/95">
+              <span className="text-ink-1">
                 {(it.newStatus !== null ? getStatusEntry(it.newStatus).label : null) ??
                   (it.status === 'timed_out'
                     ? e.bulk_rerun_timed_out_state
@@ -239,7 +239,7 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
                         : '—')}
               </span>
             </div>
-            <div className="col-span-2 typo-code text-foreground/90 flex items-center">
+            <div className="col-span-2 typo-code text-ink-1 flex items-center">
               {it.newDurationMs !== null && it.origDurationMs !== null
                 ? `${formatDuration(it.origDurationMs)} → ${formatDuration(it.newDurationMs)}`
                 : '—'}

@@ -125,25 +125,25 @@ export default function ScheduleCalendar({
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
+            className="p-1.5 rounded-card border border-hair hover:bg-surface-2 text-ink-1 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
+            className="p-1.5 rounded-card border border-hair hover:bg-surface-2 text-ink-1 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={goToday}
-            className="px-2.5 py-1 typo-caption rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
+            className="px-2.5 py-1 typo-caption rounded-card border border-hair hover:bg-surface-2 text-ink-1 transition-colors"
           >
             {t.schedules.today}
           </button>
-          <span className="typo-heading text-foreground ml-1">
+          <span className="typo-heading text-ink-1 ml-1">
             {headerLabel}
           </span>
         </div>
@@ -151,7 +151,7 @@ export default function ScheduleCalendar({
         <div className="flex items-center gap-1">
           {/* Legend (now: toggle filters) */}
           <div
-            className="flex items-center gap-1 mr-3 text-[10px]"
+            className="flex items-center gap-1 mr-3 typo-caption"
             title={t.schedules.filter_toggle_tooltip}
           >
             <LegendToggle
@@ -159,28 +159,28 @@ export default function ScheduleCalendar({
               onClick={() => toggleKind('projected')}
               ariaLabel={t.schedules.projected}
             >
-              <span className="w-2 h-2 rounded-full bg-blue-400/70" /> {t.schedules.projected}
+              <span className="w-2 h-2 rounded-full bg-status-info/70" /> {t.schedules.projected}
             </LegendToggle>
             <LegendToggle
               active={activeKinds.has('past-success')}
               onClick={() => toggleKind('past-success')}
               ariaLabel={t.schedules.success}
             >
-              <CheckCircle2 className="w-3 h-3 text-emerald-400/80" /> {t.schedules.success}
+              <CheckCircle2 className="w-3 h-3 text-status-success" /> {t.schedules.success}
             </LegendToggle>
             <LegendToggle
               active={activeKinds.has('past-failure')}
               onClick={() => toggleKind('past-failure')}
               ariaLabel={t.schedules.failed}
             >
-              <XCircle className="w-3 h-3 text-red-400/80" /> {t.schedules.failed}
+              <XCircle className="w-3 h-3 text-status-error" /> {t.schedules.failed}
             </LegendToggle>
             <LegendToggle
               active={activeKinds.has('past-unknown')}
               onClick={() => toggleKind('past-unknown')}
               ariaLabel={t.schedules.unverified}
             >
-              <HelpCircle className="w-3 h-3 text-foreground" /> {t.schedules.unverified}
+              <HelpCircle className="w-3 h-3 text-ink-1" /> {t.schedules.unverified}
             </LegendToggle>
             {totalConflicts > 0 && (
               <LegendToggle
@@ -188,7 +188,7 @@ export default function ScheduleCalendar({
                 onClick={() => toggleKind('overlap')}
                 ariaLabel={t.schedules.overlap}
               >
-                <AlertTriangle className="w-3 h-3 text-amber-400/80" /> {t.schedules.overlap}
+                <AlertTriangle className="w-3 h-3 text-status-warning" /> {t.schedules.overlap}
               </LegendToggle>
             )}
             {!allActive && (
@@ -196,7 +196,7 @@ export default function ScheduleCalendar({
                 type="button"
                 onClick={resetFilters}
                 aria-label={t.schedules.filter_reset_aria}
-                className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/40 hover:border-primary/30 transition-colors"
+                className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card border border-hair text-ink-1 hover:text-ink-1 hover:bg-surface-2 hover:border-primary/30 transition-colors"
               >
                 <RotateCcw className="w-2.5 h-2.5" />
                 {t.schedules.filter_reset}
@@ -205,15 +205,15 @@ export default function ScheduleCalendar({
           </div>
 
           {/* View toggle */}
-          <div className="flex rounded-card border border-primary/15 overflow-hidden">
+          <div className="flex rounded-card border border-hair overflow-hidden">
             <button
               type="button"
               aria-pressed={view === 'week'}
               onClick={() => setView('week')}
               className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'week'
-                  ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground hover:text-foreground/70'
+                  ? 'bg-surface-1 text-ink-1'
+                  : 'text-ink-1 hover:text-ink-2'
               }`}
             >
               {t.schedules.week}
@@ -224,8 +224,8 @@ export default function ScheduleCalendar({
               onClick={() => setView('month')}
               className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'month'
-                  ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground hover:text-foreground/70'
+                  ? 'bg-surface-1 text-ink-1'
+                  : 'text-ink-1 hover:text-ink-2'
               }`}
             >
               {t.schedules.month}
@@ -281,8 +281,8 @@ function LegendToggle({
       onClick={onClick}
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card border transition-all ${
         active
-          ? 'border-primary/15 bg-primary/5 text-foreground/85 hover:bg-primary/10'
-          : 'border-primary/5 bg-transparent text-foreground hover:text-foreground/60 hover:border-primary/15 line-through decoration-foreground/30'
+          ? 'border-hair bg-surface-1 text-ink-1 hover:bg-surface-2'
+          : 'border-hair bg-transparent text-ink-1 hover:text-ink-2 hover:border-hair line-through decoration-foreground/30'
       }`}
     >
       {children}

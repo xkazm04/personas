@@ -26,8 +26,8 @@ export default function TourAppearanceContent() {
       {/* Text size */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Type className="w-3.5 h-3.5 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.text_size_label}</span>
+          <Type className="w-3.5 h-3.5 text-ink-1" />
+          <span className="typo-body text-ink-1">{t.onboarding.text_size_label}</span>
         </div>
         <TextScalePicker
           textScale={textScale}
@@ -40,8 +40,8 @@ export default function TourAppearanceContent() {
       {/* Brightness */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Sun className="w-3.5 h-3.5 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.brightness_label}</span>
+          <Sun className="w-3.5 h-3.5 text-ink-1" />
+          <span className="typo-body text-ink-1">{t.onboarding.brightness_label}</span>
         </div>
         <BrightnessPicker
           levels={brightnessLevels}
@@ -55,7 +55,7 @@ export default function TourAppearanceContent() {
 
       {/* Dark themes */}
       <div className="space-y-1.5">
-        <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.dark_themes}</span>
+        <span className="typo-eyebrow text-ink-1">{t.onboarding.dark_themes}</span>
         <SimpleThemePicker
           themes={darkThemes}
           themeId={themeId}
@@ -67,7 +67,7 @@ export default function TourAppearanceContent() {
 
       {/* Light themes */}
       <div className="space-y-1.5">
-        <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.light_themes}</span>
+        <span className="typo-eyebrow text-ink-1">{t.onboarding.light_themes}</span>
         <SimpleThemePicker
           themes={lightThemes}
           themeId={themeId}

@@ -774,7 +774,7 @@ export function UnifiedBuildEntry() {
             className={`inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
               oneShotEnabled
                 ? "border-primary/40 bg-primary/15 text-primary"
-                : "border-border/30 bg-secondary/20 text-foreground hover:text-foreground"
+                : "border-hair bg-surface-1 text-ink-1 hover:text-ink-1"
             }`}
             title={
               oneShotEnabled
@@ -785,7 +785,7 @@ export function UnifiedBuildEntry() {
           >
             <span
               className={`inline-block h-1.5 w-1.5 rounded-full ${
-                oneShotEnabled ? "bg-primary" : "bg-foreground/30"
+                oneShotEnabled ? "bg-primary" : "bg-surface-2"
               }`}
               aria-hidden
             />

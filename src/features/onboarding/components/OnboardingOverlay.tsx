@@ -99,25 +99,25 @@ export default function OnboardingOverlay() {
       onClose={dismissOnboarding}
       titleId="onboarding-overlay-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
+      panelClassName="max-h-[85vh] bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-hair flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-            <Sparkles className="w-[18px] h-[18px] text-violet-400" />
+          <div className="w-9 h-9 rounded-modal bg-role-agent/15 border border-role-agent/25 flex items-center justify-center">
+            <Sparkles className="w-[18px] h-[18px] text-role-agent" />
           </div>
           <div>
-            <h2 id="onboarding-overlay-title" className="typo-heading text-foreground/90">
+            <h2 id="onboarding-overlay-title" className="typo-heading text-ink-1">
               {t.onboarding.title}
             </h2>
-            <p className="typo-body text-foreground">{t.onboarding.subtitle}</p>
+            <p className="typo-body text-ink-1">{t.onboarding.subtitle}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={dismissOnboarding}
-          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
+          className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-ink-1 hover:text-ink-1"
           aria-label={t.onboarding.skip_tooltip}
           title={t.onboarding.skip_tooltip}
         >
@@ -126,7 +126,7 @@ export default function OnboardingOverlay() {
       </div>
 
       {/* Step indicator */}
-      <div className="px-6 py-3 border-b border-primary/5 flex-shrink-0">
+      <div className="px-6 py-3 border-b border-hair flex-shrink-0">
         <StepIndicator
           steps={steps}
           currentStep={onboardingStep}
@@ -167,8 +167,8 @@ export default function OnboardingOverlay() {
 
             {onboardingStep === 'adopt' && !showAdoptionWizard && (
               <div className="flex flex-col items-center py-8 gap-4">
-                <LoadingSpinner size="xl" className="text-violet-400" />
-                <p className="typo-body text-foreground">{t.onboarding.opening_wizard}</p>
+                <LoadingSpinner size="xl" className="text-role-agent" />
+                <p className="typo-body text-ink-1">{t.onboarding.opening_wizard}</p>
               </div>
             )}
 
@@ -183,11 +183,11 @@ export default function OnboardingOverlay() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-3.5 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
+      <div className="flex items-center justify-between px-6 py-3.5 border-t border-hair bg-surface-1 flex-shrink-0">
         <button
           type="button"
           onClick={dismissOnboarding}
-          className="px-4 py-2 typo-heading rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
+          className="px-4 py-2 typo-heading rounded-modal border border-hair text-ink-1 hover:bg-surface-2 transition-colors"
         >
           {t.onboarding.skip_button}
         </button>

@@ -16,10 +16,10 @@ export function BundledReleaseCard({ release, t }: { release: Release; t: Releas
   const i18n = t.releases[release.version];
   const items = i18n?.items;
   return (
-    <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/2 to-transparent p-5">
+    <section className="rounded-modal border border-primary/8 bg-surface-1 p-5">
       <div className="flex flex-wrap items-baseline gap-3">
         <h3 className="typo-title-lg">{i18n?.label ?? release.version}</h3>
-        <span className="typo-code text-foreground">{release.version}</span>
+        <span className="typo-code text-ink-1">{release.version}</span>
         <span className={`rounded-full border px-2 typo-label ${TONE_CHIP[RELEASE_STATUS_TONE[release.status]]}`}>
           {t.status[release.status]}
         </span>
@@ -27,7 +27,7 @@ export function BundledReleaseCard({ release, t }: { release: Release; t: Releas
       </div>
       {/* The release's lead sentence reads a STEP LARGER than its item list (step 2, 14.9px at
           the default appearance setting, against the items' step 1). SIZE is the lever because
-          weight is not one: the card's text was already full `text-foreground` - measured
+          weight is not one: the card's text was already full `text-ink-1` - measured
           (226,233,240) on (11,16,24), ~15.6:1, with no muting applied anywhere in it, so there was
           nothing to un-mute - and the app's font (Segoe UI, no Medium) renders only 300/400/600/700,
           so the half-step a lead would want does not exist and 600 would make the sentence shout at
@@ -37,7 +37,7 @@ export function BundledReleaseCard({ release, t }: { release: Release; t: Releas
           toned Dot per line (26 titles, median 32 characters), a row by doctrine section 1, and
           lifting them too would restore the monotone, add ~38px to the tallest card, and invalidate
           the dot's measured baseline alignment recorded below. */}
-      {i18n?.summary && <p className="typo-body-lg mt-2 text-foreground">{i18n.summary}</p>}
+      {i18n?.summary && <p className="typo-body-lg mt-2 text-ink-1">{i18n.summary}</p>}
       <ul className="mt-4 grid gap-x-8 gap-y-2 lg:grid-cols-2">
         {release.items.map((item) => {
           const bullet = ITEM_TYPE_MARK[item.type];
@@ -59,7 +59,7 @@ export function BundledReleaseCard({ release, t }: { release: Release; t: Releas
                   <Dot tone={bullet.tone} glyph={bullet.glyph} />
                 </span>
               </Tooltip>
-              <span className="typo-body text-foreground">{content?.title ?? `[${release.version}.${item.id}]`}</span>
+              <span className="typo-body text-ink-1">{content?.title ?? `[${release.version}.${item.id}]`}</span>
             </li>
           );
         })}

@@ -33,7 +33,7 @@ export function TagPicker<T extends string>({
 }) {
   return (
     <div className="flex flex-col gap-1.5" data-testid={testId}>
-      <span className="typo-label text-foreground">{label}</span>
+      <span className="typo-label text-ink-1">{label}</span>
       <div
         role="radiogroup"
         aria-label={label}
@@ -51,17 +51,17 @@ export function TagPicker<T extends string>({
               className={`flex flex-col items-start px-2.5 py-1 rounded-interactive border text-left transition-colors focus-ring ${
                 active
                   ? 'bg-primary/15 border-primary/40 text-primary'
-                  : 'bg-secondary/30 border-primary/10 text-foreground/85 hover:border-primary/25'
+                  : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
               }`}
               data-testid={`${testId}-${c.value}`}
             >
               <span className="typo-body">{c.label}</span>
-              <span className="typo-caption text-foreground tabular-nums">{c.detail}</span>
+              <span className="typo-caption text-ink-2 tabular-nums">{c.detail}</span>
             </button>
           );
         })}
       </div>
-      {hint && <p className="typo-caption text-foreground">{hint}</p>}
+      {hint && <p className="typo-caption text-ink-2">{hint}</p>}
     </div>
   );
 }

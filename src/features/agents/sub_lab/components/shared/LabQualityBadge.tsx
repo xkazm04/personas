@@ -12,9 +12,9 @@ interface LabQualityBadgeProps {
 }
 
 function scoreVariant(score: number): { variant: StatusVariant; dot: string } {
-  if (score >= 75) return { variant: 'success', dot: 'bg-emerald-400' };
-  if (score >= 50) return { variant: 'warning', dot: 'bg-amber-400' };
-  return { variant: 'error', dot: 'bg-red-400' };
+  if (score >= 75) return { variant: 'success', dot: 'bg-status-success' };
+  if (score >= 50) return { variant: 'warning', dot: 'bg-status-warning' };
+  return { variant: 'error', dot: 'bg-status-error' };
 }
 
 export function LabQualityBadge({ testMetadata, compact }: LabQualityBadgeProps) {

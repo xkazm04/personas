@@ -32,8 +32,8 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
 
   return (
     <div
-      className={`group grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 items-center px-2 py-1 hover:bg-secondary/30 rounded transition-colors ${
-        failed ? 'bg-red-500/5' : unclosed ? 'bg-primary/[0.04]' : ''
+      className={`group grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 items-center px-2 py-1 hover:bg-surface-1 rounded-interactive transition-colors ${
+        failed ? 'bg-status-error/5' : unclosed ? 'bg-primary/[0.04]' : ''
       }`}
     >
       {/* Left: name + type badge */}
@@ -47,32 +47,32 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
                aria-expanded a screen reader announces "<name>, button,
                collapsed/expanded", so no translated string is needed. */
             aria-label={span.name}
-            className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0"
+            className="p-0.5 rounded-interactive hover:bg-surface-2 flex-shrink-0"
           >
             {expanded ? (
-              <ChevronDown className="w-3 h-3 text-foreground" />
+              <ChevronDown className="w-3 h-3 text-ink-1" />
             ) : (
-              <ChevronRight className="w-3 h-3 text-foreground" />
+              <ChevronRight className="w-3 h-3 text-ink-1" />
             )}
           </button>
         ) : (
           <span className="w-4 flex-shrink-0" />
         )}
 
-        <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border} flex-shrink-0`}>
+        <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded-interactive border ${config.bg} ${config.color} ${config.border} flex-shrink-0`}>
           {spanTypeLabel(t, span.span_type)}
         </span>
 
-        <span className="typo-code text-foreground/85 truncate" title={span.name}>
+        <span className="typo-code text-ink-1 truncate" title={span.name}>
           {span.name}
         </span>
 
         {failed && (
-          <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+          <AlertCircle className="w-3 h-3 text-status-error flex-shrink-0" />
         )}
 
         {unclosed && (
-          <CircleDashed className="w-3 h-3 text-foreground/85 flex-shrink-0" />
+          <CircleDashed className="w-3 h-3 text-ink-1 flex-shrink-0" />
         )}
         {/* This span named a parent the trace does not contain, so it sits at
             the top level without being a root — the backend evicts the oldest
@@ -93,7 +93,7 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
             src-tauri/src/engine/runner/mod.rs passes `None`), so all but one
             row would carry a placeholder. */}
         {span.cost_usd != null && (
-          <span className="typo-code text-amber-400/70 flex-shrink-0">
+          <span className="typo-code text-status-warning flex-shrink-0">
             $<Numeric value={span.cost_usd} precision={4} />
           </span>
         )}

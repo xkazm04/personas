@@ -90,7 +90,7 @@ export function CharterResourceCard({ charter, personaId, onPatch }: CharterReso
         <span className="inline-flex items-center gap-1.5">
           <StatusBadge size="sm" accent="cyan">{c.profile_source_self}</StatusBadge>
           {stored.declaredAt && (
-            <RelativeTime timestamp={stored.declaredAt} className="typo-caption text-foreground" />
+            <RelativeTime timestamp={stored.declaredAt} className="typo-caption text-ink-1" />
           )}
         </span>
       </Tooltip>
@@ -104,9 +104,9 @@ export function CharterResourceCard({ charter, personaId, onPatch }: CharterReso
   return (
     <SectionCard title={c.profile_title} action={<span data-testid="resp-profile-source">{chip}</span>}>
       <div className="flex flex-col gap-4" data-testid="resp-profile">
-        <p className="typo-caption text-foreground">{c.profile_hint}</p>
+        <p className="typo-caption text-ink-2">{c.profile_hint}</p>
         {untagged && (
-          <p className="typo-caption text-foreground" data-testid="resp-profile-untagged">
+          <p className="typo-caption text-ink-2" data-testid="resp-profile-untagged">
             {c.profile_untagged_note}
           </p>
         )}
@@ -155,7 +155,7 @@ export function CharterResourceCard({ charter, personaId, onPatch }: CharterReso
           stored={stored}
         />
 
-        <div className="flex items-start gap-3 border-t border-border/60 pt-3">
+        <div className="flex items-start gap-3 border-t border-hair pt-3">
           <AccessibleToggle
             checked={draft.pinned}
             onChange={() => setEdit({ ...draft, pinned: !draft.pinned })}
@@ -164,8 +164,8 @@ export function CharterResourceCard({ charter, personaId, onPatch }: CharterReso
             data-testid="resp-profile-pin"
           />
           <div className="min-w-0 flex-1">
-            <div className="typo-body text-foreground">{c.profile_pin_label}</div>
-            <p className="typo-caption text-foreground">
+            <div className="typo-body text-ink-1">{c.profile_pin_label}</div>
+            <p className="typo-caption text-ink-2">
               {draft.pinned ? c.profile_pin_on_hint : c.profile_pin_off_hint}
             </p>
           </div>

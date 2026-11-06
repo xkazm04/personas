@@ -33,10 +33,10 @@ const SOURCE_ICON: Record<ConfigSource, typeof Globe> = {
 type SourceLabelKey = 'source_agent_label' | 'source_workspace_label' | 'source_global_label' | 'source_default_label';
 
 const SOURCE_STYLE: Record<ConfigSource, { color: string; bg: string; labelKey: SourceLabelKey }> = {
-  agent:     { color: 'text-violet-400',            bg: 'bg-violet-500/10',  labelKey: 'source_agent_label' },
-  workspace: { color: 'text-blue-400',              bg: 'bg-blue-500/10',    labelKey: 'source_workspace_label' },
-  global:    { color: 'text-emerald-400',           bg: 'bg-emerald-500/10', labelKey: 'source_global_label' },
-  default:   { color: 'text-foreground',            bg: 'bg-secondary/30',   labelKey: 'source_default_label' },
+  agent:     { color: 'text-role-agent',            bg: 'bg-role-agent/10',  labelKey: 'source_agent_label' },
+  workspace: { color: 'text-status-info',              bg: 'bg-status-info/10',    labelKey: 'source_workspace_label' },
+  global:    { color: 'text-status-success',           bg: 'bg-status-success/10', labelKey: 'source_global_label' },
+  default:   { color: 'text-ink-1',            bg: 'bg-surface-1',   labelKey: 'source_default_label' },
 };
 
 function SourceBadge({ source, isOverridden }: { source: ConfigSource; isOverridden: boolean }) {
@@ -45,21 +45,21 @@ function SourceBadge({ source, isOverridden }: { source: ConfigSource; isOverrid
   const style = SOURCE_STYLE[source];
   const Icon = SOURCE_ICON[source];
   return (
-    <span className={`inline-flex items-center gap-0.5 px-1 py-px rounded text-[10px] font-medium uppercase tracking-wider ${style.color} ${style.bg}`}>
+    <span className={`inline-flex items-center gap-0.5 px-1 py-px rounded-interactive typo-eyebrow ${style.color} ${style.bg}`}>
       <Icon className="w-2.5 h-2.5" />
       {s[style.labelKey]}
       {isOverridden && source === 'agent' && (
-        <span className="w-1 h-1 rounded-full bg-amber-400 flex-shrink-0" />
+        <span className="w-1 h-1 rounded-full bg-status-warning flex-shrink-0" />
       )}
     </span>
   );
 }
 
 function CellValue({ field, mask }: { field: ConfigField; mask?: boolean }) {
-  if (field.value == null) return <span className="text-foreground italic typo-caption">--</span>;
+  if (field.value == null) return <span className="text-ink-2 italic typo-caption">--</span>;
   const display = mask ? '••••••' : String(field.value);
   return (
-    <span className="typo-code text-foreground truncate max-w-[120px]" title={mask ? undefined : display}>
+    <span className="typo-code text-ink-1 truncate max-w-[120px]" title={mask ? undefined : display}>
       {display}
     </span>
   );
@@ -139,11 +139,11 @@ function CapabilityModelsCell({ models }: { models: string[] }) {
   const extra = models.length - shown.length;
   return (
     <div className="flex items-center gap-1.5 min-w-0" title={`${s.per_capability}\n${models.join('\n')}`}>
-      <span className="typo-code text-violet-400 truncate max-w-[120px]">
+      <span className="typo-code text-role-agent truncate max-w-[120px]">
         {shown.join(' · ')}
         {extra > 0 ? ` +${extra}` : ''}
       </span>
-      <span className="inline-flex items-center gap-0.5 px-1 py-px rounded text-[10px] font-medium uppercase tracking-wider text-violet-400 bg-violet-500/10 flex-shrink-0">
+      <span className="inline-flex items-center gap-0.5 typo-eyebrow text-role-agent flex-shrink-0">
         <Layers className="w-2.5 h-2.5" />
         {s.per_capability}
       </span>
@@ -161,7 +161,7 @@ function CapabilityProvidersCell({ providerKeys }: { providerKeys: string[] }) {
     return (
       <span className="inline-flex items-center gap-1.5 min-w-0" title={m.label}>
         <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
-        <span className="typo-caption text-foreground truncate" style={{ fontWeight: 400 }}>{m.label}</span>
+        <span className="typo-caption text-ink-2 truncate" style={{ fontWeight: 400 }}>{m.label}</span>
       </span>
     );
   }
@@ -185,11 +185,11 @@ function CapabilitySubRow({ cap }: { cap: CapabilityConfig }) {
   const providerKey = deriveProviderKey(cap.model, cap.provider);
   const providerMeta = providerKey ? getConnectorMeta(providerKey) : null;
   return (
-    <tr className="border-b border-primary/5 bg-secondary/[0.07]">
+    <tr className="border-b border-hair bg-secondary/[0.07]">
       <td className="pl-8 pr-3 py-1.5 whitespace-nowrap">
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <CornerDownRight className="w-3 h-3 text-foreground opacity-50 flex-shrink-0" />
-          <span className="typo-caption text-foreground truncate max-w-[200px]" style={{ fontWeight: 400 }} title={cap.title}>
+          <CornerDownRight className="w-3 h-3 text-ink-1 opacity-50 flex-shrink-0" />
+          <span className="typo-caption text-ink-2 truncate max-w-[200px]" style={{ fontWeight: 400 }} title={cap.title}>
             {cap.title}
           </span>
         </span>
@@ -197,7 +197,7 @@ function CapabilitySubRow({ cap }: { cap: CapabilityConfig }) {
       <td className="px-3 py-1.5">{muted}</td>
       <td className="px-3 py-1.5">
         {cap.model ? (
-          <span className="typo-code text-violet-400 truncate max-w-[120px]" title={cap.model}>
+          <span className="typo-code text-role-agent truncate max-w-[120px]" title={cap.model}>
             {shortModel(cap.model)}
           </span>
         ) : muted}
@@ -206,7 +206,7 @@ function CapabilitySubRow({ cap }: { cap: CapabilityConfig }) {
         {providerMeta ? (
           <span className="inline-flex items-center gap-1.5 min-w-0" title={providerMeta.label}>
             <ConnectorIcon meta={providerMeta} size="w-3.5 h-3.5" />
-            <span className="typo-caption text-foreground truncate" style={{ fontWeight: 400 }}>{providerMeta.label}</span>
+            <span className="typo-caption text-ink-2 truncate" style={{ fontWeight: 400 }}>{providerMeta.label}</span>
           </span>
         ) : muted}
       </td>
@@ -394,7 +394,7 @@ export function PersonaConfigPanel() {
     <div className="flex flex-col gap-4 px-3 py-3">
       {/* Subtitle + refresh */}
       <div className="flex items-start justify-between gap-3">
-        <p className="typo-caption text-foreground max-w-2xl">{s.subtitle}</p>
+        <p className="typo-caption text-ink-2 max-w-2xl">{s.subtitle}</p>
         <Button
           variant="secondary"
           size="xs"
@@ -408,73 +408,73 @@ export function PersonaConfigPanel() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-3 text-[10px] text-foreground flex-wrap">
-        <span className="flex items-center gap-1"><User className="w-2.5 h-2.5 text-violet-400" /> {s.agent_level}</span>
-        <span className="flex items-center gap-1"><FolderOpen className="w-2.5 h-2.5 text-blue-400" /> {s.workspace_level}</span>
-        <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5 text-emerald-400" /> {s.global_level}</span>
-        <span className="flex items-center gap-1"><Minus className="w-2.5 h-2.5 text-foreground" /> {s.not_set}</span>
-        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" /> {s.overrides_inherited}</span>
-        <span className="flex items-center gap-1"><Layers className="w-2.5 h-2.5 text-violet-400" /> {s.per_capability}</span>
+      <div className="flex items-center gap-3 typo-caption text-ink-2 flex-wrap">
+        <span className="flex items-center gap-1"><User className="w-2.5 h-2.5 text-role-agent" /> {s.agent_level}</span>
+        <span className="flex items-center gap-1"><FolderOpen className="w-2.5 h-2.5 text-status-info" /> {s.workspace_level}</span>
+        <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5 text-status-success" /> {s.global_level}</span>
+        <span className="flex items-center gap-1"><Minus className="w-2.5 h-2.5 text-ink-1" /> {s.not_set}</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-status-warning inline-block" /> {s.overrides_inherited}</span>
+        <span className="flex items-center gap-1"><Layers className="w-2.5 h-2.5 text-role-agent" /> {s.per_capability}</span>
       </div>
 
       {/* Filter row */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-ink-1 pointer-events-none" />
           <input
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={s.search_placeholder}
             aria-label={s.search_placeholder}
-            className="w-full pl-7 pr-7 py-1 typo-caption rounded-input bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/50 focus:outline-none focus:border-primary/40"
+            className="w-full pl-7 pr-7 py-1 typo-caption rounded-input bg-surface-1 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
           />
           {filter.length > 0 && (
             <button
               type="button"
               onClick={() => setFilter('')}
               aria-label={s.clear_filter_aria}
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-primary hover:bg-secondary/40"
+              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-interactive text-ink-1 hover:text-primary hover:bg-surface-2"
             >
               <X className="w-3 h-3" />
             </button>
           )}
         </div>
         <label
-          className="flex items-center gap-1.5 typo-caption text-foreground cursor-pointer select-none"
+          className="flex items-center gap-1.5 typo-caption text-ink-1 cursor-pointer select-none"
           title={s.overrides_only_tooltip}
         >
           <input
             type="checkbox"
             checked={overridesOnly}
             onChange={(e) => setOverridesOnly(e.target.checked)}
-            className="w-3 h-3 rounded border-primary/20 bg-secondary/30 text-primary focus:ring-1 focus:ring-primary/40"
+            className="w-3 h-3 rounded-interactive border-hair bg-surface-1 text-primary focus:ring-1 focus:ring-primary/40"
           />
           {s.overrides_only_label}
         </label>
         {filtersActive && rows.length > 0 && (
-          <span className="typo-caption text-foreground ml-auto">
+          <span className="typo-caption text-ink-2 ml-auto">
             {tx(s.showing_count, { shown: visibleRows.length, total: rows.length })}
           </span>
         )}
       </div>
 
       {/* Table */}
-      <div className="border border-primary/10 rounded-card overflow-hidden bg-secondary/10">
+      <div className="border border-hair rounded-card overflow-hidden bg-surface-1">
         <table className="w-full typo-caption">
           <thead>
-            <tr className="border-b border-primary/10 bg-secondary/20">
-              <th className="text-left px-3 py-2 typo-caption font-mono uppercase tracking-widest text-foreground">{s.agent}</th>
-              <th className="text-left px-3 py-2 typo-caption font-mono uppercase tracking-widest text-foreground">{s.workspace_level}</th>
+            <tr className="border-b border-hair bg-surface-1">
+              <th className="text-left px-3 py-2 typo-eyebrow text-ink-1">{s.agent}</th>
+              <th className="text-left px-3 py-2 typo-eyebrow text-ink-1">{s.workspace_level}</th>
               {FIELDS.map((f) => (
-                <th key={f.key} className="text-left px-3 py-2 typo-caption font-mono uppercase tracking-widest text-foreground">{s[f.labelKey]}</th>
+                <th key={f.key} className="text-left px-3 py-2 typo-eyebrow text-ink-1">{s[f.labelKey]}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {globalLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-foreground">
+                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-ink-1">
                   {s.loading_agents}
                 </td>
               </tr>
@@ -488,14 +488,14 @@ export function PersonaConfigPanel() {
             )}
             {!globalLoading && !loadFailure && rows.length === 0 && (
               <tr>
-                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-foreground">
+                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-ink-1">
                   {s.no_agents}
                 </td>
               </tr>
             )}
             {!globalLoading && rows.length > 0 && visibleRows.length === 0 && (
               <tr>
-                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-foreground">
+                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-ink-1">
                   {s.filtered_empty}
                 </td>
               </tr>
@@ -507,8 +507,8 @@ export function PersonaConfigPanel() {
               const isExpanded = expanded.has(row.persona.id);
               return (
                 <Fragment key={row.persona.id}>
-                  <tr className="border-b border-primary/5 hover:bg-secondary/20 transition-colors">
-                    <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">
+                  <tr className="border-b border-hair hover:bg-surface-1 transition-colors">
+                    <td className="px-3 py-2 font-medium text-ink-1 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
                         {configs.length > 0 ? (
                           <button
@@ -516,7 +516,7 @@ export function PersonaConfigPanel() {
                             onClick={() => toggleExpanded(row.persona.id)}
                             aria-expanded={isExpanded}
                             aria-label={s.per_capability}
-                            className="p-0.5 -ml-1 rounded text-foreground hover:text-primary hover:bg-secondary/40 transition-colors"
+                            className="p-0.5 -ml-1 rounded-interactive text-ink-1 hover:text-primary hover:bg-surface-2 transition-colors"
                           >
                             <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                           </button>
@@ -526,12 +526,12 @@ export function PersonaConfigPanel() {
                         {row.persona.name}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-foreground whitespace-nowrap">
+                    <td className="px-3 py-2 text-ink-1 whitespace-nowrap">
                       {row.config?.workspaceName ?? '--'}
                     </td>
                     {FIELDS.map((f) => {
                       if (row.loading) {
-                        return <td key={f.key} className="px-3 py-2"><div className="h-3 w-16 bg-secondary/40 rounded animate-pulse" /></td>;
+                        return <td key={f.key} className="px-3 py-2"><div className="h-3 w-16 bg-surface-2 rounded-interactive animate-pulse" /></td>;
                       }
                       if (row.error || !row.config) {
                         // First column of the failed row gets the labelled error;
@@ -543,7 +543,7 @@ export function PersonaConfigPanel() {
                               <Tooltip
                                 content={row.error ? resolveErrorTranslated(t, row.error).message : s.config_could_not_be_resolved}
                               >
-                                <span className="inline-flex items-center gap-1 text-amber-400 typo-caption" data-testid={`config-resolve-failed-${row.persona.id}`}>
+                                <span className="inline-flex items-center gap-1 text-status-warning typo-caption" data-testid={`config-resolve-failed-${row.persona.id}`}>
                                   <AlertTriangle className="w-3 h-3" />
                                   {s.failed_to_resolve}
                                 </span>
@@ -551,7 +551,7 @@ export function PersonaConfigPanel() {
                             </td>
                           );
                         }
-                        return <td key={f.key} className="px-3 py-2"><span className="text-foreground italic typo-caption">--</span></td>;
+                        return <td key={f.key} className="px-3 py-2"><span className="text-ink-2 italic typo-caption">--</span></td>;
                       }
                       const field = row.config[f.key] as ConfigField;
                       // The Model field is usually unset at every persona-level tier

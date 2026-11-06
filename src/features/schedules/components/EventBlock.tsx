@@ -57,7 +57,7 @@ export function EventBlock({
     <button
       type="button"
       onClick={onClick}
-      className={`event-block flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer w-full max-w-full min-w-0 overflow-hidden ${compact ? 'px-1 py-px text-[9px]' : 'px-1.5 py-0.5 text-[10px]'
+      className={`event-block flex items-center gap-1 rounded-interactive text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer w-full max-w-full min-w-0 overflow-hidden ${compact ? 'px-1 py-px typo-caption' : 'px-1.5 py-0.5 typo-caption'
         }`}
       style={{
         ['--ev-color' as string]: color,
@@ -68,15 +68,15 @@ export function EventBlock({
     >
       <span className="event-block-label truncate font-medium min-w-0">{event.agentName}</span>
       {event.kind === 'past-failure' && (
-        <XCircle className="w-2.5 h-2.5 text-red-400 shrink-0" />
+        <XCircle className="w-2.5 h-2.5 text-status-error shrink-0" />
       )}
       {event.kind === 'past-success' && (
-        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400/60 shrink-0" />
+        <CheckCircle2 className="w-2.5 h-2.5 text-status-success shrink-0" />
       )}
       {event.kind === 'past-unknown' && (
         // The whole block already renders at 0.55 opacity for this kind, so a
         // bare foreground icon reads as muted without a low-contrast class.
-        <HelpCircle className="w-2.5 h-2.5 text-foreground shrink-0" />
+        <HelpCircle className="w-2.5 h-2.5 text-ink-1 shrink-0" />
       )}
     </button>
     </Tooltip>

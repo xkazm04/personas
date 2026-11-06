@@ -188,22 +188,22 @@ export function PersonaIconPickerModal({
       portal
     >
       <div className="flex flex-col max-h-[85vh]">
-        <header className="flex items-start justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
+        <header className="flex items-start justify-between px-6 py-4 border-b border-hair flex-shrink-0">
           <div>
             <h2
               id="persona-icon-picker-title"
-              className="typo-heading text-foreground/90"
+              className="typo-heading text-ink-1"
             >
               {t.shared.forms_extra.select_persona_icon}
             </h2>
-            <p className="text-[12px] text-foreground mt-0.5">
+            <p className="typo-caption text-ink-2 mt-0.5">
               {t.shared.forms_extra.select_persona_icon_desc}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95 cursor-pointer"
+            className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-ink-1 hover:text-ink-1 cursor-pointer"
             aria-label={t.common.close}
           >
             <X className="w-4 h-4" />
@@ -213,7 +213,7 @@ export function PersonaIconPickerModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Built-in catalog */}
           <section>
-            <h3 className="typo-caption uppercase tracking-wide text-foreground mb-3">
+            <h3 className="typo-eyebrow text-ink-1 mb-3">
               {t.shared.forms_extra.builtin_icons}
             </h3>
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
@@ -228,13 +228,13 @@ export function PersonaIconPickerModal({
                     title={entry.label}
                     className={`group relative aspect-square w-full rounded-modal border flex flex-col items-center justify-center gap-2 p-3 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-primary ring-2 ring-primary/30 bg-primary/10 scale-[1.03]'
-                        : 'border-primary/15 bg-background/40 hover:bg-secondary/50 hover:border-primary/30 hover:scale-[1.02]'
+                        ? 'border-primary ring-2 ring-primary/30 bg-surface-1 scale-[1.03]'
+                        : 'border-hair bg-background/40 hover:bg-surface-2 hover:border-primary/30 hover:scale-[1.02]'
                     }`}
                     style={isSelected ? { backgroundColor: `${entry.suggestedColor}1f` } : undefined}
                   >
                     <PersonaIcon icon={iconValue} color={null} size="w-[72%] h-[72%]" />
-                    <span className="typo-caption text-foreground truncate w-full text-center">
+                    <span className="typo-caption text-ink-2 truncate w-full text-center">
                       {entry.label}
                     </span>
                   </button>
@@ -246,14 +246,14 @@ export function PersonaIconPickerModal({
           {/* User uploads */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="typo-caption uppercase tracking-wide text-foreground">
+              <h3 className="typo-eyebrow text-ink-1">
                 {t.shared.forms_extra.your_icons}
               </h3>
               <button
                 type="button"
                 onClick={handleUpload}
                 disabled={uploading}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/20 bg-background/50 text-foreground hover:bg-secondary/50 hover:border-primary/40 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-hair bg-background/50 text-ink-1 hover:bg-surface-2 hover:border-primary/40 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
               >
                 {uploading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -267,7 +267,7 @@ export function PersonaIconPickerModal({
             </div>
 
             {customIcons.length === 0 ? (
-              <p className="typo-caption text-foreground py-4 text-center">
+              <p className="typo-caption text-ink-2 py-4 text-center">
                 {t.shared.forms_extra.no_custom_icons}
               </p>
             ) : (
@@ -281,8 +281,8 @@ export function PersonaIconPickerModal({
                       key={assetId}
                       className={`group relative aspect-square w-full rounded-modal border transition-all ${
                         isSelected
-                          ? 'border-primary ring-2 ring-primary/30 bg-primary/10'
-                          : 'border-primary/15 bg-background/40 hover:bg-secondary/50 hover:border-primary/30'
+                          ? 'border-primary ring-2 ring-primary/30 bg-surface-1'
+                          : 'border-hair bg-background/40 hover:bg-surface-2 hover:border-primary/30'
                       }`}
                     >
                       <button
@@ -298,7 +298,7 @@ export function PersonaIconPickerModal({
                         onClick={(e) => { deleteAnchorRef.current = e.currentTarget; setPendingDeleteId(assetId); }}
                         aria-label={t.shared.forms_extra.remove_custom_icon}
                         title={t.shared.forms_extra.remove_custom_icon}
-                        className="absolute top-1 right-1 p-1 rounded-card bg-background/80 text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-secondary transition-all cursor-pointer"
+                        className="absolute top-1 right-1 p-1 rounded-card bg-background/80 text-ink-1 opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-secondary transition-all cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -312,16 +312,16 @@ export function PersonaIconPickerModal({
           {/* AI generation — only when the vault has an image-gen credential */}
           {genCreds.length > 0 && (
             <section>
-              <h3 className="typo-caption uppercase tracking-wide text-foreground mb-3 flex items-center gap-1.5">
+              <h3 className="typo-eyebrow text-ink-1 mb-3 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 {t.shared.forms_extra.generate_with_ai}
               </h3>
               <div className="mb-3 space-y-0.5">
-                <p className="typo-caption text-foreground">
+                <p className="typo-caption text-ink-2">
                   {t.shared.forms_extra.icon_gen_cost_notice}
                 </p>
                 {spend && spend.generationCount > 0 && (
-                  <p data-testid="icon-gen-spend" className="typo-caption text-foreground">
+                  <p data-testid="icon-gen-spend" className="typo-caption text-ink-2">
                     {tx(t.shared.forms_extra.icon_gen_spend_summary, {
                       cost:
                         spend.totalCostUsd < 0.005
@@ -333,7 +333,7 @@ export function PersonaIconPickerModal({
                   </p>
                 )}
               </div>
-              <div className="space-y-3 rounded-modal border border-primary/15 bg-background/40 p-4">
+              <div className="space-y-3 rounded-modal border border-hair bg-background/40 p-4">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -355,7 +355,7 @@ export function PersonaIconPickerModal({
                       ))}
                     </select>
                   ) : (
-                    <span className="typo-caption text-foreground truncate">
+                    <span className="typo-caption text-ink-2 truncate">
                       {genCreds[0]?.name}
                     </span>
                   )}
@@ -363,7 +363,7 @@ export function PersonaIconPickerModal({
                     type="button"
                     onClick={handleGenerate}
                     disabled={generating || !prompt.trim() || !selectedCredId}
-                    className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/30 bg-primary/10 text-foreground hover:bg-primary/20 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/30 bg-surface-1 text-ink-1 hover:bg-primary/20 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default flex-shrink-0"
                   >
                     {generating ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -381,11 +381,11 @@ export function PersonaIconPickerModal({
         </div>
 
         {resolvePersonaIcon(value).kind !== 'fallback' && (
-          <footer className="flex items-center justify-end gap-2 px-6 py-3 border-t border-primary/10 flex-shrink-0">
+          <footer className="flex items-center justify-end gap-2 px-6 py-3 border-t border-hair flex-shrink-0">
             <button
               type="button"
               onClick={handleClear}
-              className="px-3 py-1.5 typo-body rounded-card text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors cursor-pointer"
+              className="px-3 py-1.5 typo-body rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors cursor-pointer"
             >
               {t.shared.forms_extra.clear_icon}
             </button>

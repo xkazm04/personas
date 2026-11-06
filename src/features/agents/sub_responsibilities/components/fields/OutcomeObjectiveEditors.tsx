@@ -25,7 +25,7 @@ function RemoveRowButton({ onClick, label }: { onClick: () => void; label: strin
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="shrink-0 mt-2 text-foreground/85 hover:text-status-error transition-colors"
+      className="shrink-0 mt-2 text-ink-1 hover:text-status-error transition-colors"
     >
       <X className="w-3.5 h-3.5" />
     </button>

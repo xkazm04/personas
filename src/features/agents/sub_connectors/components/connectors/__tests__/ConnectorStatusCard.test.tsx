@@ -29,8 +29,8 @@ describe('ConnectorStatusCard', () => {
   it('19: the tile follows the status (missing credential is not success-green)', () => {
     renderCard({}, []);
     const tile = screen.getByTestId('connector-status-tile');
-    expect(tile.className).toContain('bg-amber-500/10');
-    expect(tile.className).not.toContain('emerald');
+    expect(tile.className).toContain('bg-status-warning/10');
+    expect(tile.className).not.toContain('status-success');
   });
 
   it('25: a linked card with a sibling credential offers Change, which opens the picker', () => {

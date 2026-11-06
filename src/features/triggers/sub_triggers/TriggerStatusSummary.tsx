@@ -47,7 +47,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
     <>
       <Icon className={`w-4 h-4 flex-shrink-0 ${colorClass}`} />
       {catMeta && (
-        <span className={`px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded ${catMeta.bgColor} ${catMeta.color} ${catMeta.borderColor} border`}>
+        <span className={`px-1.5 py-0.5 typo-eyebrow rounded-interactive ${catMeta.bgColor} ${catMeta.color} ${catMeta.borderColor} border`}>
           {catMeta.label}
         </span>
       )}
@@ -55,7 +55,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
         {getTriggerTypeLabel(trigger.trigger_type, t)}
       </span>
       {parts.length > 0 && (
-        <span className="typo-body text-foreground truncate">
+        <span className="typo-body text-ink-1 truncate">
           {parts.join(' · ')}
         </span>
       )}

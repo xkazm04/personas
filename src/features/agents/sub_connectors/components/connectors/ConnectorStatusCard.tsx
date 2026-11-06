@@ -54,9 +54,9 @@ export function ConnectorStatusCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-body text-foreground truncate" title={status.name}>{status.name}</p>
+            <p className="typo-body text-ink-1 truncate" title={status.name}>{status.name}</p>
             {roleLabel && (
-              <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-sky-500/10 border border-sky-500/15 text-sky-400/70 whitespace-nowrap">{roleLabel}</span>
+              <span className="inline-flex items-center typo-caption text-status-info whitespace-nowrap">{roleLabel}</span>
             )}
             <span
               className={`inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full border transition-all duration-300 ease-in-out ${config.bg} ${config.color}`}>
@@ -66,12 +66,12 @@ export function ConnectorStatusCard({
               <span>{t.agents.connectors[config.labelKey]}</span>
             </span>
           </div>
-          {status.credentialName && <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.st_credential, { name: status.credentialName })}</p>}
+          {status.credentialName && <p className="typo-body text-ink-2 mt-0.5">{tx(t.agents.connectors.st_credential, { name: status.credentialName })}</p>}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {alternatives && alternatives.length > 0 && onSwap && (
             <button type="button" onClick={() => setSwapOpen((o) => !o)}
-              className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-modal border transition-colors ${swapOpen ? 'border-sky-500/30 text-sky-300 bg-sky-500/15' : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'}`}
+              className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-modal border transition-colors ${swapOpen ? 'border-status-info/30 text-status-info bg-status-info/15' : 'border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1'}`}
               title={t.agents.connectors.ct_swap_alt_tooltip}><ArrowLeftRight className="w-3 h-3" /></button>
           )}
           {/* A linked (often auto-matched) slot can be re-pointed in place:
@@ -95,12 +95,12 @@ export function ConnectorStatusCard({
             <>
               {credentials.length > 0 && (
                 <button type="button" onClick={() => onToggleLinking(isLinking ? null : status.name)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${isLinking ? 'border-violet-500/30 text-violet-300 bg-violet-500/15' : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95'}`}>
+                  className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${isLinking ? 'border-role-agent/30 text-role-agent bg-role-agent/15' : 'border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1'}`}>
                   <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} /> {t.agents.connectors.st_link_existing}
                 </button>
               )}
               <button type="button" onClick={() => onAddCredential(status.name)}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-role-agent/25 text-role-agent bg-role-agent/10 hover:bg-role-agent/20 transition-colors">
                 <Plus className="w-3 h-3" /> {t.agents.connectors.st_add_new}
               </button>
             </>

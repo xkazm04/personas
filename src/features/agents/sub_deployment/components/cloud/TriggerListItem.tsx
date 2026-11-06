@@ -55,42 +55,42 @@ export function TriggerListItem({
   const config = parseConfig(trigger.config) as Record<string, string>;
 
   return (
-    <div className="rounded-card bg-secondary/30 border border-primary/10 overflow-hidden">
+    <div className="rounded-card bg-surface-1 border border-hair overflow-hidden">
       {/* Row */}
       <button
         type="button"
         onClick={onToggleExpand}
-        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-secondary/50 transition-colors cursor-pointer"
+        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-2 transition-colors cursor-pointer"
       >
-        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
-        <span className={`${trigger.enabled ? 'text-indigo-400' : 'text-foreground'}`}>
+        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-ink-1" /> : <ChevronRight className="w-3.5 h-3.5 text-ink-1" />}
+        <span className={`${trigger.enabled ? 'text-role-agent' : 'text-ink-1'}`}>
           {triggerTypeIcon(trigger.triggerType)}
         </span>
-        <span className="typo-body text-foreground truncate flex-1">
+        <span className="typo-body text-ink-1 truncate flex-1">
           {personaName}
-          <span className="text-foreground ml-2">{triggerTypeLabel(t, trigger.triggerType)}</span>
+          <span className="text-ink-1 ml-2">{triggerTypeLabel(t, trigger.triggerType)}</span>
         </span>
         {config.cron && (
-          <span className="typo-code text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
+          <span className="inline-flex items-center typo-code text-ink-1">
             {`${config.cron}`}
           </span>
         )}
         {healthBadge(t, trigger.healthStatus)}
-        <span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} title={trigger.enabled ? t.common.enabled : t.common.disabled} />
+        <span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-status-success' : 'bg-muted-foreground/30'}`} title={trigger.enabled ? t.common.enabled : t.common.disabled} />
       </button>
 
       {/* Expanded detail */}
       {isExpanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-3">
+        <div className="px-3 pb-3 pt-1 border-t border-hair space-y-3">
           {/* Trigger info */}
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">{dt.label_type}</span> <span className="text-foreground">{triggerTypeLabel(t, trigger.triggerType)}</span></div>
-            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{trigger.enabled ? t.common.enabled : t.common.disabled}</span></div>
-            <div><span className="text-foreground">{dt.label_last_triggered}</span> <span className="text-foreground">{timeAgo(trigger.lastTriggeredAt)}</span></div>
-            <div><span className="text-foreground">{dt.label_next_trigger}</span> <span className="text-foreground"><AbsoluteTime timestamp={trigger.nextTriggerAt} /></span></div>
-            {config.cron && <div className="col-span-2"><span className="text-foreground">{dt.label_cron}</span> <span className="text-foreground font-mono">{`${config.cron}`}</span></div>}
+            <div><span className="text-ink-1">{dt.label_type}</span> <span className="text-ink-1">{triggerTypeLabel(t, trigger.triggerType)}</span></div>
+            <div><span className="text-ink-1">{dt.label_status}</span> <span className="text-ink-1">{trigger.enabled ? t.common.enabled : t.common.disabled}</span></div>
+            <div><span className="text-ink-1">{dt.label_last_triggered}</span> <span className="text-ink-1">{timeAgo(trigger.lastTriggeredAt)}</span></div>
+            <div><span className="text-ink-1">{dt.label_next_trigger}</span> <span className="text-ink-1"><AbsoluteTime timestamp={trigger.nextTriggerAt} /></span></div>
+            {config.cron && <div className="col-span-2"><span className="text-ink-1">{dt.label_cron}</span> <span className="text-ink-1 font-mono">{`${config.cron}`}</span></div>}
             {trigger.healthMessage && (
-              <div className="col-span-2 p-2 rounded-card bg-amber-500/5 border border-amber-500/10 typo-caption text-amber-400">
+              <div className="col-span-2 p-2 rounded-card bg-status-warning/5 border border-status-warning/10 typo-caption text-status-warning">
                 {trigger.healthMessage}
               </div>
             )}
@@ -125,13 +125,13 @@ export function TriggerListItem({
 
           {/* Recent firings */}
           <div>
-            <SectionHeading as="h4" className="typo-caption text-foreground mb-2">{dt.recent_firings}</SectionHeading>
+            <SectionHeading as="h4" className="typo-caption text-ink-1 mb-2">{dt.recent_firings}</SectionHeading>
             {isLoadingFirings ? (
-              <div className="flex items-center gap-2 typo-caption text-foreground py-2">
+              <div className="flex items-center gap-2 typo-caption text-ink-2 py-2">
                 <LoadingSpinner size="xs" /> {dt.loading_firings}
               </div>
             ) : firingsFailed ? (
-              <div className="flex items-center gap-2 typo-caption text-foreground" role="alert" data-testid="cloud-firings-failed">
+              <div className="flex items-center gap-2 typo-caption text-ink-2" role="alert" data-testid="cloud-firings-failed">
                 <span>{dt.firings_load_failed}</span>
                 {onRetryFirings && (
                   <Button
@@ -145,19 +145,19 @@ export function TriggerListItem({
                 )}
               </div>
             ) : firings.length === 0 ? (
-              <p className="typo-caption text-foreground">{dt.no_firings}</p>
+              <p className="typo-caption text-ink-2">{dt.no_firings}</p>
             ) : (
               <div className="space-y-1">
                 {firings.map((f) => (
-                  <div key={f.id} className="flex items-center gap-2 typo-caption px-2 py-1.5 rounded-card bg-secondary/20 border border-primary/5">
+                  <div key={f.id} className="flex items-center gap-2 typo-caption px-2 py-1.5 rounded-card bg-surface-1 border border-hair">
                     {/* Same status table as the execution rows: a firing the
                         orchestrator reports as `error` or `cancelled` was
                         painted here as still in flight. */}
                     {statusIcon(f.status)}
-                    <span className="text-foreground">{tokenLabel(t, 'execution', f.status)}</span>
-                    <span className="text-foreground flex-1">{timeAgo(f.firedAt)}</span>
-                    {f.durationMs != null && <Numeric value={Number(f.durationMs)} unit="ms" className="text-foreground" />}
-                    <span className="text-foreground">{formatCost(f.costUsd)}</span>
+                    <span className="text-ink-1">{tokenLabel(t, 'execution', f.status)}</span>
+                    <span className="text-ink-1 flex-1">{timeAgo(f.firedAt)}</span>
+                    {f.durationMs != null && <Numeric value={Number(f.durationMs)} unit="ms" className="text-ink-1" />}
+                    <span className="text-ink-1">{formatCost(f.costUsd)}</span>
                   </div>
                 ))}
               </div>

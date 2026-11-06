@@ -127,18 +127,18 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         key: 'trust', label: t.agents.overview_columns.trust, width: '110px', sortable: true,
         render: (p) =>
           (!p.enabled || isDraft(p))
-            ? <span className="text-md text-foreground">--</span>
+            ? <span className="typo-data text-ink-3">--</span>
             : <TrustScoreBar score={p.trust_score ?? 0} />,
       },
       {
-        key: 'verdict', label: t.agents.overview_columns.quality, width: '88px', align: 'center',
+        key: 'verdict', label: t.agents.overview_columns.quality, width: '112px', align: 'center',
         render: (p) => <VerdictTrendCell scores={scoreTrendsMap[p.id]} />,
       },
       {
-        key: 'triggers', label: t.common.triggers, width: '90px', sortable: true, align: 'right',
+        key: 'triggers', label: t.common.triggers, width: '112px', sortable: true, align: 'right',
         render: (p) => (
           <Tooltip content={tx(t.agents.overview_columns.active_triggers, { count: triggerCounts[p.id] ?? 0 })}>
-            <span className="flex items-center justify-end gap-1 text-md text-foreground">
+            <span className="flex items-center justify-end gap-1 typo-data text-ink-1">
               <Zap className="w-3.5 h-3.5" />
               {triggerCounts[p.id] ?? 0}
             </span>
@@ -149,10 +149,10 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         key: 'lastRun', label: t.agents.overview_columns.last_run, width: '160px', sortable: true, align: 'right',
         render: (p) => {
           const lastRun = lastRunMap[p.id];
-          if (!lastRun) return <span className="text-md text-foreground">{t.agents.persona_list.never}</span>;
+          if (!lastRun) return <span className="typo-caption text-ink-3">{t.agents.persona_list.never}</span>;
           return (
             <FormattedDateTooltip ts={lastRun}>
-              <span className="text-md text-foreground cursor-help">
+              <span className="typo-data text-ink-2 cursor-help">
                 {formatRelativeTime(lastRun)}
               </span>
             </FormattedDateTooltip>
@@ -179,17 +179,17 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
             // are different facts (golden path: llm-spend-accounting).
             return (
               <Tooltip content={t.agents.overview_columns.spend_hint}>
-                <span className="text-md text-foreground cursor-help">-</span>
+                <span className="typo-data text-ink-2 cursor-help">-</span>
               </Tooltip>
             );
           }
           const tone =
-            entry.status === 'exceeded' ? 'text-red-400'
-              : entry.status === 'warning' ? 'text-amber-400'
-                : 'text-foreground';
+            entry.status === 'exceeded' ? 'text-status-error'
+              : entry.status === 'warning' ? 'text-status-warning'
+                : 'text-ink-1';
           return (
             <Tooltip content={t.agents.overview_columns.spend_hint}>
-              <span className={`text-md tabular-nums cursor-help ${tone}`} data-testid={`persona-spend-${p.id}`}>
+              <span className={`typo-data cursor-help ${tone}`} data-testid={`persona-spend-${p.id}`}>
                 {formatCost(entry.spend)}
               </span>
             </Tooltip>

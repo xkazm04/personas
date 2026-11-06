@@ -37,7 +37,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, la
           <SectionHeading className="mb-3">{dt.cloud_status.workers}</SectionHeading>
           <div className="flex flex-wrap gap-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-11 w-32 rounded-modal border border-primary/10 bg-secondary/30 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
+              <div key={i} className="h-11 w-32 rounded-modal border border-hair bg-surface-1 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
             ))}
           </div>
         </div>
@@ -45,13 +45,13 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, la
           <SectionHeading className="mb-3">{dt.cloud_status.activity}</SectionHeading>
           <div className="grid grid-cols-2 3xl:grid-cols-4 gap-3">
             {[0, 1].map((i) => (
-              <div key={i} className="h-[8.5rem] rounded-card border border-primary/10 bg-secondary/30 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
+              <div key={i} className="h-[8.5rem] rounded-card border border-hair bg-surface-1 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
             ))}
           </div>
         </div>
         <div>
           <SectionHeading className="mb-3">{dt.cloud_status.claude_token}</SectionHeading>
-          <div className="h-11 rounded-card border border-primary/10 bg-secondary/30 animate-fade-in" style={{ animationDelay: '155ms' }} />
+          <div className="h-11 rounded-card border border-hair bg-surface-1 animate-fade-in" style={{ animationDelay: '155ms' }} />
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, la
 
   if (!status) {
     return (
-      <p className="typo-body text-foreground py-8 text-center">
+      <p className="typo-body text-ink-1 py-8 text-center">
         {dt.status.no_status}
       </p>
     );
@@ -72,7 +72,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, la
       {/* Live indicator + Refresh button */}
       <div className="flex items-center justify-between">
         {lastPolled != null ? (
-          <div className="flex items-center gap-2 typo-caption text-foreground" data-testid="cloud-status-liveness" data-stale={stale ? 'true' : 'false'}>
+          <div className="flex items-center gap-2 typo-caption text-ink-2" data-testid="cloud-status-liveness" data-stale={stale ? 'true' : 'false'}>
             <LiveStatusDot tone={stale ? 'off' : 'active'} ping={!stale} size="sm" />
             {stale ? t.agents.health_check.stale : t.agents.executions.live}
           </div>
@@ -81,7 +81,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, la
           type="button"
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           {t.common.refresh}
@@ -128,9 +128,9 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, la
 
 function WorkerBadge({ label, count, color }: { label: string; count: number; color: 'emerald' | 'blue' | 'red' }) {
   const colorMap = {
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    red: 'bg-red-500/10 border-red-500/20 text-red-400',
+    emerald: 'bg-status-success/10 border-status-success/20 text-status-success',
+    blue: 'bg-status-info/10 border-status-info/20 text-status-info',
+    red: 'bg-status-error/10 border-status-error/20 text-status-error',
   };
 
   return (
@@ -179,18 +179,18 @@ function ActivityGauge({
       ? {
           glow: 'shadow-[0_0_22px_rgba(139,92,246,0.24)]',
           fg: 'stroke-violet-400',
-          text: 'text-violet-300',
+          text: 'text-role-agent',
         }
       : {
           glow: 'shadow-[0_0_22px_rgba(59,130,246,0.24)]',
           fg: 'stroke-blue-400',
-          text: 'text-blue-300',
+          text: 'text-status-info',
         };
 
   return (
-    <div className="p-3 rounded-card bg-secondary/30 border border-primary/10">
-      <p className="typo-body text-foreground mb-2">{label}</p>
-      <div className="relative h-24 rounded-card bg-gradient-to-b from-secondary/40 to-secondary/10 border border-primary/10 overflow-hidden">
+    <div className="p-3 rounded-card bg-surface-1 border border-hair">
+      <p className="typo-body text-ink-2 mb-2">{label}</p>
+      <div className="relative h-24 rounded-card bg-surface-1 border border-hair overflow-hidden">
         <div className={`absolute inset-0 pointer-events-none ${toneClasses.glow}`} />
         <svg viewBox="0 0 120 70" className="w-full h-full" role="img" aria-label={tx(t.deployment.cloud_status.gauge_aria, { label })}>
           <path
@@ -212,7 +212,7 @@ function ActivityGauge({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
           <div className={`typo-heading-lg ${toneClasses.text}`}>{displayValue}</div>
-          <div className="typo-body text-foreground">of {safeMax}</div>
+          <div className="typo-body text-ink-1">of {safeMax}</div>
         </div>
       </div>
     </div>

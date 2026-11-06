@@ -17,12 +17,12 @@ interface BannerPrimitiveProps {
 
 const COLOR_SCHEMES: Record<BannerColorScheme, { container: string; message: string }> = {
   amber: {
-    container: 'bg-amber-500/10 border border-amber-500/20',
-    message: 'text-amber-400/90',
+    container: 'bg-status-warning/10 border border-status-warning/20',
+    message: 'text-status-warning',
   },
   red: {
-    container: 'bg-red-500/10 border border-red-500/20',
-    message: 'text-red-300/90',
+    container: 'bg-status-error/10 border border-status-error/20',
+    message: 'text-status-error',
   },
 };
 
@@ -73,7 +73,7 @@ export function UnsavedChangesBanner({
     <BannerPrimitive
       visible={visible}
       colorScheme="amber"
-      icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
+      icon={<AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0" />}
       message={changedSections.length > 0
         ? tx(t.agents.editor.unsaved_changes, { sections: changedSections.join(', ') })
         : t.agents.editor.unsaved_changes_generic}
@@ -101,7 +101,7 @@ export function PartialLoadBanner({ warnings, onDismiss }: PartialLoadBannerProp
     <BannerPrimitive
       visible={warnings.length > 0}
       colorScheme="amber"
-      icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
+      icon={<AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0" />}
       message={`${t.agents.editor_ui.partial_load} ${warnings.join('; ')}`}
       onDismiss={onDismiss}
     />
@@ -121,7 +121,7 @@ export function SaveFailedBanner({ message, actions }: SaveFailedBannerProps) {
     <BannerPrimitive
       visible
       colorScheme="red"
-      icon={<RefreshCw className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+      icon={<RefreshCw className="w-3.5 h-3.5 text-status-error flex-shrink-0" />}
       message={message}
       actions={actions}
     />

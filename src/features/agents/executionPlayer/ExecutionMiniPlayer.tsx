@@ -76,11 +76,11 @@ export function SimpleExecutionView({
     return (
       <div className="px-3 py-3 space-y-2">
         <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="typo-body text-foreground">
+          <span className="typo-body text-ink-1">
             {error ? t.execution.something_went_wrong : stageProgress.label}
           </span>
           {!error && (
-            <span className="typo-code text-foreground tabular-nums">
+            <span className="typo-code text-ink-1 tabular-nums">
               {Math.round(stageProgress.fraction * 100)}%
             </span>
           )}
@@ -91,10 +91,10 @@ export function SimpleExecutionView({
           aria-valuemax={100}
           aria-valuenow={Math.round(stageProgress.fraction * 100)}
           aria-label={error ? t.execution.something_went_wrong : stageProgress.label}
-          className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden"
+          className="w-full h-1.5 rounded-full bg-surface-2 overflow-hidden"
         >
           <div
-            className={`h-full rounded-full transition-all duration-700 ease-out ${error ? 'bg-red-400' : 'bg-blue-400'}`}
+            className={`h-full rounded-full transition-all duration-700 ease-out ${error ? 'bg-status-error' : 'bg-status-info'}`}
             style={{ width: `${stageProgress.fraction * 100}%` }}
           />
         </div>
@@ -112,10 +112,10 @@ export function SimpleExecutionView({
   return (
     <div className="px-3 py-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <span className={`typo-body ${error ? 'text-red-400' : 'text-emerald-400'}`}>
+        <span className={`typo-body ${error ? 'text-status-error' : 'text-status-success'}`}>
           {error ? t.execution.failed : t.execution.complete}
         </span>
-        <span className="typo-code text-foreground tabular-nums">
+        <span className="typo-code text-ink-1 tabular-nums">
           {formatElapsed(elapsed)}
         </span>
       </div>
@@ -124,8 +124,8 @@ export function SimpleExecutionView({
         <ExecutionSummaryCard summary={executionSummary} compact />
       )}
       {resultText && !executionSummary && (
-        <div className="rounded-card bg-secondary/30 border border-primary/10 p-2.5 max-h-32 overflow-y-auto">
-          <p className="typo-body text-foreground whitespace-pre-wrap break-words">
+        <div className="rounded-card bg-surface-1 border border-hair p-2.5 max-h-32 overflow-y-auto">
+          <p className="typo-body text-ink-1 whitespace-pre-wrap break-words">
             {resultText}
           </p>
         </div>
@@ -134,9 +134,9 @@ export function SimpleExecutionView({
         <button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground/80 transition-colors"
+          className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
         >
-          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
           {copied ? t.common.copied : t.execution.copy_full_output}
         </button>
       )}
@@ -289,26 +289,26 @@ export default function ExecutionMiniPlayer() {
           top: miniPlayerPosition.y,
           zIndex: 60,
         }}
-        className={`animate-fade-slide-in w-[360px] rounded-modal border border-primary/20 bg-background/95 backdrop-blur-lg shadow-elevation-4 shadow-black/40 overflow-hidden select-none ${
+        className={`animate-fade-slide-in w-[360px] rounded-modal border border-hair bg-background/95 backdrop-blur-lg shadow-elevation-4 shadow-black/40 overflow-hidden select-none ${
           isDragging ? 'cursor-grabbing' : ''
         }`}
       >
         {/* Header (draggable) */}
         <div
-          className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/30 cursor-grab active:cursor-grabbing touch-none"
+          className="flex items-center gap-2 px-3 py-2 border-b border-hair bg-surface-1 cursor-grab active:cursor-grabbing touch-none"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
         >
-          <GripVertical className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+          <GripVertical className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
           <StatusIndicator isExecuting={isExecuting} hasError={hasError} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
-            <Bot className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-            <span className="typo-body text-foreground truncate">{personaName}</span>
+            <Bot className="w-3.5 h-3.5 text-role-agent flex-shrink-0" />
+            <span className="typo-body text-ink-1 truncate">{personaName}</span>
           </div>
           {isExecuting && (
-            <div className="flex items-center gap-1 typo-code text-foreground">
+            <div className="flex items-center gap-1 typo-code text-ink-1">
               <Timer className="w-3 h-3" />
               {formatElapsed(elapsed, 'clock')}
             </div>
@@ -320,7 +320,7 @@ export default function ExecutionMiniPlayer() {
                 size="icon-sm"
                 aria-label={t.execution.stop_execution}
                 onClick={handleStop}
-                className="text-red-400/70 hover:text-red-400 hover:bg-red-500/15"
+                className="text-status-error hover:text-status-error hover:bg-status-error/15"
               >
                 <Square className="w-3 h-3" />
               </Button>
@@ -370,11 +370,11 @@ export default function ExecutionMiniPlayer() {
 
         {/* Full mode: Pipeline stage dots */}
         {!isSimple && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-          <span className="typo-body text-foreground uppercase tracking-wider">{t.execution.pipeline}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-hair bg-surface-1">
+          <span className="typo-eyebrow text-ink-1">{t.execution.pipeline}</span>
           <PipelineDots trace={pipelineTrace} />
           {executionOutput.length > 0 && (
-            <span className="ml-auto typo-code text-foreground">
+            <span className="ml-auto typo-code text-ink-1">
               {executionOutput.length} {t.execution.lines}
             </span>
           )}
@@ -384,9 +384,9 @@ export default function ExecutionMiniPlayer() {
         {/* Full mode: Collapsed single last line */}
         {!isSimple && !miniPlayerExpanded && (
           <div className="px-3 py-1.5 bg-black/20">
-            <div className="typo-code text-foreground truncate flex items-center gap-1.5">
+            <div className="typo-code text-ink-1 truncate flex items-center gap-1.5">
               {isExecuting && (
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-status-info animate-pulse flex-shrink-0" />
               )}
               <span className="truncate">
                 {lastLine || (isExecuting ? t.execution.waiting_for_output : t.execution.no_output)}
@@ -402,7 +402,7 @@ export default function ExecutionMiniPlayer() {
             className="max-h-52 overflow-y-auto bg-black/20 px-3 py-2 typo-code scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
           >
             {lastLines.length === 0 && (
-              <div className="text-foreground flex items-center gap-2 py-2">
+              <div className="text-ink-1 flex items-center gap-2 py-2">
                 <Terminal className="w-3.5 h-3.5" />
                 {isExecuting ? t.execution.waiting_for_output : t.execution.no_output}
               </div>
@@ -416,14 +416,14 @@ export default function ExecutionMiniPlayer() {
               </div>
             ))}
             {isExecuting && (
-              <div className="text-blue-400/40 animate-pulse">{'>'} _</div>
+              <div className="text-status-info animate-pulse">{'>'} _</div>
             )}
           </div>
         )}
 
         {/* Full mode: Execution summary when complete and trace data available */}
         {!isSimple && !isExecuting && executionSummary && (
-          <div className="px-3 py-2 border-t border-primary/10">
+          <div className="px-3 py-2 border-t border-hair">
             <ExecutionSummaryCard summary={executionSummary} compact />
           </div>
         )}

@@ -47,7 +47,7 @@ export function PersonaBatchTeamMenu({ busy, onPick }: PersonaBatchTeamMenuProps
   };
 
   const itemClass =
-    'w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/60 focus-visible:bg-secondary/60 focus:outline-none transition-colors text-left';
+    'w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2 focus-visible:bg-surface-2 focus:outline-none transition-colors text-left';
 
   return (
     <div ref={wrapRef} className="relative">
@@ -70,10 +70,10 @@ export function PersonaBatchTeamMenu({ busy, onPick }: PersonaBatchTeamMenuProps
           role="menu"
           aria-label={t.agents.persona_list.batch_move_to_group}
           onKeyDown={onKeyDown}
-          className="absolute top-full mt-1 left-0 min-w-[220px] z-30 rounded-modal border border-primary/15 bg-background shadow-elevation-3 py-1 max-h-72 overflow-y-auto"
+          className="absolute top-full mt-1 left-0 min-w-[220px] z-30 rounded-modal border border-hair bg-background shadow-elevation-3 py-1 max-h-72 overflow-y-auto"
         >
           {sortedTeams.length === 0 && (
-            <p className="px-3 py-2 typo-caption text-foreground">
+            <p className="px-3 py-2 typo-caption text-ink-2">
               {t.agents.persona_list.batch_move_to_group_empty}
             </p>
           )}
@@ -86,9 +86,9 @@ export function PersonaBatchTeamMenu({ busy, onPick }: PersonaBatchTeamMenuProps
               <span className="truncate">{g.name}</span>
             </button>
           ))}
-          <div className="my-1 border-t border-primary/10" />
+          <div className="my-1 border-t border-hair" />
           <button type="button" role="menuitem" onClick={() => pick(null)} className={itemClass}>
-            <span className="w-2 h-2 rounded-full bg-foreground/30 flex-shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-surface-2 flex-shrink-0" />
             {t.agents.persona_list.batch_move_to_ungrouped}
           </button>
         </div>

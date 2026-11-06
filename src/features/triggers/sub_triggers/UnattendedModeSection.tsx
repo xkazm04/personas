@@ -39,9 +39,9 @@ export function UnattendedModeSection({ trigger }: { trigger: PersonaTrigger }) 
     sel: string;
     iconCls: string;
   }[] = [
-    { id: 'auto', Icon: Zap, label: u.auto, desc: u.auto_desc, sel: 'border-primary/40 bg-primary/10', iconCls: 'text-primary' },
-    { id: 'dry_run', Icon: FlaskConical, label: u.dry_run, desc: u.dry_run_desc, sel: 'border-amber-500/40 bg-amber-500/10', iconCls: 'text-amber-400' },
-    { id: 'approval', Icon: ShieldCheck, label: u.approval, desc: u.approval_desc, sel: 'border-emerald-500/40 bg-emerald-500/10', iconCls: 'text-emerald-400' },
+    { id: 'auto', Icon: Zap, label: u.auto, desc: u.auto_desc, sel: 'border-primary/40 bg-surface-1', iconCls: 'text-primary' },
+    { id: 'dry_run', Icon: FlaskConical, label: u.dry_run, desc: u.dry_run_desc, sel: 'border-status-warning/40 bg-status-warning/10', iconCls: 'text-status-warning' },
+    { id: 'approval', Icon: ShieldCheck, label: u.approval, desc: u.approval_desc, sel: 'border-status-success/40 bg-status-success/10', iconCls: 'text-status-success' },
   ];
 
   const choose = async (next: UnattendedMode) => {
@@ -62,7 +62,7 @@ export function UnattendedModeSection({ trigger }: { trigger: PersonaTrigger }) 
   return (
     <div className="space-y-2" data-testid="trigger-unattended-mode">
       <div className="typo-section-title">{u.title}</div>
-      <p className="typo-caption text-foreground">{u.subtitle}</p>
+      <p className="typo-caption text-ink-2">{u.subtitle}</p>
       <div role="radiogroup" aria-label={u.title} className="grid gap-1.5">
         {options.map((o) => {
           const selected = mode === o.id;
@@ -75,13 +75,13 @@ export function UnattendedModeSection({ trigger }: { trigger: PersonaTrigger }) 
               disabled={saving}
               onClick={() => choose(o.id)}
               className={`flex items-start gap-2 px-3 py-2 rounded-card border text-left transition-colors disabled:opacity-60 ${
-                selected ? o.sel : 'border-primary/10 hover:bg-secondary/30'
+                selected ? o.sel : 'border-hair hover:bg-surface-1'
               }`}
             >
-              <o.Icon className={`w-4 h-4 mt-0.5 shrink-0 ${selected ? o.iconCls : 'text-foreground'}`} />
+              <o.Icon className={`w-4 h-4 mt-0.5 shrink-0 ${selected ? o.iconCls : 'text-ink-1'}`} />
               <div className="min-w-0">
-                <div className="typo-body text-foreground">{o.label}</div>
-                <div className="typo-caption text-foreground">{o.desc}</div>
+                <div className="typo-body text-ink-1">{o.label}</div>
+                <div className="typo-caption text-ink-2">{o.desc}</div>
               </div>
             </button>
           );

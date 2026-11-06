@@ -32,12 +32,12 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Wrench className="w-3 h-3" />
         <span>{tx(toolCalls.length === 1 ? e.tool_calls_count : e.tool_calls_count_other, { count: toolCalls.length })}</span>
-        <span className="text-foreground">
+        <span className="text-ink-1">
           {tx(e.unique_tools_count, { count: uniqueTools.length })}
         </span>
       </button>
@@ -47,7 +47,7 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
             <div key={i} className="flex items-start gap-2 typo-caption">
               <span className={`${SUCCESS_TEXT} shrink-0`}>{'\u25B6'}</span>
               <span className="font-medium shrink-0">{tc.name}</span>
-              <span className="text-foreground truncate">{tc.inputPreview}</span>
+              <span className="text-ink-1 truncate">{tc.inputPreview}</span>
             </div>
           ))}
         </div>
@@ -69,7 +69,7 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <FileText className="w-3 h-3" />
@@ -88,8 +88,8 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
           {fileChanges.map((fc, i) => (
             <div key={i} className="flex items-center gap-2 typo-caption">
               <span className={fc.changeType === 'read' ? INFO_TEXT : CAUTION_TEXT}>{'\u25CF'}</span>
-              <span className="text-foreground truncate">{fc.path.split('/').pop()}</span>
-              <span className="text-foreground capitalize typo-caption">{fc.changeType}</span>
+              <span className="text-ink-1 truncate">{fc.path.split('/').pop()}</span>
+              <span className="text-ink-2 capitalize typo-caption">{fc.changeType}</span>
             </div>
           ))}
         </div>
@@ -120,21 +120,21 @@ export function ExecutionSummaryCard({ summary, compact }: ExecutionSummaryCardP
         </div>
 
         {summary.durationMs != null && (
-          <div className="flex items-center gap-1 text-foreground">
+          <div className="flex items-center gap-1 text-ink-1">
             <Timer className="w-3 h-3" />
             <Numeric value={summary.durationMs} unit="ms" className="typo-code" />
           </div>
         )}
 
         {summary.costUsd != null && (
-          <div className="flex items-center gap-1 text-foreground">
+          <div className="flex items-center gap-1 text-ink-1">
             <DollarSign className="w-3 h-3" />
             <Numeric value={summary.costUsd} unit="usd" precision={4} className="typo-code" />
           </div>
         )}
 
         {summary.totalTokens != null && (
-          <div className="flex items-center gap-1 text-foreground">
+          <div className="flex items-center gap-1 text-ink-1">
             <Coins className="w-3 h-3" />
             <span className="typo-code"><Numeric value={summary.totalTokens} /> {t.agents.executions.tokens_unit}</span>
           </div>
@@ -144,7 +144,7 @@ export function ExecutionSummaryCard({ summary, compact }: ExecutionSummaryCardP
       {/* Model badge */}
       {summary.model && (
         <div className="mt-1.5">
-          <span className="inline-block px-2 py-0.5 rounded-input bg-secondary/40 typo-caption text-foreground">
+          <span className="inline-block px-2 py-0.5 rounded-input bg-surface-2 typo-caption text-ink-2">
             {summary.model}
           </span>
         </div>

@@ -21,20 +21,20 @@ export function SourceChip({ source, personas, completesLabel }: {
     const Icon = tpl?.icon ?? Zap;
     return (
       <span className="flex items-center gap-2 min-w-0 shrink">
-        <span className={`w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 ${tpl?.color ?? 'text-amber-400'}`}>
+        <span className={`w-7 h-7 rounded-input flex items-center justify-center bg-surface-2 shrink-0 ${tpl?.color ?? 'text-status-warning'}`}>
           <Icon className="w-3.5 h-3.5" />
         </span>
-        <span className="typo-body text-foreground truncate">{tpl ? templateCopy(t, tpl).label : source.triggerType}</span>
+        <span className="typo-body text-ink-1 truncate">{tpl ? templateCopy(t, tpl).label : source.triggerType}</span>
       </span>
     );
   }
   if (source.kind === 'marketplace') {
     return (
       <span className="flex items-center gap-2 min-w-0 shrink">
-        <span className="w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 text-sky-400">
+        <span className="w-7 h-7 rounded-input flex items-center justify-center bg-surface-2 shrink-0 text-status-info">
           <Store className="w-3.5 h-3.5" />
         </span>
-        <span className="typo-body text-foreground truncate">{source.label}</span>
+        <span className="typo-body text-ink-1 truncate">{source.label}</span>
       </span>
     );
   }
@@ -42,8 +42,8 @@ export function SourceChip({ source, personas, completesLabel }: {
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(source.personaId, personas, t.triggers.studio.unknown_persona)}</span>
-      <span className="typo-body opacity-80 text-foreground shrink-0">{completesLabel}</span>
+      <span className="typo-body text-ink-1 truncate">{p?.name ?? personaName(source.personaId, personas, t.triggers.studio.unknown_persona)}</span>
+      <span className="typo-body opacity-80 text-ink-1 shrink-0">{completesLabel}</span>
     </span>
   );
 }
@@ -54,7 +54,7 @@ export function TargetChip({ targetId, personas }: { targetId: string; personas:
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(targetId, personas, t.triggers.studio.unknown_persona)}</span>
+      <span className="typo-body text-ink-1 truncate">{p?.name ?? personaName(targetId, personas, t.triggers.studio.unknown_persona)}</span>
     </span>
   );
 }
@@ -72,12 +72,12 @@ export function PatchEndChip({ source, targetId, systemOpKind, personas, kinds, 
     const k = kinds?.find((x) => x.kind === systemOpKind);
     return (
       <span className="flex items-center gap-2 min-w-0 shrink">
-        <span className="w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 text-violet-400">
+        <span className="w-7 h-7 rounded-input flex items-center justify-center bg-surface-2 shrink-0 text-role-agent">
           <Cog className="w-3.5 h-3.5" />
         </span>
-        <span className="typo-body text-foreground truncate">{k?.label ?? systemOpKind}</span>
+        <span className="typo-body text-ink-1 truncate">{k?.label ?? systemOpKind}</span>
       </span>
     );
   }
-  return <span className="typo-body text-foreground italic">{placeholder}</span>;
+  return <span className="typo-body text-ink-1 italic">{placeholder}</span>;
 }

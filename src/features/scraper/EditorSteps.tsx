@@ -57,7 +57,7 @@ export function stepComplete(form: ScrapeForm, id: StepMeta['id']): boolean {
 function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="typo-label text-muted-foreground">{label}</span>
+      <span className="typo-label text-ink-3">{label}</span>
       {children}
     </label>
   );
@@ -93,7 +93,7 @@ export function SourceStep({ form }: { form: ScrapeForm }) {
         />
       </Labeled>
       {form.urlList.length > 0 && (
-        <p className="typo-caption text-muted-foreground">
+        <p className="typo-caption text-ink-3">
           {tx(form.urlList.length === 1 ? sc.urls_summary_one : sc.urls_summary_other, { count: form.urlList.length })}
         </p>
       )}
@@ -145,8 +145,8 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between rounded-interactive border border-primary/10 bg-secondary/20 px-3 py-2.5">
-        <span className="typo-caption text-muted-foreground">
+      <div className="flex items-center justify-between rounded-interactive border border-hair bg-surface-1 px-3 py-2.5">
+        <span className="typo-caption text-ink-3">
           {disabled
             ? t.plugins.scraper.preview_needs_input
             : tx(t.plugins.scraper.preview_hint, { url: form.urlList[0] ?? '' })}
@@ -231,7 +231,7 @@ export function ScheduleStep({ form }: { form: ScrapeForm }) {
           placeholder="0 6 * * *"
         />
       </Labeled>
-      <p className="typo-caption text-muted-foreground">
+      <p className="typo-caption text-ink-3">
         {tx(t.plugins.scraper.schedule_runs, { cadence: cadenceLabel(form.cron.trim() || null).toLowerCase() })}
       </p>
       <AccessibleToggle

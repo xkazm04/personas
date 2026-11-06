@@ -30,7 +30,7 @@ export function SubSpanBar({
 
   return (
     <div
-      className="grid grid-cols-[180px_1fr_70px] gap-2 items-center px-3 py-0.5 hover:bg-secondary/20 rounded transition-colors"
+      className="grid grid-cols-[180px_1fr_70px] gap-2 items-center px-3 py-0.5 hover:bg-surface-1 rounded-interactive transition-colors"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -40,14 +40,14 @@ export function SubSpanBar({
         <StatusBadge accent="cyan" size="sm" className="typo-code uppercase flex-shrink-0">
           {t.agents.executions.tool_type_badge}
         </StatusBadge>
-        <span className="typo-code text-foreground truncate">{step.tool_name}</span>
+        <span className="typo-code text-ink-1 truncate">{step.tool_name}</span>
       </div>
 
       {/* Center: bar */}
       <div className="relative h-4 w-full">
-        <div className="absolute inset-0 bg-primary/3 rounded" />
+        <div className="absolute inset-0 bg-primary/3 rounded-interactive" />
         <div
-          className="absolute top-0.5 bottom-0.5 rounded bg-cyan-500/35 transition-all"
+          className="absolute top-0.5 bottom-0.5 rounded-interactive bg-role-external/35 transition-all"
           style={{
             left: `${leftPct}%`,
             width: `${widthPct}%`,
@@ -56,16 +56,16 @@ export function SubSpanBar({
         />
         {hovered && (
           <div
-            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
+            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-hair rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
             style={{ left: `${Math.min(leftPct, 70)}%` }}
           >
-            <p className="typo-heading text-cyan-400 mb-1">{step.tool_name}</p>
+            <p className="typo-heading text-role-external mb-1">{step.tool_name}</p>
             <div className="flex items-center gap-3 typo-body">
-              <span className="font-mono text-foreground">{formatDuration(Number(stepDuration))}</span>
-              <span className="text-foreground">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
+              <span className="font-mono text-ink-1">{formatDuration(Number(stepDuration))}</span>
+              <span className="text-ink-1">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
             </div>
             {step.input_preview && (
-              <p className="typo-body text-foreground mt-1 max-w-[200px] truncate">
+              <p className="typo-body text-ink-2 mt-1 max-w-[200px] truncate">
                 {t.agents.executions.input_preview_prefix} {step.input_preview}
               </p>
             )}
@@ -74,7 +74,7 @@ export function SubSpanBar({
       </div>
 
       {/* Right: duration */}
-      <span className="typo-code text-foreground text-right">
+      <span className="typo-code text-ink-1 text-right">
         {formatDuration(Number(stepDuration))}
       </span>
     </div>

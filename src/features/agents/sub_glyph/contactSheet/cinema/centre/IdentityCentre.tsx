@@ -25,9 +25,9 @@ interface IdentityCentreProps {
 export function CrownedName({ name, size = "lg" }: { name: string; size?: "lg" | "xl" }) {
   const reduce = useReducedMotion();
   const cls = size === "xl" ? "typo-hero" : "typo-title-lg";
-  if (reduce) return <span className={`${cls} text-foreground`}>{name}</span>;
+  if (reduce) return <span className={`${cls} text-ink-1`}>{name}</span>;
   return (
-    <span className={`${cls} text-foreground whitespace-pre`} aria-label={name}>
+    <span className={`${cls} text-ink-1 whitespace-pre`} aria-label={name}>
       {Array.from(name).map((ch, i) => (
         <motion.span
           key={`${name}-${i}`}
@@ -89,7 +89,7 @@ export function IdentityCentre({ cast, agentName, tight = false, children }: Ide
               </motion.span>
               <CrownedName name={agentName.trim() || COPY.yourAgent} />
               {role && <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="typo-caption font-mono uppercase tracking-[0.1em]" style={{ color: accent }}>{role}</motion.span>}
-              {mission && !tight && <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} className="typo-body text-foreground line-clamp-2">{mission}</motion.span>}
+              {mission && !tight && <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} className="typo-body text-ink-1 line-clamp-2">{mission}</motion.span>}
             </motion.div>
           )}
         </AnimatePresence>

@@ -52,9 +52,9 @@ export function BrainDashboard({ personaId }: { personaId: string }) {
     // Calm geometry-matched ghost — the tiles' own shapes, nothing spinning.
     return (
       <div className="grid gap-4 lg:grid-cols-3" data-testid="brain-dashboard-ghost" aria-hidden>
-        <div className="h-56 rounded-card bg-secondary/20 animate-pulse" />
-        <div className="h-56 rounded-card bg-secondary/20 animate-pulse lg:col-span-2" />
-        <div className="h-64 rounded-card bg-secondary/20 animate-pulse lg:col-span-3" />
+        <div className="h-56 rounded-card bg-surface-1 animate-pulse" />
+        <div className="h-56 rounded-card bg-surface-1 animate-pulse lg:col-span-2" />
+        <div className="h-64 rounded-card bg-surface-1 animate-pulse lg:col-span-3" />
       </div>
     );
   }

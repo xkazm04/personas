@@ -123,11 +123,11 @@ export function TimelineScrubber({
         })}
         onPointerDown={handlePointerDown}
         onKeyDown={handleKeyDown}
-        className="relative h-3 bg-secondary/50 rounded-full cursor-pointer border border-primary/10 overflow-hidden select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+        className="relative h-3 bg-surface-2 rounded-full cursor-pointer border border-hair overflow-hidden select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-role-agent/60"
       >
         {/* Progress fill */}
         <div
-          className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500/60 to-violet-500/60 rounded-full transition-[width] duration-75"
+          className="absolute top-0 left-0 h-full bg-surface-1 rounded-full transition-[width] duration-75"
           style={{ width: `${pct}%` }}
         />
 
@@ -143,7 +143,7 @@ export function TimelineScrubber({
               key={`${sil.start_ms}-${sil.end_ms}`}
               aria-hidden="true"
               data-testid="scrubber-silence"
-              className="absolute top-0 h-full bg-secondary/80 border-x border-primary/15 pointer-events-none"
+              className="absolute top-0 h-full bg-surface-2 border-x border-hair pointer-events-none"
               style={{ left: `${left}%`, width: `${width}%` }}
             />
           );
@@ -162,9 +162,9 @@ export function TimelineScrubber({
               <div
                 className={`absolute top-0 h-full w-[3px] transition-colors cursor-pointer ${
                   isFork
-                    ? 'bg-amber-400/90 z-10'
+                    ? 'bg-status-warning/90 z-10'
                     : activeStepIndex === s.step_index
-                      ? 'bg-blue-400/80'
+                      ? 'bg-status-info/80'
                       : 'bg-primary/25'
                 }`}
                 style={{ left: `${x}%` }}
@@ -180,7 +180,7 @@ export function TimelineScrubber({
         {/* Playhead -- branded diamond marker */}
         <div
           aria-hidden="true"
-          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rotate-45 bg-secondary border-2 border-violet-500 transition-[left] duration-75 z-20"
+          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rotate-45 bg-secondary border-2 border-role-agent transition-[left] duration-75 z-20"
           style={{
             left: `calc(${pct}% - 7px)`,
             boxShadow: '0 1px 4px rgba(139, 92, 246, 0.4), 0 0 8px rgba(139, 92, 246, 0.15)',
@@ -189,7 +189,7 @@ export function TimelineScrubber({
       </div>
 
       {/* Time labels */}
-      <div className="flex justify-between typo-code text-foreground tabular-nums">
+      <div className="flex justify-between typo-code text-ink-1 tabular-nums">
         <span>{formatMs(currentMs)}</span>
         <span>{formatMs(totalMs)}</span>
       </div>

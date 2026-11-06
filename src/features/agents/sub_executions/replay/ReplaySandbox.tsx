@@ -132,9 +132,9 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
   const activeStepIndex = state.activeStep?.step_index ?? null;
 
   return (
-    <div className="flex flex-col rounded-modal border border-primary/10 bg-background/50 overflow-hidden" style={{ height: 520 }}>
+    <div className="flex flex-col rounded-modal border border-hair bg-background/50 overflow-hidden" style={{ height: 520 }}>
       {/* Transport controls */}
-      <div className="px-4 py-3 border-b border-primary/10 space-y-2.5">
+      <div className="px-4 py-3 border-b border-hair space-y-2.5">
         <TimelineScrubber
           silences={state.silences}
           hasRecordedTempo={state.hasRecordedTempo}
@@ -167,14 +167,14 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
 
       {/* The log was cut at the replay cap: say so instead of replaying a silent prefix. */}
       {logLines != null && logLines.length >= REPLAY_MAX_LINES && (
-        <p className="px-4 py-1.5 typo-caption text-foreground border-b border-primary/10" data-testid="replay-capped-notice">
+        <p className="px-4 py-1.5 typo-caption text-ink-2 border-b border-hair" data-testid="replay-capped-notice">
           {tx(e.replay_capped, { count: formatCount(REPLAY_MAX_LINES) })}
         </p>
       )}
 
       {/* Synchronized panels */}
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-[3] min-w-0 border-r border-primary/10">
+        <div className="flex-[3] min-w-0 border-r border-hair">
           <ReplayTerminalPanel
             visibleLines={state.visibleLines}
             totalLines={state.allLines.length}

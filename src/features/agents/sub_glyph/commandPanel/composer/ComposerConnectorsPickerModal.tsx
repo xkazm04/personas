@@ -23,6 +23,7 @@ import { ConnectorTableScopeRow } from "./ConnectorTableScopeRow";
 import { useOnOpen } from "./useOnOpen";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { Kbd } from '@/features/shared/components/display/Kbd';
 
 
 interface ComposerConnectorsPickerModalProps {
@@ -135,12 +136,12 @@ export function ComposerConnectorsPickerModal({
       solid={solid}
       footer={
         <>
-          <kbd className="typo-caption text-foreground"><DebtText k="auto_enter_b0d98854" /></kbd>
+          <Kbd><DebtText k="auto_enter_b0d98854" /></Kbd>
           <button
             type="button"
             onClick={applyNow}
             disabled={draft.length === 0 && selected.length === 0}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-ink-1 typo-body transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
           >
             {draft.length === 0 ? t.agents.glyph_apps_clear : tx(draft.length === 1 ? t.agents.glyph_apps_attach_one : t.agents.glyph_apps_attach_other, { count: draft.length })}
@@ -163,16 +164,16 @@ export function ComposerConnectorsPickerModal({
       <div className="p-5">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
-            <div className="w-14 h-14 rounded-full bg-foreground/5 flex items-center justify-center">
-              <Package className="w-6 h-6 text-foreground" />
+            <div className="w-14 h-14 rounded-full bg-surface-1 flex items-center justify-center">
+              <Package className="w-6 h-6 text-ink-1" />
             </div>
-            <div className="typo-body text-foreground/85">
+            <div className="typo-body text-ink-1">
               {healthy.length === 0
                 ? t.agents.glyph_apps_empty_none
                 : t.agents.glyph_apps_empty_no_match}
             </div>
             {healthy.length === 0 && (
-              <p className="typo-caption text-foreground max-w-xs">
+              <p className="typo-caption text-ink-2 max-w-xs">
                 <DebtText k="auto_add_credentials_in_the_vault_then_come_bac_b79aa59c" />
               </p>
             )}
@@ -192,9 +193,9 @@ export function ComposerConnectorsPickerModal({
       </div>
 
       {selectedDbConnectors.length > 0 && (
-        <div className="border-t border-border/20 px-5 py-4">
-          <div className="flex items-center gap-2 typo-label text-foreground mb-2.5">
-            <Database className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="border-t border-hair px-5 py-4">
+          <div className="flex items-center gap-2 typo-label text-ink-1 mb-2.5">
+            <Database className="w-3.5 h-3.5 text-role-external" />
             {t.agents.glyph_db_scope_heading}
           </div>
           <div className="flex flex-col gap-2">
@@ -213,15 +214,15 @@ export function ComposerConnectorsPickerModal({
       )}
 
       {selectedChips.length > 0 && (
-        <div className="sticky bottom-0 border-t border-border/20 bg-card-bg px-5 py-3">
-          <div className="flex items-center gap-2 typo-label text-foreground mb-2">
+        <div className="sticky bottom-0 border-t border-hair bg-card-bg px-5 py-3">
+          <div className="flex items-center gap-2 typo-label text-ink-1 mb-2">
             {t.agents.glyph_apps_selected_label}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {selectedChips.map((c) => (
               <span
                 key={c.name}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/20 border border-primary/40 typo-caption text-foreground"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/20 border border-primary/40 typo-caption text-ink-1"
               >
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full"
@@ -231,7 +232,7 @@ export function ComposerConnectorsPickerModal({
                 <button
                   type="button"
                   onClick={() => toggleDraft(c.name)}
-                  className="text-foreground hover:text-foreground -mr-0.5"
+                  className="text-ink-1 hover:text-ink-1 -mr-0.5"
                   aria-label={tx(t.agents.glyph_apps_remove, { label: c.label })}
                 >
                   ×

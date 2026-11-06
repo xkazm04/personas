@@ -38,12 +38,12 @@ export function NameField({ name, onChange }: { name: string; onChange: (v: stri
           if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
           if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setDraft(name); setEditing(false); }
         }}
-        className="typo-title-lg text-center bg-transparent outline-none border-b border-dashed border-[color:var(--cinema-accent)] text-foreground max-w-[400px]"
+        className="typo-title-lg text-center bg-transparent outline-none border-b border-dashed border-[color:var(--cinema-accent)] text-ink-1 max-w-[400px]"
       />
     );
   }
   return (
-    <button type="button" onClick={() => { setDraft(name); setEditing(true); }} className="typo-title-lg text-foreground rounded-interactive px-1.5 hover:bg-foreground/5 truncate max-w-[420px]">
+    <button type="button" onClick={() => { setDraft(name); setEditing(true); }} className="typo-title-lg text-ink-1 rounded-interactive px-1.5 hover:bg-surface-1 truncate max-w-[420px]">
       {name || COPY.yourAgent}
     </button>
   );
@@ -62,10 +62,10 @@ export function TitleCard({ winner, agentName, onAgentNameChange, rows, tight = 
       </span>}
       {core?.identity?.role && <span className="typo-caption font-mono uppercase tracking-[0.1em]" style={{ color: accent }}>{core.identity.role}</span>}
       <NameField name={agentName} onChange={onAgentNameChange} />
-      {core?.mission && !tight && <p className="typo-body text-foreground max-w-[440px] line-clamp-2">{core.mission}</p>}
+      {core?.mission && !tight && <p className="typo-body text-ink-1 max-w-[440px] line-clamp-2">{core.mission}</p>}
 
       {titles.length > 0 && (
-        <div className="flex gap-2 justify-center px-2.5 py-1.5 rounded-input max-w-full overflow-hidden bg-secondary/70" style={{ borderTop: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)", borderBottom: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)" }}>
+        <div className="flex gap-2 justify-center px-2.5 py-1.5 rounded-input max-w-full overflow-hidden bg-surface-2" style={{ borderTop: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)", borderBottom: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)" }}>
           <AnimatePresence initial={false}>
             {shown.slice(0, 4).map((t, i) => (
               <motion.span
@@ -78,11 +78,11 @@ export function TitleCard({ winner, agentName, onAgentNameChange, rows, tight = 
                 <span className="w-full h-7 rounded-[3px] grid place-items-center font-mono typo-caption" style={{ border: `1px solid ${colorWithAlpha(accent, 0.5)}`, background: `linear-gradient(135deg, ${colorWithAlpha(accent, 0.2)}, transparent)` }}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <span className="typo-caption text-foreground line-clamp-1 w-full">{t}</span>
+                <span className="typo-caption text-ink-2 line-clamp-1 w-full">{t}</span>
               </motion.span>
             ))}
           </AnimatePresence>
-          {titles.length > 4 && <span className="self-center typo-caption text-foreground">+{titles.length - 4}</span>}
+          {titles.length > 4 && <span className="self-center typo-caption text-ink-2">+{titles.length - 4}</span>}
         </div>
       )}
 

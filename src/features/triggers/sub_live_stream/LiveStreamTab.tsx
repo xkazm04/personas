@@ -1,28 +1,27 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Radio, Pause, Play, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Radio, Trash2 } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
+import { StateMark } from '@/features/shared/components/display/StateMark';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { useAgentStore } from '@/stores/agentStore';
 import { listEvents } from '@/api/overview/events';
-import { formatRelativeTime, EVENT_STATUS_COLORS } from '@/lib/utils/formatters';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
-import { EVENT_STATUS_ORDER, eventStatusLabel, eventStatusLabels } from './eventStatusLabels';
+import { EVENT_STATUS_ORDER, eventStatusLabels } from './eventStatusLabels';
 import { EventTypeChip } from './EventTypeChip';
+import { EventStatusMark } from './EventStatusMark';
 import { EventReasonChip } from '../lib/EventReasonView';
 import { resolveEventSource } from '@/features/overview/sub_events/libs/eventSourceRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { silentCatch } from '@/lib/silentCatch';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
 const STREAM_TIMESTAMP_CAP = 10_000; // hard cap on timestamp buffer to prevent OOM under sustained bursts
-
-const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
 /** Hard ceiling on the live buffer. */
 const BUFFER_CAP = 200;
@@ -63,7 +62,6 @@ export function drainPausedQueue(previous: PersonaEvent[], queued: PersonaEvent[
 
 export function LiveStreamTab() {
   const { t } = useTranslation();
-  const reduceMotion = useReducedMotion();
 
   const statusLabels = eventStatusLabels(t);
   const STATUS_OPTIONS = [
@@ -319,7 +317,7 @@ export function LiveStreamTab() {
           return (
             <div className="flex items-center gap-2 min-w-0">
               <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="md" />
-              <span className="typo-body text-foreground truncate">{persona.name}</span>
+              <span className="typo-body text-ink-1 truncate">{persona.name}</span>
             </div>
           );
         }
@@ -329,7 +327,7 @@ export function LiveStreamTab() {
         const source = resolveEventSource(t, event.source_type);
         const SourceIcon = source.icon;
         return (
-          <span className="typo-body text-foreground truncate flex items-center gap-1">
+          <span className="typo-body text-ink-1 truncate flex items-center gap-1">
             <SourceIcon className={`w-3 h-3 flex-shrink-0 ${source.tone}`} />
             {source.label}
           </span>
@@ -348,14 +346,7 @@ export function LiveStreamTab() {
           onChange={setStatusFilter}
         />
       ),
-      render: (event) => {
-        const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-        return (
-          <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-            {eventStatusLabel(t, event.status)}
-          </span>
-        );
-      },
+      render: (event) => <EventStatusMark status={event.status} />,
     },
     {
       // WHY nothing ran (or ran as a simulation). The bus records a machine
@@ -373,7 +364,7 @@ export function LiveStreamTab() {
       sortable: true,
       align: 'right' as const,
       render: (event) => (
-        <span className="typo-body text-foreground">{formatRelativeTime(event.created_at)}</span>
+        <span className="typo-data text-ink-2">{formatRelativeTime(event.created_at)}</span>
       ),
     },
   ];
@@ -381,104 +372,47 @@ export function LiveStreamTab() {
   return (
     <>
       {/* Stream stats bar */}
-      <div className="flex items-center gap-4 px-4 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
-        <button
-          type="button"
-          onClick={() => isPaused ? handleResume() : setIsPaused(true)}
+      <div className="flex items-center gap-4 px-[var(--gutter-page)] min-h-[var(--head-h)] border-b border-hair flex-shrink-0">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => (isPaused ? handleResume() : setIsPaused(true))}
           disabled={!attached && !isPaused}
-          className={`relative inline-flex items-center h-9 pl-3 pr-3.5 rounded-full typo-label transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 disabled:opacity-60 disabled:cursor-not-allowed ${
-            isPaused
-              ? 'bg-amber-500/10 text-amber-200 hover:bg-amber-500/15'
-              : attached
-                ? 'bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15'
-                : 'bg-secondary/30 text-foreground'
-          }`}
-          title={isPaused ? t.triggers.resume_tooltip : t.triggers.pause_tooltip}
           aria-live="polite"
         >
-          <AnimatePresence mode="wait" initial={false}>
-            {isPaused ? (
-              <motion.span
-                key="ring-paused"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="pointer-events-none absolute inset-0 rounded-full border-2 border-amber-400/70"
-              />
-            ) : attached ? (
-              <motion.span
-                key="ring-live"
-                initial={{ opacity: 0.3 }}
-                animate={reduceMotion ? { opacity: 1 } : { opacity: [0.4, 1, 0.4] }}
-                exit={{ opacity: 0 }}
-                transition={reduceMotion ? { duration: 0 } : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                className="pointer-events-none absolute inset-0 rounded-full border-2 border-emerald-400"
-              />
-            ) : (
-              <motion.span
-                key="ring-idle"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="pointer-events-none absolute inset-0 rounded-full border border-primary/20"
-              />
-            )}
-          </AnimatePresence>
-
-          <span className="relative flex items-center gap-2">
-            {isPaused ? (
-              <Play className="w-3.5 h-3.5" />
-            ) : attached ? (
-              <Pause className="w-3.5 h-3.5" />
-            ) : (
-              <Radio className="w-3.5 h-3.5" />
-            )}
-            <span className="flex items-baseline gap-1.5">
-              <span>
-                {isPaused
-                  ? t.triggers.paused_label
-                  : attached
-                    ? t.triggers.live_label
-                    : t.triggers.connecting_label}
-              </span>
-              {(isPaused || attached) && (
-                <>
-                  <span className="opacity-40">·</span>
-                  <span className="tabular-nums font-semibold">
-                    {isPaused ? pausedQueueCount : eventsPerMin}
-                  </span>
-                  <span className="opacity-70">
-                    {isPaused ? t.triggers.queued_bare : t.triggers.events_per_min}
-                  </span>
-                </>
-              )}
+          <StateMark
+            state={isPaused ? 'proposed' : attached ? 'running' : 'blank'}
+            label={isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}
+          />
+          {(isPaused || attached) && (
+            <span className="ml-2 typo-data text-ink-2">
+              {isPaused ? pausedQueueCount : eventsPerMin}{' '}
+              {isPaused ? t.triggers.queued_bare : t.triggers.events_per_min}
             </span>
-          </span>
-        </button>
+          )}
+        </Button>
 
-        <div className="h-4 w-px bg-primary/15" />
+        <div className="h-4 w-px bg-hair" />
 
-        <div className="flex items-center gap-1.5 typo-caption text-foreground tabular-nums">
-          <span className="text-foreground font-semibold">{totalReceived}</span>
-          <span className="text-foreground">{t.triggers.received_label}</span>
+        <div className="flex items-center gap-1.5 typo-caption text-ink-2">
+          <span className="typo-data text-ink-1">{totalReceived}</span>
+          <span>{t.triggers.received_label}</span>
         </div>
-        <div className="flex items-center gap-1.5 typo-caption text-foreground tabular-nums">
-          <span className="text-foreground font-semibold">{events.length}</span>
-          <span className="text-foreground">{t.triggers.in_buffer}</span>
+        <div className="flex items-center gap-1.5 typo-caption text-ink-2">
+          <span className="typo-data text-ink-1">{events.length}</span>
+          <span>{t.triggers.in_buffer}</span>
         </div>
 
         <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleClear}
             disabled={events.length === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption border bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            title={t.triggers.clear_stream_title}
+            icon={<Trash2 className="w-3 h-3" />}
           >
-            <Trash2 className="w-3 h-3" />
             {t.triggers.clear_stream}
-          </button>
+          </Button>
         </div>
       </div>
 

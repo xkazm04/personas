@@ -22,6 +22,7 @@ import { ComposerScheduleDetailForm } from "./ComposerScheduleDetailForm";
 import { useOnOpen } from "./useOnOpen";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { Kbd } from '@/features/shared/components/display/Kbd';
 
 
 interface ComposerSchedulePickerModalProps {
@@ -109,18 +110,18 @@ export function ComposerSchedulePickerModal({
             <button
               type="button"
               onClick={() => setStep("rhythm")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 typo-body transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive text-ink-1 hover:text-ink-1 hover:bg-surface-1 typo-body transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <DebtText k="auto_change_rhythm_2697a991" />
             </button>
           )}
           <div className="flex items-center gap-2 ml-auto">
-            <kbd className="typo-caption text-foreground"><DebtText k="auto_enter_b0d98854" /></kbd>
+            <Kbd><DebtText k="auto_enter_b0d98854" /></Kbd>
             <button
               type="button"
               onClick={applyCurrent}
-              className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body transition-colors"
+              className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-ink-1 typo-body transition-colors"
               style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
             >
               <DebtText k="auto_apply_schedule_c8f50c45" />

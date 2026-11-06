@@ -53,7 +53,7 @@ export function PersonaCoreCodex({ core, fill = false }: { core: PersonaCore; fi
                 type="button"
                 onClick={core.restoreTraits}
                 data-testid="core-restore-traits"
-                className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/80 cursor-pointer"
+                className="inline-flex items-center gap-1 typo-caption text-ink-1 hover:text-ink-1 cursor-pointer"
               >
                 <Undo2 className="w-3 h-3" /> {t.agents.core_traits_restore}
               </button>

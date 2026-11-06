@@ -27,10 +27,10 @@ export function AutomationReviewStep({
           <Rocket className="w-5 h-5 text-accent" aria-hidden="true" />
         </div>
         <div className="text-center">
-          <p className="typo-body text-foreground/90">
+          <p className="typo-body text-ink-1">
             {tx(t.agents.connectors.auto_deploying_to, { platform: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform })}
           </p>
-          <p className="typo-body text-foreground mt-1">
+          <p className="typo-body text-ink-2 mt-1">
             {platform === 'n8n' && t.agents.connectors.auto_deploy_n8n}
             {platform === 'github_actions' && t.agents.connectors.auto_deploy_github}
             {platform === 'zapier' && t.agents.connectors.auto_deploy_zapier}
@@ -51,10 +51,10 @@ export function AutomationReviewStep({
             : <CheckCircle2 className="w-5 h-5 text-brand-emerald" />}
         </div>
         <div className="text-center max-w-md">
-          <p className="typo-body text-foreground/90">
+          <p className="typo-body text-ink-1">
             {hasWarning ? t.agents.connectors.auto_deployed_warning : t.agents.connectors.auto_deployed_ok}
           </p>
-          <p className="typo-body text-foreground mt-1">{deployResult.deploymentMessage}</p>
+          <p className="typo-body text-ink-2 mt-1">{deployResult.deploymentMessage}</p>
         </div>
         {hasWarning && (
           <div className="flex items-start gap-2 p-3 rounded-modal bg-brand-amber/5 border border-brand-amber/15 max-w-md">
@@ -67,7 +67,7 @@ export function AutomationReviewStep({
             href={sanitizeExternalUrl(deployResult.platformUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-accent/15 border border-accent/25 text-foreground hover:bg-accent/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-accent/15 border border-accent/25 text-ink-1 hover:bg-accent/25 transition-colors"
           >
             {tx(t.agents.connectors.auto_view_on, { platform: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform })}
             <ExternalLink className="w-3 h-3" />
@@ -76,7 +76,7 @@ export function AutomationReviewStep({
         <button
           type="button"
           onClick={() => { onComplete(); onClose(); }}
-          className="px-4 py-2 typo-body rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
+          className="px-4 py-2 typo-body rounded-modal bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors"
         >
           {t.agents.connectors.auto_done}
         </button>
@@ -95,10 +95,10 @@ export function AutomationReviewStep({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="px-4 py-2 typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 transition-colors">
+        <button type="button" onClick={onClose} className="px-4 py-2 typo-body rounded-modal border border-hair text-ink-1 hover:bg-surface-2 transition-colors">
           {t.common.close}
         </button>
-        <button type="button" onClick={onReset} className="px-4 py-2 typo-body rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
+        <button type="button" onClick={onReset} className="px-4 py-2 typo-body rounded-modal bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors">
           {t.agents.connectors.auto_try_again}
         </button>
       </div>

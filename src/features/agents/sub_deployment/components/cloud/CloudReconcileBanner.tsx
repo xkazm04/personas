@@ -54,7 +54,7 @@ export function CloudReconcileBanner() {
         type="button"
         onClick={show}
         data-testid="cloud-reconcile-badge"
-        className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 typo-body text-amber-300 hover:bg-amber-500/15 transition-colors cursor-pointer"
+        className="flex items-center gap-2 rounded-card border border-status-warning/30 bg-status-warning/10 px-3 py-2 typo-body text-status-warning hover:bg-status-warning/15 transition-colors cursor-pointer"
       >
         <AlertTriangle className="w-4 h-4 shrink-0" />
         <span>{tx(summary, { count: orphans.length })}</span>
@@ -66,16 +66,16 @@ export function CloudReconcileBanner() {
     <div
       data-testid="cloud-reconcile-banner"
       role="alert"
-      className="rounded-card border border-amber-500/30 bg-amber-500/10 p-4 space-y-3"
+      className="rounded-card border border-status-warning/30 bg-status-warning/10 p-4 space-y-3"
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <AlertTriangle className="w-5 h-5 text-status-warning shrink-0 mt-0.5" />
         <div className="flex-1 space-y-1">
-          <p className="typo-body text-foreground">{r.heading}</p>
-          <p className="typo-body text-foreground">
+          <p className="typo-body text-ink-1">{r.heading}</p>
+          <p className="typo-body text-ink-1">
             {tx(summary, { count: orphans.length })}
           </p>
-          <p className="typo-caption text-foreground">{r.explain}</p>
+          <p className="typo-caption text-ink-2">{r.explain}</p>
         </div>
         <Button variant="ghost" size="xs" onClick={dismiss} data-testid="cloud-reconcile-dismiss">
           {r.dismiss}
@@ -87,13 +87,13 @@ export function CloudReconcileBanner() {
           <li
             key={d.id}
             data-testid={`cloud-reconcile-item-${d.id}`}
-            className="flex items-center gap-2 rounded-input bg-secondary/40 px-3 py-2"
+            className="flex items-center gap-2 rounded-input bg-surface-2 px-3 py-2"
           >
             <div className="flex-1 min-w-0">
-              <p className="typo-body text-foreground truncate">
+              <p className="typo-body text-ink-1 truncate">
                 {orphanName(d)}
               </p>
-              <p className="typo-caption text-foreground truncate">{d.slug}</p>
+              <p className="typo-caption text-ink-2 truncate">{d.slug}</p>
             </div>
             <AsyncButton
               variant="secondary"

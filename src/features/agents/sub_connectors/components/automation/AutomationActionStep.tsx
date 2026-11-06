@@ -20,16 +20,16 @@ export function AutomationActionStep({
     <div key="analyzing" className="animate-fade-slide-in space-y-4">
       <div className="flex items-center justify-between px-1">
         {elapsed >= 3 ? (
-          <div className="flex items-center gap-1.5 typo-body text-foreground">
+          <div className="flex items-center gap-1.5 typo-body text-ink-1">
             <Clock className="w-3 h-3" />
             <span>{tx(t.agents.connectors.auto_elapsed, { elapsed })}</span>
           </div>
         ) : <div />}
-        <span className="typo-body text-foreground">{t.agents.connectors.auto_typically}</span>
+        <span className="typo-body text-ink-1">{t.agents.connectors.auto_typically}</span>
       </div>
 
       <div
-        className="h-2 rounded-full bg-primary/10 overflow-hidden"
+        className="h-2 rounded-full bg-surface-1 overflow-hidden"
         role="progressbar"
         aria-label={t.agents.connectors.auto_modal_designing}
         aria-valuemin={0}
@@ -55,14 +55,14 @@ export function AutomationActionStep({
                 ) : status === 'active' ? (
                   <CircleDot className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                 ) : (
-                  <Circle className="w-3.5 h-3.5 text-foreground" />
+                  <Circle className="w-3.5 h-3.5 text-ink-1" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <span className={`typo-body ${status === 'completed' ? 'text-foreground' : status === 'active' ? 'text-foreground' : 'text-foreground'}`}>
+                <span className={`typo-body ${status === 'completed' ? 'text-ink-1' : status === 'active' ? 'text-ink-1' : 'text-ink-1'}`}>
                   {t.agents.connectors[def.labelKey]}
                 </span>
-                {status === 'active' && <span className="ml-2 typo-body text-foreground">{t.agents.connectors[def.descriptionKey]}</span>}
+                {status === 'active' && <span className="ml-2 typo-body text-ink-1">{t.agents.connectors[def.descriptionKey]}</span>}
               </div>
             </div>
           );
@@ -70,7 +70,7 @@ export function AutomationActionStep({
       </div>
 
       {tailLines.length > 0 && (
-        <div ref={tailRef} className="px-3 py-2 rounded-modal bg-secondary/30 border border-border/60 typo-code text-foreground max-h-[4.5rem] overflow-y-auto">
+        <div ref={tailRef} className="px-3 py-2 rounded-modal bg-surface-1 border border-hair typo-code text-ink-1 max-h-[4.5rem] overflow-y-auto">
           {tailLines.map((line, i) => (
             <div key={outputLinesLength - tailLines.length + i}>{line}</div>
           ))}
@@ -78,7 +78,7 @@ export function AutomationActionStep({
       )}
 
       <div className="flex justify-end">
-        <button type="button" onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 bg-surface-2 hover:bg-secondary text-ink-1 rounded-modal typo-body transition-colors">
           {t.common.cancel}
         </button>
       </div>

@@ -41,24 +41,24 @@ function ScoreBar({ value, label, icon: Icon }: { value: number | null; label: s
     // Never scored (sandbox runs carry no tool accuracy): show it as absent, not a red 0.
     return (
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 typo-caption text-foreground">
+        <span className="flex items-center gap-1.5 typo-caption text-ink-2">
           <Icon className="w-3 h-3" />{label}
         </span>
-        <span className="typo-caption text-foreground">{'–'}</span>
+        <span className="typo-caption text-ink-2">{'–'}</span>
       </div>
     );
   }
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 typo-caption text-foreground">
+        <span className="flex items-center gap-1.5 typo-caption text-ink-2">
           <Icon className="w-3 h-3" />{label}
         </span>
         <span className={`typo-caption ${scoreColor(value)}`}>{value}/100</span>
       </div>
-      <div className="h-1.5 rounded-full bg-primary/5 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-surface-1 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${value >= 80 ? 'bg-emerald-500/70' : value >= 50 ? 'bg-amber-500/70' : 'bg-red-500/60'}`}
+          className={`h-full rounded-full transition-all ${value >= 80 ? 'bg-status-success/70' : value >= 50 ? 'bg-status-warning/70' : 'bg-status-error/60'}`}
           style={{ width: `${Math.max(value, 2)}%` }}
         />
       </div>
@@ -140,7 +140,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
   if (results.length === 0) {
     if (loading) return <LabResultsSkeleton />;
     return (
-      <div className="text-center py-12 text-foreground typo-body">
+      <div className="text-center py-12 text-ink-1 typo-body">
         {t.agents.lab.no_results}
       </div>
     );
@@ -151,19 +151,19 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
   return (
     <div className="space-y-6">
       {/* Executive summary */}
-      <div className="rounded-modal border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-modal border border-hair bg-surface-1 backdrop-blur-sm overflow-hidden">
         <div className="px-5 py-4 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-card bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-card bg-surface-1 flex items-center justify-center">
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="typo-heading text-foreground/90">{t.agents.lab.test_summary}</h4>
-              <p className="typo-caption text-foreground">{scenarios.length} <DebtText k="auto_scenarios_across_e82c5962" /> {models.length} models</p>
+              <h4 className="typo-heading text-ink-1">{t.agents.lab.test_summary}</h4>
+              <p className="typo-caption text-ink-2">{scenarios.length} <DebtText k="auto_scenarios_across_e82c5962" /> {models.length} models</p>
             </div>
           </div>
           {(llmSummary || summary) && (
-            <p className="typo-body text-foreground"
+            <p className="typo-body text-ink-1"
               dangerouslySetInnerHTML={{ __html: sanitizeRichSummary(llmSummary ?? summary ?? '') }}
             />
           )}
@@ -172,7 +172,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
 
       {/* Model comparison cards */}
       <div className="space-y-3">
-        <h4 className="typo-label text-foreground px-1">{t.agents.lab.model_performance}</h4>
+        <h4 className="typo-label text-ink-1 px-1">{t.agents.lab.model_performance}</h4>
         <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(aggregates.length, 3)}, 1fr)` }}>
           {aggregates.map((agg, idx) => {
             const isWinner = agg.modelId === bestModelId;
@@ -182,21 +182,21 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                 className={`rounded-modal border overflow-hidden transition-all animate-fade-slide-in ${
                   isWinner
                     ? 'border-primary/25 shadow-elevation-3 shadow-primary/5'
-                    : 'border-primary/10'
+                    : 'border-hair'
                 }`}
                 style={{ animationDelay: `${idx * 60}ms`, animationDuration: '300ms' }}
               >
                 {/* Card header gradient */}
-                <div className={`px-4 py-3 bg-gradient-to-r ${isWinner ? 'from-primary/15 via-primary/10 to-accent/10' : 'from-secondary/40 to-secondary/20'}`}>
+                <div className={`px-4 py-3 bg-surface-1 ${isWinner ? '' : ''}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`typo-heading-lg ${isWinner ? 'text-primary' : 'text-foreground'}`}>
+                      <span className={`typo-heading-lg ${isWinner ? 'text-primary' : 'text-ink-1'}`}>
                         #{idx + 1}
                       </span>
-                      <span className="typo-heading text-foreground/90 capitalize">{agg.modelId}</span>
+                      <span className="typo-heading text-ink-1 capitalize">{agg.modelId}</span>
                     </div>
                     {isWinner && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
+                      <span className="flex items-center gap-1 typo-eyebrow text-primary">
                         <Trophy className="w-2.5 h-2.5" /> {t.agents.lab.best_badge}
                       </span>
                     )}
@@ -210,14 +210,14 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     <span className={`typo-hero ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                     <div className="flex-1 min-w-0">
                       <span className={`typo-caption ${scoreColor(agg.compositeScore)}`}>{scoreLabel(t, agg.compositeScore)}</span>
-                      <p className="text-[10px] text-foreground"><DebtText k="auto_composite_score_b7a389bd" /></p>
+                      <p className="typo-caption text-ink-2"><DebtText k="auto_composite_score_b7a389bd" /></p>
                     </div>
                     {idx > 0 && aggregates[0] && (
-                      <div className="flex items-center gap-0.5 typo-caption text-foreground">
+                      <div className="flex items-center gap-0.5 typo-caption text-ink-2">
                         {agg.compositeScore < aggregates[0].compositeScore
-                          ? <><TrendingDown className="w-3 h-3 text-red-400" aria-hidden="true" /><span>-{aggregates[0].compositeScore - agg.compositeScore}</span></>
+                          ? <><TrendingDown className="w-3 h-3 text-status-error" aria-hidden="true" /><span>-{aggregates[0].compositeScore - agg.compositeScore}</span></>
                           : agg.compositeScore > aggregates[0].compositeScore
-                            ? <><TrendingUp className="w-3 h-3 text-emerald-400" aria-hidden="true" /><span>+{agg.compositeScore - aggregates[0].compositeScore}</span></>
+                            ? <><TrendingUp className="w-3 h-3 text-status-success" aria-hidden="true" /><span>+{agg.compositeScore - aggregates[0].compositeScore}</span></>
                             : <><Minus className="w-3 h-3" aria-hidden="true" /><span>{t.agents.lab.tied}</span></>
                         }
                       </div>
@@ -232,7 +232,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                   </div>
 
                   {/* Cost & duration */}
-                  <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-foreground">
+                  <div className="flex items-center gap-3 pt-1 border-t border-hair typo-caption text-ink-2">
                     <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /><Numeric value={agg.totalCost} precision={4} /></span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /><Numeric value={agg.avgDuration / 1000} precision={1} /><DebtText k="auto_s_avg_eaee6bda" /></span>
                   </div>
@@ -247,37 +247,37 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
       {(topRationale.length > 0 || topSuggestions.length > 0) && (
         <details className="group">
           <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
-            <ChevronDown className="w-3.5 h-3.5 text-foreground transition-transform group-open:rotate-180" />
-            <h4 className="typo-label text-foreground">{t.agents.lab.insights_suggestions}</h4>
+            <ChevronDown className="w-3.5 h-3.5 text-ink-1 transition-transform group-open:rotate-180" />
+            <h4 className="typo-label text-ink-1">{t.agents.lab.insights_suggestions}</h4>
           </summary>
           <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {topRationale.length > 0 && (
-              <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
-                  <h4 className="flex items-center gap-1.5 typo-label text-foreground">
+              <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-hair bg-surface-1">
+                  <h4 className="flex items-center gap-1.5 typo-label text-ink-1">
                     <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
                   </h4>
                 </div>
                 <div className="px-4 py-3 space-y-2.5">
                   {topRationale.map((r, i) => (
                     <div key={i} className="typo-body">
-                      <span className="text-[10px] font-semibold text-foreground uppercase">{r.model} — {r.scenario}</span>
-                      <p className="text-foreground mt-0.5">{r.rationale.length > 200 ? r.rationale.slice(0, 200) + '...' : r.rationale}</p>
+                      <span className="typo-caption text-ink-2 uppercase">{r.model} — {r.scenario}</span>
+                      <p className="text-ink-1 mt-0.5">{r.rationale.length > 200 ? r.rationale.slice(0, 200) + '...' : r.rationale}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
             {topSuggestions.length > 0 && (
-              <div className="rounded-modal border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
-                  <h4 className="flex items-center gap-1.5 typo-label text-amber-400/70">
+              <div className="rounded-modal border border-status-warning/10 bg-status-warning/[0.03] overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-status-warning/10 bg-status-warning/[0.05]">
+                  <h4 className="flex items-center gap-1.5 typo-label text-status-warning">
                     <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
                   </h4>
                 </div>
                 <div className="px-4 py-3 space-y-2">
                   {topSuggestions.map((s, i) => (
-                    <p key={i} className="typo-body text-foreground">
+                    <p key={i} className="typo-body text-ink-1">
                       {s.length > 200 ? s.slice(0, 200) + '...' : s}
                     </p>
                   ))}
@@ -291,16 +291,16 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
       {/* Scenario breakdown */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 px-1">
-          <h4 className="typo-label text-foreground">{t.agents.lab.scenario_breakdown}</h4>
-          <span className="text-[10px] text-foreground">{t.agents.lab.click_cell_details}</span>
+          <h4 className="typo-label text-ink-1">{t.agents.lab.scenario_breakdown}</h4>
+          <span className="typo-caption text-ink-2">{t.agents.lab.click_cell_details}</span>
         </div>
-        <div data-virtual-scroll className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-primary/10 rounded-modal">
+        <div data-virtual-scroll className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-hair rounded-modal">
           <table className="w-full typo-body">
             <thead>
-              <tr className="border-b border-primary/10 bg-secondary/20">
-                <th className="text-left px-3 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.scenario_column}</th>
+              <tr className="border-b border-hair bg-surface-1">
+                <th className="text-left px-3 py-2.5 typo-eyebrow text-ink-1">{t.agents.lab.scenario_column}</th>
                 {models.map((mid) => (
-                  <th key={mid} className={`text-center px-3 py-2.5 typo-caption font-mono uppercase tracking-widest ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
+                  <th key={mid} className={`text-center px-3 py-2.5 typo-eyebrow ${mid === bestModelId ? 'text-primary/80' : 'text-ink-1'}`}>
                     <span className="inline-flex items-center justify-center gap-1">
                       {mid === bestModelId && <Trophy className="w-3 h-3" aria-label={t.agents.lab.best_badge} />}
                       {mid}
@@ -314,10 +314,10 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
               rowKey={(s) => s}
               renderRow={(scenario, index) => (
                 <>
-                  <td className={`px-3 py-2.5 text-foreground typo-body max-w-[250px] truncate ${index % 2 === 1 ? 'bg-secondary/10' : ''}`}>{scenario}</td>
+                  <td className={`px-3 py-2.5 text-ink-1 typo-body max-w-[250px] truncate ${index % 2 === 1 ? 'bg-surface-1' : ''}`}>{scenario}</td>
                   {models.map((mid) => {
                     const r = matrix[scenario]?.[mid];
-                    if (!r) return <td key={mid} className={`px-3 py-2.5 text-center text-foreground ${index % 2 === 1 ? 'bg-secondary/10' : ''}`}>--</td>;
+                    if (!r) return <td key={mid} className={`px-3 py-2.5 text-center text-ink-1 ${index % 2 === 1 ? 'bg-surface-1' : ''}`}>--</td>;
                     const ta = r.toolAccuracyScore;
                     const oq = r.outputQualityScore;
                     const pc = r.protocolCompliance;
@@ -326,18 +326,18 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     const dur = r.durationMs;
                     const isSelected = selectedCell?.scenario === scenario && selectedCell?.model === mid;
                     return (
-                      <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-secondary/10' : ''} ${r.status === 'failed' || r.status === 'error' ? 'bg-red-500/5' : ''}`}>
+                      <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-surface-1' : ''} ${r.status === 'failed' || r.status === 'error' ? 'bg-status-error/5' : ''}`}>
                         <button
                           type="button"
                           onClick={() => setSelectedCell(isSelected ? null : { scenario, model: mid })}
                           className={`w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1.5 transition-all ${
                             isSelected
-                              ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1'
-                              : 'hover:bg-secondary/40'
+                              ? 'bg-surface-1 ring-1 ring-primary/25 shadow-elevation-1'
+                              : 'hover:bg-surface-2'
                           }`}
                         >
                           {r.status === 'running' || r.status === 'queued' || r.status === 'pending' ? (
-                            <span className="flex items-center gap-1 typo-caption text-foreground">
+                            <span className="flex items-center gap-1 typo-caption text-ink-2">
                               <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t.agents.lab.cell_running}
                             </span>
                           ) : r.status === 'failed' || r.status === 'error' ? (
@@ -347,12 +347,12 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                           ) : (
                             <>
                               <span className={`typo-body-lg ${scoreColor(comp)}`}>{comp ?? '—'}</span>
-                              <div className="flex gap-2 text-[10px] text-foreground">
+                              <div className="flex gap-2 typo-caption text-ink-2">
                                 <span>TA {ta ?? '—'}</span>
                                 <span>OQ {oq ?? '—'}</span>
                                 <span>PC {pc ?? '—'}</span>
                               </div>
-                              <div className="flex gap-2 text-[9px] text-foreground">
+                              <div className="flex gap-2 typo-caption text-ink-2">
                                 <span>$<Numeric value={cost} precision={4} /></span>
                                 <span><Numeric value={dur / 1000} precision={1} />s</span>
                               </div>

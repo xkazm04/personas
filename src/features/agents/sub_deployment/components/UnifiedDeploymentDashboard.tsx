@@ -157,7 +157,7 @@ export function UnifiedDeploymentDashboard() {
     <div
       role="alert"
       data-testid="deployments-load-failed"
-      className="flex items-center justify-between gap-3 px-6 py-2 typo-body text-foreground border-b border-status-error/30 bg-status-error/10"
+      className="flex items-center justify-between gap-3 px-6 py-2 typo-body text-ink-1 border-b border-status-error/30 bg-status-error/10"
     >
       <span>{failureMessage}</span>
       <Button
@@ -262,11 +262,11 @@ export function UnifiedDeploymentDashboard() {
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-primary/10 flex-shrink-0">
+      <div className="px-6 py-4 border-b border-hair flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="typo-section-title">{dt.title}</h1>
-            <p className="typo-body text-foreground mt-0.5">{dt.subtitle}</p>
+            <p className="typo-body text-ink-2 mt-0.5">{dt.subtitle}</p>
           </div>
           <Button
             variant="secondary"
@@ -280,8 +280,8 @@ export function UnifiedDeploymentDashboard() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 3xl:grid-cols-10 gap-3">
           <SummaryCard icon={Activity} label={dt.total} value={unified.length} />
-          <SummaryCard icon={CheckCircle2} label={dt.active} value={activeCount} color="text-emerald-400" />
-          <SummaryCard icon={PauseCircle} label={dt.paused} value={pausedCount} color="text-amber-400" />
+          <SummaryCard icon={CheckCircle2} label={dt.active} value={activeCount} color="text-status-success" />
+          <SummaryCard icon={PauseCircle} label={dt.paused} value={pausedCount} color="text-status-warning" />
           <SummaryCard icon={Cloud} label={dt.cloud} value={totalCloud} color={DEPLOYMENT_ACCENTS.cloud.text} connected={cloudConnected} />
           <SummaryCard icon={GitBranch} label={dt.gitlab} value={totalGitlab} color={DEPLOYMENT_ACCENTS.gitlab.text} connected={gitlabConnected} />
         </div>
@@ -354,9 +354,9 @@ export function UnifiedDeploymentDashboard() {
 
       {/* Footer stats */}
       {displayRows.length > 0 && (
-        <div className="px-6 py-2.5 border-t border-primary/10 flex items-center justify-between typo-caption text-foreground flex-shrink-0">
+        <div className="px-6 py-2.5 border-t border-hair flex items-center justify-between typo-caption text-ink-2 flex-shrink-0">
           <span>{tx(dt.showing_of, { showing: displayRows.length, total: unified.length, plural: unified.length !== 1 ? 's' : '' })}</span>
-          <span>{dt.total_invocations} <Numeric value={totalInvocations} className="typo-data text-foreground" /></span>
+          <span>{dt.total_invocations} <Numeric value={totalInvocations} className="typo-data text-ink-1" /></span>
         </div>
       )}
 

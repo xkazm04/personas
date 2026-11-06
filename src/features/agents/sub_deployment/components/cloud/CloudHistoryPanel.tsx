@@ -264,7 +264,7 @@ export function CloudHistoryPanel() {
         <select
           value={filterPersona}
           onChange={(e) => setFilterPersona(e.target.value)}
-          className="px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
         >
           <option value="">{dt.history.all_personas}</option>
           {personas.map((p) => (
@@ -275,7 +275,7 @@ export function CloudHistoryPanel() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
         >
           <option value="">{dt.history.all_statuses}</option>
           <option value="completed">{dt.history.completed}</option>
@@ -286,7 +286,7 @@ export function CloudHistoryPanel() {
         <select
           value={period}
           onChange={(e) => setPeriod(Number(e.target.value))}
-          className="px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
         >
           <option value={7}>{dt.history.last_7_days}</option>
           <option value={30}>{dt.history.last_30_days}</option>
@@ -294,7 +294,7 @@ export function CloudHistoryPanel() {
         </select>
 
         {historyLastPolled != null && (
-          <div className="flex items-center gap-2 typo-caption text-foreground ml-auto mr-2" data-testid="cloud-history-liveness" data-stale={stale ? 'true' : 'false'}>
+          <div className="flex items-center gap-2 typo-caption text-ink-2 ml-auto mr-2" data-testid="cloud-history-liveness" data-stale={stale ? 'true' : 'false'}>
             {/* Data age is honest state: after a failed poll the rows are the
                 last good snapshot, and the indicator must not claim "Live". */}
             <LiveStatusDot tone={stale ? 'off' : 'active'} ping={!stale} size="sm" />
@@ -305,7 +305,7 @@ export function CloudHistoryPanel() {
           type="button"
           onClick={() => { void fetchData('manual'); }}
           disabled={isLoading}
-          className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           {t.common.refresh}
@@ -334,13 +334,13 @@ export function CloudHistoryPanel() {
                 }}
                 className={`w-full flex items-center gap-2 typo-caption p-2 rounded-card border text-left transition-colors focus-ring cursor-pointer ${
                   active
-                    ? 'bg-red-500/15 border-red-500/30'
-                    : 'bg-red-500/5 border-red-500/10 hover:bg-red-500/10'
+                    ? 'bg-status-error/15 border-status-error/30'
+                    : 'bg-status-error/5 border-status-error/10 hover:bg-status-error/10'
                 }`}
               >
-                <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
-                <span className="text-foreground truncate flex-1">{cluster.message}</span>
-                <span className="text-red-400 font-medium shrink-0">{cluster.count}x</span>
+                <AlertTriangle className="w-3 h-3 text-status-error shrink-0" />
+                <span className="text-ink-1 truncate flex-1">{cluster.message}</span>
+                <span className="text-status-error font-medium shrink-0">{cluster.count}x</span>
               </button>
             );
           })}
@@ -351,15 +351,15 @@ export function CloudHistoryPanel() {
       {errorCluster && (
         <div
           data-testid="cloud-error-cluster-chip"
-          className="flex items-center gap-2 typo-caption px-2.5 py-1.5 rounded-card bg-red-500/10 border border-red-500/20"
+          className="flex items-center gap-2 typo-caption px-2.5 py-1.5 rounded-card bg-status-error/10 border border-status-error/20"
         >
-          <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
-          <span className="text-foreground truncate flex-1">{errorCluster}</span>
+          <AlertTriangle className="w-3 h-3 text-status-error shrink-0" />
+          <span className="text-ink-1 truncate flex-1">{errorCluster}</span>
           <button
             type="button"
             onClick={() => setErrorCluster(null)}
             aria-label={dt.history.clear_filters}
-            className="shrink-0 rounded-interactive p-0.5 text-foreground hover:bg-foreground/10 transition-colors focus-ring cursor-pointer"
+            className="shrink-0 rounded-interactive p-0.5 text-ink-1 hover:bg-surface-2 transition-colors focus-ring cursor-pointer"
           >
             <X className="w-3 h-3" />
           </button>
@@ -376,7 +376,7 @@ export function CloudHistoryPanel() {
         // A cold load that failed has no snapshot to show: say so and offer the
         // same request again, never the settled-empty copy.
         <div className="py-8 text-center" role="alert" data-testid="cloud-history-load-failed">
-          <p className="typo-body text-foreground">{dt.history.load_failed}</p>
+          <p className="typo-body text-ink-1">{dt.history.load_failed}</p>
           <Button
             variant="link"
             size="sm"
@@ -390,7 +390,7 @@ export function CloudHistoryPanel() {
         </div>
       ) : visibleExecutions.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="typo-body text-foreground">
+          <p className="typo-body text-ink-1">
             {dt.history.no_executions_found}
           </p>
           {(filterPersona || filterStatus || errorCluster) && (
@@ -407,7 +407,7 @@ export function CloudHistoryPanel() {
         <div className="space-y-1">
           <SectionHeading className="typo-caption mb-2">{dt.history.execution_history} ({visibleExecutions.length})</SectionHeading>
           {windowTotal != null && (
-            <p className="typo-caption text-foreground mb-2" data-testid="cloud-history-window">
+            <p className="typo-caption text-ink-2 mb-2" data-testid="cloud-history-window">
               {tx(t.overview.execution_list.showing, { count: executions.length, total: windowTotal })}
             </p>
           )}
@@ -451,14 +451,14 @@ function CloudExecutionRowGhosts() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10 animate-fade-in"
+          className="flex items-center gap-3 px-3 py-2 rounded-card bg-surface-1 border border-hair animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <span className="w-3.5 h-3.5 rounded-full bg-primary/[0.06]" />
-          <span className="h-3.5 flex-1 max-w-[10rem] rounded bg-primary/[0.06]" />
-          <span className="h-3 w-12 rounded bg-primary/[0.06]" />
-          <span className="h-3 w-10 rounded bg-primary/[0.06]" />
-          <span className="h-3 w-14 rounded bg-primary/[0.06]" />
+          <span className="h-3.5 flex-1 max-w-[10rem] rounded-interactive bg-primary/[0.06]" />
+          <span className="h-3 w-12 rounded-interactive bg-primary/[0.06]" />
+          <span className="h-3 w-10 rounded-interactive bg-primary/[0.06]" />
+          <span className="h-3 w-14 rounded-interactive bg-primary/[0.06]" />
         </div>
       ))}
     </div>

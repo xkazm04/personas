@@ -26,13 +26,13 @@ function MarketplaceSourceCard({ feed, hint, active, onPick }: {
       type="button"
       onClick={onPick}
       className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-input border text-left transition-colors ${
-        active ? 'border-primary/50 bg-primary/10' : 'border-border bg-background/40 hover:border-foreground/25 hover:bg-secondary/40'
+        active ? 'border-primary/50 bg-surface-1' : 'border-hair bg-background/40 hover:border-hair-2 hover:bg-surface-2'
       }`}
     >
       <FeedIcon entry={feed} className="w-7 h-7" iconSize="w-4 h-4" />
       <span className="min-w-0 flex-1">
-        <span className="typo-body text-foreground truncate block">{feed.name}</span>
-        <span className="typo-caption text-foreground/60 truncate block">{hint}</span>
+        <span className="typo-body text-ink-1 truncate block">{feed.name}</span>
+        <span className="typo-caption text-ink-2 truncate block">{hint}</span>
       </span>
     </button>
   );
@@ -41,12 +41,12 @@ function MarketplaceSourceCard({ feed, hint, active, onPick }: {
 function SearchField({ query, onQuery, placeholder }: { query: string; onQuery: (v: string) => void; placeholder: string }) {
   return (
     <div className="relative">
-      <Search className="w-3.5 h-3.5 text-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+      <Search className="w-3.5 h-3.5 text-ink-1 absolute left-2.5 top-1/2 -translate-y-1/2" />
       <input
         value={query}
         onChange={(e) => onQuery(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-8 pr-2.5 py-1.5 typo-body rounded-input bg-background/60 border border-border focus:border-primary/40 focus:outline-none text-foreground placeholder:text-muted-foreground"
+        className="w-full pl-8 pr-2.5 py-1.5 typo-body rounded-input bg-background/60 border border-hair focus:border-primary/40 focus:outline-none text-ink-1 placeholder:text-ink-3"
       />
     </div>
   );
@@ -83,28 +83,28 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
   );
 
   return (
-    <div className="w-72 h-full border-r border-border flex flex-col min-h-0 bg-background">
+    <div className="w-72 h-full border-r border-hair flex flex-col min-h-0 bg-background">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
         <div className="flex items-center justify-between px-1">
-          <span className="typo-label text-foreground">{st.sources_title}</span>
+          <span className="typo-label text-ink-1">{st.sources_title}</span>
           {onClose && (
             <button type="button" onClick={onClose} aria-label={st.close_sources_rail}
-              className="p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors">
+              className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
         <SegmentedTabs<'signals' | 'personas'>
           tabs={[
-            { id: 'signals', label: <><Zap className="w-3.5 h-3.5 text-amber-400" />{st.group_signals}</> },
-            { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-emerald-400" />{st.group_personas}</> },
+            { id: 'signals', label: <><Zap className="w-3.5 h-3.5 text-status-warning" />{st.group_signals}</> },
+            { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-status-success" />{st.group_personas}</> },
           ]}
           activeTab={sourceKind}
           onTabChange={setSourceKind}
           ariaLabel={st.sources_title}
           size="sm"
         />
-        <p className="typo-body opacity-80 text-foreground px-1">
+        <p className="typo-body opacity-80 text-ink-1 px-1">
           {sourceKind === 'signals' ? st.sources_subtitle : st.group_after_persona}
         </p>
         <SearchField query={query} onQuery={setQuery} placeholder={st.filter_placeholder} />
@@ -122,8 +122,8 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
         {/* Marketplace category — subscribed feeds wire in as event listeners */}
         {sourceKind === 'signals' && marketplaceFeeds.length > 0 && (
           <div className="pt-2.5 pb-1 px-1 flex items-center gap-1.5">
-            <Store className="w-3 h-3 text-sky-400" />
-            <span className="typo-caption uppercase tracking-wide text-foreground/70">{st.group_marketplace}</span>
+            <Store className="w-3 h-3 text-status-info" />
+            <span className="typo-eyebrow text-ink-2">{st.group_marketplace}</span>
           </div>
         )}
         {sourceKind === 'signals' && marketplaceFeeds.map((f) => (
@@ -138,9 +138,9 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
         {/* Scraper category — local-scraper pipeline change/error Signals */}
         {sourceKind === 'signals' && scraperFeeds.length > 0 && (
           <div className="pt-2.5 pb-1 px-1 flex items-center gap-1.5">
-            <Globe className="w-3 h-3 text-teal-400" />
+            <Globe className="w-3 h-3 text-role-external" />
             {/* eslint-disable-next-line custom/no-hardcoded-jsx-text -- feature name, matches sidebar 'Scraper' */}
-            <span className="typo-caption uppercase tracking-wide text-foreground/70">Scraper</span>
+            <span className="typo-eyebrow text-ink-2">Scraper</span>
           </div>
         )}
         {sourceKind === 'signals' && scraperFeeds.map((f) => (
@@ -153,7 +153,7 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
           />
         ))}
         {sourceKind === 'signals' && subscribedFeeds.length === 0 && (
-          <p className="typo-caption text-foreground/60 px-1 py-1">{st.marketplace_empty}</p>
+          <p className="typo-caption text-ink-2 px-1 py-1">{st.marketplace_empty}</p>
         )}
         {sourceKind === 'personas' && filteredPersonas.map((p) => (
           <PersonaOptionCard
@@ -166,10 +166,10 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
           />
         ))}
         {sourceKind === 'signals' && q && filteredTriggers.length === 0 && filteredFeeds.length === 0 && (
-          <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(st.no_sources_match, { query })}</p>
+          <p className="typo-body opacity-80 text-ink-1 px-1 py-2">{tx(st.no_sources_match, { query })}</p>
         )}
         {sourceKind === 'personas' && filteredPersonas.length === 0 && (
-          <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(st.no_targets_match, { query })}</p>
+          <p className="typo-body opacity-80 text-ink-1 px-1 py-2">{tx(st.no_targets_match, { query })}</p>
         )}
       </div>
     </div>
@@ -188,28 +188,28 @@ export function StudioTargetRail({ c, onClose }: { c: StudioComposer; onClose?: 
   );
 
   return (
-    <div className="w-72 h-full border-l border-border flex flex-col min-h-0 bg-background">
+    <div className="w-72 h-full border-l border-hair flex flex-col min-h-0 bg-background">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
         <div className="flex items-center justify-between px-1">
-          <span className="typo-label text-foreground">{st.targets_title}</span>
+          <span className="typo-label text-ink-1">{st.targets_title}</span>
           {onClose && (
             <button type="button" onClick={onClose} aria-label={st.close_targets_rail}
-              className="p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors">
+              className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
         <SegmentedTabs<'personas' | 'system'>
           tabs={[
-            { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-emerald-400" />{st.targets_title}</> },
-            { id: 'system', label: <><Cog className="w-3.5 h-3.5 text-violet-400" />{st.group_system_events}</> },
+            { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-status-success" />{st.targets_title}</> },
+            { id: 'system', label: <><Cog className="w-3.5 h-3.5 text-role-agent" />{st.group_system_events}</> },
           ]}
           activeTab={targetKind}
           onTabChange={setTargetKind}
           ariaLabel={st.targets_title}
           size="sm"
         />
-        <p className="typo-body opacity-80 text-foreground px-1">
+        <p className="typo-body opacity-80 text-ink-1 px-1">
           {targetKind === 'personas' ? st.targets_subtitle : st.system_events_subtitle}
         </p>
         {targetKind === 'personas' && <SearchField query={query} onQuery={setQuery} placeholder={st.filter_placeholder} />}
@@ -225,7 +225,7 @@ export function StudioTargetRail({ c, onClose }: { c: StudioComposer; onClose?: 
           />
         ))}
         {targetKind === 'personas' && filteredTargets.length === 0 && (
-          <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(st.no_targets_match, { query })}</p>
+          <p className="typo-body opacity-80 text-ink-1 px-1 py-2">{tx(st.no_targets_match, { query })}</p>
         )}
         {targetKind === 'system' && c.systemOpKinds.map((k: SystemOpKindMeta) => (
           <SystemOpOptionCard
@@ -236,7 +236,7 @@ export function StudioTargetRail({ c, onClose }: { c: StudioComposer; onClose?: 
           />
         ))}
         {targetKind === 'system' && c.systemOpKinds.length === 0 && (
-          <p className="typo-body opacity-80 text-foreground px-1 py-2">{st.system_events_empty}</p>
+          <p className="typo-body opacity-80 text-ink-1 px-1 py-2">{st.system_events_empty}</p>
         )}
       </div>
     </div>

@@ -63,7 +63,7 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
       data-testid={`core-snapshot-${a.id}`}
       aria-pressed={active}
       className={`group relative flex items-center gap-3.5 p-3 rounded-card border text-left transition-colors cursor-pointer ${
-        active ? "" : "border-card-border/60 hover:bg-secondary/30 hover:border-card-border"
+        active ? "" : "border-card-border/60 hover:bg-surface-1 hover:border-card-border"
       }`}
       style={active ? { borderColor: colorWithAlpha(a.color, 0.55), background: colorWithAlpha(a.color, 0.1) } : undefined}
     >

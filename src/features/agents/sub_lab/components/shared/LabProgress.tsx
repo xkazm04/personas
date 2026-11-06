@@ -35,7 +35,7 @@ export function LabProgress() {
 
   return (
     <div className="animate-fade-slide-in overflow-hidden">
-      <div className="p-4 rounded-modal bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
+      <div className="p-4 rounded-modal bg-surface-1 border border-hair space-y-3" role="status" aria-live="polite">
         {/* Phase stepper */}
         <div className="flex items-center justify-between">
           {LAB_PHASES.map((phase, i) => {
@@ -50,10 +50,10 @@ export function LabProgress() {
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                       isCompleted
-                        ? 'bg-emerald-500/40 text-emerald-200'
+                        ? 'bg-status-success/40 text-status-success'
                         : isActive
-                          ? 'bg-primary/50 text-primary-foreground shadow-[0_0_8px_rgba(139,92,246,0.3)]'
-                          : 'bg-primary/10 text-foreground'
+                          ? 'bg-primary/50 text-primary-foreground'
+                          : 'bg-surface-1 text-ink-1'
                     } ${isActive ? 'animate-pulse' : ''}`}
                   >
                     {isCompleted ? (
@@ -65,10 +65,10 @@ export function LabProgress() {
                   <span
                     className={`typo-caption transition-colors ${
                       isCompleted
-                        ? 'text-emerald-400/70'
+                        ? 'text-status-success'
                         : isActive
-                          ? 'text-foreground'
-                          : 'text-foreground'
+                          ? 'text-ink-1'
+                          : 'text-ink-1'
                     }`}
                   >
                     {(t.agents.lab as Record<string, string>)[PHASE_LABELS[phase.key] ?? ''] ?? phase.key}
@@ -77,9 +77,9 @@ export function LabProgress() {
 
                 {/* Connecting line */}
                 {i < LAB_PHASES.length - 1 && (
-                  <div className="flex-1 mx-1.5 h-0.5 rounded-full relative overflow-hidden bg-primary/10 self-start mt-3.5">
+                  <div className="flex-1 mx-1.5 h-0.5 rounded-full relative overflow-hidden bg-surface-1 self-start mt-3.5">
                     <div
-                      className="absolute inset-y-0 left-0 bg-emerald-500/50 rounded-full transition-all duration-500"
+                      className="absolute inset-y-0 left-0 bg-status-success/50 rounded-full transition-all duration-500"
                       style={{ width: i < currentIdx ? '100%' : '0%' }}
                     />
                   </div>
@@ -91,7 +91,7 @@ export function LabProgress() {
 
         {/* Detail row: status text + counters */}
         <div className="flex items-center justify-between typo-body">
-          <span className="text-foreground">
+          <span className="text-ink-1">
             {labProgress.phase === 'drafting'
               ? t.agents.lab.generating_draft
               : labProgress.phase === 'generating'
@@ -106,7 +106,7 @@ export function LabProgress() {
           {labProgress.total != null && (
             <div className="flex items-center gap-3">
               {labProgress.elapsedMs != null && (
-                <span className="typo-caption text-foreground tabular-nums">
+                <span className="typo-caption text-ink-2 tabular-nums">
                   {labProgress.elapsedMs >= 60000 ? (
                     `${Math.floor(labProgress.elapsedMs / 60000)}m ${Math.round((labProgress.elapsedMs % 60000) / 1000)}s`
                   ) : (
@@ -114,7 +114,7 @@ export function LabProgress() {
                   )}
                 </span>
               )}
-              <span className="typo-data text-foreground">
+              <span className="typo-data text-ink-1">
                 {labProgress.current ?? 0} / {labProgress.total}
               </span>
             </div>
@@ -123,7 +123,7 @@ export function LabProgress() {
 
         {/* Scores */}
         {labProgress.scores && (
-          <div className="flex items-center gap-4 typo-body text-foreground">
+          <div className="flex items-center gap-4 typo-body text-ink-1">
             <span><DebtText k="auto_tool_5bc72f59" /> {labProgress.scores.tool_accuracy ?? '--'}</span>
             <span><DebtText k="auto_output_f3c8c95c" /> {labProgress.scores.output_quality ?? '--'}</span>
             <span><DebtText k="auto_protocol_c4bba733" /> {labProgress.scores.protocol_compliance ?? '--'}</span>

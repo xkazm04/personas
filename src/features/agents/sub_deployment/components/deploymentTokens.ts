@@ -1,8 +1,8 @@
 export const DEPLOYMENT_TOKENS = {
   panelSpacing: 'space-y-4',
   cardRadius: 'rounded-modal',
-  connectedBorder: 'border-emerald-500/20',
-  connectedBg: 'bg-emerald-500/5',
+  connectedBorder: 'border-status-success/20',
+  connectedBg: 'bg-status-success/5',
   sectionHeadingGap: 'mb-3',
 } as const;
 
@@ -31,18 +31,18 @@ export const DEPLOYMENT_ACCENTS: Record<DeploymentAccent, {
   iconContainer: string;
 }> = {
   cloud: {
-    text: 'text-indigo-400',
-    badge: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
-    iconContainer: 'bg-indigo-500/10 border-indigo-500/20',
+    text: 'text-role-agent',
+    badge: 'bg-role-agent/10 border-role-agent/20 text-role-agent',
+    iconContainer: 'bg-role-agent/10 border-role-agent/20',
   },
   gitlab: {
-    text: 'text-orange-400',
-    badge: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
-    iconContainer: 'bg-orange-500/10 border-orange-500/20',
+    text: 'text-status-warning',
+    badge: 'bg-status-warning/10 border-status-warning/20 text-status-warning',
+    iconContainer: 'bg-status-warning/10 border-status-warning/20',
   },
   signed: {
-    text: 'text-rose-400',
-    badge: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
-    iconContainer: 'bg-rose-500/10 border-rose-500/20',
+    text: 'text-status-error',
+    badge: 'bg-status-error/10 border-status-error/20 text-status-error',
+    iconContainer: 'bg-status-error/10 border-status-error/20',
   },
 } as const;

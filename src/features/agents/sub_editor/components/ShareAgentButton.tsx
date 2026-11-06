@@ -78,13 +78,13 @@ export function ShareAgentButton({ personaId, sensitive = false }: { personaId: 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 w-80 bg-background border border-primary/15 rounded-card shadow-elevation-3 p-3 z-50"
+            className="absolute top-full right-0 mt-2 w-80 bg-background border border-hair rounded-card shadow-elevation-3 p-3 z-50"
             data-testid="agent-share-confirm"
           >
-            <p id={confirmId} className="typo-heading text-foreground">
+            <p id={confirmId} className="typo-heading text-ink-1">
               {sensitive ? s.sensitive_title : s.confirm_title}
             </p>
-            <p className="mt-2 typo-caption text-foreground">
+            <p className="mt-2 typo-caption text-ink-2">
               {sensitive ? s.sensitive_body : s.confirm_body}
             </p>
             <div className="mt-3 flex justify-end gap-2">
@@ -111,10 +111,10 @@ export function ShareAgentButton({ personaId, sensitive = false }: { personaId: 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 w-80 bg-background border border-primary/15 rounded-card shadow-elevation-3 p-3 z-50"
+            className="absolute top-full right-0 mt-2 w-80 bg-background border border-hair rounded-card shadow-elevation-3 p-3 z-50"
           >
             <div className="flex items-start justify-between gap-2">
-              <p id={headingId} className="typo-heading text-foreground">{s.published}</p>
+              <p id={headingId} className="typo-heading text-ink-1">{s.published}</p>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -130,22 +130,22 @@ export function ShareAgentButton({ personaId, sensitive = false }: { personaId: 
                 readOnly
                 value={result.url}
                 onFocus={(e) => e.currentTarget.select()}
-                className="flex-1 min-w-0 bg-secondary/40 border border-primary/10 rounded-input px-2 py-1.5 typo-body text-foreground"
+                className="flex-1 min-w-0 bg-surface-2 border border-hair rounded-input px-2 py-1.5 typo-body text-ink-1"
                 data-testid="agent-share-url"
               />
               <CopyButton text={result.url} label={t.common.copy} />
             </div>
-            <p className="mt-2 typo-caption text-foreground">{s.hint}</p>
+            <p className="mt-2 typo-caption text-ink-2">{s.hint}</p>
 
             {/* Invite a friend to Personas (referral) — credited when they install. */}
-            <div className="mt-3 pt-3 border-t border-primary/10">
-              <p className="mb-1.5 typo-caption text-foreground">{s.invite_hint}</p>
+            <div className="mt-3 pt-3 border-t border-hair">
+              <p className="mb-1.5 typo-caption text-ink-2">{s.invite_hint}</p>
               <div className="flex items-center gap-2">
                 <input
                   readOnly
                   value={inviteUrl}
                   onFocus={(e) => e.currentTarget.select()}
-                  className="flex-1 min-w-0 bg-secondary/40 border border-primary/10 rounded-input px-2 py-1.5 typo-body text-foreground"
+                  className="flex-1 min-w-0 bg-surface-2 border border-hair rounded-input px-2 py-1.5 typo-body text-ink-1"
                   data-testid="invite-url"
                 />
                 <CopyButton text={inviteUrl} label={t.common.copy} />

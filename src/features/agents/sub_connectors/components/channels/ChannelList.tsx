@@ -100,10 +100,10 @@ export function ChannelList({
   return (
     <div className="space-y-3">
       {/* In-App (always present, read-only) */}
-      <div className={`flex items-center gap-3 p-2.5 bg-secondary/30 border ${TOOLS_BORDER} rounded-modal`}>
-        <Bell className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-        <span className="typo-body text-foreground flex-1">{t.agents.connectors.ch_in_app}</span>
-        <span className="flex items-center gap-1 typo-body text-emerald-400/80">
+      <div className={`flex items-center gap-3 p-2.5 bg-surface-1 border ${TOOLS_BORDER} rounded-modal`}>
+        <Bell className="w-4 h-4 text-status-success flex-shrink-0" />
+        <span className="typo-body text-ink-1 flex-1">{t.agents.connectors.ch_in_app}</span>
+        <span className="flex items-center gap-1 typo-body text-status-success">
           <Check className="w-3 h-3" /> {t.agents.connectors.ch_always_active}
         </span>
       </div>
@@ -139,7 +139,7 @@ export function ChannelList({
       {validationErrors.length > 0 && (
         <div className="space-y-1">
           {validationErrors.map((err, i) => (
-            <p key={i} className="typo-body text-red-400">{err}</p>
+            <p key={i} className="typo-body text-status-error">{err}</p>
           ))}
         </div>
       )}

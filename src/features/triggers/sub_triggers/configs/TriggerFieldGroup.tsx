@@ -16,16 +16,16 @@ export function TriggerFieldGroup({
   const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
-      <label className="block typo-body text-foreground">
+      <label className="block typo-body text-ink-1">
         {label}
-        {optional && <span className="text-foreground ml-1">{t.triggers.field_optional}</span>}
+        {optional && <span className="text-ink-1 ml-1">{t.triggers.field_optional}</span>}
       </label>
       {children}
       {error && (
-        <p id={errorId} className="typo-body text-red-400/80">{error}</p>
+        <p id={errorId} className="typo-body text-status-error">{error}</p>
       )}
       {helpText && (
-        <p className="typo-body text-foreground">{helpText}</p>
+        <p className="typo-body text-ink-1">{helpText}</p>
       )}
     </div>
   );

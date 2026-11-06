@@ -2,7 +2,7 @@ import { AlertCircle, Play, Rocket, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
-const ACTION_BTN = 'mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors';
+const ACTION_BTN = 'mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-hair hover:bg-primary/20 hover:text-primary transition-colors';
 
 function StateCard({ icon: Icon, tone, title, body, action }: {
   icon: LucideIcon;
@@ -11,15 +11,15 @@ function StateCard({ icon: Icon, tone, title, body, action }: {
   body: string;
   action: React.ReactNode;
 }) {
-  const frame = tone === 'error' ? 'bg-red-500/5 border-red-500/20' : 'bg-secondary/40 backdrop-blur-sm border-primary/20';
-  const well = tone === 'error' ? 'bg-red-500/10 border-red-500/20' : 'bg-primary/8 border-primary/20';
+  const frame = tone === 'error' ? 'bg-status-error/5 border-status-error/20' : 'bg-surface-2 backdrop-blur-sm border-hair';
+  const well = tone === 'error' ? 'bg-status-error/10 border-status-error/20' : 'bg-primary/8 border-hair';
   return (
     <div className={`animate-fade-slide-in flex flex-col items-center text-center py-12 px-6 border rounded-modal ${frame}`}>
       <div className={`w-12 h-12 rounded-modal border flex items-center justify-center mb-4 ${well}`}>
-        <Icon className={`w-5.5 h-5.5 ${tone === 'error' ? 'text-red-400' : 'text-primary/40'}`} />
+        <Icon className={`w-5.5 h-5.5 ${tone === 'error' ? 'text-status-error' : 'text-primary/40'}`} />
       </div>
-      <p className="typo-heading text-foreground">{title}</p>
-      <p className="typo-body text-foreground mt-1 max-w-[260px]">{body}</p>
+      <p className="typo-heading text-ink-1">{title}</p>
+      <p className="typo-body text-ink-2 mt-1 max-w-[260px]">{body}</p>
       {action}
     </div>
   );

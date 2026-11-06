@@ -124,13 +124,13 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
   return (
     <div className="w-full max-w-[420px] flex flex-col gap-1.5 mt-2">
       <div className="flex items-center gap-1.5 px-1">
-        <Layers className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-label text-foreground">
+        <Layers className="w-3.5 h-3.5 text-ink-1" />
+        <span className="typo-label text-ink-1">
           {activeCount === 1
             ? t.agents.glyph_cap_count_one
             : tx(t.agents.glyph_cap_count_other, { count: activeCount })}
           {excludedSet.size > 0 && (
-            <span className="ml-1 text-foreground normal-case tracking-normal">
+            <span className="ml-1 text-ink-1 normal-case tracking-normal">
               ({excludedSet.size} <DebtText k="auto_removed_7a8146f4" />
             </span>
           )}
@@ -139,13 +139,13 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
       {/* Pre-promote confirmation: surface the behavior core (what the persona IS)
           so the user can catch a misframed mission/role before committing. */}
       {behaviorCore?.mission && (
-        <div className="rounded-modal border border-border/30 bg-foreground/5 px-3 py-2">
+        <div className="rounded-modal border border-hair bg-surface-1 px-3 py-2">
           {behaviorCore.identity?.role && (
-            <div className="typo-caption uppercase tracking-[0.16em] text-foreground mb-0.5 truncate">
+            <div className="typo-eyebrow text-ink-1 mb-0.5 truncate">
               {behaviorCore.identity.role}
             </div>
           )}
-          <div className="typo-body text-foreground/90">{behaviorCore.mission}</div>
+          <div className="typo-body text-ink-1">{behaviorCore.mission}</div>
         </div>
       )}
       <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-1">
@@ -165,21 +165,21 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
               key={id}
               className={`rounded-modal border px-3 py-2 text-left transition ${
                 isExcluded
-                  ? "bg-foreground/0 border-border/20 opacity-50"
-                  : "bg-foreground/5 border-border/30 hover:border-border/50 hover:bg-foreground/[0.08]"
+                  ? "bg-foreground/0 border-hair opacity-50"
+                  : "bg-surface-1 border-hair hover:border-hair hover:bg-surface-2"
               }`}
             >
               <div className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className={`typo-body truncate ${isExcluded ? "text-foreground line-through" : "text-foreground/90"}`}>
+                  <div className={`typo-body truncate ${isExcluded ? "text-ink-1 line-through" : "text-ink-1"}`}>
                     {cap.title || id}
                   </div>
                   {isExcluded ? (
-                    <div className="mt-1 typo-caption text-foreground">
+                    <div className="mt-1 typo-caption text-ink-2">
                       <DebtText k="auto_will_not_be_promoted_7a454132" />
                     </div>
                   ) : (
-                    <div className="mt-1 flex items-center gap-2 flex-wrap typo-caption text-foreground">
+                    <div className="mt-1 flex items-center gap-2 flex-wrap typo-caption text-ink-2">
                       <span className="inline-flex items-center gap-1">
                         <TriggerIcon className="w-3 h-3" />
                         {triggerSummary(cap.suggested_trigger)}
@@ -191,21 +191,21 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                               <ConnectorIcon key={slug} meta={getConnectorMeta(slug)} size="w-3.5 h-3.5" />
                             ))}
                             {connectorList.length > 4 ? (
-                              <span className="text-foreground">+{connectorList.length - 4}</span>
+                              <span className="text-ink-1">+{connectorList.length - 4}</span>
                             ) : null}
                           </span>
                         </Tooltip>
                       )}
                       <span
                         className={`inline-flex items-center gap-1 ${
-                          tone === "warn" ? "text-amber-400/80" : "text-foreground"
+                          tone === "warn" ? "text-status-warning" : "text-ink-1"
                         }`}
                       >
                         <Shield className="w-3 h-3" />
                         {reviewLabel(reviewMode)}
                       </span>
                       {memoryEnabled && (
-                        <span className="inline-flex items-center gap-1 text-foreground">
+                        <span className="inline-flex items-center gap-1 text-ink-1">
                           <Brain className="w-3 h-3" />
                           {t.agents.glyph_cap_remembers}
                         </span>
@@ -216,7 +216,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                             .map((e) => `${e.direction === "emit" ? "→ " : "← "}${e.event_type}`)
                             .join("\n")}
                         >
-                          <span className="inline-flex items-center gap-1 text-foreground">
+                          <span className="inline-flex items-center gap-1 text-ink-1">
                             <Radio className="w-3 h-3" />
                             {events.length === 1
                               ? (events[0]?.event_type ?? "").split(".").slice(-2).join(".")
@@ -232,7 +232,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                     <button
                       type="button"
                       onClick={() => toggleCapabilityExcluded(id)}
-                      className="px-2 py-1 rounded-input hover:bg-foreground/10 text-foreground hover:text-foreground typo-caption inline-flex items-center gap-1 cursor-pointer"
+                      className="px-2 py-1 rounded-input hover:bg-surface-2 text-ink-1 hover:text-ink-1 typo-caption inline-flex items-center gap-1 cursor-pointer"
                       aria-label={debtText("auto_restore_capability_91a3b415")}
                       title={debtText("auto_restore_include_this_capability_when_promo_e8f43ec9")}
                     >
@@ -245,7 +245,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         <button
                           type="button"
                           onClick={() => onRequestSplit(cap.title || id, buildSplitPrompt(cap.title || id, connectorList))}
-                          className="px-1.5 py-1 rounded-input hover:bg-primary/10 text-foreground hover:text-primary typo-caption inline-flex items-center gap-1 cursor-pointer"
+                          className="px-1.5 py-1 rounded-input hover:bg-surface-2 text-ink-1 hover:text-primary typo-caption inline-flex items-center gap-1 cursor-pointer"
                           aria-label={debtText("auto_split_this_capability_via_refine_99e725c3")}
                           title={debtText("auto_open_refine_with_a_prompt_that_asks_the_ag_c0e3037e")}
                         >
@@ -256,7 +256,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                       <button
                         type="button"
                         onClick={() => toggleCapabilityExcluded(id)}
-                        className="px-1.5 py-1 rounded-input hover:bg-rose-500/10 text-foreground hover:text-rose-400 typo-caption inline-flex items-center gap-1 cursor-pointer"
+                        className="px-1.5 py-1 rounded-input hover:bg-status-error/10 text-ink-1 hover:text-status-error typo-caption inline-flex items-center gap-1 cursor-pointer"
                         aria-label={debtText("auto_remove_capability_from_the_promoted_person_a4d121d1")}
                         title={debtText("auto_remove_exclude_this_capability_when_promot_dbf501b9")}
                       >

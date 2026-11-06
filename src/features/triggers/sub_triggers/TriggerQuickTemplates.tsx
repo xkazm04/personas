@@ -15,7 +15,7 @@ export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplates
   const templates = useMemo(() => getTriggerTemplates(t), [t]);
   return (
     <div>
-      <label className="block typo-body text-foreground mb-1.5">
+      <label className="block typo-body text-ink-1 mb-1.5">
         {t.triggers.quick_templates_label}
       </label>
       <div className="grid grid-cols-2 gap-1.5">
@@ -27,12 +27,12 @@ export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplates
               key={tpl.id}
               type="button"
               onClick={() => onApplyTemplate(tpl.id)}
-              className="flex items-start gap-2.5 p-2.5 rounded-modal border border-primary/10 bg-background/30 hover:border-primary/25 hover:bg-secondary/30 transition-all text-left group"
+              className="flex items-start gap-2.5 p-2.5 rounded-modal border border-hair bg-background/30 hover:border-primary/25 hover:bg-surface-1 transition-all text-left group"
             >
               <Icon className={`w-4 h-4 mt-0.5 ${meta.color} shrink-0`} />
               <div className="min-w-0">
-                <p className="typo-body text-foreground/90 truncate">{tpl.label}</p>
-                <p className="typo-body text-foreground line-clamp-1">{tpl.description}</p>
+                <p className="typo-body text-ink-1 truncate">{tpl.label}</p>
+                <p className="typo-body text-ink-1 line-clamp-1">{tpl.description}</p>
               </div>
             </button>
           );

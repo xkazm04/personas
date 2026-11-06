@@ -104,13 +104,13 @@ const EMPTY_CONNECTORS: string[] = [];
 
 /** The card's rendering of the shared accent rule (`rowAccentTone`). */
 const CARD_ACCENT_CLASS: Record<RowAccentTone, string> = {
-  building: 'border-l-violet-400',
-  draft: 'border-l-zinc-400',
-  failing: 'border-l-red-400',
-  degraded: 'border-l-amber-400',
+  building: 'border-l-role-agent',
+  draft: 'border-l-hair',
+  failing: 'border-l-status-error',
+  degraded: 'border-l-status-warning',
   dormant: 'border-l-foreground/30',
   unknown: 'border-l-foreground/30',
-  healthy: 'border-l-emerald-400/60',
+  healthy: 'border-l-status-success/60',
 };
 
 const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
@@ -158,7 +158,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
 
   return (
     <div
-      className={`rounded-modal border border-primary/15 bg-secondary/20 backdrop-blur-sm border-l-2 ${accent} ${
+      className={`rounded-modal border border-hair bg-surface-1 backdrop-blur-sm border-l-2 ${accent} ${
         selected ? 'ring-1 ring-primary/40 bg-primary/[0.04]' : ''
       }`}
     >
@@ -175,18 +175,18 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
           aria-checked={selected}
           aria-label={p.name}
           onClick={() => onToggleSelect(id)}
-          className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+          className={`mt-0.5 w-4 h-4 rounded-interactive border flex-shrink-0 flex items-center justify-center ${
             selected ? 'bg-primary/80 border-primary/60' : 'border-primary/30'
           }`}
         >
           {selected && (
-            <svg className="w-3 h-3 text-foreground" viewBox="0 0 12 12" fill="none">
+            <svg className="w-3 h-3 text-ink-1" viewBox="0 0 12 12" fill="none">
               <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </button>
         <div
-          className="icon-frame icon-frame-pop bg-primary/10 border border-primary/15 flex-shrink-0"
+          className="icon-frame icon-frame-pop bg-surface-1 border border-hair flex-shrink-0"
           style={p.color ? { borderColor: `${p.color}30`, backgroundColor: `${p.color}15` } : undefined}
         >
           <PersonaIcon icon={p.icon} color={p.color} size="w-4 h-4" framed frameSize="lg" />
@@ -195,7 +195,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
           <button
             type="button"
             onClick={() => onRowClick(p)}
-            className="text-md font-medium text-foreground/90 text-left hover:text-primary transition-colors block truncate w-full"
+            className="typo-label text-ink-1 text-left hover:text-primary transition-colors block truncate w-full"
           >
             {p.name}
           </button>
@@ -207,7 +207,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
                 void copyDescription(p.description!, t.agents.persona_list);
               }}
               title={t.agents.persona_list.click_to_copy}
-              className="text-md text-foreground mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-muted-foreground transition-colors"
+              className="typo-caption text-ink-1 mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-ink-3 transition-colors"
             >
               {p.description}
             </button>
@@ -217,9 +217,9 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleFavorite(id); }}
           aria-label={favorite ? t.agents.filters.remove_from_favorites : t.agents.filters.add_to_favorites}
-          className="p-1 rounded hover:bg-amber-500/10 flex-shrink-0"
+          className="p-1 rounded-interactive hover:bg-status-warning/10 flex-shrink-0"
         >
-          <Star className={`w-3.5 h-3.5 ${favorite ? 'text-amber-400 fill-amber-400' : 'text-foreground'}`} />
+          <Star className={`w-3.5 h-3.5 ${favorite ? 'text-status-warning fill-amber-400' : 'text-ink-1'}`} />
         </button>
         {/* The same Duplicate / Export overflow the grid row carries. */}
         <div className="flex-shrink-0">
@@ -251,24 +251,24 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
               <div
                 key={`${name}-${i}`}
                 title={meta.label}
-                className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center"
+                className="w-6 h-6 rounded-input bg-surface-1 border border-hair flex items-center justify-center"
               >
                 <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
               </div>
             );
           })}
           {connectors.length > 6 && (
-            <span className="text-md text-foreground">+{connectors.length - 6}</span>
+            <span className="typo-caption text-ink-2">+{connectors.length - 6}</span>
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-1.5 px-3 pb-3 text-md text-foreground">
+        <div className="flex items-center gap-1.5 px-3 pb-3 typo-caption text-ink-2">
           <Plug className="w-3.5 h-3.5" /> {t.agents.persona_list.no_connectors}
         </div>
       )}
 
       {/* Footer: triggers + timestamps */}
-      <div className="flex items-center gap-3 px-3 pb-3 text-md text-foreground border-t border-primary/5 pt-2">
+      <div className="flex items-center gap-3 px-3 pb-3 typo-caption text-ink-2 border-t border-hair pt-2">
         <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{triggerCount}</span>
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />

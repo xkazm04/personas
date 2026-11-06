@@ -76,14 +76,14 @@ function KpRequirementsBody({ req }: { req: KpRequirementsView }) {
         }
       >
         <div className="space-y-4">
-          {req.purpose && <p className="typo-body text-foreground">{req.purpose}</p>}
+          {req.purpose && <p className="typo-body text-ink-1">{req.purpose}</p>}
           <KeyValueGrid items={facts} min="10rem" />
 
           <Section level={2} title={k.constraints_title} count={req.constraints.length}>
             {req.constraints.length === 0 ? (
               <p className="typo-caption">{k.constraints_none}</p>
             ) : (
-              <ol className="list-decimal pl-5 space-y-1 typo-body text-foreground" data-testid="kp-requirements-constraints">
+              <ol className="list-decimal pl-5 space-y-1 typo-body text-ink-1" data-testid="kp-requirements-constraints">
                 {req.constraints.map((c, i) => <li key={i}>{c}</li>)}
               </ol>
             )}
@@ -93,7 +93,7 @@ function KpRequirementsBody({ req }: { req: KpRequirementsView }) {
             <div className="space-y-4 pt-1" data-testid="kp-requirements-detail">
               {req.responsibilities.length > 0 && (
                 <Section level={2} title={k.responsibilities_title} count={req.responsibilities.length}>
-                  <ul className="list-disc pl-5 space-y-1 typo-body text-foreground">
+                  <ul className="list-disc pl-5 space-y-1 typo-body text-ink-1">
                     {req.responsibilities.map((r, i) => <li key={i}>{r}</li>)}
                   </ul>
                 </Section>
@@ -116,7 +116,7 @@ function KpRequirementsBody({ req }: { req: KpRequirementsView }) {
                         {c.successCriteria.length > 0 && (
                           <>
                             <p className="typo-label">{k.craft_success}</p>
-                            <ul className="list-disc pl-5 space-y-0.5 typo-body text-foreground">
+                            <ul className="list-disc pl-5 space-y-0.5 typo-body text-ink-1">
                               {c.successCriteria.map((s, j) => <li key={j}>{s}</li>)}
                             </ul>
                           </>
@@ -124,7 +124,7 @@ function KpRequirementsBody({ req }: { req: KpRequirementsView }) {
                         {c.lessons.length > 0 && (
                           <>
                             <p className="typo-label">{k.craft_lessons}</p>
-                            <ul className="list-disc pl-5 space-y-0.5 typo-body text-foreground">
+                            <ul className="list-disc pl-5 space-y-0.5 typo-body text-ink-1">
                               {c.lessons.map((s, j) => <li key={j}>{s}</li>)}
                             </ul>
                           </>
@@ -165,7 +165,7 @@ function KpRequirementsBody({ req }: { req: KpRequirementsView }) {
                     {research.commonAsks.length > 0 && (
                       <>
                         <p className="typo-label">{k.research_asks}</p>
-                        <ul className="list-disc pl-5 space-y-0.5 typo-body text-foreground">
+                        <ul className="list-disc pl-5 space-y-0.5 typo-body text-ink-1">
                           {research.commonAsks.map((s, i) => <li key={i}>{s}</li>)}
                         </ul>
                       </>
@@ -173,7 +173,7 @@ function KpRequirementsBody({ req }: { req: KpRequirementsView }) {
                     {research.commonChallenges.length > 0 && (
                       <>
                         <p className="typo-label">{k.research_challenges}</p>
-                        <ul className="list-disc pl-5 space-y-0.5 typo-body text-foreground">
+                        <ul className="list-disc pl-5 space-y-0.5 typo-body text-ink-1">
                           {research.commonChallenges.map((s, i) => <li key={i}>{s}</li>)}
                         </ul>
                       </>

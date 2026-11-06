@@ -85,7 +85,7 @@ export const DialReadouts = memo(function DialReadouts({ readouts, colW, labels,
                 <span className={`typo-caption shrink-0 whitespace-nowrap ${left ? "mr-auto" : "ml-auto"}`}>{stateWord(ink[dim], value)}</span>
               )}
             </span>
-            <span className="block w-full truncate typo-body text-foreground">
+            <span className="block w-full truncate typo-body text-ink-1">
               {writing ? (
                 <span key={writing.id}>
                   <span style={{ ...LETTERING, color }}>{writing.kind === "sector" ? (writing.ink && COPY.ink[writing.ink]) || COPY.kind.sector : COPY.kind[writing.kind]}</span>{" "}

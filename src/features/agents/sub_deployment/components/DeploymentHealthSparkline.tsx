@@ -38,7 +38,7 @@ function MiniSparkline({
   if (values.length < 2) {
     return (
       <div className="flex items-center gap-1" title={label}>
-        <span className="text-[9px] text-foreground">-</span>
+        <span className="typo-caption text-ink-2">-</span>
       </div>
     );
   }
@@ -110,7 +110,7 @@ export function DeploymentHealthSparkline({ daily }: DeploymentHealthSparklinePr
   const dt = t.deployment.dashboard;
 
   if (daily.length === 0) {
-    return <span className="text-[10px] text-foreground">{dt.no_data}</span>;
+    return <span className="typo-caption text-ink-2">{dt.no_data}</span>;
   }
 
   return (

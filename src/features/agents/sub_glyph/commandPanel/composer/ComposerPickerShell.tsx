@@ -27,7 +27,7 @@ interface ComposerPickerShellProps {
   size?: "md" | "lg";
   /**
    * When the picker opens *over* another translucent surface (e.g. the
-   * companion chat panel uses `bg-secondary/95`), the default card-bg
+   * companion chat panel uses `bg-surface-2`), the default card-bg
    * token (RGBA-transparent across themes) lets the underlying panel
    * bleed through visually. Opt into a solid `bg-secondary` background
    * for those callers so the modal feels like its own surface.
@@ -109,7 +109,7 @@ export function ComposerPickerShell({
               />
             )}
             <header
-              className={`flex items-center gap-3 px-5 py-4 border-b border-border/25 ${accentColor ? "" : "bg-gradient-to-r from-primary/10 via-transparent to-transparent"}`}
+              className={`flex items-center gap-3 px-5 py-4 border-b border-hair ${accentColor ? "" : "bg-surface-1"}`}
               style={accentColor ? { background: `linear-gradient(90deg, ${accentColor}1a, transparent 70%)` } : undefined}
             >
               {icon && (
@@ -126,15 +126,15 @@ export function ComposerPickerShell({
                     {eyebrow}
                   </span>
                 )}
-                <h2 className="typo-heading text-foreground font-semibold truncate">{title}</h2>
+                <h2 className="typo-heading text-ink-1 font-semibold truncate">{title}</h2>
                 {subtitle && (
-                  <p className="typo-caption text-foreground mt-0.5 truncate">{subtitle}</p>
+                  <p className="typo-caption text-ink-2 mt-0.5 truncate">{subtitle}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="shrink-0 text-foreground hover:text-foreground hover:bg-foreground/5 p-1.5 rounded-interactive transition-colors"
+                className="shrink-0 text-ink-1 hover:text-ink-1 hover:bg-surface-1 p-1.5 rounded-interactive transition-colors"
                 aria-label={t.common.close}
               >
                 <X className="w-5 h-5" />
@@ -142,7 +142,7 @@ export function ComposerPickerShell({
             </header>
             <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
             {footer && (
-              <footer className="px-5 py-3.5 border-t border-border/25 bg-foreground/[0.03] flex items-center justify-between gap-3">
+              <footer className="px-5 py-3.5 border-t border-hair bg-surface-1 flex items-center justify-between gap-3">
                 {footer}
               </footer>
             )}

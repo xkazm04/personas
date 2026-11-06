@@ -52,7 +52,7 @@ export function AutomationCardActions({
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         aria-label={t.common.actions}
-        className="flex items-center justify-center w-7 h-7 rounded-card text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+        className="flex items-center justify-center w-7 h-7 rounded-card text-ink-1 hover:bg-surface-2 hover:text-ink-1 transition-colors"
       >
         <MoreHorizontal className="w-3.5 h-3.5" />
       </button>
@@ -60,13 +60,13 @@ export function AutomationCardActions({
       {menuOpen && (
           <div
             role="menu"
-            className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-card border border-border bg-background shadow-elevation-3 py-1"
+            className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-card border border-hair bg-background shadow-elevation-3 py-1"
           >
             <button
               type="button"
               role="menuitem"
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2"
             >
               <Pencil className="w-3 h-3" /> {t.common.edit}
             </button>
@@ -76,7 +76,7 @@ export function AutomationCardActions({
                 type="button"
                 role="menuitem"
                 onClick={() => { onToggleStatus(automation.id, 'paused'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
+                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2"
               >
                 <Pause className="w-3 h-3" /> {t.agents.connectors.auto_pause}
               </button>
@@ -87,13 +87,13 @@ export function AutomationCardActions({
                 type="button"
                 role="menuitem"
                 onClick={() => { onToggleStatus(automation.id, 'active'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
+                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2"
               >
                 <Play className="w-3 h-3" /> {t.agents.connectors.auto_activate}
               </button>
             )}
 
-            <div className="border-t border-border/40 my-1" />
+            <div className="border-t border-hair my-1" />
 
             <button
               type="button"

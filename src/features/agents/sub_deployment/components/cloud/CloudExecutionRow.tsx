@@ -42,41 +42,41 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
     if (isExpanded && statusClass === 'failed' && !output) fetchRef.current();
   }, [isExpanded, statusClass, output]);
   return (
-    <div data-testid="cloud-execution-row" className="rounded-card bg-secondary/30 border border-primary/10 overflow-hidden">
+    <div data-testid="cloud-execution-row" className="rounded-card bg-surface-1 border border-hair overflow-hidden">
       {/* Row */}
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-secondary/50 transition-colors cursor-pointer"
+        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-2 transition-colors cursor-pointer"
       >
-        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
+        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-ink-1" /> : <ChevronRight className="w-3.5 h-3.5 text-ink-1" />}
         {statusIcon(exec.status)}
-        <span className="typo-body text-foreground truncate flex-1">{personaName}</span>
-        <span className="typo-caption text-foreground">{formatDuration(durationMs)}</span>
-        <span className="typo-caption text-foreground">{formatCost(exec.costUsd)}</span>
-        <span className="typo-caption text-foreground">{timeAgo(exec.createdAt)}</span>
+        <span className="typo-body text-ink-1 truncate flex-1">{personaName}</span>
+        <span className="typo-caption text-ink-2">{formatDuration(durationMs)}</span>
+        <span className="typo-caption text-ink-2">{formatCost(exec.costUsd)}</span>
+        <span className="typo-caption text-ink-2">{timeAgo(exec.createdAt)}</span>
       </button>
 
       {/* Expanded detail */}
       {isExpanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2">
+        <div className="px-3 pb-3 pt-1 border-t border-hair space-y-2">
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{tokenLabel(t, 'execution', exec.status)}</span></div>
-            <div><span className="text-foreground">{dt.label_duration}</span> <span className="text-foreground">{formatDuration(durationMs)}</span></div>
-            <div><span className="text-foreground">{dt.label_cost}</span> <span className="text-foreground">{formatCost(exec.costUsd)}</span></div>
-            <div><span className="text-foreground">{dt.label_tokens}</span> <span className="text-foreground">{tokens ?? '—'}</span></div>
-            <div><span className="text-foreground">{dt.label_started}</span> <span className="text-foreground"><AbsoluteTime timestamp={exec.startedAt} /></span></div>
-            <div><span className="text-foreground">{dt.label_completed}</span> <span className="text-foreground"><AbsoluteTime timestamp={exec.completedAt} /></span></div>
+            <div><span className="text-ink-1">{dt.label_status}</span> <span className="text-ink-1">{tokenLabel(t, 'execution', exec.status)}</span></div>
+            <div><span className="text-ink-1">{dt.label_duration}</span> <span className="text-ink-1">{formatDuration(durationMs)}</span></div>
+            <div><span className="text-ink-1">{dt.label_cost}</span> <span className="text-ink-1">{formatCost(exec.costUsd)}</span></div>
+            <div><span className="text-ink-1">{dt.label_tokens}</span> <span className="text-ink-1">{tokens ?? '—'}</span></div>
+            <div><span className="text-ink-1">{dt.label_started}</span> <span className="text-ink-1"><AbsoluteTime timestamp={exec.startedAt} /></span></div>
+            <div><span className="text-ink-1">{dt.label_completed}</span> <span className="text-ink-1"><AbsoluteTime timestamp={exec.completedAt} /></span></div>
           </div>
           {exec.errorMessage && (
-            <div className="p-2 rounded-card bg-red-500/5 border border-red-500/10 typo-caption text-red-400">
+            <div className="p-2 rounded-card bg-status-error/5 border border-status-error/10 typo-caption text-status-error">
               {exec.errorMessage}
             </div>
           )}
           {exec.inputData && (
             <div className="space-y-1">
-              <span className="typo-caption text-foreground">{dt.label_input}</span>
-              <pre className="typo-caption text-foreground bg-secondary/40 p-2 rounded-card overflow-auto max-h-32 border border-primary/10">
+              <span className="typo-caption text-ink-2">{dt.label_input}</span>
+              <pre className="typo-caption text-ink-1 bg-surface-2 p-2 rounded-card overflow-auto max-h-32 border border-hair">
                 {exec.inputData}
               </pre>
             </div>
@@ -89,7 +89,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                 <button
                   type="button"
                   onClick={onFetchOutput}
-                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card bg-role-agent/10 border border-role-agent/20 text-role-agent hover:bg-role-agent/20 hover:border-role-agent/30 transition-colors cursor-pointer"
                 >
                   <Terminal className="w-3 h-3" />
                   {dt.view_output}
@@ -98,27 +98,27 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             }
             if (output.loading) {
               return (
-                <div className="flex items-center gap-2 typo-caption text-foreground">
+                <div className="flex items-center gap-2 typo-caption text-ink-2">
                   <LoadingSpinner size="sm" /> {dt.fetching_output}
                 </div>
               );
             }
             if (output.error) {
               return (
-                <div className="p-2 rounded-card bg-red-500/5 border border-red-500/10 typo-caption text-red-400">
+                <div className="p-2 rounded-card bg-status-error/5 border border-status-error/10 typo-caption text-status-error">
                   {output.error}
                 </div>
               );
             }
             if (output.lines.length === 0) {
               return (
-                <p className="typo-caption text-foreground italic">{dt.no_output}</p>
+                <p className="typo-caption text-ink-2 italic">{dt.no_output}</p>
               );
             }
             return (
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="typo-caption text-foreground flex items-center gap-1">
+                  <span className="typo-caption text-ink-2 flex items-center gap-1">
                     <Terminal className="w-3 h-3" /> {dt.output_prefix}{output.lines.length} {dt.output_lines_suffix}
                   </span>
                   <button
@@ -126,12 +126,12 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                     onClick={onRefreshOutput ?? onFetchOutput}
                     aria-label={t.common.refresh}
                     data-testid={`cloud-exec-output-refresh-${exec.id}`}
-                    className="typo-caption text-foreground hover:text-foreground/70 transition-colors cursor-pointer"
+                    className="typo-caption text-ink-1 hover:text-ink-2 transition-colors cursor-pointer"
                   >
                     <RefreshCw className="w-3 h-3" />
                   </button>
                 </div>
-                <pre className="typo-code text-emerald-300/80 bg-gray-950/60 p-3 rounded-card overflow-auto max-h-64 border border-primary/10">
+                <pre className="typo-code text-status-success bg-surface-2 p-3 rounded-card overflow-auto max-h-64 border border-hair">
                   {output.lines.join('\n')}
                 </pre>
               </div>

@@ -47,11 +47,11 @@ const TIMELINE_ACCENT = {
     labelActive: 'text-primary/70 font-medium',
   },
   amber: {
-    track: 'bg-amber-400/15',
-    dotActive: 'bg-amber-400',
-    dotInactive: 'bg-amber-400/40',
+    track: 'bg-status-warning/15',
+    dotActive: 'bg-status-warning',
+    dotInactive: 'bg-status-warning/40',
     ring: 'ring-amber-400/10',
-    labelActive: 'text-amber-400/80 font-medium',
+    labelActive: 'text-status-warning font-medium',
   },
 } as const;
 
@@ -69,7 +69,7 @@ function ScheduleTimeline({ runs, now, accent }: { runs: Date[]; now: number; ac
       {/* "Now" marker */}
       <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
         <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-        <span className="typo-body text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
+        <span className="typo-body text-ink-1 mt-1.5 absolute top-full whitespace-nowrap">now</span>
       </div>
 
       {/* Run dots */}
@@ -83,7 +83,7 @@ function ScheduleTimeline({ runs, now, accent }: { runs: Date[]; now: number; ac
           >
             <div className={`w-2 h-2 rounded-full ${i === 0 ? cls.dotActive : cls.dotInactive} ring-2 ${cls.ring}`} />
             <span className={`typo-body mt-1.5 absolute top-full whitespace-nowrap ${
-              i === 0 ? cls.labelActive : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
+              i === 0 ? cls.labelActive : 'text-ink-1 opacity-0 group-hover:opacity-100 transition-opacity'
             }`}>
               {formatRunTime(run)}
             </span>
@@ -106,16 +106,16 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
 
   return (
     <div
-      className="animate-fade-slide-in mt-3 p-3 rounded-modal bg-primary/5 border border-primary/10"
+      className="animate-fade-slide-in mt-3 p-3 rounded-modal bg-surface-1 border border-hair"
     >
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
         <Clock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
-        <p className="typo-body text-foreground/90">
+        <p className="typo-body text-ink-1">
           First {triggerType === 'polling' ? 'poll' : 'run'}:{' '}
-          <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
+          <span className="font-medium text-ink-1">{formatRunTime(firstRun)}</span>
           {t.triggers.then_every}{' '}
-          <span className="font-medium text-foreground/90">{formatInterval(intervalSeconds)}</span>
+          <span className="font-medium text-ink-1">{formatInterval(intervalSeconds)}</span>
         </p>
       </div>
 
@@ -140,16 +140,16 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
 
   return (
     <div
-      className="animate-fade-slide-in mt-3 p-3 rounded-modal bg-amber-500/5 border border-amber-500/10"
+      className="animate-fade-slide-in mt-3 p-3 rounded-modal bg-status-warning/5 border border-status-warning/10"
     >
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
-        <CalendarClock className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-        <p className="typo-body text-foreground/90">
-          <span className="font-medium text-amber-400/90">{cronPreview.description}</span>
+        <CalendarClock className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+        <p className="typo-body text-ink-1">
+          <span className="font-medium text-status-warning">{cronPreview.description}</span>
           {' -- '}{t.triggers.next_run_colon}{' '}
-          <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
-          <span className="text-foreground ml-1 typo-caption">{t.triggers.local_label}</span>
+          <span className="font-medium text-ink-1">{formatRunTime(firstRun)}</span>
+          <span className="text-ink-2 ml-1 typo-caption">{t.triggers.local_label}</span>
         </p>
       </div>
 

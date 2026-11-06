@@ -64,23 +64,23 @@ function useColumns(
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               {annotation?.starred && (
-                <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />
+                <Star className="w-3 h-3 text-status-warning shrink-0" fill="currentColor" />
               )}
-              <span className="typo-body text-foreground/85 truncate">{item.title}</span>
+              <span className="typo-body text-ink-1 truncate">{item.title}</span>
             </div>
             {annotation && (annotation.tags.length > 0 || annotation.note) && (
               <div className="flex flex-wrap items-center gap-1 mt-0.5">
                 {annotation.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-1.5 py-px typo-code rounded-card bg-primary/10 text-primary/80 border border-primary/15"
+                    className="inline-flex items-center typo-code text-primary/80"
                   >
                     {tag}
                   </span>
                 ))}
                 {annotation.note && (
                   <span
-                    className="typo-code text-foreground italic truncate max-w-[180px]"
+                    className="typo-code text-ink-1 italic truncate max-w-[180px]"
                     title={annotation.note}
                   >
                     {annotation.note}
@@ -103,14 +103,14 @@ function useColumns(
         return sa - sb;
       },
       render: (item) => {
-        if (item.type !== 'execution') return <span className="typo-body text-foreground">—</span>;
+        if (item.type !== 'execution') return <span className="typo-body text-ink-1">—</span>;
         const score = (item.raw as PersonaExecution).director_score;
         if (score == null) {
-          return <span className="typo-body text-foreground" title={t.agents.activity.verdict_none}>—</span>;
+          return <span className="typo-body text-ink-1" title={t.agents.activity.verdict_none}>—</span>;
         }
         return (
           <span
-            className="typo-body text-amber-400 tabular-nums whitespace-nowrap"
+            className="typo-body text-status-warning tabular-nums whitespace-nowrap"
             title={tx(t.agents.activity.verdict_tooltip, { score })}
           >
             {renderScoreStars(score)}
@@ -130,10 +130,10 @@ function useColumns(
       },
       render: (item) => {
         if (!item.useCaseId) {
-          return <span className="typo-body text-foreground italic">{t.agents.activity.use_case_persona_wide}</span>;
+          return <span className="typo-body text-ink-1 italic">{t.agents.activity.use_case_persona_wide}</span>;
         }
         const title = useCaseTitleById.get(item.useCaseId) ?? item.useCaseId;
-        return <span className="typo-body text-foreground truncate block" title={title}>{title}</span>;
+        return <span className="typo-body text-ink-1 truncate block" title={title}>{title}</span>;
       },
     },
     {
@@ -143,10 +143,10 @@ function useColumns(
       render: (item) => {
         const statusEntry = item.type === 'execution' ? getStatusEntry(item.status) : null;
         if (statusEntry) {
-          return <span className={`typo-body px-1.5 py-0.5 rounded ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
+          return <span className={`typo-body px-1.5 py-0.5 rounded-interactive ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
         }
         if (item.type === 'memory') {
-          return <span className="typo-body text-amber-400/70" title={`Importance: ${item.status.replace(/^importance:\s*/i, '')}`}>{renderImportanceStars(item.status)}</span>;
+          return <span className="typo-body text-status-warning" title={`Importance: ${item.status.replace(/^importance:\s*/i, '')}`}>{renderImportanceStars(item.status)}</span>;
         }
         if (item.type === 'review') {
           const reviewStatus = REVIEW_STATUS_PILLS[item.status];
@@ -156,7 +156,7 @@ function useColumns(
             </StatusBadge>
           );
         }
-        return <span className="typo-body text-foreground">{item.status}</span>;
+        return <span className="typo-body text-ink-1">{item.status}</span>;
       },
     },
     {
@@ -167,7 +167,7 @@ function useColumns(
       sortFn: (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       align: 'right',
       render: (item) => (
-        <span className="typo-body text-foreground whitespace-nowrap">{formatRelativeTime(item.timestamp)}</span>
+        <span className="typo-body text-ink-1 whitespace-nowrap">{formatRelativeTime(item.timestamp)}</span>
       ),
     },
   ], [t, tx, useCaseTitleById, annotationsByExecution]);

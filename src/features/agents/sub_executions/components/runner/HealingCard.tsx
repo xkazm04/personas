@@ -31,8 +31,8 @@ export function HealingCard({
   useEffect(() => { setCountdown(notification.backoff_seconds ?? 0); }, [notification.backoff_seconds]);
 
   const styles = isIssue
-    ? { border: 'border-red-500/25', bg: 'bg-red-500/[0.04]', icon: 'text-red-400', accent: 'text-red-400' }
-    : { border: 'border-amber-500/25', bg: 'bg-amber-500/[0.04]', icon: 'text-amber-400', accent: 'text-amber-300' };
+    ? { border: 'border-status-error/25', bg: 'bg-status-error/[0.04]', icon: 'text-status-error', accent: 'text-status-error' }
+    : { border: 'border-status-warning/25', bg: 'bg-status-warning/[0.04]', icon: 'text-status-warning', accent: 'text-status-warning' };
 
   return (
     <div
@@ -44,10 +44,10 @@ export function HealingCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`typo-heading ${styles.accent}`}>{notification.title}</span>
-              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-foreground border border-primary/10">{tokenLabel(t, 'severity', notification.severity)}</span>
+              <span className="inline-flex items-center typo-code text-ink-1">{tokenLabel(t, 'severity', notification.severity)}</span>
             </div>
           </div>
-          <button type="button" onClick={onDismiss} className="text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
+          <button type="button" onClick={onDismiss} className="text-ink-1 hover:text-ink-1 transition-colors flex-shrink-0 p-0.5">
             <span className="typo-body">{e.dismiss}</span>
           </button>
         </div>
@@ -55,7 +55,7 @@ export function HealingCard({
         {notification.strategy && (
           <div className="flex items-center gap-2 typo-body">
             <RotateCw className={`w-3.5 h-3.5 flex-shrink-0 ${styles.icon} opacity-60`} />
-            <span className="text-foreground">{notification.strategy}</span>
+            <span className="text-ink-1">{notification.strategy}</span>
           </div>
         )}
 
@@ -63,36 +63,36 @@ export function HealingCard({
           <div className="flex items-center gap-3 pt-1">
             {countdown > 0 && (
               <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-amber-400/60 animate-pulse" />
-                <span className="typo-code text-amber-300/90">{tx(e.retrying_in, { seconds: countdown })}</span>
+                <Clock className="w-3.5 h-3.5 text-status-warning" />
+                <span className="typo-code text-status-warning">{tx(e.retrying_in, { seconds: countdown })}</span>
               </div>
             )}
             {countdown === 0 && (
               <div className="flex items-center gap-1.5">
-                <RotateCw className="w-3.5 h-3.5 text-blue-400/70 animate-spin" />
-                <span className="typo-code text-blue-300/90">{e.retrying_now}</span>
+                <RotateCw className="w-3.5 h-3.5 text-status-info animate-spin" />
+                <span className="typo-code text-status-info">{e.retrying_now}</span>
               </div>
             )}
-            <span className="ml-auto typo-code text-foreground px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
+            <span className="inline-flex items-center ml-auto typo-code text-ink-1">
               {tx(e.attempt_of, { current: notification.retry_number, max: notification.max_retries })}
             </span>
           </div>
         )}
 
         {isRetry && (notification.backoff_seconds ?? 0) > 0 && (
-          <div className="w-full h-1 rounded-full bg-secondary/40 overflow-hidden">
-            <div className="animate-fade-in h-full rounded-full bg-amber-500/40" />
+          <div className="w-full h-1 rounded-full bg-surface-2 overflow-hidden">
+            <div className="animate-fade-in h-full rounded-full bg-status-warning/40" />
           </div>
         )}
 
         {isIssue && (
-          <button type="button" onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 typo-body text-red-400/80 hover:text-red-300 transition-colors">
+          <button type="button" onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 typo-body text-status-error hover:text-status-error transition-colors">
             <ExternalLink className="w-3 h-3" />{e.view_healing_issues}
           </button>
         )}
 
         {notification.suggested_fix && (
-          <p className="typo-body text-foreground pl-6.5">{notification.suggested_fix}</p>
+          <p className="typo-body text-ink-1 pl-6.5">{notification.suggested_fix}</p>
         )}
       </div>
     </div>
@@ -125,10 +125,10 @@ export function AiHealingCounters({
     }
   })();
 
-  const dotClr = phase === 'completed' ? 'bg-emerald-400' : phase === 'failed' ? 'bg-red-400' : 'bg-violet-400 animate-pulse';
+  const dotClr = phase === 'completed' ? 'bg-status-success' : phase === 'failed' ? 'bg-status-error' : 'bg-role-agent animate-pulse';
 
   return (
-    <span className="flex items-center gap-1.5 typo-heading text-foreground">
+    <span className="flex items-center gap-1.5 typo-heading text-ink-1">
       <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotClr}`} />
       {label}
     </span>

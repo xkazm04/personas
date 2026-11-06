@@ -44,7 +44,7 @@ export function ActivityFilters({
   // other types; offering them on Events/Memories/... could only empty the feed.
   const runOnlyFilters = filter === 'all';
   return (
-    <div data-testid="activity-filter-strip" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-primary/10 pb-0">
+    <div data-testid="activity-filter-strip" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-hair pb-0">
       <div className="flex flex-wrap gap-1 min-w-0">
         {FILTER_TABS.map((tab) => {
           const isActive = filter === tab.id;
@@ -60,12 +60,12 @@ export function ActivityFilters({
               className={`relative px-3 py-1.5 typo-body whitespace-nowrap rounded-t-card transition-colors duration-150 ease-out ${
                 isActive
                   ? 'bg-primary/10 text-primary'
-                  : 'text-foreground hover:text-foreground hover:bg-primary/5'
+                  : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2'
               }`}
             >
               {label}
               {counts[tab.id] > 0 && (
-                <span className="ml-1.5 text-foreground">({counts[tab.id]}{truncated?.[tab.id] ? '+' : ''})</span>
+                <span className="ml-1.5 text-ink-1">({counts[tab.id]}{truncated?.[tab.id] ? '+' : ''})</span>
               )}
               {isActive && (
                 <motion.div
@@ -88,8 +88,8 @@ export function ActivityFilters({
           title={t.agents.activity.filter_starred_only}
           className={`flex items-center gap-1 px-2 py-1 rounded-card border typo-body transition-colors ${
             starredOnly
-              ? 'bg-amber-500/15 text-amber-400 border-amber-400/40'
-              : 'bg-secondary/20 text-foreground border-primary/15 hover:text-foreground'
+              ? 'bg-status-warning/15 text-status-warning border-status-warning/40'
+              : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-1'
           }`}
         >
           <Star className="w-3 h-3" fill={starredOnly ? 'currentColor' : 'none'} />
@@ -100,7 +100,7 @@ export function ActivityFilters({
           <select
             value={tagFilter}
             onChange={(e) => onTagFilterChange(e.target.value)}
-            className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
+            className="px-2 py-1 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 outline-none"
             title={t.agents.activity.filter_tag}
           >
             <option value="all">{t.agents.activity.filter_tag_all}</option>
@@ -113,7 +113,7 @@ export function ActivityFilters({
           <select
             value={useCaseFilter}
             onChange={(e) => onUseCaseFilterChange(e.target.value)}
-            className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
+            className="px-2 py-1 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 outline-none"
             title={debtText("auto_filter_by_capability_4c8f68bf")}
           >
             <option value="all"><DebtText k="auto_all_capabilities_1b93e8ca" /></option>
@@ -128,7 +128,7 @@ export function ActivityFilters({
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value)}
             aria-label={t.agents.activity.col_status}
-            className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
+            className="px-2 py-1 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 outline-none"
           >
             <option value="all">{t.agents.activity.all_statuses}</option>
             {availableStatuses.map((s) => (

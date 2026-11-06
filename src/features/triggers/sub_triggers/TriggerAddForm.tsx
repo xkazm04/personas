@@ -188,16 +188,16 @@ export function TriggerAddForm({
 
   return (
     <div
-      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-4 space-y-4"
+      className="animate-fade-slide-in bg-surface-2 backdrop-blur-sm border border-hair rounded-modal p-4 space-y-4"
     >
       {!lockedTriggerType && (
         <>
           <NlTriggerInput onApplyResult={applyNlResult} />
 
           <div className="relative flex items-center gap-3 py-0.5">
-            <div className="flex-1 border-t border-border/20" />
-            <span className="typo-caption text-foreground shrink-0">{t.triggers.or_use_templates}</span>
-            <div className="flex-1 border-t border-border/20" />
+            <div className="flex-1 border-t border-hair" />
+            <span className="typo-caption text-ink-2 shrink-0">{t.triggers.or_use_templates}</span>
+            <div className="flex-1 border-t border-hair" />
           </div>
 
           <TriggerQuickTemplates onApplyTemplate={applyTemplate} />
@@ -209,14 +209,14 @@ export function TriggerAddForm({
       {triggerType === 'schedule' && (
         <div className="space-y-3">
           <div>
-            <label className="block typo-body text-foreground mb-1.5">{t.triggers.schedule_mode_label}</label>
+            <label className="block typo-body text-ink-1 mb-1.5">{t.triggers.schedule_mode_label}</label>
             <div className="flex gap-1.5">
               <button type="button" onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-3 hover:bg-surface-2'}`}>
                 <Clock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_interval}
               </button>
               <button type="button" onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'cron' ? 'bg-status-warning/15 text-status-warning border-status-warning/30' : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-3 hover:bg-surface-2'}`}>
                 <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_cron}
               </button>
             </div>
@@ -236,18 +236,18 @@ export function TriggerAddForm({
       {triggerType === 'composite' && <CompositeConfig compositeConditions={compositeConditions} setCompositeConditions={setCompositeConditions} compositeOperator={compositeOperator} setCompositeOperator={setCompositeOperator} windowSeconds={windowSeconds} setWindowSeconds={setWindowSeconds} validationError={validationError} setValidationError={setValidationError} />}
 
       {validationError && (
-        <div role="alert" className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
+        <div role="alert" className="px-3 py-2 bg-status-error/10 border border-status-error/20 rounded-card typo-body text-status-error">
           {validationError}
         </div>
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 bg-surface-2 hover:bg-secondary text-ink-1 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
         <button
           type="button"
           onClick={handleAddTrigger}
           disabled={isScheduleInvalid || isCreating}
-          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
+          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-ink-1 rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
         >
           {t.triggers.add.create_trigger}
         </button>

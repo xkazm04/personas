@@ -12,7 +12,7 @@ export function EventTypeChip({ eventType }: { eventType: string }) {
   return (
     <span className="inline-flex items-center gap-2 min-w-0 max-w-full" title={eventType}>
       <Icon className={`w-4 h-4 flex-shrink-0 ${text}`} />
-      <span className="typo-body text-foreground truncate">{eventType}</span>
+      <span className="typo-body text-ink-1 truncate">{eventType}</span>
     </span>
   );
 }

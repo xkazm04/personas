@@ -22,16 +22,16 @@ describe('budgetUtilization', () => {
 describe('budgetColor thresholds', () => {
   it.each([0, 49, 50, 79, 80, 99, 100, 150])('agrees with the history tone at %i percent', (pct) => {
     const tone = budgetToneForPct(pct);
-    expect(budgetColor(pct)).toBe({ emerald: 'bg-emerald-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tone]);
+    expect(budgetColor(pct)).toBe({ emerald: 'bg-status-success', amber: 'bg-status-warning', red: 'bg-status-error' }[tone]);
   });
 });
 
 describe('status presentation is a closed pair (colour + shape)', () => {
   it.each([
-    ['active', CheckCircle2, 'emerald'],
-    ['paused', PauseCircle, 'amber'],
-    ['failed', XCircle, 'red'],
-    ['deploying', Circle, 'secondary'],
+    ['active', CheckCircle2, 'status-success'],
+    ['paused', PauseCircle, 'status-warning'],
+    ['failed', XCircle, 'status-error'],
+    ['deploying', Circle, 'surface-2'],
   ])('%s', (status, icon, hue) => {
     expect(statusIcon(status)).toBe(icon);
     expect(statusColor(status)).toContain(hue);

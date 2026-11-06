@@ -31,7 +31,7 @@ function StarterPill({ match, suggested, onOpen, onDismiss, dismissLabel }: Star
         onClick={onOpen}
         aria-label={`${match.recipe_name}, ${COPY.recipes.match(pct)}`}
         data-testid={`recipe-starter-${match.recipe_id}`}
-        className="inline-flex items-center gap-1.5 h-8 pl-3 pr-2.5 rounded-full typo-body text-foreground hover:bg-foreground/5"
+        className="inline-flex items-center gap-1.5 h-8 pl-3 pr-2.5 rounded-full typo-body text-ink-1 hover:bg-surface-1"
       >
         <span className="max-w-[180px] truncate">{match.recipe_name}</span>
         <span className="font-mono typo-caption tabular-nums" style={suggested ? { color: "var(--cinema-accent)" } : undefined}>{pct}%</span>
@@ -41,7 +41,7 @@ function StarterPill({ match, suggested, onOpen, onDismiss, dismissLabel }: Star
           type="button"
           onClick={onDismiss}
           aria-label={dismissLabel}
-          className="grid place-items-center w-7 h-7 mr-0.5 rounded-full text-foreground hover:bg-foreground/5"
+          className="grid place-items-center w-7 h-7 mr-0.5 rounded-full text-ink-1 hover:bg-surface-1"
         >
           <X className="w-3.5 h-3.5" aria-hidden />
         </button>
@@ -62,7 +62,7 @@ export function RecipeStarters({ recipes }: { recipes: CinemaRecipes }) {
       className="w-full max-w-[520px] flex items-center justify-center flex-wrap gap-1.5"
       data-testid="sheet-cinema-recipe-starters"
     >
-      <span className="inline-flex items-center gap-1.5 typo-body text-foreground mr-0.5">
+      <span className="inline-flex items-center gap-1.5 typo-body text-ink-1 mr-0.5">
         <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--cinema-accent)" }} aria-hidden />
         {suggestion ? t.recipes.composer_suggestion.label : COPY.recipes.orStartFrom}
       </span>

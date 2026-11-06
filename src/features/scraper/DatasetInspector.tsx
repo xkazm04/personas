@@ -47,35 +47,35 @@ export function DatasetInspector({
       key: 'key',
       label: 'Key',
       width: 'minmax(140px, 1fr)',
-      render: (r) => <span className="typo-caption text-foreground truncate">{r.key}</span>,
+      render: (r) => <span className="typo-caption text-ink-2 truncate">{r.key}</span>,
     },
     {
       key: 'data',
       label: 'Record',
       width: 'minmax(200px, 2fr)',
       render: (r) => (
-        <span className="typo-caption text-foreground truncate">{summarise(r.data)}</span>
+        <span className="typo-caption text-ink-2 truncate">{summarise(r.data)}</span>
       ),
     },
     {
       key: 'lastSeen',
       label: 'Last seen',
       width: '120px',
-      render: (r) => <RelativeTime timestamp={r.lastSeen} className="typo-caption text-foreground" />,
+      render: (r) => <RelativeTime timestamp={r.lastSeen} className="typo-caption text-ink-1" />,
     },
     {
       key: 'updatedAt',
       label: 'Changed',
       width: '120px',
-      render: (r) => <RelativeTime timestamp={r.updatedAt} className="typo-caption text-foreground" />,
+      render: (r) => <RelativeTime timestamp={r.updatedAt} className="typo-caption text-ink-1" />,
     },
   ];
 
   return (
-    <div className="rounded-card border border-primary/12 bg-secondary/20">
+    <div className="rounded-card border border-primary/12 bg-surface-1">
       <header className="flex items-center gap-3 border-b border-primary/8 px-4 py-2.5">
         <span className="typo-card-label">{name}</span>
-        <span className="typo-caption text-muted-foreground">
+        <span className="typo-caption text-ink-3">
           {records.length}{records.length === PAGE_SIZE ? '+' : ''} records
         </span>
         <AccessibleToggle
@@ -89,7 +89,7 @@ export function DatasetInspector({
           type="button"
           onClick={onClose}
           aria-label={`Close ${name} inspector`}
-          className="rounded-interactive p-1 text-foreground hover:bg-secondary/60 transition-colors"
+          className="rounded-interactive p-1 text-ink-1 hover:bg-surface-2 transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -98,7 +98,7 @@ export function DatasetInspector({
       {failed ? (
         <div className="flex items-center gap-3 px-4 py-4">
           <AlertTriangle className="size-4 text-status-warning shrink-0" />
-          <p className="typo-caption text-foreground flex-1">
+          <p className="typo-caption text-ink-2 flex-1">
             Could not read this dataset. Nothing here means the read failed, not that the dataset is empty.
           </p>
           <Button variant="secondary" size="xs" onClick={() => void load()}>Retry</Button>

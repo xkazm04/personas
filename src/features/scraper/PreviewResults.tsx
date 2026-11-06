@@ -11,8 +11,8 @@ export function PreviewResults({ rows, fieldNames }: { rows: PreviewRow[]; field
   return (
     <div className="flex flex-col gap-2">
       {rows.map((row) => (
-        <div key={row.url} className="rounded-interactive border border-primary/10 bg-background/40 p-3">
-          <div className="mb-2 flex items-center gap-1.5 typo-caption text-muted-foreground">
+        <div key={row.url} className="rounded-interactive border border-hair bg-background/40 p-3">
+          <div className="mb-2 flex items-center gap-1.5 typo-caption text-ink-3">
             <Globe className="size-3.5 shrink-0" />
             <span className="truncate">{row.url}</span>
             {row.error ? (
@@ -30,14 +30,14 @@ export function PreviewResults({ rows, fieldNames }: { rows: PreviewRow[]; field
                     val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
                   return (
                     <tr key={name}>
-                      <td className="py-1.5 pr-3 align-top font-mono typo-caption text-muted-foreground">{name}</td>
+                      <td className="py-1.5 pr-3 align-top font-mono typo-caption text-ink-3">{name}</td>
                       <td className="py-1.5 align-top">
                         {isEmpty ? (
                           <span className="inline-flex items-center gap-1 typo-caption text-status-warning">
                             <AlertTriangle className="size-3" /> no match
                           </span>
                         ) : (
-                          <span className="break-words typo-caption text-foreground">{formatPreviewValue(val)}</span>
+                          <span className="break-words typo-caption text-ink-2">{formatPreviewValue(val)}</span>
                         )}
                       </td>
                     </tr>

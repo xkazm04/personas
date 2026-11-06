@@ -24,15 +24,15 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 // --- Helpers ---------------------------------------------------------------
 
 function statusColor(code: number): string {
-  if (code >= 200 && code < 300) return 'text-emerald-400';
-  if (code >= 400 && code < 500) return 'text-amber-400';
-  return 'text-red-400';
+  if (code >= 200 && code < 300) return 'text-status-success';
+  if (code >= 400 && code < 500) return 'text-status-warning';
+  return 'text-status-error';
 }
 
 function statusBg(code: number): string {
-  if (code >= 200 && code < 300) return 'bg-emerald-500/10 border-emerald-500/15';
-  if (code >= 400 && code < 500) return 'bg-amber-500/10 border-amber-500/15';
-  return 'bg-red-500/10 border-red-500/15';
+  if (code >= 200 && code < 300) return 'bg-status-success/10 border-status-success/15';
+  if (code >= 400 && code < 500) return 'bg-status-warning/10 border-status-warning/15';
+  return 'bg-status-error/10 border-status-error/15';
 }
 
 function formatTime(iso: string): string {
@@ -65,30 +65,30 @@ interface RequestRowProps {
 function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isReplaying, replayResult, copiedCurl }: RequestRowProps) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-modal bg-background/30 border border-primary/5 overflow-hidden">
+    <div className="rounded-modal bg-background/30 border border-hair overflow-hidden">
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-secondary/20 transition-colors"
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-surface-1 transition-colors"
       >
         {isExpanded
-          ? <ChevronDown className="w-3 h-3 text-foreground flex-shrink-0" />
-          : <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />}
-        <span className={`px-1.5 py-0.5 rounded typo-caption border ${statusBg(entry.statusCode)} ${statusColor(entry.statusCode)}`}>
+          ? <ChevronDown className="w-3 h-3 text-ink-1 flex-shrink-0" />
+          : <ChevronRight className="w-3 h-3 text-ink-1 flex-shrink-0" />}
+        <span className={`px-1.5 py-0.5 rounded-interactive typo-caption border ${statusBg(entry.statusCode)} ${statusColor(entry.statusCode)}`}>
           {entry.statusCode}
         </span>
-        <span className="typo-code text-foreground">{entry.method}</span>
+        <span className="typo-code text-ink-1">{entry.method}</span>
         {entry.eventId && (
-          <span className="typo-code text-emerald-400/70 truncate max-w-[120px]" title={entry.eventId}>
+          <span className="typo-code text-status-success truncate max-w-[120px]" title={entry.eventId}>
             {entry.eventId.slice(0, 8)}...
           </span>
         )}
         {entry.errorMessage && (
-          <span className="typo-caption text-red-400/80 truncate max-w-[180px]" title={entry.errorMessage}>
+          <span className="typo-caption text-status-error truncate max-w-[180px]" title={entry.errorMessage}>
             {entry.errorMessage}
           </span>
         )}
-        <span className="text-foreground ml-auto typo-caption flex items-center gap-1">
+        <span className="text-ink-2 ml-auto typo-caption flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {formatTime(entry.receivedAt)}
         </span>
@@ -98,8 +98,8 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
           <div
             className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
-              <div className="flex flex-wrap gap-x-4 gap-y-1 typo-caption text-foreground">
+            <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-hair">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 typo-caption text-ink-2">
                 <span className="font-mono">{entry.id.slice(0, 12)}</span>
                 <span>{<AbsoluteTime timestamp={entry.receivedAt} />}</span>
               </div>
@@ -109,8 +109,8 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
 
               {entry.errorMessage && (
                 <div className="space-y-1">
-                  <div className="typo-label text-red-400/70">Error</div>
-                  <div className="px-2.5 py-2 rounded-card bg-red-500/5 border border-red-500/10 typo-code text-red-400/90 whitespace-pre-wrap break-all">
+                  <div className="typo-label text-status-error">Error</div>
+                  <div className="px-2.5 py-2 rounded-card bg-status-error/5 border border-status-error/10 typo-code text-status-error whitespace-pre-wrap break-all">
                     {entry.errorMessage}
                   </div>
                 </div>
@@ -121,7 +121,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
-                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-role-external hover:text-role-external hover:bg-role-external/10 rounded-card border border-role-external/15 transition-colors disabled:opacity-40"
                   title={t.triggers.replay_label}
                 >
                   {isReplaying ? <LoadingSpinner size="xs" /> : <RotateCcw className="w-3 h-3" />}
@@ -134,10 +134,10 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                   copiedLabel="Copied!"
                   iconSize="w-3 h-3"
                   icon={<Terminal className="w-3 h-3" />}
-                  className="px-2.5 py-1 typo-caption rounded-card border border-primary/10 text-foreground hover:text-foreground hover:bg-secondary/20"
+                  className="px-2.5 py-1 typo-caption rounded-card border border-hair text-ink-1 hover:text-ink-1 hover:bg-surface-1"
                 />
                 {replayResult && (
-                  <span className={`flex items-center gap-1 typo-caption ${replayResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`flex items-center gap-1 typo-caption ${replayResult.success ? 'text-status-success' : 'text-status-error'}`}>
                     {replayResult.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                     {replayResult.message}
                   </span>
@@ -230,16 +230,16 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
+        className="flex items-center gap-1.5 pt-1 border-t border-hair typo-body text-ink-1 hover:text-ink-3 transition-colors w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Radio className="w-3 h-3" />
         {t.triggers.request_inspector}
         {logs.length > 0 && (
-          <span className="text-foreground ml-1">({logs.length})</span>
+          <span className="text-ink-1 ml-1">({logs.length})</span>
         )}
         {errorCount > 0 && (
-          <span className="text-red-400/70 typo-caption ml-1">{errorCount} errors</span>
+          <span className="text-status-error typo-caption ml-1">{errorCount} errors</span>
         )}
       </button>
 
@@ -249,18 +249,18 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
           >
             <div className="space-y-1.5 pt-1">
               {loading ? (
-                <div className="flex items-center gap-2 py-2 typo-body text-foreground">
+                <div className="flex items-center gap-2 py-2 typo-body text-ink-1">
                   <LoadingSpinner size="xs" />
                   {t.triggers.loading_history}
                 </div>
               ) : error ? (
-                <div className="flex items-center gap-2 py-2 typo-body text-amber-400/90">
+                <div className="flex items-center gap-2 py-2 typo-body text-status-warning">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
                   {t.triggers.could_not_load_log}
                   <button
                     type="button"
                     onClick={() => void fetch()}
-                    className="ml-auto flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
+                    className="ml-auto flex items-center gap-1 typo-body text-ink-1 hover:text-ink-1 transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />Retry
                   </button>
@@ -287,7 +287,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                       type="button"
                       onClick={() => void fetch()}
                       disabled={loading}
-                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-foreground hover:text-muted-foreground/90 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-ink-1 hover:text-ink-3 transition-colors"
                     >
                       <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                       Refresh
@@ -297,7 +297,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                       type="button"
                       onClick={() => void handleClear()}
                       disabled={clearing}
-                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-red-400/60 hover:text-red-400/90 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-status-error hover:text-status-error transition-colors"
                     >
                       {clearing ? <LoadingSpinner size="xs" /> : <Trash2 className="w-3 h-3" />}
                       {t.triggers.clear_all}

@@ -324,7 +324,7 @@ export function ActivityTab() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-12 text-foreground typo-body">
+      <div className="flex items-center justify-center py-12 text-ink-1 typo-body">
         {t.agents.activity.select_persona}
       </div>
     );

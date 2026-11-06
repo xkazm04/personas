@@ -35,28 +35,28 @@ export function AppFocusConfig({
                 setAppNames(updated);
               }}
               placeholder={t.triggers.app_focus_process_placeholder}
-              className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+              className="flex-1 px-3 py-2 bg-background/50 border border-hair rounded-modal text-ink-1 typo-code placeholder-ink-3 focus-ring transition-all"
             />
             {appNames.length > 1 && (
-              <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-ink-1 hover:text-status-error transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setAppNames([...appNames, ''])} className="flex items-center gap-1 typo-body text-indigo-400/80 hover:text-indigo-400 transition-colors">
+        <button type="button" onClick={() => setAppNames([...appNames, ''])} className="flex items-center gap-1 typo-body text-role-agent hover:text-role-agent transition-colors">
           <Plus className="w-3.5 h-3.5" /> {t.triggers.app_focus.add_app}
         </button>
       </TriggerFieldGroup>
       <TriggerFieldGroup
-        label={<>{t.triggers.window_title_pattern_label} <span className="text-foreground">{t.triggers.optional_regex_label}</span></>}
+        label={<>{t.triggers.window_title_pattern_label} <span className="text-ink-1">{t.triggers.optional_regex_label}</span></>}
       >
         <input
           type="text"
           value={titlePattern}
           onChange={(e) => setTitlePattern(e.target.value)}
           placeholder={t.triggers.app_focus_window_placeholder}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-ink-1 typo-code placeholder-ink-3 focus-ring transition-all"
         />
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.poll_interval_label}>

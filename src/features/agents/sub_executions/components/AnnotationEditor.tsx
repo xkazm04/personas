@@ -116,7 +116,7 @@ export function AnnotationEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="typo-heading text-foreground uppercase">
+        <span className="typo-heading text-ink-1 uppercase">
           {a.annotation_section_title}
         </span>
         <button
@@ -125,7 +125,7 @@ export function AnnotationEditor({
           aria-label={a.annotation_starred_aria}
           aria-pressed={starred}
           className={`p-1 rounded-interactive transition-colors ${
-            starred ? 'text-amber-400 hover:text-amber-300' : 'text-foreground hover:text-foreground/70'
+            starred ? 'text-status-warning hover:text-status-warning' : 'text-ink-1 hover:text-ink-2'
           }`}
         >
           <Star className="w-4 h-4" fill={starred ? 'currentColor' : 'none'} />
@@ -133,14 +133,14 @@ export function AnnotationEditor({
       </div>
 
       <div className="space-y-1.5">
-        <span className="typo-code text-foreground uppercase tracking-wider">
+        <span className="typo-eyebrow text-ink-1">
           {a.annotation_tags_label}
         </span>
         <div className="flex flex-wrap gap-1.5 items-center">
           {tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-card bg-primary/10 text-primary/90 border border-primary/20"
+              className="inline-flex items-center gap-1 typo-body text-primary/90"
             >
               {tag}
               <button
@@ -167,14 +167,14 @@ export function AnnotationEditor({
             }}
             placeholder={a.annotation_tag_placeholder}
             aria-label={a.annotation_tags_label}
-            className="flex-1 min-w-[100px] px-2 py-0.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30"
+            className="flex-1 min-w-[100px] px-2 py-0.5 typo-body bg-surface-1 border border-hair rounded-card text-ink-1 outline-none focus:border-primary/30"
           />
           <button
             type="button"
             onClick={() => commitTag(draftTag)}
             disabled={!draftTag.trim()}
             aria-label={t.common.add}
-            className="p-1 rounded-interactive text-foreground hover:text-foreground disabled:opacity-30"
+            className="p-1 rounded-interactive text-ink-1 hover:text-ink-1 disabled:opacity-30"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -186,7 +186,7 @@ export function AnnotationEditor({
                 key={s}
                 type="button"
                 onClick={() => commitTag(s)}
-                className="px-2 py-0.5 typo-code rounded-card bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 border border-primary/10"
+                className="px-2 py-0.5 typo-code rounded-card bg-surface-2 text-ink-1 hover:text-ink-1 hover:bg-surface-2 border border-hair"
               >
                 + {s}
               </button>
@@ -196,7 +196,7 @@ export function AnnotationEditor({
       </div>
 
       <div className="space-y-1.5">
-        <span className="typo-code text-foreground uppercase tracking-wider">
+        <span className="typo-eyebrow text-ink-1">
           {a.annotation_note_label}
         </span>
         <textarea
@@ -205,7 +205,7 @@ export function AnnotationEditor({
           placeholder={a.annotation_note_placeholder}
           aria-label={a.annotation_note_label}
           rows={3}
-          className="w-full px-2 py-1.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30 resize-y"
+          className="w-full px-2 py-1.5 typo-body bg-surface-1 border border-hair rounded-card text-ink-1 outline-none focus:border-primary/30 resize-y"
         />
       </div>
 
@@ -224,7 +224,7 @@ export function AnnotationEditor({
             onClick={handleDelete}
             disabled={saving}
             aria-label={a.annotation_delete}
-            className="p-1 text-foreground hover:text-rose-400 transition-colors"
+            className="p-1 text-ink-1 hover:text-status-error transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

@@ -57,16 +57,16 @@ export function WhenQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMore:
       </div>
 
       {preset === "manual" ? (
-        <p className="typo-body text-foreground">{QS.when.manualNote}</p>
+        <p className="typo-body text-ink-1">{QS.when.manualNote}</p>
       ) : (
         <div className="flex flex-col gap-3">
-          <label className="flex items-center gap-3 typo-body text-foreground">
+          <label className="flex items-center gap-3 typo-body text-ink-1">
             <span className="w-24 shrink-0">{QS.when.at}</span>
             <input type="time" value={time} onChange={(e) => e.target.value && set({ time: e.target.value })} className={`${INPUT_CLS} w-36`} />
           </label>
           {preset === "weekly" && (
             <div className="flex items-center gap-3">
-              <span className="w-24 shrink-0 typo-body text-foreground">{QS.when.on}</span>
+              <span className="w-24 shrink-0 typo-body text-ink-1">{QS.when.on}</span>
               <div role="group" aria-label={QS.when.on} className="flex flex-wrap gap-1.5">
                 {dayOptions.map((d) => (
                   <ChoicePill key={d.id} on={days.includes(d.id)} color={color} onClick={() => toggleDay(d.id)} ariaLabel={d.long}>
@@ -78,11 +78,11 @@ export function WhenQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMore:
           )}
           {preset === "monthly" && (
             <div className="flex items-center gap-3">
-              <span className="w-24 shrink-0 typo-body text-foreground">{QS.when.dayOfMonth}</span>
+              <span className="w-24 shrink-0 typo-body text-ink-1">{QS.when.dayOfMonth}</span>
               <Button variant="secondary" size="icon-sm" aria-label={QS.when.earlier} disabled={monthDay <= 1} onClick={() => set({ monthDay: monthDay - 1 })}>
                 <Minus className="w-3.5 h-3.5" />
               </Button>
-              <span className="typo-body text-foreground tabular-nums w-8 text-center" aria-live="polite">{monthDay}</span>
+              <span className="typo-body text-ink-1 tabular-nums w-8 text-center" aria-live="polite">{monthDay}</span>
               <Button variant="secondary" size="icon-sm" aria-label={QS.when.later} disabled={monthDay >= 28} onClick={() => set({ monthDay: monthDay + 1 })}>
                 <Plus className="w-3.5 h-3.5" />
               </Button>

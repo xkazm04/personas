@@ -16,11 +16,11 @@ interface PersonaChangeHistoryProps {
 }
 
 const SOURCE_TONE: Record<string, string> = {
-  editor: 'bg-primary/10 text-primary border-primary/20',
-  header: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-  fanout: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  editor: 'bg-primary/10 text-primary border-hair',
+  header: 'bg-role-agent/10 text-role-agent border-role-agent/20',
+  fanout: 'bg-status-info/10 text-status-info border-status-info/20',
   gallery: 'bg-status-warning/10 text-status-warning border-status-warning/20',
-  other: 'bg-secondary/40 text-foreground border-primary/10',
+  other: 'bg-surface-2 text-ink-1 border-hair',
 };
 
 /**
@@ -102,15 +102,15 @@ export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHisto
   return (
     <div className="space-y-3">
       <h4 className="flex items-center gap-2.5 typo-submodule-header">
-        <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
+        <span className="w-6 h-[2px] bg-surface-1 rounded-full" />
         <History className="w-3.5 h-3.5" />
         {labels.title}
       </h4>
-      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3">
+      <div className="bg-surface-2 backdrop-blur-sm border border-hair rounded-modal p-3">
         {loading ? (
           <div className="space-y-2 animate-pulse" aria-hidden="true">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-5 rounded-card bg-primary/5" />
+              <div key={i} className="h-5 rounded-card bg-surface-1" />
             ))}
           </div>
         ) : failed ? (
@@ -119,7 +119,7 @@ export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHisto
             {t.common.source_unreachable}
           </p>
         ) : entries.length === 0 ? (
-          <p className="flex items-center justify-center gap-2 py-4 typo-body text-foreground">
+          <p className="flex items-center justify-center gap-2 py-4 typo-body text-ink-1">
             <History className="w-3.5 h-3.5" />
             {labels.empty}
           </p>
@@ -127,22 +127,22 @@ export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHisto
           <ul className="divide-y divide-primary/10">
             {entries.map((e) => (
               <li key={e.id} className="flex items-center gap-2 py-2 first:pt-0 last:pb-0">
-                <span className="typo-body text-foreground min-w-0 shrink-0">
+                <span className="typo-body text-ink-1 min-w-0 shrink-0">
                   {fieldLabel(e.field)}
                 </span>
-                <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-foreground">
+                <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-ink-2">
                   <span className="truncate max-w-[8rem]" title={displayValue(e.beforeValue)}>
                     {displayValue(e.beforeValue)}
                   </span>
                   <ArrowRight className="w-3 h-3 shrink-0 opacity-60" />
-                  <span className="truncate max-w-[8rem] text-foreground" title={displayValue(e.afterValue)}>
+                  <span className="truncate max-w-[8rem] text-ink-1" title={displayValue(e.afterValue)}>
                     {displayValue(e.afterValue)}
                   </span>
                 </span>
                 <span className={`shrink-0 px-1.5 py-0.5 rounded-card border typo-caption ${SOURCE_TONE[e.source ?? 'other'] ?? SOURCE_TONE.other}`}>
                   {sourceLabel(e.source)}
                 </span>
-                <RelativeTime timestamp={e.createdAt} className="shrink-0 typo-caption text-foreground" />
+                <RelativeTime timestamp={e.createdAt} className="shrink-0 typo-caption text-ink-1" />
               </li>
             ))}
           </ul>

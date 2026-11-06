@@ -48,7 +48,7 @@ export function HealthDigestPanel() {
   return (
     <div className="mt-4 space-y-3" data-testid="health-digest-panel">
       <div className="flex items-center justify-between gap-3">
-        <p className="typo-body text-foreground" data-testid="health-digest-summary">{summary}</p>
+        <p className="typo-body text-ink-1" data-testid="health-digest-summary">{summary}</p>
         <Button
           size="sm"
           variant="secondary"

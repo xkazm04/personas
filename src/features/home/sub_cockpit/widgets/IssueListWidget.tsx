@@ -92,7 +92,7 @@ export function IssueListWidget({ config, title, span, actions, footer }: Cockpi
         render: (item) => (
           <span className="flex items-center gap-1.5 min-w-0">
             {nameCell(item.title, toneLabel(t, intentTone(item.severity)), item.title)}
-            {item.href && <ExternalLink className="w-3.5 h-3.5 shrink-0 text-foreground" aria-hidden />}
+            {item.href && <ExternalLink className="w-3.5 h-3.5 shrink-0 text-ink-1" aria-hidden />}
           </span>
         ),
       },

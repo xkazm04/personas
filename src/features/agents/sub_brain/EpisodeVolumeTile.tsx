@@ -77,7 +77,7 @@ export function EpisodeVolumeTile({
       icon={<Activity className="w-3.5 h-3.5 text-primary" aria-hidden />}
       action={
         rows.length > 0 ? (
-          <span className="typo-caption text-foreground/85">
+          <span className="typo-caption text-ink-2">
             {tx(b.volume_total, { count: total })}
           </span>
         ) : undefined
@@ -111,7 +111,7 @@ export function EpisodeVolumeTile({
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           data-testid="brain-volume-drilldown"
-          className="mt-3 inline-flex items-center gap-1.5 typo-caption text-foreground/85 hover:text-foreground transition-colors"
+          className="mt-3 inline-flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
         >
           {open ? (
             <ChevronDown className="w-3.5 h-3.5" aria-hidden />
@@ -180,9 +180,9 @@ function VolumeChart({
               style={{ backgroundColor: fill(role) }}
               aria-hidden
             />
-            <span className="text-foreground/85">{roleLabel[role]}</span>
+            <span className="text-ink-1">{roleLabel[role]}</span>
             <Numeric
-              className="text-foreground"
+              className="text-ink-1"
               value={rows.reduce((n, r) => n + r[role], 0)}
               unit="plain"
             />

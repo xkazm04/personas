@@ -24,10 +24,10 @@ export function ReplayToolPanel({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-        <Wrench className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-heading text-foreground">{e.tool_steps}</span>
-        <span className="ml-auto typo-body tabular-nums text-foreground">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
+        <Wrench className="w-3.5 h-3.5 text-ink-1" />
+        <span className="typo-heading text-ink-1">{e.tool_steps}</span>
+        <span className="ml-auto typo-body tabular-nums text-ink-1">
           {completedSteps.length}/{toolSteps.length}
         </span>
       </div>
@@ -43,18 +43,18 @@ export function ReplayToolPanel({
               key={step.step_index}
               className={`relative rounded-modal border px-3 py-2 transition-all ${
                 isFork
-                  ? 'border-amber-400/50 bg-amber-500/10 ring-1 ring-amber-400/30'
+                  ? 'border-status-warning/50 bg-status-warning/10 ring-1 ring-status-warning/30'
                   : isActive
-                    ? 'border-blue-400/40 bg-blue-500/10 ring-1 ring-blue-400/20'
+                    ? 'border-status-info/40 bg-status-info/10 ring-1 ring-status-info/20'
                     : isCompleted
-                      ? 'border-emerald-500/20 bg-emerald-500/5'
-                      : 'border-primary/10 bg-secondary/20 opacity-60'
+                      ? 'border-status-success/20 bg-status-success/5'
+                      : 'border-hair bg-surface-1 opacity-60'
               }`}
             >
               <div className="flex items-center gap-2">
                 {/* Step number */}
                 <span className={`typo-code tabular-nums ${
-                  isActive ? 'text-blue-400' : isCompleted ? 'text-emerald-400' : 'text-foreground'
+                  isActive ? 'text-status-info' : isCompleted ? 'text-status-success' : 'text-ink-1'
                 }`}>
                   {step.step_index}
                 </span>
@@ -62,29 +62,29 @@ export function ReplayToolPanel({
                 {/* Status indicator */}
                 <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                   isActive
-                    ? 'bg-blue-400 animate-pulse'
+                    ? 'bg-status-info animate-pulse'
                     : isCompleted
-                      ? 'bg-emerald-400'
+                      ? 'bg-status-success'
                       : 'bg-muted-foreground/20'
                 }`} />
 
                 {/* Tool name */}
                 <span className={`typo-code truncate ${
-                  isPending ? 'text-muted-foreground' : 'text-foreground'
+                  isPending ? 'text-ink-3' : 'text-ink-1'
                 }`}>
                   {step.tool_name}
                 </span>
 
                 {/* Duration */}
                 {step.duration_ms != null && isCompleted && (
-                  <span className="ml-auto typo-code text-foreground tabular-nums">
+                  <span className="ml-auto typo-code text-ink-1 tabular-nums">
                     {formatDuration(Number(step.duration_ms))}
                   </span>
                 )}
 
                 {/* Fork marker */}
                 {isFork && (
-                  <GitFork className="w-3 h-3 text-amber-400 shrink-0" />
+                  <GitFork className="w-3 h-3 text-status-warning shrink-0" />
                 )}
               </div>
 
@@ -101,7 +101,7 @@ export function ReplayToolPanel({
           );
         })}
         {toolSteps.length === 0 && (
-          <div className="text-center py-6 typo-body text-foreground">{e.no_tool_calls_recorded}</div>
+          <div className="text-center py-6 typo-body text-ink-1">{e.no_tool_calls_recorded}</div>
         )}
       </div>
     </div>

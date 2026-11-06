@@ -18,8 +18,8 @@ export function ChoicePill({ on, color, onClick, children, ariaLabel }: ChoicePi
       onClick={onClick}
       aria-pressed={on}
       aria-label={ariaLabel}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border typo-body text-foreground transition-colors ${
-        on ? "" : "border-card-border hover:bg-secondary/40"
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border typo-body text-ink-1 transition-colors ${
+        on ? "" : "border-card-border hover:bg-surface-2"
       }`}
       style={on ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.14) } : undefined}
     >

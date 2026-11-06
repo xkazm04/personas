@@ -59,10 +59,10 @@ export function PostActivationReconcileDialog({ isOpen, onClose, conflicts, prom
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="vr-reconcile-modal" maxWidthClass="max-w-2xl">
       <div className="p-4 space-y-3">
         <h3 className="typo-section-title flex items-center gap-2">
-          <Pin className="w-4 h-4 text-amber-300" />
+          <Pin className="w-4 h-4 text-status-warning" />
           {lab.vr_reconcile_title}
         </h3>
-        <p className="typo-body text-foreground/90">
+        <p className="typo-body text-ink-1">
           {conflicts.length === 1
             ? tx(lab.vr_reconcile_desc_one, { model: promotedLabel })
             : tx(lab.vr_reconcile_desc_other, { count: conflicts.length, model: promotedLabel })}
@@ -74,18 +74,18 @@ export function PostActivationReconcileDialog({ isOpen, onClose, conflicts, prom
             return (
               <li
                 key={c.useCaseId}
-                className="flex items-center gap-3 rounded-card border border-primary/15 bg-secondary/30 px-3 py-2"
+                className="flex items-center gap-3 rounded-card border border-hair bg-surface-1 px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="typo-body text-foreground truncate">{c.title}</p>
-                  <p className="typo-caption text-foreground/85">
+                  <p className="typo-body text-ink-1 truncate">{c.title}</p>
+                  <p className="typo-caption text-ink-2">
                     {isCleared
                       ? tx(lab.vr_reconcile_now_follows, { model: promotedLabel })
                       : tx(lab.vr_reconcile_pinned_to, { model: c.pinnedLabel })}
                   </p>
                 </div>
                 {isCleared ? (
-                  <span className="inline-flex items-center gap-1 typo-caption text-emerald-400">
+                  <span className="inline-flex items-center gap-1 typo-caption text-status-success">
                     <Check className="w-3.5 h-3.5" />
                   </span>
                 ) : (

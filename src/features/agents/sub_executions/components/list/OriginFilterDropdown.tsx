@@ -34,8 +34,8 @@ export function OriginFilterDropdown({ value, onChange }: OriginFilterDropdownPr
           aria-expanded={isOpen}
           className={`flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors border ${
             value !== null
-              ? 'bg-primary/10 text-primary/80 border-primary/20'
-              : 'text-foreground hover:text-muted-foreground/70 border-transparent'
+              ? 'bg-primary/10 text-primary/80 border-hair'
+              : 'text-ink-1 hover:text-ink-3 border-transparent'
           }`}
         >
           <Route className="w-3 h-3" />
@@ -59,8 +59,8 @@ export function OriginFilterDropdown({ value, onChange }: OriginFilterDropdownPr
                   onChange(active ? null : option);
                   close();
                 }}
-                className={`flex items-center gap-2 w-full px-3 py-1.5 typo-body transition-colors hover:bg-secondary/40 ${
-                  active ? 'text-primary' : 'text-foreground'
+                className={`flex items-center gap-2 w-full px-3 py-1.5 typo-body transition-colors hover:bg-surface-2 ${
+                  active ? 'text-primary' : 'text-ink-1'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />

@@ -47,18 +47,18 @@ export function GithubRepoPicker({
           <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
           <div>
             <p className="typo-body text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
-            <p className="typo-body text-foreground mt-0.5">
+            <p className="typo-body text-ink-2 mt-0.5">
               {tx(t.agents.connectors.auto_github_token_needs, { scopes })}
             </p>
           </div>
         </div>
       )}
       <div>
-        <label className="typo-body text-foreground">{t.agents.connectors.auto_repo_required}</label>
+        <label className="typo-body text-ink-1">{t.agents.connectors.auto_repo_required}</label>
         <div className="mt-1.5">
           {loadingRepos ? (
             // Ghost in the select's geometry, delayed so a fast fetch never paints it.
-            <div className="h-9 rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
+            <div className="h-9 rounded-modal border border-hair bg-surface-1 animate-fade-in" style={{ animationDelay: '120ms' }}>
               <span className="sr-only">{t.agents.connectors.auto_loading_repos}</span>
             </div>
           ) : (
@@ -78,7 +78,7 @@ export function GithubRepoPicker({
           <ListingFailed message={t.agents.connectors.auto_repos_load_failed} onRetry={onRetry} />
         )}
         {!loadingRepos && !reposFailed && githubRepos.length === 0 && (
-          <p className="mt-1 typo-body text-foreground">{t.agents.connectors.auto_no_repos}</p>
+          <p className="mt-1 typo-body text-ink-2">{t.agents.connectors.auto_no_repos}</p>
         )}
       </div>
     </div>

@@ -52,7 +52,7 @@ export function CockpitEmpty({ onTalk }: { onTalk: () => void }) {
     <KitHost>
       <div
         data-testid="cockpit-empty-state"
-        className="relative overflow-hidden rounded-modal border border-primary/10 min-h-[440px] flex flex-col items-center justify-end text-center"
+        className="relative overflow-hidden rounded-modal border border-hair min-h-[440px] flex flex-col items-center justify-end text-center"
       >
         <div className="absolute inset-0 z-0 pointer-events-none">
           <img src="/athena/athena_baseline.jpg" alt="" aria-hidden="true" className="w-full h-full object-cover object-top opacity-60" />
@@ -60,8 +60,8 @@ export function CockpitEmpty({ onTalk }: { onTalk: () => void }) {
           <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
         </div>
         <div className="relative z-10 flex flex-col items-center gap-3 px-6 pb-10 max-w-md">
-          <div className="typo-heading text-foreground">{c.empty_title}</div>
-          <div className="typo-body text-foreground">
+          <div className="typo-heading text-ink-1">{c.empty_title}</div>
+          <div className="typo-body text-ink-1">
             {tx(c.empty_hint, { personas: c.empty_example_personas, attention: c.empty_example_attention })}
           </div>
           <KitButton tone="primary" icon={<MessageCircle />} onClick={onTalk} testId="cockpit-empty-talk-to-athena">

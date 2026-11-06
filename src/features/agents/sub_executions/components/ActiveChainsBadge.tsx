@@ -67,7 +67,7 @@ export function ActiveChainsBadge() {
 
   return (
     <div
-      className="border border-primary/20 bg-primary/5 rounded-modal typo-body"
+      className="border border-hair bg-surface-1 rounded-modal typo-body"
       data-testid="active-chains-badge"
     >
       <button
@@ -77,25 +77,25 @@ export function ActiveChainsBadge() {
         className="flex items-center gap-2 w-full px-3 py-1.5 text-left"
       >
         <Waypoints className="w-3.5 h-3.5 text-primary/80" />
-        <span className="text-foreground font-medium">
+        <span className="text-ink-1 font-medium">
           {tx(total === 1 ? e.active_chains_one : e.active_chains_other, { count: total })}
         </span>
-        <span className="ml-auto text-foreground">
+        <span className="ml-auto text-ink-1">
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </span>
       </button>
 
       <p role="status">
         {stale && (
-          <span className="block px-3 pb-1.5 typo-caption text-foreground" data-testid="active-chains-stale">
+          <span className="block px-3 pb-1.5 typo-caption text-ink-2" data-testid="active-chains-stale">
             {e.active_chains_stale} <RelativeTime timestamp={confirmedAt} />
           </span>
         )}
       </p>
 
       {expanded && (
-        <div className="px-3 pb-2.5 pt-1.5 border-t border-primary/10 flex flex-col gap-2">
-          <h4 className="typo-caption uppercase tracking-wide text-foreground">
+        <div className="px-3 pb-2.5 pt-1.5 border-t border-hair flex flex-col gap-2">
+          <h4 className="typo-eyebrow text-ink-1">
             {e.active_chains_title}
           </h4>
           <ul className="flex flex-col gap-1.5">
@@ -105,22 +105,22 @@ export function ActiveChainsBadge() {
                 className="flex items-center flex-wrap gap-x-3 gap-y-0.5 typo-code"
                 data-testid="active-chain-row"
               >
-                <span className="font-mono text-foreground" title={c.chainTraceId}>
+                <span className="font-mono text-ink-1" title={c.chainTraceId}>
                   {c.chainTraceId.slice(0, 8)}
                 </span>
-                <span className="tabular-nums text-foreground">
+                <span className="tabular-nums text-ink-1">
                   {tx(c.inFlightCount === 1 ? e.active_chains_hops_one : e.active_chains_hops_other, { count: c.inFlightCount })}
                 </span>
-                <span className="tabular-nums text-foreground">
+                <span className="tabular-nums text-ink-1">
                   {tx(c.personaIds.length === 1 ? e.active_chains_agents_one : e.active_chains_agents_other, { count: c.personaIds.length })}
                 </span>
-                <span className="tabular-nums text-foreground">
+                <span className="tabular-nums text-ink-1">
                   {tx(e.active_chains_depth, { count: c.maxDepth })}
                 </span>
                 {c.accumulatedCostUsd > 0 && (
-                  <Numeric value={c.accumulatedCostUsd} unit="usd" precision={2} className="tabular-nums text-foreground" />
+                  <Numeric value={c.accumulatedCostUsd} unit="usd" precision={2} className="tabular-nums text-ink-1" />
                 )}
-                <span className="ml-auto text-foreground">
+                <span className="ml-auto text-ink-1">
                   <RelativeTime timestamp={c.oldestStartedAt} />
                 </span>
               </li>

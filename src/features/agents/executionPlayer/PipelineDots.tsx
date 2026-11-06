@@ -39,11 +39,11 @@ export function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
             <div
               className={`w-2 h-2 rounded-full transition-colors ${
                 hasError
-                  ? 'bg-red-400'
+                  ? 'bg-status-error'
                   : isLast
-                    ? 'bg-blue-400 animate-pulse'
+                    ? 'bg-status-info animate-pulse'
                     : completed
-                      ? 'bg-emerald-400'
+                      ? 'bg-status-success'
                       : 'bg-primary/15'
               }`}
             />
@@ -55,10 +55,10 @@ export function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
 }
 
 export function StatusIndicator({ isExecuting, hasError }: { isExecuting: boolean; hasError: boolean }) {
-  if (hasError) return <XCircle className="w-4 h-4 text-red-400" />;
+  if (hasError) return <XCircle className="w-4 h-4 text-status-error" />;
   // LoadingSpinner renders null, so the header showed NO glyph while a run was
   // in flight. The shared liveness dot is the app's vocabulary for "in flight"
   // (CloudHistoryHelpers uses the same swap for queued/running rows).
   if (isExecuting) return <LiveStatusDot tone="syncing" size="sm" className="mx-1" />;
-  return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+  return <CheckCircle2 className="w-4 h-4 text-status-success" />;
 }

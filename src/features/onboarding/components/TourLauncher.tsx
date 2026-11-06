@@ -66,8 +66,8 @@ export default function TourLauncher() {
       onClick={handleClick}
       data-testid="tour-launcher"
       className="animate-fade-slide-in flex-shrink-0 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal
-        bg-violet-500/10 text-violet-300 border border-violet-500/25
-        hover:bg-violet-500/20 hover:border-violet-400/40 hover:shadow-[0_0_16px_rgba(139,92,246,0.15)]
+        bg-role-agent/10 text-role-agent border border-role-agent/25
+        hover:bg-role-agent/20 hover:border-role-agent/40
         transition-all duration-300 cursor-pointer"
     >
       {hasProgress ? (

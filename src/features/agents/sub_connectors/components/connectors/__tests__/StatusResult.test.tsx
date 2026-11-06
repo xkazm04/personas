@@ -23,7 +23,7 @@ describe('StatusResult - unreachable probe', () => {
       <StatusResult status={status({ success: false, state: 'failed', message: 'HTTP 401' })} />,
     );
     expect(queryByTestId('connector-result-unreachable')).toBeNull();
-    expect(container.querySelector('.text-red-400')).not.toBeNull();
+    expect(container.querySelector('.text-status-error')).not.toBeNull();
   });
 });
 

@@ -237,13 +237,13 @@ export function credentialMatchesConnector(
 // Patterns/explorer-preferences.md).
 
 export const STATUS_CONFIG = {
-  ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', labelKey: 'status_ready' },
-  untested: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_untested' },
-  unverifiable: { color: 'text-foreground', bg: 'bg-secondary/40 border-primary/15', labelKey: 'status_unverifiable' },
+  ready: { color: 'text-status-success', bg: 'bg-status-success/10 border-status-success/20', labelKey: 'status_ready' },
+  untested: { color: 'text-status-info', bg: 'bg-status-info/10 border-status-info/20', labelKey: 'status_untested' },
+  unverifiable: { color: 'text-ink-1', bg: 'bg-surface-2 border-hair', labelKey: 'status_unverifiable' },
   unreachable: { color: 'text-status-warning', bg: 'bg-status-warning/10 border-status-warning/20', labelKey: 'status_unreachable' },
-  failed: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', labelKey: 'status_failed' },
-  missing: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', labelKey: 'status_missing' },
-  testing: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_testing' },
+  failed: { color: 'text-status-error', bg: 'bg-status-error/10 border-status-error/20', labelKey: 'status_failed' },
+  missing: { color: 'text-status-warning', bg: 'bg-status-warning/10 border-status-warning/20', labelKey: 'status_missing' },
+  testing: { color: 'text-status-info', bg: 'bg-status-info/10 border-status-info/20', labelKey: 'status_testing' },
 } as const;
 
 export function getStatusKey(status: ConnectorStatus): keyof typeof STATUS_CONFIG {

@@ -48,7 +48,7 @@ describe('QuickStatsBar budget chip', () => {
     seedBudget({ personaId: 'p1', name: 'a', spend: 4.6, maxBudget: 5, ratio: 0.92, status: 'warning' });
     render(<QuickStatsBar personaId="p1" />);
     const chip = screen.getByTestId('quick-stat-budget');
-    expect(chip.className).toContain('amber');
+    expect(chip.className).toContain('status-warning');
     fireEvent.click(chip);
     expect(useSystemStore.getState().editorTab).toBe('design');
     expect(useSystemStore.getState().designSubTab).toBe('responsibilities');

@@ -45,7 +45,7 @@ export function TriggerConfig() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-foreground">
+      <div className="flex items-center justify-center py-8 text-ink-1">
         {t.triggers.no_persona_selected}
       </div>
     );
@@ -79,7 +79,7 @@ export function TriggerConfig() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="typo-code text-foreground uppercase tracking-wider">{t.triggers.config.title}</h3>
+        <h3 className="typo-eyebrow text-ink-1">{t.triggers.config.title}</h3>
         <Button
           variant="primary"
           size="sm"
@@ -103,9 +103,9 @@ export function TriggerConfig() {
           are dispatched as toasts inside `useRenderTriggerError`, so they
           don't appear here. */}
       {inlineError && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400" role="alert">
+        <div className="flex items-center gap-2 px-3 py-2 bg-status-error/10 border border-status-error/20 rounded-card typo-body text-status-error" role="alert">
           <span className="flex-1">{inlineError}</span>
-          <Button variant="ghost" size="icon-sm" onClick={clearTriggerError} className="shrink-0 hover:text-red-300">
+          <Button variant="ghost" size="icon-sm" onClick={clearTriggerError} className="shrink-0 hover:text-status-error">
             <X className="w-3.5 h-3.5" />
           </Button>
         </div>

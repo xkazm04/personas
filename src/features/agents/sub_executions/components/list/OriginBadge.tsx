@@ -12,11 +12,11 @@ import type { ExecutionOrigin } from '../../libs/executionOrigin';
  * origin filter dropdown, so the full map lives here.
  */
 export const ORIGIN_META: Record<ExecutionOrigin, { icon: LucideIcon; chipClass: string }> = {
-  attention: { icon: Radar, chipClass: 'bg-accent/10 text-accent border-accent/20' },
-  channel: { icon: MessagesSquare, chipClass: 'bg-status-info/10 text-status-info border-status-info/20' },
-  scheduled: { icon: CalendarClock, chipClass: 'bg-status-success/10 text-status-success border-status-success/20' },
-  simulation: { icon: FlaskConical, chipClass: 'bg-status-neutral/10 text-status-neutral border-status-neutral/20' },
-  manual: { icon: MousePointerClick, chipClass: 'bg-secondary/40 text-foreground border-primary/20' },
+  attention: { icon: Radar, chipClass: 'text-ink-1' },
+  channel: { icon: MessagesSquare, chipClass: 'text-ink-2' },
+  scheduled: { icon: CalendarClock, chipClass: 'text-ink-2' },
+  simulation: { icon: FlaskConical, chipClass: 'text-ink-3' },
+  manual: { icon: MousePointerClick, chipClass: 'text-ink-3' },
 };
 
 /** Localized label for an origin token. */
@@ -63,7 +63,7 @@ export function OriginBadge({ origin, lane }: { origin: ExecutionOrigin; lane: s
   const Icon = meta.icon;
   return (
     <Tooltip content={originTooltip(t, origin)}>
-      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card border ${meta.chipClass}`}>
+      <span className={`inline-flex items-center gap-1.5 typo-code ${meta.chipClass}`}>
         <Icon className="w-2.5 h-2.5" />
         {originLabel(t, origin)}
         {origin === 'attention' && lane ? ` · ${lane}` : ''}

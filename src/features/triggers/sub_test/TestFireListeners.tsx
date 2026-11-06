@@ -16,10 +16,10 @@ const DELIVERY_ICON = {
 } as const;
 
 const DELIVERY_TONE: Record<ListenerDelivery, string> = {
-  targeted: 'text-emerald-400',
-  'not-targeted': 'text-foreground',
-  unknown: 'text-foreground',
-  disabled: 'text-amber-400',
+  targeted: 'text-status-success',
+  'not-targeted': 'text-ink-1',
+  unknown: 'text-ink-1',
+  disabled: 'text-status-warning',
 };
 
 interface TestFireListenersProps {
@@ -46,7 +46,7 @@ export function TestFireListeners({
 
   return (
     <section
-      className="rounded-modal border border-primary/15 bg-secondary/20 p-4 space-y-2"
+      className="rounded-modal border border-hair bg-surface-1 p-4 space-y-2"
       data-testid="test-fire-listeners"
     >
       <h4 className="typo-title flex items-center gap-1.5">
@@ -55,7 +55,7 @@ export function TestFireListeners({
       </h4>
 
       {listeners.length === 0 ? (
-        <p className="typo-caption text-foreground">{tr.test_listeners_none}</p>
+        <p className="typo-caption text-ink-2">{tr.test_listeners_none}</p>
       ) : (
         <ul className="space-y-1">
           {listeners.map((row) => {
@@ -72,11 +72,11 @@ export function TestFireListeners({
                 data-testid={`test-fire-listener-${row.personaId}`}
                 data-delivery={delivery ?? 'pending'}
               >
-                <span className="text-foreground font-medium truncate">
+                <span className="text-ink-1 font-medium truncate">
                   {personaName(row.personaId)}
                 </span>
                 {row.sourceFilter && (
-                  <span className="text-foreground truncate">
+                  <span className="text-ink-1 truncate">
                     {tx(tr.test_listeners_filtered, { filter: row.sourceFilter })}
                   </span>
                 )}

@@ -118,7 +118,7 @@ export function DecisionDrawer({ item, decide, onClose }: DecisionDrawerProps) {
               <div className="k-in flex flex-col gap-4 break-words">
                 {body}
                 {item.evidence && <MarkdownRenderer content={`\`\`\`\n${item.evidence}\n\`\`\``} />}
-                {!answerable && <p className="typo-body text-foreground">{t.monitor.dc_consumers_needs_hub}</p>}
+                {!answerable && <p className="typo-body text-ink-1">{t.monitor.dc_consumers_needs_hub}</p>}
                 {answerable && REASON_KINDS.has(item.kind) && (
                   <FormField label={debtText('auto_notes_optional_4d56ca9b')}>
                     {(p) => <textarea {...p} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${INPUT_FIELD} resize-none`} />}
@@ -130,7 +130,7 @@ export function DecisionDrawer({ item, decide, onClose }: DecisionDrawerProps) {
         </KitHost>
       </div>
       <KitHost compact>
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-foreground/10">
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-hair">
           {answerable ? (
             <>
               <KitButton tone="default" onClick={() => run('reject')} loading={busy === 'reject'} disabled={busy !== null && busy !== 'reject'}>

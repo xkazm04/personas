@@ -39,31 +39,31 @@ export function LabEconomicsPanel({ personaId }: { personaId: string }) {
   );
 
   return (
-    <section className="rounded-card border border-border/40 bg-secondary/30 p-4">
+    <section className="rounded-card border border-hair bg-surface-1 p-4">
       <header className="mb-3">
         <h3 className="typo-title">{t.agents.lab.eco_title}</h3>
-        <p className="typo-caption text-foreground">{t.agents.lab.eco_subtitle}</p>
+        <p className="typo-caption text-ink-2">{t.agents.lab.eco_subtitle}</p>
       </header>
 
       {rows.length === 0 ? (
-        <p className="typo-body text-foreground">{t.agents.lab.eco_empty}</p>
+        <p className="typo-body text-ink-1">{t.agents.lab.eco_empty}</p>
       ) : (
         <table className="w-full text-left">
           <thead>
-            <tr className="typo-caption text-foreground">
-              <th className="py-1 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.vr_col_version}</th>
-              <th className="py-1 px-3 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_model}</th>
-              <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_attempted}</th>
-              <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_resolved}</th>
-              <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_rate}</th>
-              <th className="py-1 pl-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_cost_success}</th>
+            <tr className="typo-caption text-ink-1">
+              <th className="py-1 pr-3 typo-eyebrow text-ink-1">{t.agents.lab.vr_col_version}</th>
+              <th className="py-1 px-3 typo-eyebrow text-ink-1">{t.agents.lab.eco_col_model}</th>
+              <th className="py-1 px-3 text-right typo-eyebrow text-ink-1">{t.agents.lab.eco_col_attempted}</th>
+              <th className="py-1 px-3 text-right typo-eyebrow text-ink-1">{t.agents.lab.eco_col_resolved}</th>
+              <th className="py-1 px-3 text-right typo-eyebrow text-ink-1">{t.agents.lab.eco_col_rate}</th>
+              <th className="py-1 pl-3 text-right typo-eyebrow text-ink-1">{t.agents.lab.eco_col_cost_success}</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr
                 key={`${r.versionId}::${r.modelId}`}
-                className="typo-body text-foreground border-t border-border/20"
+                className="typo-body text-ink-1 border-t border-hair"
               >
                 <td className="py-1.5 pr-3 font-mono">
                   {versionNumberById.has(r.versionId) ? `v${versionNumberById.get(r.versionId)}` : '—'}

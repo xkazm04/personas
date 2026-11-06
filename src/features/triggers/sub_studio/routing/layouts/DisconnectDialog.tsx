@@ -28,7 +28,7 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
       onClose={onCancel}
       titleId={TITLE_ID}
       maxWidthClass="max-w-[380px]"
-      panelClassName="rounded-2xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden"
+      panelClassName="rounded-card bg-card border border-hair shadow-elevation-4 overflow-hidden"
       staggerChildren={false}
     >
       <div className="flex items-start gap-3 px-4 py-4">
@@ -36,10 +36,10 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
           <AlertTriangle className="w-4.5 h-4.5 text-status-error" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 id={TITLE_ID} className="typo-heading text-foreground mb-1">{t.triggers.disconnect_persona_title}</h3>
-          <p className="typo-caption text-foreground">
-            <span className="font-medium text-foreground">{personaName}</span> {t.triggers.disconnect_will_no_longer}{' '}
-            <span className="font-medium text-foreground">{eventLabel}</span> {t.triggers.disconnect_events_reconnect}
+          <h3 id={TITLE_ID} className="typo-heading text-ink-1 mb-1">{t.triggers.disconnect_persona_title}</h3>
+          <p className="typo-caption text-ink-2">
+            <span className="font-medium text-ink-1">{personaName}</span> {t.triggers.disconnect_will_no_longer}{' '}
+            <span className="font-medium text-ink-1">{eventLabel}</span> {t.triggers.disconnect_events_reconnect}
           </p>
         </div>
         <Button variant="ghost" size="icon-sm" onClick={onCancel} aria-label={t.common.close} className="flex-shrink-0">
@@ -47,7 +47,7 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
         </Button>
       </div>
 
-      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">
+      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-hair bg-surface-1">
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t.common.cancel}
         </Button>

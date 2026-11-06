@@ -47,7 +47,7 @@ export function CharterToolbar({
         className={`px-2 py-1 rounded-pill border typo-code transition-colors ${
           statusFilter === null
             ? 'bg-primary/15 border-primary/40 text-primary'
-            : 'bg-secondary/30 border-primary/10 text-foreground/85 hover:border-primary/25'
+            : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
         }`}
         data-testid="resp-filter-all"
       >
@@ -62,7 +62,7 @@ export function CharterToolbar({
           className={`px-2 py-1 rounded-pill border typo-code transition-colors ${
             statusFilter === s
               ? 'bg-primary/15 border-primary/40 text-primary'
-              : 'bg-secondary/30 border-primary/10 text-foreground/85 hover:border-primary/25'
+              : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
           }`}
           data-testid={`resp-filter-${s}`}
         >

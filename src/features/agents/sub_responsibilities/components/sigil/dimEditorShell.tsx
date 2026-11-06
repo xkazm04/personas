@@ -49,7 +49,7 @@ export function DimEditorShell({
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3" data-testid={testId}>
-      <p className="typo-caption text-foreground">{caption}</p>
+      <p className="typo-caption text-ink-2">{caption}</p>
       {children}
       <div className="flex justify-end pt-1">
         <AsyncButton
@@ -92,7 +92,7 @@ export function ChipToggleList({
             className={`px-2 py-1 rounded-pill border typo-code transition-colors ${
               active
                 ? 'bg-primary/15 border-primary/40 text-primary'
-                : 'bg-secondary/30 border-primary/10 text-foreground/85 hover:border-primary/25'
+                : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
             }`}
             data-testid={`${testId}-${opt.value}`}
           >

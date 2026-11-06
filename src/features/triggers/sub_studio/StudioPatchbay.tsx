@@ -117,7 +117,7 @@ export function StudioPatchbay() {
         onClick={() => setSourceRailOpen((v) => !v)}
         aria-expanded={sourceRailOpen}
         aria-label={sourceRailOpen ? st.close_sources_rail : st.open_sources_rail}
-        className="absolute left-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-r-card border border-l-0 border-border bg-background px-1.5 py-3 text-foreground transition-colors hover:bg-secondary"
+        className="absolute left-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-r-card border border-l-0 border-hair bg-background px-1.5 py-3 text-ink-1 transition-colors hover:bg-secondary"
       >
         {sourceRailOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
       </button>
@@ -126,23 +126,23 @@ export function StudioPatchbay() {
         onClick={() => setTargetRailOpen((v) => !v)}
         aria-expanded={targetRailOpen}
         aria-label={targetRailOpen ? st.close_targets_rail : st.open_targets_rail}
-        className="absolute right-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-l-card border border-r-0 border-border bg-background px-1.5 py-3 text-foreground transition-colors hover:bg-secondary"
+        className="absolute right-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-l-card border border-r-0 border-hair bg-background px-1.5 py-3 text-ink-1 transition-colors hover:bg-secondary"
       >
         {targetRailOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
       </button>
 
       {/* ── Unified ledger ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
-        <div className="px-5 py-3 border-b border-border flex items-center gap-3">
-          <h3 className="typo-heading text-foreground">{st.routes_title}</h3>
+        <div className="px-5 py-3 border-b border-hair flex items-center gap-3">
+          <h3 className="typo-heading text-ink-1">{st.routes_title}</h3>
           <span className="typo-data text-status-success">{routing.cableSummary.live} {st.proto_live}</span>
-          {routing.cableSummary.paused > 0 && <span className="typo-data text-foreground">{routing.cableSummary.paused} {st.proto_paused}</span>}
+          {routing.cableSummary.paused > 0 && <span className="typo-data text-ink-1">{routing.cableSummary.paused} {st.proto_paused}</span>}
           {c.draft.links.length > 0 && <span className="typo-data text-status-warning">{c.draft.links.length} {st.proto_pending}</span>}
           {sug.proposed.length > 0 && <span className="typo-data text-primary">{sug.proposed.length} {st.ghost_suggested}</span>}
           <div className="ml-auto flex items-center gap-2">
             {unconnected.length > 0 && (
               <button type="button" onClick={() => setShowUnconnected((v) => !v)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-foreground hover:bg-secondary/60 transition-colors">
+                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
                 {showUnconnected ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 {showUnconnected ? st.proto_hide_unconnected : tx(st.proto_show_unconnected, { count: unconnected.length })}
               </button>
@@ -155,7 +155,7 @@ export function StudioPatchbay() {
             )}
             {c.draft.links.length > 0 && (
               <button type="button" onClick={c.clearAll}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body opacity-80 rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors">
+                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body opacity-80 rounded-interactive text-ink-1 hover:text-status-error hover:bg-status-error/10 transition-colors">
                 <Trash2 className="w-3.5 h-3.5" /> {st.clear_all}
               </button>
             )}
@@ -166,12 +166,12 @@ export function StudioPatchbay() {
         <AnimatePresence>
           {(c.armedSource || c.armedTarget || c.armedSystemOp) && (
             <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}
-              className="mx-5 mt-3 px-4 py-2.5 rounded-card border border-primary/30 bg-primary/5 flex items-center gap-3">
+              className="mx-5 mt-3 px-4 py-2.5 rounded-card border border-primary/30 bg-surface-1 flex items-center gap-3">
               <PatchEndChip source={c.armedSource} personas={personas} kinds={c.systemOpKinds} placeholder={st.pick_a_source} />
               <ArrowRight className="w-4 h-4 text-primary shrink-0" />
               <PatchEndChip targetId={c.armedTarget} systemOpKind={c.armedSystemOp} personas={personas} kinds={c.systemOpKinds} placeholder={st.pick_a_target} />
               <button type="button" onClick={() => { c.setArmedSource(null); c.setArmedTarget(null); c.setArmedSystemOp(null); }}
-                className="ml-auto p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors" aria-label={st.cancel_pending_route}>
+                className="ml-auto p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors" aria-label={st.cancel_pending_route}>
                 <X className="w-3.5 h-3.5" />
               </button>
             </motion.div>
@@ -200,7 +200,7 @@ export function StudioPatchbay() {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div className="h-px w-4 bg-border" />
                   <button type="button" onClick={() => c.cycleCondition(link.id)} title={st.cycle_condition_hint}
-                    className={`typo-body opacity-80 px-2 py-0.5 rounded-input border transition-colors ${link.condition ? 'border-status-warning/40 text-status-warning bg-status-warning/10' : 'border-border text-foreground hover:border-foreground/30'}`}>
+                    className={`typo-body opacity-80 px-2 py-0.5 rounded-input border transition-colors ${link.condition ? 'border-status-warning/40 text-status-warning bg-status-warning/10' : 'border-hair text-ink-1 hover:border-hair-2'}`}>
                     {conditionLabel(t, link.condition)}
                   </button>
                   {showOutputMatch && (
@@ -208,27 +208,27 @@ export function StudioPatchbay() {
                       <input value={link.outputMatch?.path ?? ''}
                         onChange={(e) => c.setLinkOutputMatch(link.id, e.target.value, link.outputMatch?.expected ?? '')}
                         placeholder={st.om_path_placeholder} aria-label={st.om_path_label}
-                        className="w-32 px-2 py-0.5 typo-body bg-background/60 border border-border rounded-input focus:border-primary/50 outline-none placeholder:text-foreground/40" />
-                      <span className="typo-caption text-foreground">=</span>
+                        className="w-32 px-2 py-0.5 typo-body bg-background/60 border border-hair rounded-input focus:border-primary/50 outline-none placeholder:text-ink-3" />
+                      <span className="typo-caption text-ink-2">=</span>
                       <input value={link.outputMatch?.expected ?? ''}
                         onChange={(e) => c.setLinkOutputMatch(link.id, link.outputMatch?.path ?? '', e.target.value)}
                         placeholder={st.om_expected_placeholder} aria-label={st.om_expected_label}
-                        className="w-24 px-2 py-0.5 typo-body bg-background/60 border border-border rounded-input focus:border-primary/50 outline-none placeholder:text-foreground/40" />
+                        className="w-24 px-2 py-0.5 typo-body bg-background/60 border border-hair rounded-input focus:border-primary/50 outline-none placeholder:text-ink-3" />
                     </span>
                   )}
                   <div className="h-px w-4 bg-border" />
-                  <ArrowRight className="w-3.5 h-3.5 text-foreground" />
+                  <ArrowRight className="w-3.5 h-3.5 text-ink-1" />
                 </div>
                 <TargetChip targetId={link.targetPersonaId} personas={personas} />
                 <div className="ml-auto flex items-center gap-1">
                   <button type="button" onClick={() => { if (!blocker) void c.commitLink(link); }} disabled={!!blocker || busy}
                     title={blocker === 'signal_source' ? st.commit_blocked_source_type : blocker === 'output_match' ? st.commit_needs_output_match : viaForm ? st.configure_commit_route : st.commit_route}
                     aria-label={viaForm ? st.configure_commit_route : st.commit_route}
-                    className={`p-1.5 rounded-interactive transition-colors disabled:is-disabled ${blocker ? 'text-foreground opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10'}`}>
+                    className={`p-1.5 rounded-interactive transition-colors disabled:is-disabled ${blocker ? 'text-ink-1 opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10'}`}>
                     {busy ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                   </button>
                   <button type="button" onClick={() => c.removeLink(link.id)} aria-label={st.remove_route}
-                    className="p-1.5 rounded-interactive text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all">
+                    className="p-1.5 rounded-interactive text-ink-1 opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -263,7 +263,7 @@ export function StudioPatchbay() {
 
           {/* Incomplete edges — events with no listener, hidden by default */}
           {showUnconnected && unconnected.length > 0 && (
-            <div className="pt-2 pb-1 px-1 typo-caption uppercase tracking-wide text-foreground">{tx(st.proto_show_unconnected, { count: unconnected.length })}</div>
+            <div className="pt-2 pb-1 px-1 typo-eyebrow text-ink-1">{tx(st.proto_show_unconnected, { count: unconnected.length })}</div>
           )}
           {showUnconnected && unconnected.map((cb, i) => (
             <LiveCableRow key={`u-${cb.row.eventType}-${i}`} cb={cb} t={t} st={st} personas={personas} dim
@@ -343,7 +343,7 @@ export function StudioPatchbay() {
   );
 }
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 const GHOST_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'] as const;
 
 function CableGhostRows() {
@@ -352,7 +352,7 @@ function CableGhostRows() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 px-4 py-2.5 max-w-[calc(100%-50px)] rounded-card border border-border bg-background/60 animate-fade-in"
+          className="flex items-center gap-3 px-4 py-2.5 max-w-[calc(100%-50px)] rounded-card border border-hair bg-background/60 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <span className={`h-6 ${GHOST_WIDTHS[i % 4]} ${GHOST_BAR}`} />

@@ -16,14 +16,14 @@ export function SnapshotColumn({ core }: { core: PersonaCore }) {
   if (core.loadFailed) {
     return (
       <div
-        className="flex flex-col items-start gap-2 rounded-card border border-card-border bg-secondary/20 p-4"
+        className="flex flex-col items-start gap-2 rounded-card border border-card-border bg-surface-1 p-4"
         data-testid="core-snapshot-load-failed"
       >
-        <span className="typo-body text-foreground">{t.errors.internal}</span>
+        <span className="typo-body text-ink-1">{t.errors.internal}</span>
         <button
           type="button"
           onClick={core.retryLoad}
-          className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground/80 cursor-pointer"
+          className="inline-flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 cursor-pointer"
           data-testid="core-snapshot-retry"
         >
           <RefreshCw className="w-3.5 h-3.5" /> {t.common.retry}

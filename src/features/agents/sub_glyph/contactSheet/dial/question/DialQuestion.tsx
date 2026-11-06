@@ -78,7 +78,7 @@ export function DialQuestion({ qs, index, color, draftOf, onDraft, onPick, onNex
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.18, duration: 0.3 }}
-            className="m-0 typo-heading-lg text-foreground leading-snug"
+            className="m-0 typo-heading-lg text-ink-1 leading-snug"
             style={{ fontSize: "calc(var(--type-4) * var(--type-f) - 3px)" }}
           >
             {question.question}
@@ -106,7 +106,7 @@ export function DialQuestion({ qs, index, color, draftOf, onDraft, onPick, onNex
                   >
                     <span className="flex w-full min-w-0 items-center gap-3">
                       <InkBadge num={String(i + 1)} ink={on ? "done" : "pending"} color={color} populated size={22} />
-                      <span className="min-w-0 typo-body text-foreground">{opt}</span>
+                      <span className="min-w-0 typo-body text-ink-1">{opt}</span>
                     </span>
                   </Button>
                 );
@@ -121,7 +121,7 @@ export function DialQuestion({ qs, index, color, draftOf, onDraft, onPick, onNex
               onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { e.preventDefault(); onNext(); } }}
               placeholder={CINEMA.ownWords}
               aria-label={CINEMA.ownWords}
-              className="h-10 px-1.5 bg-transparent typo-body text-foreground outline-none border-0 border-b border-dashed"
+              className="h-10 px-1.5 bg-transparent typo-body text-ink-1 outline-none border-0 border-b border-dashed"
               style={{ borderColor: freeText ? color : "var(--ink-dim)" }}
             />
           )}

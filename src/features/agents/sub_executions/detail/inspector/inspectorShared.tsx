@@ -51,15 +51,15 @@ export function InspectorStatStrip({ execution }: { execution: PersonaExecution 
   ];
 
   return (
-    <div className="flex flex-wrap items-stretch gap-px rounded-modal border border-primary/20 bg-secondary/40 overflow-hidden">
+    <div className="flex flex-wrap items-stretch gap-px rounded-modal border border-hair bg-surface-2 overflow-hidden">
       {stats.map((s) => {
         const Icon = s.icon;
         return (
-          <div key={s.label} className="flex-1 min-w-[104px] flex items-center gap-2 px-3 py-2 bg-secondary/20">
-            <Icon className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+          <div key={s.label} className="flex-1 min-w-[104px] flex items-center gap-2 px-3 py-2 bg-surface-1">
+            <Icon className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
             <div className="min-w-0">
-              <div className="typo-code text-foreground uppercase tracking-wider truncate">{s.label}</div>
-              <div className="typo-body font-mono text-foreground/90 truncate">{s.value}</div>
+              <div className="typo-eyebrow text-ink-1 truncate">{s.label}</div>
+              <div className="typo-body font-mono text-ink-1 truncate">{s.value}</div>
             </div>
           </div>
         );
@@ -75,14 +75,14 @@ export function StepIO({ step, dense = false }: { step: ToolCallStep; dense?: bo
   const maxH = dense ? 'max-h-48' : 'max-h-80';
 
   if (!step.input_preview && !step.output_preview) {
-    return <div className="typo-code text-foreground py-3 text-center">{e.pending}</div>;
+    return <div className="typo-code text-ink-1 py-3 text-center">{e.pending}</div>;
   }
 
   return (
     <div className="space-y-2.5">
       {step.input_preview && (
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 typo-code text-blue-400 uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 typo-eyebrow text-status-info">
             <ArrowDownToLine className="w-3 h-3" /> {e.input}
           </div>
           <div className={`${maxH} overflow-y-auto`}>
@@ -92,7 +92,7 @@ export function StepIO({ step, dense = false }: { step: ToolCallStep; dense?: bo
       )}
       {step.output_preview && (
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 typo-code text-amber-400 uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 typo-eyebrow text-status-warning">
             <ArrowUpFromLine className="w-3 h-3" /> {e.output}
           </div>
           <div className={`${maxH} overflow-y-auto`}>

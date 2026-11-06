@@ -98,7 +98,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
             data-testid="dry-run-from-execution-btn"
             onClick={dryRun.run}
             disabled={dryRun.loading}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption border border-hair bg-surface-1 text-ink-1 hover:bg-surface-2 hover:text-ink-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={t.agents.executions.dry_run.button_hint}
           >
             <FlaskConical className="w-3 h-3" />
@@ -121,7 +121,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
         >
           {/* Tab Content */}
           {activeTab === 'director' && directorReviewMd ? (
-            <div className="rounded-modal border border-violet-500/20 bg-violet-500/[0.03] p-5">
+            <div className="rounded-modal border border-role-agent/20 bg-role-agent/[0.03] p-5">
               <div className="max-w-3xl mx-auto">
                 <RichMarkdown content={directorReviewMd} />
               </div>
@@ -155,7 +155,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
             />
           )}
         </div>
-        <aside className="bg-secondary/30 border border-primary/15 rounded-modal p-3">
+        <aside className="bg-surface-1 border border-hair rounded-modal p-3">
           <AnnotationEditor
             executionId={execution.id}
             personaId={execution.persona_id}
@@ -174,18 +174,18 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
           titleId="chain-execution-detail-title"
           size="xl"
           portal
-          panelClassName="bg-background border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
+          panelClassName="bg-background border border-hair rounded-modal shadow-elevation-4 overflow-hidden"
         >
           <div className="flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-primary/10">
-              <h3 id="chain-execution-detail-title" className="typo-heading text-foreground/90 truncate">
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-hair">
+              <h3 id="chain-execution-detail-title" className="typo-heading text-ink-1 truncate">
                 {t.agents.executions.chain_open} #{chainOpen.id.slice(0, 8)}
               </h3>
               <button
                 type="button"
                 onClick={() => setChainOpen(null)}
                 aria-label={t.common.close}
-                className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+                className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

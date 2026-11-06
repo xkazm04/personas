@@ -41,7 +41,7 @@ export function EventsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMor
   if (others.length === 0) {
     return (
       <div className="flex flex-col gap-3 items-start">
-        <p className="typo-body text-foreground">{QS.events.noAgents}</p>
+        <p className="typo-body text-ink-1">{QS.events.noAgents}</p>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export function EventsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMor
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
-        <span className="typo-body text-foreground">{QS.events.reactWhen}</span>
+        <span className="typo-body text-ink-1">{QS.events.reactWhen}</span>
         <div role="group" aria-label={QS.events.reactWhen} className="flex flex-wrap gap-2">
           {KINDS.map((k) => (
             <ChoicePill key={k.triggerId} on={kind === k.triggerId} color={color} onClick={() => setKind(k.triggerId)}>{k.label}</ChoicePill>
@@ -69,15 +69,15 @@ export function EventsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMor
                 type="button"
                 aria-pressed={on}
                 onClick={() => quick.toggleEvent({ personaId: p.id, personaName: p.name, triggerId: kind, description: label })}
-                className={`w-full flex items-center gap-3 p-2 rounded-card border text-left transition-colors ${on ? "" : "border-card-border hover:bg-secondary/40"}`}
+                className={`w-full flex items-center gap-3 p-2 rounded-card border text-left transition-colors ${on ? "" : "border-card-border hover:bg-surface-2"}`}
                 style={on ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.1) } : undefined}
               >
                 <span aria-hidden className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center typo-title" style={{ background: colorWithAlpha(pc, 0.2), color: pc }}>
                   {([...p.name][0] ?? "").toUpperCase()}
                 </span>
                 <span className="flex flex-col min-w-0 flex-1">
-                  <span className="typo-body text-foreground truncate">{p.name}</span>
-                  {count > 0 && <span className="typo-caption text-foreground">{QS.events.subscribed(count)}</span>}
+                  <span className="typo-body text-ink-1 truncate">{p.name}</span>
+                  {count > 0 && <span className="typo-caption text-ink-2">{QS.events.subscribed(count)}</span>}
                 </span>
                 {on && <Check className="w-4 h-4 shrink-0" style={{ color }} />}
               </button>

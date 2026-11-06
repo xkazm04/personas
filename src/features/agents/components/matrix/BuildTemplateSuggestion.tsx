@@ -101,10 +101,10 @@ export function BuildTemplateSuggestion({
           className="min-w-0 overflow-hidden"
           data-testid="build-template-suggestion"
         >
-          <div className="flex items-start gap-2 rounded-input border border-primary/20 bg-primary/[0.06] px-2.5 py-1.5 min-w-0">
+          <div className="flex items-start gap-2 rounded-input border border-hair bg-primary/[0.06] px-2.5 py-1.5 min-w-0">
             <Sparkles className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
             <details className="group min-w-0 flex-1">
-              <summary className="cursor-pointer list-none typo-caption text-foreground [&::-webkit-details-marker]:hidden">
+              <summary className="cursor-pointer list-none typo-caption text-ink-1 [&::-webkit-details-marker]:hidden">
                 <span className="text-primary">{t.agents.build_template_match_label}</span>
                 <span aria-hidden> · </span>
                 <span className="underline decoration-dotted decoration-foreground/40 underline-offset-2 group-open:no-underline">
@@ -112,13 +112,13 @@ export function BuildTemplateSuggestion({
                 </span>
               </summary>
               <div className="mt-1 flex flex-col gap-1">
-                <p className="typo-caption text-foreground">{t.agents.build_template_match_body}</p>
+                <p className="typo-caption text-ink-2">{t.agents.build_template_match_body}</p>
                 {top.snippet ? (
-                  <p className="typo-caption line-clamp-3 italic text-foreground">{top.snippet}</p>
+                  <p className="typo-caption line-clamp-3 italic text-ink-2">{top.snippet}</p>
                 ) : null}
                 {secondary.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5" data-testid="build-template-suggestion-more">
-                    <span className="typo-caption text-foreground">{t.agents.build_template_match_more}</span>
+                    <span className="typo-caption text-ink-2">{t.agents.build_template_match_more}</span>
                     {secondary.map((m) => (
                       <button
                         key={m.id}
@@ -126,7 +126,7 @@ export function BuildTemplateSuggestion({
                         onClick={() => { void accept(m); }}
                         disabled={acceptingId !== null}
                         aria-busy={acceptingId === m.id || undefined}
-                        className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2 py-0.5 typo-caption text-foreground transition hover:bg-primary/15 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2 py-0.5 typo-caption text-ink-1 transition hover:bg-primary/15 disabled:opacity-40 disabled:cursor-not-allowed"
                         data-testid={`build-template-suggestion-alt-${m.id}`}
                       >
                         {acceptingId === m.id && <Loader2 className="h-3 w-3 animate-spin" aria-hidden />}

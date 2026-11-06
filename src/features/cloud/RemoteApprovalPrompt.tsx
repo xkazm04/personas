@@ -82,12 +82,12 @@ export default function RemoteApprovalPrompt() {
       <div className="p-6 space-y-5">
         {/* Header: queue position + provenance */}
         <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 typo-caption text-sky-300/90">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-status-info">
             <CloudDownload className="w-3.5 h-3.5" />
             {s.from_dashboard}
           </span>
           {queue.length > 1 && (
-            <span className="rounded-full bg-secondary/40 border border-primary/10 px-2 py-0.5 typo-caption text-foreground">
+            <span className="inline-flex items-center typo-caption text-ink-2">
               {interpolate(s.queue_count, { index: 1, total: queue.length })}
             </span>
           )}
@@ -95,39 +95,39 @@ export default function RemoteApprovalPrompt() {
 
         {/* Persona identity */}
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-primary/15 border border-primary/20 flex items-center justify-center flex-shrink-0">
+          <div className="w-11 h-11 rounded-full bg-primary/15 border border-hair flex items-center justify-center flex-shrink-0">
             <span className="typo-body-lg text-primary">{initial(personaLabel)}</span>
           </div>
           <div className="min-w-0">
-            <h2 id="remote-approval-title" className="typo-body-lg text-foreground truncate">
+            <h2 id="remote-approval-title" className="typo-body-lg text-ink-1 truncate">
               {personaLabel}
             </h2>
-            <p className="typo-caption text-foreground">
+            <p className="typo-caption text-ink-2">
               <RelativeTime timestamp={current.requestedAt} />
             </p>
           </div>
         </div>
 
-        <p className="typo-body text-foreground">
+        <p className="typo-body text-ink-1">
           {interpolate(s.body, { persona: personaLabel })}
         </p>
 
         {/* Prompt detail */}
         <div className="space-y-1.5">
-          <p className="typo-caption text-foreground uppercase tracking-wide">
+          <p className="typo-eyebrow text-ink-1">
             {s.prompt_label}
           </p>
-          <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 max-h-40 overflow-y-auto">
-            <p className="typo-caption whitespace-pre-wrap text-foreground/90">
+          <div className="rounded-card bg-surface-1 border border-hair p-3 max-h-40 overflow-y-auto">
+            <p className="typo-caption whitespace-pre-wrap text-ink-2">
               {current.prompt?.trim() || s.no_prompt}
             </p>
           </div>
         </div>
 
         {/* Safety framing */}
-        <div className="flex items-start gap-2 rounded-card border border-emerald-500/15 bg-emerald-500/5 p-3">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-          <p className="typo-caption text-foreground">{s.safety_note}</p>
+        <div className="flex items-start gap-2 rounded-card border border-status-success/15 bg-status-success/5 p-3">
+          <ShieldCheck className="w-4 h-4 text-status-success mt-0.5 flex-shrink-0" />
+          <p className="typo-caption text-ink-2">{s.safety_note}</p>
         </div>
 
         {/* Actions */}
@@ -137,7 +137,7 @@ export default function RemoteApprovalPrompt() {
           </Button>
           <Button
             variant="ghost"
-            className="text-red-300 hover:bg-red-500/10"
+            className="text-status-error hover:bg-status-error/10"
             onClick={() => { void reject(current.id); }}
             disabled={busy}
           >

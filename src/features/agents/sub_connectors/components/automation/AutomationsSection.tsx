@@ -150,7 +150,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             </span>
           )}
           {!expanded && preview && (
-            <span className="typo-body text-foreground truncate max-w-48">
+            <span className="typo-body text-ink-1 truncate max-w-48">
               {preview}
             </span>
           )}
@@ -158,7 +158,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
         <button
           type="button"
           onClick={onAdd}
-          className={`shrink-0 flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors focus-ring`}
+          className={`shrink-0 flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-accent/20 text-ink-1 bg-accent/10 hover:bg-accent/20 transition-colors focus-ring`}
         >
           <Plus className="w-3 h-3" />
           {t.common.add}
@@ -195,7 +195,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                 <button
                   type="button"
                   onClick={onAdd}
-                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-border typo-body text-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-hair typo-body text-ink-1 hover:border-accent/30 hover:text-ink-1 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
                   <span>{t.agents.connectors.auto_add_from_platforms}</span>
@@ -210,17 +210,17 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
         onClose={() => setDeleteTarget(null)}
         titleId="delete-automation-dialog"
         maxWidthClass="max-w-sm"
-        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+        panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
       >
         {deleteTarget && (
           <div className="p-4 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-modal bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-5 h-5 text-red-400" />
+              <div className="w-10 h-10 rounded-modal bg-status-error/15 border border-status-error/25 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-status-error" />
               </div>
               <div>
-                <h3 id="delete-automation-dialog" className="typo-heading text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
-                <p className="typo-body text-foreground mt-1">
+                <h3 id="delete-automation-dialog" className="typo-heading text-ink-1">{t.agents.connectors.auto_delete_title}</h3>
+                <p className="typo-body text-ink-2 mt-1">
                   {tx(t.agents.connectors.auto_delete_msg, { name: deleteTarget.name })}
                 </p>
               </div>
@@ -232,14 +232,14 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 typo-body text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors"
+                className="px-4 py-2 typo-body text-ink-1 hover:text-ink-1 rounded-modal hover:bg-surface-2 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 typo-body rounded-modal bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                className="px-4 py-2 typo-body rounded-modal bg-status-error/20 text-status-error border border-status-error/30 hover:bg-status-error/30 transition-colors"
               >
                 {t.common.delete}
               </button>

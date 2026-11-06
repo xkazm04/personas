@@ -290,14 +290,14 @@ export function ArenaPanelColosseum({
       {versionScope && (
         <div className="flex items-center gap-2 rounded-modal border border-primary/25 bg-primary/[0.06] px-4 py-2.5">
           <Swords className="w-4 h-4 text-primary flex-shrink-0" />
-          <p className="typo-body text-foreground">
+          <p className="typo-body text-ink-1">
             {tx(t.agents.lab.vr_measure_scope_banner, { version: versionScope.versionNumber })}
           </p>
         </div>
       )}
 
       {/* ── ACT I : THE STAGE ────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-modal border border-primary/20 bg-gradient-to-b from-secondary/35 via-background/40 to-background/25">
+      <div className="relative overflow-hidden rounded-modal border border-hair bg-surface-1">
         <Torch side="left"  lit={canLaunch} />
         <Torch side="right" lit={canLaunch} />
 
@@ -359,7 +359,7 @@ export function ArenaPanelColosseum({
         </div>
 
         {/* Stage base: formula + launch */}
-        <div className="relative border-t border-primary/15 bg-background/40 px-4 sm:px-6 py-4 flex flex-wrap items-center gap-4">
+        <div className="relative border-t border-hair bg-background/40 px-4 sm:px-6 py-4 flex flex-wrap items-center gap-4">
           <MatchFormula
             contenders={contenderCount}
             scenarios={scenarioCount}
@@ -371,7 +371,7 @@ export function ArenaPanelColosseum({
                 type="button"
                 onClick={() => void handleCancel()}
                 data-testid="arena-cancel-btn"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 typo-body-lg transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-status-error/15 hover:bg-status-error/25 border border-status-error/30 text-status-error typo-body-lg transition-colors"
               >
                 <Flame className="w-4 h-4" />
                 {t.agents.lab.cancel_test}
@@ -410,10 +410,10 @@ export function ArenaPanelColosseum({
                     const Sigil = h.sigil;
                     return (
                       <li key={m.id} className="flex items-center gap-2">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-card border border-primary/25 bg-primary/10">
+                        <span className="flex items-center justify-center w-7 h-7 rounded-card border border-primary/25 bg-surface-1">
                           <Sigil className="w-4 h-4 text-primary" strokeWidth={1.75} />
                         </span>
-                        <span className="flex-1 min-w-0 typo-body-lg text-foreground truncate">
+                        <span className="flex-1 min-w-0 typo-body-lg text-ink-1 truncate">
                           {m.label}
                         </span>
                         <StatPips label={t.agents.lab.arena_stat_cost} level={h.cost} icon={Coins} />
@@ -436,12 +436,12 @@ export function ArenaPanelColosseum({
                 {selectedUseCase ? (
                   <>
                     <span className="typo-label text-primary/70"><DebtText k="auto_chosen_ground_79f67ac1" /></span>
-                    <p className="typo-body-lg text-foreground mt-1">{selectedUseCase.title}</p>
+                    <p className="typo-body-lg text-ink-1 mt-1">{selectedUseCase.title}</p>
                   </>
                 ) : useCases.length > 0 ? (
                   <>
                     <span className="typo-label text-primary/70"><DebtText k="auto_all_grounds_a5b59189" /></span>
-                    <p className="typo-body-lg text-foreground mt-1">
+                    <p className="typo-body-lg text-ink-1 mt-1">
                       <DebtText k="auto_every_authored_use_case_will_be_fought_89fe171f" />
                     </p>
                   </>
@@ -449,7 +449,7 @@ export function ArenaPanelColosseum({
                   <EmptyLine><DebtText k="auto_no_use_cases_authored_the_match_will_run_o_b21669d2" /></EmptyLine>
                 )}
               </div>
-              <div className="pt-2 border-t border-primary/10 typo-body text-foreground/90">
+              <div className="pt-2 border-t border-hair typo-body text-ink-1">
                 <span className="flex items-center gap-1.5">
                   <Circle className="w-2 h-2 fill-current" />
                   {useCases.length} <DebtText k="auto_total_use_case_83fae38c" />{useCases.length === 1 ? '' : 's'} <DebtText k="auto_on_file_8b983a13" />
@@ -476,10 +476,10 @@ export function ArenaPanelColosseum({
 
       {/* Prompt/tool advisories */}
       {(!hasPrompt || !hasTools) && (
-        <div className="rounded-modal border border-amber-500/25 bg-amber-500/[0.05] px-4 py-3 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-          <div className="space-y-1 text-foreground/90">
-            <p className="typo-body-lg text-amber-300"><DebtText k="auto_match_conditions_unmet_a823c1a7" /></p>
+        <div className="rounded-modal border border-status-warning/25 bg-status-warning/[0.05] px-4 py-3 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 flex-shrink-0" />
+          <div className="space-y-1 text-ink-1">
+            <p className="typo-body-lg text-status-warning"><DebtText k="auto_match_conditions_unmet_a823c1a7" /></p>
             {!hasPrompt && <p className="typo-body-lg">{t.agents.lab.no_prompt_warning}</p>}
             {!hasTools && <p className="typo-body-lg">{t.agents.lab.no_tools_warning}</p>}
           </div>
@@ -505,7 +505,7 @@ export function ArenaPanelColosseum({
       </section>
 
       {/* Status foot */}
-      <div className="flex items-center justify-center gap-2 typo-body text-foreground/85 pt-2">
+      <div className="flex items-center justify-center gap-2 typo-body text-ink-1 pt-2">
         <Medal className="w-3.5 h-3.5" />
         {healthCheck.phase === 'idle' && <span><DebtText k="auto_systems_on_standby_run_a_health_check_to_i_b5752441" /></span>}
         {healthCheck.phase === 'running' && <span><DebtText k="auto_the_herald_sweeps_the_field_72846b2f" /></span>}
@@ -547,15 +547,15 @@ function ArenaMarquee({
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex items-center gap-1.5 text-primary flex-shrink-0">
           <Swords className="w-5 h-5" />
-          <Flame className={`w-4 h-4 ${ready ? 'text-amber-300' : 'text-foreground'}`} fill="currentColor" strokeWidth={1.25} />
+          <Flame className={`w-4 h-4 ${ready ? 'text-status-warning' : 'text-ink-1'}`} fill="currentColor" strokeWidth={1.25} />
         </div>
         <div className="min-w-0">
-          <h3 className="typo-heading-lg text-foreground"><DebtText k="auto_the_arena_f7188466" /></h3>
-          <p className="typo-body-lg text-foreground flex flex-wrap items-center gap-1">
+          <h3 className="typo-heading-lg text-ink-1"><DebtText k="auto_the_arena_f7188466" /></h3>
+          <p className="typo-body-lg text-ink-1 flex flex-wrap items-center gap-1">
             {personaName ? (
               <>
                 <span><DebtText k="auto_a_trial_for_f551326f" /></span>
-                <span className="text-foreground font-medium">{personaName}</span>
+                <span className="text-ink-1 font-medium">{personaName}</span>
                 <span>—</span>
                 <UseCasePopover
                   selectedUseCase={selectedUseCase}
@@ -584,7 +584,7 @@ function ArenaMarquee({
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-4 w-3 bg-gradient-to-b from-primary/40 to-primary/10 border-x border-primary/30"
+            className="h-4 w-3 bg-surface-1 border-x border-primary/30"
             style={{ clipPath: 'polygon(0 0, 100% 0, 100% 60%, 50% 100%, 0 60%)' }}
             aria-hidden
           />
@@ -626,7 +626,7 @@ function UseCasePopover({
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive italic transition-colors border focus-ring ${
             isOpen
               ? 'bg-primary/15 border-primary/35 text-primary'
-              : 'bg-primary/5 border-primary/20 text-primary/85 hover:bg-primary/10 hover:text-primary'
+              : 'bg-primary/5 border-hair text-primary/85 hover:bg-primary/10 hover:text-primary'
           }`}
         >
           <span className="truncate max-w-[220px]">{label}</span>
@@ -635,7 +635,7 @@ function UseCasePopover({
       )}
     >
       {({ close, focusIndex }) => (
-        <div className="py-1 bg-background border border-primary/20 rounded-card shadow-elevation-3 mt-1 max-h-60 overflow-y-auto min-w-[240px]">
+        <div className="py-1 bg-background border border-hair rounded-card shadow-elevation-3 mt-1 max-h-60 overflow-y-auto min-w-[240px]">
           {options.map((opt, i) => {
             const active = opt.value === activeValue;
             return (
@@ -651,7 +651,7 @@ function UseCasePopover({
                 className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                   focusIndex === i ? 'bg-primary/15' : ''
                 } ${
-                  active ? 'text-primary' : 'text-foreground hover:bg-secondary/30'
+                  active ? 'text-primary' : 'text-ink-1 hover:bg-surface-1'
                 }`}
               >
                 {opt.label}
@@ -675,7 +675,7 @@ function OverrideChip({
   inRosterLabel: string;
 }) {
   const trailing = inRoster
-    ? <span className="flex items-center gap-1 text-emerald-300/90"><Check className="w-3 h-3" strokeWidth={3} />{inRosterLabel}</span>
+    ? <span className="flex items-center gap-1 text-status-success"><Check className="w-3 h-3" strokeWidth={3} />{inRosterLabel}</span>
     : <span className="flex items-center gap-1 text-primary"><Plus className="w-3 h-3" strokeWidth={2.5} />{addLabel}</span>;
   return (
     <button
@@ -687,14 +687,14 @@ function OverrideChip({
       title={`${prefersLabel} ${modelLabel}`}
       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-interactive border typo-body transition-colors focus-ring ${
         inRoster
-          ? 'bg-emerald-500/10 border-emerald-400/25 text-foreground/90 cursor-default'
-          : 'bg-amber-500/10 border-amber-400/30 text-foreground hover:bg-amber-500/15 hover:border-amber-400/50'
+          ? 'bg-status-success/10 border-status-success/25 text-ink-1 cursor-default'
+          : 'bg-status-warning/10 border-status-warning/30 text-ink-1 hover:bg-status-warning/15 hover:border-status-warning/50'
       }`}
     >
-      <Pin className="w-3 h-3 text-amber-300" strokeWidth={2} />
-      <span className="text-foreground/85">{prefersLabel}</span>
-      <span className="font-medium text-foreground">{modelLabel}</span>
-      <span className="mx-0.5 text-foreground" aria-hidden>·</span>
+      <Pin className="w-3 h-3 text-status-warning" strokeWidth={2} />
+      <span className="text-ink-1">{prefersLabel}</span>
+      <span className="font-medium text-ink-1">{modelLabel}</span>
+      <span className="mx-0.5 text-ink-1" aria-hidden>·</span>
       {trailing}
     </button>
   );
@@ -708,15 +708,15 @@ function Torch({ side, lit }: { side: 'left' | 'right'; lit: boolean }) {
     >
       <div className="relative h-11 w-8">
         {lit && (
-          <div className="absolute inset-x-0 -top-1 h-10 rounded-full bg-gradient-to-t from-amber-400/50 via-amber-300/35 to-transparent blur-[6px]" />
+          <div className="absolute inset-x-0 -top-1 h-10 rounded-full bg-surface-1 blur-[6px]" />
         )}
         <Flame
-          className={`absolute inset-0 m-auto w-7 h-7 ${lit ? 'text-amber-300' : 'text-foreground'}`}
+          className={`absolute inset-0 m-auto w-7 h-7 ${lit ? 'text-status-warning' : 'text-ink-1'}`}
           strokeWidth={1.5}
           fill="currentColor"
         />
       </div>
-      <div className="h-10 w-2.5 rounded-b-interactive bg-gradient-to-b from-primary/40 via-primary/20 to-primary/5 border-x border-primary/20" />
+      <div className="h-10 w-2.5 rounded-b-interactive bg-surface-1 border-x border-hair" />
       <div className="h-1 w-5 rounded-interactive bg-primary/30" />
     </div>
   );
@@ -741,7 +741,7 @@ function PersonaStandard({
   return (
     <div className="flex flex-col items-center gap-0">
       <Crown
-        className={`w-6 h-6 ${arrayed ? 'text-primary' : 'text-foreground'} -mb-0.5`}
+        className={`w-6 h-6 ${arrayed ? 'text-primary' : 'text-ink-1'} -mb-0.5`}
         strokeWidth={1.5}
         fill="currentColor"
       />
@@ -751,8 +751,8 @@ function PersonaStandard({
       <div
         className={`relative w-[168px] border-x-2 ${
           arrayed ? 'border-primary/55' : 'border-primary/25'
-        } bg-gradient-to-b ${
-          arrayed ? 'from-primary/35 via-primary/22 to-primary/8' : 'from-secondary/65 via-secondary/45 to-secondary/25'
+        } bg-surface-1 ${
+          arrayed ? '' : ''
         } px-3 pt-4 pb-8 shadow-elevation-3 shadow-primary/10`}
         style={{ clipPath: 'polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%)' }}
       >
@@ -761,7 +761,7 @@ function PersonaStandard({
         } bg-gradient-to-br from-background/80 to-background/40`}>
           <PersonaIcon icon={iconToken} color={color} size="w-8 h-8" />
         </div>
-        <p className="typo-body-lg text-foreground mt-2.5 text-center truncate">
+        <p className="typo-body-lg text-ink-1 mt-2.5 text-center truncate">
           {name ?? '—'}
         </p>
         <p className="typo-label text-primary/85 text-center mt-0.5">
@@ -771,15 +771,15 @@ function PersonaStandard({
 
       {/* Stone plinth base */}
       <div className="relative -mt-0.5 flex flex-col items-center">
-        <div className={`h-1.5 w-[188px] rounded-interactive bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10 border-x border-primary/20`} />
-        <div className={`h-3 w-[172px] bg-gradient-to-b from-primary/15 to-primary/[0.02] border-x border-primary/15 border-b border-primary/10`} />
+        <div className={`h-1.5 w-[188px] rounded-interactive bg-surface-1 border-x border-hair`} />
+        <div className={`h-3 w-[172px] bg-surface-1 border-x border-hair border-b border-hair`} />
         <div className="h-1 w-[150px] rounded-full bg-primary/12 blur-sm mt-0.5" />
       </div>
 
-      <div className="mt-2 flex items-center gap-1 rounded-full border border-primary/30 bg-background/75 px-3 py-0.5 typo-body text-foreground">
+      <div className="mt-2 flex items-center gap-1 rounded-full border border-primary/30 bg-background/75 px-3 py-0.5 typo-body text-ink-1">
         <Shield className="w-3.5 h-3.5 text-primary" />
         <span className="font-semibold">{formatTrustScore(trustScore)}</span>
-        <span className="text-foreground/90">trust</span>
+        <span className="text-ink-1">trust</span>
       </div>
     </div>
   );
@@ -808,7 +808,7 @@ function ModelRowCard({
       className={`relative overflow-hidden rounded-card border-2 px-3 py-2.5 text-left transition-all focus-ring ${
         selected
           ? 'bg-primary/15 border-primary/55 shadow-elevation-3 shadow-primary/15'
-          : 'bg-secondary/40 border-primary/20 hover:bg-secondary/60 hover:border-primary/40 hover:shadow-elevation-2'
+          : 'bg-surface-2 border-hair hover:bg-surface-2 hover:border-primary/40 hover:shadow-elevation-2'
       }`}
     >
       {/* Sigil — semi-transparent backdrop */}
@@ -824,21 +824,21 @@ function ModelRowCard({
       {selected && (
         <span
           aria-hidden
-          className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center shadow-[0_0_8px_rgba(var(--color-primary-rgb,180,140,255),0.6)]"
+          className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center"
         >
           <Check className="w-2.5 h-2.5 text-background" strokeWidth={3} />
         </span>
       )}
 
       {/* Model name — top row */}
-      <p className="relative typo-heading text-foreground truncate pr-6">
+      <p className="relative typo-heading text-ink-1 truncate pr-6">
         {option.label}
       </p>
 
       {/* Stats — N icons indicate level */}
       <div className="relative mt-2.5 flex items-center gap-2.5">
         <IconLevel level={heraldry.cost}  icon={DollarSign} active={selected} title={t.agents.lab.arena_stat_cost} />
-        <span className={`h-4 w-px ${selected ? 'bg-primary/45' : 'bg-foreground/20'}`} aria-hidden />
+        <span className={`h-4 w-px ${selected ? 'bg-primary/45' : 'bg-surface-2'}`} aria-hidden />
         <IconLevel level={heraldry.speed} icon={Zap}        active={selected} title={t.agents.lab.arena_stat_speed} />
       </div>
     </button>
@@ -853,7 +853,7 @@ function IconLevel({
       {Array.from({ length: level }).map((_, i) => (
         <Icon
           key={i}
-          className={`w-4 h-4 ${active ? 'text-primary' : 'text-foreground/85'}`}
+          className={`w-4 h-4 ${active ? 'text-primary' : 'text-ink-1'}`}
           strokeWidth={2}
         />
       ))}
@@ -879,8 +879,8 @@ function ConditionsList({
   const { t, tx } = useTranslation();
   const lab = t.agents.lab;
   return (
-    <aside className="rounded-card border border-primary/20 bg-background/50 backdrop-blur-sm self-start">
-      <div className="px-3 py-2 border-b border-primary/15">
+    <aside className="rounded-card border border-hair bg-background/50 backdrop-blur-sm self-start">
+      <div className="px-3 py-2 border-b border-hair">
         <span className="typo-label text-primary/80">{lab.arena_conditions}</span>
       </div>
       <ul className="p-2 space-y-1">
@@ -901,9 +901,9 @@ function ConditionsList({
 
 function ConditionRow({ tone, label }: { tone: 'ok' | 'warn' | 'neutral'; label: string }) {
   const toneClasses =
-    tone === 'ok'      ? { dot: 'bg-emerald-400 ring-emerald-400/20', label: 'text-foreground/90' }
-    : tone === 'warn'  ? { dot: 'bg-amber-400 ring-amber-400/20',     label: 'text-amber-300' }
-    :                    { dot: 'bg-primary ring-primary/20',         label: 'text-foreground/90' };
+    tone === 'ok'      ? { dot: 'bg-status-success ring-status-success/20', label: 'text-ink-1' }
+    : tone === 'warn'  ? { dot: 'bg-status-warning ring-status-warning/20',     label: 'text-status-warning' }
+    :                    { dot: 'bg-primary ring-primary/20',         label: 'text-ink-1' };
   return (
     <li className="flex items-center gap-2 px-2.5 py-1.5 rounded-interactive">
       <span className={`h-2 w-2 flex-shrink-0 rounded-full ring-2 ${toneClasses.dot}`} />
@@ -935,17 +935,17 @@ function MatchFormula({ contenders, scenarios, duels }: { contenders: number; sc
 function FormulaToken({
   n, label, icon: Icon, tone = 'muted',
 }: { n: number; label: string; icon: LucideIcon; tone?: 'muted' | 'primary' }) {
-  const color = tone === 'primary' ? 'text-foreground border-primary/35 bg-primary/15' : 'text-foreground/85 border-primary/15 bg-background/40';
+  const color = tone === 'primary' ? 'text-ink-1 border-primary/35 bg-primary/15' : 'text-ink-1 border-hair bg-background/40';
   return (
     <span className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border ${color}`}>
       <Icon className="w-3.5 h-3.5 text-primary/70" />
       <span className="typo-body-lg tabular-nums">{n}</span>
-      <span className="typo-body text-foreground/90">{label}</span>
+      <span className="typo-body text-ink-1">{label}</span>
     </span>
   );
 }
-function Times()  { return <span aria-hidden className="typo-body-lg text-foreground">×</span>; }
-function Equals() { return <span aria-hidden className="typo-body-lg text-foreground">=</span>; }
+function Times()  { return <span aria-hidden className="typo-body-lg text-ink-1">×</span>; }
+function Equals() { return <span aria-hidden className="typo-body-lg text-ink-1">=</span>; }
 
 function WaxSealButton({
   canLaunch, contenders, disabledReason, onLaunch,
@@ -964,30 +964,30 @@ function WaxSealButton({
         data-testid="arena-run-btn"
         className={`relative group flex items-center gap-3 pl-6 pr-5 py-3 rounded-modal border typo-body-lg transition-all ${
           canLaunch
-            ? 'bg-gradient-to-r from-primary/30 via-primary/20 to-accent/20 hover:from-primary/40 hover:via-primary/30 hover:to-accent/30 border-primary/40 text-foreground shadow-elevation-3'
-            : 'bg-secondary/40 border-primary/10 text-foreground/85 cursor-not-allowed'
+            ? 'bg-surface-1 hover:from-primary/40 hover:via-primary/30 hover:to-accent/30 border-primary/40 text-ink-1 shadow-elevation-3'
+            : 'bg-surface-2 border-hair text-ink-1 cursor-not-allowed'
         }`}
       >
         <span
           aria-hidden
           className={`flex items-center justify-center h-9 w-9 rounded-full -ml-3 border-2 ${
             canLaunch
-              ? 'bg-gradient-to-br from-primary/80 to-accent/70 border-primary/40 shadow-[0_0_12px_rgba(var(--color-primary-rgb,180,140,255),0.5)]'
-              : 'bg-secondary border-primary/20'
+              ? 'bg-surface-1 border-primary/40'
+              : 'bg-secondary border-hair'
           }`}
         >
-          <Swords className={`w-4 h-4 ${canLaunch ? 'text-background' : 'text-foreground'}`} strokeWidth={2} />
+          <Swords className={`w-4 h-4 ${canLaunch ? 'text-background' : 'text-ink-1'}`} strokeWidth={2} />
         </span>
         <span className="flex flex-col items-start leading-tight">
           <span className="typo-body-lg"><DebtText k="auto_begin_the_match_439d5782" /></span>
-          <span className="typo-label text-foreground/90">
+          <span className="typo-label text-ink-1">
             {contenders} {contenders === 1 ? 'contender' : 'contenders'}
           </span>
         </span>
       </button>
       {!canLaunch && disabledReason && (
-        <span className="typo-body text-foreground/90 flex items-center gap-1">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+        <span className="typo-body text-ink-1 flex items-center gap-1">
+          <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
           {disabledReason}
         </span>
       )}
@@ -1006,12 +1006,12 @@ function SectionHeader({
     <div className="flex items-end justify-between gap-3 px-1">
       <div>
         <p className="typo-label text-primary/80">{eyebrow}</p>
-        <h4 className="typo-heading-lg text-foreground flex items-center gap-2 mt-0.5">
+        <h4 className="typo-heading-lg text-ink-1 flex items-center gap-2 mt-0.5">
           <Icon className="w-4 h-4 text-primary" />
           {title}
         </h4>
       </div>
-      <span className="typo-body italic text-foreground/90">{subtitle}</span>
+      <span className="typo-body italic text-ink-1">{subtitle}</span>
     </div>
   );
 }
@@ -1025,17 +1025,17 @@ function ParchmentCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative rounded-modal border border-primary/20 bg-gradient-to-b from-secondary/50 to-background/40 backdrop-blur-sm overflow-hidden">
+    <div className="relative rounded-modal border border-hair bg-surface-1 backdrop-blur-sm overflow-hidden">
       <span aria-hidden className="absolute top-1.5 left-1.5 h-3 w-3 border-l-2 border-t-2 border-primary/30 rounded-tl-interactive" />
       <span aria-hidden className="absolute top-1.5 right-1.5 h-3 w-3 border-r-2 border-t-2 border-primary/30 rounded-tr-interactive" />
       <span aria-hidden className="absolute bottom-1.5 left-1.5 h-3 w-3 border-l-2 border-b-2 border-primary/30 rounded-bl-interactive" />
       <span aria-hidden className="absolute bottom-1.5 right-1.5 h-3 w-3 border-r-2 border-b-2 border-primary/30 rounded-br-interactive" />
-      <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-hair flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-primary" strokeWidth={1.75} />
           <span className="typo-label text-primary/80">{title}</span>
         </div>
-        <span className="typo-body text-foreground/90 truncate max-w-[140px]" title={meta}>{meta}</span>
+        <span className="typo-body text-ink-1 truncate max-w-[140px]" title={meta}>{meta}</span>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -1044,7 +1044,7 @@ function ParchmentCard({
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
   return (
-    <span className="typo-body-lg italic text-foreground/90">{children}</span>
+    <span className="typo-body-lg italic text-ink-1">{children}</span>
   );
 }
 
@@ -1052,7 +1052,7 @@ function StatPips({ label, level, icon: Icon }: { label: string; level: number; 
   return (
     <span className="flex items-center gap-0.5" title={`${label}: ${level}/3`}>
       {[1, 2, 3].map((i) => (
-        <Icon key={i} className={`w-3 h-3 ${i <= level ? 'text-primary' : 'text-foreground'}`} strokeWidth={2} fill={i <= level ? 'currentColor' : 'none'} />
+        <Icon key={i} className={`w-3 h-3 ${i <= level ? 'text-primary' : 'text-ink-1'}`} strokeWidth={2} fill={i <= level ? 'currentColor' : 'none'} />
       ))}
     </span>
   );
@@ -1074,22 +1074,22 @@ function ChampionCard({
     <ParchmentCard title={t.agents.lab.arena_champion} meta={heraldry.houseName} icon={Shield}>
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-primary/40 bg-gradient-to-br from-primary/25 to-accent/15 shadow-elevation-2">
-            <Sigil className="w-6 h-6 text-foreground" strokeWidth={1.75} />
+          <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-primary/40 bg-surface-1 shadow-elevation-2">
+            <Sigil className="w-6 h-6 text-ink-1" strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="typo-heading text-foreground truncate">{modelLabel}</p>
-            <p className="typo-body text-foreground/90 mt-0.5">{sourceLabel}</p>
+            <p className="typo-heading text-ink-1 truncate">{modelLabel}</p>
+            <p className="typo-body text-ink-2 mt-0.5">{sourceLabel}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 pt-2 border-t border-primary/10">
+        <div className="flex items-center gap-3 pt-2 border-t border-hair">
           <PersonaIcon icon={iconToken} color={color} size="w-5 h-5" />
           <div className="flex-1 min-w-0">
             <p className="typo-label text-primary/70">{t.agents.lab.arena_defender}</p>
-            <p className="typo-body-lg text-foreground truncate">{personaName ?? '—'}</p>
+            <p className="typo-body-lg text-ink-1 truncate">{personaName ?? '—'}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 typo-body text-foreground/90">
+        <div className="flex items-center gap-2 typo-body text-ink-1">
           <Crown className="w-3.5 h-3.5 text-primary" />
           <span><DebtText k="auto_contenders_must_unseat_this_sword_to_win_t_2a31c866" /></span>
         </div>
@@ -1108,9 +1108,9 @@ function StandingChampionBanner({
   const { t, tx } = useTranslation();
   if (!champion) {
     return (
-      <div className="rounded-modal border border-primary/15 bg-secondary/30 px-4 py-3 flex items-center gap-3">
-        <Trophy className="w-4 h-4 text-foreground" />
-        <p className="typo-body-lg italic text-foreground/90">
+      <div className="rounded-modal border border-hair bg-surface-1 px-4 py-3 flex items-center gap-3">
+        <Trophy className="w-4 h-4 text-ink-1" />
+        <p className="typo-body-lg italic text-ink-1">
           <DebtText k="auto_no_chronicle_yet_the_first_match_will_crow_32ef87e3" />
         </p>
       </div>
@@ -1119,29 +1119,29 @@ function StandingChampionBanner({
   const heraldry = HERALDRY[champion.model] ?? heraldryFor(champion.model, 'unknown');
   const Sigil = heraldry.sigil;
   return (
-    <div className="relative rounded-modal border border-primary/30 bg-gradient-to-r from-primary/15 via-background/40 to-accent/10 backdrop-blur-sm overflow-hidden">
-      <span aria-hidden className="absolute -left-4 top-1/2 -translate-y-1/2 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
+    <div className="relative rounded-modal border border-primary/30 bg-surface-1 backdrop-blur-sm overflow-hidden">
+      <span aria-hidden className="absolute -left-4 top-1/2 -translate-y-1/2 h-24 w-24 rounded-full bg-surface-1 blur-2xl" />
       <div className="relative flex items-center gap-4 px-4 py-3">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-primary/40 bg-gradient-to-br from-primary/30 to-accent/20 shadow-elevation-2">
-          <Sigil className="w-5 h-5 text-foreground" strokeWidth={1.75} />
+        <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-primary/40 bg-surface-1 shadow-elevation-2">
+          <Sigil className="w-5 h-5 text-ink-1" strokeWidth={1.75} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="typo-label text-primary/80 flex items-center gap-1.5">
             <Crown className="w-3.5 h-3.5" fill="currentColor" />
             <DebtText k="auto_standing_champion_97e028f7" />
           </p>
-          <p className="typo-heading-lg text-foreground capitalize mt-0.5 truncate">
+          <p className="typo-heading-lg text-ink-1 capitalize mt-0.5 truncate">
             {champion.model}
           </p>
-          <p className="typo-body text-foreground/90">
+          <p className="typo-body text-ink-1">
             {tx(t.agents.lab.arena_champion_record, { wins: champion.wins, total: champion.total, runs: totalRuns })}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/60 border border-primary/25 typo-body-lg text-foreground">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/60 border border-primary/25 typo-body-lg text-ink-1">
           <Trophy className="w-4 h-4 text-primary" />
           <span className="font-semibold tabular-nums">{champion.wins}</span>
-          <span className="text-foreground/90">/</span>
-          <span className="text-foreground/90 tabular-nums">{champion.total}</span>
+          <span className="text-ink-1">/</span>
+          <span className="text-ink-1 tabular-nums">{champion.total}</span>
         </div>
       </div>
     </div>

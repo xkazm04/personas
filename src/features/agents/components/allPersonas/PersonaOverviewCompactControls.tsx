@@ -23,7 +23,7 @@ export function PersonaOverviewCompactControls({ view, onViewChange, allConnecto
   const sortValue = view.sortKey ? `${view.sortKey}:${view.sortDirection}` : DEFAULT_SORT;
 
   return (
-    <div className="px-3 py-1.5 border-b border-primary/5 flex items-center gap-4 flex-wrap" data-testid="roster-compact-controls">
+    <div className="px-3 py-1.5 border-b border-hair flex items-center gap-4 flex-wrap" data-testid="roster-compact-controls">
       <PersonaOverviewFilterHeader
         label={t.agents.persona_list.sort_label}
         value={sortValue}

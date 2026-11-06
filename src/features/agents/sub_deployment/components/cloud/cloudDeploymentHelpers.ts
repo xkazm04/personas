@@ -21,9 +21,9 @@ export function budgetUtilization(d: CloudDeployment): number | null {
 
 export function budgetColor(pct: number): string {
   return {
-    emerald: 'bg-emerald-500',
-    amber: 'bg-amber-500',
-    red: 'bg-red-500',
+    emerald: 'bg-status-success',
+    amber: 'bg-status-warning',
+    red: 'bg-status-error',
   }[budgetToneForPct(pct)];
 }
 
@@ -32,13 +32,13 @@ export { formatCost } from '@/lib/utils/formatters';
 export function statusColor(status: string) {
   switch (status) {
     case 'active':
-      return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+      return 'bg-status-success/10 border-status-success/20 text-status-success';
     case 'paused':
-      return 'bg-amber-500/10 border-amber-500/25 text-amber-400';
+      return 'bg-status-warning/10 border-status-warning/25 text-status-warning';
     case 'failed':
-      return 'bg-red-500/10 border-red-500/20 text-red-400';
+      return 'bg-status-error/10 border-status-error/20 text-status-error';
     default:
-      return 'bg-secondary/40 border-primary/15 text-foreground';
+      return 'bg-surface-2 border-hair text-ink-1';
   }
 }
 
