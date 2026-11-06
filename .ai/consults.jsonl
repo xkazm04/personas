@@ -2269,3 +2269,4 @@
 {"ts":"2026-11-05T12:00:00Z","bundle":"software-engineering","subjects":["vendored-patch-stack"],"techniques":["least-invasive-carrier","reject-triage-is-a-port-not-a-merge"],"deviations":0}
 {"ts":"2026-11-05T10:17:14Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","commit-boundary"],"deviations":0}
 {"ts":"2026-11-06T09:30:00Z","bundle":"software-engineering","subjects":["fleet-orchestration","admission-queue","hitl-approval"],"techniques":["parallel-dispatch","review-queues"],"deviations":2}
+{"ts":"2026-11-06T22:03:24.945287+00:00","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0,"context":"shared-chrome","via":"curator-multi:claude","model":"claude-opus-5-5"}

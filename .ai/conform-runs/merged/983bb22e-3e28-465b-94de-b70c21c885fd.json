@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "983bb22e-3e28-465b-94de-b70c21c885fd",
+ "subject": "mcp-tools",
+ "evaluatedAt": "2026-11-06T22:03:24.945287+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "shared-chrome",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/chrome/commandPaletteUtils.ts:7 The sidebar and command palette navigate app sections from the nav registry and expose no tools to a model. A grep of src/features/shared/chrome for mcp, inputSchema, callTool, tools/list and tool_use returned zero hits.",
+   "techniques": [],
+   "absenceTerms": [
+    "mcp",
+    "inputSchema",
+    "callTool",
+    "tool_use"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "mcp-tools",
+   "context": "i18n",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "companion-ui-controls",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "vault-credentials-components-forms",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "hooks-design",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T22:03:24.945287+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "shared-chrome",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

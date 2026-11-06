@@ -34949,7 +34949,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/chrome/commandPaletteUtils.ts:7 The sidebar and command palette navigate app sections from the nav registry and expose no tools to a model. A grep of src/features/shared/chrome for mcp, inputSchema, callTool, tools/list and tool_use returned zero hits.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:cb2b1c9f6fef5eb9",
+          "evaluatedRevision": 35
         },
         {
           "subject": "agent-runtime-assembly",

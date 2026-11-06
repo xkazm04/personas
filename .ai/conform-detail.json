@@ -44946,6 +44946,16 @@
           "evidence": "src/lib/utils/sanitizers/workflowSanitizer.ts:58 The technique says truncation inside a rung cuts at semantic boundaries and names what is left out; here the cut is mid-text by character count and nothing reaches the prompt to say so. The same silent drop happens to array items past 100 at line 87."
         }
       ]
+    },
+    "dc471d31-ae30-4ac9-b015-d51969df458d/mcp-tools": {
+      "context": "shared-chrome",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T22:03:24.945Z",
+      "worker": "983bb22e-3e28-465b-94de-b70c21c885fd",
+      "techniques": []
     }
   }
 }
