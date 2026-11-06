@@ -46,6 +46,9 @@ import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useHydratedDesignResult } from './useHydratedDesignResult';
 
 
@@ -940,6 +943,42 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (nextAuto) setAutoDetectedIds(nextAuto);
   }, [adoptionQuestions, dynamicOptions, adoptionAnswers, autoDetectedIds, hasAdoptionQuestions]);
 
+  // The answers reach test_build_draft and promote only through this save: on a
+  // rejected write build_sessions.adoption_answers stays empty and the test runs
+  // on template placeholders. So the failure is the person's to see and retry,
+  // and the adjust and auto-test effects below hold until the save lands. The
+  // hold is a ref as well as state: those effects run in the same commit as the
+  // effect that starts the save, when state still reads the old value.
+  const answerSaveHeldRef = useRef(false);
+  const answerSaveLatest = useRef(createLatestWins()).current;
+  const lastAnswerSaveRef = useRef<{ sessionId: string; json: string } | null>(null);
+  const [answerSaveError, setAnswerSaveError] = useState<string | null>(null);
+  const [answerSaveEpoch, setAnswerSaveEpoch] = useState(0);
+
+  const persistAnswers = useCallback((sessionId: string, json: string) => {
+    answerSaveHeldRef.current = true;
+    lastAnswerSaveRef.current = { sessionId, json };
+    const token = answerSaveLatest.next();
+    setAnswerSaveError(null);
+    saveAdoptionAnswers(sessionId, json).then(
+      () => {
+        if (!answerSaveLatest.isCurrent(token)) return;
+        answerSaveHeldRef.current = false;
+        setAnswerSaveEpoch((n) => n + 1);
+      },
+      (err: unknown) => {
+        silentCatch("ChronologyAdoptionView:persistAdoptionAnswers")(err);
+        if (!answerSaveLatest.isCurrent(token)) return;
+        setAnswerSaveError(inlineErrorCopy(t, err));
+      },
+    );
+  }, [t, answerSaveLatest]);
+
+  const retryAnswerSave = useCallback(() => {
+    const last = lastAnswerSaveRef.current;
+    if (last) persistAnswers(last.sessionId, last.json);
+  }, [persistAnswers]);
+
   // When questions are completed, store answers in the build draft and transition to draft_ready.
   // Adoption sessions are pre-designed templates — they don't have active LLM build tasks,
   // so we skip the refinement call and apply answers directly as parameter overrides.
@@ -993,11 +1032,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         // field today; the matrix preview already reflects the filter).
         selected_use_case_ids: showUseCasePicker ? [...selectedUseCaseIds] : null,
       };
-      void saveAdoptionAnswers(sessionId, JSON.stringify(payload)).catch(
-        silentCatch("ChronologyAdoptionView:persistAdoptionAnswers"),
-      );
+      persistAnswers(sessionId, JSON.stringify(payload));
     }
-  }, [questionsComplete, seeded, adoptionAnswers, filteredAdoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
+  }, [questionsComplete, seeded, adoptionAnswers, filteredAdoptionQuestions, selectedUseCaseIds, showUseCasePicker, persistAnswers]);
 
   // Seed the matrix cells from the template — deferred until questionnaire is completed
   // (if one exists). This prevents creating a draft persona when the user might
@@ -1211,6 +1248,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (hasFilteredQuestions && !questionsComplete) return;
     if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
     if (build.buildError) return;
+    if (answerSaveHeldRef.current) return;
     if (adjustedPersonaId === personaId || adjustingRef.current) return;
     const sessionId = adoptionSessionIdRef.current;
     if (!sessionId) return;
@@ -1236,7 +1274,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         setAdjustedPersonaId(personaId);
       }
     })();
-  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId]);
+  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId, answerSaveEpoch]);
 
   useEffect(() => {
     if (!seeded || !personaId) return;
@@ -1245,12 +1283,13 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (hasFilteredQuestions && !questionsComplete) return;
     if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
     if (build.buildError) return;
+    if (answerSaveHeldRef.current) return;
     // Wait for the always-on adjustment pass to finish so the test/promote run
     // against the specialized IR.
     if (adjustedPersonaId !== personaId) return;
     autoTestedRef.current = personaId;
     void lifecycle.handleStartTest();
-  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId, lifecycle]);
+  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId, lifecycle, answerSaveEpoch]);
   useEffect(() => {
     if (!seeded || !personaId) return;
     // Terminal phases: end the process activity
@@ -1372,6 +1411,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       handleAddCredentialForCategory,
     ],
   );
+
+  // The hold covers the manual Test button too: it would run the same placeholders.
+  const startTestUnlessHeld = useCallback(() => {
+    if (answerSaveHeldRef.current) return;
+    return lifecycle.handleStartTest();
+  }, [lifecycle]);
 
   // Discard the current draft persona and close the adoption modal.
   // Shown as "Delete Draft" in the Command Hub when tests are skipped/failed
@@ -1567,6 +1612,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       {/* Build / test / promote phases live INSIDE the Persona Layout shell —
           Persona Sigil hero + capability rows + phase-aware controls below,
           the same screen the user just configured. */}
+      {answerSaveError && (
+        <InlineErrorBanner compact className="mb-2 flex-shrink-0" message={answerSaveError} onRetry={retryAnswerSave} />
+      )}
       <PersonaLayoutBuild
         buildPhase={build.buildPhase}
         completeness={build.completeness}
@@ -1575,7 +1623,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         cellStates={build.cellStates}
         pendingQuestions={build.pendingQuestions}
         onAnswerBuildQuestion={build.handleAnswer}
-        onStartTest={lifecycle.handleStartTest}
+        onStartTest={startTestUnlessHeld}
         onApproveTest={lifecycle.handlePromote}
         onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
         onRejectTest={lifecycle.handleRejectTest}
