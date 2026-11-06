@@ -21693,32 +21693,15 @@ export type Translations = {
         armed: string;
         ended: string;
       };
-      tally: {
-        waits: string;
-        proposed: string;
-        decided: string;
-        running: string;
-        refused: string;
-        running_none_draft: string;
-        running_none_armed: string;
-      };
       voice: {
         none: string;
-        none_sub: string;
         proposing: string;
-        proposing_sub: string;
         decide: string;
-        decide_sub: string;
         nothing: string;
-        nothing_sub: string;
         all_decided: string;
-        all_decided_sub: string;
         return: string;
-        return_sub: string;
         ended: string;
-        ended_sub: string;
         armed: string;
-        armed_sub: string;
       };
       since: {
         label: string;
@@ -21730,13 +21713,8 @@ export type Translations = {
       };
       machine: {
         label: string;
-        zoom_today: string;
-        zoom_long: string;
-        past_caption: string;
-        long_caption: string;
         now_armed: string;
         now_draft: string;
-        night_caption: string;
         night_empty: string;
       };
       state: {
@@ -21754,10 +21732,7 @@ export type Translations = {
         verb_retune: string;
       };
       row: {
-        history_label: string;
         moved: string;
-        no_movement: string;
-        acts_label: string;
         refused: string;
         waits: string;
         blank: string;
@@ -21771,15 +21746,6 @@ export type Translations = {
         label: string;
         recommended: string;
         type_placeholder: string;
-        act_pick: string;
-        act_accept: string;
-        act_edit: string;
-        act_type: string;
-        act_skip: string;
-        act_answer: string;
-        act_talk: string;
-        act_dossier: string;
-        act_undo: string;
       };
       groups: {
         decide: {
@@ -21820,24 +21786,10 @@ export type Translations = {
         };
       };
       footer: {
-        away_rules: string;
-        delegates: string;
-        push_targets: string;
-        legend: string;
         keys: string;
-        planned: string;
-        still_proposed: string;
-        all_resolved: string;
         arm: string;
         end: string;
         amend: string;
-        always_wait: string;
-      };
-      legend: {
-        proposed: string;
-        decided: string;
-        running: string;
-        waits: string;
       };
       rules: {
         title: string;
@@ -21915,6 +21867,83 @@ export type Translations = {
       actions: {
         propose: string;
         open: string;
+      };
+      console: {
+        col: {
+          name: string;
+          today: string;
+          today_long: string;
+          decision: string;
+          tonight: string;
+        };
+        meter: {
+          decided: string;
+          waits: string;
+          hint: string;
+          empty: string;
+        };
+        state_waits: string;
+        since_lead: string;
+        since_body: string;
+        since_running: string;
+        machine: {
+          name: string;
+          idle: string;
+          lanes: string;
+          summary_empty: string;
+          now: string;
+          zoom: string;
+          cpu_hint: string;
+          cpu_hint_long: string;
+          lanes_hint: string;
+        };
+        decision: {
+          options: string;
+          proposed_plain: string;
+          agent: string;
+          blank: string;
+          refused: string;
+        };
+        today: {
+          moved_word: string;
+          moved_hint: string;
+        };
+        history_hint: string;
+        detail: {
+          read: string;
+          pick: string;
+          type: string;
+          edit: string;
+          skip: string;
+          accept: string;
+          talk: string;
+          answer: string;
+          dossier: string;
+          undo: string;
+        };
+        footer: {
+          directions: string;
+          runs: string;
+          off: string;
+          resolved: string;
+          plan_none: string;
+          rules: string;
+          locked: string;
+          help: string;
+          help_keys: string;
+        };
+        kinds: {
+          push: string;
+          dispatch: string;
+          ask_parked: string;
+          ask_delegated: string;
+          stop: string;
+          drift: string;
+          agent_created: string;
+          agent_retuned: string;
+          sweep: string;
+          backfill: string;
+        };
       };
     };
     tab_setup: string;

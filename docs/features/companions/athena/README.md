@@ -40,6 +40,14 @@ idle capacity is backfilled. Standup absorbed Night Shift's planning (see below)
 `app-standup`; backend `src-tauri/src/companion/standup/`, commands
 `src-tauri/src/commands/companion/standup.rs`, IPC `src/api/companion/standup.ts`.
 
+**The page.** One column grid: every project is a line through Today (the away log), the Decision
+and Tonight (the forecast), under one instrument bar (Athena's sentence, a decided/total plan meter,
+what waits on you) and a pinned Machine row (host CPU, tonight's lanes and dead spots). The selected
+row opens in place with Athena's read and her directions as a numbered palette; the footer holds the
+plan in figures and the one accent press (Arm, or End and Amend). Inter for names and prose,
+JetBrains Mono for every figure, hairline rules, a glyph and a word for every state
+(`sub_standup/parts/StandupPage.tsx`; screenshots in `docs/design/standup/`).
+
 **The page decides; chat is optional.** One card per registered, switched-on project (status
 `active`, project switch on). Each card carries an evidence line, Athena's proposals (her pick
 marked) and the operator's resolution: pick a proposal, edit it, write one, or skip; plus the

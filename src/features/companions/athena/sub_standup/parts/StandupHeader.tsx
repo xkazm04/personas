@@ -1,92 +1,79 @@
 import { memo, type ReactNode } from 'react';
 
-import { UnitStrip } from '@/features/shared/components/kit';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AthenaAvatar } from '../../AthenaAvatar';
 import { clockLabel } from '../model/timeAxis';
-import type { Counts, StandupView } from '../model/types';
-import { Kbd } from './Kbd';
+import type { SinceLast, StandupView } from '../model/types';
+import { Meter } from './Meter';
+import { Figs } from './prims';
 
-/** Five tallies, each a count drawn as units (B/1's pips): waits / proposed / decided / running / refused. */
-function Tallies({ counts, life }: { counts: Counts; life: StandupView['life'] }) {
-  const { t } = useTranslation();
-  const s = t.athena.standup.tally;
-  const one = (n: number, label: string, tone: 'error' | 'warning' | 'primary' | 'success' | 'neutral', glyph: 'solid' | 'hollow', note?: string) => (
-    <div className="su-tally__one">
-      <span className="typo-caption"><span className="typo-data text-foreground">{n}</span> {label}</span>
-      {n > 0 || !note
-        ? <UnitStrip segments={[{ n, tone, glyph }]} size="m" label={`${n} ${label}`} />
-        : <span className="typo-caption">{note}</span>}
-    </div>
-  );
-  return (
-    <div className="su-tally">
-      {one(counts.waits, s.waits, 'error', 'solid')}
-      {one(counts.proposed, s.proposed, 'warning', 'hollow')}
-      {one(counts.decided, s.decided, 'primary', 'solid')}
-      {one(counts.running, s.running, 'success', 'solid', life === 'decide' ? s.running_none_draft : s.running_none_armed)}
-      {one(counts.refused, s.refused, 'neutral', 'hollow')}
-    </div>
-  );
-}
+type T = ReturnType<typeof useTranslation>;
 
-/** Athena's one line about the standup, beside her orb (the page's half of her two surfaces). */
-function Voice({ view, proposing }: { view: StandupView; proposing: boolean }) {
-  const { t, tx } = useTranslation();
+/** Athena's one sentence about the standup, in the header bar. */
+function sentence(view: StandupView, proposing: boolean, { t, tx }: T): string {
   const v = t.athena.standup.voice;
   const c = view.counts;
-  let head: ReactNode;
-  let sub: ReactNode;
-  if (view.life === 'none') { head = v.none; sub = v.none_sub; }
-  else if (proposing) { head = v.proposing; sub = v.proposing_sub; }
-  else if (view.life === 'decide' && c.proposed > 0) { head = tx(v.decide, { n: c.proposed, w: c.waits }); sub = v.decide_sub; }
-  else if (view.life === 'decide' && view.rows.length === 0) { head = v.nothing; sub = v.nothing_sub; }
-  else if (view.life === 'decide') { head = v.all_decided; sub = <>{v.all_decided_sub} <Kbd>G</Kbd></>; }
-  else if (view.life === 'return' && view.sinceLast) { head = tx(v.return, { m: view.sinceLast.moved, p: view.sinceLast.projects }); sub = tx(v.return_sub, { w: c.waits }); }
-  else if (view.life === 'ended') { head = v.ended; sub = v.ended_sub; }
-  else { head = tx(v.armed, { r: c.running, d: c.decided }); sub = tx(v.armed_sub, { w: c.waits }); }
-  const busy = proposing || c.running > 0;
-  return (
-    <div className="su-orb">
-      <AthenaAvatar state={busy ? 'thinking' : 'idle'} size={44} />
-      <div className="min-w-0">
-        <p className="typo-body k-strong text-foreground">{head}</p>
-        <p className="typo-caption">{sub}</p>
-      </div>
-    </div>
-  );
+  if (view.life === 'none') return v.none;
+  if (proposing) return v.proposing;
+  if (view.life === 'decide' && c.proposed > 0) return tx(v.decide, { n: c.proposed, w: c.waits });
+  if (view.life === 'decide' && view.rows.length === 0) return v.nothing;
+  if (view.life === 'decide') return v.all_decided;
+  if (view.life === 'return' && view.sinceLast) return tx(v.return, { m: view.sinceLast.moved, p: view.sinceLast.projects });
+  if (view.life === 'ended') return v.ended;
+  return tx(v.armed, { r: c.running, d: c.decided });
 }
 
-function revLabel(view: StandupView, t: ReturnType<typeof useTranslation>['t'], tx: ReturnType<typeof useTranslation>['tx']): string {
+/** `rev 2 · draft` / `rev 2 · armed 17:20` in the mono face, lower case like a build tag. */
+function revLabel(view: StandupView, { t, tx }: T): string {
   const s = t.athena.standup.rev;
-  const rev = tx(s.number, { n: view.revision });
+  const rev = tx(s.number, { n: view.revision }).toLowerCase();
   if (view.status === 'draft') return `${rev} · ${s.draft}`;
   if (view.status === 'armed') return `${rev} · ${tx(s.armed, { time: clockLabel(view.past.to) })}`;
   return `${rev} · ${s.ended}`;
 }
 
-/** The B/1 header strip: title + revision (+ the presses under it), then the five tallies over Athena's line. */
-export const StandupHeader = memo(function StandupHeader({ view, proposing, actions }: { view: StandupView; proposing: boolean; actions?: ReactNode }) {
+/** The return report as one status line: a mono `since 06:00` stamp, then the figures in prose. */
+function SinceLine({ since }: { since: SinceLast }) {
   const { t, tx } = useTranslation();
-  const s = t.athena.standup;
+  const k = t.athena.standup.console;
+  const parts = [tx(k.since_body, { moved: since.moved, p: since.projects, parked: since.parked })];
+  if (since.running > 0) parts.push(tx(k.since_running, { n: since.running }));
+  if (since.created.length > 0) parts.push(tx(t.athena.standup.since.created, { names: since.created.join(', ') }));
   return (
-    <header className="su-head">
-      <div className="su-title">
-        <div className="su-title__row">
-          <h2 className="typo-heading-lg text-foreground">{s.title}</h2>
-          {view.life !== 'none' && <span className="su-chip typo-label text-foreground">{revLabel(view, t, tx)}</span>}
+    <p className="sc-since" aria-label={t.athena.standup.since.label}>
+      <span className="sc-since__stamp">
+        {k.since_lead} {clockLabel(since.sinceMs)}
+      </span>
+      <span className="sc-since__body"><Figs text={parts.join(' · ')} /></span>
+    </p>
+  );
+}
+
+/** ONE instrument bar: identity | Athena's sentence | the plan meter | presses + the DEV fixture switch. */
+export const StandupHeader = memo(function StandupHeader({ view, proposing, actions }: { view: StandupView; proposing: boolean; actions: ReactNode }) {
+  const tr = useTranslation();
+  const s = tr.t.athena.standup;
+  const busy = proposing || view.counts.running > 0;
+  return (
+    <header className="sc-head">
+      <div className="sc-head__bar">
+        <div className="sc-id">
+          <h2 className="sc-title">{s.title}</h2>
+          {view.life !== 'none' && <span className="sc-rev">{revLabel(view, tr)}</span>}
+          <span className="sc-meta">
+            <AbsoluteTime timestamp={view.nowMs} variant="date" showRelativeTooltip={false} />
+            {view.revision > 1 && <span className="sc-wide">{` · ${tr.tx(s.amends, { n: view.revision - 1 })}`}</span>}
+          </span>
         </div>
-        <p className="typo-caption">
-          <AbsoluteTime timestamp={view.nowMs} variant="date" showRelativeTooltip={false} />
-          {view.revision > 1 && ` · ${tx(s.amends, { n: view.revision - 1 })}`}
-        </p>
-        {actions && <div className="flex flex-wrap items-center gap-2 mt-1">{actions}</div>}
+        <div className="sc-voice">
+          <AthenaAvatar state={busy ? 'thinking' : 'idle'} size={28} />
+          <span className="sc-say"><Figs text={sentence(view, proposing, tr)} /></span>
+        </div>
+        {view.life !== 'none' && <Meter counts={view.counts} />}
+        <div className="sc-head__actions">{actions}</div>
       </div>
-      <div className="su-head__main">
-        {view.life !== 'none' && <Tallies counts={view.counts} life={view.life} />}
-        <Voice view={view} proposing={proposing} />
-      </div>
+      {view.sinceLast && <SinceLine since={view.sinceLast} />}
     </header>
   );
 });

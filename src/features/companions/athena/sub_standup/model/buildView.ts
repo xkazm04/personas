@@ -1,6 +1,6 @@
 /**
  * Wire -> view: one pure function from what the IPC returned (or the dev
- * fixture) to the B/1 Timetable. Memoised once per data change by the panel,
+ * fixture) to the Standup page. Memoised once per data change by the panel,
  * so every row object keeps its identity until its own data moves and the
  * memoised rows skip re-rendering.
  */

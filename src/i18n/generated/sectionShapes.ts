@@ -614,7 +614,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "athena": {
     "standup": {
       "rev": {},
-      "tally": {},
       "voice": {},
       "since": {},
       "machine": {},
@@ -630,7 +629,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "refused": {}
       },
       "footer": {},
-      "legend": {},
       "rules": {
         "classes": {},
         "notes": {}
@@ -638,7 +636,17 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "dossier": {},
       "keys": {},
       "fixture": {},
-      "actions": {}
+      "actions": {},
+      "console": {
+        "col": {},
+        "meter": {},
+        "machine": {},
+        "decision": {},
+        "today": {},
+        "detail": {},
+        "footer": {},
+        "kinds": {}
+      }
     },
     "orchestration": {}
   },

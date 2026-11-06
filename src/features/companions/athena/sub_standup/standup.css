@@ -1,9 +1,11 @@
 /*
- * Athena > Standup: the B/1 "Timetable" layout on the app's material.
- * Layout is free here; type is a typo-* class on each element and every colour
- * is a token (--primary, --status-*, --role-*, the kit's --rule/--line/--ghost)
- * or color-mix() over one. PROPOSED = dashed warning outline, DECIDED = solid
- * primary, RUNNING = hatched success: the three never share a treatment.
+ * Athena > Standup: the shared overlays' treatment (dossier drawer, away-rules
+ * sheet, key legend, fixture switch) and the host fill. The page itself is
+ * styled by parts/standup-page.css + parts/standup-figure.css (`sc-`).
+ * Type is a typo-* class on each element and every colour is a token
+ * (--primary, --status-*, --role-*, the kit's --rule/--line) or color-mix()
+ * over one. PROPOSED = dashed warning outline, DECIDED = solid primary,
+ * RUNNING = hatched success: the three never share a treatment.
  */
 /* On :root so the portalled sheets (away rules, keys) read the same treatment as the page. */
 :root {
@@ -12,83 +14,13 @@
   --su-run: var(--status-success);
   --su-hold: var(--status-error);
   --su-ref: var(--status-neutral);
-  --su-dead: color-mix(in srgb, var(--status-warning) 13%, transparent);
 }
-.su-page {
-  --su-name: 14rem;
-  --su-now: 17.5rem;
-  container: su / inline-size;
-  display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%;
-  background: var(--background);
-}
-.su-page .su-narrow { display: none; }
 
-.su-grid { display: grid; grid-template-columns: var(--su-name) minmax(0, 1fr) var(--su-now) minmax(0, 1.35fr); }
-.su-grid > * { min-width: 0; border-left: 1px solid var(--rule); }
-.su-grid > :first-child { border-left: 0; }
-
-/* ---- header strip ---- */
-.su-head { display: flex; align-items: flex-start; gap: 1.5rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--rule); }
-.su-head__main { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; }
-.su-title { display: flex; flex-direction: column; gap: 0.125rem; min-width: 15rem; max-width: 22rem; }
-.su-title__row { display: flex; align-items: center; gap: 0.5rem; }
 .su-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.0625rem 0.5rem; border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent); border-radius: var(--radius-pill, 9999px); white-space: nowrap; }
-.su-tally { display: flex; gap: 1.25rem; align-items: flex-end; flex: 0 1 auto; }
-.su-tally__one { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; white-space: nowrap; }
-.su-tally .k-units { max-width: 13rem; }
-.su-tally .k-u.t-warning.g-hollow { box-shadow: none; outline: 1.5px dashed var(--su-prop); outline-offset: -1.5px; }
-.su-tally .k-u.t-success.g-solid { background: repeating-linear-gradient(135deg, var(--su-run) 0 2px, color-mix(in srgb, var(--su-run) 35%, transparent) 2px 4px); }
-.su-orb { display: flex; align-items: center; gap: 0.75rem; flex: 1 1 20rem; min-width: 16rem; max-width: 34rem; margin-left: auto; }
+.su-chip--lock { border-color: color-mix(in srgb, var(--su-hold) 45%, transparent); background: color-mix(in srgb, var(--su-hold) 9%, transparent); }
+.su-chip--lock::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--su-hold); }
 
-/* ---- since-last strip (the return) ---- */
-.su-since { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 0.5rem 1.25rem; border-bottom: 1px solid var(--rule);
-  background: color-mix(in srgb, var(--su-run) 7%, var(--background)); }
-
-/* ---- machine band ---- */
-.su-band { border-bottom: 1px solid var(--rule); background: var(--band-alt, transparent); }
-.su-band > div { position: relative; height: 6.25rem; }
-.su-band__label { display: flex; flex-direction: column; justify-content: space-between; padding: 0.625rem 0.875rem; }
-.su-band__now { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;
-  background: color-mix(in srgb, var(--primary) 6%, transparent); }
-.su-band svg, .su-cell svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.su-band__caption { position: absolute; left: 0.625rem; right: 0.625rem; top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-.su-axis { fill: currentColor; }
-
-/* ---- the table ---- */
-.su-rows { flex: 1; min-height: 0; overflow: auto; position: relative; outline: none; }
-.su-grp { position: sticky; top: 0; z-index: 2; background: var(--background); border-bottom: 1px solid var(--rule); box-shadow: 0 1px 0 var(--rule); }
-.su-grp > div { padding: 0.4rem 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.su-row { border-bottom: 1px solid var(--rule); min-height: 3rem; cursor: pointer; transition: background-color var(--duration-fast) ease-out; }
-.su-row:hover { background: var(--band-hover); }
-.su-row.is-sel { background: var(--band-sel); box-shadow: inset 3px 0 0 var(--su-dec); }
-.su-name { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.75rem; }
-.su-name__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.su-hist { display: flex; gap: 2px; flex: none; }
-.su-hist i { width: 4px; height: 0.875rem; border-radius: 1px; background: var(--ghost); }
-.su-hist i.is-armed { background: var(--su-dec); }
-.su-hist i.is-off { background: var(--line); }
-.su-cell { position: relative; min-height: 3rem; }
-.su-cell--text { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.75rem; }
-.su-now { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.625rem; }
-.su-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-
-/* the expanded row: collapses through grid-template-rows, no height measuring */
-.su-exp { grid-column: 2 / -1; display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--duration-normal) cubic-bezier(.22, 1, .36, 1); }
-.su-exp.is-open { grid-template-rows: 1fr; }
-.su-exp > div { overflow: hidden; }
-.su-exp__body { display: flex; flex-direction: column; gap: 0.625rem; padding: 0.625rem 0.875rem 0.875rem; }
-.su-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.625rem; }
-.su-opt { position: relative; display: flex; flex-direction: column; gap: 0.375rem; padding: 0.625rem 0.75rem; cursor: pointer;
-  border: 2px dashed color-mix(in srgb, var(--su-prop) 70%, transparent); border-radius: var(--radius-card, 0.75rem);
-  background: color-mix(in srgb, var(--su-prop) 6%, transparent); transition: border-color var(--duration-fast), background-color var(--duration-fast); }
-.su-opt:hover, .su-opt:focus-visible { border-color: var(--su-prop); background: color-mix(in srgb, var(--su-prop) 11%, transparent); }
-.su-opt.is-chosen { border-style: solid; border-color: var(--su-dec); background: color-mix(in srgb, var(--su-dec) 12%, transparent); }
-.su-opt__key { position: absolute; right: 0.625rem; top: 0.5rem; }
-.su-opt.is-ghost { cursor: default; border-color: var(--rule); background: transparent; }
-.su-acts { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
-.su-acts > span { display: inline-flex; align-items: center; gap: 0.375rem; }
-
-/* ---- state chips: the three that must never be confused ---- */
+/* ---- the dossier's state chip: the three that must never be confused ---- */
 .su-st { flex: none; display: inline-flex; align-items: center; padding: 0.0625rem 0.4rem; border-radius: var(--radius-interactive, 0.375rem); text-transform: uppercase; letter-spacing: 0.04em; }
 .su-st--proposed { color: var(--su-prop); outline: 1.5px dashed var(--su-prop); outline-offset: -1.5px; }
 .su-st--decided { color: var(--background); background: var(--su-dec); }
@@ -99,22 +31,7 @@
 .su-st--quiet { color: var(--foreground); outline: 1px solid var(--line); outline-offset: -1px; }
 @keyframes su-march { to { background-position: 34px 0; } }
 
-/* ---- svg marks (blocks on the night axis, acts on the day axis) ---- */
-.su-blk { transition: x var(--duration-normal) ease-out, width var(--duration-normal) ease-out, fill var(--duration-normal); }
-.su-blk--decided { fill: var(--su-dec); }
-.su-blk--filler { fill: color-mix(in srgb, var(--su-ref) 55%, transparent); }
-.su-blk--done { fill: color-mix(in srgb, var(--su-dec) 35%, transparent); }
-.su-blk--running { fill: url(#su-run-hatch); }
-.su-blk--proposed { fill: none; stroke: var(--su-prop); stroke-width: 1.5; stroke-dasharray: 4 3; }
-.su-lane-bg { fill: var(--su-dead); }
-.su-bar { fill: color-mix(in srgb, var(--foreground) 22%, transparent); }
-.su-bar--busy { fill: color-mix(in srgb, var(--su-run) 55%, transparent); }
-.su-gap { fill: url(#su-gap-hatch); }
-.su-nowline { stroke: var(--su-run); stroke-width: 2; }
-.su-gridline { stroke: var(--rule); }
-.su-hatch-a { fill: var(--su-run); }
-.su-hatch-b { fill: color-mix(in srgb, var(--su-run) 30%, var(--background)); }
-.su-gap-line { stroke: var(--line); stroke-width: 2; }
+/* ---- the dossier's act dots, coloured by kind ---- */
 .su-k { fill: var(--status-neutral); }
 .su-k--push { fill: var(--su-run); }
 .su-k--dispatch { fill: var(--status-info); }
@@ -123,54 +40,14 @@
 .su-k--drift { fill: var(--su-prop); }
 .su-k--agent_created, .su-k--agent_retuned { fill: var(--role-highlight); }
 
-/* ---- footer ---- */
-.su-foot { display: flex; align-items: center; gap: 1rem; padding: 0.625rem 1.25rem; border-top: 1px solid var(--rule); flex-wrap: wrap; }
-.su-rules { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; flex: 1; min-width: 20rem; }
-.su-chip--lock { border-color: color-mix(in srgb, var(--su-hold) 45%, transparent); background: color-mix(in srgb, var(--su-hold) 9%, transparent); }
-.su-chip--lock::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--su-hold); }
-.su-legend { display: flex; gap: 0.875rem; align-items: center; flex-wrap: wrap; }
-.su-legend > span { display: inline-flex; align-items: center; gap: 0.375rem; }
-.su-swatch { width: 0.75rem; height: 1rem; border-radius: 2px; }
-.su-swatch--proposed { outline: 1.5px dashed var(--su-prop); outline-offset: -1.5px; }
-.su-swatch--decided { background: var(--su-dec); }
-.su-swatch--running { background: repeating-linear-gradient(135deg, var(--su-run) 0 2px, color-mix(in srgb, var(--su-run) 35%, transparent) 2px 4px); }
-.su-swatch--waits { background: var(--su-hold); }
-.su-gate { display: flex; align-items: center; gap: 0.75rem; margin-left: auto; }
-.su-gate__sum { text-align: right; }
-
 .su-kbd { display: inline-block; min-width: 1.25rem; padding: 0 0.3rem; text-align: center; border: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent); border-bottom-width: 2px; border-radius: var(--radius-interactive, 0.375rem); background: var(--background); color: var(--foreground); }
 .su-fixture { color: var(--role-agent); outline: 1px dotted var(--role-agent); outline-offset: -1px; }
 .su-error { color: var(--status-error); }
 
 @media (prefers-reduced-motion: reduce) {
   .su-st--running { animation: none; }
-  .su-exp, .su-blk, .su-row, .su-opt { transition: none; }
 }
 :root[data-motion="reduce"] .su-st--running { animation: none; }
-:root[data-motion="reduce"] :is(.su-exp, .su-blk, .su-row, .su-opt) { transition: none; }
 
 /* The page fills the Athena body: the kit host becomes the flex column it hangs from. */
-.k-host:has(> .su-page), .k-host:has(> .su-proto) { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
-/* PROTOTYPE (2026-11-06): the variant switcher's column; every layout root fills it (flex: 1; min-height: 0). */
-.su-proto { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
-/* In a scrolling (non-full-bleed) body the strip and the gate still stay in reach. */
-.su-head { position: sticky; top: 0; z-index: 3; background: var(--background); }
-.su-foot { position: sticky; bottom: 0; z-index: 3; background: var(--background); }
-
-/* A narrow body (the 1280 window): the band and the foot fold; the table keeps its height. */
-@container su (max-width: 1150px) {
-  .su-page { --su-name: 12.5rem; --su-now: 14.5rem; }
-  .su-page .su-wide { display: none; }
-  .su-page .su-narrow { display: inline-flex; }
-  .su-band > div { height: 5rem; }
-  .su-legend { gap: 0.625rem; }
-  .su-tally { gap: 0.5rem 0.875rem; flex-wrap: wrap; }
-}
-
-/* A short window (800px): the whole page scrolls, so the strip and the band give their height
- * back to the rows; group heads stay pinned and the go-gate stays in reach. */
-@media (max-height: 900px) {
-  .su-page { overflow-y: auto; }
-  .su-rows { flex: none; overflow: visible; }
-  .su-page .su-head { position: static; }
-}
+.k-host:has(> .sc-page) { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }

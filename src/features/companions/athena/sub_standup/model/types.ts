@@ -1,6 +1,6 @@
 /**
- * The Standup page's view model (spark app-standup, WP4): what the B/1
- * "Timetable" draws, derived from the wire types by `buildView`. Every
+ * The Standup page's view model (spark app-standup, WP4): what the page
+ * draws, derived from the wire types by `buildView`. Every
  * component reads these shapes, never the raw `Standup`, so the three lives
  * (decide, armed/running, return) and the fixture all render through one path.
  */
@@ -9,7 +9,7 @@ import type { ParkedAsk } from '@/lib/bindings/ParkedAsk';
 import type { StandupEventKind } from '@/lib/bindings/StandupEventKind';
 import type { StandupStatus } from '@/lib/bindings/StandupStatus';
 
-/** Where a row sits in the B/1 table. */
+/** Where a row sits in the table. */
 export type GroupId = 'decide' | 'agents' | 'waits' | 'blank' | 'filler' | 'refused';
 
 /**

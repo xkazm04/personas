@@ -681,32 +681,15 @@
       "armed": "armed {time}",
       "ended": "ended"
     },
-    "tally": {
-      "waits": "wait for you",
-      "proposed": "proposed",
-      "decided": "decided",
-      "running": "running",
-      "refused": "refused",
-      "running_none_draft": "nothing until armed",
-      "running_none_armed": "none this minute"
-    },
     "voice": {
       "none": "No standup open.",
-      "none_sub": "Open one and I will read what moved since the last standup.",
       "proposing": "Reading what moved and writing directions.",
-      "proposing_sub": "Each project fills in as its directions arrive.",
       "decide": "{n} to decide, {w} only you can answer.",
-      "decide_sub": "Nothing runs until you arm the plan.",
       "nothing": "Nothing to decide this time.",
-      "nothing_sub": "No project needs a direction right now.",
       "all_decided": "Everything decided. Arm when ready.",
-      "all_decided_sub": "Arm the plan with",
       "return": "Welcome back. Commits moved: {m}, on {p} of your projects.",
-      "return_sub": "{w} wait for you. N opens the next standup.",
       "ended": "This standup has ended.",
-      "ended_sub": "Open the next one to plan again.",
-      "armed": "Armed. {r} running, {d} decided.",
-      "armed_sub": "Holding {w} for you. N amends the plan as a new revision."
+      "armed": "Armed. {r} running, {d} decided."
     },
     "since": {
       "label": "Since the last standup",
@@ -718,13 +701,8 @@
     },
     "machine": {
       "label": "Machine",
-      "zoom_today": "today",
-      "zoom_long": "12 days",
-      "past_caption": "Host CPU · green: an agent ran · hatched: not recorded",
-      "long_caption": "12 days of host CPU · hatched: not recorded",
       "now_armed": "the plan is running",
       "now_draft": "now · the standup",
-      "night_caption": "Lanes: {lanes} · primary: your directions · slate: fill · amber: dead spot ({dead}%) · peak {units} units",
       "night_empty": "No forecast yet. Decided directions are laid on the night once forecast."
     },
     "state": {
@@ -742,10 +720,7 @@
       "verb_retune": "retune"
     },
     "row": {
-      "history_label": "The last standups: armed, off, or not named",
       "moved": "Commits landed since the last standup: {n}",
-      "no_movement": "No movement since the last standup",
-      "acts_label": "Away acts today: {n}",
       "refused": "held elsewhere",
       "waits": "only you can answer",
       "blank": "press E to type the direction",
@@ -758,16 +733,7 @@
     "cards": {
       "label": "Athena's directions",
       "recommended": "Athena's pick",
-      "type_placeholder": "Type the direction for {name} and press Enter",
-      "act_pick": "pick",
-      "act_accept": "accept",
-      "act_edit": "edit / type your own",
-      "act_type": "type a direction",
-      "act_skip": "skip tonight",
-      "act_answer": "answer it with Athena",
-      "act_talk": "talk it through",
-      "act_dossier": "dossier",
-      "act_undo": "undo"
+      "type_placeholder": "Type the direction for {name} and press Enter"
     },
     "groups": {
       "decide": {
@@ -808,24 +774,10 @@
       }
     },
     "footer": {
-      "away_rules": "Away rules",
-      "delegates": "she decides {n} kinds alone",
-      "push_targets": "push targets: {n}",
-      "legend": "Legend",
       "keys": "Keyboard keys",
-      "planned": "Directions {d} · runs {r}",
-      "still_proposed": "{n} still proposed (they stay off)",
-      "all_resolved": "all resolved",
       "arm": "Arm rev {n}",
       "end": "End standup",
-      "amend": "Amend: rev {n}",
-      "always_wait": "{n} always wait for you"
-    },
-    "legend": {
-      "proposed": "proposed",
-      "decided": "decided",
-      "running": "running",
-      "waits": "waits for you"
+      "amend": "Amend: rev {n}"
     },
     "rules": {
       "title": "While you are away",
@@ -903,6 +855,83 @@
     "actions": {
       "propose": "Propose directions",
       "open": "Open a standup"
+    },
+    "console": {
+      "col": {
+        "name": "Project",
+        "today": "Today",
+        "today_long": "12 days",
+        "decision": "Decision",
+        "tonight": "Tonight"
+      },
+      "meter": {
+        "decided": "decided",
+        "waits": "wait on you",
+        "hint": "{w} wait for you · {p} proposed · {d} decided · {r} running",
+        "empty": "Nothing on the plan yet"
+      },
+      "state_waits": "your call",
+      "since_lead": "since",
+      "since_body": "{moved} commits moved on {p} projects, {parked} asks parked for you",
+      "since_running": "{n} sessions still running",
+      "machine": {
+        "name": "Machine",
+        "idle": "idle tonight",
+        "lanes": "{lanes} lanes",
+        "summary_empty": "No forecast yet",
+        "now": "Clock",
+        "zoom": "Click or press Z for {span}.",
+        "cpu_hint": "Host CPU per bin. Green: an agent ran. Dotted: not recorded.",
+        "cpu_hint_long": "Host CPU over 12 days. Dotted: not recorded.",
+        "lanes_hint": "{lanes} lanes, peak {units} units. Solid: your directions. Grey: fill. Dotted: a dead spot nothing fills ({dead}% of lane time)."
+      },
+      "decision": {
+        "options": "{n} options",
+        "proposed_plain": "Pick one of {n} directions",
+        "agent": "Accept to {verb} this agent",
+        "blank": "No proposal yet. Type the direction",
+        "refused": "Held by a headless master"
+      },
+      "today": {
+        "moved_word": "moved",
+        "moved_hint": "Commits landed since the last standup: {n}"
+      },
+      "history_hint": "Armed in {n} of the last {of} standups",
+      "detail": {
+        "read": "Read",
+        "pick": "Athena's pick",
+        "type": "Type your own",
+        "edit": "Edit the direction",
+        "skip": "Skip tonight",
+        "accept": "Accept",
+        "talk": "Talk it through",
+        "answer": "Answer it with Athena",
+        "dossier": "Dossier",
+        "undo": "Undo"
+      },
+      "footer": {
+        "directions": "directions",
+        "runs": "runs go tonight",
+        "off": "proposed stay off",
+        "resolved": "all resolved",
+        "plan_none": "Nothing goes tonight yet",
+        "rules": "Away rules",
+        "locked": "{n} locked",
+        "help": "Legend and keys",
+        "help_keys": "Press ? for every key"
+      },
+      "kinds": {
+        "push": "Pushes",
+        "dispatch": "Dispatches",
+        "ask_parked": "Asks parked",
+        "ask_delegated": "Asks delegated",
+        "stop": "Stops",
+        "drift": "Drift",
+        "agent_created": "Agents created",
+        "agent_retuned": "Agents retuned",
+        "sweep": "Sweeps",
+        "backfill": "Backfills"
+      }
     }
   },
   "tab_setup": "Setup",

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ComponentType } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { KitHost } from '@/features/shared/components/kit';
 import { useFixtureChoice, type FixtureChoice } from './data/fixtureToggle';
@@ -9,49 +9,20 @@ import { INITIAL_UI, type UiState } from './model/keymap';
 import { AwayRulesSheet } from './parts/AwayRulesSheet';
 import { DossierDrawer } from './parts/DossierDrawer';
 import { KeyLegend } from './parts/KeyLegend';
+import { StandupPage } from './parts/StandupPage';
 import { useStandupController } from './useStandupController';
-import { ConsoleLayout } from './variants/console/ConsoleLayout';
-import { EditorialLayout } from './variants/editorial/EditorialLayout';
-import { LedgerLayout } from './variants/ledger/LedgerLayout';
-import { StudioLayout } from './variants/studio/StudioLayout';
-import type { StandupLayoutProps } from './variants/types';
-import { useLayoutVariant, VariantSwitch, type LayoutVariant } from './variants/VariantSwitch';
 import './standup.css';
 
-const LAYOUTS: Record<LayoutVariant, ComponentType<StandupLayoutProps>> = {
-  ledger: LedgerLayout,
-  console: ConsoleLayout,
-  editorial: EditorialLayout,
-  studio: StudioLayout,
-};
-
-/** Hatches the band and the rows reference by id (one definition per page). */
-function SvgDefs() {
-  return (
-    <svg width="0" height="0" aria-hidden="true" className="absolute">
-      <defs>
-        <pattern id="su-run-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect className="su-hatch-b" width="8" height="8" />
-          <rect className="su-hatch-a" width="4" height="8" />
-        </pattern>
-        <pattern id="su-gap-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line className="su-gap-line" x1="0" y1="0" x2="0" y2="6" />
-        </pattern>
-      </defs>
-    </svg>
-  );
-}
-
 /**
- * Athena > Standup (spark app-standup, WP4): the contest winner B/1
- * "Timetable" on the app's own material. Every project is one line through
- * today (the away log), NOW (the decision) and tonight (the forecast); the
- * operator decides at the NOW column and arms the plan at the go-gate.
+ * Athena > Standup (spark app-standup): every project is one line through
+ * today (the away log), the decision and tonight (the forecast); the operator
+ * decides on the selected row and arms the plan at the go-gate. The page is
+ * V1 Ledger's layout in the Console component language (`parts/StandupPage`);
+ * the dossier, away rules and key legend are shared overlays on their own layer.
  * Data: live IPC (`src/api/companion/standup.ts`), or in a DEV build the
  * explicit fixture switch.
  */
 export default function StandupPanel() {
-  const [variant, setVariant] = useLayoutVariant();
   const [choice, setChoice] = useFixtureChoice();
   const [ui, setUi] = useState<UiState>(INITIAL_UI);
   const fixtureOn = choice !== 'off';
@@ -65,15 +36,9 @@ export default function StandupPanel() {
   const rules = source.input.standup?.awayRules ?? null;
   const loading = fixtureOn ? !fixture : source.loading.standup;
 
-  const Layout = LAYOUTS[variant];
-
   return (
     <KitHost testId="athena-standup-panel">
-      <div className="su-proto" data-variant={variant}>
-        <SvgDefs />
-        <VariantSwitch value={variant} onChange={setVariant} />
-        <Layout view={view} source={source} c={c} fixture={choice} onFixture={setChoice} loading={loading} rules={rules} />
-      </div>
+      <StandupPage view={view} source={source} c={c} fixture={choice} onFixture={setChoice} loading={loading} rules={rules} />
       <DossierDrawer row={row} open={c.ui.dossier} onClose={() => c.set({ dossier: false })} />
       {rules && (
         <AwayRulesSheet

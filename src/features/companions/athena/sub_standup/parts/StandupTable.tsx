@@ -1,95 +1,100 @@
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useRef } from 'react';
 
 import { GhostRows } from '@/features/shared/components/kit';
-import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
-import { pos } from '../model/timeAxis';
-import type { GroupId, RowView, StandupView } from '../model/types';
+import type { StandupSource } from '../data/types';
+import type { StandupView } from '../model/types';
+import type { StandupController } from './pageTypes';
+import { clockLabel } from '../model/timeAxis';
+import { useAxes } from './axis';
+import { ColumnHead } from './ColumnHead';
+import { MachineRow } from './MachineRow';
 import { StandupRow } from './StandupRow';
+import { useRowActions } from './rowActions';
 
 interface Props {
   view: StandupView;
-  sel: number;
-  typingKey: string | null;
-  proposing: boolean;
+  source: StandupSource;
+  c: StandupController;
   loading: boolean;
-  onSelect: (index: number) => void;
-  onPick: (row: RowView, index: number) => void;
-  onTyped: (row: RowView, text: string | null) => void;
-}
-
-/** The group head is the table's chrome: name + count, then what each column means for this group. */
-function GroupHead({ id, n }: { id: GroupId; n: number }) {
-  const { t } = useTranslation();
-  const g = t.athena.standup.groups[id];
-  return (
-    <div className="su-grp su-grid" role="presentation">
-      <div><span className="typo-eyebrow text-foreground">{g.title}</span> <span className="typo-caption">{n}</span></div>
-      <div><span className="typo-eyebrow">{g.past}</span></div>
-      <div><span className="typo-eyebrow">{g.now}</span></div>
-      <div><span className="typo-eyebrow">{g.night}</span></div>
-    </div>
-  );
 }
 
 /**
- * The Timetable body: one listbox of every row, grouped, the selected row
- * expanded. Rows enter once per standup (RevealItem, id-guarded), so a live
- * update or a decision never replays the cascade.
+ * The page body: one scroller holding the sticky column head, the pinned
+ * machine row and the grouped rows, all on the same column grid. Group heads
+ * are quiet sticky separators; the cursor (`c.ui.sel`) is kept in view.
  */
-export const StandupTable = memo(function StandupTable({ view, sel, typingKey, proposing, loading, onSelect, onPick, onTyped }: Props) {
+export const StandupTable = memo(function StandupTable({ view, source, c, loading }: Props) {
   const { t } = useTranslation();
-  const reveal = useProgressiveReveal(view.rows.length, { resetKey: view.id ?? 'none' });
-  const enter = useRevealTracker(view.id ?? 'none', 'athena-standup');
-  const selected = view.rows[sel];
-  const nowPos = view.status === 'armed' ? pos(view.nowMs, view.night) : null;
+  const { sel, zoom, typing } = c.ui;
+  const axes = useAxes(view, zoom);
+  const act = useRowActions(c, source);
   const editable = view.life === 'decide';
+  const selectedKey = view.rows[sel]?.key;
+  const { set, select } = c;
 
-  const selectedKey = selected?.key;
+  // Follow the cursor, but never on mount: the page opens at its top, not scrolled to row 0's detail.
+  const lastKey = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (selectedKey) document.getElementById(`su-row-${selectedKey}`)?.scrollIntoView({ block: 'nearest' });
+    if (!selectedKey) return;
+    const first = lastKey.current === undefined;
+    lastKey.current = selectedKey;
+    if (!first) document.getElementById(`sc-row-${selectedKey}`)?.scrollIntoView({ block: 'nearest' });
   }, [selectedKey]);
 
-  if (loading && view.rows.length === 0) {
-    return <div className="su-rows px-3"><GhostRows count={7} size="l" label={t.athena.standup.loading} /></div>;
-  }
   let flat = 0;
   return (
-    <div
-      className="su-rows"
-      role="listbox"
-      tabIndex={0}
-      aria-label={t.athena.standup.table_label}
-      aria-activedescendant={selected ? `su-row-${selected.key}` : undefined}
-      data-testid="standup-table"
-    >
-      {view.groups.map((g) => (
-        <div key={g.id} role="group" aria-label={t.athena.standup.groups[g.id].title}>
-          <GroupHead id={g.id} n={g.rows.length} />
-          {g.rows.map((row) => {
-            const index = flat++;
-            if (index >= reveal.count) return null;
-            return (
-              <StandupRow
-                key={row.key}
-                row={row}
-                index={index}
-                revealOrder={index - reveal.newSince}
-                selected={index === sel}
-                editable={editable}
-                typing={typingKey === row.key}
-                proposing={proposing}
-                nowPos={nowPos}
-                hasEntered={enter.hasEntered}
-                markEntered={enter.markEntered}
-                onSelect={onSelect}
-                onPick={onPick}
-                onTyped={onTyped}
-              />
-            );
-          })}
+    <div className="sc-scroll">
+      <ColumnHead axes={axes} zoom={zoom} clock={clockLabel(view.nowMs)} />
+      <MachineRow
+        view={view}
+        zoom={zoom}
+        axes={axes}
+        utilizationLong={source.utilizationLong}
+        loading={source.loading.machine}
+        error={source.errors.machine}
+        onZoom={() => set({ zoom: zoom === 'today' ? '12d' : 'today' })}
+      />
+      {loading && view.rows.length === 0 ? (
+        <div className="sc-ghosts"><GhostRows count={7} size="l" label={t.athena.standup.loading} /></div>
+      ) : (
+        <div
+          role="listbox"
+          tabIndex={0}
+          className="sc-list"
+          aria-label={t.athena.standup.table_label}
+          aria-activedescendant={selectedKey ? `sc-row-${selectedKey}` : undefined}
+          data-testid="standup-table"
+        >
+          {view.groups.map((g) => (
+            <div key={g.id} role="group" aria-label={t.athena.standup.groups[g.id].title}>
+              <div className="sc-group" role="presentation">
+                <span className="sc-group__title">{t.athena.standup.groups[g.id].title}</span>
+                <span className="sc-group__count">{String(g.rows.length).padStart(2, '0')}</span>
+                <i className="sc-group__rule" aria-hidden="true" />
+              </div>
+              {g.rows.map((row) => {
+                const index = flat++;
+                return (
+                  <StandupRow
+                    key={row.key}
+                    row={row}
+                    index={index}
+                    selected={index === sel}
+                    editable={editable}
+                    typing={typing === row.key}
+                    proposing={source.proposing}
+                    axes={axes}
+                    rug={zoom === 'today'}
+                    act={act}
+                    onSelect={select}
+                  />
+                );
+              })}
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 });
