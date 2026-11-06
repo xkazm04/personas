@@ -4,7 +4,7 @@
  * and nothing on the tab could read the history again. The failure is now stated
  * and retryable while the live listener keeps delivering.
  */
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import enCommon from '@/i18n/section-locales/en/common.json';
 import enTriggers from '@/i18n/section-locales/en/triggers.json';
@@ -29,7 +29,7 @@ import { LiveStreamTab } from '../LiveStreamTab';
 const event = (id: string, event_type: string): PersonaEvent => ({
   id, project_id: 'proj-1', event_type, source_type: 'smee_relay',
   source_id: null, target_persona_id: null, payload: null, status: 'delivered',
-  error_message: null, processed_at: null, created_at: new Date().toISOString(),
+  error_message: null, processed_at: null, created_at: '2026-10-19T12:00:00Z',
   use_case_id: null, retry_count: 0,
 });
 
@@ -57,10 +57,14 @@ describe('LiveStreamTab failed backfill', () => {
     await preloadSectionsAsync('en', ['triggers']);
   });
 
+  // The tab keeps a rolling 24 h window, so the clock is pinned an hour after the rows.
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 19, 13)));
     bus.deliver = null;
     listEvents.mockReset();
   });
+  afterEach(() => { vi.useRealTimers(); });
 
   it('states the failure instead of an empty bus', async () => {
     listEvents.mockRejectedValue(REJECTION);
