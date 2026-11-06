@@ -20668,25 +20668,29 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T15:47:34.100Z",
-      "worker": "045c3e85-3466-4fe8-aeff-1579cc4bf12e",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:38:50.001Z",
+      "worker": "944e0c95-53d1-4c87-a181-a96ad68cce4d",
       "techniques": [
         {
           "technique": "pin-the-call-not-the-name",
-          "verdict": "deviation: needle is a bare string a comment can spell; haystack is unstripped source prose",
-          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37"
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:38 The haystack holds both program and prose, and the predicate does not read the construct for the resource (include vs '!' exclusion). The sibling parity test in this context strips comments (personaThresholds.parity.test.ts:16)."
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "conformant",
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:15 The case population comes from the locale manifest, not a re-typed copy of the implementation's list."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/lib/personas/templates/__tests__/seedTemplatesTriggers.test.ts:12 Before the fix only one template carried triggers, so reverting the recipe_ref resolution fails this. An empty seed set also fails (0 > 0)."
         },
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "conformant",
           "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:124 Derives expected platforms from PLATFORM_LABELS union rather than hand-copied lists, ensuring all router variants are reached.",
-          "carriedFrom": "2026-10-12"
-        },
-        {
-          "technique": "negative-control-tests",
-          "verdict": "conformant",
-          "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:157 Verifies explicit boundary rejections when byte, depth, and entity limits are exceeded.",
           "carriedFrom": "2026-10-12"
         },
         {
@@ -20742,6 +20746,15 @@
           "verdict": "not-applicable",
           "evidence": "vitest.config.ts:17 Does not perform mutations on unowned third-party external services.",
           "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37 pins the overlay glob with source.includes over raw file text (comments included) and no floor, so a comment spelling the needle keeps it green while the real glob loses a locale",
+          "evaluatedAt": "2026-10-15T15:47:34.100Z",
+          "worker": "045c3e85-3466-4fe8-aeff-1579cc4bf12e",
+          "reason": "replaced by 944e0c95-53d1-4c87-a181-a96ad68cce4d"
         }
       ]
     },

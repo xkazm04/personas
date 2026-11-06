@@ -20198,12 +20198,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37 pins the overlay glob with source.includes over raw file text (comments included) and no floor, so a comment spelling the needle keeps it green while the real glob loses a locale",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:38 The overlay-glob pin is a raw substring match over the whole file: comments are not stripped and the needle is not scoped to the include entries of the import.meta.glob call. A commented-out pattern or a negation entry ('!…/**/*.de.json', a form the glob already uses at templateOverlays.ts:288) keeps it green while that locale's overlays never load.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
