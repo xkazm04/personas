@@ -27233,19 +27233,39 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:14:39.000Z",
-      "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:05:04.602Z",
+      "worker": "c4d960fe-6830-4529-9e6e-a742dd0ed939",
       "techniques": [
         {
-          "technique": "gate-scope-is-not-report-scope",
-          "verdict": "not realized: 3 of 8 sanitizer modules (335 lines of PII/secret redaction) sit in no test and no coverage report exists to expose the gap (vitest.config.ts has no coverage block)",
-          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:109"
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/sanitizers/sanitizeCloudReview.ts:59 The shared masker's behaviour is tested, but sanitizeCloudReview's use of it is not. The technique asks for the call site's adoption to be asserted too, and the golden test's header overstates what it covers."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:84 The fixture is checked to be real: each attack names an existing built-in connector and actually plants every secret it declares before the masking is judged."
         },
         {
           "technique": "negative-control-tests",
-          "verdict": "realized where tests exist",
-          "evidence": "src/lib/utils/sanitizers/__tests__/promptInjection.test.ts:71 pins the intentional non-neutralization of {{}} for workflow text"
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/sanitizers/__tests__/maskSensitive.test.ts:9 An unlabelled ghp_ token must come back as [secret]. Reverting PREFIXED_SECRET_RE to the old form described at maskSensitive.ts:108-118 fails this, because nothing else catches an unlabelled ghp_ token, so the test's control is its own fix. The earlier claim that 'no test imports sanitizeErrorMessage' is now stale."
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not realized: 3 of 8 sanitizer modules (335 lines of PII/secret redaction) sit in no test and no coverage report exists to expose the gap (vitest.config.ts has no coverage block)",
+          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:109",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:109 sanitizeErrorMessage (also :40 maskSensitiveJson, sanitizeCloudReview.ts:77, sanitizeErrorForDisplay.ts:61) is imported by no test under src/, although the header at maskSensitive.ts:94-95 records the secret-class regex leaking 13 of 20 real token shapes unnoticed; a redactor regression stays green",
+          "evaluatedAt": "2026-10-14T09:14:39.000Z",
+          "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+          "reason": "replaced by c4d960fe-6830-4529-9e6e-a742dd0ed939"
         }
       ]
     },
@@ -38919,22 +38939,45 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:50:20.014Z",
-      "worker": "afe29407-ce9d-4c41-80fa-262960015574",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:05:04.602Z",
+      "worker": "c4d960fe-6830-4529-9e6e-a742dd0ed939",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "not realized",
-          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 the wire-name claim is never reached: no assertion touches the Rust struct or a generated binding; line 46 channel check restates a literal that scripts/check-event-registry.mjs already gates"
+          "verdict": "deviation",
+          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 Mutating the Rust field names, which is the decision the test says it pins, would not turn the test red. The test name overstates what it checks."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:60 The fixture holds a shape the producer never emits: the generated binding types error and lastEventAt as string | null, so the wire carries null, never undefined."
         },
         {
           "technique": "isolation-lanes",
-          "verdict": "realized",
-          "evidence": "src/hooks/realtime/__tests__/createSingletonListener.test.ts:221 ships a reset hatch and tests it"
+          "verdict": "conformant",
+          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:42 Globals are unstubbed and the listen mock reset after every test."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/hooks/realtime/__tests__/createSingletonListener.test.ts:83 The StrictMode double-mount claim is asserted as a count of native listeners, and flushes go through deterministic microtasks (:55), not timers."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/hooks/realtime/__tests__/createSingletonListener.test.ts:263 The regression test names the pre-fix behaviour, so reverting the fix is its control."
         }
       ],
-      "registryProposal": "Cross-language payload parity (TS hand-kept interface vs Rust serde struct) recurs across this repo as the commonest test-harness deviation; unreached-decisions-pin-nothing could name it as a distinct fixture shape."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 claims the payload the backend actually serializes but builds it from the hand-kept TS SmeeRelayStatusPayload, so renaming a field in src-tauri/src/engine/smee_relay.rs:142 leaves it green and the counters read undefined again",
+          "evaluatedAt": "2026-10-22T19:50:20.014Z",
+          "worker": "afe29407-ce9d-4c41-80fa-262960015574",
+          "reason": "replaced by c4d960fe-6830-4529-9e6e-a742dd0ed939"
+        }
+      ]
     },
     "b164f847-45d6-4c9e-85bc-a1308375085d/eval-harness": {
       "context": "db-repos-communication",

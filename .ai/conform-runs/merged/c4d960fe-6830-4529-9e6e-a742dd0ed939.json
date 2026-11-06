@@ -1,0 +1,121 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c4d960fe-6830-4529-9e6e-a742dd0ed939",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T02:05:04.602389+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "lib-utils-sanitizers",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:10 The golden test's header claims coverage of the masker on cloud-review payloads, but it only calls maskSensitiveJson directly (:29), and sanitizeCloudReview.test.ts has no payload-secret case. If sanitizeCloudReview stopped calling the masker (sanitizeCloudReview.ts:59), the suite would stay green, and string payloads are returned unmasked (:53) without any test noticing.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/lib/utils/sanitizers/sanitizeCloudReview.ts:59 The shared masker's behaviour is tested, but sanitizeCloudReview's use of it is not. The technique asks for the call site's adoption to be asserted too, and the golden test's header overstates what it covers."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:84 The fixture is checked to be real: each attack names an existing built-in connector and actually plants every secret it declares before the masking is judged."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/lib/utils/sanitizers/__tests__/maskSensitive.test.ts:9 An unlabelled ghp_ token must come back as [secret]. Reverting PREFIXED_SECRET_RE to the old form described at maskSensitive.ts:108-118 fails this, because nothing else catches an unlabelled ghp_ token, so the test's control is its own fix. The earlier claim that 'no test imports sanitizeErrorMessage' is now stale."
+    }
+   ]
+  },
+  {
+   "context": "hooks-realtime",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 The test claims to read the payload the backend serializes, but builds it from the hand-kept SmeeRelayStatusPayload in eventRegistry.ts instead of the generated src/lib/bindings/SmeeRelayStatus.ts. Renaming a field of the Rust struct (src-tauri/src/engine/smee_relay.rs:143) leaves the test green, which is the same defect its header says it closes.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 Mutating the Rust field names, which is the decision the test says it pins, would not turn the test red. The test name overstates what it checks."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "deviation",
+     "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:60 The fixture holds a shape the producer never emits: the generated binding types error and lastEventAt as string | null, so the wire carries null, never undefined."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:42 Globals are unstubbed and the listen mock reset after every test."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/hooks/realtime/__tests__/createSingletonListener.test.ts:83 The StrictMode double-mount claim is asserted as a count of native listeners, and flushes go through deterministic microtasks (:55), not timers."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/hooks/realtime/__tests__/createSingletonListener.test.ts:263 The regression test names the pre-fix behaviour, so reverting the fix is its control."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "triggers-triggers",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "shared-components-layout",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "stores-slices-overview",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T02:05:04.602389+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "fixture-economics",
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "lib-utils-sanitizers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T02:05:04.602389+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "fixture-economics",
+    "isolation-lanes",
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "hooks-realtime",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

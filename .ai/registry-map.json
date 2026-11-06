@@ -17533,12 +17533,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 claims the payload the backend actually serializes but builds it from the hand-kept TS SmeeRelayStatusPayload, so renaming a field in src-tauri/src/engine/smee_relay.rs:142 leaves it green and the counters read undefined again",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 The test claims to read the payload the backend serializes, but builds it from the hand-kept SmeeRelayStatusPayload in eventRegistry.ts instead of the generated src/lib/bindings/SmeeRelayStatus.ts. Renaming a field of the Rust struct (src-tauri/src/engine/smee_relay.rs:143) leaves the test green, which is the same defect its header says it closes.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -20771,12 +20770,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:109 sanitizeErrorMessage (also :40 maskSensitiveJson, sanitizeCloudReview.ts:77, sanitizeErrorForDisplay.ts:61) is imported by no test under src/, although the header at maskSensitive.ts:94-95 records the secret-class regex leaking 13 of 20 real token shapes unnoticed; a redactor regression stays green",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:10 The golden test's header claims coverage of the masker on cloud-review payloads, but it only calls maskSensitiveJson directly (:29), and sanitizeCloudReview.test.ts has no payload-secret case. If sanitizeCloudReview stopped calling the masker (sanitizeCloudReview.ts:59), the suite would stay green, and string payloads are returned unmasked (:53) without any test noticing.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
