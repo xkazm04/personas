@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cronFireTimesInRange, listRecentScheduleRuns } from '@/api/pipeline/triggers';
-import { classifyRunOutcome, matchPastSlotsToRuns, type CalendarEvent, type RunPoint } from './calendarHelpers';
+import { bindPastSlotsToRuns, classifyRunOutcome, type CalendarEvent } from './calendarHelpers';
 import type { ScheduleEntry } from './scheduleHelpers';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
@@ -262,20 +262,27 @@ function assembleCalendarEvents(
     }
 
     if (agent.cron_expression && slots.pastCron.length > 0) {
-      const runPoints: RunPoint[] = (runsByTrigger.get(agent.trigger_id) ?? [])
-        .map((r) => ({ time: r.time, status: r.status }));
-      const outcomes = matchPastSlotsToRuns(slots.pastCron.map((d) => d.getTime()), runPoints);
+      const bound = bindPastSlotsToRuns(slots.pastCron.map((d) => d.getTime()), runsByTrigger.get(agent.trigger_id) ?? []);
       for (let j = 0; j < slots.pastCron.length; j++) {
         const time = slots.pastCron[j]!;
-        events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: outcomes[j]! });
+        const { outcome, run } = bound[j]!;
+        events.push({
+          ...base,
+          id: `${agent.trigger_id}-${time.getTime()}`,
+          time,
+          kind: outcome,
+          ...(run && outcome !== 'past-unknown' ? { executionId: run.executionId } : {}),
+        });
       }
     } else if (agent.interval_seconds) {
       for (const run of runsByTrigger.get(agent.trigger_id) ?? []) {
+        const kind = classifyRunOutcome(run.status);
         events.push({
           ...base,
           id: `${agent.trigger_id}-run-${run.executionId}`,
           time: new Date(run.time),
-          kind: classifyRunOutcome(run.status),
+          kind,
+          ...(kind !== 'past-unknown' ? { executionId: run.executionId } : {}),
         });
       }
     }
