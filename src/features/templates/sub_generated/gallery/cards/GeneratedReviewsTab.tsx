@@ -30,6 +30,9 @@ import type { Density } from '../search/filters/DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
+import { isTauriError } from '@/lib/types/tauriError';
+import { useToastStore } from '@/stores/toastStore';
 
 
 interface Props {
@@ -50,6 +53,8 @@ export default function GeneratedReviewsTab({
   const templateAdoptActive = useSystemStore((s) => s.templateAdoptActive);
   const adoptionDraft = useSystemStore((s) => s.adoptionDraft);
   const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
+  const { t, tx } = useTranslation();
+  const addToast = useToastStore((s) => s.addToast);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [density, setDensityRaw] = useState<Density>('comfortable');
   const compare = useTemplateCompare();
@@ -134,17 +139,40 @@ export default function GeneratedReviewsTab({
     onPersonaCreated?.();
   };
 
+  // allItems is the loaded, filtered page, so a miss says nothing about whether
+  // the template still exists. Ask the backend before giving up. Only its
+  // not-found answer means gone: a failed read must not cost a paused adoption.
+  const resumeByLookup = async (reviewId: string, name: string, onGone?: () => void) => {
+    try {
+      const review = await getDesignReview(reviewId);
+      if (review) { modals.open({ type: 'adopt', review }); return; }
+    } catch (err) {
+      if (!isTauriError(err) || err.kind !== 'not_found') {
+        silentCatch('GeneratedReviewsTab:resumeLookup')(err);
+        addToast(tx(t.explore.adopt_failed, { name }), 'error');
+        return;
+      }
+    }
+    logger.warn('Review not found for resume', { reviewId });
+    addToast(tx(t.explore.adopt_not_found, { name }), 'warning');
+    onGone?.();
+  };
+
   const handleResumeAdoption = () => {
     const reviewId = useSystemStore.getState().activeAdoptionReviewId;
     const match = reviewId ? gallery.allItems.find((r: PersonaDesignReview) => r.id === reviewId) : undefined;
     if (match) { modals.open({ type: 'adopt', review: match }); return; }
-    logger.warn('Review not found for resume adoption', { reviewId });
+    // The adoption banner holds no template name of its own.
+    const name = adoptionDraft?.templateName ?? t.templates.bg_notify.preview_default_name;
+    if (reviewId) { void resumeByLookup(reviewId, name); return; }
+    logger.warn('No review id to resume adoption');
+    addToast(tx(t.explore.adopt_not_found, { name }), 'warning');
   };
 
   const handleResumeDraft = (draft: import('@/stores/slices/system/uiSlice').AdoptionDraft) => {
     const match = gallery.allItems.find((r: PersonaDesignReview) => r.id === draft.reviewId);
-    if (match) { modals.open({ type: 'adopt', review: match }); }
-    else { logger.warn('Review not found for resume draft', { reviewId: draft.reviewId }); setAdoptionDraft(null); }
+    if (match) { modals.open({ type: 'adopt', review: match }); return; }
+    void resumeByLookup(draft.reviewId, draft.templateName, () => setAdoptionDraft(null));
   };
 
   // Loading choreography (docs/design/overview-loading.md, row-level): the
