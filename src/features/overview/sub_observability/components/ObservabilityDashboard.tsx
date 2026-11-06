@@ -138,6 +138,7 @@ export default function ObservabilityDashboard() {
           setAnalysisResult={() => healing.setAnalysisResult(null)}
           analysisError={healing.analysisError}
           setAnalysisError={() => healing.setAnalysisError(null)}
+          analysisTargetId={healing.analysisTargetId}
           viewMode={healing.healingViewMode}
           setViewMode={healing.setHealingViewMode}
           timelineEvents={d.healingTimeline}

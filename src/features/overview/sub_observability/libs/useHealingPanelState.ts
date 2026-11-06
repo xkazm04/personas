@@ -26,6 +26,9 @@ export function useHealingPanelState({
     auto_fixed: number;
   } | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  // The agent the last run actually analysed: on all agents that is the first one,
+  // and the result keeps naming it after the scope changes.
+  const [analysisTargetId, setAnalysisTargetId] = useState<string | null>(null);
   const [healingViewMode, setHealingViewMode] = useState<'list' | 'timeline'>('list');
 
   const handleRunAnalysis = useCallback(async () => {
@@ -34,6 +37,7 @@ export function useHealingPanelState({
     try {
       const pid = selectedPersonaId || personas[0]?.id;
       if (!pid) return;
+      setAnalysisTargetId(pid);
       const result = await triggerHealing(pid);
       if (result) {
         setAnalysisResult(result);
@@ -92,6 +96,7 @@ export function useHealingPanelState({
     setAnalysisResult,
     analysisError,
     setAnalysisError,
+    analysisTargetId,
     healingViewMode,
     setHealingViewMode,
     handleRunAnalysis,

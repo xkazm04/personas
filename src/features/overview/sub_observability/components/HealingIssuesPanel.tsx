@@ -35,6 +35,8 @@ export interface HealingIssuesPanelProps {
   setAnalysisResult: (r: null) => void;
   analysisError: string | null;
   setAnalysisError: (e: null) => void;
+  /** The agent the last run analysed, named on its result so one agent's clean run does not read as a clean fleet. */
+  analysisTargetId?: string | null;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   timelineEvents: HealingTimelineEvent[];
@@ -86,6 +88,8 @@ export function HealingIssuesPanel(p: HealingIssuesPanelProps) {
     ? <HealingChainDetail chain={chain} onOpenIssue={openIssueById} w={w} />
     : <HealingIssueDetail issue={issue} personaName={personaName} onOpen={p.setSelectedIssue} onResolve={p.resolveHealingIssue} w={w} />;
   const r = p.analysisResult;
+  const analysedName = p.analysisTargetId ? personaName(p.analysisTargetId) : null;
+  const noAgents = p.personas.length === 0;
   return (
     <Section
       id="s-obs-health"
@@ -95,7 +99,7 @@ export function HealingIssuesPanel(p: HealingIssuesPanelProps) {
       count={p.issuesLoading && p.healingIssues.length === 0 ? undefined : p.healingIssues.length}
       meta={p.healingIssues.length > 0 ? <HealingIssueSummary issues={p.healingIssues} w={w} /> : undefined}
       actions={
-        <KitButton onClick={p.handleRunAnalysis} loading={p.healingRunning} testId="obs-run-analysis">
+        <KitButton onClick={p.handleRunAnalysis} loading={p.healingRunning} disabled={noAgents} testId="obs-run-analysis">
           {p.healingRunning ? o.healing_issues_panel.analyzing : o.healing_issues_panel.run_analysis}
         </KitButton>
       }
@@ -123,10 +127,14 @@ export function HealingIssuesPanel(p: HealingIssuesPanelProps) {
           />
         </span>
       </Toolbar>
+      {noAgents && (
+        <p className="typo-caption" style={{ margin: '0 0 12px' }}>{o.health.no_agents}</p>
+      )}
       {r && !p.healingRunning && (
         <p className="k-in typo-caption flex items-center gap-2" style={{ margin: '0 0 12px' }}>
           <Dot tone="success" />
           {o.healing_issues_panel.analysis_complete_prefix}{' '}
+          {analysedName && <><span className="k-strong">{analysedName}</span>{', '}</>}
           {w.tx(r.issues_created !== 1 ? ad.issues_found : ad.issues_found_one, { count: r.issues_created })}
           {r.auto_fixed > 0 && ` (${r.auto_fixed} ${ad.auto_fixed})`}
           {', '}{w.tx(r.failures_analyzed !== 1 ? ad.executions_scanned : ad.executions_scanned_one, { count: r.failures_analyzed })}
