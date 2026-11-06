@@ -1,0 +1,37 @@
+{
+ "schema": "conform-run/1",
+ "worker": "950693bb-1b45-41d3-9ef3-bd984a44d929",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T04:51:29.384930+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "commands-contest",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "i18n",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "companions-page",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "agents-connectors",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "agents-components-allpersonas",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": []
+}
