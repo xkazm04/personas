@@ -8404,37 +8404,54 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:25:36.000Z",
-      "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T23:11:09.380Z",
+      "worker": "4a54bb07-14fc-4d71-a2fa-e821e7a979ee",
       "techniques": [
-        {
-          "technique": "broker-proxy-attaches-secret",
-          "verdict": "conformant",
-          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 the webview sends origin + credentialId; browser_login attaches the secret Rust-side (src/features/browser/whitelist/SiteCredentialField.tsx:2)"
-        },
         {
           "technique": "omit-the-column-not-the-value",
           "verdict": "conformant",
-          "evidence": "src/lib/bindings/BrowserSite.ts:26 credential_id only; the picker lists id/name/service_type (src/features/browser/whitelist/SiteCredentialField.tsx:43)"
+          "evidence": "src/lib/bindings/BrowserSite.ts:26 The site shape has a reference column and no column for the secret value; SiteChips.tsx:104 renders only bound or none."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:80 The UI sends origin and credential_id. The secret is resolved server-side when browser_login runs. The command is gated privileged."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:66 Confirming a scan sends only the origin, so the scan result stays server-side and the client never carries it back (the keep-it-server-side variant)."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:75 The origin is operator-typed configuration, validated to scheme://host[:port]. It is not an address that arrives inside a dependency's response."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:55 No upstream broker is involved: failures are local command refusals from a closed BrowserRefusalCode vocabulary, shown to the local operator."
         },
         {
           "technique": "public-vs-server-env-split",
           "verdict": "not-applicable",
-          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 configuration moves over IPC; zero import.meta.env reads under src/features/browser"
+          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 configuration moves over IPC; zero import.meta.env reads under src/features/browser",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "aggregate-view-not-base-table",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/browser/sites.rs:79 site rows are reached only through privileged commands; no browser-held store role"
+          "evidence": "src-tauri/src/commands/browser/sites.rs:79 site rows are reached only through privileged commands; no browser-held store role",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "default-deny-plus-defaulted-owner",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/browser/sites.rs:79 no row-policy store is browser-reachable"
+          "evidence": "src-tauri/src/commands/browser/sites.rs:79 no row-policy store is browser-reachable",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "The context map's path list for this context omits siteEdit.ts and SiteCredentialField.tsx, which carry its entire credential surface; the context scan lags the whitelist->server-control refactor (e385cc353e).",
       "superseded": [
         {
           "state": "conformant",
@@ -8449,6 +8466,13 @@
           "evaluatedAt": "2026-10-09T16:24:24.000Z",
           "worker": "0a06b266-72a8-44ea-9aac-b1d021f8a02c",
           "reason": "replaced by 24614e38-f160-48b2-ad89-8ffd559a3765"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 binds a site to a credential id only via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79); the site shape carries credential_id and no secret (src/lib/bindings/BrowserSite.ts:26)",
+          "evaluatedAt": "2026-10-10T11:25:36.000Z",
+          "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+          "reason": "replaced by 4a54bb07-14fc-4d71-a2fa-e821e7a979ee"
         }
       ]
     },
@@ -17071,9 +17095,8 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:25:36.000Z",
-      "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T23:11:09.380Z",
       "techniques": [],
       "superseded": [
         {
@@ -17082,8 +17105,21 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 24614e38-f160-48b2-ad89-8ffd559a3765"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; no file in this context references credential/secret/vault (re-grepped 2026-10-10, files unchanged since the 2026-10-03 verdict) - the credential binding lives in site-whitelist-management",
+          "evaluatedAt": "2026-10-10T11:25:36.000Z",
+          "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+          "reason": "replaced by 4a54bb07-14fc-4d71-a2fa-e821e7a979ee"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "4a54bb07-14fc-4d71-a2fa-e821e7a979ee",
+        "state": "not-applicable",
+        "at": "2026-11-06T23:12:54.262117+00:00",
+        "reason": "reviewer (sonnet): The anchor browserStore.ts:25 is an import line, so it doesn't show that credential material is absent. The not-applicable rests only on a keyword grep, and this context's PageSlot hosts the embedded webview, which is where cookies and session material would sit."
+      }
     },
     "19e4120b-6020-4103-8a3d-a9fd0e13640b/structured-output": {
       "context": "plugins-research-lab-reports",
@@ -45011,6 +45047,51 @@
           "technique": "layered-composition",
           "verdict": "conformant",
           "evidence": "src/features/teams/sub_factory/useAddKpi.ts:120 The AI KPI proposal passes typed fields (name, category, direction, measureKind, ...) to the backend assembler instead of pre-rendered prompt text."
+        }
+      ]
+    },
+    "647d6a54-3813-4149-bbf7-2d96a57a77c7/browser-credential-boundary": {
+      "context": "vault-databases-tabs",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T23:11:09.380Z",
+      "worker": "4a54bb07-14fc-4d71-a2fa-e821e7a979ee",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:295 Only credentialId and the SQL cross IPC; the credential is attached in the Rust engine."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/db_query.rs:138 Hosts that come from credential data are fetched through the SSRF-safe resolver client, which judges the resolved address."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/db_query.rs:148 The database belongs to the operator, so error detail is legitimate for them; credential field values are scrubbed before the error returns."
+        },
+        {
+          "technique": "allowlisted-operator-stream",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:225 Telemetry carries an enumerated bucket and never the SQL text. Console history is kept in memory only (ConsoleTab.tsx:51)."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/db_query.rs:703 The SQL and the allowMutation flag are the operator's own input. The server re-derives the mutation class instead of trusting a carried result, so there is nothing to seal."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "broker-proxy-attaches-secret: ChatTab.tsx:256 / src/api/vault/database/dbSchema.ts:74 send credentialId + SQL only, credential attached in Rust; outbound-fetch-destination-validation: that broker fetches via SSRF_SAFE_HTTP (src-tauri/src/engine/db_query.rs:138); opaque-upstream-errors (operator-owned DB, so detail is legitimate) with credential material scrubbed by sanitize_error before return (db_query.rs:148, :244); allowlisted-operator-stream: telemetry carries only read/mutation, never the statement (ChatTab.tsx:249-250) and console history is memory-only (ConsoleTab.tsx:47); env-split and RLS techniques n/a (no env reads, no browser-held DB role key).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by 4a54bb07-14fc-4d71-a2fa-e821e7a979ee"
         }
       ]
     }

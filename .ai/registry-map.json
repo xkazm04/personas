@@ -6225,11 +6225,7 @@
           "confidence": "probable",
           "state": "not-applicable",
           "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; no file in this context references credential/secret/vault (re-grepped 2026-10-10, files unchanged since the 2026-10-03 verdict) - the credential binding lives in site-whitelist-management",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-10"
         },
         {
           "subject": "table",
@@ -35883,12 +35879,11 @@
           "changedAt": "2026-10-27",
           "confidence": "strong",
           "state": "conformant",
-          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 binds a site to a credential id only via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79); the site shape carries credential_id and no secret (src/lib/bindings/BrowserSite.ts:26)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/browser/sites.rs:80 The whitelist binds a site to a vault credential by id only, through a #[requires(privileged)] command. The site shape the webview receives carries credentialId and no secret column, so the login secret stays in Rust.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-gates",
@@ -45706,13 +45701,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "broker-proxy-attaches-secret: ChatTab.tsx:256 / src/api/vault/database/dbSchema.ts:74 send credentialId + SQL only, credential attached in Rust; outbound-fetch-destination-validation: that broker fetches via SSRF_SAFE_HTTP (src-tauri/src/engine/db_query.rs:138); opaque-upstream-errors (operator-owned DB, so detail is legitimate) with credential material scrubbed by sanitize_error before return (db_query.rs:148, :244); allowlisted-operator-stream: telemetry carries only read/mutation, never the statement (ChatTab.tsx:249-250) and console history is memory-only (ConsoleTab.tsx:47); env-split and RLS techniques n/a (no env reads, no browser-held DB role key).",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:295 The database tabs send only a credential id and the SQL. Rust attaches the connection secret, fetches through the SSRF-safe client, scrubs credential fields from errors and re-classifies mutations itself, so the webview never holds a database credential.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "migrations",
