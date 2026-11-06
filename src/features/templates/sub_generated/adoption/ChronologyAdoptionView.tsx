@@ -47,6 +47,7 @@ import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
+import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useHydratedDesignResult } from './useHydratedDesignResult';
@@ -1421,12 +1422,16 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   // Discard the current draft persona and close the adoption modal.
   // Shown as "Delete Draft" in the Command Hub when tests are skipped/failed
   // and the user wants to abandon the adoption rather than retry or approve.
+  // Asks first, as the X route does: the button sits beside retry and refine.
+  const [deleteDraftAsked, setDeleteDraftAsked] = useState(false);
   const handleDeleteDraft = useCallback(() => {
+    setDeleteDraftAsked(false);
     const agent = useAgentStore.getState();
     const sys = useSystemStore.getState();
-    // Fire-and-forget cleanup — UI closes immediately either way
+    // The UI closes immediately either way; a failed delete leaves a stray
+    // agent behind, so it says so.
     if (personaId) {
-      void agent.deletePersona(personaId).catch(silentCatch("ChronologyAdoptionView:deleteDraftCleanup"));
+      void agent.deletePersona(personaId).catch(toastCatch("ChronologyAdoptionView:deleteDraftCleanup"));
     }
     agent.resetBuildSession();
     void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
@@ -1627,7 +1632,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onApproveTest={lifecycle.handlePromote}
         onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
         onRejectTest={lifecycle.handleRejectTest}
-        onDeleteDraft={handleDeleteDraft}
+        onDeleteDraft={() => setDeleteDraftAsked(true)}
         onRefine={lifecycle.handleRefine}
         onViewAgent={handleViewAgent}
         templateName={templateName}
@@ -1641,6 +1646,17 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           original PersonaMatrix variant; keep the callbacks live for build
           flow even though no surface currently invokes them. */}
       {void (handleApplyEdits || handleDiscardEdits)}
+
+      <ConfirmDestructiveModal
+        open={deleteDraftAsked}
+        config={deleteDraftAsked ? {
+          title: t.templates.adopt_modal.discard_title,
+          message: t.templates.adopt_modal.discard_body,
+          confirmLabel: t.templates.adopt_modal.discard_confirm,
+          onConfirm: handleDeleteDraft,
+          onCancel: () => setDeleteDraftAsked(false),
+        } : null}
+      />
 
       {/* Note: questionnaire is rendered inline in the !seeded branch above.
           Once seeded === true the user has already submitted, so no need

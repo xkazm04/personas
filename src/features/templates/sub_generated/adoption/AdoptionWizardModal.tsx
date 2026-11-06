@@ -6,7 +6,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ChronologyAdoptionView } from './ChronologyAdoptionView';
 import { BaseModal } from '../shared/BaseModal';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   ConfirmDestructiveModal,
   type ConfirmDestructiveConfig,
@@ -41,8 +41,6 @@ export default function AdoptionWizardModal({
 }: AdoptionWizardModalProps) {
   const { t } = useTranslation();
   const [confirmConfig, setConfirmConfig] = useState<ConfirmDestructiveConfig | null>(null);
-  const buildPhase = useAgentStore((s) => s.buildPhase);
-  const buildSessionId = useAgentStore((s) => s.buildSessionId);
 
   // Reset any stale build-session state when the adoption modal opens. Without
   // this, a leftover buildSessionId from a previous adoption would trigger the
@@ -56,7 +54,10 @@ export default function AdoptionWizardModal({
   }, [isOpen]);
 
   const handleCloseAttempt = useCallback(() => {
-    // No active build session or phase is safe to close — skip confirmation
+    // No active build session or phase is safe to close — skip confirmation.
+    // Read at call time: a confirmed Delete Draft resets the session and calls
+    // this in the same tick, when the render's values would still ask again.
+    const { buildSessionId, buildPhase } = useAgentStore.getState();
     if (!buildSessionId || SAFE_CLOSE_PHASES.has(buildPhase)) {
       onClose();
       return;
@@ -75,7 +76,7 @@ export default function AdoptionWizardModal({
         const sys = useSystemStore.getState();
         const pid = agent.buildPersonaId;
         if (pid) {
-          void agent.deletePersona(pid).catch(silentCatch('AdoptionWizardModal:deletePersona'));
+          void agent.deletePersona(pid).catch(toastCatch('AdoptionWizardModal:deletePersona'));
         }
         agent.resetBuildSession();
         void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
@@ -89,7 +90,7 @@ export default function AdoptionWizardModal({
         setConfirmConfig(null);
       },
     });
-  }, [buildPhase, buildSessionId, onClose, t]);
+  }, [onClose, t]);
 
   if (!isOpen || !review) return null;
 
