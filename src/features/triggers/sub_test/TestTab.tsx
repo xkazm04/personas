@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Info, RotateCcw, Sparkles, Zap } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { listAllSubscriptions, listEvents, listKnownEventTypes, testEventFlow } from '@/api/overview/events';
@@ -21,6 +21,7 @@ const CUSTOM_EVENT_VALUE = '__custom__';
 
 export function TestTab() {
   const { t, tx } = useTranslation();
+  const payloadId = useId();
   const personas = useAgentStore((s) => s.personas);
 
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>([]);
@@ -290,7 +291,7 @@ export function TestTab() {
           <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="typo-caption text-foreground">{t.triggers.payload_json_label}</label>
+                <label htmlFor={payloadId} className="typo-caption text-foreground">{t.triggers.payload_json_label}</label>
                 {payloadSource === 'history' && historyEvent && (
                   <button
                     type="button"
@@ -304,6 +305,9 @@ export function TestTab() {
                 )}
               </div>
               <textarea
+                id={payloadId}
+                aria-invalid={isInvalidJson || undefined}
+                aria-describedby={isInvalidJson ? `${payloadId}-error` : undefined}
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
                 rows={8}
@@ -323,7 +327,7 @@ export function TestTab() {
                 )}
               </div>
               {isInvalidJson && (
-                <p className="typo-caption text-amber-400/90 mt-1">{t.triggers.test_payload_invalid_json}</p>
+                <p id={`${payloadId}-error`} className="typo-caption text-amber-400/90 mt-1">{t.triggers.test_payload_invalid_json}</p>
               )}
             </div>
 
