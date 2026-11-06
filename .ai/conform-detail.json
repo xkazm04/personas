@@ -20473,72 +20473,94 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:32.807Z",
-      "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:25:38.538Z",
       "techniques": [
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:768 The tests' fixture is neither built nor committed, so the world they certify differs per machine and is empty on the runner."
+        },
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test iterates list_summaries over an archive with 0 judged runs and exits green without ever entering the assertion block."
-        },
-        {
-          "technique": "negative-control-tests",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:843 Because detail.judge is never Some in the archive, the test cannot fail when the judge panel contract breaks."
-        },
-        {
-          "technique": "fixture-economics",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:117 Cheap in-memory JSON string payloads test array parsing and validation logic efficiently."
+          "evidence": "src-tauri/src/commands/eval_runs.rs:830 The judge-panel contract runs over a population that the comment at :828 says contains no judged runs, and no engagement count is published beside the green result."
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/execution/assertions.rs:188 Pure parsing and validation functions execute without shared state or live database handles."
+          "evidence": "src-tauri/src/commands/execution/lab.rs:1613 Each test gets its own copy of the template database. Its seed (:1617) is a raw INSERT that bypasses the persona write door."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:843 Because detail.judge is never Some in the archive, the test cannot fail when the judge panel contract breaks.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Rust unit tests run within the cargo test framework; lane boundaries are declared in CI matrix configs."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Rust unit tests run within the cargo test framework; lane boundaries are declared in CI matrix configs.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:118 Assertions check specific integers and validation errors rather than recording approval snapshots."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:118 Assertions check specific integers and validation errors rather than recording approval snapshots.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/assertions.rs:189 Tokens are internal IPC strings parsed directly rather than scripts emitted for foreign interpreters."
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:189 Tokens are internal IPC strings parsed directly rather than scripts emitted for foreign interpreters.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/assertions.rs:204 Tests invoke command parsers directly rather than scanning source files."
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:204 Tests invoke command parsers directly rather than scanning source files.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Runs in-process unit tests without launching the desktop Tauri application shell."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Runs in-process unit tests without launching the desktop Tauri application shell.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 No sanitizers or verifier instrumentation are configured in this command unit suite."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 No sanitizers or verifier instrumentation are configured in this command unit suite.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Synchronous unit tests with no retry or quarantine policy."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Synchronous unit tests with no retry or quarantine policy.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Does not assert side effects on external unowned remote services."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Does not assert side effects on external unowned remote services.",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "unreached-decisions-pin-nothing: add a rule and linter for test assertions enclosed in conditional blocks or loops over static fixtures that execute zero iterations, passing vacuously when expected data variants are absent."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test loops over summaries with an archive containing zero judged runs and passes vacuously without asserting any judge panel contract.",
+          "evaluatedAt": "2026-10-12T16:43:32.807Z",
+          "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
+          "reason": "replaced by 43bc9b1b-b2e2-4394-ba2b-af71c0849330"
+        }
+      ],
+      "withdrawn": {
+        "worker": "43bc9b1b-b2e2-4394-ba2b-af71c0849330",
+        "state": "deviation",
+        "at": "2026-11-06T01:26:34.105451+00:00",
+        "reason": "reviewer (sonnet): The claim that CI has an empty archive and every data assertion skips is contradicted by the repo: docs/tests/autonomy-eval/runs/.gitignore only ignores run-*/ and longitudinal-*.json, and a golden _example-run/ (scorecard.json, judge.json, run.json and others) is committed. list_summaries() (eval_r"
+      }
     },
     "c5f662f2-458b-4b5d-b03b-e4acf8f54049/test-harness": {
       "context": "plugins-dev-tools-projects",
@@ -37359,29 +37381,46 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:44:00.000Z",
-      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:25:38.538Z",
+      "worker": "43bc9b1b-b2e2-4394-ba2b-af71c0849330",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 ordering + watermark-hold decisions never lifted into a reachable unit; the sibling prune decision was (src-tauri/engine/src/webhook_ingest.rs:369 tests it), showing the lift is possible"
+          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 The decision that closes bug-hunt 2026-06-07 cloud-sync #4 was not lifted into a reachable unit, although webhook_ingest.rs exists for exactly that purpose."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_process.rs:1371 The cutoff is proven by outcome plus the child's exit; the elapsed bound (:1372) is a loose one-sided hang guard (10 s against a 300 ms budget)."
         },
         {
           "technique": "negative-control-tests",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:343 a recovery arm (publish failure holds the watermark) is a path the ordinary suite never executes, and nothing has ever been observed red on it"
+          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:343 a recovery arm (publish failure holds the watermark) is a path the ordinary suite never executes, and nothing has ever been observed red on it",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "fixture-economics",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/webhook.rs:771 the webhook state is built on init_test_db with persona and trigger seeded through personas::create (:772) and trigger_repo::create (:795)"
+          "evidence": "src-tauri/src/engine/webhook.rs:771 the webhook state is built on init_test_db with persona and trigger seeded through personas::create (:772) and trigger_repo::create (:795)",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/webhook.rs:766 the oversized-delivery test reads persona_events back and asserts zero rows reached the bus, not just the 422 status"
+          "evidence": "src-tauri/src/engine/webhook.rs:766 the oversized-delivery test reads persona_events back and asserts zero rows reached the bus, not just the 422 status",
+          "carriedFrom": "2026-10-22"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 the oldest-first ordering that holds the watermark at the last contiguous success (the 2026-06-07 cloud-sync #4 fix) and the cutoff skip (:369) live inline in an AppHandle-bound tick no test reaches, so a regression that strands or replays cloud firings stays green - only the prune predicate was lifted (src-tauri/engine/src/webhook_ingest.rs:236)",
+          "evaluatedAt": "2026-10-22T02:44:00.000Z",
+          "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+          "reason": "replaced by 43bc9b1b-b2e2-4394-ba2b-af71c0849330"
         }
       ]
     },

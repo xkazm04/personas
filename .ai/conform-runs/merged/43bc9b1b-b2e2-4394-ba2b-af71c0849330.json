@@ -1,0 +1,84 @@
+{
+  "schema": "conform-run/1",
+  "worker": "43bc9b1b-b2e2-4394-ba2b-af71c0849330",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-11-06T01:25:38.538981+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "webhook-ingestion",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 The oldest-first ordering that holds the watermark at the last contiguous success, the cutoff skip (:370) and the watermark max (:409) all sit inline in the AppHandle-bound tick, which has no test module and is referenced by no test. Only the prune predicate was lifted (src-tauri/engine/src/webhook_ingest.rs:236), so a regression that strands or replays cloud firings stays green.",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 The decision that closes bug-hunt 2026-06-07 cloud-sync #4 was not lifted into a reachable unit, although webhook_ingest.rs exists for exactly that purpose."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_process.rs:1371 The cutoff is proven by outcome plus the child's exit; the elapsed bound (:1372) is a loose one-sided hang guard (10 s against a 300 ms budget)."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "triggers-triggers",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "test-harness",
+      "context": "shared-components-layout",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "test-harness",
+      "context": "lib-utils-sanitizers",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "test-harness",
+      "context": "commands-execution",
+      "reason": "withdrawn after review: reviewer (sonnet): The claim that CI has an empty archive and every data assertion skips is contradicted by the repo: docs/tests/autonomy-eval/runs/.gitignore only ignores run-*/ and longitudinal-*.json, and a golden _example-run/ (scorecard.json, judge.json, run.json and others) is committed. list_summaries() (eval_r"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T01:25:38.538981+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "fixture-economics",
+        "isolation-lanes",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 1,
+      "context": "commands-execution",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T01:25:38.538981+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "assert-the-schedule-not-the-stopwatch",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 1,
+      "context": "webhook-ingestion",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

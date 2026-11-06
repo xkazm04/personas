@@ -8494,11 +8494,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test loops over summaries with an archive containing zero judged runs and passes vacuously without asserting any judge panel contract.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-12"
         },
         {
           "subject": "eval-harness",
@@ -46886,12 +46882,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 the oldest-first ordering that holds the watermark at the last contiguous success (the 2026-06-07 cloud-sync #4 fix) and the cutoff skip (:369) live inline in an AppHandle-bound tick no test reaches, so a regression that strands or replays cloud firings stays green - only the prune predicate was lifted (src-tauri/engine/src/webhook_ingest.rs:236)",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 The oldest-first ordering that holds the watermark at the last contiguous success, the cutoff skip (:370) and the watermark max (:409) all sit inline in the AppHandle-bound tick, which has no test module and is referenced by no test. Only the prune predicate was lifted (src-tauri/engine/src/webhook_ingest.rs:236), so a regression that strands or replays cloud firings stays green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
