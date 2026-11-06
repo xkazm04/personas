@@ -199,4 +199,65 @@ describe('useCalendarEvents — honest past history (real runs, not health)', ()
     // No fabricated 'past-unknown' walk for the interval trigger.
     expect(kinds).not.toContain('past-unknown');
   });
+
+  // DW-127: a clicked past slot opens its run, so the event has to carry it.
+  it('a run-bound past slot carries its execution id; a slot with no run has none', async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'cron_fire_times_in_range') {
+        return [
+          '2026-05-01T08:00:00Z', // a run that failed
+          '2026-05-01T09:00:00Z', // a run that completed
+          '2026-05-01T10:00:00Z', // no run
+          '2026-05-01T15:00:00Z', // future
+        ];
+      }
+      if (cmd === 'list_recent_schedule_runs') {
+        return [
+          { execution_id: 'exec-fail', trigger_id: 'trig-cron', status: 'failed', created_at: '2026-05-01T08:00:03Z' },
+          { execution_id: 'exec-ok', trigger_id: 'trig-cron', status: 'completed', created_at: '2026-05-01T09:00:04Z' },
+        ];
+      }
+      return undefined;
+    });
+
+    const entries = [parseScheduleEntry(makeAgent({ trigger_id: 'trig-cron', cron_expression: '0 * * * *', timezone: 'UTC' }))];
+    const start = new Date('2026-05-01T00:00:00Z');
+    const end = new Date('2026-05-02T00:00:00Z');
+
+    const { result } = renderHook(() => useCalendarEvents(entries, start, end));
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    const at = (iso: string) => result.current.events.find((e) => e.time.toISOString() === iso) as
+      { kind: string; executionId?: string } | undefined;
+    expect(at('2026-05-01T08:00:00.000Z')).toMatchObject({ kind: 'past-failure', executionId: 'exec-fail' });
+    expect(at('2026-05-01T09:00:00.000Z')).toMatchObject({ kind: 'past-success', executionId: 'exec-ok' });
+    expect(at('2026-05-01T10:00:00.000Z')?.kind).toBe('past-unknown');
+    expect(at('2026-05-01T10:00:00.000Z')?.executionId).toBeUndefined();
+    expect(at('2026-05-01T15:00:00.000Z')?.executionId).toBeUndefined();
+  });
+
+  it('an interval run carries its execution id', async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'list_recent_schedule_runs') {
+        return [{ execution_id: 'exec-int', trigger_id: 'trig-int', status: 'failed', created_at: '2026-05-01T08:30:00Z' }];
+      }
+      return undefined;
+    });
+
+    const entries = [parseScheduleEntry(makeAgent({
+      trigger_id: 'trig-int',
+      interval_seconds: 3600n,
+      next_trigger_at: '2026-05-01T13:00:00Z',
+    }))];
+    const start = new Date('2026-05-01T00:00:00Z');
+    const end = new Date('2026-05-02T00:00:00Z');
+
+    const { result } = renderHook(() => useCalendarEvents(entries, start, end));
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    const run = result.current.events.find((e) => e.kind === 'past-failure') as { executionId?: string } | undefined;
+    expect(run?.executionId).toBe('exec-int');
+  });
 });
