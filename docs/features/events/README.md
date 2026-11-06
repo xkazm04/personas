@@ -14,7 +14,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | --- | --- | --- |
 | Live Stream | Rolling 24h real-time event stream. The Type column shows the raw event type on a single line (e.g. `document.edited`); the Source column resolves `persona:<id-or-name>` values to the persona's icon + name (other sources keep their cloud/relay glyph). JSON highlighting + detail modal. **System operations surface here too** — e.g. `dev_tools.context_scan_started` / `dev_tools.context_scan_completed` are published to the bus by every context-map scan (manual or triggered) with no target persona, so they appear as observable lifecycle markers (icons in `sub_live_stream/eventTypeMeta.ts`). | `sub_live_stream` |
 | Speed Limits | Counts the triggers with a rate limit configured. Nothing records firings yet and the backend does not read these limits, so running, queued and throttled stay at zero and no run is limited | `sub_speed_limits/RateLimitDashboard.tsx` |
-| Test | Manual event test surface | `sub_test/TestTab.tsx` |
+| Test | Manual event test surface. Its Listeners panel names subscriptions and `event_listener` triggers for the chosen type (at most 500 of each are read), and omits its "no listener" sentence when either read failed | `sub_test/TestTab.tsx` |
 | Local Relay | Smee relay control and switch-back to live stream | `sub_smee_relay/SmeeRelayTab.tsx` |
 | Cloud Events | Dev-only cloud webhook relay status | `sub_cloud_webhooks/CloudWebhooksTab.tsx` |
 | Dead Letter Queue | Dev-only failed event review with checkbox multi-select, bulk retry/discard, event-type/source/error/age filters, and a Group-by-error view that clusters rows by Jaccard similarity so an operator can retry-or-discard an entire failure mode at once | `sub_dead_letter/DeadLetterTab.tsx` |
@@ -74,7 +74,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 > resolves it (`resolve_pending_trigger_fire` republishes the held event on
 > approve, discards on reject). The trigger detail drawer exposes the mode
 > (`UnattendedModeSection`, shown for schedule/polling/webhook), the trigger list
-> surfaces held fires (`PendingTriggerApprovals`) + a per-row mode badge.
+> surfaces held fires (`PendingTriggerApprovals`, where a discard asks first and both outcomes toast) + a per-row mode badge.
 > Commands: `set_trigger_unattended_mode` / `list_pending_trigger_fires` /
 > `resolve_pending_trigger_fire`.
 
