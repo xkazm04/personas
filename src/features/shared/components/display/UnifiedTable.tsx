@@ -602,8 +602,12 @@ export function UnifiedTable<T>({
       sorted.sort(col.sortFn);
     } else {
       sorted.sort((a, b) => {
-        const av = String((a as Record<string, unknown>)[sortKey] ?? '');
-        const bv = String((b as Record<string, unknown>)[sortKey] ?? '');
+        const ar = (a as Record<string, unknown>)[sortKey];
+        const br = (b as Record<string, unknown>)[sortKey];
+        // Two finite numbers compare as numbers: as strings 10 sorts before 9.
+        if (typeof ar === 'number' && typeof br === 'number' && Number.isFinite(ar) && Number.isFinite(br)) return ar - br;
+        const av = String(ar ?? '');
+        const bv = String(br ?? '');
         return av.localeCompare(bv);
       });
     }
