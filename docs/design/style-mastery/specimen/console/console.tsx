@@ -1,12 +1,16 @@
 // Console law specimen: recipes, ink ladder, hair/surface roles, density axis.
 // Harness page; nothing in the app imports it. ?theme=<id>
-import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import '@fontsource-variable/inter/opsz.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
 import '@/styles/globals.css';
 import { useThemeStore } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 const RECIPES: [string, string][] = [
   ['typo-hero', 'Good morning, 128'],
@@ -58,6 +62,46 @@ function Density({ value }: { value?: string }) {
   );
 }
 
+function Controls() {
+  const [seg, setSeg] = useState('runs');
+  const [chip, setChip] = useState('all');
+  const [row, setRow] = useState(1);
+  return (
+    <Block title="Controls (round 3)">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.25rem' }}>
+          {['runs', 'agents', 'events'].map((k) => (
+            <Button key={k} variant="ghost" size="sm" pressed={seg === k} onClick={() => setSeg(k)}>{k}</Button>
+          ))}
+          <Button variant="secondary" size="sm" pressed>secondary on</Button>
+          <Button variant="secondary" size="sm" pressed={false}>secondary off</Button>
+        </div>
+        <div className="typo-body">
+          Read the <Button variant="link" size="inline">full run log</Button> or open settings; icon-xs steps:
+          <Button size="icon-xs" variant="ghost" aria-label="minus">-</Button>
+          <Button size="icon-xs" variant="secondary" aria-label="plus">+</Button>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {[['all', 128], ['open', 12], ['done', 116]].map(([k, n]) => (
+            <OptionChip key={k} selected={chip === k} onSelect={() => setChip(String(k))} count={n}>{k}</OptionChip>
+          ))}
+          <OptionChip selected={false} onSelect={() => {}} disabled>disabled</OptionChip>
+          <OptionChip selected tone="success" onSelect={() => {}}>success tone</OptionChip>
+        </div>
+        <div style={{ width: '22rem', border: '1px solid var(--hair)' }}>
+          {['First option', 'Second option', 'Third option'].map((r, i) => (
+            <OptionRow key={r} divided selected={row === i} onSelect={() => setRow(i)} meta={(i + 1) * 4}>{r}</OptionRow>
+          ))}
+        </div>
+        <PressSurface onPress={() => {}} className="w-full p-3 border border-hair rounded-card">
+          <div className="typo-title">PressSurface card</div>
+          <div className="typo-caption">Whole surface is the press target; hover shows surface-1.</div>
+        </PressSurface>
+      </div>
+    </Block>
+  );
+}
+
 function Specimen() {
   const p = new URLSearchParams(window.location.search);
   const theme = (p.get('theme') ?? 'dark-midnight') as ThemeId;
@@ -100,6 +144,7 @@ function Specimen() {
               ))}
             </div>
           </Block>
+          <Controls />
           <Block title="Density axis (type does not move)">
             <div style={{ display: 'flex', gap: '1.5rem' }}>
               <Density />

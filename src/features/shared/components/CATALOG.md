@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**176 reusable components** live under `src/features/shared/components/`.
+**179 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -20,6 +20,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `AsyncButton` | Button that shows a spinner + disables itself while an async onClick is in flight. |
 | `Button` | Canonical button — variants (primary/secondary/ghost/danger/accent), sizes, icons. Never style a raw <button>. |
 | `CopyButton` | Copy-to-clipboard button with built-in copied feedback. Use instead of raw navigator.clipboard.writeText. |
+| `PressSurface` | A chrome-less semantic button wrapping arbitrary content (clickable card, tile, row): hover surface-1, selected bg-sel, focus ring |
 
 ## content
 
@@ -51,7 +52,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ConfidenceArc` | Semi-circular arc gauge for displaying confidence metrics. |
 | `DataGrid` | Paginated table — page-size selector, row selection + bulk-action toolbar, row drag; caller-owned sort. Else use UnifiedTable. |
 | `DataGridPager` | _(add a `@catalog` tag)_ |
-| `DensityToggle` | Suffix added to layoutId to avoid collisions when multiple toggles render. |
+| `DensityToggle` | DensityToggle - the two-choice density picker, Console (default) and Comfortable (more air); a persisted 'cozy' reads as Comfortab |
 | `DesignConnectorGrid` | _(add a `@catalog` tag)_ |
 | `DragHandle` | Visual size of the grip icon. |
 | `DropIndicator` | Orientation of the list the indicator sits in. |
@@ -75,7 +76,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SortableHeader` | Visible, already-translated column label. |
 | `SpringCount` | Count-up number animated with the shared cloud count-up spring (stiffness 180 / damping 22); wrap in <Numeric> for tabular figure  |
 | `StatCard` | Compact KPI / metric card — icon chip + label + big value, with an optional trend delta and hint. Use for dashboard stat rows inst |
-| `StateMark` | StateMark - a state as glyph + mono word (15 states: proposed/decided/running/done/waits/skipped/blank/filler/refused plus success |
+| `StateMark` | StateMark - a state as glyph + mono word (18 states: proposed/decided/running/done/waits/skipped/blank/filler/refused/paused/build |
 | `StatusBadge` | Status pill mapping a status token to label + color. Use with tokenLabel(). |
 | `StatusDot` | Minimal colored status dot for compact rows. |
 | `StatusShape` | _(add a `@catalog` tag)_ |
@@ -155,6 +156,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `KeyValueEditor` | Editable list of key/value pairs. |
 | `Listbox` | Accessible select/listbox dropdown. Use instead of raw <select> or custom dropdowns. |
 | `NumberStepper` | Numeric input with +/- steppers. |
+| `OptionChip` | Selectable chip (filter, segment, option): hairline, bg-sel + ink-1 + foot when selected, mono count; role tab/radio/option passth |
+| `OptionRow` | Full-width menu/list option row: min row height, hover surface-1, selected bg-sel + 2px primary inset, optional mono meta; role pa |
 | `PasswordToggleField` | Password input with show/hide toggle. |
 | `PillGroup` | _(add a `@catalog` tag)_ |
 | `PopupColorPicker` | _(add a `@catalog` tag)_ |
@@ -226,7 +229,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SectionHeader` | Section header (icon + title + badge + trailing actions). |
 | `SectionHeading` | _(add a `@catalog` tag)_ |
 | `SegmentedTabs` | Segmented control / pill tab switcher. |
-| `SettingsScaffold` | Two-column settings layout — a sticky quick-nav rail (scroll-spy + smooth-scroll + animated active pill) beside a stack of Section |
+| `SettingsScaffold` | Two-column settings layout — a sticky quick-nav rail (scroll-spy + smooth-scroll + animated selected row) beside a stack of Sectio |
 | `TableSkeleton` | TableSkeleton — grid-shaped calm placeholder for a 12-col table (optional header band + N body rows), with per-column bar widths s |
 | `useSectionScrollSpy` | auto/scroll/overlay), else null. |
 | `VibeThemeProvider` | Applies persona-derived "vibe" CSS custom properties to a wrapper element. |
@@ -275,4 +278,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_176 components, 35 without a `@catalog` description._
+_179 components, 35 without a `@catalog` description._

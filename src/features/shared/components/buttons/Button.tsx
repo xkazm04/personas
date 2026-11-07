@@ -19,9 +19,9 @@ export type ButtonVariant =
   | 'ghost'      // No border/bg, text-only + hover fill
   | 'danger'     // Red destructive action
   | 'accent'     // Tinted by `tone`: a status or a role, never a hue
-  | 'link';      // Inline text link style, no padding
+  | 'link';      // Inline INK text link (underline on hover), no padding
 
-export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon-md' | 'icon-lg';
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'inline' | 'icon-xs' | 'icon-sm' | 'icon-md' | 'icon-lg';
 
 // -- Style maps ------------------------------------------------
 
@@ -42,7 +42,15 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   accent:
     'border',
   link:
-    'text-primary hover:text-primary/80 underline-offset-2 hover:underline p-0 h-auto rounded-none',
+    'text-ink-1 underline-offset-2 hover:underline p-0 h-auto rounded-none',
+};
+
+// The selected look (`pressed`): Console selection is a wash plus ink, never a hue swap. The
+// primary foot is an inset 2px bottom edge (segmented use). Ghost and secondary both get it;
+// the other variants own their colour and only report aria-pressed.
+const PRESSED_CLASSES: Partial<Record<ButtonVariant, string>> = {
+  ghost: 'bg-sel text-ink-1 hover:bg-sel hover:text-ink-1 shadow-[inset_0_-2px_0_0_var(--primary)]',
+  secondary: 'bg-sel text-ink-1 hover:bg-sel shadow-[inset_0_-2px_0_0_var(--primary)]',
 };
 
 // The label: 13px weight 500, expressed through the recipe size step so the text scale still
@@ -54,6 +62,10 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
   sm:       `h-[var(--control-h)] px-2.5 ${CONTROL_TEXT} rounded-interactive gap-1.5`,
   md:       `h-[var(--control-h-lg)] px-3 ${CONTROL_TEXT} rounded-interactive gap-2`,
   lg:       `h-9 px-4 ${CONTROL_TEXT} rounded-interactive gap-2`,
+  // No height, no padding, inherits the surrounding font: for a link inside a sentence.
+  inline:   'h-auto p-0 gap-1 rounded-sm text-[length:inherit] leading-[inherit] font-[inherit]',
+  // 20px square for dense tile affordances and steppers (icon 12-14px).
+  'icon-xs': 'w-5 h-5 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-interactive p-0 justify-center',
   // Coarse-pointer (touch) bump to 44x44 — WCAG 2.5.5 / HIG 44pt / Material 48dp.
   'icon-sm': 'w-[var(--control-h)] h-[var(--control-h)] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-interactive p-0 justify-center',
   'icon-md': 'w-[var(--control-h-lg)] h-[var(--control-h-lg)] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-interactive p-0 justify-center',
@@ -114,6 +126,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
    * wins over it (a disabled button cannot be hovered, so the reason owns the wrapper).
    */
   tooltip?: ReactNode;
+  /**
+   * Selected / pressed state of a toggle or segmented control. Sets `aria-pressed` and the Console
+   * selected look (bg-sel + ink-1 + a 2px primary foot) on ghost and secondary buttons. Leave
+   * undefined for a plain action button (no aria-pressed attribute at all).
+   */
+  pressed?: boolean;
 }
 
 // -- Component -------------------------------------------------
@@ -132,6 +150,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       disabledReason,
       tooltip,
+      pressed,
       className = '',
       children,
       type = 'button',
@@ -150,7 +169,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const isDisabled = disabled || loading;
     const showReason = isDisabled && !!disabledReason;
-    const isIconOnly = size === 'icon-sm' || size === 'icon-md' || size === 'icon-lg';
+    const isIconOnly = size === 'icon-xs' || size === 'icon-sm' || size === 'icon-md' || size === 'icon-lg';
 
     // Width-preserving loading: capture the resting rect when loading starts so the
     // button doesn't collapse while content swaps to a loading label or stays dimmed.
@@ -221,6 +240,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'focus-ring',
       VARIANT_CLASSES[variant],
       accentClasses,
+      pressed ? PRESSED_CLASSES[variant] ?? '' : '',
       SIZE_CLASSES[size],
       block ? 'w-full justify-center' : '',
       // `is-disabled` is a project utility (see globals.css) pairing --disabled-opacity with
@@ -250,6 +270,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={classes}
         style={mergedStyle}
         aria-busy={loading || ariaBusy || undefined}
+        aria-pressed={pressed}
         onClick={onClick ? handleClick : undefined}
       >
         {loading && isIconOnly ? (

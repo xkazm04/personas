@@ -152,22 +152,22 @@ export function inputFieldClass(hasError?: boolean): string {
 
 export const BUTTON_VARIANTS: Record<'tryIt' | 'adopt' | 'delete', ButtonVariantToken> = {
   tryIt: {
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-400',
-    border: 'border-emerald-500/20',
-    hover: 'hover:bg-emerald-500/20',
+    bg: 'bg-status-success/10',
+    text: 'text-status-success',
+    border: 'border-status-success/20',
+    hover: 'hover:bg-status-success/20',
   },
   adopt: {
-    bg: 'bg-violet-500/15',
-    text: 'text-violet-400',
-    border: 'border-violet-500/25',
-    hover: 'hover:bg-violet-500/25',
+    bg: 'bg-role-agent/15',
+    text: 'text-role-agent',
+    border: 'border-role-agent/25',
+    hover: 'hover:bg-role-agent/25',
   },
   delete: {
-    bg: 'bg-red-500/10',
-    text: 'text-red-400',
-    border: 'border-red-500/20',
-    hover: 'hover:bg-red-500/10',
+    bg: 'bg-status-error/10',
+    text: 'text-status-error',
+    border: 'border-status-error/20',
+    hover: 'hover:bg-status-error/10',
   },
 };
 
