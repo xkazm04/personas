@@ -13070,15 +13070,14 @@
           "source": "conform",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:620 keeps an index-keyed visual-only focusedIndex on a scroll container tab stop whose outline is removed (:726, :761, :881) with no aria-activedescendant, so the shared table every list surface inherits is silent to a screen reader and the highlight teleports after a resort; src/features/shared/components/display/ColumnResize.tsx:126 is a pointer-only role=separator (:130 onPointerDown) with no keyboard resize",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:641 Arrow-key row navigation in the shared table stores an index-keyed, visual-only highlight on a scroll container whose outline is removed (:758 focus:outline-none) and that has no aria-activedescendant, so a screen reader hears nothing as the highlight moves and the highlight lands on a different row after a resort.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:d839f62eac6007da",
+          "evaluatedRevision": 8,
           "digest": "sha256-b2:d839f62eac6007da",
           "revision": 8,
           "changedAt": "2026-10-25",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -14506,15 +14505,14 @@
           "source": "conform",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:98 keys the live REGION (key=polite-N) so each announcement mounts a fresh region already holding text (live-region-architecture: silent on most pairings); src/features/shared/components/feedback/ConfirmDialog.tsx:59 hard-codes isOpen so callers close by unmounting and the focus restore at src/lib/ui/BaseModal.tsx:231 never runs; src/features/shared/components/feedback/Banner.tsx:111 and src/features/shared/components/feedback/LoadingSpinner.tsx:15 own pre-populated role regions instead of calling the provider. Realized: provider mounted at src/App.tsx:388, serial drain AriaLiveProvider.tsx:58, named dismiss Banner.tsx:145",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:98 The single provider remounts its live REGION on every message (key changes, at :48-54), so each announcement arrives as a fresh region already holding its text, which most pairings do not voice. The shell's one announcement door is therefore unreliable for every caller.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:d839f62eac6007da",
+          "evaluatedRevision": 8,
           "digest": "sha256-b2:d839f62eac6007da",
           "revision": 8,
           "changedAt": "2026-10-25",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -16225,12 +16223,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 mounts role=alert already holding its error text (also RecentDecisionsWidget.tsx:86, WalkthroughOfferWidget.tsx:118 in the same folder), so the failure is silent on most pairings; src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 marks a dangerous option only by a Dot tone icon (aria-hidden), no text or name carries the danger",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
-          "evaluatedRevision": 7,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 The role=alert span only exists inside the Tile error band, which replaces the body at the moment of failure (Tiles.tsx:89), so the region mounts already holding its text and the load failure is silent on most reader/browser pairings; RecentDecisionsWidget.tsx:86 and WalkthroughOfferWidget.tsx:118 repeat the pattern.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:d839f62eac6007da",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",
@@ -18098,13 +18095,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 the shared roving mechanism is index-keyed and has zero consumers (grep finds only its own file; tablists hand-roll arrows, e.g. src/features/shared/components/layout/SegmentedTabs.tsx:83), and src/hooks/utility/interaction/useCopyToClipboard.ts:44 sets a visual-only copied flag no consumer announces",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
-          "evaluatedRevision": 7,
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 The one shared roving-tabindex mechanism keys the active member by index, so focus moves to a different item after a resort or filter. A repo-wide grep finds no consumer outside its own file, so every composite hand-rolls its own arrow handling instead.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:d839f62eac6007da",
+          "evaluatedRevision": 8,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",

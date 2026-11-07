@@ -3833,19 +3833,24 @@
       "subject": "accessibility",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:34:30.433Z",
+      "worker": "8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c",
       "techniques": [
         {
           "technique": "live-region-architecture",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 pre-populated role=alert"
+          "evidence": "src/features/home/sub_cockpit/widgets/RecentDecisionsWidget.tsx:86 A per-widget alert region mounts together with its message instead of calling the shell's announce(). The same folder shows the correct shape at WalkthroughOfferWidget.tsx:108 (a persistent role=status mounted empty), so the right shape is already known here."
         },
         {
           "technique": "name-and-description-wiring",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 danger carried by colour dot only"
+          "evidence": "src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 A dangerous option is marked only by a Dot, which renders aria-hidden (Mark.tsx:23). Neither the name nor a description carries the danger, so a screen reader hears it as an ordinary choice."
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx:118 The Tile/empty-band primitive does not announce errors, so each widget hand-rolls an alert at the call site, and each one fails the same way."
         }
       ],
       "superseded": [
@@ -3862,6 +3867,13 @@
           "evaluatedAt": "2026-10-10T01:06:37.000Z",
           "worker": "96a2a328-b145-4457-a218-44efe2eff45c",
           "reason": "replaced by f4ba92d2-93c6-437c-8945-c2b6be7a5fd4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 mounts role=alert already holding its error text (also RecentDecisionsWidget.tsx:86, WalkthroughOfferWidget.tsx:118 in the same folder), so the failure is silent on most pairings; src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 marks a dangerous option only by a Dot tone icon (aria-hidden), no text or name carries the danger",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+          "reason": "replaced by 8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c"
         }
       ]
     },
@@ -6602,19 +6614,30 @@
       "subject": "accessibility",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:34:30.433Z",
+      "worker": "8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c",
       "techniques": [
         {
           "technique": "keyboard-navigation-models",
           "verdict": "deviation",
-          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 index-keyed and unused"
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:28 Index arithmetic, not member identity, so the identity-survives-reuse rule is broken. The hook also has zero consumers."
+        },
+        {
+          "technique": "preference-respect",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:49 One signal combines the OS query and the in-app data-motion override. Under reduced motion it is an instant settle (REDUCED_MOTION duration 0.01), not a removal, and useMotion.test.ts forces the signal."
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useMenuKeyboard.ts:39 The shared transient-menu model moves focus in on open and hands it back to the trigger on Tab or close (lines 43 and 49-53). Three menus consume it."
         },
         {
           "technique": "live-region-architecture",
           "verdict": "deviation",
-          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:44 transient outcome not announced"
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:44 transient outcome not announced",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -6631,6 +6654,13 @@
           "evaluatedAt": "2026-10-10T01:06:37.000Z",
           "worker": "96a2a328-b145-4457-a218-44efe2eff45c",
           "reason": "replaced by f4ba92d2-93c6-437c-8945-c2b6be7a5fd4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 the shared roving mechanism is index-keyed and has zero consumers (grep finds only its own file; tablists hand-roll arrows, e.g. src/features/shared/components/layout/SegmentedTabs.tsx:83), and src/hooks/utility/interaction/useCopyToClipboard.ts:44 sets a visual-only copied flag no consumer announces",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+          "reason": "replaced by 8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c"
         }
       ]
     },
@@ -7909,19 +7939,39 @@
       "subject": "accessibility",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:34:30.433Z",
+      "worker": "8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c",
       "techniques": [
         {
           "technique": "keyboard-navigation-models",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:620 index-keyed focus, no real focus or activedescendant"
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:758 There is one tab stop with arrows inside it, but position is an index and the container's own focus indicator is removed. The grouped variant at :900/:930 repeats it."
+        },
+        {
+          "technique": "live-region-architecture",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:344 The loading ghost mounts its own status region already holding the loading label, so most pairings stay silent."
+        },
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/SortableHeader.tsx:89 The sort button carries a descriptive name ('Sort by X' or 'Sorted by X'), and aria-sort sits on the columnheader."
+        },
+        {
+          "technique": "a11y-verification",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/SortableHeader.test.tsx:31 The test queries by role and asserts aria-sort and the computed label, which is what a screen reader receives."
         },
         {
           "technique": "primitive-level-a11y",
-          "verdict": "deviation",
-          "evidence": "src/features/shared/components/display/ColumnResize.tsx:130 pointer-only primitive inherited by every table"
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/ColumnResize.tsx:167 The separator is now keyboard-resizable with aria-valuenow when onNudge is passed, so the earlier pointer-only finding is stale."
+        },
+        {
+          "technique": "preference-respect",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/motionPresets.ts:47 Each preset declares its reduced-motion replacement. MotionizedGlyph.tsx:162 re-detects the OS query ad hoc, but globals.css:5549 still covers the in-app toggle."
         }
       ],
       "superseded": [
@@ -7931,6 +7981,13 @@
           "evaluatedAt": "2026-10-09T15:53:49.488Z",
           "worker": "4cf233c4-a788-4e7f-9780-653d49dacaf3",
           "reason": "replaced by f4ba92d2-93c6-437c-8945-c2b6be7a5fd4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:620 keeps an index-keyed visual-only focusedIndex on a scroll container tab stop whose outline is removed (:726, :761, :881) with no aria-activedescendant, so the shared table every list surface inherits is silent to a screen reader and the highlight teleports after a resort; src/features/shared/components/display/ColumnResize.tsx:126 is a pointer-only role=separator (:130 onPointerDown) with no keyboard resize",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+          "reason": "replaced by 8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c"
         }
       ]
     },
@@ -26353,24 +26410,40 @@
       "subject": "accessibility",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:34:30.433Z",
+      "worker": "8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c",
       "techniques": [
         {
           "technique": "live-region-architecture",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:98 region remounts per message"
+          "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:109 The provider and its serial drain (setTimeout at :58) are right, but re-announcing by remounting the region breaks the rule that the region must exist before the news."
+        },
+        {
+          "technique": "assistive-tech-divergence",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:28 The re-announce mechanism relies on the pairing-divergent case (a pre-populated new region) instead of a mutation every reader observes."
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/Banner.tsx:84 Banner, ErrorBanner (:26) and LoadingSpinner (:15) each own a region that mounts with its content instead of calling the provider, so every consumer inherits the silence."
+        },
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:64 isOpen is hard-coded true, so callers close the dialog by unmounting it. BaseModal's focus restore runs only when isOpen flips to false (src/lib/ui/BaseModal.tsx:230-231), so after a confirm or cancel, focus falls back to the document body."
         },
         {
           "technique": "name-and-description-wiring",
-          "verdict": "realized",
-          "evidence": "src/features/shared/components/feedback/Banner.tsx:145 aria-label on icon dismiss"
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/feedback/Banner.tsx:109 The icon-only dismiss button has a translated name."
         },
         {
           "technique": "preference-respect",
           "verdict": "realized",
-          "evidence": "src/features/shared/components/feedback/Reveal.tsx:25 gates animation on useMotion shouldAnimate"
+          "evidence": "src/features/shared/components/feedback/Reveal.tsx:25 gates animation on useMotion shouldAnimate",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -26380,6 +26453,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by f4ba92d2-93c6-437c-8945-c2b6be7a5fd4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:98 keys the live REGION (key=polite-N) so each announcement mounts a fresh region already holding text (live-region-architecture: silent on most pairings); src/features/shared/components/feedback/ConfirmDialog.tsx:59 hard-codes isOpen so callers close by unmounting and the focus restore at src/lib/ui/BaseModal.tsx:231 never runs; src/features/shared/components/feedback/Banner.tsx:111 and src/features/shared/components/feedback/LoadingSpinner.tsx:15 own pre-populated role regions instead of calling the provider. Realized: provider mounted at src/App.tsx:388, serial drain AriaLiveProvider.tsx:58, named dismiss Banner.tsx:145",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+          "reason": "replaced by 8d88427f-b5af-4a98-9b7c-5bcb9b6ee70c"
         }
       ]
     },
