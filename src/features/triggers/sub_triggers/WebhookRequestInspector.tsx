@@ -18,6 +18,7 @@ import {
 } from '@/api/pipeline/triggers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -171,18 +172,23 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
   const { copiedKey: copiedCurlId, copy } = useKeyedCopyFlag<string>();
   const [clearing, setClearing] = useState(false);
 
+  // A slow read for the previous trigger must not land over the current one's.
+  const [latestFetch] = useState(() => createLatestWins());
   const fetch = useCallback(async () => {
+    const token = latestFetch.next();
     setLoading(true);
     setError(false);
     try {
       const result = await listWebhookRequestLogs(triggerId);
+      if (!latestFetch.isCurrent(token)) return;
       setLogs(result);
     } catch {
+      if (!latestFetch.isCurrent(token)) return;
       setError(true);
     } finally {
-      setLoading(false);
+      if (latestFetch.isCurrent(token)) setLoading(false);
     }
-  }, [triggerId]);
+  }, [triggerId, latestFetch]);
 
   // Fetch once per (open, trigger). Guarding on logs.length === 0 treated an
   // empty result as "never fetched", so a webhook with zero logs refetched in
