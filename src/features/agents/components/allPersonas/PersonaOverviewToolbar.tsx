@@ -49,7 +49,9 @@ export function PersonaOverviewToolbar({
     const handler = (e: KeyboardEvent) => {
       if (e.key !== '/') return;
       const target = e.target as HTMLElement | null;
-      if (target?.matches('input, textarea, [contenteditable="true"]')) return;
+      if (target?.matches('input, textarea, select, [role="combobox"], [contenteditable="true"]')) return;
+      // A modal owns the keyboard: do not pull focus out from behind it.
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
       e.preventDefault();
       inputRef.current?.focus();
       inputRef.current?.select();
