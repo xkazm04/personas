@@ -261,7 +261,10 @@ export function FleetTerminalOverlay({
     if (!open) return;
     setBackInterceptor(onClose);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      // Esc belongs to the shell/TUI while an xterm has focus (vim, claude).
+      if (e.target instanceof Element && e.target.closest('.xterm')) return;
+      onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => {
