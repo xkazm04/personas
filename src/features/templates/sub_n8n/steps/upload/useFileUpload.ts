@@ -57,6 +57,10 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // Moving onto a child of the drop zone also fires dragleave on the zone; the
+    // highlight would drop while the file is still over it.
+    const next = e.relatedTarget;
+    if (next instanceof Node && e.currentTarget.contains(next)) return;
     setIsDragging(false);
   }, []);
 
