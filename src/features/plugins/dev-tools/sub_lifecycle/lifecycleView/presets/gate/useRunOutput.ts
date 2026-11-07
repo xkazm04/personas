@@ -25,7 +25,11 @@ export type RunOutputState =
 export function useRunOutput(projectId: string | null, runId: string | null): { state: RunOutputState; retry: () => void } {
   const key = projectId && runId ? `${projectId}:${runId}` : null;
   const warm = key ? outputs.get(key) : undefined;
-  const [state, setState] = useState<RunOutputState>(warm ? { status: 'ready', text: warm.text } : { status: 'loading' });
+  const [held, setHeld] = useState<{ key: string | null; state: RunOutputState }>({
+    key,
+    state: warm ? { status: 'ready', text: warm.text } : { status: 'loading' },
+  });
+  const setState = useCallback((state: RunOutputState) => setHeld({ key, state }), [key]);
   const [gen, setGen] = useState(0);
 
   useEffect(() => {
@@ -49,9 +53,13 @@ export function useRunOutput(projectId: string | null, runId: string | null): { 
         if (live) setState({ status: 'failed', error: errorText(err) });
       });
     return () => { live = false; };
-  }, [key, projectId, runId, gen]);
+  }, [key, projectId, runId, gen, setState]);
 
   const retry = useCallback(() => setGen((g) => g + 1), []);
+  // A held state belongs to the key it was set for; on a key change show the cache or loading, never the previous run's output.
+  const state: RunOutputState = held.key === key
+    ? held.state
+    : warm ? { status: 'ready', text: warm.text } : { status: 'loading' };
   return { state, retry };
 }
 
