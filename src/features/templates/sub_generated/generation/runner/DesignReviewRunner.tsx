@@ -66,7 +66,7 @@ export default function DesignReviewRunner({
               </div>
             </div>
             {!isRunning && (
-              <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
+              <Button type="button" onClick={onClose} variant="ghost" size="icon-sm" aria-label={t.common.close}>
                 <X className="w-4 h-4 text-foreground" />
               </Button>
             )}
