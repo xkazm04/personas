@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DryRunReport } from '@/lib/bindings/DryRunReport';
 import { dryRunPersona } from '@/api/agents/executions';
 import { resolveError } from '@/lib/errors/errorRegistry';
@@ -27,8 +27,13 @@ export function useDryRun({ personaId, getInputData, useCaseId }: UseDryRunOptio
   const [report, setReport] = useState<DryRunReport | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (clearTimerRef.current) clearTimeout(clearTimerRef.current); }, []);
+
   const run = useCallback(async () => {
     if (!personaId) return;
+    // A pending close-cleanup must not wipe this newer run's result.
+    if (clearTimerRef.current) { clearTimeout(clearTimerRef.current); clearTimerRef.current = null; }
     setOpen(true);
     setLoading(true);
     setReport(null);
@@ -48,7 +53,8 @@ export function useDryRun({ personaId, getInputData, useCaseId }: UseDryRunOptio
   const close = useCallback(() => {
     setOpen(false);
     // Defer cleanup so the close animation has data to render
-    setTimeout(() => {
+    clearTimerRef.current = setTimeout(() => {
+      clearTimerRef.current = null;
       setReport(null);
       setErrorMessage(null);
     }, 200);
