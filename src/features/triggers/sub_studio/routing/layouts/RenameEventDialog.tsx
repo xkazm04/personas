@@ -187,7 +187,7 @@ export function RenameEventDialog({
               id="rename-event-new"
               type="text"
               value={newEventType}
-              onChange={e => setNewEventType(e.target.value)}
+              onChange={e => { setNewEventType(e.target.value); setServerError(null); }}
               disabled={sourceReserved || busy}
               autoFocus
               onKeyDown={e => {
