@@ -31,6 +31,22 @@ function renderSelect(onValueChange = vi.fn(), hideSearch = false) {
   return trigger;
 }
 
+describe('ThemedSelect (native)', () => {
+  it('fires both onValueChange and a passed onChange', () => {
+    const onValueChange = vi.fn();
+    const onChange = vi.fn();
+    render(
+      <ThemedSelect aria-label="Native" value="a" onValueChange={onValueChange} onChange={onChange}>
+        <option value="a">Alpha</option>
+        <option value="b">Bravo</option>
+      </ThemedSelect>,
+    );
+    fireEvent.change(screen.getByLabelText('Native'), { target: { value: 'b' } });
+    expect(onValueChange).toHaveBeenCalledWith('b');
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('ThemedSelect (filterable) keyboard contract', () => {
   it('closes on Escape from the search field and returns focus to the trigger', () => {
     const trigger = renderSelect();

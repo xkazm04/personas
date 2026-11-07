@@ -264,7 +264,7 @@ function FilterableSelect({
  * Set `filterable` to render a custom dropdown with text search.
  */
 export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
-  ({ className = '', wrapperClassName = '', filterable, options, value, onValueChange, placeholder, hideSearch, children, ...rest }, ref) => {
+  ({ className = '', wrapperClassName = '', filterable, options, value, onValueChange, placeholder, hideSearch, children, onChange, ...rest }, ref) => {
     if (filterable) {
       return (
         <FilterableSelect
@@ -300,7 +300,7 @@ export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
           value={value}
           onChange={(e) => {
             onValueChange?.(e.target.value);
-            rest.onChange?.(e);
+            onChange?.(e);
           }}
           {...rest}
         >
