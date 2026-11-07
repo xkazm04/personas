@@ -58,7 +58,7 @@ export function DockCommandRow({
               // The capture handler above has already consumed Enter while a
               // typeahead token is open, so reaching here means the operator
               // is finishing a plain objective.
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 submit();
               }
