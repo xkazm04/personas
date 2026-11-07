@@ -160,7 +160,7 @@ export function useDesignRunnerState({
   const progressInfo = useMemo(() => {
     if (!runProgress) return null;
     const { current, total, startedAt, currentTemplateName } = runProgress;
-    const pct = Math.round((current / total) * 100);
+    const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((current / total) * 100))) : 0;
     const elapsed = Date.now() - startedAt;
     const msPerTest = current > 0 ? elapsed / current : 0;
     const remaining = Math.max(0, (total - current) * msPerTest);
