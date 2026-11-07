@@ -140,7 +140,15 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
   }, [open, team.id, refetchRuns]));
 
   // 250ms "live" pulse window — drives the eyebrow dot animation.
-  const isPulsing = livePulseAt > 0 && Date.now() - livePulseAt < 1500;
+  // State + timer: computing it from Date.now() in render left the indicator lit
+  // until some unrelated re-render happened to land after the window.
+  const [isPulsing, setIsPulsing] = useState(false);
+  useEffect(() => {
+    if (livePulseAt === 0) return;
+    setIsPulsing(true);
+    const id = setTimeout(() => setIsPulsing(false), 1500);
+    return () => clearTimeout(id);
+  }, [livePulseAt]);
 
   const teamColor = team.color || '#6366f1';
 
