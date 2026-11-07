@@ -32983,12 +32983,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 and :329 build_cli_args/build_resume_cli_args emit --dangerously-skip-permissions unconditionally with no mode vocabulary (generate/readonly-scan/edit), so no caller of this transport can obtain a provably non-writing run",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 build_cli_args, and build_resume_cli_args at :329, emit --dangerously-skip-permissions unconditionally and expose no generate, readonly-scan or edit mode vocabulary, so no caller of this transport (including repo scans) can get a run that provably cannot write.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "supply-chain",
@@ -36369,12 +36368,11 @@
           "changedAt": "2026-10-27",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/stores/slices/agents/chatSlice.ts:226 a follow-up turn --resumes the stored claudeSessionId sending only latest_message, and :322 maps every non-completed turn to a generic error while the id stays bound; with no 'thread gone' class (persona chat has none, unlike companion/session/cli.rs:681) and no fold of the client-held transcript, a resume whose Claude thread is gone fails every Retry forever",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/agents/chatSlice.ts:277 Every turn that does not complete becomes the same generic 'something went wrong' error and Retry re-sends through startChatTurn, which resumes the same stored Claude session id (chat_turn::finish writes nothing on failure and has no 'thread gone' class), so a conversation whose Claude thread was pruned fails every retry and is never unbound, re-seeded or shown as a fresh thread.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",

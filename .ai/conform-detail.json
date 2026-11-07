@@ -26777,19 +26777,30 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T13:00:00.000Z",
-      "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T01:31:45.717Z",
+      "worker": "733090d9-57de-4d29-adfc-dceb5dad58d0",
       "techniques": [
         {
           "technique": "permission-stance-enforcement",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 single full-access stance, no read-only layers; :329 resume repeats it"
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:329 The resume path also bypasses permissions. The optional --allowedTools (line 179) only pre-approves tools under bypass; it is not a restriction layer or a denylist."
+        },
+        {
+          "technique": "dated-capability-matrix",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:110 The version requirement lives in a comment and the flag is hardcoded with no runtime version check or dated capability data, which is the baked-constant failure the technique names."
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:103 '-p -' makes the prompt travel over stdin, never argv, as the contract requires."
         },
         {
           "technique": "subscription-auth-selection",
           "verdict": "realized",
-          "evidence": "src-tauri/engine/src/cli_process.rs:45 force_subscription_auth strips reserved vars at the shared spawn door; cli_args.rs:206 strips CLAUDECODE/CLAUDE_CODE nesting markers"
+          "evidence": "src-tauri/engine/src/cli_process.rs:45 force_subscription_auth strips reserved vars at the shared spawn door; cli_args.rs:206 strips CLAUDECODE/CLAUDE_CODE nesting markers",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -26799,6 +26810,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by e6722372-20b3-4f23-a4d7-abf234ee66f2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 and :329 build_cli_args/build_resume_cli_args emit --dangerously-skip-permissions unconditionally with no mode vocabulary (generate/readonly-scan/edit), so no caller of this transport can obtain a provably non-writing run",
+          "evaluatedAt": "2026-10-14T13:00:00.000Z",
+          "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+          "reason": "replaced by 733090d9-57de-4d29-adfc-dceb5dad58d0"
         }
       ]
     },
@@ -45282,6 +45300,31 @@
       "evaluatedTs": "2026-11-07T00:44:31.832Z",
       "worker": "17f0fa7a-c87b-465f-a91d-2218f205dbfd",
       "techniques": []
+    },
+    "b6e66a59-78d3-465e-83b7-e77498b4c6ae/agent-cli-transport": {
+      "context": "stores-slices-agents",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T01:31:45.717Z",
+      "worker": "733090d9-57de-4d29-adfc-dceb5dad58d0",
+      "techniques": [
+        {
+          "technique": "thread-custody-across-resume",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:280 The 'thread gone' and 'poisoned' verdicts are folded into a generic error. There is no typed 'thread lost' result, no unbind, and no shown re-thread (rules 1 and 4). Rule 3 is now partly met: the transcript lives server-side in the database (chat_turn.rs)."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:226 a follow-up turn --resumes the stored claudeSessionId sending only latest_message, and :322 maps every non-completed turn to a generic error while the id stays bound; with no 'thread gone' class (persona chat has none, unlike companion/session/cli.rs:681) and no fold of the client-held transcript, a resume whose Claude thread is gone fails every Retry forever",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by 733090d9-57de-4d29-adfc-dceb5dad58d0"
+        }
+      ]
     }
   }
 }
