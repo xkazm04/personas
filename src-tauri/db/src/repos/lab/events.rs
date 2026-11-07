@@ -17,7 +17,10 @@ const PAYLOAD_PREVIEW_BYTES: usize = 2048;
 fn truncate_preview(s: Option<String>) -> Option<String> {
     s.map(|mut v| {
         if v.len() > PAYLOAD_PREVIEW_BYTES {
-            v.truncate(PAYLOAD_PREVIEW_BYTES);
+            // `String::truncate` panics off a char boundary; tool output and
+            // model text are routinely multibyte.
+            let cut = personas_core::utils::text::floor_char_boundary(&v, PAYLOAD_PREVIEW_BYTES);
+            v.truncate(cut);
             v.push_str("\n…[truncated]");
         }
         v
@@ -125,4 +128,18 @@ pub fn list_events_for_result(
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn truncating_a_multibyte_preview_does_not_panic() {
+        // 2047 ASCII bytes then a 3-byte char straddling the 2048 cut.
+        let s = format!("{}€€", "a".repeat(PAYLOAD_PREVIEW_BYTES - 1));
+        let out = truncate_preview(Some(s)).expect("some");
+        assert!(out.ends_with("…[truncated]"));
+        assert!(out.starts_with(&"a".repeat(PAYLOAD_PREVIEW_BYTES - 1)));
+    }
 }
