@@ -85,7 +85,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="typo-body text-ink-1">
-          {pipelines.length > 0 ? tx(pipelines.length === 1 ? t.gitlab.pipeline_count_one : t.gitlab.pipeline_count_other, { count: pipelines.length }) : t.gitlab.no_pipelines}
+          {pipelines.length > 0 ? tx(pipelines.length === 1 ? t.gitlab.pipeline_count_one : t.gitlab.pipeline_count_other, { count: pipelines.length }) : loading ? '' : t.gitlab.no_pipelines}
         </p>
         <div className="flex items-center gap-2">
           <Button
