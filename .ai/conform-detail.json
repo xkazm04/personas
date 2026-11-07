@@ -45628,6 +45628,47 @@
         "at": "2026-11-07T02:12:43.405471+00:00",
         "reason": "reviewer (sonnet): The anchor remediationExecutor.ts:42 sits in executeAutoRotate and does not show that no credential value is held in this directory. It is an incidental line. The absence search also missed the right terms: the directory has no hits for the cited terms but does contain other credential-adjacent code"
       }
+    },
+    "cbb061cf-5c61-49d4-80d8-98b8f9b40600/native-shell-integration": {
+      "context": "browser-webview-control",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T02:35:02.706Z",
+      "worker": "547cb761-e225-482f-9de7-0383db2f4f4d",
+      "techniques": [
+        {
+          "technique": "native-side-owns-the-target-set",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/webview/WebviewPage.tsx:154 Rule two: the typed URL is tested natively by policy::check_navigation (whitelist) before navigating. Fill, submit and pick pass through admit(), which reads the tab's current URL from native state rather than trusting the caller."
+        },
+        {
+          "technique": "native-owned-stream",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/browserStore.ts:258 Tab state is owned natively and fanned out on the browser-tabs event. The store seeds from browser_webview_list and renders, and a failed subscribe does not latch."
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/webview/WebviewPage.tsx:4 The host is an opaque, owned (not transparent or always-on-top) window that the user types into. That is the technique's 'meant to be interacted with' exclusion. Its visibility is derived in one place (hostVisibility.ts:82)."
+        },
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/browser_bridge/webview/mod.rs:130 The page host is built on all three hosts through one parent() call with no cfg, so no host lacks the capability. A missing backend refuses with its own NoBackend code."
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/twinDraftLane.ts:296 Pick mode is armed inside the page by injected hands, not by a product overlay placed over a foreign app, so no point query can hit the product's own surface."
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/twinDraftLane.ts:252 Text is inserted by setting the field value directly (page_fill), not by synthesizing keystrokes or chords, so no keyboard-layout resolution is involved."
+        }
+      ]
     }
   }
 }
