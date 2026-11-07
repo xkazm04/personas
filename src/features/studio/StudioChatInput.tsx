@@ -48,7 +48,9 @@ export default function StudioChatInput({
   view?: { showing: StudioFrameView; appReady: boolean; onChange: (v: StudioFrameView) => void };
 } = {}) {
   const { t, tx } = useTranslation();
-  const [input, setInput] = useState('');
+  // One draft per project tab: a note typed for one build must not follow the
+  // user to another tab and be sent into the wrong project.
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [chatOpen, setChatOpen] = useState(false);
   // The step (by its start time) whose queue refused a note; the notice is
   // about that step only and is gone once the next one starts.
@@ -81,6 +83,8 @@ export default function StudioChatInput({
   const queueNote = useStudioStore((s) => s.queueNote);
 
   if (!activeId || !rt) return null;
+  const input = drafts[activeId] ?? '';
+  const setInput = (v: string) => setDrafts((d) => ({ ...d, [activeId]: v }));
   const { busy, question, autonomous, name, phases, stopNoop, turnStartedAt } = rt;
   const working = busy || autonomous;
   const queueFull = working && queueFullTurn !== null && queueFullTurn === (turnStartedAt ?? 0);
