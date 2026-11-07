@@ -102,7 +102,12 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
   const preview = skillCommand(skill.name, previewArgs);
   const batchCount = tracked ? chosenContexts.length : 0;
 
-  const confirm = () => onConfirm({ args: args.trim(), target, contexts: chosenContexts });
+  // Ctrl/Cmd+Enter in the args box calls this directly, bypassing the footer button's
+  // disabled state, so a dispatch already in flight must be refused here too.
+  const confirm = () => {
+    if (busy) return;
+    onConfirm({ args: args.trim(), target, contexts: chosenContexts });
+  };
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="use-skill-title" size="md" portal staggerChildren={false}>
