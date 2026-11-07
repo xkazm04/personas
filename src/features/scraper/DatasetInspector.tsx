@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 
 import type { DatasetRecord } from '@/api/scraper';
@@ -6,6 +6,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /** Matches the backend page size `useScraperData.queryDataset` asks for. */
 const PAGE_SIZE = 100;
@@ -32,9 +33,13 @@ export function DatasetInspector({
   const [loading, setLoading] = useState(true);
   const [changedOnly, setChangedOnly] = useState(false);
 
+  // Flipping "Changed only" twice fast, or Retry during a load: only the newest read lands.
+  const latest = useRef(createLatestWins());
   const load = useCallback(async () => {
+    const token = latest.current.next();
     setLoading(true);
     const rows = await queryDataset(name, changedOnly);
+    if (!latest.current.isCurrent(token)) return;
     setFailed(rows === null);
     setRecords(rows ?? []);
     setLoading(false);
