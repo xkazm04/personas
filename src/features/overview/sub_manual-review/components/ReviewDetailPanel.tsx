@@ -108,7 +108,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   );
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void handleSend(); }
     // Number keys 1-9 select suggested actions when input is empty
     if (!input.trim() && e.key >= '1' && e.key <= '9') {
       const idx = parseInt(e.key) - 1;
