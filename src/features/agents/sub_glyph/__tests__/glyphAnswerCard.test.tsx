@@ -7,7 +7,7 @@
  * the card reads the bundle.
  */
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import en from "@/i18n/locales/en.json";
 
@@ -39,5 +39,33 @@ describe("GlyphAnswerCard copy", () => {
     expect(screen.getByText("Odeslat")).toBeTruthy();
     expect(screen.getByLabelText("Zavrit")).toBeTruthy();
     expect(screen.queryByText("When")).toBeNull();
+  });
+});
+
+describe("GlyphAnswerCard free-text Enter", () => {
+  const setup = () => {
+    const onAnswer = vi.fn();
+    render(
+      <GlyphAnswerCard
+        question={{ cellKey: "triggers", question: "When should it run?" } as never}
+        onAnswer={onAnswer}
+        onClose={() => {}}
+      />,
+    );
+    return { onAnswer, input: screen.getByRole("textbox") };
+  };
+
+  it("Enter submits the typed answer", () => {
+    const { onAnswer, input } = setup();
+    fireEvent.change(input, { target: { value: "daily" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onAnswer).toHaveBeenCalledWith("triggers", "daily");
+  });
+
+  it("regression: the Enter that commits an IME composition does not submit", () => {
+    const { onAnswer, input } = setup();
+    fireEvent.change(input, { target: { value: "daily" } });
+    fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    expect(onAnswer).not.toHaveBeenCalled();
   });
 });

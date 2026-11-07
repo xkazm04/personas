@@ -118,7 +118,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submit(text); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) submit(text); }}
               placeholder={t.templates.chronology.answer_own_words_placeholder}
               className={`flex-1 bg-surface-1 border text-ink-1 placeholder:text-ink-3 focus:outline-none ${dlg ? "px-3.5 py-3 rounded-none typo-body-lg text-left" : "px-3 py-2 rounded-modal typo-body"}`}
               style={{ borderColor: `${color}40` }}
