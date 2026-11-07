@@ -4,6 +4,7 @@ pub mod audit_incidents;
 pub mod chain_stop_reasons;
 pub mod change_journal;
 pub mod circuit_breaker;
+mod cost_deviation;
 pub mod executions;
 pub mod healing;
 pub mod knowledge;

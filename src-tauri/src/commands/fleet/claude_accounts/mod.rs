@@ -19,6 +19,7 @@
 pub mod live;
 pub mod oauth;
 pub mod projection;
+mod refresh_failure;
 pub mod relogin;
 pub mod rotate;
 

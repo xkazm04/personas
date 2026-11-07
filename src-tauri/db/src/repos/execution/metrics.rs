@@ -4,6 +4,7 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tracing::{info, instrument, warn};
 
+use super::cost_deviation::{cost_deviation, CostDeviation};
 use crate::models::{
     AnomalyDrilldownData, CorrelatedEvent, DashboardCostAnomaly, DashboardDailyPoint,
     DashboardTopPersona, ErrorCategoryBreakdown, ErrorCategoryCount, ExecutionDashboardData,
@@ -1624,20 +1625,15 @@ pub fn get_execution_dashboard_in_window(
                     continue;
                 }
 
-                let n = preceding_costs.len() as f64;
-                let mean = preceding_costs.iter().sum::<f64>() / n;
-                let variance = preceding_costs
-                    .iter()
-                    .map(|c| (c - mean).powi(2))
-                    .sum::<f64>()
-                    / n;
-                let std_dev = variance.sqrt();
-
-                if std_dev == 0.0 {
+                let Some(CostDeviation {
+                    mean,
+                    std_dev,
+                    sigma: deviation_sigma,
+                }) = cost_deviation(&preceding_costs, daily_points[i].total_cost)
+                else {
                     continue;
-                }
+                };
 
-                let deviation_sigma = (daily_points[i].total_cost - mean) / std_dev;
                 if deviation_sigma > 2.0 {
                     let exec_ids = date_buckets
                         .get(&daily_points[i].date)
