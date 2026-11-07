@@ -3855,18 +3855,17 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "not-applicable",
+          "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:100-124 is a page-owned tab strip (reads/writes useSystemStore().editorTab locally; its ids are not in the navigation registry's section vocabulary) -- nav-hierarchy.md 'Level three does not live in the shell ... the page owns the depth (tabs, trees, master-detail)' names exactly this precondition: PersonaEditor's tab bar is the page's own structure, not shell navigation.",
+          "evidence": "src/features/agents/sub_editor/components/EditorLazyTabs.tsx:3 The editor's Activity/Settings/Lab/Design tabs are split with raw React lazy() and no retry, so a transient chunk failure is not retried. Its tier gate also exists twice: tabDefs minTier in the bar, and a hand-copied isStarter check at the destination.",
           "digest": "sha256-b2:b55c5172e3d9fac0",
           "revision": 8,
           "changedAt": "2026-10-27",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 2
         },
         {
           "subject": "undo-history",
@@ -16872,11 +16871,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-10-12"
         },
         {
           "subject": "agent-memory",
@@ -24305,13 +24300,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/ProactiveCard.tsx:53 (and decision/useDecisionQueue.ts:153) route to a tab the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:63 Each Overview tab switch re-keys the subtree under AnimatePresence, so a warm return re-runs the entrance animation and remounts the tab. Separately, line 73 renders IncidentsInbox with no tier check, so programmatic doors (ProactiveCard.tsx:56 setOverviewTab('incidents')) reach a tab the sidebar hides below TEAM.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         },
         {
           "subject": "sidecar-provisioning",
@@ -31523,13 +31517,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 Six Obsidian panels are split with plain React lazy() (lines 10-15) instead of the lazyRetry wrapper that sibling TwinPage uses, so a transient chunk failure is never retried and lands straight in the ErrorBoundary.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         },
         {
           "subject": "supply-chain",
@@ -34841,12 +34834,11 @@
           "changedAt": "2026-10-27",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (id as DevToolsTab/ObsidianBrainTab/TwinTab); only top-level sections derive from the registry (src/features/shared/chrome/sidebar/sidebarData.ts:34) while the sub-nav arrays stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 Only top-level sections are registry-derived; the plugin sub-nav ids are hand-kept arrays cast into the tab unions (lines 120-122), which already once shipped a blank page (sidebarData.ts:161-164), so the sub-destination vocabulary still has no single authority.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-memory",

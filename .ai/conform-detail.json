@@ -5613,14 +5613,44 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:46:49.000Z",
-      "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T01:49:22.463Z",
+      "worker": "26218cfa-e4d2-488a-97bb-46b1f7835afd",
       "techniques": [
         {
           "technique": "navigation-model",
           "verdict": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (id as DevToolsTab/ObsidianBrainTab/TwinTab); only top-level sections derive from the registry (src/features/shared/chrome/sidebar/sidebarData.ts:34) while the sub-nav arrays stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-12, unfixed"
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 Sub-destination ids are untyped strings cast to DevToolsTab/ObsidianBrainTab/TwinTab; the registry covers only level one. Still unfixed."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:200 The rail runs an inline tier/dev check, while the palette (commandPaletteUtils.ts:26) and the footer use passesGates. Every gated entry is hidden; nothing is shown locked."
+        },
+        {
+          "technique": "badge-and-attention",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/BadgeSlot.tsx:92 The slot is priority-ranked with a +N overflow, a tooltip listing every signal, and a 99+ cap. But two count badges render side by side on one entry, which the one-slot rule names as layout noise. PluginsSidebarNav also hand-rolls its own pulsing pill (line 133)."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:227 Posture is persisted (Sidebar.tsx:26 localStorage). But when the rail is collapsed, the whole level 2 disappears with no flyout, so sub-destinations exist in one posture only. The L1 name reveal is a native title= (SidebarLevel1.tsx:240)."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:232 Hovering or focusing a rail entry prefetches that section's chunk; it is cancelled on leave or blur."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/BackgroundServices.tsx:51 One lazy, render-nothing host lists its residents, and each states why it is session-wide or cross-section. Start order is not written down as dependencies; the reaper was not checked."
+        },
+        {
+          "technique": "screen-contributed-second-level",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel2.tsx:253 The shell imports each screen's sidebar content (persona lists, team lists) and switches on sidebarSection (line 172), which is a shell-side table of which screens have sections. Screens do not portal and register."
         }
       ],
       "superseded": [
@@ -5637,6 +5667,13 @@
           "evaluatedAt": "2026-10-10T01:15:00.000Z",
           "worker": "18d0c8b8-f7a3-4f4e-bee5-1158af36953a",
           "reason": "replaced by ca8a5574-2dd0-43fb-9e4e-bb796e477ad3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (id as DevToolsTab/ObsidianBrainTab/TwinTab); only top-level sections derive from the registry (src/features/shared/chrome/sidebar/sidebarData.ts:34) while the sub-nav arrays stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-12, unfixed",
+          "evaluatedAt": "2026-10-12T11:46:49.000Z",
+          "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+          "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
         }
       ]
     },
@@ -8258,14 +8295,24 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:46:49.000Z",
-      "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T01:49:22.463Z",
+      "worker": "26218cfa-e4d2-488a-97bb-46b1f7835afd",
       "techniques": [
         {
           "technique": "entitlement-gating",
           "verdict": "deviation",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/ProactiveCard.tsx:53 (and decision/useDecisionQueue.ts:153) route to a tab the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-12, unfixed"
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 sidebarData.ts:81 gates Incidents at TEAM only in the sidebar, and overviewSlice.ts:288 setOverviewTab writes without a check, so the destination never consults the gate. Still unfixed."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:63 Chunks use lazyRetry (line 14), which is good. But re-keying with the pageTransition variants replays cold-load choreography on every return, which prohibition 5 names."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:82 An unknown overviewTab falls back to the dashboard rather than a blank viewport."
         }
       ],
       "superseded": [
@@ -8289,6 +8336,13 @@
           "evaluatedAt": "2026-10-10T01:15:00.000Z",
           "worker": "18d0c8b8-f7a3-4f4e-bee5-1158af36953a",
           "reason": "replaced by ca8a5574-2dd0-43fb-9e4e-bb796e477ad3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/ProactiveCard.tsx:53 (and decision/useDecisionQueue.ts:153) route to a tab the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-12, unfixed",
+          "evaluatedAt": "2026-10-12T11:46:49.000Z",
+          "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+          "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
         }
       ]
     },
@@ -14135,14 +14189,28 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:46:49.000Z",
-      "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T01:49:22.463Z",
       "techniques": [
         {
           "technique": "entitlement-gating",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed"
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:68 A hand-copied constant (platform.ts:102 DEV_MODE_SECTIONS = plugins) instead of the registry gate. Still unfixed."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/home/components/HomePage.tsx:67 A persisted or unavailable Home tab is checked against the build and falls back to a defined default, never a blank page."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "conformant",
+          "evidence": "src/features/home/components/HomePage.tsx:22 Every Home tab chunk uses lazyRetry, other tabs are prefetched (schedulePrefetchOtherHomeTabs), and each sits under a Suspense fallback."
+        },
+        {
+          "technique": "badge-and-attention",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_welcome/useResumeContext.ts:55 The ranked resume signal records acknowledgement as a stored mark the derivation reads, with a 24h decay window, so 'seen' is state rather than display."
         }
       ],
       "superseded": [
@@ -14159,22 +14227,45 @@
           "evaluatedAt": "2026-10-10T01:15:00.000Z",
           "worker": "18d0c8b8-f7a3-4f4e-bee5-1158af36953a",
           "reason": "replaced by ca8a5574-2dd0-43fb-9e4e-bb796e477ad3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed",
+          "evaluatedAt": "2026-10-12T11:46:49.000Z",
+          "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+          "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "26218cfa-e4d2-488a-97bb-46b1f7835afd",
+        "state": "deviation",
+        "at": "2026-11-07T01:57:36.981105+00:00",
+        "reason": "reviewer (sonnet): The evidence says the default tier is TEAM, but uiModes.ts:46-47 defaults BUILD_MAX_TIER to BUILDER, so Welcome and the rail only disagree on TEAM-capped builds; the hand-copied DEV_MODE_SECTIONS set at NavigationGrid.tsx:68 is real, but the stated disagreement does not happen by default."
+      }
     },
     "83a8a744-2036-4e3e-9654-6fcec82334ff/app-shell": {
       "context": "plugins-obsidian-brain",
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:46:49.000Z",
-      "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T01:49:22.463Z",
+      "worker": "26218cfa-e4d2-488a-97bb-46b1f7835afd",
       "techniques": [
         {
           "technique": "lazy-section-loading",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-12, unfixed"
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 No automatic retry before showing the failure. TwinPage.tsx:19-24 uses lazyRetry. Still unfixed."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/twin/TwinPage.tsx:37 Retired Twin tab ids read back from storage are mapped to live destinations, not rendered blank: the remove-with-fallback rule."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/obsidian-brain/useObsidianVaultRehydration.ts:29 Vault rehydration is admitted to the shell host on cross-section reach, runs once per session, retries with backoff (RETRY_DELAYS_MS), and has a cancel flag."
         }
       ],
       "superseded": [
@@ -14191,6 +14282,13 @@
           "evaluatedAt": "2026-10-10T01:15:00.000Z",
           "worker": "18d0c8b8-f7a3-4f4e-bee5-1158af36953a",
           "reason": "replaced by ca8a5574-2dd0-43fb-9e4e-bb796e477ad3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-12, unfixed",
+          "evaluatedAt": "2026-10-12T11:46:49.000Z",
+          "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+          "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
         }
       ]
     },
@@ -45323,6 +45421,46 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 733090d9-57de-4d29-adfc-dceb5dad58d0"
+        }
+      ]
+    },
+    "1ff7809a-171b-4baa-9c9b-12d888b017f0/app-shell": {
+      "context": "agents-editor",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T01:49:22.463Z",
+      "worker": "26218cfa-e4d2-488a-97bb-46b1f7835afd",
+      "techniques": [
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/EditorLazyTabs.tsx:3 Raw lazy instead of the repo's lazyRetry, so there is no automatic retry before the failure surfaces."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/EditorBody.tsx:126 The destination re-checks with a hand-copied constant, not the declared tabDefs minTier (EditorTabBar.tsx:16,18), and redirects with no explanation (a silent eviction)."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:104 The active tab is derived from the one store value; legacy ids are remapped (EditorBody.tsx:121). The EditorTab vocabulary is still outside the registry."
+        },
+        {
+          "technique": "badge-and-attention",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:124 The tab badge is derived from failedTabs state and carries a screen-reader text equivalent, not just colour."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:100-124 is a page-owned tab strip (reads/writes useSystemStore().editorTab locally; its ids are not in the navigation registry's section vocabulary) -- nav-hierarchy.md 'Level three does not live in the shell ... the page owns the depth (tabs, trees, master-detail)' names exactly this precondition: PersonaEditor's tab bar is the page's own structure, not shell navigation.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
         }
       ]
     }

@@ -1,0 +1,226 @@
+{
+  "schema": "conform-run/1",
+  "worker": "26218cfa-e4d2-488a-97bb-46b1f7835afd",
+  "subject": "app-shell",
+  "evaluatedAt": "2026-11-07T01:49:22.463961+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "shared-chrome",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 Only top-level sections are registry-derived; the plugin sub-nav ids are hand-kept arrays cast into the tab unions (lines 120-122), which already once shipped a blank page (sidebarData.ts:161-164), so the sub-destination vocabulary still has no single authority.",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 Sub-destination ids are untyped strings cast to DevToolsTab/ObsidianBrainTab/TwinTab; the registry covers only level one. Still unfixed."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:200 The rail runs an inline tier/dev check, while the palette (commandPaletteUtils.ts:26) and the footer use passesGates. Every gated entry is hidden; nothing is shown locked."
+        },
+        {
+          "technique": "badge-and-attention",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/BadgeSlot.tsx:92 The slot is priority-ranked with a +N overflow, a tooltip listing every signal, and a 99+ cap. But two count badges render side by side on one entry, which the one-slot rule names as layout noise. PluginsSidebarNav also hand-rolls its own pulsing pill (line 133)."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:227 Posture is persisted (Sidebar.tsx:26 localStorage). But when the rail is collapsed, the whole level 2 disappears with no flyout, so sub-destinations exist in one posture only. The L1 name reveal is a native title= (SidebarLevel1.tsx:240)."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:232 Hovering or focusing a rail entry prefetches that section's chunk; it is cancelled on leave or blur."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/BackgroundServices.tsx:51 One lazy, render-nothing host lists its residents, and each states why it is session-wide or cross-section. Start order is not written down as dependencies; the reaper was not checked."
+        },
+        {
+          "technique": "screen-contributed-second-level",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel2.tsx:253 The shell imports each screen's sidebar content (persona lists, team lists) and switches on sidebarSection (line 172), which is a shell-side table of which screens have sections. Screens do not portal and register."
+        }
+      ]
+    },
+    {
+      "context": "plugins-obsidian-brain",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 Six Obsidian panels are split with plain React lazy() (lines 10-15) instead of the lazyRetry wrapper that sibling TwinPage uses, so a transient chunk failure is never retried and lands straight in the ErrorBoundary.",
+      "techniques": [
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 No automatic retry before showing the failure. TwinPage.tsx:19-24 uses lazyRetry. Still unfixed."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/twin/TwinPage.tsx:37 Retired Twin tab ids read back from storage are mapped to live destinations, not rendered blank: the remove-with-fallback rule."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/obsidian-brain/useObsidianVaultRehydration.ts:29 Vault rehydration is admitted to the shell host on cross-section reach, runs once per session, retries with backoff (RETRY_DELAYS_MS), and has a cancel flag."
+        }
+      ]
+    },
+    {
+      "context": "overview-components",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:63 Each Overview tab switch re-keys the subtree under AnimatePresence, so a warm return re-runs the entrance animation and remounts the tab. Separately, line 73 renders IncidentsInbox with no tier check, so programmatic doors (ProactiveCard.tsx:56 setOverviewTab('incidents')) reach a tab the sidebar hides below TEAM.",
+      "techniques": [
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 sidebarData.ts:81 gates Incidents at TEAM only in the sidebar, and overviewSlice.ts:288 setOverviewTab writes without a check, so the destination never consults the gate. Still unfixed."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:63 Chunks use lazyRetry (line 14), which is good. But re-keying with the pageTransition variants replays cold-load choreography on every return, which prohibition 5 names."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:82 An unknown overviewTab falls back to the dashboard rather than a blank viewport."
+        }
+      ]
+    },
+    {
+      "context": "agents-editor",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_editor/components/EditorLazyTabs.tsx:3 The editor's Activity/Settings/Lab/Design tabs are split with raw React lazy() and no retry, so a transient chunk failure is not retried. Its tier gate also exists twice: tabDefs minTier in the bar, and a hand-copied isStarter check at the destination.",
+      "techniques": [
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/EditorLazyTabs.tsx:3 Raw lazy instead of the repo's lazyRetry, so there is no automatic retry before the failure surfaces."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/EditorBody.tsx:126 The destination re-checks with a hand-copied constant, not the declared tabDefs minTier (EditorTabBar.tsx:16,18), and redirects with no explanation (a silent eviction)."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:104 The active tab is derived from the one store value; legacy ids are remapped (EditorBody.tsx:121). The EditorTab vocabulary is still outside the registry."
+        },
+        {
+          "technique": "badge-and-attention",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:124 The tab badge is derived from failedTabs state and carries a screen-reader text equivalent, not just colour."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "app-shell",
+      "context": "home-welcome",
+      "reason": "withdrawn after review: reviewer (sonnet): The evidence says the default tier is TEAM, but uiModes.ts:46-47 defaults BUILD_MAX_TIER to BUILDER, so Welcome and the rail only disagree on TEAM-capped builds; the hand-copied DEV_MODE_SECTIONS set at NavigationGrid.tsx:68 is real, but the stated disagreement does not happen by default."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-07T01:49:22.463961+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "badge-and-attention",
+        "entitlement-gating",
+        "lazy-section-loading",
+        "nav-hierarchy",
+        "navigation-model",
+        "screen-contributed-second-level",
+        "shell-hosted-services"
+      ],
+      "deviations": 1,
+      "context": "shared-chrome",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T01:49:22.463961+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "badge-and-attention",
+        "entitlement-gating",
+        "lazy-section-loading",
+        "navigation-model"
+      ],
+      "deviations": 1,
+      "context": "home-welcome",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T01:49:22.463961+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "lazy-section-loading",
+        "navigation-model",
+        "shell-hosted-services"
+      ],
+      "deviations": 1,
+      "context": "plugins-obsidian-brain",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T01:49:22.463961+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "entitlement-gating",
+        "lazy-section-loading",
+        "navigation-model"
+      ],
+      "deviations": 1,
+      "context": "overview-components",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T01:49:22.463961+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "badge-and-attention",
+        "entitlement-gating",
+        "lazy-section-loading",
+        "navigation-model"
+      ],
+      "deviations": 1,
+      "context": "agents-editor",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
