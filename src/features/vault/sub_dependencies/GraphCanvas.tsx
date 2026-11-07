@@ -176,7 +176,7 @@ export function GraphCanvas({ nodes, edges, counts, filterKind, selectedNodeId, 
 
 function GraphNodeCircle({ node, pos, selected, highlighted, dimmed, onHover, onClick }: {
   node: GraphNode; pos: NodePos; selected: boolean; highlighted: boolean; dimmed: boolean;
-  onHover: (id: string) => void; onClick: () => void;
+  onHover: (id: string | null) => void; onClick: () => void;
 }) {
   const color = node.color;
   const health = node.kind === 'credential' ? node.meta.healthOk : undefined;
@@ -197,6 +197,9 @@ function GraphNodeCircle({ node, pos, selected, highlighted, dimmed, onHover, on
       aria-pressed={selected}
       onMouseEnter={() => onHover(node.id)}
       onFocus={() => onHover(node.id)}
+      // Without this a keyboard user tabbing out of the graph left the last node
+      // highlighted and every other node dimmed.
+      onBlur={() => onHover(null)}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
