@@ -242,6 +242,9 @@ pub fn category_token(category: ErrorCategory) -> String {
 ///
 /// then add the dominant new SHAPES here (and mirror them into
 /// `src/lib/errorTaxonomy.ts` + both `PARITY_FIXTURES` lists).
+///
+/// A number routes only as a standalone status token, never because its digits
+/// sit inside a longer one: `offset 14290` is not a 429.
 pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> ErrorCategory {
     if session_limit {
         return ErrorCategory::SessionLimit;
@@ -257,7 +260,7 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         || lower.contains("too many requests")
         || lower.contains("quota exceeded")
         || lower.contains("usage limit")
-        || lower.contains("429")
+        || has_status_token(&lower, "429")
     {
         return ErrorCategory::RateLimit;
     }
@@ -304,7 +307,7 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         || lower.contains("enoent")
         || lower.contains("is not recognized")
         || lower.contains("not_found_error")
-        || lower.contains("404")
+        || has_status_token(&lower, "404")
         || lower.contains("model not found")
         || lower.contains("unknown model")
         || lower.contains("no such model")
@@ -320,8 +323,8 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         || lower.contains("credential")
         || lower.contains("api key")
         || lower.contains("unauthorized")
-        || lower.contains("401")
-        || lower.contains("403")
+        || has_status_token(&lower, "401")
+        || has_status_token(&lower, "403")
         || lower.contains("authentication_error")
         || lower.contains("permission_error")
         || lower.contains("forbidden")
@@ -372,17 +375,17 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
     // names `invalid` — a bare "400" inside a URL or a token count is not a
     // request rejection.
     if lower.contains("invalid_request_error")
-        || (lower.contains("400") && lower.contains("invalid"))
+        || (has_status_token(&lower, "400") && lower.contains("invalid"))
     {
         return ErrorCategory::Validation;
     }
 
     // API / server errors — 5xx and Anthropic's `overloaded_error` (529), the
     // dominant real failure when the provider is at capacity.
-    if lower.contains("500")
-        || lower.contains("502")
-        || lower.contains("503")
-        || lower.contains("529")
+    if has_status_token(&lower, "500")
+        || has_status_token(&lower, "502")
+        || has_status_token(&lower, "503")
+        || has_status_token(&lower, "529")
         || lower.contains("overloaded")
         || lower.contains("api error")
         || lower.contains("server error")
@@ -405,7 +408,7 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         || lower.contains("request_too_large")
         || lower.contains("request too large")
         || lower.contains("payload too large")
-        || lower.contains("413")
+        || has_status_token(&lower, "413")
     {
         return ErrorCategory::Validation;
     }
@@ -441,6 +444,17 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
     }
 
     ErrorCategory::Unknown
+}
+
+/// True when `code` appears in `lower` as a standalone token (not embedded in a
+/// longer run of alphanumerics).
+pub fn has_status_token(lower: &str, code: &str) -> bool {
+    lower.match_indices(code).any(|(i, _)| {
+        let before = lower[..i].chars().next_back();
+        let after = lower[i + code.len()..].chars().next();
+        !before.is_some_and(|c| c.is_ascii_alphanumeric())
+            && !after.is_some_and(|c| c.is_ascii_alphanumeric())
+    })
 }
 
 /// Convenience: classify with no pre-parsed flags (string-only).
@@ -1023,6 +1037,17 @@ mod tests {
             "Execution failed (exit code 1): ",
             ErrorCategory::TransientProcessFailure,
         ),
+        // A status code is a standalone token, not any number that contains its digits.
+        ("processed 14013 rows", ErrorCategory::Unknown),
+        ("read 14030 bytes", ErrorCategory::Unknown),
+        ("offset 14290", ErrorCategory::Unknown),
+        ("indexed 40410 items", ErrorCategory::Unknown),
+        ("wrote 5000 records", ErrorCategory::Unknown),
+        ("scanned 15020 entries", ErrorCategory::Unknown),
+        ("moved 5030 rows", ErrorCategory::Unknown),
+        ("retried 15290 jobs", ErrorCategory::Unknown),
+        ("sent 24130 bytes", ErrorCategory::Unknown),
+        ("API error: invalid offset 14003", ErrorCategory::ApiError),
         ("some entirely novel failure", ErrorCategory::Unknown),
     ];
 
