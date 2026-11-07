@@ -308,7 +308,7 @@ export default function GraphPanel() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') runSearch();
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) runSearch();
                   }}
                   placeholder={t.plugins.obsidian_brain.search_vault_placeholder}
                   aria-label={t.plugins.obsidian_brain.search_vault_placeholder}
