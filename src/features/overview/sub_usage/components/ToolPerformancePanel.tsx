@@ -90,9 +90,13 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
     ];
   }, [rows, t.common.all]);
 
+  // A refetch (new window / persona) can drop the selected type from the data;
+  // a filter on a type that no longer exists would show an empty table with no
+  // matching option to clear it, so fall back to "all".
+  const activeFilter = typeOptions.some((o) => o.value === typeFilter) ? typeFilter : 'all';
   const visibleRows = useMemo(
-    () => (typeFilter === 'all' ? sortedRows : sortedRows.filter((r) => r.tool_type === typeFilter)),
-    [sortedRows, typeFilter],
+    () => (activeFilter === 'all' ? sortedRows : sortedRows.filter((r) => r.tool_type === activeFilter)),
+    [sortedRows, activeFilter],
   );
 
   const columns = useMemo<TableColumn<ToolPerformanceSummary>[]>(() => {
@@ -105,7 +109,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         sortable: true,
         sortFn: (a, b) => a.tool_name.localeCompare(b.tool_name),
         filterOptions: typeOptions,
-        filterValue: typeFilter,
+        filterValue: activeFilter,
         onFilterChange: setTypeFilter,
         render: (row) => (
           <span className="inline-flex items-baseline gap-2 min-w-0">
@@ -180,7 +184,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         },
       },
     ];
-  }, [t, typeOptions, typeFilter]);
+  }, [t, typeOptions, activeFilter]);
 
   return (
     <div
