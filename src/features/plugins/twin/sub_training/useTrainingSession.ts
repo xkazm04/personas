@@ -88,8 +88,21 @@ export function useTrainingSession(): TrainingSession {
 
   const savedCount = questions.filter((q) => q.saved).length;
 
+  // A different twin invalidates the in-flight interview: its questions and
+  // drafts were generated for the previous twin and would be saved to the new one.
+  const prevTwinIdRef = useRef(activeTwinId);
+  useEffect(() => {
+    if (prevTwinIdRef.current === activeTwinId) return;
+    prevTwinIdRef.current = activeTwinId;
+    setPhase('topic'); setQuestions([]); setCurrentIdx(0); setAnswerDraft('');
+    setCustomTopic(''); setSessionSummary(null); setAiDrafted(false);
+    followupSpawnedFor.current = new Set();
+  }, [activeTwinId]);
+
   useEffect(() => {
     if (!activeTwinId) { setGroundingFacts([]); setTopicCoverage([]); return; }
+    // Cleanup flag: a slow fetch for the previous twin must not overwrite this one's facts.
+    let cancelled = false;
     // Memories AND the training communications they came from: the second is
     // what lets coverage credit a memory to the preset its session ran under
     // instead of to whichever English keyword its text happened to contain.
@@ -97,6 +110,7 @@ export function useTrainingSession(): TrainingSession {
       twinApi.listPendingMemories(activeTwinId, 'approved'),
       twinApi.listCommunications(activeTwinId, 'training', TRAINING_TOPIC_WINDOW),
     ]).then(([mems, comms]) => {
+      if (cancelled) return;
       const facts = mems.slice(0, TRAINING_GROUNDING_LIMIT).map((m) => m.title ? `${m.title}: ${m.content}` : m.content);
       setGroundingFacts(facts);
       // Coverage scores the FULL approved set (not the grounding-capped slice)
@@ -104,9 +118,11 @@ export function useTrainingSession(): TrainingSession {
       setTopicCoverage(scoreTopicCoverage(mems, topicByCommunication(comms)));
     }).catch((err: unknown) => {
       silentCatch('useTrainingSession:listPendingMemories')(err);
+      if (cancelled) return;
       setGroundingFacts([]);
       setTopicCoverage([]);
     });
+    return () => { cancelled = true; };
   }, [activeTwinId]);
 
   // Cross-tab handoff: Reflections panel populates pendingTrainingQuestions
