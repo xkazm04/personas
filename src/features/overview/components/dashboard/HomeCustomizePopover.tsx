@@ -3,6 +3,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { SlidersHorizontal } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAppKeyboard, OVERLAY_DISMISS_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
@@ -45,18 +46,20 @@ export const HomeCustomizePopover = memo(function HomeCustomizePopover() {
         buttonRef.current && !buttonRef.current.contains(e.target as Node)
       ) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.defaultPrevented) return;
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  useAppKeyboard(
+    (e) => {
+      if (e.key !== 'Escape') return false;
+      e.preventDefault();
       setOpen(false);
       buttonRef.current?.focus();
-    };
-    document.addEventListener('mousedown', onClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+      return true;
+    },
+    { enabled: open, priority: OVERLAY_DISMISS_PRIORITY },
+  );
 
   const hiddenCount = hidden.length;
   const onReset = useCallback(() => resetHomeSections(), [resetHomeSections]);
