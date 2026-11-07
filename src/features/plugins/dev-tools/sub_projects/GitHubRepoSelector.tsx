@@ -12,7 +12,7 @@ const Github = ({ className }: { className?: string }) => (
 import { listCredentials, healthcheckCredential } from '@/api/vault/credentials';
 import { executeApiRequest } from '@/api/system/apiProxy';
 import { silentCatch } from '@/lib/silentCatch';
-import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import {
   repoPagePath,
   walkRepoPages,
@@ -84,7 +84,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
     setOpen(false);
     setSearch('');
     return true;
-  }, { enabled: open, priority: 90 });
+  }, { enabled: open, priority: OVERLAY_DISMISS_PRIORITY });
 
   // Discover the GitHub credential, healthcheck it, fetch repos. Re-runs when
   // the preferred credential changes so the dropdown always lists repositories
