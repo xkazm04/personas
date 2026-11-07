@@ -45,8 +45,17 @@ export const HomeCustomizePopover = memo(function HomeCustomizePopover() {
         buttonRef.current && !buttonRef.current.contains(e.target as Node)
       ) setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      setOpen(false);
+      buttonRef.current?.focus();
+    };
     document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
 
   const hiddenCount = hidden.length;
