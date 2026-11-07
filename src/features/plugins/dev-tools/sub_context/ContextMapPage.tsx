@@ -400,6 +400,8 @@ export default function ContextMapPage() {
   }, [activeProjectId, fetchContextGroups, fetchContexts]);
 
   const handleScan = useCallback(async () => {
+    // scanCodebase resolves without scanning when no project is active, which would strand the process row as running.
+    if (!activeProjectId) return;
     setScanLines([]);
     useOverviewStore.getState().processStarted(
       'context_scan',
@@ -410,13 +412,14 @@ export default function ContextMapPage() {
     try { await scanCodebase(activeProject?.root_path); } catch {
       useOverviewStore.getState().processEnded('context_scan', 'failed');
     }
-  }, [scanCodebase, activeProject?.root_path, activeProject?.name]);
+  }, [scanCodebase, activeProjectId, activeProject?.root_path, activeProject?.name]);
 
   // Incremental re-scan — only re-derives contexts for files that changed since
   // the last scan (delta_mode), so frequent updates stay cheap. Same streaming
   // + completion path as a full scan; the backend short-circuits when nothing
   // changed.
   const handleRescan = useCallback(async () => {
+    if (!activeProjectId) return;
     setScanLines([]);
     useOverviewStore.getState().processStarted(
       'context_scan',
@@ -427,7 +430,7 @@ export default function ContextMapPage() {
     try { await scanCodebase(activeProject?.root_path, true); } catch {
       useOverviewStore.getState().processEnded('context_scan', 'failed');
     }
-  }, [scanCodebase, activeProject?.root_path, activeProject?.name]);
+  }, [scanCodebase, activeProjectId, activeProject?.root_path, activeProject?.name]);
 
   // Plan a recurring (weekly) context-scan automation for this project. Creates
   // a `system_op_automation` schedule the background loop runs — surfacing in
@@ -468,7 +471,8 @@ export default function ContextMapPage() {
   }, [activeScanId, activeProject?.name, t, tx]);
 
   const handleCreateGroup = (name: string, color: string) => {
-    createContextGroup({ name, color });
+    if (!activeProjectId) return;
+    createContextGroup({ name, color }).catch(silentCatch('ContextMapPage:createContextGroup'));
   };
 
   // Inline per-context idea scan — reuses the scanner's agent matching + the
