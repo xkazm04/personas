@@ -1,0 +1,72 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8",
+  "subject": "browser-credential-boundary",
+  "evaluatedAt": "2026-11-07T02:10:32.376078+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "browser-credential-boundary",
+      "context": "commands-credentials",
+      "reason": "evidence leans on commands/credentials/api_proxy.rs, which is not a tracked file"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "api-vault",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "vault-credentials-components-forms",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "vault-credentials-components-features",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchors (workspace/useWorkspaceConnect.ts, gateway/PendingAuthModal.tsx, and the Rust model) are not among this context's files, which are all in components/features/. The workspace and gateway directories belong to other contexts. My grep of components/features/ found no credential handling in "
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "lib-credentials",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor remediationExecutor.ts:42 sits in executeAutoRotate and does not show that no credential value is held in this directory. It is an incidental line. The absence search also missed the right terms: the directory has no hits for the cited terms but does contain other credential-adjacent code"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-07T02:10:32.376078+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "aggregate-view-not-base-table",
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "outbound-fetch-destination-validation",
+        "server-sealed-client-roundtrip"
+      ],
+      "deviations": 0,
+      "context": "vault-credentials-components-features",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T02:10:32.376078+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "public-vs-server-env-split"
+      ],
+      "deviations": 0,
+      "context": "lib-credentials",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

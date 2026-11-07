@@ -45463,6 +45463,96 @@
           "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
         }
       ]
+    },
+    "ee9d4d9e-0414-4460-b159-5d9c7c4108a7/browser-credential-boundary": {
+      "context": "vault-credentials-components-features",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T02:10:32.376Z",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:84 The Rust side redeems the reference and attaches the refresh token; the webview submits intent, never the credential."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:86 The server-produced OAuth result goes round the client as an opaque id into server state (the technique's keep-it-server-side branch), not as a client-carried value the server must trust."
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/credential.rs:40 The legacy encrypted blob is skipped from the serialized and TS shape these panels receive; the field-metadata binding carries isSensitive but no value column."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:59 The only data-borne address is opened in the user's own browser with no credential attached; the technique exempts fetches made from the user's network position."
+        },
+        {
+          "technique": "aggregate-view-not-base-table",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:69 Usage figures arrive as server-computed aggregates over IPC. No anonymous role reaches a hosted store, so the regime-one view/grant precondition does not hold."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "broker-proxy-attaches-secret: useWorkspaceConnect.ts:83-85 sends a one-time oauthSessionRef redeemed server-side, the token never crosses IPC; omit-the-column-not-the-value: src-tauri/core/src/models/credential.rs:40-42 serde-skips encrypted_data off the webview shape and src/lib/bindings/CredentialFieldMeta.ts:3 carries no value column; outbound-fetch-destination-validation n/a: the only data-borne address (authorize_url) is scheme-allowlisted at src-tauri/src/engine/mcp_tools.rs:532 and opened in the user browser with no credential (PendingAuthModal.tsx:58); public-vs-server-env-split n/a: zero import.meta.env reads; RLS techniques n/a: no browser-reachable store; audit detail is a fixed vocabulary (src-tauri/src/commands/credentials/crud.rs:201).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8"
+        }
+      ],
+      "withdrawn": {
+        "worker": "ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8",
+        "state": "conformant",
+        "at": "2026-11-07T02:12:43.256850+00:00",
+        "reason": "reviewer (sonnet): The anchors (workspace/useWorkspaceConnect.ts, gateway/PendingAuthModal.tsx, and the Rust model) are not among this context's files, which are all in components/features/. The workspace and gateway directories belong to other contexts. My grep of components/features/ found no credential handling in "
+      }
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/browser-credential-boundary": {
+      "context": "lib-credentials",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T02:10:32.376Z",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/remediationExecutor.ts:42 Only a credential id leaves this module; attachment happens in the backend context judged separately."
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/parseCredentialLedger.ts:31 Parses the non-secret metadata JSON; no secret-bearing shape is defined here."
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/catalogApiEndpoints.ts:4 Endpoint metadata is bundled as public catalog data with no auth material, and no env value is read anywhere in the directory."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Precondition (a credential value held by, or crossing into, the webview tier) does not hold: this context is a static connector catalog plus an ID-only action dispatcher - src/lib/credentials/remediationExecutor.ts:21 passes event.credentialId alone to rotation, src/lib/credentials/catalogApiEndpoints.ts:4 is endpoint metadata with no auth material, and parseCredentialLedger.ts:31 parses non-secret metadata; zero import.meta.env reads. Credential attachment for catalog endpoints happens in execute_api_request (commands-credentials, judged separately).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8"
+        }
+      ],
+      "withdrawn": {
+        "worker": "ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8",
+        "state": "not-applicable",
+        "at": "2026-11-07T02:12:43.405471+00:00",
+        "reason": "reviewer (sonnet): The anchor remediationExecutor.ts:42 sits in executeAutoRotate and does not show that no credential value is held in this directory. It is an incidental line. The absence search also missed the right terms: the directory has no hits for the cited terms but does contain other credential-adjacent code"
+      }
     }
   }
 }
