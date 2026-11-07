@@ -36,3 +36,13 @@ describe('Cross-project map generation failure', () => {
     expect(messages).not.toContain('Generation failed');
   });
 });
+
+describe('Cross-project map dismissal', () => {
+  it('closes on Escape', async () => {
+    const onClose = vi.fn();
+    render(<CrossProjectMetadataModal open onClose={onClose} />);
+    await screen.findByText(en.plugins.dev_tools.generate);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});

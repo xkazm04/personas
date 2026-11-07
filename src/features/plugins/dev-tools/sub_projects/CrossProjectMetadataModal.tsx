@@ -8,6 +8,7 @@ import {
   CheckCircle2, Zap,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
@@ -296,17 +297,18 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
     };
   }, [map]);
 
-  if (!open) return null;
-
+  // BaseModal supplies Escape, the focus trap and focus return the hand-built
+  // overlay lacked (Escape did nothing, Tab walked out into the page behind).
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 surface-blur-modal p-6"
-      onClick={onClose}
+    <BaseModal
+      isOpen={open}
+      onClose={onClose}
+      titleId="cross-project-map-title"
+      maxWidthClass="max-w-5xl"
+      panelClassName="max-h-[90vh] rounded-card bg-background border border-hair shadow-elevation-4 flex flex-col overflow-hidden"
+      staggerChildren={false}
     >
-      <div
-        className="w-full max-w-5xl max-h-[90vh] rounded-card bg-background border border-hair shadow-elevation-4 flex flex-col overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-hair bg-surface-1">
           <div className="flex items-center gap-3">
@@ -314,7 +316,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               <Network className="w-5 h-5 text-role-agent" />
             </div>
             <div>
-              <h2 className="typo-body text-primary">{t.plugins.dev_projects.cross_project_map_title}</h2>
+              <h2 id="cross-project-map-title" className="typo-body text-primary">{t.plugins.dev_projects.cross_project_map_title}</h2>
               <p className="typo-body text-foreground">
                 {t.plugins.dev_projects.cross_project_map_subtitle}
               </p>
@@ -334,6 +336,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               type="button"
               onClick={onClose}
               className="w-8"
+              aria-label={t.common.close}
             >
               <X className="w-4 h-4" />
             </Button>
@@ -461,8 +464,8 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
             </>
           )}
         </div>
-      </div>
-    </div>
+      </>
+    </BaseModal>
   );
 }
 
