@@ -187,6 +187,8 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) validateAndPreview(file);
+    // Clear the input so picking the same file again (after a fix or a clear) still fires change.
+    e.target.value = '';
   }, [validateAndPreview]);
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
