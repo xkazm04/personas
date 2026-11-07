@@ -6382,13 +6382,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:2049 the page-draft call behind the Twin toolbar (src/features/browser/twinDraftLane.ts:245) reads the CLI stream without ever consulting the result envelope is_error/subtype (:2034) and falls back to returning raw stdout as the answer, which the lane types straight into the third-party page box (twinDraftLane.ts:252); a non-zero exit is flattened to one opaque Internal string with stderr discarded (src-tauri/src/engine/twin_setup/llm.rs:187, :208), so usage-limit, logged-out and crash all render as the same failure (twinDraftLane.ts:277)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src/features/browser/twinDraftLane.ts:252 The Twin toolbar types whatever twin_draft_for_page returns straight into the third-party page box. That command never consults the result envelope's is_error/subtype and falls back to raw stdout as the answer, and a non-zero exit is one opaque string without stderr, so usage-limit, logged-out and crash all reach the lane (twinDraftLane.ts:277) as the same failure.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
