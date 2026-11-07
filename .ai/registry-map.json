@@ -4827,13 +4827,12 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/agents/personas.ts:54 These modules forward persona operations through Tauri IPC, and context and repository searches found no guest_context or register_global constructs establishing an embeddable guest-language runtime.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
-          "evaluatedRevision": 1,
+          "evidence": "src/api/agents/personas.ts:56 The module forwards persona CRUD to Rust through Tauri IPC (invokeWithTimeout). A search of the context's directories and of src-tauri/src found no boa_engine, rquickjs, deno_core, register_global or guest_context, so there is no guest-language engine or standards package for the subject to govern.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:72be2b66c8d50db7",
+          "evaluatedRevision": 3,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
@@ -5908,12 +5907,11 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/design/design.ts:9 These modules expose application design and system commands through Tauri IPC, and context and repository searches found no guest_context or register_global constructs establishing a guest-language runtime implementation.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/api/design/design.ts:9 These modules are thin Tauri IPC wrappers for the design, template and system commands. A search of src/api found no boa_engine, rquickjs, deno_core, register_global or guest_context, so no guest-language runtime exists here to layer by standards body.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:72be2b66c8d50db7",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
@@ -29469,13 +29467,12 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:175 The context runtime projects application telemetry onto codebase contexts, and context and repository searches found no guest_context or register_global constructs establishing a guest-language engine or API registrar.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
-          "evaluatedRevision": 1,
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:175 The 'runtime' here is LLM cost and Sentry telemetry mapped onto Context Map rows, not a language runtime. A search of sub_context found no boa_engine, rquickjs, deno_core, register_global or guest_context.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:72be2b66c8d50db7",
+          "evaluatedRevision": 3,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
@@ -38991,12 +38988,11 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/passport/improve/useImproveEngine.ts:23 The improvement engine coordinates project scans and remediation actions, and context and repository searches found no guest_context or register_global constructs establishing an embeddable guest-language runtime.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/teams/sub_factory/passport/improve/useImproveEngine.ts:23 The 'engine' coordinates project scans, standards configuration and deploy dispatch through IPC. 'Standards' here means quality benchmarks for a project. A search of the improve directory found no boa_engine, rquickjs, deno_core, register_global or guest_context.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:72be2b66c8d50db7",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 2
         },
         {
           "subject": "readiness-passports",
@@ -47261,13 +47257,12 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:253 Governance scanning invokes an external Claude process to assess repositories, and context and repository searches found no guest_context or register_global constructs establishing a guest-language runtime implementation.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
-          "evaluatedRevision": 1,
+          "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:314 The governance scans start an external headless Claude CLI process inside a repo and parse what it prints. The 'standards' here means a code ruleset, not web-platform standards. A search of src-tauri/src found no boa_engine, rquickjs, deno_core, register_global or guest_context, so this code embeds no guest runtime.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:72be2b66c8d50db7",
+          "evaluatedRevision": 3,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
