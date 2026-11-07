@@ -200,7 +200,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
               data-testid="fleet-drawer-command"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitCommand(); } }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); submitCommand(); } }}
               disabled={!canApply}
               placeholder={f.skills_drawer_command_placeholder}
               className="flex-1 min-w-0 rounded-input border border-hair bg-surface-1 py-1.5 px-2 typo-body text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-50"
