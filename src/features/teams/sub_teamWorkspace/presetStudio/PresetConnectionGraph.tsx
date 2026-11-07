@@ -211,10 +211,18 @@ export function PresetConnectionGraph({
                 role={clickable ? 'button' : undefined}
                 aria-pressed={clickable ? active : undefined}
                 onClick={clickable ? () => onToggleRole!(n.role) : undefined}
+                // The node is the selection surface: without a tab stop and Enter/Space it
+                // was pointer-only. Focus mirrors hover so the edge labels reveal too.
+                tabIndex={clickable ? 0 : undefined}
+                onKeyDown={clickable ? (ev) => {
+                  if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onToggleRole!(n.role); }
+                } : undefined}
+                onFocus={clickable ? () => setFocus(n.role) : undefined}
+                onBlur={clickable ? () => setFocus(null) : undefined}
                 onMouseEnter={() => setFocus(n.role)}
                 onMouseLeave={() => setFocus(null)}
                 data-testid={`preset-graph-node-${n.role}`}
-                className={`h-full w-full rounded-card border bg-background flex items-center gap-2 px-3 transition-shadow duration-200 ${clickable ? 'cursor-pointer' : ''}`}
+                className={`h-full w-full rounded-card border bg-background flex items-center gap-2 px-3 transition-shadow duration-200 ${clickable ? 'cursor-pointer focus-ring' : ''}`}
                 style={{
                   borderColor: colorWithAlpha(teamColor, active ? 0.85 : 0.45),
                   borderStyle: active ? 'solid' : 'dashed',
