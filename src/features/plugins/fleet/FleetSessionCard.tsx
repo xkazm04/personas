@@ -200,7 +200,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           onChange={(e) => setDraft(e.target.value)}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
               e.preventDefault();
               commitEdit();
             } else if (e.key === 'Escape') {
