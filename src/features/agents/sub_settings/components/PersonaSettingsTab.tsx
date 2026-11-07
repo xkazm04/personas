@@ -65,9 +65,14 @@ export function PersonaSettingsTab({
 
   useEffect(() => {
     if (!personaId) return;
+    // Retention is per persona: drop the previous persona's value first, or one
+    // with no stored setting would show (and look like) the last one's months.
+    setRetentionMonths(2);
+    let cancelled = false;
     getAppSetting(`execution_retention_months:${personaId}`)
-      .then((val: string | null) => { if (val) setRetentionMonths(parseInt(val, 10) || 2); })
+      .then((val: string | null) => { if (!cancelled && val) setRetentionMonths(parseInt(val, 10) || 2); })
       .catch(silentCatch('PersonaSettingsTab:getExecutionRetention'));
+    return () => { cancelled = true; };
   }, [personaId]);
 
   const handleRetentionChange = useCallback((months: number) => {
