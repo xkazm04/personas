@@ -179,7 +179,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 type="text"
                 value={customPattern}
                 onChange={(e) => setCustomPattern(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPattern(); } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); addPattern(); } }}
                 placeholder={sh.add_pattern_placeholder}
                 className="flex-1 px-2.5 py-1.5 typo-code bg-surface-1 border border-hair rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
               />
