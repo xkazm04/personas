@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface InlineConfirmProps {
   message: string;
@@ -40,23 +41,25 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
         <div className="absolute right-0 bottom-full mb-1 z-50 rounded-card border border-border bg-background shadow-elevation-3 p-2.5 min-w-[180px]">
           <p className="typo-caption text-foreground mb-2">{message}</p>
           <div className="flex gap-1.5 justify-end">
-            <button
+            <Button
               type="button"
               onClick={() => setOpen(false)}
-              className="px-2 py-1 typo-caption rounded-input border border-border hover:bg-surface-2 text-foreground"
+              variant="secondary"
+              size="xs"
             >
               {st.cancel}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => {
                 setOpen(false);
                 onConfirm();
               }}
-              className="px-2 py-1 typo-caption rounded-input text-foreground hover:bg-status-error"
+              variant="ghost"
+              size="xs"
             >
               {st.confirm}
-            </button>
+            </Button>
           </div>
         </div>
       )}

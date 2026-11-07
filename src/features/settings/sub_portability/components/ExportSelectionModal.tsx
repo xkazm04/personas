@@ -24,6 +24,7 @@ import {
   AthenaTierPickRow,
 } from './export-prototype/rows';
 import type { ExportKind, OnExport } from './export-prototype/types';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExportSelectionModalProps {
   isOpen: boolean;
@@ -227,14 +228,15 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
             <p className="typo-caption text-foreground">{s.export_subtitle}</p>
           </div>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={s.close}
-          className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-surface-1 transition-colors flex-shrink-0"
+          variant="ghost"
+          size="icon-sm"
         >
           <X className="w-5 h-5" />
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-1 min-h-0">
@@ -250,50 +252,51 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={p.search_placeholder}
                 aria-label={p.search_placeholder}
-                className="w-full pl-9 pr-9 py-2 rounded-card border border-hair bg-surface-1 typo-body text-foreground placeholder:text-foreground/40 outline-none focus-visible:border-primary/30"
+                className="w-full pl-9 pr-9 py-2 rounded-card border border-hair bg-surface-1 typo-body text-foreground placeholder:text-ink-3 outline-none focus-visible:border-primary/30"
               />
               {query && (
-                <button
+                <Button
                   type="button"
                   onClick={() => setQuery('')}
                   aria-label={s.cancel}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-interactive text-foreground hover:text-foreground"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute right-2.5 top-1/2"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {scope === 'personas' &&
                 filterChips.map((chip) => (
-                  <button
+                  <Button
                     type="button"
                     key={chip.key}
                     onClick={() => setPersonaFilter(chip.key)}
-                    className={`px-2.5 py-1 rounded-input typo-caption border transition-colors ${
-                      personaFilter === chip.key
-                        ? 'bg-primary/15 border-primary/25 text-foreground'
-                        : 'bg-surface-1 border-hair text-foreground hover:text-foreground'
-                    }`}
+                    variant={personaFilter === chip.key ? 'accent' : 'secondary'}
+                    tone={personaFilter === chip.key ? 'highlight' : undefined}
+                    size="xs"
                   >
                     {chip.label}
-                  </button>
+                  </Button>
                 ))}
               <span className="ml-auto typo-caption text-foreground tabular-nums">
                 {tx(p.results_count, { count: shownIds.length })}
               </span>
-              <button
+              <Button
                 type="button"
                 onClick={() => picker.setMany(scope, shownIds, !allShownSelected)}
                 disabled={shownIds.length === 0}
                 data-testid="portability-select-filtered"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption text-status-success hover:bg-status-success/15 transition-colors disabled:opacity-40"
+                variant="ghost"
+                size="xs"
+                icon={<CheckCheck className="w-3.5 h-3.5" />}
               >
-                <CheckCheck className="w-3.5 h-3.5" />
                 {allShownSelected
                   ? tx(p.deselect_filtered, { count: shownIds.length })
                   : tx(p.select_filtered, { count: shownIds.length })}
-              </button>
+              </Button>
             </div>
           </div>
 

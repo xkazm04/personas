@@ -4,6 +4,7 @@ import { PasswordToggleField } from '@/features/shared/components/forms/Password
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExportPicker } from './types';
+import Button from '@/features/shared/components/buttons/Button';
 
 // ---------------------------------------------------------------------------
 // One category line in the live manifest summary.
@@ -86,7 +87,7 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
     <div className="space-y-3">
       {/* Memories */}
       <div className="flex items-center gap-3 rounded-card border border-hair bg-secondary/5 px-3.5 py-3">
-        <span className="w-8 h-8 rounded-card flex items-center justify-center bg-fuchsia-500/10 text-fuchsia-300 flex-shrink-0">
+        <span className="w-8 h-8 rounded-card flex items-center justify-center bg-role-agent/10 text-role-agent flex-shrink-0">
           <Brain className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
@@ -118,7 +119,7 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
           onChange={(e) => picker.setPassphrase(e.target.value)}
           hasError={!valid}
           data-testid="portability-passphrase-input"
-          inputClassName={`w-full px-3 py-2 rounded-card border bg-surface-1 typo-body text-foreground placeholder:text-foreground/40 outline-none ${
+          inputClassName={`w-full px-3 py-2 rounded-card border bg-surface-1 typo-body text-foreground placeholder:text-ink-3 outline-none ${
             !valid ? 'border-status-error/30 focus-visible:border-status-error/50' : 'border-hair focus-visible:border-status-warning/30'
           }`}
         />
@@ -206,15 +207,18 @@ export function ExportButton({
           count: picker.totalSelected,
         });
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
       disabled={disabled}
       data-testid="export-confirm-button"
-      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-modal typo-body bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${className ?? ''}`}
+      variant="accent"
+      tone="success"
+      size="md"
+      className={className}
+      icon={exporting ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
     >
-      {exporting ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
       {label}
-    </button>
+    </Button>
   );
 }

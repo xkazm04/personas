@@ -1,4 +1,5 @@
 import { Check, Minus } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // ---------------------------------------------------------------------------
 // Selection checkbox — emerald fill, tri-state.
@@ -75,12 +76,11 @@ export function StatChip({
   title?: string;
 }) {
   return (
-    <span
-      title={title}
+    <Tooltip content={title}><span
       className={`inline-flex items-center gap-1 rounded-input border px-1.5 py-0.5 typo-caption tabular-nums whitespace-nowrap ${STAT_TONES[tone]}`}
     >
       {icon}
       {children}
-    </span>
+    </span></Tooltip>
   );
 }

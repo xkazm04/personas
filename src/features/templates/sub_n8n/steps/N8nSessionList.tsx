@@ -10,6 +10,7 @@ import { fallbackStepForData, surfacedStep } from '../reducers/navigationReducer
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SESSION_STATUS_STYLES } from '../colorTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 function isValidAgentIR(v: unknown): v is AgentIR {
   return v != null && typeof v === 'object' && 'name' in (v as Record<string, unknown>);
@@ -65,16 +66,18 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
       </div>
 
       <div className="flex items-center gap-1 flex-shrink-0">
-        <button
+        <Button
           type="button"
           onClick={(e) => void onDelete(e, session.id)}
           disabled={isBusy}
-          className="p-1.5 rounded-card text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
-          title={t.templates.n8n.delete_session}
+          variant="ghost"
+          size="icon-sm"
+          className="opacity-0 group-hover:opacity-100"
+          tooltip={t.templates.n8n.delete_session} aria-label={t.templates.n8n.delete_session}
           data-testid={`n8n-session-delete-${session.id}`}
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         {interrupted ? (
           <span className="flex items-center gap-1 typo-body text-status-warning">
             <RotateCcw className="w-3 h-3" />
@@ -247,7 +250,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="typo-body text-ink-1 uppercase tracking-wider">
+        <h3 className="typo-eyebrow text-ink-1">
           {t.templates.n8n.previous_imports}
         </h3>
         {!showGhost && (
@@ -264,13 +267,14 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
             aria-live="polite"
           >
             <p className="typo-body text-status-error/80">{error}</p>
-            <button
+            <Button
               type="button"
               onClick={() => void fetchSessions()}
-              className="px-3 py-1.5 typo-body rounded-modal border border-status-error/20 bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
+              variant="danger"
+              size="sm"
             >
               {t.templates.n8n.retry_label}
-            </button>
+            </Button>
           </div>
         )}
 

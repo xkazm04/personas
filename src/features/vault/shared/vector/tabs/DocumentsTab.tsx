@@ -20,6 +20,7 @@ import { DocToolbar } from './DocUploadArea';
 import { DocGhostRows } from './DocGhostRows';
 import { KbErrorNotice } from '../KbErrorNotice';
 import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 const DOC_PAGE_SIZE = 50;
 
@@ -178,15 +179,17 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                     </Tooltip>
                   )}
                   <StatusBadge status={doc.status} error={doc.errorMessage} />
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void handleDelete(doc.id)}
                     disabled={deletingId === doc.id}
-                    className="p-1.5 rounded-card text-status-error/0 group-hover:text-status-error/60 hover:!text-status-error hover:bg-status-error/10 transition-all disabled:opacity-50"
-                    title={t.vault.shared.delete_document}
+                    variant="danger"
+                    size="icon-sm"
+                    className="group-hover:text-status-error/60"
+                    tooltip={t.vault.shared.delete_document} aria-label={t.vault.shared.delete_document}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>

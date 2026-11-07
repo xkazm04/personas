@@ -2,6 +2,7 @@ import { ArrowLeft, Upload, Terminal } from 'lucide-react';
 import { IMPORT_SOURCES, importSourceLabel, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ImportInputPhaseProps {
   sourceId: ImportSourceId;
@@ -38,13 +39,14 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
       className="animate-fade-slide-in space-y-4"
     >
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          size="icon-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <div
           className="w-7 h-7 rounded-card border flex items-center justify-center"
           style={{ backgroundColor: `${source.color}12`, borderColor: `${source.color}30` }}
@@ -63,21 +65,22 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
         placeholder={placeholder}
         rows={10}
         autoFocus
-        className="w-full px-4 py-3 bg-surface-2 border border-hair rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-surface-2 border border-hair rounded-modal text-foreground typo-code placeholder:text-ink-3 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
 
       {error && <VaultErrorBanner message={error} variant="inline" />}
 
       <div className="flex justify-end">
-        <button
+        <Button
           type="button"
           onClick={onParse}
           disabled={!rawInput.trim()}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20"
+          variant="primary"
+          size="md"
+          icon={<Upload className="w-4 h-4" />}
         >
-          <Upload className="w-4 h-4" />
           {vi.parse_secrets}
-        </button>
+        </Button>
       </div>
     </div>
   );

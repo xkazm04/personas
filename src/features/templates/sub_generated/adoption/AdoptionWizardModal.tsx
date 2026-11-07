@@ -11,6 +11,7 @@ import {
   ConfirmDestructiveModal,
   type ConfirmDestructiveConfig,
 } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AdoptionWizardModalProps {
   isOpen: boolean;
@@ -111,13 +112,14 @@ export default function AdoptionWizardModal({
               <p className="typo-caption text-foreground">{review.test_case_name}</p>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={handleCloseAttempt}
-            className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-1"
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
         <ChronologyAdoptionView
           review={review}

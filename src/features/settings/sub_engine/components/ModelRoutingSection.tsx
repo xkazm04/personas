@@ -110,8 +110,9 @@ export function ModelRoutingSection() {
       </div>
 
       <div className="flex gap-2">
-        <Button variant="secondary" onClick={addRule}>
-          <Plus className="w-4 h-4" />
+        <Button variant="secondary" onClick={addRule}
+          icon={<Plus className="w-4 h-4" />}>
+          
           {s.routing_add}
         </Button>
         <AsyncButton variant="primary" onClick={save}>

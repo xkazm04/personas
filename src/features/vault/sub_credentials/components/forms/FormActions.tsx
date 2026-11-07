@@ -5,6 +5,7 @@ import type { VaultStatus } from "@/api/vault/credentials";
 
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface FormActionsProps {
   vault: VaultStatus | null;
@@ -52,29 +53,31 @@ export function FormActions({
           )}
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             data-testid="vault-schema-cancel"
-            className="px-4 py-2 bg-surface-2 hover:bg-secondary text-ink-1 rounded-modal typo-body transition-colors"
+            variant="ghost"
+            size="md"
           >
             {t.common.cancel}
-          </button>
+          </Button>
           <Tooltip content={saveDisabled && saveDisabledReason ? saveDisabledReason : ''} placement="top" delay={200}>
-            <button
+            <Button
               type="button"
               onClick={onSave}
               disabled={saveDisabled}
               data-testid="vault-schema-save"
-              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed brightness-lock"
-            >
-              {isSaving ? (
+              variant="primary"
+              size="md"
+              icon={isSaving ? (
                 <LoadingSpinner />
               ) : (
                 <Save className="w-4 h-4" />
               )}
+            >
               {isSaving ? t.common.saving : t.vault.auto_cred.save_credential}
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>

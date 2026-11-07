@@ -28,7 +28,7 @@ export function OverviewTab({
     <div className="space-y-6">
       {/* Summary */}
       {designResult?.summary && (
-        <div className="bg-gradient-to-r from-role-agent/5 to-transparent border border-role-agent/10 rounded-modal px-4 py-3">
+        <div className="border border-role-agent/10 rounded-modal px-4 py-3 bg-surface-1">
           <p className="typo-body text-ink-1">{designResult.summary}</p>
         </div>
       )}
@@ -64,7 +64,7 @@ export function OverviewTab({
       )}
       {!perfLoading && !perfError && performance && performance.data_available && (
         <div>
-          <h4 className="typo-body text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-eyebrow text-foreground mb-2">
             {t.templates.overview_tab.performance}
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -132,7 +132,7 @@ export function OverviewTab({
       {/* Use Case Flows */}
       {flows.length > 0 && (
         <div>
-          <h4 className="typo-body text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-eyebrow text-foreground mb-2">
             {t.templates.overview_tab.use_case_flows}
           </h4>
           <div className="flex items-center gap-3 flex-wrap">
@@ -164,7 +164,7 @@ export function OverviewTab({
         <div className="bg-status-warning/5 border border-status-warning/15 rounded-modal px-4 py-3 space-y-2">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-status-warning/80" />
-            <h4 className="typo-body text-status-warning/80 uppercase">
+            <h4 className="typo-eyebrow text-status-warning/80">
               {t.templates.overview_tab.suggested_adjustment}
               {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                 <span className="ml-1.5 text-foreground normal-case">
@@ -182,7 +182,7 @@ export function OverviewTab({
               {adjustment.appliedFixes.map((fix: string, i: number) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 typo-body rounded-full bg-status-warning/10 border border-status-warning/15 text-status-warning/70"
+                  className="typo-body text-status-warning"
                 >
                   {fix}
                 </span>
@@ -195,7 +195,7 @@ export function OverviewTab({
       {/* Dimension completion */}
       {review.structural_score !== null && (
         <div>
-          <h4 className="typo-body text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-eyebrow text-foreground mb-2">
             {t.templates.overview_tab.dimension_completion}
           </h4>
           <div className="flex items-center gap-3">

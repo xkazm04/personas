@@ -51,7 +51,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
           )}
 
           <span
-            className={`px-2 py-0.5 rounded-interactive typo-heading uppercase border ${methodStyle} shrink-0 min-w-[52px] text-center`}
+            className={`px-2 py-0.5 rounded-interactive typo-eyebrow border ${methodStyle} shrink-0 min-w-[52px] text-center`}
           >
             {endpoint.method.toUpperCase()}
           </span>
@@ -106,7 +106,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.parameters.length > 0 && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase text-role-highlight/70">
+              <span className="typo-eyebrow text-role-highlight/70">
                 {t.vault.playground.parameters}
               </span>
               <div className="space-y-0.5">
@@ -132,7 +132,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.request_body && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase text-role-highlight/70">
+              <span className="typo-eyebrow text-role-highlight/70">
                 {t.vault.shared.request_body}
               </span>
               <div className="typo-body text-foreground">
@@ -164,7 +164,7 @@ function TestBadge({ result, skipLabel }: { result: EndpointTestResult; skipLabe
       );
     case 'passed':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body bg-status-success/10 text-status-success border border-status-success/15 shrink-0">
+        <span className="flex items-center gap-1 typo-body text-status-success shrink-0">
           <CheckCircle2 className="w-3 h-3" />
           {result.httpStatus}
           {result.durationMs != null && (
@@ -177,7 +177,7 @@ function TestBadge({ result, skipLabel }: { result: EndpointTestResult; skipLabe
       );
     case 'failed':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body bg-status-error/10 text-status-error border border-status-error/15 shrink-0">
+        <span className="flex items-center gap-1 typo-body text-status-error shrink-0">
           <XCircle className="w-3 h-3" />
           {result.httpStatus ?? 'ERR'}
           {result.durationMs != null && (

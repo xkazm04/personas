@@ -72,7 +72,7 @@ export function ToolRow({
           )}
           {tool.input_schema && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase text-foreground">
+              <span className="typo-eyebrow text-foreground">
                 {sh.input_schema}
               </span>
               <pre className="typo-code text-foreground bg-surface-1 rounded-interactive p-2 overflow-x-auto max-h-[200px]">

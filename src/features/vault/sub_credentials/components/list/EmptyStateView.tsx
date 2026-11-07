@@ -7,6 +7,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useMotion, useMotionVariants } from '@/hooks/utility/interaction/useMotion';
 import { QUICK_START_SERVICES } from './credentialListTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // Choreographed reveal: parent cascades each block (and the two pathway cards)
 // in sequence. `useMotionVariants` strips the y/stagger under reduced motion.
@@ -75,7 +76,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           <div className="w-9 h-9 rounded-card bg-status-success/10 border border-status-success/20 flex items-center justify-center mb-3">
             <LayoutTemplate className="w-4.5 h-4.5 text-status-success" />
           </div>
-          <span className="block typo-code uppercase tracking-wider text-primary/70 mb-1">
+          <span className="block typo-eyebrow text-primary/70 mb-1">
             {t.vault.empty_state.recommended}
           </span>
           <p className="typo-body text-foreground mb-1">{t.vault.empty_state.catalog_heading}</p>
@@ -84,21 +85,19 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           </p>
           <div className="flex items-center gap-1.5 mt-3">
             {connectorDefinitions.slice(0, 4).map((c) => (
-              <div
-                key={c.id}
+              <Tooltip key={c.id} content={c.label}><div
                 className="w-5 h-5 rounded-interactive border flex items-center justify-center"
                 style={{
                   backgroundColor: `${c.color}12`,
                   borderColor: `${c.color}25`,
                 }}
-                title={c.label}
               >
                 {c.icon_url ? (
                   <ThemedConnectorIcon url={c.icon_url} label={c.label} color={c.color} size="w-3 h-3" />
                 ) : (
                   <Plug className="w-2.5 h-2.5" style={{ color: c.color }} />
                 )}
-              </div>
+              </div></Tooltip>
             ))}
             {connectorDefinitions.length > 4 && (
               <span className="typo-body text-foreground ml-0.5">+{connectorDefinitions.length - 4}</span>
@@ -133,7 +132,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           variants={item}
           whileHover={lift}
           onClick={onWorkspaceConnect}
-          className={`w-full text-left p-4 rounded-modal bg-gradient-to-r from-status-info/5 to-status-success/5 border border-status-info/15 hover:from-status-info/10 hover:to-status-success/10 hover:border-status-info/25 hover:shadow-elevation-2 ${CARD_TRANSITION}`}
+          className={`w-full text-left p-4 rounded-modal border border-status-info/15 hover:from-status-info/10 hover:to-status-success/10 hover:border-status-info/25 hover:shadow-elevation-2 ${CARD_TRANSITION} bg-surface-1`}
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-card bg-status-info/10 border border-status-info/20 flex items-center justify-center">
@@ -152,7 +151,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
       {/* Quick-start row */}
       {quickConnectors.length > 0 && onQuickStart && (
         <motion.div variants={item} className="space-y-2">
-          <p className="typo-code uppercase tracking-wider text-foreground text-center">{t.vault.quick_start}</p>
+          <p className="typo-eyebrow text-foreground text-center">{t.vault.quick_start}</p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {quickConnectors.map((connector) => (
               <button

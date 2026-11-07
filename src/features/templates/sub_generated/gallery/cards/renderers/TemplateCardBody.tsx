@@ -95,9 +95,8 @@ export function TemplateCardBody({
                 const status = readinessMap.get(c);
                 const isReady = status?.health === 'ready';
                 return (
-                  <Tooltip content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">
+                  <Tooltip key={c} content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">
                     <div
-                      key={c}
                       className={`w-8 h-8 rounded-card flex items-center justify-center transition-opacity ${
                         isReady ? '' : 'opacity-30 grayscale'
                       }`}

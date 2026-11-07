@@ -127,7 +127,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                 <div className={`grid gap-0 ${state.response || state.sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
                   <div className="space-y-4 min-w-0 pr-4">
                     <div className="flex items-center gap-2">
-                      <span className="typo-heading uppercase text-status-info/70">{sh.request_builder}</span>
+                      <span className="typo-eyebrow text-status-info/70">{sh.request_builder}</span>
                       <div className="flex-1" />
                       <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-ink-2">{t.common.close}</Button>
                     </div>
@@ -137,7 +137,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                   {(state.response || state.sendError) && <div className="bg-primary/25" />}
                   {(state.response || state.sendError) && (
                     <div className="min-w-0 pl-4">
-                      <span className="typo-heading uppercase text-status-success/70 block mb-3">{sh.response}</span>
+                      <span className="typo-eyebrow text-status-success/70 block mb-3">{sh.response}</span>
                       {state.sendError && (
                         <div className="p-3 rounded-card bg-status-error/10 border border-status-error/20 typo-code text-status-error whitespace-pre-wrap">{inlineErrorCopy(t, state.sendError.raw)}</div>
                       )}

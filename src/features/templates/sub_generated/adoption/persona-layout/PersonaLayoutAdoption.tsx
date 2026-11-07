@@ -18,6 +18,7 @@ import { QuestionnaireStoryThread } from '../questionnaire/QuestionnaireStoryThr
 import { useAdoptionDimensionModel } from './useAdoptionDimensionModel';
 import type { DimImpact, ImpactTone } from './adoptionImpact';
 import type { PersonaLayoutAdoptionProps } from './personaLayoutAdoptionTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 const VAL: Record<ImpactTone, string> = {
   active: 'text-foreground',
@@ -178,9 +179,9 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
         />
       </div>
       <div className="shrink-0 border-t border-border bg-foreground/[0.02] px-5 py-3 flex items-center gap-3">
-        <button type="button" onClick={onClose} className="typo-caption text-foreground hover:text-foreground transition-colors cursor-pointer">
+        <Button type="button" onClick={onClose} variant="ghost" size="sm">
           {t.templates.adopt_modal.cancel}
-        </button>
+        </Button>
       </div>
       {model.pickerModals}
     </div>

@@ -42,7 +42,7 @@ export function GuidingProgressBar({ plan, completedCount, totalSteps, skippedSt
       {/* Progress bar */}
       <div className="w-32 h-1.5 bg-surface-2 rounded-full overflow-hidden">
         <div style={{ width: `${progressPercent}%` }}
-          className="animate-fade-in h-full bg-gradient-to-r from-role-agent to-status-success rounded-full"
+          className="animate-fade-in h-full rounded-full"
         />
       </div>
     </div>

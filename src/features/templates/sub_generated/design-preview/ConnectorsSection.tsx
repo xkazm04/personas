@@ -180,12 +180,13 @@ export function ConnectorsSection({
                   </Tooltip>
                 ) : (onConnectorClick && (requiresFields || needsSetup)) || hasCredential ? (
                   <Tooltip content={runnability.reason}>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => onConnectorClick?.(item.connector)}
-                    className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors"
-                  >
-                    {hasCredential && isHealthy ? (
+                    variant="ghost"
+                    size="sm"
+                    iconRight={item.connector.setup_url ? <ExternalLink className="w-3 h-3" /> : null}
+                    icon={hasCredential && isHealthy ? (
                       <CheckCircle2 className="w-3 h-3 text-status-success" />
                     ) : hasCredential && isUnhealthy ? (
                       <AlertCircle className="w-3 h-3 text-status-error" />
@@ -194,6 +195,7 @@ export function ConnectorsSection({
                     ) : (
                       <AlertCircle className="w-3 h-3 text-status-warning" />
                     )}
+                  >
                     <span>
                       {hasCredential && isHealthy
                         ? t.templates.design.credential_ready
@@ -205,8 +207,7 @@ export function ConnectorsSection({
                               ? t.templates.design.configure_credential
                               : t.templates.design.connector_not_installed}
                     </span>
-                    {item.connector.setup_url && <ExternalLink className="w-3 h-3" />}
-                  </button>
+                  </Button>
                   </Tooltip>
                 ) : null
               )}

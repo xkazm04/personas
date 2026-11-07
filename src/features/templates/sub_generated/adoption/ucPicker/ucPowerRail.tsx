@@ -17,6 +17,7 @@ import {
 } from '../useCasePickerShared';
 import { LED, TimeControls } from './ucTimeControls';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 export function PowerRail({
@@ -39,7 +40,7 @@ export function PowerRail({
   const poweredEvent = hasEvent(selection);
   const powered = poweredTime || poweredEvent;
   return (
-    <div className="relative rounded-card ring-1 ring-border/80 bg-gradient-to-b from-foreground/[0.035] to-foreground/[0.015] overflow-hidden shadow-elevation-1">
+    <div className="relative rounded-card ring-1 ring-border/80 overflow-hidden shadow-elevation-1">
       <div className="flex items-center gap-1 px-6 pt-2.5">
         {Array.from({ length: 14 }).map((_, i) => (
           // reduced-motion-ok: decorative power-rail opacity pulse shown only while firing; the static bar color already conveys powered/firing state
@@ -63,32 +64,35 @@ export function PowerRail({
           >
             {powered ? <Radio className="w-5 h-5" /> : <PowerOff className="w-5 h-5" />}
           </div>
-          <span className="typo-caption uppercase tracking-wider text-foreground">
+          <span className="typo-eyebrow text-foreground">
             Source
           </span>
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="inline-flex items-center gap-1.5 typo-caption font-mono uppercase tracking-wider text-primary">
+            <div className="inline-flex items-center gap-1.5 typo-eyebrow text-primary">
               <Clock className="w-3.5 h-3.5" /> <DebtText k="auto_time_trigger_c242fdeb" /> <LED on={poweredTime} accent="primary" />
             </div>
             {poweredTime ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => onChange(disableTimeFamily(selection))}
-                className="focus-ring p-0.5 rounded-interactive text-foreground hover:text-foreground"
+                variant="ghost"
+                size="icon-sm"
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="button"
                 onClick={() => onChange(enableTimeFamily(selection))}
-                className="focus-ring inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive text-primary hover:bg-primary/10 typo-caption"
+                variant="ghost"
+                size="xs"
+                icon={<Plus className="w-3 h-3" />}
               >
-                <Plus className="w-3 h-3" /> enable
-              </button>
+                 enable
+              </Button>
             )}
           </div>
           {poweredTime && <TimeControls selection={selection} onChange={onChange} />}
@@ -96,25 +100,28 @@ export function PowerRail({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="inline-flex items-center gap-1.5 typo-caption font-mono uppercase tracking-wider text-status-info">
+            <div className="inline-flex items-center gap-1.5 typo-eyebrow text-status-info">
               <Zap className="w-3.5 h-3.5" /> <DebtText k="auto_event_trigger_ac6b34dc" /> <LED on={poweredEvent} accent="info" />
             </div>
             {poweredEvent ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => onChange(disableEventFamily(selection))}
-                className="focus-ring p-0.5 rounded-interactive text-foreground hover:text-foreground"
+                variant="ghost"
+                size="icon-sm"
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="button"
                 onClick={() => onChange(enableEventFamily(selection, availableEventKeys))}
-                className="focus-ring inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive text-status-info hover:bg-status-info/10 typo-caption"
+                variant="ghost"
+                size="xs"
+                icon={<Plus className="w-3 h-3" />}
               >
-                <Plus className="w-3 h-3" /> enable
-              </button>
+                 enable
+              </Button>
             )}
           </div>
           {poweredEvent && (
@@ -138,7 +145,7 @@ export function PowerRail({
             <span className="tabular-nums text-foreground font-semibold">{subscribedCount}</span>
             emitting
           </div>
-          <span className="typo-caption uppercase tracking-wider text-foreground">
+          <span className="typo-eyebrow text-foreground">
             events
           </span>
         </div>

@@ -14,6 +14,7 @@ import { useRecipeEligibilityMap } from '../useEligibility';
 import { getCategoryLabels } from '../libs/categoryLabels';
 import { computeStaleRecipeIds } from '../libs/recipeStaleness';
 import { RecipesTableResults } from './RecipesTableResults';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RecipesBrowseListProps {
   recipes: Recipe[];
@@ -296,23 +297,21 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
       menuClassName="animate-fade-slide-in absolute top-full mt-1 left-0 min-w-[200px] bg-card-bg border border-card-border rounded-modal shadow-elevation-4 z-[100] overflow-hidden"
       renderTrigger={({ isOpen, toggle }) => (
         <Tooltip content={t.recipes_catalog.category_filter_aria}>
-          <button
+          <Button
             type="button"
             onClick={toggle}
             aria-expanded={isOpen}
             aria-label={t.recipes_catalog.category_filter_aria}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-input border typo-caption transition-colors cursor-pointer ${
-              isAll
-                ? 'border-card-border bg-surface-2 text-ink-1 hover:border-foreground/30'
-                : 'border-primary/35 bg-primary/12 text-primary hover:bg-primary/22'
-            }`}
+            variant={isAll ? 'secondary' : 'accent'}
+            tone={isAll ? undefined : 'highlight'}
+            size="sm"
+            iconRight={<ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
           >
             <span className="typo-label opacity-70">
               {t.recipes_catalog.category_filter_prefix}
             </span>
             <span>{current.label}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-          </button>
+          </Button>
         </Tooltip>
       )}
     >
@@ -357,26 +356,20 @@ interface EligibilityFilterChipProps {
 }
 
 function EligibilityFilterChip({ active, onClick, label, count, icon, tone }: EligibilityFilterChipProps) {
-  const toneCls = tone === 'success'
-    ? 'bg-status-success/12 border-status-success/35 text-status-success/95'
-    : tone === 'warning'
-      ? 'bg-status-warning/12 border-status-warning/35 text-status-warning/95'
-      : tone === 'muted'
-        ? 'bg-surface-2 border-card-border text-foreground'
-        : 'bg-primary/12 border-primary/35 text-primary';
+  const activeTone = tone === 'success' ? 'success' : tone === 'warning' ? 'warning' : tone === 'muted' ? undefined : 'highlight';
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full typo-caption transition-colors cursor-pointer border ${
-        active ? toneCls : 'bg-surface-2 border-card-border/60 text-foreground hover:text-foreground hover:border-foreground/30'
-      }`}
+      variant={active ? 'accent' : 'secondary'}
+      tone={active ? activeTone : undefined}
+      size="xs"
+      icon={icon}
     >
-      {icon}
       {label}
       {count !== undefined && count > 0 && (
         <span className="font-mono opacity-80">{count}</span>
       )}
-    </button>
+    </Button>
   );
 }

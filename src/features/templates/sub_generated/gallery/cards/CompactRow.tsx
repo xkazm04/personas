@@ -45,7 +45,7 @@ export function CompactRow({
           {highlightMatch(review.test_case_name, searchQuery)}
         </span>
         {isAiResult && (
-          <span className="px-1.5 py-0.5 typo-body rounded-interactive bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
+          <span className="typo-body text-role-agent flex-shrink-0">
             <Sparkles className="w-2.5 h-2.5 inline -mt-px mr-0.5" />AI
           </span>
         )}

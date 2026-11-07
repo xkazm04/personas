@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import type { GraphNode } from './credentialGraph';
 import { KIND_ICONS } from './graphConstants';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface NodeDetailPanelProps {
   node: GraphNode | null;
@@ -32,9 +33,9 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
           <Icon className="w-4 h-4" style={{ color: node.color }} />
           <span className="typo-body text-ink-1">{node.label}</span>
         </div>
-        <button type="button" onClick={onClose} className="p-1 hover:bg-surface-2 rounded-interactive transition-colors cursor-pointer">
+        <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
           <X className="w-3.5 h-3.5 text-foreground" />
-        </button>
+        </Button>
       </div>
 
       <div className="p-3 space-y-2">

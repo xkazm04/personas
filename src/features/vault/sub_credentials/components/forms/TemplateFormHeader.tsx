@@ -4,6 +4,7 @@ import type { ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TemplateFormHeaderProps {
   selectedConnector: ConnectorDefinition;
@@ -26,14 +27,16 @@ export function TemplateFormHeader({
     <div className="flex items-center gap-3 mb-4">
       {onBack && (
         <Tooltip content={cf.back_to_catalog}>
-        <button
+        <Button
           type="button"
           onClick={onBack}
-          className="p-2 -ml-2 rounded-card hover:bg-surface-2 transition-colors"
+          variant="ghost"
+          size="icon-sm"
+          className="-ml-2"
           aria-label={cf.back_to_catalog}
         >
           <ArrowLeft className="w-4 h-4 text-foreground" />
-        </button>
+        </Button>
         </Tooltip>
       )}
       <div
@@ -59,26 +62,30 @@ export function TemplateFormHeader({
       </div>
       {isDesktopBridge(selectedConnector) ? (
         onDesktopDetect && (
-          <button
+          <Button
             type="button"
             onClick={onDesktopDetect}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-status-warning/20 bg-status-warning/8 hover:bg-status-warning/15 text-status-warning typo-body transition-colors"
+            variant="accent"
+            tone="warning"
+            size="sm"
+            icon={<Monitor className="w-3.5 h-3.5" />}
           >
-            <Monitor className="w-3.5 h-3.5" />
             {cf.detect}
-          </button>
+          </Button>
         )
       ) : (
         onAutoSetup && activeMethod?.type !== 'mcp' && (
-          <button
+          <Button
             type="button"
             onClick={onAutoSetup}
             data-testid="vault-auto-add-btn"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-role-highlight/20 bg-role-highlight/8 hover:bg-role-highlight/15 text-role-highlight typo-body transition-colors"
+            variant="accent"
+            tone="highlight"
+            size="sm"
+            icon={<Bot className="w-3.5 h-3.5" />}
           >
-            <Bot className="w-3.5 h-3.5" />
             {cf.auto_add}
-          </button>
+          </Button>
         )
       )}
     </div>

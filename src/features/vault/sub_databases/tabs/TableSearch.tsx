@@ -2,6 +2,7 @@ import { RefreshCw, Search, Zap, Loader2, CheckCircle2, XCircle } from 'lucide-r
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TableSearchProps {
   filter: string;
@@ -37,15 +38,16 @@ export function TableSearch({
           />
         </div>
         <Tooltip content={db.refresh}>
-          <button
+          <Button
             type="button"
             onClick={onRefresh}
             disabled={loading}
-            className="p-1.5 rounded-card text-foreground hover:text-ink-2 hover:bg-surface-2 disabled:opacity-40 transition-colors"
+            variant="ghost"
+            size="icon-sm"
             aria-label={db.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          </Button>
         </Tooltip>
       </div>
     </div>
@@ -60,19 +62,21 @@ export function SidebarTestConnection({ credentialId }: { credentialId: string }
 
   return (
     <div className="flex flex-col items-center gap-2 mt-2">
-      <button
+      <Button
         type="button"
         onClick={checkStored}
         disabled={isHealthchecking}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
-      >
-        {isHealthchecking ? (
+        variant="accent"
+        tone="highlight"
+        size="sm"
+        icon={isHealthchecking ? (
           <Loader2 className="w-3 h-3 animate-spin" />
         ) : (
           <Zap className="w-3 h-3" />
         )}
+      >
         {isHealthchecking ? db.testing : db.test_connection}
-      </button>
+      </Button>
       {result && !isHealthchecking && (
         <div
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption ${

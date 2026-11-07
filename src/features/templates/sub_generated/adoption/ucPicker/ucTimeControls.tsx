@@ -11,6 +11,7 @@ import {
 } from '../useCasePickerShared';
 import { useTranslation } from '@/i18n/useTranslation';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function TimeControls({
   selection,
@@ -31,19 +32,17 @@ export function TimeControls({
           const Icon = p.icon;
           const on = sub === p.key;
           return (
-            <button
+            <Button
               key={p.key}
               type="button"
               onClick={() => onChange(selectionForTimePreset(p.key, selection))}
-              className={`focus-ring inline-flex items-center gap-1 rounded-interactive px-2 py-0.5 typo-caption transition-colors ${
-                on
-                  ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
-                  : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'
-              }`}
+              variant={on ? 'accent' : 'ghost'}
+              tone={on ? 'highlight' : undefined}
+              size="xs"
+              icon={<Icon className="w-3 h-3" />}
             >
-              <Icon className="w-3 h-3" />
               {t.templates.adoption.time_presets[p.key]}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -52,16 +51,16 @@ export function TimeControls({
           {sub === 'weekly' && (
             <div className="flex gap-0.5">
               {WEEKDAYS.map((d, i) => (
-                <button
+                <Button
                   key={d}
                   type="button"
                   onClick={() => onChange(updateTime(selection, { weekday: i }))}
-                  className={`rounded-interactive px-1.5 py-0.5 font-mono transition-colors ${
-                    weekday === i ? 'bg-primary/25 text-primary' : 'text-foreground hover:text-foreground hover:bg-foreground/[0.05]'
-                  }`}
+                  variant={weekday === i ? 'accent' : 'ghost'}
+                  tone={weekday === i ? 'highlight' : undefined}
+                  size="xs"
                 >
                   {t.templates.adoption.weekdays[d]}
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -90,10 +89,10 @@ export function LED({ on, accent }: { on: boolean; accent: 'primary' | 'info' | 
     : 'bg-foreground/20';
   const glow = on
     ? accent === 'primary'
-      ? 'shadow-[0_0_6px_var(--color-primary)]'
+      ? ''
       : accent === 'info'
-      ? 'shadow-[0_0_6px_var(--color-status-info)]'
-      : 'shadow-[0_0_6px_var(--color-status-warning)]'
+      ? ''
+      : ''
     : '';
   return <span className={`inline-block w-1.5 h-1.5 rounded-full ${bg} ${glow}`} />;
 }

@@ -117,7 +117,7 @@ export function N8nParserResults({
             <div className="flex items-center gap-2">
               <h3 className="typo-heading text-ink-1">{workflowName}</h3>
               {platform && (
-                <span className={`typo-code uppercase px-1.5 py-0.5 rounded-interactive border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
+                <span className={`typo-eyebrow px-1.5 py-0.5 rounded-interactive border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
                   {PLATFORM_LABELS[platform]}
                 </span>
               )}
@@ -170,7 +170,7 @@ export function N8nParserResults({
 
       {/* Selection summary */}
       {hasSelection && (
-        <div className="flex items-center gap-2 typo-code uppercase tracking-wider text-foreground">
+        <div className="flex items-center gap-2 typo-eyebrow text-foreground">
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.blue}`}>
             {tx(t.templates.n8n.tools_count, { count: toolCount })}
           </span>

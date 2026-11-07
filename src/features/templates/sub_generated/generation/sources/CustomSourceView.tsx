@@ -7,6 +7,7 @@ import {
   MIN_INSTRUCTION_LENGTH,
 } from '../runner/designRunnerConstants';
 import type { CustomProps } from './TemplateSourceTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUpload }: CustomProps) {
   const { t } = useTranslation();
@@ -27,23 +28,25 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
             onChange={onFileUpload}
             className="hidden"
           />
-          <button
+          <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5"
-            title={t.templates.generation.custom_load_file_title}
+            variant="secondary"
+            size="sm"
+            tooltip={t.templates.generation.custom_load_file_title}
+            icon={<Upload className="w-3 h-3" />}
           >
-            <Upload className="w-3 h-3" />
             {t.templates.generation.custom_load_file}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onAdd}
-            className="px-3 py-1.5 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5"
+            variant="secondary"
+            size="sm"
+            icon={<Plus className="w-3 h-3" />}
           >
-            <Plus className="w-3 h-3" />
             Add
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -73,13 +76,14 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   }`}
                 />
                 {cases.length > 1 && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => onRemove(index)}
-                    className="p-1 rounded-interactive hover:bg-status-error/10 text-foreground hover:text-status-error transition-colors flex-shrink-0"
+                    variant="ghost"
+                    size="icon-sm"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -141,14 +145,15 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
         <p className="typo-body text-foreground">
           {t.templates.generation.custom_detail_hint}
         </p>
-        <button
+        <Button
           type="button"
           onClick={() => setShowExample((v) => !v)}
-          className="typo-body text-role-agent/70 hover:text-role-agent transition-colors flex items-center gap-1"
+          variant="ghost"
+          size="sm"
+          icon={showExample ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         >
-          {showExample ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           {showExample ? 'Hide example' : 'Show example'}
-        </button>
+        </Button>
         {showExample && (
           <div className="typo-body text-foreground bg-surface-1 border border-hair rounded-card p-3 mt-1">
             <p className="font-medium text-foreground mb-1">{t.templates.generation.custom_example_title}</p>

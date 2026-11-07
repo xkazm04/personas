@@ -5,6 +5,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { CredentialAuditEntry } from '@/lib/bindings/CredentialAuditEntry';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const INFO_STATUS = STATUS_COLORS.info!;
 const SUCCESS_STATUS = STATUS_COLORS.success!;
@@ -93,18 +94,15 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
       {/* Filter */}
       <div className="flex items-center gap-1">
         {AUDIT_FILTERS.map((f) => (
-          <button
+          <Button
             key={f}
             type="button"
             onClick={() => handleFilterChange(f)}
-            className={`px-2 py-0.5 rounded-interactive typo-caption transition-colors ${
-              auditFilter === f
-                ? 'bg-primary/15 text-ink-1 border border-hair'
-                : 'text-foreground hover:text-ink-2 hover:bg-surface-1'
-            }`}
+            variant={auditFilter === f ? 'secondary' : 'ghost'}
+            size="xs"
           >
             {f === 'all' ? t.common.all : opLabel(f)}
-          </button>
+          </Button>
         ))}
         <span className="ml-auto typo-caption text-foreground">{tx(filtered.length === 1 ? t.vault.audit_log.entries_one : t.vault.audit_log.entries_other, { count: filtered.length })}</span>
       </div>
@@ -114,9 +112,9 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
         <table className="w-full typo-body">
           <thead>
             <tr className="border-b border-hair bg-secondary/10">
-              <th className="text-left px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.operation}</th>
-              <th className="text-left px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.detail}</th>
-              <th className="text-right px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.time}</th>
+              <th className="text-left px-3 py-1.5 typo-eyebrow text-foreground">{t.vault.features.intelligence.operation}</th>
+              <th className="text-left px-3 py-1.5 typo-eyebrow text-foreground">{t.vault.features.intelligence.detail}</th>
+              <th className="text-right px-3 py-1.5 typo-eyebrow text-foreground">{t.vault.features.intelligence.time}</th>
             </tr>
           </thead>
           <tbody>
@@ -146,25 +144,27 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={() => setAuditPage((p) => Math.max(0, p - 1))}
             disabled={auditPage === 0}
-            className="p-1 rounded-interactive hover:bg-surface-1 disabled:opacity-30 transition-colors"
+            variant="ghost"
+            size="icon-sm"
           >
             <ChevronLeft className="w-3.5 h-3.5 text-foreground" />
-          </button>
+          </Button>
           <span className="typo-caption text-foreground tabular-nums">
             {tx(t.vault.audit_log.page_of, { page: auditPage + 1, total: totalPages })}
           </span>
-          <button
+          <Button
             type="button"
             onClick={() => setAuditPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={auditPage >= totalPages - 1}
-            className="p-1 rounded-interactive hover:bg-surface-1 disabled:opacity-30 transition-colors"
+            variant="ghost"
+            size="icon-sm"
           >
             <ChevronRightIcon className="w-3.5 h-3.5 text-foreground" />
-          </button>
+          </Button>
         </div>
       )}
     </div>

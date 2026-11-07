@@ -7,6 +7,7 @@ import { getAnthropicModels } from '@/lib/models/modelCatalog';
 import type { AthenaEngine } from '@/lib/bindings/AthenaEngine';
 import type { AthenaTierSettings } from '@/lib/bindings/AthenaTierSettings';
 import type { TurnTierClass } from '@/lib/bindings/TurnTierClass';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Brand names, not copy: never translated. */
 export const ENGINE_LABELS: Record<AthenaEngine, string> = { claude: 'Claude', grok: 'Grok' };
@@ -42,20 +43,20 @@ function TierSelect({ options, value, onChange, ariaLabel, testId, disabled, inp
       itemCount={options.length}
       onSelectFocused={(i) => options[i] && onChange(options[i].id)}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
+        <Button
           id={inputId}
           type="button"
           onClick={toggle}
           disabled={disabled}
           aria-expanded={isOpen}
           data-testid={testId}
-          // `is-disabled` is the design system's one disabled token; the
-          // state is never painted by hand.
-          className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-hair bg-surface-2 text-foreground hover:border-primary/30 transition-colors ${disabled ? 'is-disabled' : ''}`}
+          variant="secondary"
+          size="sm"
+          className="w-full"
+          iconRight={<ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />}
         >
           <span className="flex-1 text-left truncate">{current}</span>
-          <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
-        </button>
+        </Button>
       )}
     >
       {({ close }) => (

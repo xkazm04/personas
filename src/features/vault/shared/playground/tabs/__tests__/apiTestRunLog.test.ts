@@ -29,9 +29,9 @@ describe('Run All log colouring', () => {
     const lines = result.current.lines;
     const classOf = (needle: string) => apiTestLineClassName(lines.find((l) => l.includes(needle))!);
 
-    expect(classOf('200 OK')).toBe('text-emerald-400/70');
-    expect(classOf('ERROR')).toBe('text-red-400/70');
-    expect(classOf('GET /ok')).toBe('text-blue-400/50');
+    expect(classOf('200 OK')).toBe('text-status-success/70');
+    expect(classOf('ERROR')).toBe('text-status-error/70');
+    expect(classOf('GET /ok')).toBe('text-status-info/50');
     expect(classOf('Done:')).toBe('text-foreground');
   });
 

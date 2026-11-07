@@ -42,7 +42,7 @@ export function NegotiatorStepCard({
       aria-label={tx(t.vault.negotiator_extra.step_of, { current: stepIndex + 1, total: totalSteps, title: step.title })}
       className={`rounded-modal border transition-all ${
         isActive
-          ? 'border-role-agent/30 bg-role-agent/5 shadow-elevation-3 shadow-role-agent/5'
+          ? 'border-role-agent/30 bg-role-agent/5 shadow-elevation-3'
           : isCompleted
             ? 'border-status-success/20 bg-status-success/5'
             : 'border-hair bg-surface-1'

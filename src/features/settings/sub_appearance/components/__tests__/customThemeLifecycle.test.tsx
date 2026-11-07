@@ -98,7 +98,7 @@ describe('custom theme editor lifecycle', () => {
     render(<CustomThemeCreator />);
     expect(screen.queryByText(a.contrast_low_warning)).toBeNull();
     // Foreground set to (almost) the dark default background: unreadable body text.
-    fireEvent.click(screen.getByTitle(`Pick ${a.color_foreground}`));
+    fireEvent.click(screen.getByLabelText(`Pick ${a.color_foreground}`));
     const region = screen.getByRole('region', { name: `${a.color_foreground} color picker` });
     fireEvent.change(within(region).getByRole('textbox'), { target: { value: '#0a0e14' } });
     expect(screen.queryByText(a.contrast_low_warning)).not.toBeNull();

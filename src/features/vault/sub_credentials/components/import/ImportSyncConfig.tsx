@@ -49,7 +49,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
                 sourceId === 'azure_keyvault' ? 'https://myvault.vault.azure.net/...' :
                 'project/config'
               }
-              className="w-full px-2.5 py-1.5 rounded-card border border-role-highlight/20 bg-background/40 typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-highlight/30"
+              className="w-full px-2.5 py-1.5 rounded-card border border-role-highlight/20 bg-background/40 typo-body text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-highlight/30"
             />
           </div>
           <div className="w-28">

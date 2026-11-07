@@ -8,6 +8,7 @@ import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 // Re-export cards so existing imports from AutoCredBrowser still work
@@ -60,13 +61,15 @@ export function UrlCard({
         {hostname && <p className="typo-body text-foreground truncate">{hostname}</p>}
       </div>
       {safeUrl && (
-        <button
+        <Button
           type="button"
           onClick={() => onUrlClick(safeUrl)}
-          className="px-3 py-1 typo-body text-status-info hover:text-status-info rounded-card border border-status-info/20 hover:bg-status-info/10 transition-colors shrink-0"
+          variant="secondary"
+          size="xs"
+          className="shrink-0"
         >
           {t.vault.auto_cred_extra.open_url}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -103,16 +106,17 @@ export function RichMessage({
         const safe = sanitizeExternalUrl(part.text);
         if (!safe) return <span key={i}>{part.text}</span>;
         return (
-          <button
+          <Button
             type="button"
             key={i}
             onClick={() => onUrlClick(safe)}
-            className="text-status-info hover:text-status-info hover:underline cursor-pointer transition-colors"
-            title={tx(t.vault.auto_cred_extra.open_url_title, { url: safe })}
+            variant="ghost"
+            size="sm"
+            tooltip={tx(t.vault.auto_cred_extra.open_url_title, { url: safe })}
+            iconRight={<ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5" />}
           >
             {part.text}
-            <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5" />
-          </button>
+          </Button>
         );
       })}
     </>
@@ -133,10 +137,11 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
   if (logs.length === 0) return <div />;
 
   return (
-    <button
+    <Button
       type="button"
       onClick={handleCopy}
-      className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-ink-2 rounded-card hover:bg-surface-1 transition-colors"
+      variant="ghost"
+      size="sm"
     >
       {copied ? (
         <>
@@ -149,6 +154,6 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
           <span>{t.vault.auto_cred_extra.copy_log}</span>
         </>
       )}
-    </button>
+    </Button>
   );
 }

@@ -28,9 +28,9 @@ export function getKindLabels(t: Translations): Record<GraphNodeKind, string> {
 // the same way: no severity function returns it since the workflow branch was
 // folded back into the blast-radius buckets (see SimulationResult.severity).
 export const SEVERITY_STYLES = {
-  low: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  medium: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-  high: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
+  low: { bg: 'bg-status-success/10', text: 'text-status-success', border: 'border-status-success/20' },
+  medium: { bg: 'bg-status-warning/10', text: 'text-status-warning', border: 'border-status-warning/20' },
+  high: { bg: 'bg-status-error/10', text: 'text-status-error', border: 'border-status-error/20' },
 } as const;
 
 /** Returns severity styles with translated labels. */

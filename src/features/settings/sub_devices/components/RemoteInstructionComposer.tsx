@@ -19,6 +19,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { errMsg } from '@/stores/storeTypes';
 import { createLogger } from '@/lib/log';
+import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger('remote-instruction-composer');
 
@@ -71,21 +72,23 @@ export function RemoteInstructionComposer({ peerId: fixedPeerId }: { peerId?: st
             ariaLabel={st.send_instruction_device_label}
             className="min-w-[170px]"
             renderTrigger={({ isOpen, toggle }) => (
-              <button
+              <Button
                 type="button"
                 onClick={toggle}
                 aria-expanded={isOpen}
                 data-testid="remote-instruction-device"
-                className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-hair bg-surface-2 text-foreground hover:border-primary/30 transition-colors"
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                iconRight={<ChevronDown
+                  className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  aria-hidden
+                />}
               >
                 <span className="flex-1 text-left truncate">
                   {target ? target.displayName : st.send_instruction_pick_device}
                 </span>
-                <ChevronDown
-                  className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                  aria-hidden
-                />
-              </button>
+              </Button>
             )}
           >
             {({ close }) => (

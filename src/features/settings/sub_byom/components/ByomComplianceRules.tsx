@@ -3,6 +3,8 @@ import { SectionHeading } from '@/features/shared/components/layout/SectionHeadi
 import type { ComplianceRule } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, type PolicyWarning, type PolicyWarningSeverity } from '../libs/byomHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const SEVERITY_STYLES: Record<PolicyWarningSeverity, { border: string; text: string; icon: typeof AlertTriangle }> = {
   error:   { border: 'border-status-error/30',   text: 'text-status-error/90',   icon: AlertCircle },
@@ -27,14 +29,15 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
         <SectionHeading
           title={s.compliance_title}
           action={
-            <button
+            <Button
               type="button"
               onClick={onAdd}
-              className="flex items-center gap-1 px-3 py-1.5 typo-body rounded-modal border border-hair text-primary hover:bg-primary/10 transition-colors"
+              variant="secondary"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
               {s.add_rule}
-            </button>
+            </Button>
           }
         />
         <p className="typo-body text-foreground mt-1">
@@ -88,26 +91,28 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => onUpdate(idx, { enabled: !rule.enabled })}
                         aria-pressed={rule.enabled}
                         aria-label={tx(rule.enabled ? t.common.disable_item : t.common.enable_item, { name: rule.name || s.compliance_name_placeholder })}
-                        className="typo-body"
+                        variant="ghost"
+                        size="sm"
                       >
                         {rule.enabled
                           ? <ToggleRight className="w-5 h-5 text-status-success" />
                           : <ToggleLeft className="w-5 h-5 text-foreground" />
                         }
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => onRemove(idx)}
                         aria-label={`${t.common.delete}: ${rule.name || s.compliance_name_placeholder}`}
-                        className="text-foreground hover:text-status-error transition-colors"
+                        variant="ghost"
+                        size="icon-sm"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -139,7 +144,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                           const isSelected = rule.allowed_providers.includes(prov.id);
                           const provSeverity = warnedProviders.get(prov.id);
                           return (
-                            <button
+                            <Button
                               key={prov.id}
                               type="button"
                               onClick={() => {
@@ -148,20 +153,12 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                                   : [...rule.allowed_providers, prov.id];
                                 onUpdate(idx, { allowed_providers: updated });
                               }}
-                              className={`px-2 py-1 typo-caption rounded-card border transition-colors ${
-                                isSelected && provSeverity === 'error'
-                                  ? 'border-status-error/40 bg-status-error/15 text-status-error'
-                                  : isSelected && provSeverity === 'warning'
-                                  ? 'border-status-warning/40 bg-status-warning/15 text-status-warning'
-                                  : isSelected && provSeverity === 'info'
-                                  ? 'border-status-info/40 bg-status-info/15 text-status-info'
-                                  : isSelected
-                                  ? 'border-status-success/30 bg-status-success/15 text-status-success'
-                                  : 'border-hair text-foreground hover:text-foreground'
-                              }`}
+                              variant={isSelected ? 'accent' : 'secondary'}
+                              tone={isSelected ? (provSeverity === 'error' ? 'error' : provSeverity === 'warning' ? 'warning' : 'info') : undefined}
+                              size="xs"
                             >
                               {prov.label}
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>
@@ -174,12 +171,11 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                         const style = SEVERITY_STYLES[w.severity];
                         const WarnIcon = style.icon;
                         return (
-                          <div key={wi} className={`flex items-start gap-1.5 typo-caption ${style.text}`}
-                            title={w.severity === 'info' ? w.message : undefined}
+                          <Tooltip key={wi} content={w.severity === 'info' ? w.message : undefined}><div className={`flex items-start gap-1.5 typo-caption ${style.text}`}
                           >
                             <WarnIcon className="w-3 h-3 mt-0.5 shrink-0" />
                             <span>{w.message}</span>
-                          </div>
+                          </div></Tooltip>
                         );
                       })}
                     </div>

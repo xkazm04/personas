@@ -72,7 +72,7 @@ export function GigPersonaPolicySection() {
       <SectionCard
         title={s.gig_policy_title}
         icon={<ShieldCheck className="w-4 h-4 text-ink-2" />}
-        titleClassName="text-primary"
+        titleClassName="text-ink-1"
       >
         <p className="typo-caption text-foreground mb-3">{s.gig_policy_desc}</p>
         {error && (

@@ -3,6 +3,7 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const INFO_STATUS = STATUS_COLORS.info!;
 const AI_STATUS = STATUS_COLORS.ai!;
@@ -79,21 +80,22 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
             {optionalCount}
           </span>
         </div>
-        <span className="px-2 py-0.5 bg-primary/10 text-primary/70 typo-code rounded-card">
+        <span className="text-ink-1 typo-code">
           {result.connector.category}
         </span>
       </div>
 
       {/* Refine request */}
       {onRefine && (
-        <button
+        <Button
           type="button"
           onClick={onRefine}
-          className="flex items-center gap-1.5 typo-body text-foreground hover:text-primary/70 transition-colors"
+          variant="ghost"
+          size="sm"
+          icon={<PenLine className="w-3 h-3" />}
         >
-          <PenLine className="w-3 h-3" />
           {dp.refine_request}
-        </button>
+        </Button>
       )}
     </>
   );

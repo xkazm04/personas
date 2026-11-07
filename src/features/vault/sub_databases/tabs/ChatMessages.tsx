@@ -4,6 +4,7 @@ import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEm
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface ChatMessage {
   id: string;
@@ -73,14 +74,16 @@ export function ChatMessages({
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{t.vault.databases.generating_query}</span>
                 <Tooltip content={t.common.cancel}>
-                  <button
+                  <Button
                     type="button"
                     onClick={onCancel}
-                    className="ml-2 p-1 rounded-card hover:bg-status-error/10 text-foreground hover:text-status-error transition-colors"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="ml-2"
                     aria-label={t.common.cancel}
                   >
                     <X className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </Tooltip>
               </div>
             )}
@@ -136,14 +139,15 @@ function EmptyState({
       {suggestions.length > 0 && (
         <div className="flex flex-wrap gap-2 max-w-lg justify-center mt-2">
           {suggestions.map((s, i) => (
-            <button
+            <Button
               type="button"
               key={i}
               onClick={() => onSuggestionClick(s)}
-              className="px-3 py-1.5 rounded-modal typo-body text-foreground bg-surface-1 border border-hair hover:bg-surface-2 hover:text-ink-2 transition-colors"
+              variant="secondary"
+              size="sm"
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
       )}

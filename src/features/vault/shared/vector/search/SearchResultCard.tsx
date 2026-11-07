@@ -6,6 +6,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { VectorSearchResult } from '@/api/vault/database/vectorKb';
 import { isPartialExtraction } from '../partialConfidence';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface SearchResultCardProps {
   result: VectorSearchResult;
@@ -61,14 +62,16 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
         </p>
 
         {result.content.length > 300 && (
-          <button
+          <Button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 typo-caption text-role-agent/70 hover:text-role-agent mt-2 transition-colors"
+            variant="ghost"
+            size="sm"
+            className="mt-2"
+            icon={expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           >
-            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             {expanded ? sh.show_less : sh.show_full_chunk}
-          </button>
+          </Button>
         )}
 
         {/* Metadata */}

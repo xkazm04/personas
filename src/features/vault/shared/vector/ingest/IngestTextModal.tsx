@@ -54,14 +54,15 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
           <Type className="w-3.5 h-3.5 text-role-agent" />
         </div>
         <h2 id="ingest-text-title" className="typo-heading text-ink-1 flex-1">{sh.paste_text}</h2>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={sh.close}
-          className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
+          variant="ghost"
+          size="icon-sm"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Body */}

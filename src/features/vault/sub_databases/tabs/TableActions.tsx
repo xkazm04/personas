@@ -1,6 +1,7 @@
 import { Zap, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Inline test-connection widget reused in empty/unsupported states. */
 export function TestConnectionButton({ credentialId }: { credentialId: string }) {
@@ -10,19 +11,21 @@ export function TestConnectionButton({ credentialId }: { credentialId: string })
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <button
+      <Button
         type="button"
         onClick={checkStored}
         disabled={isHealthchecking}
-        className="flex items-center gap-2 px-4 py-2 rounded-modal typo-body bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
-      >
-        {isHealthchecking ? (
+        variant="accent"
+        tone="highlight"
+        size="md"
+        icon={isHealthchecking ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
         ) : (
           <Zap className="w-3.5 h-3.5" />
         )}
+      >
         {isHealthchecking ? db.testing : db.test_connection}
-      </button>
+      </Button>
 
       {result && !isHealthchecking && (
         <div

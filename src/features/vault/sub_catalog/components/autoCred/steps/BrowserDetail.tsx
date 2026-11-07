@@ -28,9 +28,6 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
           ) : (
             <StateIcon className={`w-5 h-5 ${config.color}`} />
           )}
-          {config.pulse && (
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-status-warning animate-ping" />
-          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className={`typo-heading ${config.color}`}>{ace[config.labelKey]}</p>

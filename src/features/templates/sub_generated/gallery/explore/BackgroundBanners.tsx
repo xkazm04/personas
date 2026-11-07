@@ -2,6 +2,7 @@ import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle, Ba
 import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
 import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 /** Label map for legacy adoption wizard steps shown in draft resume banners. */
 const ADOPT_STEP_LABELS: Record<string, string> = {
   choose: 'Choose', connect: 'Connect', tune: 'Tune', build: 'Build', create: 'Create',
@@ -90,14 +91,15 @@ export function BackgroundBanners({
                 </span>
               </div>
             </button>
-            <button
+            <Button
               type="button"
               onClick={onDiscardDraft}
-              className="p-1 rounded-card hover:bg-status-warning/15 text-foreground hover:text-status-warning transition-colors flex-shrink-0"
-              title={t.templates.banners.discard_draft}
+              variant="ghost"
+              size="icon-sm"
+              tooltip={t.templates.banners.discard_draft} aria-label={t.templates.banners.discard_draft}
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -111,7 +113,7 @@ export function BackgroundBanners({
             className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-role-agent/8 border border-role-agent/15 hover:bg-role-agent/12 transition-colors text-left"
           >
             <div className="w-7 h-7 rounded-card bg-role-agent/15 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-role-agent animate-pulse" />
+              <Sparkles className="w-4 h-4 text-role-agent" />
             </div>
             <div className="flex-1 min-w-0">
               <span className="typo-body text-role-agent block">{t.templates.banners.adoption_in_progress}</span>
@@ -243,14 +245,15 @@ export function BackgroundBanners({
                 <div className={`w-2 h-2 rounded-full ${dotColor} ${!isDone ? 'animate-pulse' : ''} flex-shrink-0`} />
               </button>
               {isDone && (
-                <button
+                <Button
                   type="button"
                   onClick={onDismissPreview}
-                  className="p-1 rounded-card hover:bg-surface-2 text-foreground hover:text-ink-2 transition-colors flex-shrink-0"
-                  title="Dismiss"
+                  variant="ghost"
+                  size="icon-sm"
+                  tooltip="Dismiss" aria-label="Dismiss"
                 >
                   <X className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

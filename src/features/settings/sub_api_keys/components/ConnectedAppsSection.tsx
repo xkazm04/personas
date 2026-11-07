@@ -44,7 +44,7 @@ export function ConnectedAppsSection({ keys, actioningIds, onDisconnect, onAudit
       <SectionCard
         title={s.connected_apps_title}
         icon={<Globe className="w-4 h-4 text-ink-2" />}
-        titleClassName="text-primary"
+        titleClassName="text-ink-1"
       >
         <div className="flex items-center gap-3 mb-2">
           <p className="typo-caption text-foreground flex-1">{s.connected_apps_desc}</p>
@@ -145,28 +145,28 @@ function PairingGroupRow({ group, actioning, onDisconnect, onAudit }: PairingGro
       </div>
       <div className="flex items-center gap-1">
         <Tooltip content={s.audit_tooltip}>
-          <button
+          <Button
             type="button"
             onClick={() => onAudit(shown)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            variant="ghost"
+            size="xs"
+            icon={<History size={12} />}
           >
-            <History size={12} />
             {s.audit}
-          </button>
+          </Button>
         </Tooltip>
         {current && (
           <Tooltip content={s.connected_apps_revoke_tooltip}>
-            <button
+            <Button
               type="button"
               onClick={triggerDisconnect}
               disabled={actioning}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:is-disabled ${
-                confirm ? 'text-status-error bg-status-error/10 hover:bg-status-error/20' : 'text-foreground hover:text-status-error hover:bg-status-error/10'
-              }`}
+              variant={confirm ? 'danger' : 'ghost'}
+              size="xs"
+              icon={confirm ? <Check size={12} /> : <Unplug size={12} />}
             >
-              {confirm ? <Check size={12} /> : <Unplug size={12} />}
               {confirm ? s.confirm_delete : s.connected_apps_revoke}
-            </button>
+            </Button>
           </Tooltip>
         )}
       </div>

@@ -10,6 +10,7 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import Button from '@/features/shared/components/buttons/Button';
 
 const INFO_STATUS = STATUS_COLORS.info;
 const AI_STATUS = STATUS_COLORS.ai;
@@ -143,15 +144,16 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
       className="pt-1"
       data-testid={`negotiator-step-${stepIndex}-help-section`}
     >
-      <button
+      <Button
         type="button"
         onClick={() => setShowHelp(!showHelp)}
-        className="inline-flex items-center gap-1.5 typo-body text-foreground hover:text-ink-1 transition-colors duration-snap"
+        variant="ghost"
+        size="sm"
         data-testid={`negotiator-step-${stepIndex}-help-toggle-btn`}
+        icon={<HelpCircle className="w-3 h-3" />}
       >
-        <HelpCircle className="w-3 h-3" />
         {showHelp ? t.vault.negotiator_extra.hide_help : t.vault.negotiator_extra.need_help}
-      </button>
+      </Button>
       <Collapse open={showHelp} unmountWhenClosed duration={250} className="mt-2 space-y-2">
         <div className="flex gap-2">
           <input
@@ -160,18 +162,20 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             onChange={(e) => setHelpQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAskHelp(); }}
             placeholder={t.vault.negotiator_extra.ask_question}
-            className={`flex-1 px-3 py-1.5 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
+            className={`flex-1 px-3 py-1.5 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
             data-testid={`negotiator-step-${stepIndex}-help-input`}
           />
-          <button
+          <Button
             type="button"
             onClick={handleAskHelp}
             disabled={!helpQuestion.trim() || isLoadingHelp}
-            className={`px-3 py-1.5 rounded-modal typo-body transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
+            variant="accent"
+            tone="agent"
+            size="sm"
             data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
           >
             {isLoadingHelp ? <LoadingSpinner size="xs" /> : t.vault.negotiator_extra.ask_button}
-          </button>
+          </Button>
         </div>
         {stepHelp && stepHelp.stepIndex === stepIndex && !stepHelp.isError && (
           <div

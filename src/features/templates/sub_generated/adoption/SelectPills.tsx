@@ -5,6 +5,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface PillOption {
   value: string;
@@ -154,19 +155,17 @@ export function SelectPills({
     <div className="space-y-1.5" ref={containerRef}>
       <div className="flex flex-wrap gap-1.5">
         {multi && includeAllOption && (
-          <button
+          <Button
             type="button"
             data-pill="1"
             onClick={pickAll}
             onKeyDown={(e) => onPillKeyDown(e, 0)}
-            className={`px-3.5 py-1.5 typo-body-lg rounded-card border transition-all ${
-              isAllSelected
-                ? 'bg-primary/20 border-primary/30 text-primary'
-                : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
-            }`}
+            variant={isAllSelected ? 'accent' : 'secondary'}
+            tone={isAllSelected ? 'highlight' : undefined}
+            size="sm"
           >
             {t.templates.adopt_modal.all_option}
-          </button>
+          </Button>
         )}
         {options.map((opt, i) => {
           const selected =
@@ -175,21 +174,19 @@ export function SelectPills({
             (multi ? selectedValues.has(opt.value) : value === opt.value);
           const pillIdx = (multi && includeAllOption ? 1 : 0) + i;
           return (
-            <button
+            <Button
               key={opt.value}
               type="button"
               data-pill="1"
               onClick={() => togglePill(opt.value)}
               onKeyDown={(e) => onPillKeyDown(e, pillIdx)}
-              className={`px-3.5 py-1.5 typo-body-lg rounded-card border transition-all ${
-                selected
-                  ? 'bg-primary/20 border-primary/30 text-primary'
-                  : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
-              }`}
-              title={opt.sublabel ?? undefined}
+              variant={selected ? 'accent' : 'secondary'}
+              tone={selected ? 'highlight' : undefined}
+              size="sm"
+              tooltip={opt.sublabel ?? undefined}
             >
               {opt.label}
-            </button>
+            </Button>
           );
         })}
         {/* Custom values that were previously entered appear as dismissable
@@ -200,28 +197,28 @@ export function SelectPills({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body-lg rounded-card border border-primary/30 bg-primary/15 text-primary"
           >
             {v}
-            <button
+            <Button
               type="button"
               onClick={() => removeCustomValue(v)}
-              className="opacity-60 hover:opacity-100 transition-opacity"
+              variant="ghost"
+              size="icon-sm"
+              className="opacity-60"
               aria-label={`Remove ${v}`}
             >
               <X className="w-3 h-3" />
-            </button>
+            </Button>
           </span>
         ))}
         {effectiveAllowCustom && (
-          <button
+          <Button
             type="button"
             onClick={() => setShowCustomInput((v) => !v)}
-            className={`px-3 py-1.5 typo-body rounded-card border transition-all ${
-              showCustomInput
-                ? 'bg-primary/20 border-primary/30 text-primary'
-                : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
-            }`}
+            variant={showCustomInput ? 'accent' : 'secondary'}
+            tone={showCustomInput ? 'highlight' : undefined}
+            size="sm"
           >
             {multi ? t.templates.adopt_modal.custom_prefix : t.templates.adopt_modal.custom_plain}
-          </button>
+          </Button>
         )}
       </div>
       {effectiveAllowCustom && showCustomInput && (
@@ -248,14 +245,16 @@ export function SelectPills({
             className="flex-1 max-w-sm px-3 py-1.5 typo-body rounded-card border border-hair bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
           />
           {multi && (
-            <button
+            <Button
               type="button"
               onClick={commitCustom}
               disabled={!customDraft.trim()}
-              className="px-3 py-1.5 typo-caption rounded-card bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
+              variant="accent"
+              tone="highlight"
+              size="sm"
             >
               {t.templates.adopt_modal.add_custom}
-            </button>
+            </Button>
           )}
         </div>
       )}

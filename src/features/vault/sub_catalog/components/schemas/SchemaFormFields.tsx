@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SchemaFormConfig, SchemaSubType } from './schemaFormTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface SchemaFormHeaderProps {
   config: SchemaFormConfig;
@@ -12,14 +13,15 @@ export function SchemaFormHeader({ config, onBack }: SchemaFormHeaderProps) {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3">
-      <button
+      <Button
         type="button"
         onClick={onBack}
         aria-label={t.common.back}
-        className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+        variant="ghost"
+        size="icon-sm"
       >
         <ArrowLeft className="w-4 h-4" />
-      </button>
+      </Button>
       {config.headerIcon}
       <div>
         <h3 className="typo-heading text-foreground">{config.title}</h3>
@@ -53,7 +55,7 @@ export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder
         aria-invalid={!!error}
         aria-describedby={error ? 'schema-form-error' : undefined}
         data-testid="vault-schema-name"
-        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-body focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-body focus-ring focus-visible:border-primary/40 transition-all placeholder:text-ink-3"
       />
     </div>
   );
@@ -71,7 +73,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
 
   return (
     <div data-testid="vault-schema-subtype">
-      <label className="block typo-heading uppercase text-foreground mb-3">
+      <label className="block typo-eyebrow text-foreground mb-3">
         {config.subTypeLabel}
       </label>
 
@@ -79,19 +81,18 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
         <>
           <div className="flex gap-2">
             {config.subTypes.map((st) => (
-              <button
+              <Button
                 key={st.id}
                 type="button"
                 aria-pressed={subTypeId === st.id}
                 onClick={() => onSubTypeChange(st.id)}
-                className={`flex-1 px-4 py-2.5 rounded-modal typo-body border transition-all ${
-                  subTypeId === st.id
-                    ? config.subTypeActiveClass
-                    : 'bg-surface-1 border-hair text-foreground hover:bg-surface-2'
-                }`}
+                variant={subTypeId === st.id ? 'accent' : 'secondary'}
+                tone={subTypeId === st.id ? 'highlight' : undefined}
+                size="md"
+                className="flex-1"
               >
                 {st.displayLabel ?? st.label}
-              </button>
+              </Button>
             ))}
           </div>
           <p className="mt-1.5 typo-body text-foreground">{activeSubType.description}</p>

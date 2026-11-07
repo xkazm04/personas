@@ -3,6 +3,8 @@ import { SectionHeading } from '@/features/shared/components/layout/SectionHeadi
 import type { RoutingRule, TaskComplexity } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, COMPLEXITY_OPTIONS, type PolicyWarning, type PolicyWarningSeverity } from '../libs/byomHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const SEVERITY_STYLES: Record<PolicyWarningSeverity, { border: string; text: string; icon: typeof AlertTriangle }> = {
   error:   { border: 'border-status-error/30',   text: 'text-status-error/90',   icon: AlertCircle },
@@ -27,14 +29,15 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
         <SectionHeading
           title={s.routing_title}
           action={
-            <button
+            <Button
               type="button"
               onClick={onAdd}
-              className="flex items-center gap-1 px-3 py-1.5 typo-body rounded-modal border border-hair text-primary hover:bg-primary/10 transition-colors"
+              variant="secondary"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
               {s.add_rule}
-            </button>
+            </Button>
           }
         />
         <p className="typo-body text-foreground mt-1">
@@ -74,26 +77,28 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => onUpdate(idx, { enabled: !rule.enabled })}
                         aria-pressed={rule.enabled}
                         aria-label={tx(rule.enabled ? t.common.disable_item : t.common.enable_item, { name: rule.name || s.rule_name_placeholder })}
-                        className="typo-body"
+                        variant="ghost"
+                        size="sm"
                       >
                         {rule.enabled
                           ? <ToggleRight className="w-5 h-5 text-status-success" />
                           : <ToggleLeft className="w-5 h-5 text-foreground" />
                         }
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => onRemove(idx)}
                         aria-label={`${t.common.delete}: ${rule.name || s.rule_name_placeholder}`}
-                        className="text-foreground hover:text-status-error transition-colors"
+                        variant="ghost"
+                        size="icon-sm"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -141,12 +146,11 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                         const style = SEVERITY_STYLES[w.severity];
                         const WarnIcon = style.icon;
                         return (
-                          <div key={wi} className={`flex items-start gap-1.5 typo-caption ${style.text}`}
-                            title={w.severity === 'info' ? w.message : undefined}
+                          <Tooltip key={wi} content={w.severity === 'info' ? w.message : undefined}><div className={`flex items-start gap-1.5 typo-caption ${style.text}`}
                           >
                             <WarnIcon className="w-3 h-3 mt-0.5 shrink-0" />
                             <span>{w.message}</span>
-                          </div>
+                          </div></Tooltip>
                         );
                       })}
                     </div>

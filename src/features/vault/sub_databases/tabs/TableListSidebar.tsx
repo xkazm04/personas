@@ -208,10 +208,10 @@ export function TableListSidebar({
               </span>
               {isPinned && <Pin className="w-2.5 h-2.5 text-status-info/50 shrink-0" />}
               {table.table_type === 'VIEW' && (
-                <span className="px-1 py-0.5 rounded-interactive typo-body bg-role-agent/10 text-role-agent/70 shrink-0">VIEW</span>
+                <span className="typo-body text-role-agent shrink-0">VIEW</span>
               )}
               {table.table_type === 'DATABASE' && (
-                <span className="px-1 py-0.5 rounded-interactive typo-body bg-status-info/10 text-status-info/70 shrink-0">DB</span>
+                <span className="typo-body text-status-info shrink-0">DB</span>
               )}
             </div>
           );

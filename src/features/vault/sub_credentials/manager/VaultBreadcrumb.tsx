@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import type { BreadcrumbSegment, CredentialViewAction } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface VaultBreadcrumbProps {
   segments: BreadcrumbSegment[];
@@ -26,13 +27,14 @@ export function VaultBreadcrumb({ segments, dispatch }: VaultBreadcrumbProps) {
           <span key={i} className="flex items-center gap-1 min-w-0">
             {i > 0 && <ChevronRight className="w-3 h-3 shrink-0 text-foreground" />}
             {seg.action && !isLast ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => dispatch(seg.action!)}
-                className="hover:text-ink-1 transition-colors truncate"
+                variant="ghost"
+                size="sm"
               >
                 {seg.label}
-              </button>
+              </Button>
             ) : (
               <span className="text-foreground font-medium truncate">{seg.label}</span>
             )}

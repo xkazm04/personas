@@ -22,6 +22,7 @@ import type { RemoteJobStatus } from '@/lib/bindings/RemoteJobStatus';
 import { useRemoteJobs } from '../lib/useRemoteJobs';
 import { RemoteJobDetail } from './RemoteJobDetail';
 import { RemoteInstructionComposer } from './RemoteInstructionComposer';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Status → StatusDot severity. `refused` and `cancelled` are warnings rather
@@ -87,7 +88,7 @@ export function RemoteJobsPanel({ peerId }: { peerId?: string } = {}) {
             <Badge variant={row.kind === 'fleet_session' ? 'sky' : 'neutral'} size="xs" className="flex-shrink-0">
               {row.kind === 'fleet_session' ? st.job_kind_fleet_session : st.job_kind_instruction}
             </Badge>
-            <span className="typo-caption text-ink-1 truncate" title={row.instruction}>{row.instruction}</span>
+            <Tooltip content={row.instruction}><span className="typo-caption text-ink-1 truncate">{row.instruction}</span></Tooltip>
           </span>
         ),
       },
@@ -122,7 +123,7 @@ export function RemoteJobsPanel({ peerId }: { peerId?: string } = {}) {
       title={peerId ? st.remote_jobs_for_pc_title : st.remote_jobs_title}
       subtitle={peerId ? st.remote_jobs_for_pc_subtitle : st.remote_jobs_subtitle}
       icon={<Radio className="w-4 h-4 text-ink-2" />}
-      titleClassName="text-primary"
+      titleClassName="text-ink-1"
       action={
         peerId ? undefined : <RemoteJobDirectionFilter value={jobs.direction} onChange={jobs.setDirection} />
       }

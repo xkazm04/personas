@@ -2,6 +2,7 @@ import type { BrowserLogEntry, AutoCredErrorInfo } from '../helpers/types';
 import { CopyLogButton } from '../display/AutoCredLogEntries';
 import { ERROR_KIND_CONFIG, useAutoScrollRef } from '../helpers/autoCredErrorConfig';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutoCredBrowserErrorProps {
   logs: BrowserLogEntry[];
@@ -71,21 +72,24 @@ export function AutoCredBrowserError({
       <div className="flex justify-between">
         <CopyLogButton logs={logs} />
         <div className="flex gap-3">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-surface-2 transition-colors"
+            variant="ghost"
+            size="md"
           >
             {t.vault.auto_cred.setup_manually}
-          </button>
+          </Button>
           {error.retryable && (
-            <button
+            <Button
               type="button"
               onClick={onRetry}
-              className="px-5 py-2 bg-role-highlight hover:bg-role-highlight text-foreground rounded-modal typo-body transition-colors"
+              variant="accent"
+              tone="highlight"
+              size="md"
             >
               {t.vault.auto_cred.retry}
-            </button>
+            </Button>
           )}
         </div>
       </div>

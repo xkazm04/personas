@@ -1,9 +1,9 @@
 import { Download, Play, Workflow } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DimensionRadial } from '../../../shared/DimensionRadial';
-import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TemplateCardFooterProps {
   designResult: AgentIR | null;
@@ -24,45 +24,49 @@ export function TemplateCardFooter({
   return (
     <div className="px-4 py-3.5 border-t border-hair flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           data-testid="template-adopt-button"
           onClick={(e) => {
             e.stopPropagation();
             onAdopt();
           }}
-          className={`px-3.5 py-2 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+          variant="primary"
+          size="md"
+          icon={<Download className="w-3.5 h-3.5" />}
         >
-          <Download className="w-3.5 h-3.5" />
           Adopt
-        </button>
+        </Button>
         {designResult && (
-          <button
+          <Button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onTryIt();
             }}
-            className={`px-3.5 py-2 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
+            variant="secondary"
+            size="md"
+            icon={<Play className="w-3.5 h-3.5" />}
           >
-            <Play className="w-3.5 h-3.5" />
             {t.templates.actions.try_it}
-          </button>
+          </Button>
         )}
       </div>
       <div className="flex items-center gap-2.5">
         {displayFlows.length > 0 && (
-          <button
+          <Button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onViewFlows();
             }}
-            className="px-2.5 py-1.5 typo-body rounded-modal bg-role-agent/8 text-role-agent/70 hover:bg-role-agent/15 transition-colors inline-flex items-center gap-1.5"
+            variant="accent"
+            tone="agent"
+            size="sm"
+            icon={<Workflow className="w-3.5 h-3.5" />}
           >
-            <Workflow className="w-3.5 h-3.5" />
             {displayFlows.length}
-          </button>
+          </Button>
         )}
         <DimensionRadial designResult={designResult} size={32} />
       </div>

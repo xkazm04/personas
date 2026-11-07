@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { CATEGORY_META, FALLBACK_CATEGORY } from '../QuestionnaireFormGridConfig';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** One authored category as the rail presents it. */
 export interface QuestionnaireCategoryBucket {
@@ -84,15 +85,15 @@ export function QuestionnaireCategoryRail({
         const isActive = (activeCategory ?? OTHER_CATEGORY_KEY) === bucket.key;
         const complete = bucket.answered === bucket.total;
         return (
-          <button
+          <Button
             key={bucket.key}
             type="button"
             onClick={() => onJumpTo(bucket.jumpIdx)}
             aria-current={isActive ? 'step' : undefined}
             data-testid={`questionnaire-category-${bucket.key}`}
-            className={`focus-ring inline-flex items-center gap-1.5 px-2 py-1 rounded-card border transition-colors ${
-              isActive ? `${meta.bg} border-primary/30` : 'border-transparent hover:bg-foreground/[0.04]'
-            }`}
+            variant={isActive ? 'accent' : 'ghost'}
+            tone={isActive ? 'highlight' : undefined}
+            size="xs"
           >
             <meta.Icon className={`w-3.5 h-3.5 ${meta.color}`} />
             <span className="typo-caption text-foreground">{bucket.label}</span>
@@ -101,7 +102,7 @@ export function QuestionnaireCategoryRail({
             >
               {bucket.answered}/{bucket.total}
             </span>
-          </button>
+          </Button>
         );
       })}
     </div>

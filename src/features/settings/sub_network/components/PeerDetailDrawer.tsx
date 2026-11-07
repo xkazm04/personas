@@ -16,6 +16,7 @@ import type { DiscoveredPeer, ConnectionState, PeerManifestEntry } from '@/api/n
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolvePeerConnectionState } from './peerConnectionState';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PeerDetailDrawerProps {
   peer: DiscoveredPeer;
@@ -120,14 +121,15 @@ export function PeerDetailDrawer({
               {truncatedId}
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label={st.close}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -143,23 +145,25 @@ export function PeerDetailDrawer({
               {stateLabel}
             </span>
             {isConnected ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => onDisconnect(peer.peer_id)}
-                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
+                variant="secondary"
+                size="sm"
+                icon={<NodeDisconnectedIcon className="w-3.5 h-3.5" />}
               >
-                <NodeDisconnectedIcon className="w-3.5 h-3.5" />
                 {st.disconnect}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="button"
                 onClick={() => onConnect(peer.peer_id)}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+                variant="primary"
+                size="sm"
+                icon={<NodeConnectedIcon className="w-3.5 h-3.5" />}
               >
-                <NodeConnectedIcon className="w-3.5 h-3.5" />
                 {st.connect}
-              </button>
+              </Button>
             )}
           </div>
 
@@ -203,7 +207,7 @@ export function PeerDetailDrawer({
               {syncing && (
                 <div className="h-0.5 rounded-full overflow-hidden bg-surface-1">
                   <div
-                    className="animate-fade-in h-full bg-gradient-to-r from-role-agent to-status-info"
+                    className="animate-fade-in h-full"
                   />
                 </div>
               )}
@@ -221,19 +225,20 @@ export function PeerDetailDrawer({
                     </span>
                   )}
                 </h4>
-                <button
+                <Button
                   type="button"
                   onClick={handleSync}
                   disabled={syncing}
-                  title={st.sync_manifest}
-                  className="p-1 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  tooltip={st.sync_manifest}
+                  variant="ghost"
+                  size="sm"
                 >
                   {syncing ? (
                     <LoadingSpinner size="sm" />
                   ) : (
                     <RefreshCw className="w-3.5 h-3.5" />
                   )}
-                </button>
+                </Button>
               </div>
 
               {manifest.length === 0 ? (
@@ -273,7 +278,7 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
           {parsedTags.length > 0 && (
             <div className="flex gap-1">
               {parsedTags.slice(0, 3).map((tag) => (
-                <span key={tag} className="typo-caption px-1 py-0.5 rounded-interactive bg-primary/10 text-primary/70">
+                <span key={tag} className="typo-caption text-ink-1">
                   {tag}
                 </span>
               ))}

@@ -34,6 +34,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import { OverviewTab } from './OverviewTab';
 import { UseCasesTab } from './UseCasesTab';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 type DetailTab = 'overview' | 'use_cases' | 'prompt' | 'connectors';
 
@@ -147,8 +148,6 @@ export function TemplateDetailModal({
     >
         {/* Header with gradient accent */}
         <div className="relative flex-shrink-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-role-agent/8 via-indigo-500/5 to-transparent pointer-events-none" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-role-agent/30 via-indigo-500/15 to-transparent" />
           <div className="relative px-8 py-5 flex items-start justify-between gap-6">
             <div className="min-w-0 flex-1">
               <h2 id="template-detail-title" className="typo-heading-lg text-foreground">
@@ -163,15 +162,14 @@ export function TemplateDetailModal({
                   {statusBadge.label}
                 </span>
                 {!isSimple && review.adoption_count > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-card bg-status-success/10 border border-status-success/15 text-status-success/80">
+                  <span className="inline-flex items-center gap-1.5 typo-body text-status-success">
                     <Download className="w-3.5 h-3.5" />
                     {t.templates.detail_modal.adopted.replace('{count}', String(review.adoption_count))}
                   </span>
                 )}
                 {difficultyMeta && difficulty && (
-                  <span
+                  <Tooltip content={`${tpl.complexity[difficulty]}${setupMinutes ? ` · ${tpl.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}><span
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-card border ${difficultyMeta.bgClass}`}
-                    title={`${tpl.complexity[difficulty]}${setupMinutes ? ` · ${tpl.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}
                   >
                     <GraduationCap className="w-3.5 h-3.5" />
                     {tpl.complexity[difficulty]}
@@ -182,7 +180,7 @@ export function TemplateDetailModal({
                         {tpl.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}
                       </>
                     )}
-                  </span>
+                  </span></Tooltip>
                 )}
                 {!isSimple && review.had_references && (
                   <span className="typo-body text-role-agent/60 flex items-center gap-1.5">
@@ -228,7 +226,7 @@ export function TemplateDetailModal({
                 <TabIcon className={`w-4 h-4 ${isActive ? 'text-role-agent/80' : ''}`} />
                 {tab.label}
                 {isActive && (
-                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-role-agent/80 to-indigo-500/60 rounded-full" />
+                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
                 )}
               </button>
             );
@@ -275,7 +273,6 @@ export function TemplateDetailModal({
 
         {/* Footer with subtle gradient */}
         <div className="relative flex-shrink-0">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/12 to-transparent" />
           <div className="px-8 py-4 bg-secondary/15">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -284,7 +281,7 @@ export function TemplateDetailModal({
                   variant="secondary"
                   size="sm"
                   icon={<Download className="w-4 h-4" />}
-                  className="bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 shadow-elevation-3 shadow-role-agent/5"
+                  className="bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 shadow-elevation-3"
                   data-testid="button-adopt-template"
                 >
                   {t.templates.detail_modal.adopt_as_persona}
@@ -298,7 +295,7 @@ export function TemplateDetailModal({
                     variant="secondary"
                     size="sm"
                     icon={<Play className="w-4 h-4" />}
-                    className="bg-status-success/10 text-status-success/80 border border-status-success/20 hover:bg-status-success/20 shadow-elevation-3 shadow-status-success/5"
+                    className="bg-status-success/10 text-status-success/80 border border-status-success/20 hover:bg-status-success/20 shadow-elevation-3"
                   >
                     {t.templates.detail_modal.try_it}
                   </Button>

@@ -5,6 +5,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface CredentialScopeSectionProps {
   credential: CredentialMetadata;
@@ -81,9 +82,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {picks.map((p) => (
-                    <span
-                      key={p.id}
-                      title={p.sublabel ?? p.id}
+                    <Tooltip key={p.id} content={p.sublabel ?? p.id}><span
                       className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-primary/10 border border-hair typo-caption text-foreground"
                     >
                       <span className="truncate max-w-[18ch]">{p.label}</span>
@@ -92,7 +91,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
                           · {p.sublabel}
                         </span>
                       )}
-                    </span>
+                    </span></Tooltip>
                   ))}
                 </div>
               )}

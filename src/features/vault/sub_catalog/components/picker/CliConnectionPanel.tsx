@@ -13,6 +13,7 @@ import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import Button from '@/features/shared/components/buttons/Button';
 
 type PanelState =
   | { kind: 'checking' }
@@ -152,7 +153,7 @@ export function CliConnectionPanel({
           icon={<AlertCircle className="w-4 h-4 text-status-error" />}
           title={l.error}
           description={resolveErrorTranslated(t, extractMessage(state.raw)).message}
-          action={<button type="button" onClick={runInstallCheck} className="typo-caption px-2 py-1 rounded-interactive border border-hair hover:bg-surface-2">{l.retry}</button>}
+          action={<Button type="button" onClick={runInstallCheck} variant="secondary" size="xs">{l.retry}</Button>}
         />
       )}
 
@@ -169,20 +170,24 @@ export function CliConnectionPanel({
             {spec.install_hint.replace(/\*\*/g, '')}
           </pre>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={copyInstallHint}
-              className="typo-caption px-2 py-1 rounded-interactive border border-hair hover:bg-surface-2 inline-flex items-center gap-1"
+              variant="secondary"
+              size="xs"
+              icon={<Copy className="w-3 h-3" />}
             >
-              <Copy className="w-3 h-3" /> {l.copy}
-            </button>
-            <button
+               {l.copy}
+            </Button>
+            <Button
               type="button"
               onClick={runInstallCheck}
-              className="typo-caption px-2 py-1 rounded-interactive border border-hair hover:bg-surface-2 inline-flex items-center gap-1"
+              variant="secondary"
+              size="xs"
+              icon={<RefreshCw className="w-3 h-3" />}
             >
-              <RefreshCw className="w-3 h-3" /> {l.recheck}
-            </button>
+               {l.recheck}
+            </Button>
           </div>
         </div>
       )}
@@ -201,13 +206,16 @@ export function CliConnectionPanel({
           <div className="typo-caption text-foreground">
             {spec.auth_instruction}
           </div>
-          <button
+          <Button
             type="button"
             onClick={runVerify}
-            className="typo-caption px-3 py-1.5 rounded-interactive bg-status-warning/20 border border-status-warning/30 text-status-warning hover:bg-status-warning/30 inline-flex items-center gap-1"
+            variant="accent"
+            tone="warning"
+            size="sm"
+            icon={<CheckCircle2 className="w-3 h-3" />}
           >
-            <CheckCircle2 className="w-3 h-3" /> {l.verify_auth}
-          </button>
+             {l.verify_auth}
+          </Button>
         </div>
       )}
 
@@ -225,13 +233,15 @@ export function CliConnectionPanel({
               <div className="typo-caption text-foreground">{state.verify.message}</div>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={runVerify}
-            className="typo-caption px-3 py-1.5 rounded-interactive border border-hair hover:bg-surface-2 inline-flex items-center gap-1"
+            variant="secondary"
+            size="sm"
+            icon={<RefreshCw className="w-3 h-3" />}
           >
-            <RefreshCw className="w-3 h-3" /> {l.recheck}
-          </button>
+             {l.recheck}
+          </Button>
         </div>
       )}
 
@@ -245,35 +255,40 @@ export function CliConnectionPanel({
             </div>
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={runVerify}
-              className="typo-caption px-3 py-1.5 rounded-interactive border border-hair hover:bg-surface-2 inline-flex items-center gap-1"
+              variant="secondary"
+              size="sm"
+              icon={<RefreshCw className="w-3 h-3" />}
             >
-              <RefreshCw className="w-3 h-3" /> {l.test_connection}
-            </button>
+               {l.test_connection}
+            </Button>
           </div>
         </div>
       )}
 
       {/* Footer buttons */}
       <div className="flex justify-end gap-2 pt-2 border-t border-hair">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="typo-body px-3 py-1.5 rounded-interactive border border-hair hover:bg-surface-2"
+          variant="secondary"
+          size="sm"
         >
           {l.cancel}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={handleSave}
           disabled={state.kind !== 'authenticated' || saving || !credentialName.trim()}
-          className="typo-body px-3 py-1.5 rounded-interactive bg-status-success/20 border border-status-success/30 text-status-success hover:bg-status-success/30 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          variant="accent"
+          tone="success"
+          size="sm"
+          icon={saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
         >
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
           {l.save_connection}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { openExternalUrl } from '@/api/system/system';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Prominent amber card for WAITING: messages */
 export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLatest: boolean }) {
@@ -50,23 +51,27 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
         {!confirmed && (
           <div className="flex items-center gap-2 mt-2.5">
             {url && (
-              <button
+              <Button
                 type="button"
                 onClick={handleOpenUrl}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-status-info/25 bg-status-info/10 text-status-info hover:bg-status-info/20 transition-colors"
+                variant="accent"
+                tone="info"
+                size="sm"
+                icon={<ExternalLink className="w-3 h-3" />}
               >
-                <ExternalLink className="w-3 h-3" />
                 {t.vault.auto_cred.open_in_browser}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmed(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-status-success/25 bg-status-success/10 text-status-success hover:bg-status-success/20 transition-colors"
+              variant="accent"
+              tone="success"
+              size="sm"
+              icon={<Check className="w-3 h-3" />}
             >
-              <Check className="w-3 h-3" />
               {t.vault.auto_cred.completed_step}
-            </button>
+            </Button>
           </div>
         )}
       </div>

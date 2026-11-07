@@ -3,6 +3,7 @@
  */
 import { Beaker, FileText, List } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 type RunMode = 'predefined' | 'custom' | 'batch';
 
@@ -23,19 +24,17 @@ export function ModeTabBar({ mode, onModeChange, batchCount }: ModeTabBarProps) 
   return (
     <div className="flex gap-2">
       {tabs.map(({ id, label, Icon }) => (
-        <button
+        <Button
           type="button"
           key={id}
           onClick={() => onModeChange(id)}
-          className={`px-4 py-2 typo-body rounded-modal border transition-all flex items-center gap-2 ${
-            mode === id
-              ? 'bg-role-agent/15 border-role-agent/30 text-role-agent'
-              : 'bg-surface-1 border-hair text-foreground hover:border-hair'
-          }`}
+          variant={mode === id ? 'accent' : 'secondary'}
+          tone={mode === id ? 'agent' : undefined}
+          size="md"
+          icon={<Icon className="w-3.5 h-3.5" />}
         >
-          <Icon className="w-3.5 h-3.5" />
           {label}
-        </button>
+        </Button>
       ))}
     </div>
   );

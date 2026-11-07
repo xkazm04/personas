@@ -14,6 +14,8 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { createLatestWins } from '@/stores/util/latestWins';
 import { extractMessage } from '@/lib/silentCatch';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const PAGE_SIZE = 100;
 
@@ -137,15 +139,16 @@ export default function SettingsHistoryTab() {
         title={s.title}
         subtitle={s.subtitle}
         actions={
-          <button
+          <Button
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-surface-2 transition-colors disabled:opacity-50"
+            variant="ghost"
+            size="xs"
+            icon={<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />}
           >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             {s.refresh}
-          </button>
+          </Button>
         }
       />
       <ContentBody>
@@ -212,11 +215,11 @@ export default function SettingsHistoryTab() {
                     } transition-colors`}
                   >
                     <span
-                      className={`typo-caption px-1.5 py-0.5 rounded-interactive border uppercase tracking-wider ${actionClass}`}
+                      className={`typo-eyebrow px-1.5 py-0.5 rounded-interactive border ${actionClass}`}
                     >
                       {entry.action}
                     </span>
-                    <span className="typo-caption text-foreground uppercase tracking-wider">
+                    <span className="typo-eyebrow text-foreground">
                       {categoryLabel(entry.category)}
                     </span>
                     <span className="typo-body text-foreground truncate flex-1 text-left">
@@ -227,12 +230,11 @@ export default function SettingsHistoryTab() {
                         {entry.actor}
                       </span>
                     )}
-                    <span
+                    <Tooltip content={formatTimestamp(entry.createdAt)}><span
                       className="typo-caption text-foreground shrink-0"
-                      title={formatTimestamp(entry.createdAt)}
                     >
                       {formatRelativeTime(entry.createdAt, '', { dateFallbackDays: 30 })}
-                    </span>
+                    </span></Tooltip>
                     {hasDetails && (
                       <ChevronDown
                         size={12}

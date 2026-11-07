@@ -12,6 +12,7 @@ import { listProfiles as listTwinProfiles, type TwinProfile } from '@/api/twin/t
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ConnectorCredentialModalProps {
   connector: SuggestedConnector;
@@ -138,14 +139,15 @@ export function ConnectorCredentialModal({
               )}
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label={t.common.close}
-            className="p-1.5 rounded-card hover:bg-primary/10 transition-colors text-foreground hover:text-ink-1"
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Existing credential badge */}
@@ -196,7 +198,7 @@ export function ConnectorCredentialModal({
         {/* Setup instructions */}
         {connector.setup_instructions && (
           <div className="mb-4 px-3.5 py-2.5 bg-surface-2 border border-hair rounded-modal">
-            <p className="typo-code text-foreground uppercase tracking-wider mb-1.5">
+            <p className="typo-eyebrow text-foreground mb-1.5">
               {cf.setup_instructions_label}
             </p>
             <p className="typo-body text-foreground whitespace-pre-line">
@@ -232,13 +234,15 @@ export function ConnectorCredentialModal({
             <p className="typo-body text-foreground">
               {cf.no_fields_defined}
             </p>
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="mt-3 px-4 py-2 bg-surface-2 hover:bg-secondary text-ink-1 rounded-modal typo-body transition-colors"
+              variant="ghost"
+              size="md"
+              className="mt-3"
             >
               {t.common.close}
-            </button>
+            </Button>
           </div>
         )}
     </BaseModal>

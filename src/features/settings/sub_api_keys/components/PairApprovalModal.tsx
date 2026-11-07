@@ -122,7 +122,7 @@ export default function PairApprovalModal() {
         <p className="typo-body text-foreground">{s.pair_body}</p>
 
         <div className="space-y-1.5">
-          <p className="typo-caption text-foreground uppercase tracking-wide">
+          <p className="typo-eyebrow text-foreground">
             {s.pair_scopes_label}
           </p>
           {current.requested_scopes.length === 0 ? (
@@ -135,7 +135,7 @@ export default function PairApprovalModal() {
                   type="button"
                   onClick={() => toggleScope(scope)}
                   disabled={busy}
-                  className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:opacity-50 ${
+                  className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:is-disabled ${
                     scopes.has(scope) ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1'
                   }`}
                 >
@@ -153,24 +153,23 @@ export default function PairApprovalModal() {
         </div>
 
         <div className="space-y-1.5">
-          <p className="typo-caption text-foreground uppercase tracking-wide">
+          <p className="typo-eyebrow text-foreground">
             {s.field_expiry_label}
           </p>
           <div className="flex gap-1.5">
             {EXPIRY_OPTIONS.map((days) => (
-              <button
+              <Button
                 key={days}
                 type="button"
                 onClick={() => setExpiresInDays(days)}
                 disabled={busy}
-                className={`flex-1 px-2 py-1.5 rounded-interactive typo-caption border transition-colors disabled:opacity-50 ${
-                  expiresInDays === days
-                    ? 'border-primary/50 bg-primary/15 text-foreground'
-                    : 'border-border/30 bg-surface-1 text-foreground'
-                }`}
+                variant={expiresInDays === days ? 'accent' : 'secondary'}
+                tone={expiresInDays === days ? 'highlight' : undefined}
+                size="sm"
+                className="flex-1"
               >
                 {days === 7 ? s.expiry_7d : days === 30 ? s.expiry_30d : s.expiry_90d}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

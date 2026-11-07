@@ -84,7 +84,7 @@ function ThreadItem({
               )}
             </div>
           ) : state === 'current' ? (
-            <div className="typo-label text-primary/80 mt-1">
+            <div className="typo-label text-ink-2 mt-1">
               {t.templates.adopt_modal.thread_current}
             </div>
           ) : state === 'blocked' ? (

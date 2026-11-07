@@ -9,6 +9,7 @@ import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { toastCatch } from '@/lib/silentCatch';
 import { useCredentialRename } from '@/features/vault/shared/hooks/useCredentialRename';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface PlaygroundHeaderProps {
@@ -96,26 +97,30 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 autoFocus
                 className="flex-1 min-w-0 typo-heading text-ink-1 bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
               />
-              <button
+              <Button
                 onMouseDown={(e) => { e.preventDefault(); saveName(); }}
-                className="p-0.5 rounded-interactive text-status-success hover:text-status-success transition-colors shrink-0"
-                title={t.vault.ingest.save_name}
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0"
+                tooltip={t.vault.ingest.save_name} aria-label={t.vault.ingest.save_name}
               >
                 <Check className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           ) : (
             <>
               <h2 id="credential-playground-title" className="typo-heading text-ink-1 truncate">
                 {credential.name}
               </h2>
-              <button
+              <Button
                 onClick={startEditing}
-                className="p-0.5 rounded-interactive text-foreground hover:text-ink-2 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
-                title={t.vault.ingest.rename_credential}
+                variant="ghost"
+                size="icon-sm"
+                className="opacity-0 group-hover/name:opacity-100 focus-visible:opacity-100 shrink-0"
+                tooltip={t.vault.ingest.rename_credential} aria-label={t.vault.ingest.rename_credential}
               >
                 <Pencil className="w-3 h-3" />
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -133,13 +138,14 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border ${style.bg} ${style.text} ${style.border}`}
               >
                 {tag}
-                <button
+                <Button
                   onClick={() => removeTag(tag)}
-                  className="hover:opacity-70 transition-opacity"
+                  variant="ghost"
+                  size="icon-sm"
                   aria-label={tx(t.vault.credential_card.remove_tag, { tag })}
                 >
                   <X className="w-2.5 h-2.5" />
-                </button>
+                </Button>
               </span>
             );
           })}
@@ -174,22 +180,26 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
               )}
             </div>
           ) : (
-            <button
+            <Button
               onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
-              className="inline-flex items-center gap-0.5 typo-caption text-foreground hover:text-ink-2 transition-colors"
-              title={t.vault.shared.add_tag_title}
+              variant="ghost"
+              size="sm"
+              tooltip={t.vault.shared.add_tag_title}
+              icon={<Plus className="w-2.5 h-2.5" />}
             >
-              <Plus className="w-2.5 h-2.5" /> {t.vault.shared.add_tag_title}
-            </button>
+               {t.vault.shared.add_tag_title}
+            </Button>
           )}
         </div>
       </div>
-      <button
+      <Button
         onClick={onClose}
-        className="p-2 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2 shrink-0"
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
       >
         <X className="w-4 h-4" />
-      </button>
+      </Button>
     </div>
   );
 }

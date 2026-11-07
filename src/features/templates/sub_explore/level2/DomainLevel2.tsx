@@ -10,6 +10,7 @@ import { useExploreCatalog, recipesForDomain, type ExploreItem, type ExploreReci
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DomainTable } from './DomainTable';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface Props {
   domainId: string;
@@ -33,16 +34,19 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
       <div className="relative rounded-modal border border-hair overflow-hidden p-5 flex flex-col justify-center gap-2" style={{ minHeight: 104 }}>
         <img src={domainArt(d, isDark)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, var(--background) 32%, ${d.color}22)` }} />
-        <button
+        <Button
           type="button"
           onClick={onBack}
-          className="relative self-start inline-flex items-center gap-1 typo-caption text-foreground opacity-70 hover:opacity-100 -mt-1"
+          variant="ghost"
+          size="sm"
+          className="relative self-start opacity-70 -mt-1"
+          icon={<ChevronLeft className="w-3.5 h-3.5" />}
         >
-          <ChevronLeft className="w-3.5 h-3.5" /> {t.explore.l2_all_domains}
-        </button>
+           {t.explore.l2_all_domains}
+        </Button>
         <div className="relative">
           <div className="typo-heading-lg text-foreground">{domainLabel(d, t.explore)}</div>
-          <div className="typo-caption text-foreground opacity-80 h-4 flex items-center">
+          <div className="typo-caption text-ink-2 h-4 flex items-center">
             {loading ? (
               <span className="inline-block h-2.5 w-32 rounded-interactive bg-primary/[0.08] animate-fade-in" style={{ animationDelay: '120ms' }} aria-hidden="true" />
             ) : (

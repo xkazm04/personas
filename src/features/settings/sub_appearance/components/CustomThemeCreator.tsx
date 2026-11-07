@@ -180,7 +180,7 @@ export default function CustomThemeCreator() {
         title={s.custom_theme}
         icon={<Paintbrush />}
         action={isActiveCustom ? (
-          <span className="typo-label text-primary bg-primary/10 border border-hair rounded-full px-2 py-0.5">{s.custom_theme_active}</span>
+          <span className="typo-label text-ink-1">{s.custom_theme_active}</span>
         ) : undefined}
       />
 
@@ -197,18 +197,18 @@ export default function CustomThemeCreator() {
               const active = baseMode === mode;
               const Icon = mode === 'dark' ? Moon : Sun;
               return (
-                <button
+                <Button
                   type="button"
                   key={mode}
                   onClick={() => setBaseMode(mode)}
                   aria-pressed={active}
-                  className={`focus-ring flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
-                    active ? 'border-primary/30 bg-primary/10 text-foreground' : 'border-hair text-foreground hover:border-hair hover:bg-primary/5'
-                  }`}
+                  variant={active ? 'accent' : 'secondary'}
+                  tone={active ? 'highlight' : undefined}
+                  size="md"
+                  icon={<Icon className="w-3 h-3" />}
                 >
-                  <Icon className="w-3 h-3" />
                   {mode === 'dark' ? s.dark : s.light}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -221,7 +221,7 @@ export default function CustomThemeCreator() {
             onChange={(e) => setLabel(e.target.value)}
             placeholder={s.custom_theme_name_placeholder}
             maxLength={24}
-            className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal typo-body text-foreground placeholder:text-ink-3 focus-ring transition-all"
           />
         </div>
       </div>
@@ -238,14 +238,15 @@ export default function CustomThemeCreator() {
 
       {/* Background gradient (collapsible) */}
       <div className="space-y-2">
-        <button
+        <Button
           type="button"
           onClick={() => { const next = !showGradient; setShowGradient(next); if (!next) setBackgroundEndColor(null); }}
-          className="focus-ring flex items-center gap-1.5 typo-caption text-foreground hover:text-ink-2 transition-colors"
+          variant="ghost"
+          size="sm"
+          icon={<ChevronRight className={`w-3 h-3 transition-transform ${showGradient ? 'rotate-90' : ''}`} />}
         >
-          <ChevronRight className={`w-3 h-3 transition-transform ${showGradient ? 'rotate-90' : ''}`} />
           {s.background_gradient}
-        </button>
+        </Button>
         {showGradient && (
           <div className="pl-4 space-y-3">
             <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-1">

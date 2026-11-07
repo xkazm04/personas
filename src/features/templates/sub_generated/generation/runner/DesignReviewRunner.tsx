@@ -7,6 +7,7 @@ import { ModeTabBar } from '../sources/ModeTabBar';
 import { useDesignRunnerState } from './useDesignRunnerState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 export type { PredefinedTestCase } from './designRunnerConstants';
 
@@ -65,9 +66,9 @@ export default function DesignReviewRunner({
               </div>
             </div>
             {!isRunning && (
-              <button type="button" onClick={onClose} className="w-8 h-8 rounded-card hover:bg-surface-2 flex items-center justify-center transition-colors">
+              <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
                 <X className="w-4 h-4 text-foreground" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -164,30 +165,34 @@ export default function DesignReviewRunner({
           {/* Footer actions */}
           <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-hair">
             {isRunning ? (
-              <button type="button" onClick={onCancel} className="px-4 py-2 typo-body rounded-modal bg-status-error/10 text-status-error border border-status-error/20 hover:bg-status-error/20 transition-colors flex items-center gap-2">
-                <Square className="w-3.5 h-3.5" />{t.common.cancel}
-              </button>
+              <Button type="button" onClick={onCancel} variant="danger" size="md"
+                icon={<Square className="w-3.5 h-3.5" />}>
+                {t.common.cancel}
+              </Button>
             ) : !state.hasStarted ? (
-              <button
+              <Button
                 type="button"
                 onClick={state.handleStart}
                 disabled={!state.hasPersona || (state.mode === 'custom' && state.validCustomCount === 0) || (state.mode === 'batch' && state.filteredBatchTemplates.length === 0)}
-                className="px-4 py-2 typo-body rounded-modal bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                variant="accent"
+                tone="agent"
+                size="md"
+                icon={<Play className="w-3.5 h-3.5" />}
               >
-                <Play className="w-3.5 h-3.5" />
                 {state.mode === 'predefined' ? t.templates.generation.start_review_predefined
                   : state.mode === 'batch' ? t.templates.generation.start_batch.replace('{count}', String(state.filteredBatchTemplates.length)).replace('{plural}', state.filteredBatchTemplates.length !== 1 ? 's' : '')
                   : t.templates.generation.start_review_custom.replace('{count}', String(state.validCustomCount)).replace('{plural}', state.validCustomCount !== 1 ? 's' : '')}
-              </button>
+              </Button>
             ) : (
               <div className="flex items-center gap-2">
                 {lines.length > 0 && (
-                  <button type="button" onClick={state.handleCopyLog} className="px-4 py-2 typo-body rounded-modal bg-surface-2 text-foreground border border-hair hover:bg-secondary/80 hover:text-ink-1 transition-colors flex items-center gap-2">
-                    {state.copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
+                  <Button type="button" onClick={state.handleCopyLog} variant="secondary" size="md"
+                    icon={state.copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}>
+                    
                     {state.copied ? t.templates.generation.copied_log : t.templates.generation.copy_log}
-                  </button>
+                  </Button>
                 )}
-                <button type="button" onClick={onClose} className="px-4 py-2 typo-body rounded-modal bg-primary/10 text-foreground border border-hair hover:bg-primary/20 transition-colors">{t.common.close}</button>
+                <Button type="button" onClick={onClose} variant="secondary" size="md">{t.common.close}</Button>
               </div>
             )}
           </div>

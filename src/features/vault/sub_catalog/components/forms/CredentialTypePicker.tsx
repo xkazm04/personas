@@ -2,6 +2,7 @@ import { ArrowLeft, Radar, Globe } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
+import Button from '@/features/shared/components/buttons/Button';
 
 type TypePickerLabelKey = keyof Translations['vault']['type_picker'];
 
@@ -88,15 +89,16 @@ export function CredentialTypePicker({
       data-testid="vault-type-picker"
     >
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
           onClick={onBack}
           data-testid="vault-back-btn"
           aria-label={t.common.back}
-          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          size="icon-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <div>
           <h3 className="typo-heading text-foreground">{t.vault.type_picker.title}</h3>
           <p className="typo-body text-foreground">{t.vault.type_picker.subtitle}</p>
@@ -138,7 +140,7 @@ export function CredentialTypePicker({
         type="button"
         onClick={onWorkspaceConnect}
         data-testid="vault-pick-workspace"
-        className="w-full text-left p-4 bg-gradient-to-r from-status-info/5 to-status-success/5 border border-status-info/15 rounded-modal hover:from-status-info/10 hover:to-status-success/10 hover:border-status-info/25 transition-all"
+        className="w-full text-left p-4 border border-status-info/15 rounded-modal hover:from-status-info/10 hover:to-status-success/10 hover:border-status-info/25 transition-all bg-surface-1"
       >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-status-info/10 border-status-info/20">
@@ -159,7 +161,7 @@ export function CredentialTypePicker({
           type="button"
           onClick={onForage}
           data-testid="vault-pick-foraging"
-          className="w-full text-left p-4 bg-gradient-to-r from-role-agent/5 to-role-highlight/5 border border-role-agent/15 rounded-modal hover:from-role-agent/10 hover:to-role-highlight/10 hover:border-role-agent/25 transition-all"
+          className="w-full text-left p-4 border border-role-agent/15 rounded-modal hover:from-role-agent/10 hover:to-role-highlight/10 hover:border-role-agent/25 transition-all bg-surface-1"
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-role-agent/10 border-role-agent/20">

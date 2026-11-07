@@ -392,7 +392,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         {/* No font-* utility here: typography.css is unlayered, so a weight
             utility beside a typo-* token is silently discarded (the toolbar's
             copy of this chip still carries the dead font-medium). */}
-        <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-surface-2 border border-primary/8">
+        <span className="typo-eyebrow text-foreground px-2 py-0.5 rounded-card bg-surface-2 border border-primary/8">
           {language}
         </span>
         <ConnectorCapabilityNote serviceType={serviceType} />

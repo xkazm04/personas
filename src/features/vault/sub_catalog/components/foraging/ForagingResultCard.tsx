@@ -120,7 +120,7 @@ export function ForagingResultCard({
               </span>
             )}
             {isImported && (
-              <span className="typo-body px-1.5 py-0.5 rounded-interactive bg-status-success/15 text-status-success">
+              <span className="typo-body text-status-success">
                 {fg.imported}
               </span>
             )}

@@ -7,6 +7,7 @@ import {
 } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface CapabilityApprovalCardProps {
   manifest: DesktopConnectorManifest;
@@ -24,7 +25,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
     <div
       className="animate-fade-slide-in overflow-hidden"
     >
-      <div className="p-4 rounded-modal border border-status-warning/20 bg-gradient-to-b from-status-warning/5 to-transparent space-y-3">
+      <div className="p-4 rounded-modal border border-status-warning/20 space-y-3 bg-surface-1">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-status-warning" />
           <h4 className="typo-heading text-foreground">
@@ -81,30 +82,30 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
         )}
 
         <div className="flex items-center gap-2 pt-1">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="flex-1 px-3 py-1.5 typo-caption text-foreground bg-surface-1 rounded-card hover:bg-surface-2 transition-colors"
+            variant="ghost"
+            size="sm"
+            className="flex-1"
           >
             {t.common.cancel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onApprove}
             disabled={approving}
-            // text-foreground is deliberate: bg-orange-500 is saturated and
-            // theme-stable, so contrast is uniform across light/dark. The
-            // theme-aware text-foreground would render dark-on-orange on
-            // light theme — passing WCAG but visually weaker. Keep until a
-            // text-foreground-on-primary token lands.
-            className="flex-1 px-3 py-1.5 typo-caption text-foreground bg-status-warning rounded-card hover:bg-status-warning transition-colors disabled:opacity-50"
+            variant="accent"
+            tone="warning"
+            size="sm"
+            className="flex-1"
           >
             {approving ? (
               <LoadingSpinner size="sm" className="mx-auto" />
             ) : (
               dd.approve_connect
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

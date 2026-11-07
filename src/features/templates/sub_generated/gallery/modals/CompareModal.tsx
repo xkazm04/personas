@@ -7,6 +7,7 @@ import { categoryLabel, getCategoryMeta } from '../search/filters/searchConstant
 import { DIFFICULTY_META } from '../../shared/templateComplexity';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CompareColumn } from '../cards/buildComparison';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface CompareModalProps {
   isOpen: boolean;
@@ -164,14 +165,15 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
               {tx(t.templates.compare.subtitle, { count: columns.length })}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label={t.common.close}
-            className="p-1.5 rounded-interactive text-foreground hover:bg-surface-2 transition-colors flex-shrink-0"
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="overflow-auto px-6 py-4">
@@ -185,26 +187,28 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                     {(onAdopt || onTryIt) && (
                       <div className="flex items-center gap-1.5 mt-2">
                         {onAdopt && (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => onAdopt(col.id)}
                             data-testid={`compare-adopt-${col.id}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption text-role-agent hover:bg-role-agent/25 transition-colors"
+                            variant="ghost"
+                            size="xs"
+                            icon={<Download className="w-3 h-3" />}
                           >
-                            <Download className="w-3 h-3" />
                             {t.templates.actions.adopt}
-                          </button>
+                          </Button>
                         )}
                         {onTryIt && col.hasDesign && (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => onTryIt(col.id)}
                             data-testid={`compare-tryit-${col.id}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption text-status-success/80 hover:bg-status-success/20 transition-colors"
+                            variant="ghost"
+                            size="xs"
+                            icon={<Play className="w-3 h-3" />}
                           >
-                            <Play className="w-3 h-3" />
                             {t.templates.actions.try_it}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     )}
@@ -217,7 +221,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                 const differs = columns.length >= 2 && new Set(columns.map(dim.signature)).size > 1;
                 return (
                   <tr key={dim.label} className={`border-t border-hair ${differs ? 'bg-amber-500/[0.05]' : ''}`}>
-                    <th scope="row" className="text-left align-top py-3 pr-3 typo-caption text-foreground uppercase tracking-wide">
+                    <th scope="row" className="text-left align-top py-3 pr-3 typo-eyebrow text-foreground">
                       <span className="inline-flex items-center gap-1.5">
                         {differs && (
                           <Tooltip content={t.templates.compare.differs} placement="right">

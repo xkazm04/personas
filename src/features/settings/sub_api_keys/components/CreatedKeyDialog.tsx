@@ -28,6 +28,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { probeMcpServer } from '@/api/agents/mcpTools';
 import { DEFAULT_MCP_PORT, mcpBaseUrl } from '../libs/mcpServer';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface CreatedKeyDialogProps {
@@ -140,14 +141,15 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
             {s.created_dialog_title}
           </h2>
           {acknowledged && (
-            <button
+            <Button
               type="button"
               onClick={handleClose}
-              className="text-foreground hover:bg-surface-2 rounded-interactive p-1 transition-colors focus-ring"
+              variant="ghost"
+              size="icon-sm"
               aria-label={s.close}
             >
               <X size={16} />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -174,13 +176,15 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
                 className="flex-1 px-3 py-2 bg-background border border-border/40 rounded-input typo-code text-foreground select-all ring-1 ring-primary/30 transition-shadow focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/50"
                 onFocus={(e) => e.currentTarget.select()}
               />
-              <button
+              <Button
                 type="button"
                 onClick={copyKey}
-                className="inline-flex items-center justify-center gap-1.5 min-w-[88px] px-3 py-2 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 transition-opacity focus-ring"
+                variant="primary"
+                size="icon-sm"
+                className="min-w-[88px]"
               >
                 <CopyFeedback copied={keyCopied} idle={s.copy} done={s.copied} reduce={reduce} />
-              </button>
+              </Button>
             </motion.div>
             <p className="typo-caption text-foreground mt-1">{s.created_key_hint}</p>
           </div>
@@ -192,13 +196,15 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
             <pre className="px-3 py-2 bg-background border border-border/40 rounded-input typo-code text-ink-1 overflow-x-auto max-h-48">
               {mcpConfig}
             </pre>
-            <button
+            <Button
               type="button"
               onClick={copyConfig}
-              className="mt-1.5 inline-flex items-center gap-1.5 typo-caption text-primary hover:opacity-80 transition-opacity focus-ring"
+              variant="ghost"
+              size="icon-sm"
+              className="mt-1.5"
             >
               <CopyFeedback copied={configCopied} idle={s.copy_mcp_config} done={s.copied} reduce={reduce} />
-            </button>
+            </Button>
           </div>
 
           <label
@@ -220,19 +226,15 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border/30">
-          <button
+          <Button
             type="button"
             onClick={handleClose}
             disabled={!acknowledged}
-            className={[
-              'inline-flex items-center gap-1.5 px-4 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption transition-all duration-200 focus-ring',
-              acknowledged
-                ? 'opacity-100 scale-100 ring-2 ring-primary/40 shadow-elevation-2'
-                : 'opacity-40 scale-[0.98] cursor-not-allowed',
-            ].join(' ')}
+            variant="primary"
+            size="sm"
           >
             {s.created_done}
-          </button>
+          </Button>
         </div>
       </motion.div>
     </motion.div>

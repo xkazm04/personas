@@ -4,6 +4,7 @@ import { SectionLabel } from '@/features/shared/components/display/SectionLabel'
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface RecommendedCarouselProps {
   recommendedTemplates: PersonaDesignReview[];
@@ -48,14 +49,12 @@ export function RecommendedCarousel({
                 {connectors.slice(0, 3).map((c) => {
                   const meta = getConnectorMeta(c);
                   return (
-                    <span
-                      key={c}
+                    <Tooltip key={c} content={meta.label}><span
                       className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-surface-2 text-foreground"
-                      title={meta.label}
                     >
                       <ConnectorIcon meta={meta} size="w-3 h-3" />
                       {meta.label.length > 8 ? meta.label.slice(0, 8) + '..' : meta.label}
-                    </span>
+                    </span></Tooltip>
                   );
                 })}
                 {connectors.length > 3 && (

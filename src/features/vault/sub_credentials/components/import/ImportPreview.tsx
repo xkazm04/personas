@@ -9,6 +9,7 @@ import {
 } from './importHelpers';
 import { ImportSyncConfig } from './ImportSyncConfig';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ImportPreviewProps {
   sourceId: ImportSourceId;
@@ -49,13 +50,14 @@ export function ImportPreview({
     <div className="animate-fade-slide-in space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={onBack}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+            variant="ghost"
+            size="icon-sm"
           >
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </Button>
           <div>
             <h3 className="typo-body text-foreground">
               {tx(secrets.length !== 1 ? vi.secrets_found_other : vi.secrets_found_one, { count: secrets.length })}
@@ -66,9 +68,9 @@ export function ImportPreview({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onSelectAll} className="typo-body text-primary hover:underline">{vi.select_all}</button>
+          <Button type="button" onClick={onSelectAll} variant="ghost" size="sm">{vi.select_all}</Button>
           <span className="text-foreground">|</span>
-          <button type="button" onClick={onDeselectAll} className="typo-body text-foreground hover:text-foreground hover:underline">{vi.deselect_all}</button>
+          <Button type="button" onClick={onDeselectAll} variant="ghost" size="sm">{vi.deselect_all}</Button>
         </div>
       </div>
 
@@ -147,15 +149,16 @@ export function ImportPreview({
       )}
 
       <div className="flex justify-end">
-        <button
+        <Button
           type="button"
           onClick={onImport}
           disabled={selectedCount === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20"
+          variant="primary"
+          size="md"
+          icon={<Import className="w-4 h-4" />}
         >
-          <Import className="w-4 h-4" />
           {tx(selectedCount !== 1 ? vi.import_secrets_other : vi.import_secrets_one, { count: selectedCount })}
-        </button>
+        </Button>
       </div>
     </div>
   );

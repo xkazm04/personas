@@ -141,7 +141,7 @@ function PresetTile({ preset, art, big, memberLabel, onOpen }: {
       <div className="absolute inset-0" style={{ background: `linear-gradient(to top, var(--background) 16%, transparent 62%), radial-gradient(120% 80% at 70% 20%, ${colorWithAlpha(color, 0.13)}, transparent)` }} />
       <div className="relative h-full flex flex-col justify-end p-3.5 gap-0.5">
         <span className={`text-foreground drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)] ${big ? 'typo-heading-lg' : 'typo-heading'}`}>{preset.name}</span>
-        <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-80">
+        <span className="inline-flex items-center gap-1 typo-caption text-ink-2">
           <Users className="w-3.5 h-3.5" style={{ color }} />
           {memberLabel}
         </span>

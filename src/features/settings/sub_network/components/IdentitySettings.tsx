@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { InlineConfirm } from './InlineConfirm';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import Button from '@/features/shared/components/buttons/Button';
 
 export { IdentitySettings };
 export default function IdentitySettings() {
@@ -108,14 +109,15 @@ export default function IdentitySettings() {
                     {truncatePeerId(localIdentity.peer_id)}
                   </div>
                 </div>
-                <button
+                <Button
                   type="button"
                   onClick={handleCopyCard}
-                  className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
+                  variant="secondary"
+                  size="sm"
+                  icon={copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? t.common.copied : st.copy_identity_card}
-                </button>
+                </Button>
               </div>
 
               <div>
@@ -130,19 +132,20 @@ export default function IdentitySettings() {
                       maxLength={64}
                       autoFocus
                     />
-                    <button type="button" onClick={handleSaveName} className="px-2 py-1 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90">{st.save}</button>
-                    <button type="button" onClick={() => setEditingName(false)} className="px-2 py-1 typo-caption rounded-card border border-border hover:bg-surface-2">{st.cancel}</button>
+                    <Button type="button" onClick={handleSaveName} variant="primary" size="xs">{st.save}</Button>
+                    <Button type="button" onClick={() => setEditingName(false)} variant="secondary" size="xs">{st.cancel}</Button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="typo-body text-foreground">{localIdentity.display_name}</span>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => { setNameInput(localIdentity.display_name); setEditingName(true); }}
-                      className="typo-caption text-foreground hover:text-foreground underline"
+                      variant="ghost"
+                      size="sm"
                     >
                       {st.edit}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -180,14 +183,15 @@ export default function IdentitySettings() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h3 className="typo-heading text-foreground">{st.trusted_peers}</h3>
-          <button
+          <Button
             type="button"
             onClick={() => setShowImportForm(!showImportForm)}
-            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
+            variant="secondary"
+            size="xs"
+            icon={<UserPlus className="w-3.5 h-3.5" />}
           >
-            <UserPlus className="w-3.5 h-3.5" />
             {st.add_peer}
-          </button>
+          </Button>
         </div>
 
         {showImportForm && (
@@ -207,21 +211,23 @@ export default function IdentitySettings() {
               className="w-full px-3 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
             />
             <div className="flex gap-2 pt-1">
-              <button
+              <Button
                 type="button"
                 onClick={handleImportPeer}
                 disabled={!importInput.trim()}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                size="sm"
               >
                 {st.add_trusted_peer}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => { setShowImportForm(false); setImportInput(''); setImportNotes(''); }}
-                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2"
+                variant="secondary"
+                size="sm"
               >
                 {st.cancel}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -267,14 +273,15 @@ export default function IdentitySettings() {
                       onConfirm={() => handleRevoke(peer.peer_id, peer.display_name)}
                     >
                       {({ requestConfirm }) => (
-                        <button
+                        <Button
                           type="button"
                           onClick={requestConfirm}
-                          title={t.sharing.revoke_trust}
-                          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-warning transition-colors"
+                          tooltip={t.sharing.revoke_trust} aria-label={t.sharing.revoke_trust}
+                          variant="ghost"
+                          size="icon-sm"
                         >
                           <TrustRevokedIcon className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       )}
                     </InlineConfirm>
                   )}
@@ -283,14 +290,15 @@ export default function IdentitySettings() {
                     onConfirm={() => handleDelete(peer.peer_id, peer.display_name)}
                   >
                     {({ requestConfirm }) => (
-                      <button
+                      <Button
                         type="button"
                         onClick={requestConfirm}
-                        title={t.sharing.remove_peer}
-                        className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-error transition-colors"
+                        tooltip={t.sharing.remove_peer} aria-label={t.sharing.remove_peer}
+                        variant="ghost"
+                        size="icon-sm"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     )}
                   </InlineConfirm>
                 </div>

@@ -10,6 +10,7 @@ import {
   TRUST_LEVEL_LABELS,
   TRUST_LEVEL_COLORS,
 } from '@/lib/templates/templateVerification';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TrustBadgeProps {
   trustLevel: TemplateTrustLevel;
@@ -31,12 +32,11 @@ export function TrustBadge({ trustLevel, compact = false, className = '' }: Trus
 
   if (compact) {
     return (
-      <div
+      <Tooltip content={label}><div
         className={`inline-flex items-center justify-center w-6 h-6 rounded-card ${colors.bg} ${className}`}
-        title={label}
       >
         <Icon className={`w-3.5 h-3.5 ${colors.text}`} />
-      </div>
+      </div></Tooltip>
     );
   }
 

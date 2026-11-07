@@ -2,6 +2,7 @@ import { AlertTriangle, Lightbulb, RefreshCw, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { Translations } from '@/i18n/en';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ErrorPhaseProps {
   error: string | null;
@@ -104,22 +105,24 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
 
       {/* Action buttons */}
       <div className="flex items-center justify-between">
-        <button
+        <Button
           type="button"
           onClick={onStartOver}
-          className="flex items-center gap-1.5 px-3 py-2 text-foreground hover:text-ink-1 typo-body transition-colors"
+          variant="ghost"
+          size="md"
+          icon={<X className="w-3 h-3" />}
         >
-          <X className="w-3 h-3" />
           {dm.start_over}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onRetry}
-          className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-hair text-foreground rounded-modal typo-body transition-colors"
+          variant="secondary"
+          size="md"
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
         >
-          <RefreshCw className="w-3.5 h-3.5" />
           {hasInstruction ? dm.try_again_with : t.common.try_again}
-        </button>
+        </Button>
       </div>
     </div>
   );

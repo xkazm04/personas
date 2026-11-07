@@ -7,6 +7,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 // -- Step card component -----------------------------------------
 
@@ -35,10 +36,12 @@ export function SetupStepCard({
     >
       {/* Checkmark button */}
       <Tooltip content={isCompleted ? t.vault.design_phases.mark_not_done : t.vault.design_phases.mark_done}>
-        <button
+        <Button
           type="button"
           onClick={onToggle}
-          className="mt-0.5 shrink-0 focus-visible:outline-none"
+          variant="ghost"
+          size="sm"
+          className="mt-0.5 shrink-0"
           aria-label={t.vault.design_phases.mark_step_complete}
           aria-pressed={isCompleted}
         >
@@ -47,12 +50,12 @@ export function SetupStepCard({
           ) : (
             <Circle className="w-4 h-4 text-foreground hover:text-primary/50 transition-colors" />
           )}
-        </button>
+        </Button>
       </Tooltip>
 
       {/* Step content */}
       <div className={`flex-1 min-w-0 ${isCompleted ? 'opacity-50' : ''}`}>
-        <span className="typo-heading text-foreground uppercase">
+        <span className="typo-eyebrow text-foreground">
           {tx(t.vault.design_phases.step_number, { n: stepIndex + 1 })}
         </span>
         <div className="prose-none">

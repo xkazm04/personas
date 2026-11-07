@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { RefreshCw, Type, FileSearch, FolderOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface DocToolbarProps {
   documentCount: number;
@@ -39,15 +40,16 @@ function StartControl({
   label: string;
 }) {
   const button = (
-    <button
+    <Button
       type="button"
       onClick={onClick}
       disabled={busy}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-surface-2 hover:bg-surface-2 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed${busy ? ' pointer-events-none' : ''}`}
+      variant="ghost"
+      size="sm"
+      icon={icon}
     >
-      {icon}
       {label}
-    </button>
+    </Button>
   );
 
   if (!busy) return button;
@@ -80,14 +82,15 @@ export function DocToolbar({
         {tx(documentCount === 1 ? sh.documents_count_one : sh.documents_count_other, { count: documentCount })}
       </h3>
       {/* Refresh stays live while a job runs — it starts nothing. */}
-      <button
+      <Button
         type="button"
         onClick={onRefresh}
-        className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
-        title={t.vault.databases.refresh}
+        variant="ghost"
+        size="icon-sm"
+        tooltip={t.vault.databases.refresh} aria-label={t.vault.databases.refresh}
       >
         <RefreshCw className="w-3.5 h-3.5" />
-      </button>
+      </Button>
       <StartControl
         busy={ingestBusy}
         busyHint={sh.ingest_in_progress}

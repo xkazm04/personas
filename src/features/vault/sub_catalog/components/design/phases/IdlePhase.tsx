@@ -3,6 +3,7 @@ import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/sub_catalog/c
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { IdleSuggestions } from './IdleSuggestions';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface IdlePhaseProps {
   instruction: string;
@@ -50,42 +51,47 @@ export function IdlePhase({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button
+        <Button
           type="button"
           onClick={onToggleTemplates}
-          className="px-2.5 py-1 typo-body rounded-modal border border-hair text-primary hover:bg-primary/10 transition-colors"
+          variant="secondary"
+          size="xs"
         >
           {t.vault.design_phases.from_catalog}
-        </button>
+        </Button>
 
         {onUniversalSetup && (
-          <button
+          <Button
             type="button"
             onClick={onUniversalSetup}
-            className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+            variant="secondary"
+            size="xs"
+            icon={<Globe className="w-3.5 h-3.5" />}
           >
-            <Globe className="w-3.5 h-3.5" />
             {t.vault.design_phases.any_service}
-          </button>
+          </Button>
         )}
 
         {onImportFrom && (
-          <button
+          <Button
             type="button"
             onClick={onImportFrom}
-            className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-role-highlight/20 text-role-highlight hover:bg-role-highlight/10 transition-colors"
+            variant="accent"
+            tone="highlight"
+            size="xs"
+            icon={<Import className="w-3.5 h-3.5" />}
           >
-            <Import className="w-3.5 h-3.5" />
             {t.vault.design_phases.import_from}
-          </button>
+          </Button>
         )}
 
         {QUICK_SERVICE_HINTS.map((hint) => (
-          <button
+          <Button
             key={hint}
             type="button"
             onClick={() => onInstructionChange(hint)}
-            className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-hair text-ink-1 hover:bg-surface-2 transition-colors"
+            variant="secondary"
+            size="xs"
             data-testid={`hint-chip-${hint.split(' ')[0]?.toLowerCase()}`}
           >
             <span
@@ -93,7 +99,7 @@ export function IdlePhase({
               style={{ backgroundColor: HINT_COLORS[hint] ?? '#888' }}
             />
             {hint}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -116,30 +122,33 @@ export function IdlePhase({
         rows={3}
         autoFocus
         data-testid="vault-design-input"
-        className="w-full px-4 py-3 bg-surface-2 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-surface-2 border border-hair rounded-modal text-foreground typo-body placeholder:text-ink-3 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
       <div className="flex justify-end gap-2.5">
         {onAutoSetup && (
-          <button
+          <Button
             type="button"
             onClick={onAutoSetup}
             disabled={!instruction.trim()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-role-highlight hover:bg-role-highlight disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-role-highlight/20"
+            variant="accent"
+            tone="highlight"
+            size="md"
+            icon={<Bot className="w-4 h-4" />}
           >
-            <Bot className="w-4 h-4" />
             {t.vault.design_phases.auto_setup}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           onClick={onStart}
           disabled={!instruction.trim()}
           data-testid="vault-design-submit"
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20"
+          variant="primary"
+          size="md"
+          icon={<Sparkles className="w-4 h-4" />}
         >
-          <Sparkles className="w-4 h-4" />
           {t.vault.design_phases.design_credential}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewpor
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function ConnectorFilterDropdown({
   availableConnectors,
@@ -67,20 +68,21 @@ export function ConnectorFilterDropdown({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
+      <Button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5"
+        variant="secondary"
+        size="md"
+        icon={<Filter className="w-3.5 h-3.5" />}
+        iconRight={<ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
       >
-        <Filter className="w-3.5 h-3.5" />
         {t.templates.search.connectors_label}
         {connectorFilter.length > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-role-agent/20 text-role-agent typo-body">
+          <span className="ml-0.5 text-role-agent typo-body">
             {connectorFilter.length}
           </span>
         )}
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      </Button>
 
       {isOpen && (
         <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-hair rounded-modal shadow-elevation-3 min-w-[280px] overflow-hidden">

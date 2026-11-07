@@ -1,8 +1,10 @@
+import Button from '@/features/shared/components/buttons/Button';
 import { RotateCw, CheckCircle2, Play, Square, CircleCheck, CircleX, CircleHelp } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export function RotateAllButton({
   isRotatingAll,
@@ -17,28 +19,22 @@ export function RotateAllButton({
 }) {
   const { t, tx } = useTranslation();
   return (
-    <button
+    <Button
       type="button"
       onClick={onRotateAll}
       disabled={isRotatingAll || rotatableCount === 0}
-      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-card typo-caption border transition-colors ${
-        rotatableCount === 0
-          ? 'border-hair text-foreground cursor-not-allowed'
-          : rotateAllResult
-            ? rotateAllResult.failed > 0
-              ? 'bg-status-warning/15 text-status-warning dark:text-status-warning border-status-warning/25 dark:border-status-warning/20'
-              : 'bg-status-success/15 text-status-success dark:text-status-success border-status-success/25 dark:border-status-success/20'
-            : 'border-role-highlight/25 dark:border-role-highlight/20 text-role-highlight dark:text-role-highlight/80 hover:bg-role-highlight/10 dark:hover:bg-role-highlight/10 hover:text-role-highlight dark:hover:text-role-highlight'
-      }`}
-      title={rotatableCount === 0 ? t.vault.manager.no_rotation_support : tx(rotatableCount === 1 ? t.vault.manager.refresh_oauth_one : t.vault.manager.refresh_oauth_other, { count: rotatableCount })}
-    >
-      {isRotatingAll ? (
+      variant={rotateAllResult ? 'accent' : 'secondary'}
+      tone={rotateAllResult ? (rotateAllResult.failed > 0 ? 'warning' : 'success') : undefined}
+      size="sm"
+      tooltip={rotatableCount === 0 ? t.vault.manager.no_rotation_support : tx(rotatableCount === 1 ? t.vault.manager.refresh_oauth_one : t.vault.manager.refresh_oauth_other, { count: rotatableCount })}
+      icon={isRotatingAll ? (
         <LoadingSpinner size="xs" />
       ) : rotateAllResult ? (
         <CheckCircle2 className="w-3 h-3" />
       ) : (
         <RotateCw className="w-3 h-3" />
       )}
+    >
       {isRotatingAll
         ? t.vault.manager.refreshing
         : rotateAllResult
@@ -46,7 +42,7 @@ export function RotateAllButton({
           : rotatableCount > 0
             ? tx(t.vault.manager.rotate_count, { count: rotatableCount })
             : t.vault.manager.rotate}
-    </button>
+    </Button>
   );
 }
 
@@ -81,21 +77,13 @@ export function TestAllButton({
   const anyFailed = hasSummary && failed > 0;
 
   return (
+    <Tooltip content={bulk.isRunning ? t.vault.manager.cancel_healthcheck : t.vault.manager.test_all_credentials}>
     <button
       type="button"
       onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
-      className={`flex items-center gap-0 rounded-card typo-caption border transition-colors overflow-hidden ${
-        bulk.isRunning
-          ? 'bg-status-warning/15 text-status-warning dark:text-status-warning border-status-warning/25 dark:border-status-warning/20'
-          : hasSummary
-            ? anyFailed
-              ? 'bg-status-error/8 text-foreground border-status-error/25 dark:border-status-error/20'
-              : allVerified
-                ? 'bg-status-success/8 text-foreground border-status-success/25 dark:border-status-success/20'
-                : 'bg-foreground/5 text-foreground border-foreground/15'
-            : 'border-hair text-foreground hover:bg-primary/5 hover:text-ink-2'
+      className={`flex items-center gap-0 rounded-card typo-caption border border-hair overflow-hidden transition-colors hover:bg-surface-2 ${
+        bulk.isRunning ? 'text-status-warning' : 'text-ink-1'
       }`}
-      title={bulk.isRunning ? t.vault.manager.cancel_healthcheck : t.vault.manager.test_all_credentials}
     >
       {/* Play/Stop icon + label */}
       <span className="flex items-center gap-1.5 px-2 py-1.5">
@@ -138,13 +126,12 @@ export function TestAllButton({
               </span>
             )}
             {unverifiable > 0 && (
-              <span
+              <Tooltip content={t.vault.manager.unverifiable_tooltip}><span
                 className="flex items-center gap-0.5 text-ink-3"
-                title={t.vault.manager.unverifiable_tooltip}
               >
                 <CircleHelp className="w-3 h-3" />
                 <span>{unverifiable}</span>
-              </span>
+              </span></Tooltip>
             )}
           </>
         ) : (
@@ -152,5 +139,6 @@ export function TestAllButton({
         )}
       </span>
     </button>
+    </Tooltip>
   );
 }

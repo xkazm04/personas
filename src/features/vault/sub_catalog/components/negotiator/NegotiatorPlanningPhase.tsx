@@ -19,7 +19,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
       data-testid="vault-negotiator-planning"
     >
       <div className="flex items-center gap-3 px-4 py-3 bg-role-agent/10 border border-role-agent/20 rounded-modal">
-        <Brain className="w-4 h-4 text-role-agent shrink-0 animate-pulse" />
+        <Brain className="w-4 h-4 text-role-agent shrink-0" />
         <p className="typo-body text-role-agent/80">
           {negx.planning_description}
         </p>

@@ -14,6 +14,7 @@ import { QueriesTab } from './tabs/QueriesTab';
 import { ConsoleTab } from './tabs/ConsoleTab';
 import { ChatTab } from './tabs/ChatTab';
 import { getQueryLanguage } from './introspectionQueries';
+import Button from '@/features/shared/components/buttons/Button';
 
 type SchemaTab = 'chat' | 'tables' | 'queries' | 'console';
 
@@ -123,28 +124,32 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                   autoFocus
                   className="flex-1 min-w-0 typo-heading text-ink-1 bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
-                <button
+                <Button
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
-                  className="p-0.5 rounded-interactive text-status-success hover:text-status-success transition-colors shrink-0"
-                  title={db.save_name}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  tooltip={db.save_name} aria-label={db.save_name}
                 >
                   <Check className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             ) : (
               <>
                 <h2 id="schema-manager-title" className="typo-heading text-ink-1 truncate">
                   {credential.name}
                 </h2>
-                <button
+                <Button
                   type="button"
                   onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
-                  className="p-0.5 rounded-interactive text-foreground hover:text-ink-2 opacity-0 group-hover/name:opacity-100 group-focus-within/name:opacity-100 focus-visible:opacity-100 transition-all shrink-0"
-                  title={db.rename_credential}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="opacity-0 group-hover/name:opacity-100 group-focus-within/name:opacity-100 focus-visible:opacity-100 shrink-0"
+                  tooltip={db.rename_credential} aria-label={db.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -152,14 +157,15 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
             {db.schema_manager} -- {connector?.label || credential.service_type}
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
-          className="p-2 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
+          variant="ghost"
+          size="icon-sm"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Tab bar */}
@@ -168,17 +174,15 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
           const Icon = TAB_ICONS[tabId];
           const isActive = tabId === activeTab;
           return (
-            <button
+            <Button
               type="button"
               key={tabId}
               onClick={() => { setVisited((prev) => new Set([...prev, tabId])); setActiveTab(tabId); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body transition-colors ${
-                isActive
-                  ? 'text-ink-1'
-                  : 'text-foreground hover:text-ink-2'
-              }`}
+              variant="ghost"
+              size="md"
+              className="relative"
+              icon={<Icon className="w-3.5 h-3.5" />}
             >
-              <Icon className="w-3.5 h-3.5" />
               {TAB_LABELS[tabId]}
               {isActive && (
                 <motion.div
@@ -187,7 +191,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-            </button>
+            </Button>
           );
         })}
       </div>

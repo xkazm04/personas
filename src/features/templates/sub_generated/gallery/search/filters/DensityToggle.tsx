@@ -1,4 +1,5 @@
 import { useId, useRef, type KeyboardEvent } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { LayoutList, AlignJustify } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -64,8 +65,8 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
       {options.map(({ value, label, Icon }) => {
         const isActive = density === value;
         return (
+          <Tooltip key={value} content={label}>
           <button
-            key={value}
             type="button"
             role="radio"
             aria-checked={isActive}
@@ -77,7 +78,6 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
                 ? 'text-role-agent'
                 : 'text-foreground hover:text-ink-2 hover:bg-surface-2'
             }`}
-            title={label}
             aria-label={label}
           >
             {isActive && (
@@ -94,6 +94,7 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
             )}
             <Icon className="relative z-10 w-3.5 h-3.5" />
           </button>
+          </Tooltip>
         );
       })}
     </div>

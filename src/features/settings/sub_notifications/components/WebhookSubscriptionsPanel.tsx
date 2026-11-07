@@ -134,24 +134,24 @@ export function WebhookSubscriptionsPanel() {
   const showGhost = loading && subscriptions.length === 0 && !draft;
 
   return (
-    // eslint-disable-next-line custom/prefer-section-card -- bespoke panel: bordered header + flush divide-y list that SectionCard's padded body can't express
     <div className="rounded-modal border border-primary/12 bg-surface-1 shadow-elevation-1 overflow-hidden">
       <div className="px-4 py-3 border-b border-hair flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Webhook className="w-4 h-4 text-primary/60" />
-          <span className="typo-heading text-primary">
+          <span className="typo-heading text-ink-1">
             {s.webhook_subscriptions_title}
           </span>
         </div>
-        <button
+        <Button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-1 rounded-interactive px-2.5 py-1 typo-caption text-foreground hover:bg-primary/10"
+          variant="ghost"
+          size="xs"
           data-testid="webhook-subscriptions-add"
+          icon={<Plus className="w-3.5 h-3.5" />}
         >
-          <Plus className="w-3.5 h-3.5" />
           {s.webhook_subscriptions_add}
-        </button>
+        </Button>
       </div>
       <div className="divide-y divide-primary/10">
         {showGhost ? (
@@ -166,7 +166,7 @@ export function WebhookSubscriptionsPanel() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="typo-body text-foreground truncate">{sub.label}</span>
-                <span className="typo-caption text-foreground uppercase tracking-wider">
+                <span className="typo-eyebrow text-foreground">
                   {sub.provider}
                 </span>
               </div>
@@ -183,14 +183,15 @@ export function WebhookSubscriptionsPanel() {
                 aria-label={s.webhook_subscriptions_test_aria}
                 icon={<Send className="w-3.5 h-3.5 text-primary/60" />}
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => openEdit(sub)}
-                className="rounded-interactive p-1.5 hover:bg-primary/10"
+                variant="ghost"
+                size="icon-sm"
                 aria-label={s.webhook_subscriptions_edit_aria}
               >
                 <Pencil className="w-3.5 h-3.5 text-primary/60" />
-              </button>
+              </Button>
               <WebhookDeleteButton
                 id={sub.id}
                 onDelete={removeSubscription}

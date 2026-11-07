@@ -47,6 +47,7 @@ import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useHydratedDesignResult } from './useHydratedDesignResult';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface ChronologyAdoptionViewProps {
@@ -1530,14 +1531,15 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
             <span className="typo-body text-status-warning">
               {t.templates.adopt_modal.capabilities_load_failed}
             </span>
-            <button
+            <Button
               type="button"
               onClick={retryHydration}
-              className="focus-ring inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal border border-status-warning/30 typo-body text-status-warning hover:bg-status-warning/15 transition-colors"
+              variant="secondary"
+              size="xs"
+              icon={<RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />}
             >
-              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               {t.templates.adopt_modal.retry}
-            </button>
+            </Button>
           </div>
         )}
         {/* Composition x-ray — shows the template as mentality + catalog

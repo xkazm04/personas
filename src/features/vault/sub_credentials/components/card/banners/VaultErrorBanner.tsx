@@ -1,6 +1,7 @@
 import { XCircle } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface VaultErrorBannerProps {
   message: string;
@@ -17,13 +18,15 @@ export function VaultErrorBanner({ message, onDismiss, variant = 'banner' }: Vau
       <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
       <span className="flex-1">{message}</span>
       {onDismiss && (
-        <button
+        <Button
           type="button"
           onClick={onDismiss}
-          className="text-status-error/60 hover:text-status-error typo-body shrink-0"
+          variant="danger"
+          size="sm"
+          className="shrink-0"
         >
           {t.common.dismiss}
-        </button>
+        </Button>
       )}
     </div>
   );

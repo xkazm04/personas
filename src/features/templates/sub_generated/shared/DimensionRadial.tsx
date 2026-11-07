@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { AgentIR } from '@/lib/types/designTypes';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /** The 9 design dimensions scored in reviews.rs `score_design_result()`. */
 export const DIMENSIONS = [
@@ -157,9 +158,8 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
   const titleText = `${filled.length}/${SEGMENT_COUNT} dimensions -- ${filledNames}${missing.length > 0 ? ` | Missing: ${missingNames}` : ''}`;
 
   return (
-    <div
+    <Tooltip content={titleText}><div
       className={`relative inline-flex ${className}`}
-      title={titleText}
       data-testid="dimension-radial"
       data-filled={filled.length}
     >
@@ -207,6 +207,6 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
           </li>
         ))}
       </ul>
-    </div>
+    </div></Tooltip>
   );
 }

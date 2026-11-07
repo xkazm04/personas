@@ -18,6 +18,7 @@ import type { ConnectorDefinition } from '@/lib/types/types';
 import { CatalogCredentialModal } from '../../gallery/modals/CatalogCredentialModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 // ---------------------------------------------------------------------------
@@ -68,7 +69,7 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 surface-blur-modal">
       <div
         ref={modalRef}
-        className="flex flex-col rounded-card border border-hair bg-background shadow-elevation-4 shadow-black/30 overflow-hidden"
+        className="flex flex-col rounded-card border border-hair bg-background shadow-elevation-4 overflow-hidden"
         style={{ width: '70vw', height: '80vh', maxWidth: '1200px', maxHeight: '900px' }}
       >
         {/* Header */}
@@ -97,9 +98,9 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
               )}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-card hover:bg-surface-2 transition-colors">
+          <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
             <X className="w-4 h-4 text-foreground" />
-          </button>
+          </Button>
         </div>
 
         {/* Split content */}
@@ -295,15 +296,17 @@ function ConnectorHandshakeCard({
                 <span className="text-foreground">{c.name}</span>
                 <span className="text-status-error/60 typo-caption">{t.templates.test_report.not_found}</span>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => handleAddKey(c.name)}
-                title={tx(t.templates.test_report.add_key_for, { connector: c.name })}
-                className="flex items-center gap-1 px-2.5 py-1 typo-caption rounded-card bg-primary/10 border border-hair text-primary hover:bg-primary/20 transition-colors"
+                tooltip={tx(t.templates.test_report.add_key_for, { connector: c.name })}
+                variant="accent"
+                tone="highlight"
+                size="xs"
+                icon={<Plus className="w-3 h-3" />}
               >
-                <Plus className="w-3 h-3" />
                 {t.templates.test_report.add_key}
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -457,8 +460,8 @@ function ResultCards({ passed, failed, credentialMissing, skipped, unverified = 
 function MarkdownLine({ text }: { text: string }) {
   const trimmed = text.trim();
   if (!trimmed) return null;
-  if (/^####\s+/.test(trimmed)) return <h5 className="typo-label text-primary/70 mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
-  if (/^###\s+/.test(trimmed)) return <h4 className="typo-heading text-primary/80 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
+  if (/^####\s+/.test(trimmed)) return <h5 className="typo-label text-ink-1 mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
+  if (/^###\s+/.test(trimmed)) return <h4 className="typo-heading text-ink-1 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
   if (/^##\s+/.test(trimmed)) return <h3 className="typo-body-lg text-ink-1 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
   if (/^---+$/.test(trimmed)) return <hr className="border-hair my-3" />;
 
@@ -581,10 +584,11 @@ function InlineCopyButton({ text }: { text: string }) {
   const { copied, copy } = useCopyToClipboard();
   const handleCopy = () => copy(text);
   return (
-    <button type="button" onClick={handleCopy} className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-caption text-foreground hover:text-ink-2 hover:bg-surface-1 transition-colors">
-      {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
+    <Button type="button" onClick={handleCopy} variant="ghost" size="xs"
+      icon={copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}>
+      
       {copied ? t.templates.test_report.copied : t.templates.test_report.copy}
-    </button>
+    </Button>
   );
 }
 

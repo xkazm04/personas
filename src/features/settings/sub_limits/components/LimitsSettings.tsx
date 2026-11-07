@@ -471,15 +471,16 @@ export default function LimitsSettings() {
         actions={
           <div className="flex items-center gap-2">
             <RecentChangeChip category="limits" />
-            <button
+            <Button
               type="button"
               onClick={() => void loadSpend()}
               disabled={spendLoading}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-surface-2 transition-colors disabled:opacity-50"
+              variant="ghost"
+              size="xs"
+              icon={<RefreshCw className={`w-3 h-3 ${spendLoading ? 'animate-spin' : ''}`} />}
             >
-              <RefreshCw className={`w-3 h-3 ${spendLoading ? 'animate-spin' : ''}`} />
               {s.refresh}
-            </button>
+            </Button>
           </div>
         }
       />

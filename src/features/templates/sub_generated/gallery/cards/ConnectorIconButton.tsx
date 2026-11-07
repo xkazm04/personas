@@ -1,6 +1,7 @@
 import React from 'react';
 import { ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorMeta } from '@/lib/connectors/connectorMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConnectorIconButtonProps {
   connectorName: string;
@@ -22,9 +23,8 @@ export function ConnectorIconButton({
   };
 
   return (
-    <div
+    <Tooltip content={`${meta.label}${isReady ? '' : ' -- click to add credential'}`}><div
       className="relative flex-shrink-0"
-      title={`${meta.label}${isReady ? '' : ' -- click to add credential'}`}
       data-testid={`connector-readiness-dot-${connectorName}`}
     >
       <div
@@ -45,6 +45,6 @@ export function ConnectorIconButton({
             : 'bg-status-warning/60 border border-dashed border-status-warning/30'
         }`}
       />
-    </div>
+    </div></Tooltip>
   );
 }

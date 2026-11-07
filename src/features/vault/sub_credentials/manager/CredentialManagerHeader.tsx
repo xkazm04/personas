@@ -7,6 +7,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
 import type { ViewName } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { RotateAllButton, TestAllButton } from './HeaderActionButtons';
+import Button from '@/features/shared/components/buttons/Button';
 
 /* -- Title-only header (no actions) -------------------------------- */
 
@@ -106,17 +107,19 @@ export function CredentialToolbar({
                 ? t.vault.manager.search_catalog
                 : t.vault.manager.search_credentials
             }
-            className="w-full pl-8 pr-8 py-1.5 rounded-card border border-hair bg-background/80 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
+            className="w-full pl-8 pr-8 py-1.5 rounded-card border border-hair bg-background/80 typo-body text-foreground placeholder:text-ink-3 focus-ring"
           />
           {credentialSearch && (
-            <button
+            <Button
               type="button"
               onClick={() => onSearchChange('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-ink-2 transition-colors"
-              title={t.vault.manager.clear_search}
+              variant="ghost"
+              size="icon-sm"
+              className="absolute right-2 top-1/2"
+              tooltip={t.vault.manager.clear_search} aria-label={t.vault.manager.clear_search}
             >
               <X className="w-3 h-3" />
-            </button>
+            </Button>
           )}
         </div>
       )}

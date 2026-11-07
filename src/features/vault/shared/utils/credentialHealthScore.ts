@@ -179,13 +179,13 @@ export interface TierStyle {
 export function getTierStyle(tier: HealthTier): TierStyle {
   switch (tier) {
     case 'critical':
-      return { dotColor: 'bg-red-500', badgeBg: 'bg-red-500/10', badgeBorder: 'border-red-500/20', badgeText: 'text-red-400', label: 'Critical' };
+      return { dotColor: 'bg-status-error', badgeBg: 'bg-status-error/10', badgeBorder: 'border-status-error/20', badgeText: 'text-status-error', label: 'Critical' };
     case 'degraded':
-      return { dotColor: 'bg-orange-500', badgeBg: 'bg-orange-500/10', badgeBorder: 'border-orange-500/20', badgeText: 'text-orange-400', label: 'Degraded' };
+      return { dotColor: 'bg-status-warning', badgeBg: 'bg-status-warning/10', badgeBorder: 'border-status-warning/20', badgeText: 'text-status-warning', label: 'Degraded' };
     case 'warning':
-      return { dotColor: 'bg-amber-400', badgeBg: 'bg-amber-500/10', badgeBorder: 'border-amber-500/20', badgeText: 'text-amber-400', label: 'Warning' };
+      return { dotColor: 'bg-status-warning', badgeBg: 'bg-status-warning/10', badgeBorder: 'border-status-warning/20', badgeText: 'text-status-warning', label: 'Warning' };
     case 'healthy':
-      return { dotColor: 'bg-emerald-400', badgeBg: 'bg-emerald-500/10', badgeBorder: 'border-emerald-500/20', badgeText: 'text-emerald-400', label: 'Healthy' };
+      return { dotColor: 'bg-status-success', badgeBg: 'bg-status-success/10', badgeBorder: 'border-status-success/20', badgeText: 'text-status-success', label: 'Healthy' };
     case 'unknown':
       return { dotColor: 'bg-muted-foreground/40', badgeBg: 'bg-secondary/40', badgeBorder: 'border-primary/10', badgeText: 'text-foreground', label: 'Untested' };
   }

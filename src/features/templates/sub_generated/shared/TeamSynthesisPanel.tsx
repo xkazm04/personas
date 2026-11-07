@@ -5,6 +5,7 @@ import type { TeamSynthesisResult } from '@/api/overview/intelligence/teamSynthe
 import { BaseModal } from './BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TeamSynthesisPanelProps {
   isOpen: boolean;
@@ -68,9 +69,9 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               </p>
             </div>
           </div>
-          <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-card hover:bg-surface-2 transition-colors">
+          <Button type="button" onClick={handleClose} aria-label={t.common.close} variant="ghost" size="icon-sm">
             <X className="w-4 h-4 text-foreground" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
@@ -87,7 +88,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder={t.templates.team_synthesis.team_name_placeholder}
-                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-hair bg-background/40 text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-role-agent/30"
+                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-hair bg-background/40 text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:border-role-agent/30"
                   disabled={loading}
                 />
               </div>
@@ -102,7 +103,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t.templates.team_synthesis.describe_placeholder}
                   rows={4}
-                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-hair bg-background/40 text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-role-agent/30"
+                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-hair bg-background/40 text-foreground placeholder:text-ink-3 resize-none focus-visible:outline-none focus-visible:border-role-agent/30"
                   disabled={loading}
                 />
               </div>
@@ -137,15 +138,17 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
         {/* Footer */}
         <div className="px-6 py-3.5 border-t border-hair flex items-center justify-end gap-2">
           {!result ? (
-            <button
+            <Button
               type="button"
               onClick={handleSynthesize}
               disabled={loading || !query.trim() || !teamName.trim()}
-              className="px-4 py-2.5 typo-body rounded-modal bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              variant="accent"
+              tone="agent"
+              size="md"
             >
               {loading ? (
                 <>
-                  <Sparkles className="w-4 h-4 animate-pulse" />
+                  <Sparkles className="w-4 h-4" />
                   {t.templates.team_synthesis.synthesizing}
                 </>
               ) : (
@@ -154,16 +157,18 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   {t.templates.team_synthesis.synthesize_team}
                 </>
               )}
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 typo-body rounded-modal bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25 transition-colors flex items-center gap-2"
+              variant="accent"
+              tone="success"
+              size="md"
+              iconRight={<ArrowRight className="w-4 h-4" />}
             >
               {t.templates.team_synthesis.done}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
     </BaseModal>

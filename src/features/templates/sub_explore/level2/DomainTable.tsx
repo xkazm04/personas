@@ -9,6 +9,7 @@ import { FileStack, Blocks, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation';
 import { categoryLabel } from '../exploreDomains';
 import { recipesForTemplate, type ExploreItem, type ExploreRecipe } from '../useExploreCatalog';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface Row {
   kind: 'template' | 'recipe';
@@ -79,15 +80,20 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-input border border-hair p-0.5 bg-background/40">
           {([['all', t.explore.l2_filter_all], ['template', t.explore.l2_filter_templates], ['recipe', t.explore.l2_filter_recipes]] as [TypeFilter, string][]).map(([id, label]) => (
-            <button type="button" key={id} onClick={() => setType(id)}
-              className="px-3 py-1 rounded-input typo-caption transition-colors"
-              style={type === id ? { backgroundColor: `${accent}22`, color: accent } : undefined}>
-              <span className={type === id ? '' : 'text-foreground opacity-70'}>{label}</span>
-            </button>
+            <Button
+              type="button"
+              key={id}
+              onClick={() => setType(id)}
+              variant="ghost"
+              size="xs"
+              style={type === id ? { backgroundColor: `${accent}22`, color: accent } : undefined}
+            >
+              <span className={type === id ? '' : 'text-ink-2'}>{label}</span>
+            </Button>
           ))}
         </div>
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground opacity-50" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-3" />
           <input
             value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.explore.l2_filter_placeholder}
             className="pl-8 pr-3 py-1.5 rounded-input bg-background/50 border border-hair typo-body text-foreground w-52 focus:outline-none focus:border-primary/30"
@@ -121,7 +127,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
                 className="border-b border-hair last:border-0 hover:bg-surface-1 focus-visible:outline-none focus-visible:bg-surface-1 cursor-pointer">
                 <td className="px-3 py-2 typo-body template-name-themed">{r.name}</td>
                 <td className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
+                  <span className="inline-flex items-center gap-1 typo-caption text-ink-2">
                     {r.kind === 'template' ? <FileStack className="w-3 h-3" /> : <Blocks className="w-3 h-3" />}
                     {r.kind === 'template' ? t.explore.l2_kind_template : t.explore.l2_kind_recipe}
                   </span>
@@ -129,20 +135,20 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
                 <td className="px-3 py-2">
                   <span className="typo-caption px-1.5 py-0.5 rounded-input" style={{ color: accent, backgroundColor: `${accent}18` }}>{categoryLabel(r.category)}</span>
                 </td>
-                <td className="px-3 py-2 typo-data text-foreground opacity-80">{r.tools || '–'}</td>
-                <td className="px-3 py-2 typo-data text-foreground opacity-80">{r.kind === 'template' ? (r.recipes || '–') : '–'}</td>
+                <td className="px-3 py-2 typo-data text-ink-2">{r.tools || '–'}</td>
+                <td className="px-3 py-2 typo-data text-ink-2">{r.kind === 'template' ? (r.recipes || '–') : '–'}</td>
               </tr>
             ))}
             {rows.length === 0 && loading && (
               <DomainTableGhostRows />
             )}
             {rows.length === 0 && !loading && (
-              <tr><td colSpan={5} className="px-3 py-8 text-center typo-body text-foreground opacity-60">{t.explore.l2_no_matches}</td></tr>
+              <tr><td colSpan={5} className="px-3 py-8 text-center typo-body text-ink-3">{t.explore.l2_no_matches}</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="typo-caption text-foreground opacity-55">{tx(t.explore.l2_shown, { shown: rows.length, total: allRows.length })}</div>
+      <div className="typo-caption text-ink-3">{tx(t.explore.l2_shown, { shown: rows.length, total: allRows.length })}</div>
     </div>
   );
 }
@@ -151,11 +157,15 @@ function FilterChip({ label, count, active, accent, onClick }: {
   label: string; count: number; active: boolean; accent: string; onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption transition-colors ${active ? '' : 'text-foreground opacity-70 hover:opacity-100'}`}
-      style={active ? { backgroundColor: `${accent}22`, color: accent } : undefined}>
+    <Button
+      type="button"
+      onClick={onClick}
+      variant="ghost"
+      size="xs"
+      style={active ? { backgroundColor: `${accent}22`, color: accent } : undefined}
+    >
       {label}<span className="opacity-60">{count}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -190,12 +200,12 @@ function Th({ col, label, sort, onSort }: {
   return (
     <th
       aria-sort={on ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
-      className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground"
+      className="px-3 py-2 text-left typo-eyebrow text-foreground"
     >
-      <button type="button" onClick={() => onSort(col)} className={`inline-flex items-center gap-1 typo-label ${on ? 'text-foreground' : 'text-foreground opacity-55 hover:opacity-80'}`}>
+      <Button type="button" onClick={() => onSort(col)} variant="ghost" size="sm"
+        iconRight={on ? (sort.dir === 1 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : null}>
         {label}
-        {on && (sort.dir === 1 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-      </button>
+      </Button>
     </th>
   );
 }

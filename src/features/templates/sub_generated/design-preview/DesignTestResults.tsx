@@ -124,7 +124,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Confirmed capabilities */}
       {result.confirmed_capabilities.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="typo-code text-foreground uppercase tracking-wider">
+          <h4 className="typo-eyebrow text-foreground">
             {t.templates.design.confirmed_capabilities}
           </h4>
           <motion.div
@@ -146,7 +146,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Issues */}
       {result.issues.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="typo-code text-foreground uppercase tracking-wider">
+          <h4 className="typo-eyebrow text-foreground">
             Issues
           </h4>
           <motion.div
@@ -168,7 +168,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Next steps (non-ready only) */}
       {nextSteps.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <h4 className="typo-eyebrow text-foreground flex items-center gap-1.5">
             <Lightbulb className="w-3 h-3" />
             {t.templates.design.suggested_next_steps}
           </h4>

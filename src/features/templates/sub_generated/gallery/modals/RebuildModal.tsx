@@ -101,7 +101,7 @@ export function RebuildModal({
             <div className="space-y-4">
               {/* Instruction context */}
               <div className="bg-surface-1 rounded-modal border border-hair p-4">
-                <div className="typo-body text-foreground uppercase tracking-wide mb-1.5">
+                <div className="typo-eyebrow text-foreground mb-1.5">
                   {t.templates.rebuild_modal.template_instruction}
                 </div>
                 <p className="typo-body text-foreground">
@@ -202,52 +202,58 @@ export function RebuildModal({
         <div className="px-6 py-3 border-t border-hair flex items-center justify-end gap-3">
           {displayPhase === 'input' && (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 typo-body rounded-modal text-foreground hover:bg-surface-2 transition-colors"
+                variant="ghost"
+                size="md"
               >
                 {t.common.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => onStartRebuild(userDirection, [...regenTargets])}
-                className="px-4 py-2 typo-body rounded-modal bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors flex items-center gap-2"
+                variant="accent"
+                tone="agent"
+                size="md"
+                icon={<RefreshCw className="w-3.5 h-3.5" />}
               >
-                <RefreshCw className="w-3.5 h-3.5" />
                 {t.templates.rebuild_modal.start_rebuild}
-              </button>
+              </Button>
             </>
           )}
 
           {displayPhase === 'processing' && (
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 typo-body rounded-modal text-status-error/70 border border-status-error/20 hover:bg-status-error/10 transition-colors flex items-center gap-2"
+                variant="danger"
+                size="md"
+                icon={<Square className="w-3 h-3" />}
               >
-                <Square className="w-3 h-3" />
                 {t.templates.rebuild_modal.cancel_rebuild}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 typo-body rounded-modal bg-surface-2 text-foreground hover:bg-secondary/70 transition-colors"
+                variant="ghost"
+                size="md"
               >
                 {t.templates.rebuild_modal.run_in_background}
-              </button>
+              </Button>
             </div>
           )}
 
           {(displayPhase === 'completed' || displayPhase === 'failed') && (
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 typo-body rounded-modal bg-surface-2 text-foreground hover:bg-secondary/70 transition-colors"
+              variant="ghost"
+              size="md"
             >
               {t.common.close}
-            </button>
+            </Button>
           )}
         </div>
     </BaseModal>

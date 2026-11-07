@@ -62,21 +62,21 @@ describe('expanded gallery row stats on real seed payloads', () => {
     const useCases = seed.payload.use_cases?.length ?? 0;
     expect(useCases).toBeGreaterThan(0);
     renderRow(review);
-    expect(screen.getByTitle(`${useCases} expanded.use_cases`)).toBeTruthy();
-    expect(screen.getByTitle('1 expanded.notifications')).toBeTruthy();
+    expect(screen.getByLabelText(`${useCases} expanded.use_cases`)).toBeTruthy();
+    expect(screen.getByLabelText('1 expanded.notifications')).toBeTruthy();
   });
 
   it('does not claim zero events or reviews for a template that declares neither', () => {
     const { review } = seededReview('content/audio-briefing-host.json');
     renderRow(review);
-    expect(screen.queryByTitle(/ expanded.events$/)).toBeNull();
-    expect(screen.queryByTitle(/ expanded.reviews_label$/)).toBeNull();
+    expect(screen.queryByLabelText(/ expanded.events$/)).toBeNull();
+    expect(screen.queryByLabelText(/ expanded.reviews_label$/)).toBeNull();
   });
 
   it('keeps the legacy AgentIR arrays for a template that carries them', () => {
     const { review, seed } = seededReview('development/skill-librarian.json');
     const events = (seed.payload.suggested_event_subscriptions as unknown[]).length;
     renderRow(review);
-    expect(screen.getByTitle(`${events} expanded.events`)).toBeTruthy();
+    expect(screen.getByLabelText(`${events} expanded.events`)).toBeTruthy();
   });
 });

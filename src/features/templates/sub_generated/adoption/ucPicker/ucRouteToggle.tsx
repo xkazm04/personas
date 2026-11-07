@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { Destination } from './ucPickerTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function RouteToggle({
   destination,
@@ -52,16 +53,18 @@ export function RouteToggle({
         ) : null}
       </motion.button>
       {onRemove && (
-        <button
+        <Button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-status-error/80 hover:bg-status-error text-background flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+          variant="danger"
+          size="icon-sm"
+          className="absolute opacity-0 group-hover:opacity-100"
         >
           <X className="w-2.5 h-2.5" strokeWidth={3} />
-        </button>
+        </Button>
       )}
     </div>
   );

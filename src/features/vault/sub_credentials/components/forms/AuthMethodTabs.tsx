@@ -1,6 +1,6 @@
 import { Server, Terminal } from 'lucide-react';
 import type { ConnectorAuthMethod } from '@/lib/types/types';
-import { getAuthBadgeClasses } from '@/features/vault/shared/utils/authMethodStyles';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AuthMethodTabsProps {
   authMethods: ConnectorAuthMethod[];
@@ -18,21 +18,18 @@ export function AuthMethodTabs({
   return (
     <div className="flex gap-1 p-1 bg-secondary/15 border border-primary/8 rounded-card">
       {authMethods.map((method) => (
-        <button
+        <Button
           type="button"
           key={method.id}
           onClick={() => onMethodChange(method)}
           aria-pressed={activeAuthMethodId === method.id}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-colors ${
-            activeAuthMethodId === method.id
-              ? `border ${getAuthBadgeClasses(method)}`
-              : 'text-foreground hover:bg-surface-2 border border-transparent'
-          }`}
+          variant={activeAuthMethodId === method.id ? 'accent' : 'ghost'}
+          tone={activeAuthMethodId === method.id ? 'highlight' : undefined}
+          size="sm"
+          icon={method.type === 'mcp' ? <Server className="w-3 h-3" /> : method.type === 'cli' ? <Terminal className="w-3 h-3" /> : null}
         >
-          {method.type === 'mcp' && <Server className="w-3 h-3" />}
-          {method.type === 'cli' && <Terminal className="w-3 h-3" />}
           {method.label}
-        </button>
+        </Button>
       ))}
     </div>
   );

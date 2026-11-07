@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { categoryLabel } from '../libs/categoryLabels';
 import { EligibilityChip } from './EligibilityChip';
 import type { Recipe, Eligibility } from '../types';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ResultsProps {
   recipes: Recipe[];
@@ -480,19 +481,17 @@ const RecipeRow = memo(function RecipeRow({ recipe, eligibility, highlight, pers
 
       {/* Adopt button — hover-revealed */}
       <td className="pr-3 align-middle text-right">
-        <button
+        <Button
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpenDetail(recipe.id); }}
           disabled={incompatible}
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive border typo-label transition-all cursor-pointer ${
-            incompatible
-              ? 'border-hair bg-surface-2 text-foreground opacity-0'
-              : 'border-primary/35 bg-primary/12 text-primary opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-primary/22'
-          }`}
+          variant={incompatible ? 'secondary' : 'accent'}
+          tone={incompatible ? undefined : 'highlight'}
+          size="xs"
+          icon={<Sparkles className="w-3 h-3" />}
         >
-          <Sparkles className="w-3 h-3" />
           {t.recipes_catalog.adopt_button}
-        </button>
+        </Button>
       </td>
     </tr>
   );

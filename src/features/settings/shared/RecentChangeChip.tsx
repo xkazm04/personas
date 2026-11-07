@@ -5,6 +5,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 const NO_REFRESH_INTERVAL = 30_000;
 
@@ -54,14 +55,15 @@ export function RecentChangeChip({ category }: RecentChangeChipProps) {
   const label = tx(s.label, { action: entry.action, when: relative });
 
   return (
-    <button
+    <Button
       type="button"
       onClick={() => setSettingsTab('history')}
-      title={`${absolute}\n${s.click_to_open}`}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-foreground bg-surface-1 border border-hair hover:text-primary hover:bg-surface-2 transition-colors"
+      tooltip={`${absolute}\n${s.click_to_open}`}
+      variant="secondary"
+      size="xs"
+      icon={<History className="w-3 h-3 shrink-0" />}
     >
-      <History className="w-3 h-3 shrink-0" />
       <span>{label}</span>
-    </button>
+    </Button>
   );
 }

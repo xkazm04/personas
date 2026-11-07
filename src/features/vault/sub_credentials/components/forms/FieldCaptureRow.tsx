@@ -138,7 +138,7 @@ export function FieldCaptureRow({
           aria-invalid={!!error}
           aria-describedby={describedBy}
           aria-required={required || undefined}
-          className={`w-full px-3 py-2 border rounded-modal typo-body focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-status-error/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
+          className={`w-full px-3 py-2 border rounded-modal typo-body focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder:text-ink-3 disabled:is-disabled ${SOURCE_ACCENT[source]} ${error ? 'border-status-error/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
       )}

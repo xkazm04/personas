@@ -11,6 +11,7 @@ import { ExportSelectionModal } from './ExportSelectionModal';
 import { ImportConflictPanel } from './ImportConflictPanel';
 import type { PortabilityImportResult, ExportSelectionArgs } from '@/api/system/dataPortability';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -57,40 +58,40 @@ export function ExportSection({
       </p>
 
       <div className="flex flex-wrap gap-3">
-        <button
+        <Button
           type="button"
           onClick={onOpenExportModal}
           disabled={exportStatus === 'loading'}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
-            bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15
-            transition-colors disabled:opacity-50"
-        >
-          {exportStatus === 'loading' ? (
+          variant="accent"
+          tone="success"
+          size="md"
+          icon={exportStatus === 'loading' ? (
             <LoadingSpinner />
           ) : exportStatus === 'success' ? (
             <Check className="w-4 h-4" />
           ) : (
             <Download className="w-4 h-4" />
           )}
+        >
           {exportStatus === 'loading'
             ? s.exporting
             : exportStatus === 'success'
               ? s.exported
               : s.export_workspace}
-        </button>
+        </Button>
 
         {!showImportInput ? (
-          <button
+          <Button
             type="button"
             onClick={() => setShowImportInput(true)}
             disabled={importStatus === 'loading'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
-              bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
-              transition-colors disabled:opacity-50"
+            variant="accent"
+            tone="info"
+            size="md"
+            icon={importStatus === 'success' ? <Check className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
           >
-            {importStatus === 'success' ? <Check className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
             {importStatus === 'success' ? s.imported : s.import_workspace}
-          </button>
+          </Button>
         ) : (
           <div className="flex items-center gap-2">
             <PasswordToggleField
@@ -101,24 +102,25 @@ export function ExportSection({
               inputClassName="w-56 px-3 py-2 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 placeholder:text-ink-3 outline-none focus-visible:border-status-info/30"
               autoFocus
             />
-            <button
+            <Button
               type="button"
               onClick={handleImport}
               disabled={importStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body
-                bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
-                transition-colors disabled:opacity-50"
+              variant="accent"
+              tone="info"
+              size="md"
+              icon={importStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
             >
-              {importStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
               {s.import_label}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => { setShowImportInput(false); setImportPassphrase(''); }}
-              className="typo-caption text-foreground hover:text-ink-2 transition-colors"
+              variant="ghost"
+              size="sm"
             >
               {s.cancel}
-            </button>
+            </Button>
           </div>
         )}
       </div>

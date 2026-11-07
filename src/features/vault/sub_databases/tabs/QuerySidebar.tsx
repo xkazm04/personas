@@ -80,15 +80,17 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               </Button>
             </div>
           ) : (
-            <button
+            <Button
               key="create-btn"
               type="button"
               onClick={() => setIsCreating(true)}
-              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body text-primary/80 hover:bg-primary/8 border border-dashed border-hair hover:border-primary/25 transition-all"
+              variant="secondary"
+              size="md"
+              className="w-full"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
               {db.new_query}
-            </button>
+            </Button>
           )}
       </div>
 
@@ -101,7 +103,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             aria-current={selectedId === q.id || undefined}
             className={`focus-ring group flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-all duration-150 ${
               selectedId === q.id
-                ? 'bg-primary/10 border border-hair shadow-elevation-1 shadow-primary/5'
+                ? 'bg-primary/10 border border-hair shadow-elevation-1'
                 : 'hover:bg-surface-2 border border-transparent'
             }`}
             onClick={() => onSelect(q.id)}
@@ -123,24 +125,27 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 "button"s on every saved-query row, one of which deletes. The
                 star's label carries its state, since the glyph's fill is the
                 only thing that distinguishes on from off. */}
-            <button
+            <Button
               type="button"
               aria-label={q.is_favorite ? db.remove_favorite : db.add_favorite}
               aria-pressed={q.is_favorite}
               onClick={(e) => { e.stopPropagation(); handleToggleFavorite(q.id, q.is_favorite); }}
-              className={`p-0.5 transition-colors ${q.is_favorite ? 'text-status-warning' : 'text-foreground hover:text-status-warning/50'}`}
+              variant="ghost"
+              size="icon-sm"
             >
               <Star className="w-3 h-3" fill={q.is_favorite ? 'currentColor' : 'none'} />
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               aria-label={t.common.delete}
               onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: q.id, title: q.title }); }}
-              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-status-error/60 transition-all"
+              variant="ghost"
+              size="icon-sm"
+              className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
             >
               <Trash2 className="w-3 h-3" />
-            </button>
+            </Button>
           </div>
         ))}
 

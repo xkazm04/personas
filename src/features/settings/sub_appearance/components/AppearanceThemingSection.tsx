@@ -40,7 +40,7 @@ export default function AppearanceThemingSection() {
     <SectionCard
       title={labels.theming}
       icon={<Palette className="w-4 h-4 text-ink-2" />}
-      titleClassName="text-primary"
+      titleClassName="text-ink-1"
       action={
         <SegmentedTabs<'default' | 'custom'>
           variant="segment"

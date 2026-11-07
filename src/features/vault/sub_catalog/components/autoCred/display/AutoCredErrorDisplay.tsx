@@ -4,6 +4,7 @@ import type { BrowserLogEntry, AutoCredErrorInfo } from '../helpers/types';
 import { CopyLogButton } from './AutoCredLogEntries';
 import { ERROR_KIND_CONFIG } from '../helpers/autoCredErrorConfig';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutoCredErrorDisplayProps {
   error: AutoCredErrorInfo;
@@ -53,14 +54,16 @@ export function AutoCredErrorDisplay({
       {/* What happened -- expandable context */}
       {ctx && (ctx.tool_call_count > 0 || ctx.last_url || ctx.duration_secs) && (
         <div className="rounded-card border border-hair bg-secondary/15 overflow-hidden">
-          <button
+          <Button
             type="button"
             onClick={() => setContextOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 typo-body text-foreground hover:text-ink-2 transition-colors"
+            variant="ghost"
+            size="md"
+            className="w-full"
+            iconRight={contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           >
             <span>{t.vault.auto_cred.what_happened}</span>
-            {contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
+          </Button>
           {contextOpen && (
             <div className="px-4 pb-3 space-y-2 typo-body text-foreground">
               {ctx.duration_secs != null && (
@@ -105,14 +108,16 @@ export function AutoCredErrorDisplay({
       {/* Session log -- expandable with copy */}
       {logs.length > 0 && (
         <div className="rounded-card border border-hair bg-secondary/15 overflow-hidden">
-          <button
+          <Button
             type="button"
             onClick={() => setLogOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 typo-body text-foreground hover:text-ink-2 transition-colors"
+            variant="ghost"
+            size="md"
+            className="w-full"
+            iconRight={logOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           >
             <span>{tx(t.vault.auto_cred.session_log, { count: logs.length })}</span>
-            {logOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
+          </Button>
           {logOpen && (
             <div className="border-t border-hair">
               <div className="max-h-[26rem] overflow-y-auto p-3 typo-code space-y-1">
@@ -140,23 +145,24 @@ export function AutoCredErrorDisplay({
 
       {/* Actions */}
       <div className="flex gap-3 justify-center">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-surface-2 transition-colors"
+          variant="ghost"
+          size="md"
         >
           {error.retryable ? t.common.cancel : t.vault.auto_cred.setup_manually}
-        </button>
+        </Button>
         {error.retryable && (
-          <button
+          <Button
             type="button"
             onClick={onRetry}
-            // text-foreground is deliberate on saturated bg-cyan-600 — see
-            // AutoCredConsent for the same exception.
-            className="px-4 py-2 bg-role-highlight hover:bg-role-highlight text-foreground rounded-modal typo-body transition-colors"
+            variant="accent"
+            tone="highlight"
+            size="md"
           >
             {t.vault.auto_cred.retry}
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -10,6 +10,7 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // Centralized sparkline colors so a future palette migration touches one site.
 // These are raw Tailwind 500-shade hex values — there is no theme-aware CSS
@@ -421,12 +422,11 @@ function HealthDot({ state }: { state: TestState }) {
   };
   const c = config[state];
   return (
-    <span
+    <Tooltip content={s[c.ariaKey]}><span
       role="status"
       aria-label={s[c.ariaKey]}
-      title={s[c.ariaKey]}
       className={`inline-block w-2 h-2 rounded-full shrink-0 ${c.cls}`}
-    />
+    /></Tooltip>
   );
 }
 
@@ -467,7 +467,7 @@ function TestConnectionButton({
         // The check only probes the local CLI binary (presence + --version), not
         // the external model endpoint or API key — surface that scope via the
         // tooltip so a green check doesn't overclaim end-to-end connectivity.
-        <span className="typo-caption text-status-success flex items-center gap-1" title={s.test_cli_scope_note}>
+        <Tooltip content={s.test_cli_scope_note}><span className="typo-caption text-status-success flex items-center gap-1">
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.78 4.97a.75.75 0 00-1.06 0L7 8.69 5.28 6.97a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l4.25-4.25a.75.75 0 000-1.06z" />
           </svg>
@@ -475,16 +475,16 @@ function TestConnectionButton({
           {result?.latency_ms != null && (
             <span className="text-foreground ml-1">{result.latency_ms}ms</span>
           )}
-        </span>
+        </span></Tooltip>
       )}
 
       {state === 'fail' && (
-        <span className="typo-caption text-status-error flex items-center gap-1" title={result?.error ?? undefined}>
+        <Tooltip content={result?.error ?? undefined}><span className="typo-caption text-status-error flex items-center gap-1">
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.03 4.97a.75.75 0 00-1.06 0L8 6.94 6.03 4.97a.75.75 0 10-1.06 1.06L6.94 8 4.97 9.97a.75.75 0 001.06 1.06L8 9.06l1.97 1.97a.75.75 0 001.06-1.06L9.06 8l1.97-1.97a.75.75 0 000-1.06z" />
           </svg>
           {result?.error ?? s.unreachable}
-        </span>
+        </span></Tooltip>
       )}
     </div>
   );

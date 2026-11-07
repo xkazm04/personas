@@ -4,6 +4,7 @@
 import { Inbox, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 export function PreviewModal({
@@ -25,9 +26,8 @@ export function PreviewModal({
       size="full"
       portal
       containerClassName="fixed inset-0 z-[10500] flex items-center justify-center p-6"
-      panelClassName="relative bg-gradient-to-b from-background via-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-hair rounded-card shadow-elevation-4 shadow-black/30 overflow-hidden flex flex-col max-h-[calc(100vh-3rem)] w-full max-w-3xl"
+      panelClassName="relative border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col max-h-[calc(100vh-3rem)] w-full max-w-3xl bg-surface-1"
     >
-      <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-primary/[0.04] blur-3xl pointer-events-none" />
       <div className="relative flex items-start justify-between px-6 py-4 border-b border-primary/[0.08] flex-shrink-0 bg-secondary/10">
         <div className="flex-1 min-w-0 pr-4">
           <h3
@@ -41,14 +41,15 @@ export function PreviewModal({
           </h3>
           {subtitle && <p className="typo-body text-foreground mt-1">{subtitle}</p>}
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="focus-ring p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          size="icon-sm"
           aria-label={debtText("auto_close_preview_baa55035")}
         >
           <X className="w-5 h-5" />
-        </button>
+        </Button>
       </div>
       <div className="relative flex-1 overflow-y-auto px-6 py-5 flex flex-col min-h-0">{children}</div>
     </BaseModal>

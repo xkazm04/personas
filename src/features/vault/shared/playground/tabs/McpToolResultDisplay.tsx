@@ -26,12 +26,12 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {/* Status line */}
       <div className="flex items-center gap-3">
         {result.is_error ? (
-          <span className="flex items-center gap-1 px-2 py-1 rounded-interactive typo-body bg-status-error/15 text-status-error border border-status-error/25">
+          <span className="flex items-center gap-1 typo-body text-status-error">
             <AlertCircle className="w-3 h-3" />
             {t.vault.playground.mcp_error}
           </span>
         ) : (
-          <span className="flex items-center gap-1 px-2 py-1 rounded-interactive typo-body bg-status-success/15 text-status-success border border-status-success/25">
+          <span className="flex items-center gap-1 typo-body text-status-success">
             <Check className="w-3 h-3" />
             {t.vault.playground.mcp_success}
           </span>

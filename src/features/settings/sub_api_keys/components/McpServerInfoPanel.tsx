@@ -16,6 +16,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { probeMcpServer, type McpServerLiveness } from '@/api/agents/mcpTools';
 import { DEFAULT_MCP_PORT, mcpBaseUrl } from '../libs/mcpServer';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** How often the panel re-probes the local server's live state. */
 const PROBE_INTERVAL_MS = 30_000;
@@ -105,8 +106,8 @@ export function McpServerInfoPanel() {
   return (
     <SectionCard
       title={s.server_panel_title}
-      icon={<Server className="w-4 h-4 text-fuchsia-400" />}
-      titleClassName="text-primary"
+      icon={<Server className="w-4 h-4 text-role-agent" />}
+      titleClassName="text-ink-1"
       action={
         <span
           data-testid="mcp-server-status-chip"
@@ -124,10 +125,11 @@ export function McpServerInfoPanel() {
         <code className="flex-1 typo-code text-foreground bg-background/60 border border-border/30 rounded-input px-2.5 py-1.5 truncate">
           {baseUrl}
         </code>
-        <button
+        <Button
           type="button"
           onClick={copyUrl}
-          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-surface-2 transition-colors"
+          variant="ghost"
+          size="sm"
         >
           {urlCopied ? (
             <>
@@ -140,7 +142,7 @@ export function McpServerInfoPanel() {
               {s.copy}
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       <details className="group">

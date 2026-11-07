@@ -23,6 +23,7 @@ import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/comp
 import { AutoCredBrowserError } from './AutoCredBrowserError';
 import { AutoCredErrorDisplay } from '../display/AutoCredErrorDisplay';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutoCredPanelProps {
   designResult: CredentialDesignResult;
@@ -183,13 +184,15 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
                 {tx(t.vault.auto_cred_extra.credential_stored, { label: designResult.connector.label })}
               </p>
             </div>
-            <button
+            <Button
               type="button"
               onClick={onComplete}
-              className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-modal typo-body transition-colors"
+              variant="accent"
+              tone="highlight"
+              size="md"
             >
               {t.common.done}
-            </button>
+            </Button>
           </motion.div>
         )}
 

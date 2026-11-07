@@ -5,6 +5,7 @@ import { BookOpen, Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-re
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RecipeListItemProps {
   recipe: RecipeDefinition;
@@ -32,19 +33,20 @@ export function RecipeListItem({
   return (
     <div className="rounded-modal border border-border/40 bg-card/30 overflow-hidden hover:border-border/60 transition-colors">
       <div className="flex items-center gap-3 px-4 py-3">
-        <button
+        <Button
           type="button"
           onClick={onToggleExpand}
           aria-expanded={isExpanded}
           aria-label={recipe.name}
-          className="text-foreground hover:text-ink-2 transition-colors"
+          variant="ghost"
+          size="sm"
         >
           {isExpanded ? (
             <ChevronDown className="w-3.5 h-3.5" />
           ) : (
             <ChevronRight className="w-3.5 h-3.5" />
           )}
-        </button>
+        </Button>
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-card bg-primary/10 border border-hair">
           <BookOpen className="w-3 h-3 text-primary" />
         </div>
@@ -60,24 +62,28 @@ export function RecipeListItem({
           </span>
         )}
         {onOpenPlayground && (
-          <button
+          <Button
             type="button"
             onClick={onOpenPlayground}
             aria-label={sh.open_settings}
-            className="flex items-center justify-center rounded-card p-1.5 text-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
           >
             <Settings className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           ref={deleteRef}
           type="button"
           onClick={() => setConfirmOpen(true)}
           aria-label={t.common.delete}
-          className="rounded-card p-1.5 text-status-error/40 hover:text-status-error hover:bg-status-error/10 transition-colors shrink-0"
+          variant="danger"
+          size="icon-sm"
+          className="shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         <ConfirmPopover
           open={confirmOpen}
           anchorRef={deleteRef}

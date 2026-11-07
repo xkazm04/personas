@@ -5,6 +5,7 @@ import { getSeverityStyles } from './graphConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SimulationPanel } from './SimulationPanel';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface BlastRadiusPanelProps {
   blast: BlastRadius;
@@ -31,7 +32,7 @@ export function BlastRadiusPanel({
       {onToggleSimulation && (
         <div className="flex items-center justify-between px-3 py-1.5 rounded-card border border-hair bg-surface-1">
           <div className="flex items-center gap-2">
-            <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-fuchsia-400' : 'text-foreground'}`} />
+            <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-role-agent' : 'text-foreground'}`} />
             <span className="typo-caption text-foreground">{dep.simulate_revocation}</span>
           </div>
           {/* A switch is named by what it controls; its state is aria-checked.
@@ -63,9 +64,9 @@ export function BlastRadiusPanel({
                 <Shield className="w-4 h-4 text-foreground" />
                 <span className="typo-body text-ink-1">{dep.blast_radius}</span>
               </div>
-              <button type="button" onClick={onClose} className="p-1 hover:bg-surface-2 rounded-interactive transition-colors cursor-pointer">
+              <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
                 <X className="w-3.5 h-3.5 text-foreground" />
-              </button>
+              </Button>
             </div>
 
             <div className="p-3 space-y-3">

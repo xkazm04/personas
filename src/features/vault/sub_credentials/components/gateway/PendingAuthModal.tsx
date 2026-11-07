@@ -97,7 +97,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
             <div className="flex-1 min-w-0">
               <h2
                 id="pending-auth-modal-title"
-                className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+                className="typo-heading text-ink-1"
               >
                 {pa.title}
               </h2>
@@ -108,7 +108,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
           </div>
 
           <div className="rounded-interactive border border-hair bg-background/50 p-3">
-            <p className="typo-caption text-foreground mb-2 uppercase tracking-wider">
+            <p className="typo-eyebrow text-foreground mb-2">
               {pa.auth_url_label}
             </p>
             <p className="typo-body text-foreground break-all font-mono text-[11px]">

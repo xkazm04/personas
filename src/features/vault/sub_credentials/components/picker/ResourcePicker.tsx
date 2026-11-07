@@ -27,6 +27,8 @@ import {
 import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 interface Props {
@@ -210,14 +212,15 @@ export function ResourcePicker({
             <DebtText k="auto_narrow_this_credential_to_specific_resourc_5f20fe8a" />
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="text-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          size="icon-sm"
           aria-label={t.common.close}
         >
           <X className="w-5 h-5" />
-        </button>
+        </Button>
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
@@ -270,17 +273,18 @@ export function ResourcePicker({
                       {tx(t.vault.resource_picker.picked_count, { count: picked.length })}
                     </span>
                   )}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => fetchSpec(spec, true)}
-                    className="p-1.5 rounded-interactive hover:bg-foreground/5 text-foreground hover:text-foreground transition-colors"
-                    title={t.common.refresh}
+                    variant="ghost"
+                    size="icon-sm"
+                    tooltip={t.common.refresh} aria-label={t.common.refresh}
                     disabled={st.loading}
                   >
                     <RefreshCw
                       className={`w-4 h-4 ${st.loading ? 'animate-spin' : ''}`}
                     />
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -303,24 +307,23 @@ export function ResourcePicker({
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {stalePicks.map((p) => (
-                        <span
-                          key={p.id}
+                        <Tooltip key={p.id} content={p.id}><span
                           className="typo-caption px-2 py-0.5 text-status-warning line-through"
-                          title={p.id}
                         >
                           {p.label}
-                        </span>
+                        </span></Tooltip>
                       ))}
                     </div>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     onClick={dropStale}
                     data-testid={`resource-drop-stale-${spec.id}`}
-                    className="typo-caption px-2 py-1 hover:bg-status-warning/30 text-status-warning transition-colors flex-shrink-0"
+                    variant="ghost"
+                    size="icon-sm"
                   >
                     <DebtText k="auto_drop_stale_1ac8b7f6" />
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -335,7 +338,7 @@ export function ResourcePicker({
                         setSearch((s) => ({ ...s, [spec.id]: e.target.value }))
                       }
                       placeholder={tx(t.vault.resource_picker.search_placeholder, { label: spec.label.toLowerCase() })}
-                      className="w-full pl-8 pr-3 py-1.5 typo-body bg-surface-2 border border-border rounded-input text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
+                      className="w-full pl-8 pr-3 py-1.5 typo-body bg-surface-2 border border-border rounded-input text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
                     />
                   </div>
                   <div className="max-h-48 overflow-y-auto border border-border rounded-input bg-surface-1 divide-y divide-border">
@@ -392,34 +395,37 @@ export function ResourcePicker({
       </div>
 
       <footer className="shrink-0 px-6 py-4 border-t border-hair flex items-center justify-between gap-3">
-        <button
+        <Button
           type="button"
           onClick={handleSkip}
           disabled={saving}
           data-testid="resource-picker-skip"
-          className="typo-body text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          variant="ghost"
+          size="icon-sm"
         >
           <DebtText k="auto_skip_use_broad_scope_c91bd0ae" />
-        </button>
+        </Button>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={saving}
             data-testid="resource-picker-cancel"
-            className="px-4 py-1.5 rounded-interactive border border-border hover:bg-foreground/5 typo-body text-foreground transition-colors disabled:opacity-50"
+            variant="secondary"
+            size="md"
           >
             {t.common.cancel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleSave}
             disabled={saving || requiredMissing}
             data-testid="resource-picker-save"
-            className="px-4 py-1.5 rounded-interactive bg-primary hover:bg-primary/90 typo-body text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
+            size="md"
           >
             {saving ? t.common.saving : t.vault.resource_picker.save_scope}
-          </button>
+          </Button>
         </div>
       </footer>
     </BaseModal>

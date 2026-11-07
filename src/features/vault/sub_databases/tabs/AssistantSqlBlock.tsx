@@ -5,6 +5,7 @@ import { QueryResultTable } from '../QueryResultTable';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ChatMessage } from './ChatMessages';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AssistantSqlBlockProps {
   msg: ChatMessage;
@@ -42,10 +43,11 @@ export function AssistantSqlBlock({
           </span>
           <div className="flex items-center gap-1">
             <Tooltip content={db.copy_sql}>
-              <button
+              <Button
                 type="button"
                 onClick={() => onCopySql(msg.sql!, msg.id)}
-                className="p-1 rounded-interactive hover:bg-surface-2 text-foreground hover:text-ink-2 transition-colors"
+                variant="ghost"
+                size="sm"
                 aria-label={db.copy_sql}
               >
                 {copiedSql === msg.id ? (
@@ -53,7 +55,7 @@ export function AssistantSqlBlock({
                 ) : (
                   <Copy className="w-3 h-3" />
                 )}
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -68,15 +70,17 @@ export function AssistantSqlBlock({
       </div>
 
       {(msg.status === 'ready' || msg.status === 'done') && (
-        <button
+        <Button
           type="button"
           data-testid="chat-run-sql"
           onClick={() => onExecuteSql(msg.id, msg.sql!)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20 transition-colors"
+          variant="accent"
+          tone="success"
+          size="sm"
+          icon={<Play className="w-3 h-3" />}
         >
-          <Play className="w-3 h-3" />
           {msg.result ? db.rerun_query : db.run_query}
-        </button>
+        </Button>
       )}
 
       {msg.status === 'executing' && (
@@ -89,16 +93,17 @@ export function AssistantSqlBlock({
               all, so a runaway SELECT here was a wait for the backend's own
               QUERY_TIMEOUT and nothing else. */}
           {onCancelExecution && (
-            <button
+            <Button
               type="button"
               data-testid="chat-cancel-sql"
               onClick={() => onCancelExecution(msg.id)}
               aria-label={t.common.cancel}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-modal typo-caption text-status-error hover:bg-status-error/20 transition-colors focus-ring"
+              variant="danger"
+              size="xs"
+              icon={<X className="w-3 h-3" aria-hidden="true" />}
             >
-              <X className="w-3 h-3" aria-hidden="true" />
               {t.common.cancel}
-            </button>
+            </Button>
           )}
         </div>
       )}

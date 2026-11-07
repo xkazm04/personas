@@ -3,6 +3,8 @@ import { ArrowRight, Play, GitBranch, Zap, AlertTriangle, Workflow, type LucideI
 import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { UseCaseFlow, FlowNode } from '@/lib/types/frontendTypes';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface UseCasesTabProps {
   flows: UseCaseFlow[];
@@ -75,9 +77,8 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
                 return (
                   <span key={node.id} className="inline-flex items-center">
                     {i > 0 && <ArrowRight className="w-3.5 h-3.5 text-foreground mx-1.5 flex-shrink-0" />}
-                    <span
+                    <Tooltip content={node.detail || undefined}><span
                       className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-surface-2 border border-hair max-w-[260px]"
-                      title={node.detail || undefined}
                     >
                       {connMeta ? (
                         <ConnectorIcon meta={connMeta} size="w-3.5 h-3.5" />
@@ -85,7 +86,7 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
                         <NodeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${meta?.color ?? 'text-status-info'}`} />
                       )}
                       <span className="typo-caption text-foreground truncate">{node.label}</span>
-                    </span>
+                    </span></Tooltip>
                   </span>
                 );
               })}
@@ -94,14 +95,16 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
         </div>
       ))}
 
-      <button
+      <Button
         type="button"
         onClick={onViewFlows}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body text-role-agent bg-role-agent/10 border border-role-agent/20 hover:bg-role-agent/20 transition-colors"
+        variant="accent"
+        tone="agent"
+        size="sm"
+        icon={<Workflow className="w-3.5 h-3.5" />}
       >
-        <Workflow className="w-3.5 h-3.5" />
         {t.templates.detail.open_diagram}
-      </button>
+      </Button>
     </div>
   );
 }

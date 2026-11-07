@@ -200,7 +200,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
       <div className="border-b border-hair px-6 py-4 shrink-0">
         <h2
           id="gateway-members-modal-title"
-          className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+          className="typo-heading text-ink-1"
         >
           {tx(gw.gateway_members, { name: credential.name })}
         </h2>
@@ -221,7 +221,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
           ) : (
             <>
               <section>
-                <h3 className="typo-caption text-foreground uppercase tracking-wider mb-2">
+                <h3 className="typo-eyebrow text-foreground mb-2">
                   {tx(gw.current_members, { count: members.length })}
                 </h3>
                 {isLoading && members.length === 0 ? (
@@ -299,7 +299,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
               </section>
 
               <section>
-                <h3 className="typo-caption text-foreground uppercase tracking-wider mb-2">
+                <h3 className="typo-eyebrow text-foreground mb-2">
                   {gw.add_member_heading}
                 </h3>
                 {eligibleCreds.length === 0 ? (

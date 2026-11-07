@@ -6,6 +6,7 @@ import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
 import type { readinessTier } from '../../../shared/adoptionReadiness';
 import type { DifficultyLevel, DifficultyMeta, SetupMeta } from '../../../shared/templateComplexity';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TemplateCardHeaderProps {
   name: string;
@@ -51,9 +52,8 @@ export function TemplateCardHeader({
           </h3>
           <TrustBadge trustLevel={verification.trustLevel} compact />
           {tier != null && readinessScore != null ? (
-            <span
+            <Tooltip content={`${readinessScore}% of connectors ready`}><span
               className={`inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption font-mono rounded-interactive border ${tier.bgClass}`}
-              title={`${readinessScore}% of connectors ready`}
             >
               {readinessScore === 100 ? (
                 <CheckCircle2 className="w-2.5 h-2.5" />
@@ -61,16 +61,15 @@ export function TemplateCardHeader({
                 <XCircle className="w-2.5 h-2.5" />
               )}
               {readinessScore}%
-            </span>
+            </span></Tooltip>
           ) : (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption font-mono rounded-interactive border bg-zinc-500/10 text-foreground border-zinc-500/15">
               --%
             </span>
           )}
           {difficultyMeta && difficulty && (
-            <span
+            <Tooltip content={`${t.complexity[difficulty]}${setupMinutes ? ` · ${t.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}><span
               className={`inline-flex items-center gap-1 px-1.5 py-0.5 typo-label rounded-interactive border ${difficultyMeta.bgClass}`}
-              title={`${t.complexity[difficulty]}${setupMinutes ? ` · ${t.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}
             >
               <GraduationCap className="w-2.5 h-2.5" />
               {t.complexity[difficulty]}
@@ -81,7 +80,7 @@ export function TemplateCardHeader({
                   {t.complexity.minuteShort.replace('{minutes}', String(setupMinutes))}
                 </>
               )}
-            </span>
+            </span></Tooltip>
           )}
         </div>
         {goal ? (

@@ -17,6 +17,7 @@ import {
   PresetQuestionnaireForm,
 } from './PresetQuestionnaireForm';
 import { usePresetAdoption, type PresetMemberRowState } from './usePresetAdoption';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface PresetPreviewModalProps {
   open: boolean;
@@ -244,7 +245,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
                     )
                   )}
                   <span
-                    className="typo-body min-w-[90px] uppercase tracking-wider text-[11px]"
+                    className="typo-eyebrow min-w-[90px] text-[11px]"
                     style={{ color: selected || !interactive ? teamColor : undefined }}
                   >
                     {row.role}
@@ -371,14 +372,14 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
 function StatusBadge({ row, t }: { row: PresetMemberRowState; t: ReturnType<typeof useTranslation>['t'] }) {
   if (row.status === 'queued') {
     return (
-      <span className="typo-caption text-foreground uppercase tracking-wider">
+      <span className="typo-eyebrow text-foreground">
         {t.templates.presets.status_queued}
       </span>
     );
   }
   if (row.status === 'adopting') {
     return (
-      <span className="inline-flex items-center gap-1.5 typo-caption text-indigo-300">
+      <span className="inline-flex items-center gap-1.5 typo-caption text-role-agent">
         <Loader2 className="w-3 h-3 animate-spin" />
         {t.templates.presets.status_adopting}
       </span>
@@ -393,12 +394,11 @@ function StatusBadge({ row, t }: { row: PresetMemberRowState; t: ReturnType<type
     );
   }
   return (
-    <span
+    <Tooltip content={row.error ?? t.templates.presets.status_failed}><span
       className="inline-flex items-center gap-1.5 typo-caption text-status-error max-w-[180px] truncate"
-      title={row.error ?? t.templates.presets.status_failed}
     >
       <AlertCircle className="w-3 h-3 flex-shrink-0" />
       {row.error ?? t.templates.presets.status_failed}
-    </span>
+    </span></Tooltip>
   );
 }

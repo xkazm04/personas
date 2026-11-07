@@ -6,6 +6,7 @@ import type { DiscoveredPeer, ConnectionState } from '@/api/network/discovery';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolvePeerConnectionState } from './peerConnectionState';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PeerCardProps {
   peer: DiscoveredPeer;
@@ -79,32 +80,35 @@ export const PeerCard = memo(function PeerCard({
             <LoadingSpinner size="sm" className="text-foreground" />
           </span>
         ) : isConnected ? (
-          <button
+          <Button
             type="button"
             onClick={() => onDisconnect(peer.peer_id)}
-            title={st.disconnect}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-warning transition-colors"
+            tooltip={st.disconnect} aria-label={st.disconnect}
+            variant="ghost"
+            size="icon-sm"
           >
             <NodeDisconnectedIcon className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={() => onConnect(peer.peer_id)}
-            title={st.connect}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-success transition-colors"
+            tooltip={st.connect} aria-label={st.connect}
+            variant="ghost"
+            size="icon-sm"
           >
             <NodeConnectedIcon className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           onClick={() => onSelect(peer.peer_id)}
-          title={st.view_details}
-          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+          tooltip={st.view_details} aria-label={st.view_details}
+          variant="ghost"
+          size="icon-sm"
         >
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
     </div>
   );

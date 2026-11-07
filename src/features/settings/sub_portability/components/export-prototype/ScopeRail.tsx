@@ -2,6 +2,7 @@ import { Bot, Users, KeyRound, FolderGit2, BookOpen, Fingerprint, Sparkles, Boxe
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExportKind, ExportPicker } from './types';
 import { ENCRYPTED_SCOPES } from './types';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Icon + accent per scope. A total `Record` on purpose — an eighth
  *  `ExportKind` without an entry here fails typecheck instead of rendering
@@ -11,9 +12,9 @@ export const SCOPE_META: Record<ExportKind, { icon: LucideIcon; accent: string }
   teams: { icon: Users, accent: 'bg-status-info/10 text-status-info' },
   credentials: { icon: KeyRound, accent: 'bg-status-warning/10 text-status-warning' },
   projects: { icon: FolderGit2, accent: 'bg-status-success/10 text-status-success' },
-  knowledge: { icon: BookOpen, accent: 'bg-indigo-500/10 text-indigo-300' },
+  knowledge: { icon: BookOpen, accent: 'bg-role-agent/10 text-role-agent' },
   twins: { icon: Fingerprint, accent: 'bg-status-error/10 text-status-error' },
-  athena: { icon: Sparkles, accent: 'bg-fuchsia-500/10 text-fuchsia-300' },
+  athena: { icon: Sparkles, accent: 'bg-role-agent/10 text-role-agent' },
 };
 
 /** Rail order (also the tab order of the picker). */
@@ -98,22 +99,28 @@ export function ScopeRail({
       })}
 
       <div className="mt-auto pt-3 space-y-1">
-        <button
+        <Button
           type="button"
           onClick={() => setAll(true)}
           data-testid="portability-select-everything"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-surface-1 transition-colors"
+          variant="ghost"
+          size="sm"
+          className="w-full"
+          icon={<Boxes className="w-3.5 h-3.5" />}
         >
-          <Boxes className="w-3.5 h-3.5" /> {p.select_everything}
-        </button>
-        <button
+           {p.select_everything}
+        </Button>
+        <Button
           type="button"
           onClick={() => setAll(false)}
           data-testid="portability-clear-all"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-surface-1 transition-colors"
+          variant="ghost"
+          size="sm"
+          className="w-full"
+          icon={<Eraser className="w-3.5 h-3.5" />}
         >
-          <Eraser className="w-3.5 h-3.5" /> {p.clear_all}
-        </button>
+           {p.clear_all}
+        </Button>
       </div>
     </nav>
   );

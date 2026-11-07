@@ -17,6 +17,7 @@ import { buildComponents } from '@/features/vault/sub_catalog/components/design/
 import { SetupStepCard } from '@/features/vault/sub_catalog/components/design/setup/SetupStepCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface InteractiveSetupInstructionsProps {
@@ -118,17 +119,19 @@ export function InteractiveSetupInstructions({
         {/* Open setup page shortcut */}
         {firstSetupUrl && (
           <Tooltip content={dp.open_setup_page}>
-            <button
+            <Button
               type="button"
               onClick={async () => {
                 await handleOpenUrl(firstSetupUrl);
               }}
-              className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-body text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-role-agent/40"
+              variant="ghost"
+              size="xs"
+              className="ml-auto"
               aria-label={dp.open_setup_page}
+              icon={<ExternalLink className="w-2.5 h-2.5" />}
             >
-              <ExternalLink className="w-2.5 h-2.5" />
               {dp.open}
-            </button>
+            </Button>
           </Tooltip>
         )}
       </div>

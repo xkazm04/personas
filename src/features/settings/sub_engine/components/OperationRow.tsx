@@ -3,6 +3,8 @@ import { PROVIDERS, DEFAULT_CAPABILITIES } from '../libs/engineCapabilities';
 import type { CliOperation } from '../libs/engineCapabilities';
 import type { CliEngine } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface OperationRowProps {
   operation: CliOperation;
@@ -47,31 +49,28 @@ export function OperationRow({
               </div>
             ) : locked ? (
               <div className="flex justify-center">
-                <span
+                <Tooltip content={tx(s.op_unsupported_title, { label, provider: p.shortLabel })}><span
                   className="w-6 h-6 rounded-interactive bg-status-error/10 border border-status-error/20 flex items-center justify-center cursor-not-allowed"
-                  title={tx(s.op_unsupported_title, { label, provider: p.shortLabel })}
                 >
                   <Lock className="w-2.5 h-2.5 text-status-error/40" />
-                </span>
+                </span></Tooltip>
               </div>
             ) : (
               <div className="flex justify-center">
-                <button
+                <Button
                   type="button"
                   onClick={() => onToggle(operation, p.id)}
-                  className={`w-6 h-6 rounded-interactive border flex items-center justify-center transition-all ${
-                    enabled
-                      ? 'bg-status-success/20 border-status-success/30 hover:bg-status-success/30'
-                      : 'bg-status-error/10 border-status-error/20 hover:bg-status-error/20'
-                  }`}
-                  title={tx(enabled ? s.op_disable_title : s.op_enable_title, { label, provider: p.shortLabel })}
+                  variant={enabled ? 'accent' : 'danger'}
+                  tone={enabled ? 'success' : undefined}
+                  size="xs"
+                  tooltip={tx(enabled ? s.op_disable_title : s.op_enable_title, { label, provider: p.shortLabel })}
                 >
                   {enabled ? (
                     <Check className="w-3 h-3 text-status-success" />
                   ) : (
                     <X className="w-3 h-3 text-status-error/60" />
                   )}
-                </button>
+                </Button>
               </div>
             )}
           </td>

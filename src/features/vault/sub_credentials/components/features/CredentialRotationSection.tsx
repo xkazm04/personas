@@ -9,6 +9,7 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useThemeStore } from '@/stores/themeStore';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Bottom 24px fade so the scroll boundary dissolves instead of cutting off abruptly. */
 const HISTORY_FADE_MASK =
@@ -96,9 +97,9 @@ export function CredentialRotationSection({
         <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-status-error/10 border border-status-error/20 typo-body text-status-error">
           <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span className="flex-1">{actionError}</span>
-          <button type="button" onClick={() => setActionError(null)} className="shrink-0 p-0.5 hover:bg-status-error/10 rounded-interactive transition-colors">
+          <Button type="button" onClick={() => setActionError(null)} variant="ghost" size="icon-sm" className="shrink-0">
             <XCircle className="w-3 h-3" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -134,7 +135,7 @@ export function CredentialRotationSection({
         <>
           <div className="border-t border-hair" />
           <div className="space-y-1.5">
-            <p className="typo-heading text-foreground uppercase">{t.vault.rotation_section.history}</p>
+            <p className="typo-eyebrow text-foreground">{t.vault.rotation_section.history}</p>
             {isLoadingHistory ? (
               <RotationHistorySkeleton />
             ) : recentHistory.length === 0 ? (

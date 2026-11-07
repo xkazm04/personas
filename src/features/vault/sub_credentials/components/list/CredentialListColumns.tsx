@@ -11,6 +11,7 @@ import { capitalize, readCredentialHealthState, type HealthState } from './crede
 import { BoundAccountChip } from '@/features/vault/shared/BoundAccountChip';
 import { readCredentialAccount } from '@/features/vault/shared/credentialAccount';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface CredRow {
   credential: CredentialMetadata;
@@ -198,14 +199,15 @@ export function useCredentialColumns({
           return isPending ? (
             <LoadingSpinner size="sm" className="text-status-error/50" />
           ) : (
-            <button
+            <Button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(row.credential.id); }}
-              className="p-1 rounded-card text-status-error/40 hover:text-status-error hover:bg-status-error/10 transition-colors"
-              title={t.vault.credential_card.delete_credential}
+              variant="danger"
+              size="icon-sm"
+              tooltip={t.vault.credential_card.delete_credential} aria-label={t.vault.credential_card.delete_credential}
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           );
         },
       },

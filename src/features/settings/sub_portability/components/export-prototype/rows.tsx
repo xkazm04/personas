@@ -10,6 +10,7 @@ import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { AthenaTierRow } from './types';
 import { SelectBox, StatChip } from './atoms';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const ROW_BASE =
   'group flex items-center gap-3 px-3 py-2.5 rounded-card cursor-pointer transition-colors border';
@@ -193,9 +194,9 @@ export function ProjectPickRow({
       </span>
       <div className="min-w-0 flex-1">
         <div className="typo-body text-foreground truncate">{project.name}</div>
-        <div className="typo-caption text-foreground truncate" title={project.root_path}>
+        <Tooltip content={project.root_path}><div className="typo-caption text-foreground truncate">
           {truncatePathMiddle(project.root_path)}
-        </div>
+        </div></Tooltip>
       </div>
     </label>
   );
@@ -217,7 +218,7 @@ export function WorkspacePickRow({
   return (
     <label className={`${ROW_BASE} ${rowTone(selected)}`}>
       <SelectBox state={selected} onChange={onToggle} ariaLabel={workspace.name} />
-      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-indigo-500/10 text-indigo-300 flex-shrink-0">
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-role-agent/10 text-role-agent flex-shrink-0">
         <BookOpen className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
@@ -264,9 +265,9 @@ export function TwinPickRow({
       </span>
       <div className="min-w-0 flex-1">
         <div className="typo-body text-foreground truncate">{twin.name}</div>
-        <div className="typo-caption text-foreground truncate" title={twin.obsidian_subpath}>
+        <Tooltip content={twin.obsidian_subpath}><div className="typo-caption text-foreground truncate">
           {twin.obsidian_subpath}
-        </div>
+        </div></Tooltip>
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {twin.is_active && (
@@ -318,7 +319,7 @@ export function AthenaTierPickRow({
   return (
     <label className={`${ROW_BASE} ${rowTone(selected)}`} data-testid={`portability-athena-row-${tier.id}`}>
       <SelectBox state={selected} onChange={onToggle} ariaLabel={title} />
-      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-fuchsia-500/10 text-fuchsia-300 flex-shrink-0">
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-role-agent/10 text-role-agent flex-shrink-0">
         <Sparkles className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">

@@ -181,11 +181,11 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
             <table className="min-w-full typo-caption text-foreground">
               <thead>
                 <tr className="text-left text-foreground">
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_model}</th>
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_runs}</th>
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_success}</th>
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_cost}</th>
-                  <th className="py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_lab}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_model}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_runs}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_success}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_cost}</th>
+                  <th className="py-1 typo-eyebrow text-foreground">{s.tuning_evidence_lab}</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,8 +255,8 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
           <Button
             variant="ghost"
             onClick={() => setExpanded((e) => ({ ...e, [p.id]: !isOpen }))}
+            icon={isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           >
-            {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             {isOpen ? s.tuning_evidence_hide : s.tuning_evidence_show}
           </Button>
           {p.status === 'pending' && decliningId !== p.id && (
@@ -265,8 +265,9 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
                 <Check className="w-4 h-4" />
                 {s.tuning_apply}
               </AsyncButton>
-              <Button variant="secondary" onClick={() => setDecliningId(p.id)}>
-                <X className="w-4 h-4" />
+              <Button variant="secondary" onClick={() => setDecliningId(p.id)}
+                icon={<X className="w-4 h-4" />}>
+                
                 {s.tuning_decline}
               </Button>
             </>

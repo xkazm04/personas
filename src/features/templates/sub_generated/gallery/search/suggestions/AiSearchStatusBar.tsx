@@ -24,13 +24,13 @@ export function AiSearchStatusBar({
     <div className="px-4 pb-2">
       <div className={`flex items-center gap-2 px-3 py-2 rounded-modal max-w-2xl mx-auto ${
         aiSearchLoading
-          ? 'bg-indigo-500/8 border border-indigo-500/15'
+          ? 'bg-role-agent/8 border border-role-agent/15'
           : 'bg-status-warning/8 border border-status-warning/15'
       }`}>
         {aiSearchLoading ? (
           <>
-            <LoadingSpinner size="sm" className="text-indigo-400 flex-shrink-0" />
-            <span className="typo-body text-indigo-300/80">{t.templates.search.ai_searching}</span>
+            <LoadingSpinner size="sm" className="text-role-agent flex-shrink-0" />
+            <span className="typo-body text-role-agent/80">{t.templates.search.ai_searching}</span>
           </>
         ) : (
           <>

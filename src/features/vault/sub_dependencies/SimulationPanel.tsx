@@ -9,6 +9,7 @@ import {
   FailoverSuggestions,
   MitigationSummary,
 } from './SimulationControls';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface SimulationPanelProps {
   simulation: SimulationResult;
@@ -28,15 +29,15 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-hair">
         <div className="flex items-center gap-2">
-          <FlaskConical className="w-4 h-4 text-fuchsia-400/80" />
+          <FlaskConical className="w-4 h-4 text-role-agent/80" />
           <span className="typo-body text-ink-1">{dep.revocation_simulation}</span>
           <span className={`px-1.5 py-0.5 typo-label rounded-input border ${sev.bg} ${sev.text} ${sev.border}`}>
             {sev.label}
           </span>
         </div>
-        <button type="button" onClick={onClose} className="p-1 hover:bg-surface-2 rounded-interactive transition-colors cursor-pointer">
+        <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
           <X className="w-3.5 h-3.5 text-foreground" />
-        </button>
+        </Button>
       </div>
 
       <div className="p-3 space-y-3">
@@ -67,7 +68,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
             <span
               dangerouslySetInnerHTML={{
                 __html: tx(dep.sim_high, {
-                  credentialName: `<strong class="text-red-400">${safeCredentialName}</strong>`,
+                  credentialName: `<strong class="text-status-error">${safeCredentialName}</strong>`,
                   personas: simulation.totalAffectedPersonas,
                   personaPlural,
                 }),
@@ -77,7 +78,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
             <span
               dangerouslySetInnerHTML={{
                 __html: tx(dep.sim_medium, {
-                  credentialName: `<strong class="text-amber-400">${safeCredentialName}</strong>`,
+                  credentialName: `<strong class="text-status-warning">${safeCredentialName}</strong>`,
                 }),
               }}
             />

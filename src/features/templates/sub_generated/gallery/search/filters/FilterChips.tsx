@@ -3,6 +3,7 @@ import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta'
 import { categoryLabel, getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../../shared/architecturalCategories';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function FilterChips({
   selectedCategory,
@@ -47,17 +48,19 @@ export function FilterChips({
     <>
       {/* Active category chip */}
       {selectedCategory && activeCategoryMeta && ActiveCategoryIcon && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-role-agent/10 border border-role-agent/20 text-role-agent flex-shrink-0">
+        <span className="inline-flex items-center gap-1.5 typo-body text-role-agent flex-shrink-0">
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
           {activeCategoryLabel}
-          <button
+          <Button
             type="button"
             onClick={() => onCategoryFilterChange([])}
             aria-label={removeLabel(activeCategoryLabel)}
-            className="ml-0.5 hover:text-white transition-colors"
+            variant="ghost"
+            size="icon-sm"
+            className="ml-0.5"
           >
             <X className="w-3 h-3" aria-hidden="true" />
-          </button>
+          </Button>
         </span>
       )}
 
@@ -70,18 +73,20 @@ export function FilterChips({
             return (
               <span
                 key={name}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-role-agent/10 border border-role-agent/20 text-role-agent"
+                className="inline-flex items-center gap-1.5 typo-body text-role-agent"
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
                 {meta.label}
-                <button
+                <Button
                   type="button"
                   onClick={() => onConnectorFilterChange(connectorFilter.filter((c) => c !== name))}
                   aria-label={removeLabel(meta.label)}
-                  className="ml-0.5 hover:text-white transition-colors"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="ml-0.5"
                 >
                   <X className="w-3 h-3" aria-hidden="true" />
-                </button>
+                </Button>
               </span>
             );
           })}
@@ -104,14 +109,16 @@ export function FilterChips({
               >
                 <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
                 {cat.label}
-                <button
+                <Button
                   type="button"
                   onClick={() => onComponentFilterChange(componentFilter.filter((c) => c !== key))}
                   aria-label={removeLabel(cat.label)}
-                  className="ml-0.5 hover:text-white transition-colors"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="ml-0.5"
                 >
                   <X className="w-3 h-3" aria-hidden="true" />
-                </button>
+                </Button>
               </span>
             );
           })}

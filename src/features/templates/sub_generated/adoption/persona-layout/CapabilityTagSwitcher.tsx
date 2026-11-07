@@ -12,6 +12,8 @@
  */
 import { Power } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export type CapabilitySegmentState = 'answered' | 'blocked' | 'pending';
 
@@ -36,7 +38,7 @@ interface CapabilityTagSwitcherProps {
 }
 
 function countColor(item: CapabilityTagItem): string {
-  if (item.total === 0) return 'text-foreground/40';
+  if (item.total === 0) return 'text-ink-3';
   if (item.blocked > 0) return 'text-status-error';
   if (item.answered >= item.total) return 'text-status-success';
   return 'text-status-warning';
@@ -81,12 +83,12 @@ export function CapabilityTagSwitcher({
             } ${off ? 'opacity-55' : ''}`}
           >
             <div className="flex items-center gap-1.5 min-w-0">
+              <Tooltip content={item.title}>
               <button
                 type="button"
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => onActiveChange(item.id)}
-                title={item.title}
                 className="flex-1 min-w-0 flex items-center gap-2 text-left cursor-pointer"
               >
                 <span
@@ -100,23 +102,22 @@ export function CapabilityTagSwitcher({
                   {item.answered}/{item.total}
                 </span>
               </button>
-              <button
+              </Tooltip>
+              <Button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleEnabled(item.id);
                 }}
                 aria-pressed={item.enabled}
-                title={off ? t.templates.adopt_modal.capability_include : t.templates.adopt_modal.capability_skip}
+                tooltip={off ? t.templates.adopt_modal.capability_include : t.templates.adopt_modal.capability_skip}
                 aria-label={off ? t.templates.adopt_modal.capability_include : t.templates.adopt_modal.capability_skip}
-                className={`shrink-0 p-1 rounded-full border transition-colors cursor-pointer ${
-                  item.enabled
-                    ? 'border-status-success/40 text-status-success hover:bg-status-success/10'
-                    : 'border-card-border/50 text-foreground/40 hover:text-ink-2 hover:bg-foreground/5'
-                }`}
+                variant="secondary"
+                size="icon-sm"
+                className="shrink-0"
               >
                 <Power className="w-3 h-3" />
-              </button>
+              </Button>
             </div>
             {/* Per-capability question stepper — reflects this capability's
                 individual progress (answered / blocked / pending). */}

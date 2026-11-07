@@ -5,6 +5,7 @@ import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { PROVIDERS } from '../libs/engineCapabilities';
 import type { CliOperation } from '../libs/engineCapabilities';
 import type { CliEngine } from '@/lib/types/types';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface EngineCapabilityBadgeProps {
   /** Which CLI operation this UI dispatches */
@@ -32,13 +33,12 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
 
   if (compact) {
     return (
-      <span
+      <Tooltip content={tx(capable ? s.engine_verified_title : s.engine_unparseable_title, { provider: providerLabel })}><span
         className={`inline-flex items-center gap-1 typo-caption font-mono px-1.5 py-0.5 rounded-full border ${
           capable
             ? 'bg-status-success/10 text-status-success border-status-success/20'
             : 'bg-status-warning/10 text-status-warning border-status-warning/20'
         }`}
-        title={tx(capable ? s.engine_verified_title : s.engine_unparseable_title, { provider: providerLabel })}
       >
         {capable ? (
           <Check className="w-2.5 h-2.5" />
@@ -46,7 +46,7 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
           <AlertTriangle className="w-2.5 h-2.5" />
         )}
         {providerLabel}
-      </span>
+      </span></Tooltip>
     );
   }
 

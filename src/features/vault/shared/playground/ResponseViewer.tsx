@@ -5,13 +5,14 @@ import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboa
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { ApiProxyResponse } from '@/api/system/apiProxy';
 import { prettyJson } from './prettyJson';
+import Button from '@/features/shared/components/buttons/Button';
 
 // -- Status styling -----------------------------------------------
 
 function statusStyle(status: number): string {
-  if (status >= 200 && status < 300) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
-  if (status >= 300 && status < 400) return 'bg-amber-500/15 text-amber-400 border-amber-500/25';
-  return 'bg-red-500/15 text-red-400 border-red-500/25';
+  if (status >= 200 && status < 300) return 'bg-status-success/15 text-status-success border-status-success/25';
+  if (status >= 300 && status < 400) return 'bg-status-warning/15 text-status-warning border-status-warning/25';
+  return 'bg-status-error/15 text-status-error border-status-error/25';
 }
 
 // -- Component ----------------------------------------------------
@@ -74,27 +75,25 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       {/* Sub-tabs */}
       <div className="flex items-center gap-1 border-b border-primary/8">
         {(['body', 'headers', 'raw'] as const).map((tab) => (
-          <button
+          <Button
             key={tab}
             onClick={() => setSubTab(tab)}
-            className={`px-3 py-1.5 typo-body capitalize transition-colors border-b-2 ${
-              subTab === tab
-                ? 'text-foreground border-primary/50'
-                : 'text-foreground border-transparent hover:text-ink-2'
-            }`}
+            variant={subTab === tab ? 'secondary' : 'ghost'}
+            size="sm"
           >
             {tab}
             {tab === 'headers' && ` (${headerEntries.length})`}
-          </button>
+          </Button>
         ))}
         <div className="flex-1" />
-        <button
+        <Button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-1 rounded-interactive typo-body text-foreground hover:text-ink-2 hover:bg-surface-1 transition-colors"
+          variant="ghost"
+          size="xs"
+          icon={copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
         >
-          {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
           {copied ? sh.copied : t.common.copy}
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -125,8 +124,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           <table className="w-full typo-body">
             <thead>
               <tr className="bg-surface-1 border-b border-primary/8">
-                <th className="px-3 py-2 text-left w-1/3 typo-caption font-mono uppercase tracking-widest text-foreground">{vt.header_col}</th>
-                <th className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{vt.value_col}</th>
+                <th className="px-3 py-2 text-left w-1/3 typo-eyebrow text-foreground">{vt.header_col}</th>
+                <th className="px-3 py-2 text-left typo-eyebrow text-foreground">{vt.value_col}</th>
               </tr>
             </thead>
             <tbody>

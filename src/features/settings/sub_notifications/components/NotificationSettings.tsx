@@ -17,6 +17,7 @@ import {
   parseNotificationPrefs,
   type NotificationPrefs,
 } from '@/lib/notifications/notificationPrefs';
+import Button from '@/features/shared/components/buttons/Button';
 
 type HealingSeverity = 'critical' | 'high' | 'medium' | 'low';
 
@@ -63,7 +64,7 @@ function WeeklyDigestToggle() {
     <SectionCard
       title={s.weekly_digest}
       icon={<Activity className="w-4 h-4 text-primary/60" />}
-      titleClassName="text-primary"
+      titleClassName="text-ink-1"
     >
       <SettingRow
         label={s.digest_title}
@@ -146,7 +147,7 @@ export default function NotificationSettings() {
           <SectionCard
             title={s.healing_severity}
             icon={<ShieldAlert className="w-4 h-4 text-primary/60" />}
-            titleClassName="text-primary"
+            titleClassName="text-ink-1"
           >
             <div className="divide-y divide-foreground/5">
               {SEVERITY_ROWS.map(({ key, severity, labelKey, descKey, color }) => (
@@ -156,15 +157,16 @@ export default function NotificationSettings() {
                     <p className="typo-caption text-foreground">{s[descKey]}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => fireTestToast(severity, s[labelKey])}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                      title={tx(s.test_button_tooltip, { level: s[labelKey] })}
+                      variant="ghost"
+                      size="xs"
+                      tooltip={tx(s.test_button_tooltip, { level: s[labelKey] })}
+                      icon={<PlayCircle size={12} />}
                     >
-                      <PlayCircle size={12} />
                       {s.test_button}
-                    </button>
+                    </Button>
                     <AccessibleToggle
                       checked={prefs[key]}
                       onChange={() => toggle(key)}
@@ -179,7 +181,7 @@ export default function NotificationSettings() {
           <SectionCard
             title={s.spend_alerts_label}
             icon={<DollarSign className="w-4 h-4 text-primary/60" />}
-            titleClassName="text-primary"
+            titleClassName="text-ink-1"
           >
             <SettingRow
               label={s.spend_alerts_label}

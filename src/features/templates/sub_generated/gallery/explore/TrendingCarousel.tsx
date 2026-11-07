@@ -5,6 +5,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TrendingCarouselProps {
   trendingTemplates: PersonaDesignReview[];
@@ -53,15 +54,18 @@ export function TrendingCarousel({
             </button>
             {onAdoptTemplate && (
               <Tooltip content={t.templates.actions.adopt} placement="bottom">
-                <button
+                <Button
                   type="button"
                   onClick={() => onAdoptTemplate(tmpl)}
                   aria-label={t.templates.actions.adopt}
                   data-testid={`trending-adopt-${tmpl.id}`}
-                  className="absolute top-2 right-2 p-1.5 rounded-interactive bg-status-success/15 border border-status-success/25 text-status-success opacity-0 group-hover/trend:opacity-100 focus-visible:opacity-100 hover:bg-status-success/25 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)]"
+                  variant="accent"
+                  tone="success"
+                  size="icon-sm"
+                  className="absolute top-2 right-2 opacity-0 group-hover/trend:opacity-100 focus-visible:opacity-100"
                 >
                   <Download className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </Tooltip>
             )}
           </div>

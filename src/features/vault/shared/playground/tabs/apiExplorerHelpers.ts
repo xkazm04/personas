@@ -24,8 +24,8 @@ export const RUN_LOG_MARK = { pass: '[v]', fail: '[x]', send: '->' } as const;
 
 /** Line classifier for API test output (pass/fail/request markers). */
 export function apiTestLineClassName(line: string): string {
-  if (line.includes(RUN_LOG_MARK.pass)) return 'text-emerald-400/70';
-  if (line.includes(RUN_LOG_MARK.fail)) return 'text-red-400/70';
-  if (line.includes(`${RUN_LOG_MARK.send} `)) return 'text-blue-400/50';
+  if (line.includes(RUN_LOG_MARK.pass)) return 'text-status-success/70';
+  if (line.includes(RUN_LOG_MARK.fail)) return 'text-status-error/70';
+  if (line.includes(`${RUN_LOG_MARK.send} `)) return 'text-status-info/50';
   return 'text-foreground';
 }

@@ -48,7 +48,7 @@ function renderActions(extractedValues: Record<string, string>, healthResult = P
 }
 
 function saveProcedureButton() {
-  return screen.queryByTitle(/reuse|procedure/i);
+  return screen.queryByRole('button', { name: /save procedure/i });
 }
 
 describe('ReviewActionButtons — the harvested procedure reaches production', () => {

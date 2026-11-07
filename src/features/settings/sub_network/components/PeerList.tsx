@@ -9,6 +9,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const logger = createLogger("peer-list");
@@ -87,15 +88,16 @@ export function PeerList() {
           {st.discovered_peers}
         </h3>
         <div className="flex flex-col items-end gap-0.5">
-          <button
+          <Button
             type="button"
             onClick={() => doFetch()}
-            title={st.refresh_peer_list}
-            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
+            tooltip={st.refresh_peer_list}
+            variant="secondary"
+            size="xs"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
             {st.refresh}
-          </button>
+          </Button>
           {lastScannedAt !== null && (
             <span className="typo-caption text-foreground">
               {st.scanned_label} <RelativeTime timestamp={lastScannedAt} showTooltip={false} />

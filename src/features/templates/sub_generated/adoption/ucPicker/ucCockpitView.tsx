@@ -11,6 +11,7 @@ import type { Destination, DestId } from './ucPickerTypes';
 import { TimeCard } from './ucTimeCard';
 import { DeliverCard } from './ucDeliverCard';
 import { Panel } from './ucPanel';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface Props {
   code: string;
@@ -33,7 +34,7 @@ export function CockpitView({
   const display = parseTriggerDisplay(trigger);
   return (
     <div
-      className="relative px-5 py-6 bg-gradient-to-b from-foreground/[0.03] to-foreground/[0.06]"
+      className="relative px-5 py-6"
       style={{
         backgroundImage:
           'radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--color-primary) 5%, transparent) 0%, transparent 50%), radial-gradient(circle at 80% 100%, color-mix(in srgb, var(--color-status-warning) 4%, transparent) 0%, transparent 50%)',
@@ -45,14 +46,16 @@ export function CockpitView({
         <DeliverCard destinations={destinations} active={activeDestinations} firing={firing} />
       </div>
 
-      <button
+      <Button
         type="button"
         onClick={onEdit}
-        className="focus-ring absolute bottom-3 right-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-caption uppercase tracking-wider text-foreground hover:text-primary hover:bg-primary/[0.08] transition-colors"
+        variant="ghost"
+        size="xs"
+        className="absolute bottom-3 right-4"
+        icon={<Pencil className="w-3 h-3" />}
       >
-        <Pencil className="w-3 h-3" />
         Configure
-      </button>
+      </Button>
     </div>
   );
 }

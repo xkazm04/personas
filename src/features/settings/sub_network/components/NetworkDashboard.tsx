@@ -274,7 +274,6 @@ export function NetworkDashboard() {
         <div className="rounded-card border border-border bg-secondary/10 p-4 flex items-center gap-3 typo-body text-foreground">
           <div className="relative">
             <Wifi className="w-4 h-4 text-status-success/50" />
-            <span className="absolute inset-0 rounded-full animate-ping bg-status-success/20" />
           </div>
           {st.checking_network}
         </div>
@@ -301,7 +300,6 @@ export function NetworkDashboard() {
                 {isRunning ? (
                   <div className="relative w-4 h-4 flex-shrink-0">
                     <Wifi className="w-4 h-4 text-status-success" />
-                    <span className="absolute inset-0 rounded-full animate-ping bg-status-success/25" />
                   </div>
                 ) : (
                   <WifiOff className="w-4 h-4 text-foreground flex-shrink-0" />

@@ -15,6 +15,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { extractMessage } from '@/lib/silentCatch';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { ExecutePersonaPicker } from './ExecutePersonaPicker';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ScopeOption {
   id: string;
@@ -118,15 +119,16 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <h2 className="typo-body text-foreground">{s.create_dialog_title}</h2>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={submitting}
             aria-label={s.close}
-            className="text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            variant="ghost"
+            size="icon-sm"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto">
@@ -141,7 +143,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
               maxLength={64}
               autoFocus
               disabled={submitting}
-              className="w-full px-3 py-2 bg-background border border-border/40 rounded-input typo-body text-foreground focus:border-primary/60 focus:outline-none disabled:opacity-50"
+              className="w-full px-3 py-2 bg-background border border-border/40 rounded-input typo-body text-foreground focus:border-primary/60 focus:outline-none disabled:is-disabled"
             />
             <p className="typo-caption text-foreground mt-1">{s.field_name_hint}</p>
           </div>
@@ -158,7 +160,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
                     onClick={() => toggleScope(scope.id)}
                     aria-pressed={isSelected}
                     disabled={submitting}
-                    className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:opacity-50 ${
+                    className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:is-disabled ${
                       isSelected ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1 hover:bg-surface-2'
                     }`}
                   >
@@ -176,7 +178,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
                 onClick={() => setAllowExecute((v) => !v)}
                 aria-pressed={allowExecute}
                 disabled={submitting}
-                className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:opacity-50 ${
+                className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:is-disabled ${
                   allowExecute ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1 hover:bg-surface-2'
                 }`}
               >
@@ -204,17 +206,18 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
               {EXPIRY_OPTIONS.map((opt) => {
                 const active = expiresInDays === opt.days;
                 return (
-                  <button
+                  <Button
                     key={opt.labelKey}
                     type="button"
                     onClick={() => setExpiresInDays(opt.days)}
                     disabled={submitting}
-                    className={`flex-1 px-2 py-1.5 rounded-interactive typo-caption border transition-colors disabled:opacity-50 ${
-                      active ? 'border-primary/50 bg-primary/15 text-foreground' : 'border-border/30 bg-surface-1 text-foreground hover:bg-surface-2'
-                    }`}
+                    variant={active ? 'accent' : 'secondary'}
+                    tone={active ? 'highlight' : undefined}
+                    size="sm"
+                    className="flex-1"
                   >
                     {s[opt.labelKey]}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -224,14 +227,15 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border/30">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-surface-2 transition-colors disabled:opacity-50"
+            variant="ghost"
+            size="sm"
           >
             {s.cancel}
-          </button>
+          </Button>
           <AsyncButton
             variant="primary"
             size="sm"

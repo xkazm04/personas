@@ -1,6 +1,7 @@
 import { Send, X, CornerDownLeft } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ChatInputProps {
   input: string;
@@ -62,19 +63,18 @@ export function ChatInput({
           </div>
         </div>
         <Tooltip content={generating ? t.common.cancel : t.common.send}>
-          <button
+          <Button
             type="button"
             onClick={generating ? onCancel : onSubmit}
             disabled={!generating && !input.trim()}
-            className={`shrink-0 p-2.5 rounded-modal border transition-colors ${
-              generating
-                ? 'bg-status-error/10 border-status-error/20 text-status-error hover:bg-status-error/20'
-                : 'bg-role-agent/10 border-role-agent/20 text-role-agent hover:bg-role-agent/20 disabled:opacity-30 disabled:cursor-not-allowed'
-            }`}
+            variant={generating ? 'danger' : 'accent'}
+            tone={generating ? undefined : 'agent'}
+            size="sm"
+            className="shrink-0"
             aria-label={generating ? t.common.cancel : t.common.send}
           >
             {generating ? <X className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-          </button>
+          </Button>
         </Tooltip>
       </div>
     </div>

@@ -7,6 +7,7 @@ import FlowDiagram from './FlowDiagram';
 import NodePopover from './NodePopover';
 import PopoverPositioner from './PopoverPositioner';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
+import Button from '@/features/shared/components/buttons/Button';
 
 // ============================================================================
 // Main Component
@@ -57,16 +58,16 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             </p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="w-8 h-8 rounded-card bg-surface-2 hover:bg-secondary flex items-center justify-center transition-colors" aria-label={t.templates.diagrams.close_dialog}>
+        <Button type="button" onClick={onClose} variant="ghost" size="icon-sm" aria-label={t.templates.diagrams.close_dialog}>
           <X className="w-4 h-4 text-foreground" />
-        </button>
+        </Button>
       </div>
 
       {/* Use Case Tabs */}
       {flows.length > 1 && (
         <div className={`flex items-center gap-2 ${CARD_PADDING.modalSection} border-b border-hair bg-surface-1 overflow-x-auto`}>
           {flows.map((flow, index) => (
-            <button
+            <Button
               type="button"
               key={flow.id}
               onClick={() => {
@@ -74,15 +75,13 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
                 setInspectedNode(null);
                 setPopoverPos(null);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body transition-all whitespace-nowrap ${
-                index === activeFlowIndex
-                  ? 'bg-role-agent/15 border border-role-agent/30 text-role-agent shadow-[0_0_12px_rgba(139,92,246,0.1)]'
-                  : 'bg-surface-2 border border-transparent text-foreground hover:bg-surface-2 hover:text-ink-2'
-              }`}
+              variant={index === activeFlowIndex ? 'accent' : 'ghost'}
+              tone={index === activeFlowIndex ? 'agent' : undefined}
+              size="md"
             >
               <span className={`w-2 h-2 rounded-full ${index === activeFlowIndex ? 'bg-role-agent' : 'bg-muted-foreground/30'}`} />
               {flow.name}
-            </button>
+            </Button>
           ))}
         </div>
       )}

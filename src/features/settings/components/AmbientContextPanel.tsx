@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch, extractMessage } from '@/lib/silentCatch';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { resolveError } from '@/lib/errors/errorRegistry';
+import Button from '@/features/shared/components/buttons/Button';
 
 const SOURCE_ICONS: Record<string, typeof Clipboard> = {
   clipboard: Clipboard,
@@ -217,13 +218,14 @@ export function AmbientContextPanel() {
             <span className="typo-caption text-foreground">{s.live_context}</span>
             <div className="flex items-center gap-2 typo-caption text-foreground">
               <span>{tx(s.total_signals, { count: Number(ambientSnapshot.totalSignalsCaptured) })}</span>
-              <button
+              <Button
                 type="button"
                 onClick={() => selectedPersonaId && fetchAmbientSnapshot(selectedPersonaId)}
-                className="hover:text-ink-2 transition-colors"
+                variant="ghost"
+                size="icon-sm"
               >
                 <RefreshCw className="w-3 h-3" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -277,13 +279,14 @@ export function AmbientContextPanel() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="typo-caption text-foreground">{s.sensory_policy}</span>
-            <button
+            <Button
               type="button"
               onClick={handleReset}
-              className="typo-caption text-foreground hover:text-ink-2 transition-colors"
+              variant="ghost"
+              size="sm"
             >
               {s.reset_defaults}
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -292,19 +295,17 @@ export function AmbientContextPanel() {
               { key: 'fileChanges' as const, label: s.file_changes, icon: FolderOpen },
               { key: 'appFocus' as const, label: s.app_focus, icon: AppWindow },
             ]).map(({ key, label, icon: Icon }) => (
-              <button
+              <Button
                 type="button"
                 key={key}
                 onClick={() => handlePolicyChange(key, !localPolicy[key])}
-                className={`flex flex-col items-center gap-1 p-2 rounded-card border typo-caption transition-colors ${
-                  localPolicy[key]
-                    ? 'border-status-info/30 bg-status-info/5 text-status-info'
-                    : 'border-hair bg-surface-1 text-foreground'
-                }`}
+                variant={localPolicy[key] ? 'accent' : 'secondary'}
+                tone={localPolicy[key] ? 'info' : undefined}
+                size="sm"
+                icon={<Icon className="w-3.5 h-3.5" />}
               >
-                <Icon className="w-3.5 h-3.5" />
                 <span>{label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -322,14 +323,15 @@ export function AmbientContextPanel() {
                 placeholder={s.focus_filter_placeholder}
                 className="flex-1 px-2 py-1 bg-surface-2 border border-hair rounded-interactive typo-caption text-foreground placeholder:text-ink-3"
               />
-              <button
+              <Button
                 type="button"
                 onClick={handleAddFilter}
                 disabled={!filterInput.trim()}
-                className="px-2 py-1 bg-surface-2 hover:bg-surface-2 typo-caption rounded-interactive text-foreground disabled:opacity-50"
+                variant="ghost"
+                size="xs"
               >
                 {s.add}
-              </button>
+              </Button>
             </div>
             {localPolicy.focusAppFilter.length > 0 && (
               <div className="flex flex-wrap gap-1">
@@ -339,13 +341,14 @@ export function AmbientContextPanel() {
                     className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-surface-1 rounded-interactive typo-caption text-foreground"
                   >
                     {app}
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleRemoveFilter(i)}
-                      className="text-foreground hover:text-ink-2"
+                      variant="ghost"
+                      size="sm"
                     >
                       &times;
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>
@@ -362,14 +365,15 @@ export function AmbientContextPanel() {
               <Zap className="w-3.5 h-3.5 text-status-warning" />
               <span className="typo-caption text-foreground">{s.context_rules}</span>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => setShowRuleForm(!showRuleForm)}
-              className="flex items-center gap-1 typo-caption text-status-info hover:text-status-info transition-colors"
+              variant="ghost"
+              size="sm"
+              icon={<Plus className="w-3 h-3" />}
             >
-              <Plus className="w-3 h-3" />
               {s.add_rule}
-            </button>
+            </Button>
           </div>
 
           <p className="typo-caption text-foreground">
@@ -394,18 +398,16 @@ export function AmbientContextPanel() {
                     { src: 'file_watcher' as const, label: s.file_changes },
                     { src: 'app_focus' as const, label: s.app_focus },
                   ]).map(({ src, label }) => (
-                    <button
+                    <Button
                       type="button"
                       key={src}
                       onClick={() => toggleSource(src)}
-                      className={`px-2 py-0.5 rounded-interactive typo-caption border transition-colors ${
-                        ruleSources.includes(src)
-                          ? 'border-status-warning/30 bg-status-warning/10 text-status-warning'
-                          : 'border-hair bg-surface-1 text-foreground'
-                      }`}
+                      variant={ruleSources.includes(src) ? 'accent' : 'secondary'}
+                      tone={ruleSources.includes(src) ? 'warning' : undefined}
+                      size="xs"
                     >
                       {label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -458,21 +460,23 @@ export function AmbientContextPanel() {
               </div>
 
               <div className="flex justify-end gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowRuleForm(false)}
-                  className="px-2.5 py-1 typo-caption text-foreground hover:text-ink-2 transition-colors"
+                  variant="ghost"
+                  size="xs"
                 >
                   {s.cancel}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleAddRule}
                   disabled={!ruleName.trim()}
-                  className="px-2.5 py-1 text-status-warning hover:bg-status-warning/20 typo-caption rounded-input transition-colors disabled:opacity-50"
+                  variant="ghost"
+                  size="xs"
                 >
                   {s.create_rule}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -498,13 +502,15 @@ export function AmbientContextPanel() {
                       </span>
                     </div>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => removeContextRule(rule.id)}
-                    className="text-foreground hover:text-status-error transition-colors shrink-0 ml-2"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 ml-2"
                   >
                     <Trash2 className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>

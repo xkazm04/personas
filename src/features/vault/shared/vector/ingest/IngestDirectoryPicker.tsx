@@ -103,14 +103,15 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             <FolderOpen className="w-3.5 h-3.5 text-role-agent" />
           </div>
           <h2 id="ingest-directory-title" className="typo-heading text-ink-1 flex-1">{sh.scan_directory}</h2>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label={sh.close}
-            className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
@@ -125,15 +126,17 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                   <span className="text-foreground">{sh.no_directory}</span>
                 )}
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleBrowse()}
                 disabled={browsing || ingesting}
-                className="px-3 py-2 typo-body rounded-card bg-surface-2 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
+                variant="ghost"
+                size="md"
+                className="shrink-0"
+                icon={<FolderOpen className="w-3.5 h-3.5" />}
               >
-                <FolderOpen className="w-3.5 h-3.5" />
                 {browsing ? sh.browsing : sh.browse}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -161,9 +164,9 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 {patterns.map((p) => (
                   <span key={p} className="inline-flex items-center gap-1 typo-caption px-2 py-1 text-role-agent/80">
                     {p}
-                    <button type="button" onClick={() => removePattern(p)} className="hover:text-status-error transition-colors">
+                    <Button type="button" onClick={() => removePattern(p)} variant="ghost" size="icon-sm">
                       <Minus className="w-3 h-3" />
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>
@@ -180,14 +183,15 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 placeholder={sh.add_pattern_placeholder}
                 className="flex-1 px-2.5 py-1.5 typo-code bg-surface-1 border border-hair rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
               />
-              <button
+              <Button
                 type="button"
                 onClick={addPattern}
                 disabled={!customPattern.trim()}
-                className="p-1.5 rounded-card bg-surface-2 hover:bg-surface-2 text-foreground transition-colors disabled:opacity-30"
+                variant="ghost"
+                size="icon-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           </div>
 

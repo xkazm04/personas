@@ -44,7 +44,6 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             decoding="async"
             className="w-full h-full object-cover opacity-50"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         </div>
       )}
 

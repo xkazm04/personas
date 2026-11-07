@@ -9,6 +9,7 @@ import {
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import Button from '@/features/shared/components/buttons/Button';
 
 // -- Copy button -------------------------------------------------
 
@@ -22,19 +23,18 @@ export function CopyButton({ text, className }: { text: string; className?: stri
 
   return (
     <Tooltip content={t.vault.design_phases.copy_to_clipboard}>
-      <button
+      <Button
         type="button"
         onClick={handleCopy}
         aria-label={t.vault.design_phases.copy_to_clipboard}
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body transition-all ${
-          copied
-            ? 'text-status-success bg-status-success/10'
-            : 'text-foreground hover:text-ink-1 hover:bg-surface-2'
-        } ${className ?? ''}`}
+        variant={copied ? 'accent' : 'ghost'}
+        tone={copied ? 'success' : undefined}
+        size="xs"
+        className={className}
+        icon={copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
       >
-        {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
         {copied ? t.common.copied : t.common.copy}
-      </button>
+      </Button>
     </Tooltip>
   );
 }
@@ -119,7 +119,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       <h2 className="typo-heading text-ink-1 mb-1 mt-2">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="typo-heading uppercase text-foreground mb-1 mt-1.5">{children}</h3>
+      <h3 className="typo-eyebrow text-foreground mb-1 mt-1.5">{children}</h3>
     ),
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>

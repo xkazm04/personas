@@ -73,19 +73,16 @@ export function EntityToolbar({
 
 function TypeChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
       aria-pressed={active}
       data-testid={`entity-type-chip-${label}`}
-      className={[
-        'px-2 py-0.5 rounded-interactive typo-caption font-mono transition-colors focus-ring',
-        active
-          ? 'bg-role-agent/20 text-role-agent border border-role-agent/40'
-          : 'bg-surface-2 text-foreground border border-border/40 hover:bg-secondary/70',
-      ].join(' ')}
+      variant={active ? 'accent' : 'secondary'}
+      tone={active ? 'agent' : undefined}
+      size="xs"
     >
       {label}
-    </button>
+    </Button>
   );
 }

@@ -5,6 +5,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { Code2, HeadsetIcon, Briefcase } from 'lucide-react';
 import type { RolePreset } from './catalogRolePresets';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
 
@@ -91,19 +92,17 @@ export function CredentialPickerFilters({
           { role: 'manager' as const, icon: Briefcase, label: t.vault.picker_section.role_manager },
         ]).map(({ role, icon: Icon, label }) => (
           <Tooltip key={role} content={label}>
-            <button
+            <Button
               type="button"
               onClick={() => onRoleToggle(role)}
               aria-label={label}
               aria-pressed={activeRole === role}
-              className={`p-1.5 rounded-card border transition-colors ${
-                activeRole === role
-                  ? 'bg-role-agent/15 border-role-agent/30 text-role-agent'
-                  : 'bg-surface-1 border-hair text-foreground hover:text-ink-2 hover:border-hair'
-              }`}
+              variant={activeRole === role ? 'accent' : 'secondary'}
+              tone={activeRole === role ? 'agent' : undefined}
+              size="icon-sm"
             >
               <Icon className="w-4 h-4" />
-            </button>
+            </Button>
           </Tooltip>
         ))}
       </div>

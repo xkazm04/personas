@@ -22,7 +22,7 @@ export function ToolsSection({ tools, selectedToolIndices, hasSelection, onToggl
 
   return (
     <div className="p-4">
-      <h4 className="typo-heading text-foreground uppercase mb-2.5 flex items-center gap-1">
+      <h4 className="typo-eyebrow text-foreground mb-2.5 flex items-center gap-1">
         <Wrench className="w-3 h-3" />
         {tx(t.templates.n8n.tools_header, { count: tools.length })}
       </h4>
@@ -35,7 +35,7 @@ export function ToolsSection({ tools, selectedToolIndices, hasSelection, onToggl
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-modal border transition-all duration-150 ${
                 isSelected
                   ? 'bg-status-info/10 text-status-info border-status-info/20'
-                  : 'bg-surface-1 text-foreground border-hair opacity-60'
+                  : 'bg-surface-1 text-ink-3 border-hair'
               } ${onToggleTool ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={() => onToggleTool?.(i)}
             >
@@ -67,7 +67,7 @@ export function TriggersSection({ triggers, selectedTriggerIndices, hasSelection
 
   return (
     <div className="p-4">
-      <h4 className="typo-heading text-foreground uppercase mb-2.5 flex items-center gap-1">
+      <h4 className="typo-eyebrow text-foreground mb-2.5 flex items-center gap-1">
         <Zap className="w-3 h-3" />
         {tx(t.templates.n8n.triggers_header, { count: triggers.length })}
       </h4>
@@ -133,7 +133,7 @@ export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelec
 
   return (
     <div className="p-4">
-      <h4 className="typo-heading text-foreground uppercase mb-2.5 flex items-center gap-1">
+      <h4 className="typo-eyebrow text-foreground mb-2.5 flex items-center gap-1">
         <Link className="w-3 h-3" />
         {tx(t.templates.n8n.connectors_header, { count: connectors.length })}
         {gaps.missingCount > 0 && (
@@ -157,7 +157,7 @@ export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelec
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-modal border transition-all duration-150 ${
                 isSelected
                   ? 'bg-status-success/10 text-status-success border-status-success/20'
-                  : 'bg-surface-1 text-foreground border-hair opacity-60'
+                  : 'bg-surface-1 text-ink-3 border-hair'
               } ${onToggleConnector ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={() => onToggleConnector?.(conn.name)}
             >

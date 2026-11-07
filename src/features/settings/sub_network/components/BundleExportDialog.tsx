@@ -15,6 +15,7 @@ import { createLogger } from "@/lib/log";
 import { errMsg } from "@/stores/storeTypes";
 import { resolveError } from '@/lib/errors/errorRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger("bundle-export");
 
@@ -267,30 +268,26 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
 
         {/* Mode toggle */}
         <div className="flex rounded-card border border-border p-0.5 bg-surface-1">
-          <button
+          <Button
             type="button"
             onClick={() => setMode('bundle')}
-            className={`flex-1 px-3 py-1.5 typo-caption rounded-input transition-colors flex items-center justify-center gap-1.5 ${
-              mode === 'bundle'
-                ? 'bg-background text-foreground shadow-elevation-1'
-                : 'text-foreground hover:text-foreground'
-            }`}
+            variant="ghost"
+            size="sm"
+            className="flex-1"
+            icon={<Package className="w-3.5 h-3.5" />}
           >
-            <Package className="w-3.5 h-3.5" />
             {st.mode_bundle}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => setMode('enclave')}
-            className={`flex-1 px-3 py-1.5 typo-caption rounded-input transition-colors flex items-center justify-center gap-1.5 ${
-              mode === 'enclave'
-                ? 'bg-background text-foreground shadow-elevation-1'
-                : 'text-foreground hover:text-foreground'
-            }`}
+            variant="ghost"
+            size="sm"
+            className="flex-1"
+            icon={<Lock className="w-3.5 h-3.5" />}
           >
-            <Lock className="w-3.5 h-3.5" />
             {st.mode_enclave}
-          </button>
+          </Button>
         </div>
 
         {mode === 'bundle' ? (
@@ -305,13 +302,14 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
           ) : (
             <>
               <div className="flex items-center justify-between">
-                <button
+                <Button
                   type="button"
                   onClick={toggleAll}
-                  className="typo-caption text-primary hover:text-primary/80 transition-colors"
+                  variant="ghost"
+                  size="sm"
                 >
                   {selected.size === exposedResources.length ? st.deselect_all : st.select_all}
-                </button>
+                </Button>
                 <span className="typo-caption text-foreground">
                   {tx(st.selected_of_total, { selected: selected.size, total: exposedResources.length })}
                 </span>
@@ -345,55 +343,62 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         )}
 
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2"
+            variant="secondary"
+            size="sm"
           >
             {st.cancel}
-          </button>
+          </Button>
           {mode === 'bundle' ? (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleCreateShareLink}
                 disabled={selected.size === 0 || creatingLink || copying || exporting}
-                className="px-3 py-1.5 typo-caption rounded-card border border-role-highlight/30 text-role-highlight hover:bg-role-highlight/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                title={st.share_link_tooltip}
+                variant="accent"
+                tone="highlight"
+                size="sm"
+                tooltip={st.share_link_tooltip}
+                icon={creatingLink ? <LoadingSpinner size="sm" /> : linkCopied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Link2 className="w-3.5 h-3.5" />}
               >
-                {creatingLink ? <LoadingSpinner size="sm" /> : linkCopied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Link2 className="w-3.5 h-3.5" />}
                 {creatingLink ? st.creating_link : linkCopied ? st.link_copied : st.share_link}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleCopyToClipboard}
                 disabled={selected.size === 0 || copying || exporting || creatingLink}
-                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                title={st.copy_clipboard_tooltip}
+                variant="secondary"
+                size="sm"
+                tooltip={st.copy_clipboard_tooltip}
+                icon={copying ? <LoadingSpinner size="sm" /> : copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Clipboard className="w-3.5 h-3.5" />}
               >
-                {copying ? <LoadingSpinner size="sm" /> : copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Clipboard className="w-3.5 h-3.5" />}
                 {copying ? st.copying : copied ? st.copied : st.copy_to_clipboard}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleExportBundle}
                 disabled={selected.size === 0 || exporting || copying || creatingLink}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                variant="primary"
+                size="sm"
+                icon={exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
               >
-                {exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
                 {exporting ? st.exporting : st.export_to_file}
-              </button>
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               type="button"
               onClick={handleSealEnclave}
               disabled={!selectedPersonaId || exporting}
-              className="px-3 py-1.5 typo-caption rounded-card bg-role-agent text-foreground hover:bg-role-agent disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              variant="accent"
+              tone="agent"
+              size="sm"
+              icon={exporting ? <LoadingSpinner size="sm" /> : <Lock className="w-3.5 h-3.5" />}
             >
-              {exporting ? <LoadingSpinner size="sm" /> : <Lock className="w-3.5 h-3.5" />}
               {exporting ? st.sealing : st.seal_enclave_btn}
-            </button>
+            </Button>
           )}
         </div>
       </div>

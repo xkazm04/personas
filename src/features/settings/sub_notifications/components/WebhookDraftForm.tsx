@@ -3,6 +3,7 @@ import type { EventVocabularyEntry } from '@/lib/bindings/EventVocabularyEntry';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { parseEventTypes, type WebhookDraft, type WebhookProvider } from '../libs/webhookMatch';
 import { WebhookEventPicker } from './WebhookEventPicker';
+import Button from '@/features/shared/components/buttons/Button';
 
 const PROVIDERS: readonly WebhookProvider[] = ['slack', 'discord', 'teams', 'generic'];
 
@@ -89,13 +90,14 @@ export function WebhookDraftForm({ draft, onChange, onCancel, onSave, vocabulary
         <span className="typo-caption text-foreground mt-1 block">{s.webhook_subscriptions_template_hint}</span>
       </label>
       <div className="flex items-center justify-end gap-2">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="rounded-interactive px-3 py-1 typo-caption text-foreground hover:bg-primary/10"
+          variant="ghost"
+          size="xs"
         >
           {s.webhook_subscriptions_cancel}
-        </button>
+        </Button>
         <AsyncButton
           variant="primary"
           size="sm"

@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
 import { secretSafeErrorCode } from '../libs/secretSafeError';
+import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger('ByomApiKeyManager');
 
@@ -346,15 +347,16 @@ function QwenKeyRow() {
           )}
         </div>
         {configured && !editing && (
-          <button
+          <Button
             type="button"
             onClick={() => setConfirmingRemove(true)}
             disabled={busy}
-            className="typo-caption p-1.5 rounded-input text-status-error/60 hover:text-status-error hover:bg-status-error/10 transition-all disabled:opacity-50"
-            title={s.remove_key}
+            variant="danger"
+            size="icon-sm"
+            tooltip={s.remove_key} aria-label={s.remove_key}
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -365,7 +367,7 @@ function QwenKeyRow() {
           <PasswordToggleField
             className="flex-1"
             inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-              text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40"
+              text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="sk-..."
@@ -375,15 +377,16 @@ function QwenKeyRow() {
               if (e.key === 'Escape') { setEditing(false); setValue(''); }
             }}
           />
-          <button
+          <Button
             type="button"
             onClick={() => void save()}
             disabled={!value.trim() || busy}
-            className="p-1.5 rounded-input text-status-success hover:bg-status-success/10 transition-all disabled:opacity-30"
-            title={s.save_key_title}
+            variant="ghost"
+            size="sm"
+            tooltip={s.save_key_title}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          </button>
+          </Button>
         </div>
       ) : (
         <div onClick={() => setEditing(true)} className="flex items-center gap-2 cursor-pointer group">
@@ -450,12 +453,12 @@ function KeyEntryRow({
         </div>
         <div className="flex items-center gap-1.5">
           {hasValue && !entry.editing && (
-            <button
+            <Button
               type="button"
               onClick={onTest}
               disabled={entry.connectionState === 'testing'}
-              className="typo-caption px-2.5 py-1 rounded-input border border-primary/15 text-foreground
-                hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
+              variant="secondary"
+              size="xs"
             >
               {entry.connectionState === 'testing' ? (
                 <span className="flex items-center gap-1">
@@ -465,17 +468,18 @@ function KeyEntryRow({
               ) : (
                 s.verify
               )}
-            </button>
+            </Button>
           )}
           {hasValue && !entry.editing && (
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="typo-caption p-1.5 rounded-input text-status-error/60 hover:text-status-error hover:bg-status-error/10 transition-all"
-              title={s.remove_key}
+              variant="danger"
+              size="icon-sm"
+              tooltip={s.remove_key} aria-label={s.remove_key}
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -492,7 +496,7 @@ function KeyEntryRow({
               onChange={(e) => onChange(e.target.value)}
               placeholder={entry.def.placeholder}
               className="flex-1 px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-                text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
+                text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40
                 "
               autoFocus
               onKeyDown={(e) => {
@@ -504,7 +508,7 @@ function KeyEntryRow({
             <PasswordToggleField
               className="flex-1"
               inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-                text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
+                text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40
                 "
               value={entry.value}
               onChange={(e) => onChange(e.target.value)}
@@ -517,23 +521,25 @@ function KeyEntryRow({
               }}
             />
           )}
-          <button
+          <Button
             type="button"
             onClick={onSave}
             disabled={!isDirty}
-            className="p-1.5 rounded-input text-status-success hover:bg-status-success/10 transition-all disabled:opacity-30"
-            title={s.save_key_title}
+            variant="ghost"
+            size="icon-sm"
+            tooltip={s.save_key_title} aria-label={s.save_key_title}
           >
             <Check className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-surface-2 transition-all"
-            title={s.cancel_key_title}
+            variant="ghost"
+            size="icon-sm"
+            tooltip={s.cancel_key_title} aria-label={s.cancel_key_title}
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       ) : (
         <div
@@ -551,7 +557,7 @@ function KeyEntryRow({
             )}
           </div>
           {hasValue && !entry.def.isUrl && (
-            <button
+            <Button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -559,24 +565,26 @@ function KeyEntryRow({
               }}
               aria-label={entry.revealed ? s.hide_key : s.reveal_key}
               aria-pressed={entry.revealed}
-              className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
-              title={entry.revealed ? s.hide_key : s.reveal_key}
+              variant="ghost"
+              size="sm"
+              tooltip={entry.revealed ? s.hide_key : s.reveal_key}
             >
               {entry.revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
+            </Button>
           )}
           {hasValue && (
-            <button
+            <Button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 copy('value', entry.savedValue);
               }}
               aria-label={copiedKey === 'value' ? t.common.copied : t.common.copy}
-              className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
+              variant="ghost"
+              size="sm"
             >
               {copiedKey === 'value' ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
-            </button>
+            </Button>
           )}
         </div>
       )}

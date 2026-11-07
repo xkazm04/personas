@@ -142,7 +142,7 @@ export default function CloudSyncCard() {
     <SectionCard
       title={s.cloud_sync_title}
       icon={<CloudUpload className="w-4 h-4 text-ink-2" />}
-      titleClassName="text-primary"
+      titleClassName="text-ink-1"
       action={statusBadge}
     >
       <div className="space-y-4">
@@ -238,11 +238,13 @@ export default function CloudSyncCard() {
           {/* Per-table breakdown (collapsible) */}
           {tables.length > 0 && (
             <div className="rounded-card border border-primary/8 bg-secondary/10 overflow-hidden">
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowDetails((v) => !v)}
                 aria-expanded={showDetails}
-                className="flex w-full items-center justify-between px-4 py-2.5 typo-caption text-foreground hover:bg-surface-1 transition-colors"
+                variant="ghost"
+                size="md"
+                className="w-full"
               >
                 <span>{s.cloud_sync_tables_title}</span>
                 <span className="inline-flex items-center gap-1.5 text-foreground">
@@ -251,7 +253,7 @@ export default function CloudSyncCard() {
                     className={`w-3.5 h-3.5 transition-transform ${showDetails ? 'rotate-180' : ''}`}
                   />
                 </span>
-              </button>
+              </Button>
 
               <Collapse open={showDetails} unmountWhenClosed duration={200}>
                     <ul className="divide-y divide-primary/8 border-t border-primary/8">

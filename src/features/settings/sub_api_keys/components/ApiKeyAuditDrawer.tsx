@@ -14,6 +14,8 @@ import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ApiKeyAuditDrawerProps {
   keyId: string;
@@ -22,9 +24,9 @@ interface ApiKeyAuditDrawerProps {
 }
 
 function statusColor(status: number): string {
-  if (status < 300) return 'text-emerald-400';
-  if (status < 500) return 'text-amber-400';
-  return 'text-red-400';
+  if (status < 300) return 'text-status-success';
+  if (status < 500) return 'text-status-warning';
+  return 'text-status-error';
 }
 
 /**
@@ -83,14 +85,15 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
             <h2 id="api-key-audit-title" className="typo-body text-foreground truncate">{s.audit_title}</h2>
             <p className="typo-caption text-foreground truncate">{keyName}</p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label={s.close}
-            className="text-foreground hover:text-foreground transition-colors"
+            variant="ghost"
+            size="icon-sm"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         <div className="p-3 overflow-y-auto">
@@ -125,20 +128,19 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
                     {String(row.status)}
                   </span>
                   <span className="typo-code text-foreground w-10 shrink-0">{row.method}</span>
-                  <code className="typo-code text-foreground truncate flex-1" title={row.path}>
+                  <Tooltip content={row.path}><code className="typo-code text-foreground truncate flex-1">
                     {row.path}
-                  </code>
+                  </code></Tooltip>
                   {row.origin && (
-                    <span className="typo-caption text-foreground truncate max-w-[8rem]" title={row.origin}>
+                    <Tooltip content={row.origin}><span className="typo-caption text-foreground truncate max-w-[8rem]">
                       {row.origin}
-                    </span>
+                    </span></Tooltip>
                   )}
-                  <span
+                  <Tooltip content={formatTimestamp(row.at)}><span
                     className="typo-caption text-foreground shrink-0"
-                    title={formatTimestamp(row.at)}
                   >
                     {formatRelativeTime(row.at, '', { dateFallbackDays: 7 })}
-                  </span>
+                  </span></Tooltip>
                 </RevealItem>
               ))}
             </div>

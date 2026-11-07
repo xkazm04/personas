@@ -41,26 +41,28 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
           : tx(neg.start_description, { label: connectorLabel })}
       </p>
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={onStart}
           disabled={authDetectLoading}
           data-testid="vault-negotiator-start"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal bg-role-agent/15 border border-role-agent/25 text-role-agent typo-body hover:bg-role-agent/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {authDetectLoading ? (
+          variant="accent"
+          tone="agent"
+          size="md"
+          icon={authDetectLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : existing ? (
             <CheckCircle2 className="w-4 h-4" />
           ) : (
             <Zap className="w-4 h-4" />
           )}
+        >
           {authDetectLoading
             ? negx.detecting_auth
             : existing
               ? tx(negx.use_existing_auth, { service: connectorLabel })
               : negx.start_auto}
-        </button>
+        </Button>
         {/* The estimate is for a full guided capture. With a live session most
             of that plan is skipped, so quoting it would be misleading. */}
         {!authDetectLoading && !existing && (
@@ -99,14 +101,17 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       <p className="typo-body text-foreground">
         {tx(neg.fields_captured, { count: capturedValuesCount })}
       </p>
-      <button
+      <Button
         type="button"
         onClick={onFinish}
         data-testid="vault-negotiator-apply"
-        className="px-4 py-2 bg-status-success/20 hover:bg-status-success/30 border border-status-success/30 text-status-success rounded-modal typo-body transition-colors mt-1"
+        variant="accent"
+        tone="success"
+        size="md"
+        className="mt-1"
       >
         {neg.apply_button}
-      </button>
+      </Button>
     </motion.div>
   );
 }
@@ -139,13 +144,14 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
         <Button variant="secondary" onClick={onRetry} disabled={authDetectLoading}>
           {neg.try_again}
         </Button>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 rounded-modal text-foreground typo-body hover:text-ink-1 transition-colors"
+          variant="ghost"
+          size="md"
         >
           {t.common.close}
-        </button>
+        </Button>
       </div>
     </motion.div>
   );

@@ -36,7 +36,7 @@ describe('SchemaManagerModal rename failure copy', () => {
 
   it('toasts the catalog string, not a literal', async () => {
     render(<SchemaManagerModal credential={cred} connector={undefined} onClose={() => {}} />);
-    fireEvent.click(screen.getByTitle(en.vault.databases.rename_credential));
+    fireEvent.click(screen.getByLabelText(en.vault.databases.rename_credential));
     const input = screen.getByDisplayValue('My Test Database');
     fireEvent.change(input, { target: { value: 'Renamed' } });
     fireEvent.keyDown(input, { key: 'Enter' });

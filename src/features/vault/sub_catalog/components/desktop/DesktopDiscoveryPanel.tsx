@@ -14,6 +14,7 @@ import {
 import { DiscoveryAppList } from './DiscoveryAppList';
 import { DiscoveryMcpList } from './DiscoveryMcpList';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface DesktopDiscoveryPanelProps {
   onBack: () => void;
@@ -128,62 +129,60 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
     >
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
           data-testid="vault-desktop-back"
           onClick={onBack}
           aria-label={t.common.back}
-          title={t.common.back}
-          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+          tooltip={t.common.back}
+          variant="ghost"
+          size="icon-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <div className="flex-1">
           <h3 className="typo-heading text-foreground">{dd.title}</h3>
           <p className="typo-body text-foreground">
             {dd.connect_description}
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={() => { void scanApps(); void scanMcpServers(); }}
           disabled={scanning}
           data-testid="vault-desktop-scan"
           aria-label={dd.rescan_aria}
-          title={dd.rescan_aria}
-          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+          tooltip={dd.rescan_aria}
+          variant="ghost"
+          size="icon-sm"
         >
           <RefreshCw className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-surface-1 rounded-card">
-        <button
+        <Button
           type="button"
           onClick={() => setTab('apps')}
-          className={`flex-1 px-3 py-1.5 rounded-input typo-caption transition-colors ${
-            tab === 'apps'
-              ? 'bg-secondary/80 text-foreground'
-              : 'text-foreground hover:text-foreground'
-          }`}
+          variant="ghost"
+          size="sm"
+          className="flex-1"
+          icon={<Monitor className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />}
         >
-          <Monitor className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
           {tx(dd.detected_apps_tab, { count: installedApps.length })}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={() => setTab('mcp-import')}
           data-testid="vault-desktop-import-mcp"
-          className={`flex-1 px-3 py-1.5 rounded-input typo-caption transition-colors ${
-            tab === 'mcp-import'
-              ? 'bg-secondary/80 text-foreground'
-              : 'text-foreground hover:text-foreground'
-          }`}
+          variant="ghost"
+          size="sm"
+          className="flex-1"
+          icon={<Download className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />}
         >
-          <Download className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
           {tx(dd.claude_mcp_tab, { count: mcpServers.length })}
-        </button>
+        </Button>
       </div>
 
       {tab === 'apps' && (

@@ -66,7 +66,7 @@ describe('Appearance copy speaks through the catalog', () => {
       expect(screen.getByText(`${A}${k}`)).toBeTruthy();
     }
     expect(screen.getAllByText(`${A}color_auto`).length).toBeGreaterThan(0);
-    expect(screen.getByTitle(`${A}color_pick_title{"label":"${A}color_primary"}`)).toBeTruthy();
+    expect(screen.getByLabelText(`${A}color_pick_title{"label":"${A}color_primary"}`)).toBeTruthy();
     expect(screen.getByPlaceholderText(`${A}custom_theme_name_placeholder`)).toBeTruthy();
     expect(screen.queryByText('Muted Text')).toBeNull();
   });

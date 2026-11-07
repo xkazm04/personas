@@ -26,11 +26,11 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
           onClick={() => onSelect(project.id)}
           className={`w-full flex items-start gap-3 p-3 rounded-modal border text-left transition-colors ${
             isSelected(project.id)
-              ? 'border-indigo-500/30 bg-indigo-500/8'
+              ? 'border-role-agent/30 bg-role-agent/8'
               : 'border-hair hover:border-hair hover:bg-surface-1'
           }`}
         >
-          <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-indigo-400' : 'text-foreground'}`} />
+          <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-role-agent' : 'text-foreground'}`} />
           <div className="min-w-0 flex-1">
             <p className="typo-body text-ink-1 truncate">{project.name}</p>
             <p className="typo-caption text-foreground truncate">{project.root_path}</p>
@@ -46,7 +46,7 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
           </div>
           {multiSelect && (
             <div className={`w-4 h-4 mt-1 rounded-interactive border flex-shrink-0 flex items-center justify-center ${
-              isSelected(project.id) ? 'bg-indigo-500 border-indigo-500' : 'border-hair'
+              isSelected(project.id) ? 'bg-role-agent border-role-agent' : 'border-hair'
             }`}>
               {isSelected(project.id) && <span className="text-foreground typo-label">&#10003;</span>}
             </div>

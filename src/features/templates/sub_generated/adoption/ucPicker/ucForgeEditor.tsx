@@ -12,6 +12,7 @@ import { StampGlyph } from './ucStampGlyph';
 import { classifyEvent } from './ucPickerHelpers';
 import type { Destination, DestId } from './ucPickerTypes';
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface Props {
@@ -50,7 +51,7 @@ export function ForgeEditor({
   const firing = status === 'running';
   return (
     <div
-      className="relative px-5 py-5 bg-gradient-to-b from-foreground/[0.015] to-foreground/[0.04]"
+      className="relative px-5 py-5"
       style={{
         backgroundImage:
           'repeating-linear-gradient(90deg, transparent 0 19px, color-mix(in srgb, var(--color-foreground) 3%, transparent) 19px 20px)',
@@ -121,13 +122,14 @@ export function ForgeEditor({
                         onRemove={dest.kind === 'channel' ? () => onRemoveChannel(dest.id) : undefined}
                       />
                     ))}
-                    <button
+                    <Button
                       type="button"
                       onClick={() => onAddChannel(ev.event_type)}
-                      className="focus-ring w-8 h-8 rounded-full border border-dashed border-border text-foreground hover:text-foreground hover:border-foreground/40 flex items-center justify-center transition-colors"
+                      variant="secondary"
+                      size="icon-sm"
                     >
                       <Plus className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -156,7 +158,7 @@ function ZoneHeader({
       ? 'bg-primary/20 text-primary ring-primary/30'
       : 'bg-status-warning/20 text-status-warning ring-status-warning/30';
   return (
-    <div className={`typo-body uppercase tracking-wider flex items-center gap-2 ${textColor}`}>
+    <div className={`typo-eyebrow flex items-center gap-2 ${textColor}`}>
       <Icon className="w-5 h-5" />
       {label}
       {typeof count === 'number' && (

@@ -64,14 +64,15 @@ export function DonePhase({
           {t.common.done}
         </Button>
         {onViewCredential && (
-          <button
+          <Button
             type="button"
             onClick={onViewCredential}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all"
+            variant="primary"
+            size="md"
+            iconRight={<ArrowRight className="w-3.5 h-3.5" />}
           >
             {dp.view_credential}
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </div>
 

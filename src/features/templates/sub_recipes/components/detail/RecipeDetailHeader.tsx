@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe, Eligibility } from '../../types';
 import { categoryLabel } from '../../libs/categoryLabels';
 import { EligibilityChip } from '../EligibilityChip';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RecipeDetailHeaderProps {
   recipe: Recipe;
@@ -51,14 +52,16 @@ export function RecipeDetailHeader({
           />
         )}
         <Tooltip content={t.recipes_catalog.back_to_catalog}>
-          <button
+          <Button
             type="button"
             onClick={onBack}
             aria-label={t.recipes_catalog.back_to_catalog}
-            className="relative mt-1 inline-flex items-center justify-center w-8 h-8 rounded-full border border-card-border bg-surface-2 text-foreground hover:border-primary/40 cursor-pointer transition-colors"
+            variant="secondary"
+            size="icon-sm"
+            className="relative mt-1"
           >
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </Button>
         </Tooltip>
         {iconMeta && (
           <span
@@ -96,7 +99,7 @@ export function RecipeDetailHeader({
           </div>
           <div className="typo-body text-foreground mt-0.5">{recipe.summary}</div>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="typo-label px-1.5 py-0.5 rounded-interactive border border-primary/30 bg-primary/10 text-primary">
+            <span className="typo-label text-ink-1">
               {categoryLabel(t, recipe.category)}
             </span>
             <span className="typo-label font-mono px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-2 text-foreground">
@@ -123,29 +126,30 @@ export function RecipeDetailHeader({
           // Adopted → the CTA becomes the symmetric detach. Destructive
           // tone; confirmation dialog is owned by the panel.
           <Tooltip content={t.recipes_catalog.remove_tooltip}>
-            <button
+            <Button
               type="button"
               onClick={onRemove}
               disabled={removePending}
               data-testid="recipe-remove-cta"
-              className="relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20"
+              variant="danger"
+              size="md"
+              className="relative shrink-0 self-center"
+              icon={<Trash2 className="w-4 h-4" />}
             >
-              <Trash2 className="w-4 h-4" />
               {t.recipes_catalog.remove_label}
-            </button>
+            </Button>
           </Tooltip>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={onAdopt}
             disabled={!canAdopt}
             data-testid="recipe-adopt-cta"
-            className={`relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
-              canAdopt
-                ? 'border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 shadow-elevation-1'
-                : 'border-card-border bg-surface-2 text-foreground'
-            }`}
-            title={
+            variant={canAdopt ? 'accent' : 'secondary'}
+            tone={canAdopt ? 'highlight' : undefined}
+            size="md"
+            className="relative shrink-0 self-center"
+            tooltip={
               !hasPersona
                 ? t.recipes_catalog.adopt_tooltip_no_persona
                 : eligibility.state === 'incompatible'
@@ -159,10 +163,10 @@ export function RecipeDetailHeader({
                       )
                     : t.recipes_catalog.adopt_tooltip_ready
             }
+            icon={<Sparkles className="w-4 h-4" />}
           >
-            <Sparkles className="w-4 h-4" />
             {eligibility.state === 'adoptable-with-setup' ? t.recipes_catalog.adopt_with_setup_label : t.recipes_catalog.adopt_label}
-          </button>
+          </Button>
         )}
       </div>
 

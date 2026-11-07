@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import type { SetupKind } from '@/lib/bindings/SetupKind';
 import type { ResolvedConnectorReadiness } from './useConnectorReadiness';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConnectorReadinessProps {
   statuses: ResolvedConnectorReadiness[];
@@ -119,7 +120,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
 
   if (simplified) {
     return (
-      <span className={`inline-flex items-center gap-1 ${config.color}`} title={label}>
+      <Tooltip content={label}><span className={`inline-flex items-center gap-1 ${config.color}`}>
         <StatusIcon className="w-3.5 h-3.5" />
         <span className="typo-caption">
           {overall === 'ready'
@@ -130,19 +131,18 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
                 ? t.templates.connector_readiness.not_ready
                 : label}
         </span>
-      </span>
+      </span></Tooltip>
     );
   }
 
   if (compact) {
     return (
-      <span
+      <Tooltip content={label}><span
         className={`inline-flex items-center gap-1 px-2 py-1 typo-body rounded-full border ${config.bg} ${config.color}`}
-        title={label}
       >
         <StatusIcon className="w-3 h-3" />
         {label}
-      </span>
+      </span></Tooltip>
     );
   }
 

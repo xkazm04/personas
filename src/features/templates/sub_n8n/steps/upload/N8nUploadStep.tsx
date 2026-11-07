@@ -14,6 +14,7 @@ import { usePasteImport } from './usePasteImport';
 import { useUrlImport } from './useUrlImport';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DropZoneGlow } from '@/features/shared/components/feedback/DropZoneGlow';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface N8nUploadStepProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -54,19 +55,18 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
       {/* Mode tabs */}
       <div className="flex items-center gap-1 mb-4 p-1 rounded-card bg-surface-1 border border-primary/8">
         {modes.map((m) => (
-          <button
+          <Button
             key={m.id}
             type="button"
             onClick={() => setMode(m.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body transition-all ${
-              mode === m.id
-                ? 'bg-role-agent/15 text-role-agent border border-role-agent/25 shadow-elevation-1'
-                : 'text-foreground hover:text-ink-2 hover:bg-surface-2 border border-transparent'
-            }`}
+            variant={mode === m.id ? 'accent' : 'ghost'}
+            tone={mode === m.id ? 'agent' : undefined}
+            size="md"
+            className="flex-1"
+            icon={m.icon}
           >
-            {m.icon}
             {m.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -170,9 +170,9 @@ function FileUploadTab({
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button type="button" onClick={handleManualProceed} className="px-4 py-2.5 typo-heading rounded-modal bg-role-agent text-foreground hover:bg-role-agent transition-colors">
+          <Button type="button" onClick={handleManualProceed} variant="accent" tone="agent" size="md">
             {t.templates.n8n.continue_btn}
-          </button>
+          </Button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
         </div>
       )}
@@ -211,19 +211,17 @@ function PasteTab({
         />
         <div className="px-4 py-2.5 border-t border-primary/8 flex items-center justify-between">
           <PlatformLabels />
-          <button
+          <Button
             type="button"
             onClick={handlePasteImport}
             disabled={pastePreview?.kind !== 'valid'}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-modal typo-body transition-all ${
-              pastePreview?.kind === 'valid'
-                ? 'bg-role-agent/20 text-role-agent border border-role-agent/30 hover:bg-role-agent/30'
-                : 'bg-surface-2 text-foreground border border-hair disabled:cursor-not-allowed'
-            }`}
+            variant={pastePreview?.kind === 'valid' ? 'accent' : 'secondary'}
+            tone={pastePreview?.kind === 'valid' ? 'agent' : undefined}
+            size="md"
+            icon={<ChevronRight className="w-3.5 h-3.5" />}
           >
-            <ChevronRight className="w-3.5 h-3.5" />
             {t.templates.n8n.import_btn}
-          </button>
+          </Button>
         </div>
       </div>
       <PreviewCard preview={pastePreview} FileIcon={FileJson} onClick={pastePreview?.kind === 'valid' ? handlePasteImport : undefined} />
@@ -265,22 +263,20 @@ function UrlTab({
             className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-hair typo-body text-foreground placeholder:text-foreground outline-none focus-visible:border-role-agent/40 transition-colors"
             data-testid="url-input"
           />
-          <button
+          <Button
             type="button"
             onClick={() => void handleUrlFetch()}
             disabled={urlFetching || !urlValue.trim()}
-            className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body transition-all ${
-              urlFetching || !urlValue.trim()
-                ? 'bg-surface-2 text-foreground border border-hair disabled:cursor-not-allowed'
-                : 'bg-role-agent/20 text-role-agent border border-role-agent/30 hover:bg-role-agent/30'
-            }`}
+            variant={urlFetching || !urlValue.trim() ? 'secondary' : 'accent'}
+            tone={urlFetching || !urlValue.trim() ? undefined : 'agent'}
+            size="md"
           >
             {urlFetching ? (
               <><LoadingSpinner size="sm" /> {t.templates.n8n.fetching}</>
             ) : (
               <><ChevronRight className="w-3.5 h-3.5" /> {t.templates.n8n.fetch}</>
             )}
-          </button>
+          </Button>
         </div>
         <div className="flex items-center gap-3 typo-body text-foreground">
           <span>{t.templates.n8n.accepts_label}</span>
@@ -294,9 +290,9 @@ function UrlTab({
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button type="button" onClick={handleUrlImport} className="px-4 py-2.5 typo-heading rounded-modal bg-role-agent text-foreground hover:bg-role-agent transition-colors">
+          <Button type="button" onClick={handleUrlImport} variant="accent" tone="agent" size="md">
             {t.templates.n8n.continue_btn}
-          </button>
+          </Button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
         </div>
       )}

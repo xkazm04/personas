@@ -38,7 +38,7 @@ export function PreviewCard({
             <>
               <FileIcon className="w-4 h-4 text-role-agent flex-shrink-0" />
               {preview.platform && (
-                <span className="typo-code uppercase px-1.5 py-0.5 text-role-agent/80 flex-shrink-0">
+                <span className="typo-eyebrow px-1.5 py-0.5 text-role-agent/80 flex-shrink-0">
                   {preview.platform}
                 </span>
               )}

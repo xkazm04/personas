@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import type { KbIngestProgressPayload } from '@/lib/eventRegistry';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface IngestProgressBarProps {
   kbId: string;
@@ -121,13 +122,15 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
 
         {/* The bar no longer clears itself on failure, so it needs a way out. */}
         {hasError && (
-          <button
+          <Button
             type="button"
             onClick={() => onCompleteRef.current()}
-            className="typo-caption shrink-0 px-2 py-0.5 text-status-error hover:bg-status-error/10 transition-colors"
+            variant="danger"
+            size="xs"
+            className="shrink-0"
           >
             {t.common.dismiss}
-          </button>
+          </Button>
         )}
       </div>
 

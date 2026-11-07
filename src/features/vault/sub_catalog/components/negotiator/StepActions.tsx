@@ -6,6 +6,7 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { CaptureFieldRow, HelpSection } from './NegotiatorStepCardHelpers';
 import type { NegotiatorStepCardProps } from './NegotiatorStepCardHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 type StepExpandedContentProps = Pick<NegotiatorStepCardProps,
   'step' | 'stepIndex' | 'isCompleted' | 'capturedValues' | 'onComplete' | 'onCaptureValue' | 'onRequestHelp' | 'stepHelp' | 'isLoadingHelp'
@@ -69,15 +70,17 @@ export function StepExpandedContent({
       {/* URL button */}
       {step.url && (
         <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }} className="space-y-1">
-          <button
+          <Button
             type="button"
             onClick={handleOpenUrl}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-modal bg-role-agent/10 border border-role-agent/20 text-role-agent typo-body hover:bg-role-agent/20 transition-colors"
+            variant="accent"
+            tone="agent"
+            size="md"
             data-testid={`negotiator-step-${stepIndex}-open-url-btn`}
+            icon={<ExternalLink className="w-3.5 h-3.5" />}
           >
-            <ExternalLink className="w-3.5 h-3.5" />
             {neg.open_in_browser}
-          </button>
+          </Button>
           <p className="typo-code text-foreground truncate pl-0.5">{step.url}</p>
         </motion.div>
       )}
@@ -121,20 +124,22 @@ export function StepExpandedContent({
         data-testid={`negotiator-step-${stepIndex}-actions`}
       >
         {!isCompleted && (
-          <button
+          <Button
             type="button"
             onClick={onComplete}
             disabled={step.field_fills ? !allFieldsCaptured : false}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-modal bg-status-success/15 border border-status-success/25 text-status-success typo-body hover:bg-status-success/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            variant="accent"
+            tone="success"
+            size="md"
             data-testid={`negotiator-step-${stepIndex}-complete-btn`}
+            icon={<Check className="w-3.5 h-3.5" />}
           >
-            <Check className="w-3.5 h-3.5" />
             {step.field_fills ? neg.step_complete_captured : neg.mark_complete}
-          </button>
+          </Button>
         )}
         {isCompleted && (
           <span
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-status-success/10 text-status-success typo-body"
+            className="inline-flex items-center gap-1.5 text-status-success typo-body"
             data-testid={`negotiator-step-${stepIndex}-completed-badge`}
           >
             <CheckCircle className="w-3 h-3" />

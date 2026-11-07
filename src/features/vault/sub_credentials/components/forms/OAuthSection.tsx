@@ -2,6 +2,7 @@ import { CheckCircle, Shield } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { OAuthProgressRing, type OAuthRingPhase } from './OAuthProgressRing';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface OAuthSectionProps {
   onConsent: () => void;
@@ -64,7 +65,7 @@ export function OAuthSection({
     <>
       <div className="border-t border-primary/8" />
       <div>
-        <h4 className="typo-heading uppercase text-foreground mb-3">
+        <h4 className="typo-eyebrow text-foreground mb-3">
           {t.vault.autopilot.authentication}
         </h4>
 
@@ -82,16 +83,18 @@ export function OAuthSection({
         {!ringPhase && (
           <>
             <Tooltip content={consentDisabled && consentDisabledReason ? consentDisabledReason : ''} placement="top" delay={200}>
-              <button
+              <Button
                 onClick={onConsent}
                 type="button"
                 data-testid="oauth-authorize"
                 disabled={consentDisabled}
-                className="flex items-center gap-2 px-4 py-2 border rounded-modal typo-body transition-all bg-status-info/10 hover:bg-status-info/20 border-status-info/25 text-status-info disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="accent"
+                tone="info"
+                size="md"
+                icon={<Shield className="w-4 h-4" />}
               >
-                <Shield className="w-4 h-4" />
                 {consentLabel || tx(t.vault.forms.authorize_with, { label: 'Google' })}
-              </button>
+              </Button>
             </Tooltip>
             {consentHint && (
               <p className="mt-1.5 typo-body text-foreground">{consentHint}</p>

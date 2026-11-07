@@ -16,6 +16,7 @@ import {
 } from '../CredentialDesignHelpers';
 import { PreviewBanners } from './PreviewBanners';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const AI_STATUS = STATUS_COLORS.ai!;
 const SUCCESS_STATUS = STATUS_COLORS.success!;
@@ -95,13 +96,16 @@ export function PreviewPhase() {
                   {tx(dp.auto_provision_hint, { label: result.connector.label })}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowNegotiator(true)}
-                className={`shrink-0 px-3 py-1.5 rounded-modal typo-body transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
+                variant="accent"
+                tone="agent"
+                size="sm"
+                className="shrink-0"
               >
                 {dp.negotiator_start}
-              </button>
+              </Button>
             </div>
           ) : (
             <NegotiatorPanel
@@ -130,7 +134,7 @@ export function PreviewPhase() {
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={tx(t.vault.credential_forms.credential_suffix, { name: result.connector.label })}
-          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder:text-ink-3 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 
@@ -143,7 +147,6 @@ export function PreviewPhase() {
       </div>
 
       {oauthStatusMessage && !oauthStatusMessage.success && (
-        // eslint-disable-next-line custom/prefer-status-badge -- full-width error banner
         <div className="typo-body px-3 py-2 rounded-card bg-status-error/10 border border-status-error/20 text-status-error">
           {oauthStatusMessage.message}
         </div>

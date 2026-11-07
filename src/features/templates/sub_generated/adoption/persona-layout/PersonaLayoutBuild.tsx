@@ -20,6 +20,7 @@ import {
 } from '@/lib/personas/capabilities';
 
 import { sendRefine, type RefineHandler } from './refineSend';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PersonaLayoutBuildProps {
   buildPhase: BuildPhase | null;
@@ -300,96 +301,104 @@ export function PersonaLayoutBuild({
     return (
       <div className="flex items-center justify-center gap-2 flex-wrap">
         {phaseDraftReady && (
-          <button
+          <Button
             type="button"
             onClick={() => void onStartTest()}
             disabled={phaseTesting}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-primary/40 bg-primary/25 hover:bg-primary/40 text-foreground typo-body cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            variant="accent"
+            tone="highlight"
+            size="md"
+            icon={<Play className="w-3.5 h-3.5" />}
           >
-            <Play className="w-3.5 h-3.5" />
             {t.templates.matrix_variants.start_test}
-          </button>
+          </Button>
         )}
 
         {phaseTestComplete && (
           <>
-            <button
+            <Button
               type="button"
               onClick={testPassed ? onApproveTest : onApproveTestAnyway}
               data-testid="adopt-approve-and-promote"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground cursor-pointer"
+              variant="accent"
+              tone="highlight"
+              size="md"
+              icon={<Rocket className="w-3.5 h-3.5" />}
             >
-              <Rocket className="w-3.5 h-3.5" />
               {testPassed ? t.templates.matrix_variants.approve_and_promote : t.templates.matrix_variants.approve_anyway}
-            </button>
+            </Button>
             {(toolTestResults?.length ?? 0) > 0 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setReportOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-ink-1 cursor-pointer"
+                variant="secondary"
+                size="md"
+                icon={<ScrollText className="w-3.5 h-3.5" />}
               >
-                <ScrollText className="w-3.5 h-3.5" />
                 {t.templates.adopt_modal.persona_layout_build_view_logs}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => void onStartTest()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-ink-1 cursor-pointer"
-              title={t.templates.n8n.retest}
+              variant="secondary"
+              size="md"
+              tooltip={t.templates.n8n.retest}
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
             >
-              <RefreshCw className="w-3.5 h-3.5" />
               {t.templates.n8n.retest}
-            </button>
+            </Button>
             {onRejectTest && (
-              <button
+              <Button
                 type="button"
                 onClick={onRejectTest}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-foreground hover:text-foreground typo-caption cursor-pointer"
+                variant="ghost"
+                size="md"
+                icon={<X className="w-3.5 h-3.5" />}
               >
-                <X className="w-3.5 h-3.5" />
                 {t.common.reject}
-              </button>
+              </Button>
             )}
           </>
         )}
 
         {phasePromoted && (
-          <button
+          <Button
             type="button"
             onClick={onViewAgent}
             data-testid="adopt-view-agent"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-status-success/25 hover:bg-status-success/40 border border-status-success/40 text-foreground typo-body cursor-pointer"
+            variant="accent"
+            tone="success"
+            size="md"
+            icon={<ScrollText className="w-3.5 h-3.5" />}
           >
-            <ScrollText className="w-3.5 h-3.5" />
             {t.templates.matrix_variants.view_agent_btn}
-          </button>
+          </Button>
         )}
 
         {(phaseFailed || (phaseTestComplete && !testPassed)) && onDeleteDraft && (
-          <button
+          <Button
             type="button"
             onClick={onDeleteDraft}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-status-error/85 hover:text-status-error typo-caption cursor-pointer"
+            variant="danger"
+            size="md"
+            icon={<X className="w-3.5 h-3.5" />}
           >
-            <X className="w-3.5 h-3.5" />
             {t.templates.matrix_variants.delete_draft}
-          </button>
+          </Button>
         )}
 
         {onRefine && (phaseDraftReady || phaseTestComplete) && (
-          <button
+          <Button
             type="button"
             onClick={() => setRefineOpen((v) => !v)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full typo-caption cursor-pointer transition-colors ${
-              refineOpen
-                ? 'bg-primary/15 border border-primary/35 text-foreground'
-                : 'text-foreground hover:text-foreground'
-            }`}
+            variant={refineOpen ? 'accent' : 'ghost'}
+            tone={refineOpen ? 'highlight' : undefined}
+            size="md"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
             {t.common.refine}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -498,22 +507,22 @@ function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) 
         maxWidth: 'min(720px, 92vw)',
       }}
     >
-      <div className="absolute top-0 left-0 w-full h-1 rounded-t-modal bg-gradient-to-r from-primary to-transparent" />
       <div className="flex items-center gap-2 px-5 pt-4 pb-2">
         <RefreshCw className="w-4 h-4 text-primary" />
         <span className="typo-label text-primary">
           {t.common.refine}
         </span>
         <div className="flex-1" />
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
+          variant="ghost"
+          size="icon-sm"
           aria-label={t.common.close}
-          title={t.common.close}
+          tooltip={t.common.close}
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
       <div className="px-5 pb-3">
         <textarea
@@ -528,26 +537,29 @@ function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) 
           }}
           placeholder={t.templates.adopt_modal.persona_layout_build_refine_placeholder}
           rows={4}
-          className="w-full px-3 py-2 rounded-modal bg-primary/5 border border-hair typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
+          className="w-full px-3 py-2 rounded-modal bg-primary/5 border border-hair typo-body text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40 resize-none"
         />
       </div>
       <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-hair bg-foreground/[0.02] rounded-b-modal">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="typo-caption px-3 py-1.5 rounded-full text-foreground hover:text-foreground transition-colors cursor-pointer"
+          variant="ghost"
+          size="sm"
         >
           {t.common.cancel}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={submit}
           disabled={!text.trim()}
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          variant="accent"
+          tone="highlight"
+          size="md"
+          icon={<Send className="w-3.5 h-3.5" />}
         >
-          <Send className="w-3.5 h-3.5" />
           {t.templates.adopt_modal.persona_layout_build_refine_send}
-        </button>
+        </Button>
       </div>
     </div>
   );

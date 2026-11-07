@@ -97,7 +97,7 @@ describe('PeerList connect failure log', () => {
     // invokeWithTimeout rejects with a serialized AppError, never an Error.
     state.connectToPeer.mockRejectedValueOnce({ error: 'handshake refused', kind: 'forbidden' });
     render(<PeerList />);
-    fireEvent.click(await screen.findByTitle('connect'));
+    fireEvent.click(await screen.findByLabelText('connect'));
     await waitFor(() => expect(warn).toHaveBeenCalledWith('Failed to connect to peer', expect.objectContaining({ error: 'handshake refused' })));
   });
 });

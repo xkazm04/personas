@@ -18,6 +18,7 @@ import {
 } from '../display/AutoCredLogEntries';
 import { BrowserStatusBanner } from './BrowserDetail';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const DIVIDER_COLORS: Record<SessionState, { text: string; line: string }> = {
   connecting: { text: 'text-foreground', line: 'bg-primary/8' },
@@ -161,14 +162,15 @@ export function AutoCredBrowser({ logs, startedAt, onCancel, mode = 'playwright'
       {/* Actions */}
       <div className="flex justify-between">
         {import.meta.env.DEV ? <CopyLogButton logs={logs} /> : <div />}
-        <button
+        <Button
           type="button"
           onClick={onCancel}
           data-testid="vault-autocred-cancel"
-          className="px-4 py-2 typo-body text-status-error/80 hover:text-status-error rounded-modal border border-status-error/15 hover:bg-status-error/10 transition-colors"
+          variant="danger"
+          size="md"
         >
           {t.vault.auto_cred.cancel_session}
-        </button>
+        </Button>
       </div>
     </div>
   );

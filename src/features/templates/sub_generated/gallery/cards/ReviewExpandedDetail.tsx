@@ -8,8 +8,8 @@ import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from './reviewParseCache';
-import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function ReviewExpandedDetail({
   review,
@@ -49,7 +49,7 @@ export function ReviewExpandedDetail({
     <div className="space-y-6">
       {/* 1. Summary Card */}
       {designResult.summary && (
-        <div className="bg-gradient-to-r from-role-agent/5 to-transparent border border-role-agent/10 rounded-modal px-4 py-3">
+        <div className="border border-role-agent/10 rounded-modal px-4 py-3 bg-surface-1">
           <p className="typo-body text-ink-1">{designResult.summary}</p>
         </div>
       )}
@@ -97,7 +97,7 @@ export function ReviewExpandedDetail({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-status-warning/80" />
-              <h4 className="typo-body text-status-warning/80 uppercase">
+              <h4 className="typo-eyebrow text-status-warning/80">
                 {t.templates.overview_tab.suggested_adjustment}
                 {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                   <span className="ml-1.5 text-foreground normal-case">
@@ -106,15 +106,17 @@ export function ReviewExpandedDetail({
                 )}
               </h4>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => onApplyAdjustment(adjustment.suggestion)}
               disabled={isRunning}
-              className="px-3 py-1.5 typo-body rounded-modal bg-status-warning/10 text-status-warning border border-status-warning/20 hover:bg-status-warning/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              variant="accent"
+              tone="warning"
+              size="sm"
+              icon={<RotateCcw className="w-3 h-3" />}
             >
-              <RotateCcw className="w-3 h-3" />
               {t.templates.review_detail.apply_rerun}
-            </button>
+            </Button>
           </div>
           <p className="typo-body text-foreground">{adjustment.reason}</p>
           <div className="bg-background/50 rounded-modal px-3 py-2 typo-body text-ink-1 border border-hair">
@@ -124,7 +126,7 @@ export function ReviewExpandedDetail({
             {adjustment.appliedFixes.map((fix: string, i: number) => (
               <span
                 key={i}
-                className="px-2 py-0.5 typo-body rounded-full bg-status-warning/10 border border-status-warning/15 text-status-warning/70"
+                className="typo-body text-status-warning"
               >
                 {fix}
               </span>
@@ -144,25 +146,27 @@ export function ReviewExpandedDetail({
       {/* 7. Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-primary/[0.08]">
         {onAdopt ? (
-          <button
+          <Button
             type="button"
             onClick={onAdopt}
             disabled={isAdopting}
-            className={`px-4 py-2.5 typo-body rounded-modal border disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+            variant="primary"
+            size="md"
+            icon={<Download className="w-4 h-4" />}
           >
-            <Download className="w-4 h-4" />
             {t.templates.review_detail.adopt_as_new_persona}
-          </button>
+          </Button>
         ) : (
           <div />
         )}
-        <button
+        <Button
           type="button"
           onClick={() => setShowJson(!showJson)}
-          className="typo-body text-role-agent/60 hover:text-role-agent/80 transition-colors"
+          variant="ghost"
+          size="sm"
         >
           {showJson ? t.templates.review_detail.hide_raw_json : t.templates.review_detail.view_raw_json}
-        </button>
+        </Button>
       </div>
 
       {showJson && (

@@ -7,6 +7,7 @@
 // variant wins, consolidation collapses onto this hook.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronRight, AlertCircle } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
@@ -462,20 +463,29 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
   const centerOverlay: ReactNode = activeDim ? (
     <span aria-hidden />
   ) : canContinue ? (
-    <button type="button" onClick={onContinue} data-testid="adopt-continue-to-build"
-      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-6 py-3 rounded-modal bg-primary/20 hover:bg-primary/35 border border-primary/45 hover:border-primary/70 text-foreground cursor-pointer transition-all"
-      title={t.templates.adopt_modal.persona_layout_continue_to_build}>
+    <Tooltip content={t.templates.adopt_modal.persona_layout_continue_to_build}>
+    <button
+      type="button"
+      onClick={onContinue}
+      data-testid="adopt-continue-to-build"
+      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-6 py-3 rounded-modal border border-hair-2 bg-surface-1 hover:bg-surface-2 text-ink-1 cursor-pointer transition-colors"
+    >
       <ChevronRight className="w-5 h-5 text-primary" />
       <span className="typo-label text-foreground">{t.templates.adopt_modal.persona_layout_continue_to_build}</span>
     </button>
+    </Tooltip>
   ) : globalRemaining > 0 ? (
-    <button type="button" onClick={openFirstUnanswered}
-      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-5 py-3 rounded-modal bg-status-warning/10 hover:bg-status-warning/20 border border-status-warning/40 hover:border-status-warning/65 text-foreground cursor-pointer transition-all"
-      title={t.templates.adopt_modal.persona_layout_center_open_questions_title}>
+    <Tooltip content={t.templates.adopt_modal.persona_layout_center_open_questions_title}>
+    <button
+      type="button"
+      onClick={openFirstUnanswered}
+      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-5 py-3 rounded-modal border border-hair-2 bg-surface-1 hover:bg-surface-2 text-ink-1 cursor-pointer transition-colors"
+    >
       <span className="typo-data font-mono text-status-warning">{globalRemaining}</span>
       <span className="typo-label text-ink-1">{globalRemaining === 1 ? t.templates.adopt_modal.persona_layout_center_questions_to_answer_one : t.templates.adopt_modal.persona_layout_center_questions_to_answer_other}</span>
       <span className="typo-caption text-foreground italic group-hover:text-ink-2 transition-colors">{t.templates.adopt_modal.persona_layout_center_click_to_start}</span>
     </button>
+    </Tooltip>
   ) : continueDisabledReason ? (
     <span className="typo-caption text-status-warning italic pointer-events-none inline-flex items-center gap-1.5 max-w-[14rem] text-center">
       <AlertCircle className="w-3.5 h-3.5 shrink-0" />{continueDisabledReason}

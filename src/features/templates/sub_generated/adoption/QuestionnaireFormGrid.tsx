@@ -17,6 +17,7 @@ import {
   type ScopeSection,
 } from './QuestionnaireFormGridConfig';
 import { ProgressBar, QuestionCard } from './QuestionnaireFormGridParts';
+import Button from '@/features/shared/components/buttons/Button';
 
 // Re-export so existing importers resolve without changes
 export { CATEGORY_META, FALLBACK_CATEGORY, groupByCategory } from './QuestionnaireFormGridConfig';
@@ -139,13 +140,14 @@ export function QuestionnaireFormGrid({
                 {t.templates.adopt_modal.configure_your_persona}
               </h2>
             </div>
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-card text-foreground hover:text-ink-2 hover:bg-foreground/[0.06] transition-colors"
+              variant="ghost"
+              size="icon-sm"
             >
               <X className="w-4.5 h-4.5" />
-            </button>
+            </Button>
           </div>
           <ProgressBar answered={answeredCount} total={totalCount} />
         </div>
@@ -176,14 +178,15 @@ export function QuestionnaireFormGrid({
                         {questionLabels.join(' · ')}
                       </div>
                     </div>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => onAddCredential(category)}
-                      className="flex items-center gap-1.5 px-3 py-2 typo-body rounded-card bg-status-error/15 border border-status-error/40 text-status-error hover:bg-status-error/25 transition-colors flex-shrink-0"
+                      variant="danger"
+                      size="md"
+                      icon={<Plus className="w-3.5 h-3.5" />}
                     >
-                      <Plus className="w-3.5 h-3.5" />
                       {t.templates.adopt_modal.add_credential}
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -344,13 +347,14 @@ export function QuestionnaireFormGrid({
 
         {/* ── Footer ─────────────────────────────────────────── */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-t border-border">
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="typo-body text-foreground hover:text-ink-2 transition-colors"
+            variant="ghost"
+            size="sm"
           >
             {t.templates.adopt_modal.cancel}
-          </button>
+          </Button>
 
           <div className="flex items-center gap-3">
             {blockedCount > 0 && (
@@ -359,19 +363,16 @@ export function QuestionnaireFormGrid({
                 {tx(t.templates.adopt_modal.blocked_blocking_submit, { count: blockedCount })}
               </span>
             )}
-            <button
+            <Button
               type="button"
               onClick={onSubmit}
               disabled={!canSubmit}
-              className={`flex items-center gap-2 px-5 py-2 typo-heading rounded-modal transition-all ${
-                canSubmit
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20'
-                  : 'bg-foreground/[0.06] text-foreground cursor-not-allowed'
-              }`}
+              variant={canSubmit ? 'primary' : 'ghost'}
+              size="md"
+              icon={<Send className="w-3.5 h-3.5" />}
             >
-              <Send className="w-3.5 h-3.5" />
               {allAnswered ? t.templates.adopt_modal.submit_all : tx(t.templates.adopt_modal.submit_remaining, { remaining })}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

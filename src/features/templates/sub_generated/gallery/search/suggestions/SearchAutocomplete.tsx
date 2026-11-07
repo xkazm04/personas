@@ -158,7 +158,7 @@ export function SearchAutocomplete({
         <div className="max-h-64 overflow-y-auto py-1">
           {groups.map((group) => (
             <div key={group.type} role="group" aria-label={groupLabel(group.type)}>
-              <div className="px-3 py-1.5 typo-body uppercase tracking-wider text-foreground border-b border-hair">
+              <div className="px-3 py-1.5 typo-eyebrow text-foreground border-b border-hair">
                 {groupLabel(group.type)}
               </div>
               {group.items.map((suggestion) => {

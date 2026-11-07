@@ -56,7 +56,7 @@ export function BrokerPanel() {
         title={b.title}
         subtitle={b.subtitle}
         icon={<ShieldCheck className="w-4 h-4 text-primary/60" />}
-        titleClassName="text-primary"
+        titleClassName="text-ink-1"
       >
         <Banner severity="warning" compact neutralBody message={b.exclusion_note} />
       </SectionCard>
@@ -64,7 +64,7 @@ export function BrokerPanel() {
       <SectionCard
         title={b.consumers_header}
         icon={<Users className="w-4 h-4 text-primary/60" />}
-        titleClassName="text-primary"
+        titleClassName="text-ink-1"
       >
         {consumers === null && !loadError && <ListSkeleton rows={3} rowHeight={56} leading />}
         {loadError && (

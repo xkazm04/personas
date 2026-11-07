@@ -53,13 +53,13 @@ export default function DataPortabilitySettings() {
               <StatBadge icon={Wrench} label={s.tools} value={dp.stats.toolCount} accent="text-status-warning" />
               <StatBadge icon={KeyRound} label={s.credentials} value={dp.stats.credentialCount} accent="text-role-agent" />
               <StatBadge icon={Brain} label={s.memories} value={dp.stats.memoryCount} accent="text-role-highlight" />
-              <StatBadge icon={BrainCircuit} label={s.team_memories} value={dp.stats.teamMemoryCount} accent="text-teal-400" />
+              <StatBadge icon={BrainCircuit} label={s.team_memories} value={dp.stats.teamMemoryCount} accent="text-role-human" />
               <StatBadge icon={FlaskConical} label={s.test_suites} value={dp.stats.testSuiteCount} accent="text-status-error" />
               <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpiCount} accent="text-role-human" />
               <StatBadge icon={FolderGit2} label={s.dev_projects} value={dp.stats.devProjectCount} accent="text-status-success" />
               <StatBadge icon={Fingerprint} label={s.twins} value={dp.stats.twinCount} accent="text-status-error" />
-              <StatBadge icon={Sparkles} label={s.athena_core} value={dp.stats.athenaCoreCount} accent="text-fuchsia-400" />
-              <StatBadge icon={Library} label={s.athena_learned} value={dp.stats.athenaLearnedCount} accent="text-fuchsia-300" />
+              <StatBadge icon={Sparkles} label={s.athena_core} value={dp.stats.athenaCoreCount} accent="text-role-agent" />
+              <StatBadge icon={Library} label={s.athena_learned} value={dp.stats.athenaLearnedCount} accent="text-role-agent" />
             </div>
           )}
 

@@ -4,6 +4,7 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewportClamp';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SORT_OPTIONS } from './searchConstants';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function SortDropdown({
   sortBy,
@@ -32,15 +33,16 @@ export function SortDropdown({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
+      <Button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5"
+        variant="secondary"
+        size="md"
+        icon={<ArrowUpDown className="w-3.5 h-3.5" />}
+        iconRight={<ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
       >
-        <ArrowUpDown className="w-3.5 h-3.5" />
         {t.templates.search[currentOption.labelKey]}
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      </Button>
 
       {isOpen && (
         <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full right-0 mt-1 z-20 bg-background border border-hair rounded-modal shadow-elevation-3 min-w-[190px] py-1.5 overflow-hidden">

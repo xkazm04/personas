@@ -14,9 +14,9 @@ export interface DifficultyMeta {
 }
 
 export const DIFFICULTY_META: Record<DifficultyLevel, DifficultyMeta> = {
-  beginner:     { label: 'Beginner',     color: '#22c55e', bgClass: 'bg-emerald-500/10 text-emerald-400/80 border-emerald-500/20' },
-  intermediate: { label: 'Intermediate', color: '#f59e0b', bgClass: 'bg-amber-500/10 text-amber-400/80 border-amber-500/20' },
-  advanced:     { label: 'Advanced',     color: '#ef4444', bgClass: 'bg-red-500/10 text-red-400/80 border-red-500/20' },
+  beginner:     { label: 'Beginner',     color: '#22c55e', bgClass: 'bg-status-success/10 text-status-success/80 border-status-success/20' },
+  intermediate: { label: 'Intermediate', color: '#f59e0b', bgClass: 'bg-status-warning/10 text-status-warning/80 border-status-warning/20' },
+  advanced:     { label: 'Advanced',     color: '#ef4444', bgClass: 'bg-status-error/10 text-status-error/80 border-status-error/20' },
 };
 
 // -- Setup time levels ------------------------------------------------
@@ -31,9 +31,9 @@ export interface SetupMeta {
 }
 
 export const SETUP_META: Record<SetupLevel, SetupMeta> = {
-  quick:    { label: 'Quick Setup',    minutes: 5,  color: '#22c55e', bgClass: 'bg-emerald-500/10 text-emerald-400/80 border-emerald-500/20' },
-  moderate: { label: 'Moderate Setup', minutes: 15, color: '#f59e0b', bgClass: 'bg-amber-500/10 text-amber-400/80 border-amber-500/20' },
-  involved: { label: 'Involved Setup', minutes: 30, color: '#ef4444', bgClass: 'bg-red-500/10 text-red-400/80 border-red-500/20' },
+  quick:    { label: 'Quick Setup',    minutes: 5,  color: '#22c55e', bgClass: 'bg-status-success/10 text-status-success/80 border-status-success/20' },
+  moderate: { label: 'Moderate Setup', minutes: 15, color: '#f59e0b', bgClass: 'bg-status-warning/10 text-status-warning/80 border-status-warning/20' },
+  involved: { label: 'Involved Setup', minutes: 30, color: '#ef4444', bgClass: 'bg-status-error/10 text-status-error/80 border-status-error/20' },
 };
 
 // -- Internal: extract rich fields from design_result -----------------

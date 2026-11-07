@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface MutationConfirmBannerProps {
   /** The pending mutation query text (already known non-null by the caller). */
@@ -47,22 +48,25 @@ export function MutationConfirmBanner({
         </div>
       </div>
       <div className="flex items-center gap-2 pl-6">
-        <button
+        <Button
           type="button"
           data-testid="db-mutation-confirm-run"
           onClick={onConfirm}
-          className="px-3 py-1.5 rounded-modal typo-body bg-status-warning/15 text-status-warning border border-status-warning/25 hover:bg-status-warning/25 transition-colors"
+          variant="accent"
+          tone="warning"
+          size="sm"
         >
           {db.execute_anyway}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           data-testid="db-mutation-confirm-cancel"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-modal typo-body text-foreground hover:text-ink-2 hover:bg-surface-2 border border-transparent hover:border-hair transition-colors"
+          variant="ghost"
+          size="sm"
         >
           {t.common.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );

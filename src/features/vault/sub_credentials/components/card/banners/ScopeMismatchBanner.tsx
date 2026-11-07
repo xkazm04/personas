@@ -1,5 +1,6 @@
 import { ShieldAlert } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ScopeMismatchBannerProps {
   requestedScopes: string;
@@ -34,13 +35,15 @@ export function ScopeMismatchBanner({
           <span className="font-mono">{missing.join(', ')}</span>
         </p>
         {onReauthorize && (
-          <button
+          <Button
             type="button"
             onClick={onReauthorize}
-            className="mt-1.5 typo-caption text-status-warning hover:text-status-warning underline underline-offset-2 transition-colors"
+            variant="ghost"
+            size="sm"
+            className="mt-1.5"
           >
             {card.reauthorize_scopes}
-          </button>
+          </Button>
         )}
       </div>
     </div>

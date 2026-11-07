@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, RefreshCw, Check, AlertCircle, FlaskConical, Che
 import type { N8nWizardStep } from '../hooks/useN8nImportReducer';
 import Button, { type ButtonTone } from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface N8nWizardFooterProps {
   step: N8nWizardStep;
@@ -101,9 +102,9 @@ export function N8nWizardFooter({
 
         {/* Test error message */}
         {step === 'edit' && testStatus === 'failed' && testError && (
-          <span className="typo-body text-status-error/80 max-w-[400px] line-clamp-2" title={testError}>
+          <Tooltip content={testError}><span className="typo-body text-status-error/80 max-w-[400px] line-clamp-2">
             {testError}
-          </span>
+          </span></Tooltip>
         )}
 
         {/* Test Persona button -- secondary action on edit step */}

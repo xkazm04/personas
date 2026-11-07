@@ -4,6 +4,7 @@ import type { SetupKind } from '@/lib/bindings/SetupKind';
 import { debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 type Status = 'ready' | 'needs_credentials' | 'misconfigured';
@@ -97,24 +98,22 @@ export function SetupStatusBadge({
     // status badge instead of wrapping onto its own line. The tooltip (and
     // aria-label) still name exactly which connectors need setup.
     return (
-      <span
+      <Tooltip content={setupTooltip(t, parseSetup(setupDetail))}><span
         className={`inline-flex items-center justify-center text-status-warning ${className}`}
-        title={setupTooltip(t, parseSetup(setupDetail))}
         aria-label={debtText('auto_setup_required_9fa0e005')}
       >
         <AlertTriangle className="w-4 h-4" />
-      </span>
+      </span></Tooltip>
     );
   }
 
   // misconfigured (future expansion)
   return (
-    <span
+    <Tooltip content={debtText("auto_this_persona_has_a_configuration_problem_s_f9c78e89")}><span
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-status-error ${className}`}
-      title={debtText("auto_this_persona_has_a_configuration_problem_s_f9c78e89")}
     >
       <Settings className="w-3 h-3" />
       Misconfigured
-    </span>
+    </span></Tooltip>
   );
 }

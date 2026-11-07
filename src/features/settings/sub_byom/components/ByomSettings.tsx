@@ -15,6 +15,7 @@ import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const SECTION_TABS: { id: ByomSection; labelKey: 'tab_providers' | 'tab_keys' | 'tab_routing' | 'tab_compliance' | 'tab_audit'; icon: typeof Shield }[] = [
   { id: 'policy', labelKey: 'tab_providers', icon: Shield },
@@ -62,32 +63,26 @@ export default function ByomSettings() {
             {bm.isDirty && (
               <span className="typo-caption text-status-warning/80 mr-1">{s.unsaved_changes}</span>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingReset(true)}
               disabled={bm.isSaving}
-              className="px-3 py-1.5 typo-body rounded-modal border border-hair text-foreground hover:bg-surface-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              variant="secondary"
+              size="sm"
             >
               {s.reset}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={bm.handleSave}
               disabled={bm.hasBlockingErrors || bm.isSaving}
+              disabledReason={bm.hasBlockingErrors ? s.fix_errors : undefined}
               aria-busy={bm.isSaving}
-              title={bm.hasBlockingErrors ? s.fix_errors : undefined}
-              className={`px-3 py-1.5 typo-body rounded-modal border transition-colors ${
-                bm.hasBlockingErrors
-                  ? 'bg-status-error/15 text-status-error/60 border-status-error/30 cursor-not-allowed'
-                  : bm.isSaving
-                  ? 'bg-primary/20 text-primary/70 border-primary/30 cursor-wait'
-                  : bm.isDirty
-                  ? 'bg-primary/25 text-primary border-primary/40 hover:bg-primary/35'
-                  : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
-              }`}
+              variant="primary"
+              size="sm"
             >
               {s.save_policy}
-            </button>
+            </Button>
           </div>
         }
       />
@@ -140,13 +135,15 @@ export default function ByomSettings() {
                 </p>
                 <p className="typo-caption text-status-error/60 mt-2 break-all">{bm.corruptPolicyError}</p>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => setConfirmingReset(true)}
-                className="shrink-0 px-3 py-1.5 typo-body rounded-modal bg-status-error/20 text-status-error border border-status-error/30 hover:bg-status-error/30 transition-colors"
+                variant="danger"
+                size="sm"
+                className="shrink-0"
               >
                 {s.reset_policy}
-              </button>
+              </Button>
             </div>
           )}
 

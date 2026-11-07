@@ -105,7 +105,7 @@ export function TemplateFormBody({
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={tx(cf.credential_name_placeholder, { label })}
-          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder:text-ink-3 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 

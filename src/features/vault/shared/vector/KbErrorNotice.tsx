@@ -1,6 +1,7 @@
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface KbErrorNoticeProps {
   /** The raw backend string, exactly as the catch site captured it. */
@@ -58,14 +59,16 @@ export function KbErrorNotice({ raw, onDismiss, className = '', compact = false,
         )}
       </div>
       {onDismiss && (
-        <button
+        <Button
           type="button"
           onClick={onDismiss}
           aria-label={t.common.dismiss}
-          className="text-status-error/60 hover:text-status-error shrink-0"
+          variant="danger"
+          size="sm"
+          className="shrink-0"
         >
           &times;
-        </button>
+        </Button>
       )}
     </div>
   );

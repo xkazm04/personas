@@ -96,17 +96,17 @@ export function CredentialPortability({
         {/* Export credentials */}
         <div className="space-y-2">
           {!showCredExportInput ? (
-            <button
+            <Button
               type="button"
               onClick={() => setShowCredExportInput(true)}
               disabled={credExportStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
-                bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15
-                transition-colors disabled:opacity-50"
+              variant="accent"
+              tone="warning"
+              size="md"
+              icon={credExportStatus === 'success' ? <Check className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
             >
-              {credExportStatus === 'success' ? <Check className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
               {credExportStatus === 'success' ? s.exported : s.export_credentials}
-            </button>
+            </Button>
           ) : (
             <div className="flex items-center gap-2">
               <PasswordToggleField
@@ -117,15 +117,25 @@ export function CredentialPortability({
                 inputClassName="w-56 px-3 py-2 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 placeholder:text-ink-3 outline-none focus-visible:border-status-warning/30"
                 autoFocus
               />
-              <button type="button" onClick={onCredExport} disabled={credExportStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body bg-status-warning/10 text-status-warning border border-status-warning/20 hover:bg-status-warning/15 transition-colors disabled:opacity-50">
-                {credExportStatus === 'loading' ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
+              <Button
+                type="button"
+                onClick={onCredExport}
+                disabled={credExportStatus === 'loading'}
+                variant="accent"
+                tone="warning"
+                size="md"
+                icon={credExportStatus === 'loading' ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
+              >
                 {s.export}
-              </button>
-              <button type="button" onClick={() => { setShowCredExportInput(false); setCredExportPassphrase(''); }}
-                className="typo-caption text-foreground hover:text-ink-2 transition-colors">
+              </Button>
+              <Button
+                type="button"
+                onClick={() => { setShowCredExportInput(false); setCredExportPassphrase(''); }}
+                variant="ghost"
+                size="sm"
+              >
                 {s.cancel}
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -133,17 +143,17 @@ export function CredentialPortability({
         {/* Import credentials */}
         <div className="space-y-2">
           {!showCredImportInput ? (
-            <button
+            <Button
               type="button"
               onClick={() => setShowCredImportInput(true)}
               disabled={credImportStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
-                bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
-                transition-colors disabled:opacity-50"
+              variant="accent"
+              tone="info"
+              size="md"
+              icon={credImportStatus === 'success' ? <Check className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
             >
-              {credImportStatus === 'success' ? <Check className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
               {credImportStatus === 'success' ? s.imported : s.import_credentials}
-            </button>
+            </Button>
           ) : (
             <div className="flex items-center gap-2">
               <PasswordToggleField
@@ -154,15 +164,25 @@ export function CredentialPortability({
                 inputClassName="w-56 px-3 py-2 rounded-card border border-hair bg-surface-1 typo-body text-ink-1 placeholder:text-ink-3 outline-none focus-visible:border-status-info/30"
                 autoFocus
               />
-              <button type="button" onClick={onCredImport} disabled={credImportStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body bg-status-info/10 text-status-info border border-status-info/20 hover:bg-status-info/15 transition-colors disabled:opacity-50">
-                {credImportStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
+              <Button
+                type="button"
+                onClick={onCredImport}
+                disabled={credImportStatus === 'loading'}
+                variant="accent"
+                tone="info"
+                size="md"
+                icon={credImportStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
+              >
                 {s.import_label}
-              </button>
-              <button type="button" onClick={() => { setShowCredImportInput(false); setCredImportPassphrase(''); }}
-                className="typo-caption text-foreground hover:text-ink-2 transition-colors">
+              </Button>
+              <Button
+                type="button"
+                onClick={() => { setShowCredImportInput(false); setCredImportPassphrase(''); }}
+                variant="ghost"
+                size="sm"
+              >
                 {s.cancel}
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -189,22 +209,17 @@ export function CredentialPortability({
                   {(['skip', 'keep_both', 'replace'] as const).map((action) => {
                     const isActive = resolutions[c.name] === action;
                     const labels: Record<ConflictAction, string> = { skip: s.skip, keep_both: s.keep_both, replace: s.replace };
-                    const colors: Record<ConflictAction, string> = {
-                      skip: isActive ? 'bg-muted-foreground/20 text-foreground border-muted-foreground/30' : 'text-foreground',
-                      keep_both: isActive ? 'bg-status-info/15 text-status-info border-status-info/25' : 'text-foreground',
-                      replace: isActive ? 'bg-status-warning/15 text-status-warning border-status-warning/25' : 'text-foreground',
-                    };
                     return (
-                      <button
+                      <Button
                         key={action}
                         type="button"
                         onClick={() => setResolution(c.name, action)}
-                        className={`px-2.5 py-1 rounded-input typo-caption border transition-colors ${
-                          isActive ? colors[action] : `${colors[action]} border-transparent hover:border-primary/15`
-                        }`}
+                        variant={isActive ? 'accent' : 'ghost'}
+                        tone={isActive ? (action === 'keep_both' ? 'info' : action === 'replace' ? 'warning' : 'highlight') : undefined}
+                        size="xs"
                       >
                         {labels[action]}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -212,15 +227,17 @@ export function CredentialPortability({
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={handleApplyResolutions}
             disabled={!allResolved}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-modal typo-body bg-status-info/10 text-status-info border border-status-info/20 hover:bg-status-info/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            variant="accent"
+            tone="info"
+            size="md"
+            icon={<Upload className="w-4 h-4" />}
           >
-            <Upload className="w-4 h-4" />
             {s.import_with_resolutions}
-          </button>
+          </Button>
           {onCredDismissConflicts && (
             <Button
               variant="ghost"

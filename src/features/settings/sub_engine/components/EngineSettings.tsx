@@ -9,6 +9,7 @@ import { AmbientContextPanel } from '@/features/settings/components/AmbientConte
 import { ModelRoutingSection } from './ModelRoutingSection';
 import { AthenaTiersSection } from './AthenaTiersSection';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export default function EngineSettings() {
   const {
@@ -45,14 +46,15 @@ export default function EngineSettings() {
       label: s.capability_map,
       icon: <Cpu className="w-4 h-4 text-ink-2" />,
       action: (
-        <button
+        <Button
           type="button"
           onClick={resetToDefaults}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body text-foreground hover:text-ink-2 hover:bg-surface-2 transition-colors"
+          variant="ghost"
+          size="xs"
+          icon={<RotateCcw className="w-3 h-3" />}
         >
-          <RotateCcw className="w-3 h-3" />
           {s.reset_defaults}
-        </button>
+        </Button>
       ),
       content: (
         // Matrix grid — sticky axes + zebra striping keep each cell traceable
@@ -61,13 +63,13 @@ export default function EngineSettings() {
           <table className="w-full typo-body border-separate border-spacing-0">
             <thead>
               <tr>
-                <th className="sticky left-0 top-0 z-20 bg-background text-left py-2 pr-4 pl-3 w-[45%] border-b border-hair border-r border-r-primary/10 typo-caption font-mono uppercase tracking-widest text-foreground">
+                <th className="sticky left-0 top-0 z-20 bg-background text-left py-2 pr-4 pl-3 w-[45%] border-b border-hair border-r border-r-primary/10 typo-eyebrow text-foreground">
                   {s.operation}
                 </th>
                 {PROVIDERS.map((p) => {
                   const installed = installedProviders.has(p.id);
                   return (
-                    <th key={p.id} className="sticky top-0 z-10 bg-background py-2 px-2 text-center min-w-[90px] border-b border-hair typo-caption font-mono uppercase tracking-widest text-foreground">
+                    <th key={p.id} className="sticky top-0 z-10 bg-background py-2 px-2 text-center min-w-[90px] border-b border-hair typo-eyebrow text-foreground">
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="text-foreground">
                           {p.shortLabel}

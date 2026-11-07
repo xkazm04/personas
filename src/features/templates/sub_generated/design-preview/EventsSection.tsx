@@ -5,6 +5,7 @@ import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { parseTriggerConfig, type TriggerConfig } from '@/lib/utils/platform/triggerConstants';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Human-readable detail line for a parsed trigger config. Returns the actual
  *  cadence/url/event so users see "0 9 * * MON" or "every 300s" instead of a
@@ -103,7 +104,7 @@ export function EventsSection({
         {/* Triggers */}
         {hasTriggers && (
           <div className="p-3.5 space-y-2">
-            <span className="typo-code uppercase tracking-wider text-foreground">{t.templates.design.triggers_section}</span>
+            <span className="typo-eyebrow text-foreground">{t.templates.design.triggers_section}</span>
             {readOnly && actualTriggers.length > 0 ? (
               actualTriggers.map((trigger) => {
                 const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
@@ -122,18 +123,19 @@ export function EventsSection({
                       )}
                     </div>
                     {onTriggerEnabledToggle && (
-                      <button
+                      <Button
                         type="button"
                         onClick={() => onTriggerEnabledToggle(trigger.id, !trigger.enabled)}
-                        className="flex-shrink-0 p-0.5 rounded-interactive transition-colors hover:bg-surface-2"
-                        title={trigger.enabled ? 'Disable' : 'Enable'}
+                        variant="ghost"
+                        size="sm"
+                        tooltip={trigger.enabled ? 'Disable' : 'Enable'}
                       >
                         {trigger.enabled ? (
                           <ToggleRight className="w-5 h-5 text-status-success" />
                         ) : (
                           <ToggleLeft className="w-5 h-5 text-foreground" />
                         )}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 );
@@ -166,7 +168,7 @@ export function EventsSection({
         {/* Event Subscriptions */}
         {hasSubscriptions && (
           <div className="p-3.5 space-y-2">
-            <span className="typo-code uppercase tracking-wider text-foreground flex items-center gap-1.5">
+            <span className="typo-eyebrow text-foreground flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-role-agent" />
               {t.templates.design.event_subscriptions}
             </span>

@@ -9,6 +9,7 @@ import {
   DependencyNotes,
   ExportButton,
 } from './panels';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Right rail — the live "what ships" summary + packaging controls + CTA. */
 export function ManifestCart({
@@ -49,9 +50,9 @@ export function ManifestCart({
             <CategoryCountRow icon={Users} label={p.row_teams} {...picker.counts.teams} accent="bg-status-info/10 text-status-info" />
             <CategoryCountRow icon={KeyRound} label={p.row_credentials} {...picker.counts.credentials} accent="bg-status-warning/10 text-status-warning" />
             <CategoryCountRow icon={FolderGit2} label={p.row_projects} {...picker.counts.projects} accent="bg-status-success/10 text-status-success" />
-            <CategoryCountRow icon={BookOpen} label={p.row_knowledge} {...picker.counts.knowledge} accent="bg-indigo-500/10 text-indigo-300" />
+            <CategoryCountRow icon={BookOpen} label={p.row_knowledge} {...picker.counts.knowledge} accent="bg-role-agent/10 text-role-agent" />
             <CategoryCountRow icon={Fingerprint} label={p.row_twins} {...picker.counts.twins} accent="bg-status-error/10 text-status-error" />
-            <CategoryCountRow icon={Sparkles} label={p.row_athena} {...picker.counts.athena} accent="bg-fuchsia-500/10 text-fuchsia-300" />
+            <CategoryCountRow icon={Sparkles} label={p.row_athena} {...picker.counts.athena} accent="bg-role-agent/10 text-role-agent" />
           </div>
         )}
 
@@ -66,14 +67,16 @@ export function ManifestCart({
       <div className="p-4 border-t border-hair bg-background/40 space-y-2.5">
         <SecretsStatus picker={picker} />
         <ExportButton picker={picker} exporting={exporting} onClick={picker.commit} className="w-full" />
-        <button
+        <Button
           type="button"
           onClick={onCancel}
           disabled={exporting}
-          className="w-full py-2 rounded-modal typo-caption text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          variant="ghost"
+          size="md"
+          className="w-full"
         >
           {s.cancel}
-        </button>
+        </Button>
       </div>
     </aside>
   );

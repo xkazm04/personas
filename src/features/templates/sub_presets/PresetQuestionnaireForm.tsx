@@ -195,7 +195,7 @@ function MemberSection({
         ) : (
           <span className="w-3.5 flex-shrink-0" />
         )}
-        <span className="typo-body text-ink-1 uppercase tracking-wider text-[11px] min-w-[100px]">
+        <span className="typo-eyebrow text-ink-1 text-[11px] min-w-[100px]">
           {member.role}
         </span>
         <span className="typo-body text-foreground flex-1 truncate">

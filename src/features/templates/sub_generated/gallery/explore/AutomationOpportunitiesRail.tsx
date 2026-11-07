@@ -4,6 +4,7 @@ import { SectionLabel } from '@/features/shared/components/display/SectionLabel'
 import type { AutomationOpportunity } from './useAutomationDiscovery';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutomationOpportunitiesRailProps {
   opportunities: AutomationOpportunity[];
@@ -77,14 +78,15 @@ function OpportunityCard({
         <div className="flex-1 min-w-0">
           <h3 className="typo-heading text-ink-1">{t.templates.search[group.labelKey]}</h3>
         </div>
-        <button
+        <Button
           type="button"
           onClick={() => onSelectCategory(group.categories[0]!)}
-          className="typo-body text-status-warning/60 hover:text-status-warning transition-colors"
-          title={t.templates.opportunities.explore_templates.replace('{label}', t.templates.search[group.labelKey])}
+          variant="ghost"
+          size="icon-sm"
+          tooltip={t.templates.opportunities.explore_templates.replace('{label}', t.templates.search[group.labelKey])} aria-label={t.templates.opportunities.explore_templates.replace('{label}', t.templates.search[group.labelKey])}
         >
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Business value */}
@@ -120,7 +122,7 @@ function OpportunityCard({
             <span className="typo-body text-status-warning/70">
               {t.templates.opportunities.add_connector}
             </span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-status-warning/10 text-status-warning/80 border border-status-warning/15">
+            <span className="inline-flex items-center gap-1 typo-body text-status-warning">
               <ConnectorIcon meta={connectorMeta} size="w-3 h-3" />
               {connectorMeta.label}
             </span>

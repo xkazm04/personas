@@ -2,6 +2,7 @@ import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react
 import { IMPORT_SOURCES, importSourceLabel, importSourceDescription, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import Button from '@/features/shared/components/buttons/Button';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
   'file-text': FileText,
@@ -24,13 +25,14 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
       className="animate-fade-slide-in space-y-4"
     >
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          size="icon-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <div>
           <h3 className="typo-body text-foreground">{t.vault.credential_import.import_from_vault}</h3>
           <p className="typo-body text-foreground">{t.vault.credential_import.import_subtitle}</p>

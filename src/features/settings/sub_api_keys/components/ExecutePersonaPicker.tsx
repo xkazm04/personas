@@ -72,7 +72,7 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
           onChange={(e) => setFilter(e.target.value)}
           placeholder={s.execute_filter_placeholder}
           disabled={disabled}
-          className="w-full pl-8 pr-3 py-1.5 bg-background border border-border/40 rounded-input typo-caption text-foreground focus:border-primary/60 focus:outline-none disabled:opacity-50"
+          className="w-full pl-8 pr-3 py-1.5 bg-background border border-border/40 rounded-input typo-caption text-foreground focus:border-primary/60 focus:outline-none disabled:is-disabled"
         />
       </div>
       {showGhost ? (
@@ -103,7 +103,7 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
                 onClick={() => onToggle(p.id)}
                 aria-pressed={isSelected}
                 disabled={disabled}
-                className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:opacity-50 ${
+                className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:is-disabled ${
                   isSelected
                     ? 'border-primary/40 bg-primary/10'
                     : 'border-border/30 bg-surface-1 hover:bg-surface-2'

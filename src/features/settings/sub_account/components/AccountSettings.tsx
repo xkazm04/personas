@@ -166,7 +166,7 @@ export default function AccountSettings() {
                     <div className="typo-body text-foreground truncate">{user.email}</div>
                   )}
                   {isOffline && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 typo-heading rounded-full bg-status-warning/20 text-status-warning border border-status-warning/30 uppercase">
+                    <span className="inline-block mt-1.5 typo-eyebrow text-status-warning">
                       {s.offline}
                     </span>
                   )}

@@ -12,6 +12,7 @@ import { RecipeDetailHeader } from './detail/RecipeDetailHeader';
 import { RecipeHowItRuns } from './detail/RecipeHowItRuns';
 import { RecipeNeedsCard } from './detail/RecipeNeedsCard';
 import { RecipeGuardrailsCard } from './detail/RecipeGuardrailsCard';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RecipeDetailPanelProps {
   recipe: Recipe;
@@ -92,14 +93,15 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
             <div className="flex flex-wrap gap-1 mt-3">
               {recipe.tags.map((tag) => onTagClick ? (
                 <Tooltip key={tag} content={t.recipes_catalog.tag_filter_tooltip}>
-                  <button
+                  <Button
                     type="button"
                     data-testid={`recipe-tag-${tag}`}
                     onClick={() => onTagClick(tag)}
-                    className="typo-label px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-1 text-foreground hover:border-primary/40 hover:text-primary cursor-pointer transition-colors"
+                    variant="secondary"
+                    size="xs"
                   >
                     {tag}
-                  </button>
+                  </Button>
                 </Tooltip>
               ) : (
                 <span

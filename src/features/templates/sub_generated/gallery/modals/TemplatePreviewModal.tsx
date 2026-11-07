@@ -137,15 +137,17 @@ export function TemplatePreviewModal({
                   {t.templates.preview_modal.try_description}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={handleRun}
                 disabled={!designResult}
-                className="px-4 py-2.5 typo-body rounded-modal bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                variant="accent"
+                tone="agent"
+                size="md"
+                icon={<Play className="w-4 h-4" />}
               >
-                <Play className="w-4 h-4" />
                 {t.templates.preview_modal.run_preview}
-              </button>
+              </Button>
               {!designResult && (
                 <p className="typo-body text-status-error/70">
                   {t.templates.preview_modal.no_design_data}
@@ -200,27 +202,29 @@ export function TemplatePreviewModal({
           </div>
           <div className="flex items-center gap-2">
             {isDone && (
-              <button
+              <Button
                 type="button"
                 onClick={handleRetry}
-                className="px-3.5 py-2 typo-body rounded-modal bg-surface-2 text-foreground hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                variant="ghost"
+                size="md"
+                icon={<RotateCcw className="w-3.5 h-3.5" />}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
                 {t.templates.preview_modal.run_again}
-              </button>
+              </Button>
             )}
             {isRunning && (
               <span className="typo-body text-foreground">
                 {t.templates.preview_modal.close_test_continues}
               </span>
             )}
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 typo-body rounded-modal text-foreground hover:text-ink-2 hover:bg-surface-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+              variant="ghost"
+              size="md"
             >
               {t.common.close}
-            </button>
+            </Button>
           </div>
         </div>
     </BaseModal>

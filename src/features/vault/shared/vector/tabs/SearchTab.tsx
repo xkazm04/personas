@@ -31,17 +31,19 @@ function CompactListbox<T extends string | number>({ ariaLabel, value, options, 
       onSelectFocused={(i) => { const o = options[i]; if (o) onChange(o.value); }}
       className={className}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
+        <Button
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           data-testid={testId}
-          className="flex max-w-48 items-center gap-1 truncate bg-surface-2 border border-hair rounded-input px-1.5 py-0.5 text-foreground typo-caption"
+          variant="secondary"
+          size="xs"
+          className="max-w-48"
+          iconRight={<ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />}
         >
           <span className="truncate">{current}</span>
-          <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
-        </button>
+        </Button>
       )}
     >
       {({ close }) => (

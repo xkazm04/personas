@@ -57,6 +57,7 @@ import {
   runRetire,
   type PairingGroup,
 } from '../libs/keyLifecycle';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
 
@@ -199,7 +200,7 @@ export default function ApiKeysSettings() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Key className="w-5 h-5 text-fuchsia-400" />}
+        icon={<Key className="w-5 h-5 text-role-agent" />}
         title={s.title}
         // keys === null with no fetch in flight means the first load failed: the
         // error banner speaks, so neither "Loading" nor "no keys" is claimed.
@@ -207,15 +208,16 @@ export default function ApiKeysSettings() {
         actions={
           <div className="flex items-center gap-2">
             <RecentChangeChip category="api_keys" />
-            <button
+            <Button
               type="button"
               onClick={() => setShowCreate(true)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 transition-opacity disabled:opacity-50"
+              variant="primary"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
               {s.create_key}
-            </button>
+            </Button>
           </div>
         }
       />
@@ -224,14 +226,16 @@ export default function ApiKeysSettings() {
           <div className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-interactive p-2 mb-3">
             <AlertTriangle size={14} />
             {error}
-            <button
+            <Button
               type="button"
               onClick={() => void load()}
-              className="ml-auto inline-flex items-center gap-1 hover:text-status-error"
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+              icon={<RefreshCw size={12} />}
             >
-              <RefreshCw size={12} />
               {s.retry}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -240,7 +244,7 @@ export default function ApiKeysSettings() {
         <McpServerInfoPanel />
 
         <div className="mt-6">
-          <SectionCard title={s.your_keys} icon={<Key className="w-4 h-4 text-fuchsia-400" />} titleClassName="text-primary">
+          <SectionCard title={s.your_keys} icon={<Key className="w-4 h-4 text-role-agent" />} titleClassName="text-ink-1">
             <div className="space-y-2">
               {loading && keys === null ? (
                 <>
@@ -368,26 +372,24 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
             </span>
           )}
           {stale && (
-            <span
+            <Tooltip content={s.stale_tooltip}><span
               className="typo-caption text-status-warning px-1.5 py-0.5 inline-flex items-center gap-1"
-              title={s.stale_tooltip}
             >
               <Clock3 size={10} />
               {s.stale_chip}
-            </span>
+            </span></Tooltip>
           )}
           {!isRevoked && expiry && (
-            <span
+            <Tooltip content={apiKey.expires_at ? formatTimestamp(apiKey.expires_at) : undefined}><span
               className={`typo-caption px-1.5 py-0.5 rounded-interactive inline-flex items-center gap-1 ${
                 expiry.expired
                   ? 'text-status-error bg-status-error/10 border border-status-error/30'
                   : 'text-foreground bg-surface-2'
               }`}
-              title={apiKey.expires_at ? formatTimestamp(apiKey.expires_at) : undefined}
             >
               <CalendarClock size={10} />
               {expiry.expired ? s.expired_chip : tx(s.expires_in, { days: expiry.days })}
-            </span>
+            </span></Tooltip>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1">
@@ -397,39 +399,37 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
             {scopes.length > 0 ? scopes.join(', ') : s.no_scopes}
           </span>
           <span className="typo-caption text-foreground">·</span>
-          <span
+          <Tooltip content={lastUsedAbsolute ?? undefined}><span
             className={`typo-caption ${stale ? 'text-status-warning/80' : 'text-foreground'}`}
-            title={lastUsedAbsolute ?? undefined}
           >
             {s.last_used}: {lastUsedRelative}
-          </span>
+          </span></Tooltip>
           <span className="typo-caption text-foreground">·</span>
-          <span className="typo-caption text-foreground" title={createdAbsolute}>
+          <Tooltip content={createdAbsolute}><span className="typo-caption text-foreground">
             {s.created_label}: {createdRelative}
-          </span>
+          </span></Tooltip>
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <button
+        <Button
           type="button"
           onClick={onAudit}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-          title={s.audit_tooltip}
+          variant="ghost"
+          size="xs"
+          tooltip={s.audit_tooltip}
+          icon={<History size={12} />}
         >
-          <History size={12} />
           {s.audit}
-        </button>
+        </Button>
         {!isRevoked && (
-          <button
+          <Button
             type="button"
             onClick={triggerRevoke}
             disabled={actioning}
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
-              confirmRevoke
-                ? 'text-status-warning bg-status-warning/10 hover:bg-status-warning/20'
-                : 'text-foreground hover:text-status-warning hover:bg-status-warning/10'
-            }`}
-            title={s.revoke_tooltip}
+            variant={confirmRevoke ? 'accent' : 'ghost'}
+            tone={confirmRevoke ? 'warning' : undefined}
+            size="xs"
+            tooltip={s.revoke_tooltip}
           >
             {confirmRevoke ? (
               <>
@@ -442,18 +442,15 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
                 {s.revoke}
               </>
             )}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           onClick={triggerDelete}
           disabled={actioning}
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
-            confirmDelete
-              ? 'text-status-error bg-status-error/10 hover:bg-status-error/20'
-              : 'text-foreground hover:text-status-error hover:bg-status-error/10'
-          }`}
-          title={s.delete_tooltip}
+          variant={confirmDelete ? 'danger' : 'ghost'}
+          size="xs"
+          tooltip={s.delete_tooltip}
         >
           {confirmDelete ? (
             <>
@@ -466,7 +463,7 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
               {s.delete}
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

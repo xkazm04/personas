@@ -7,6 +7,7 @@ import { AdminToolsDropdown } from './filters/AdminToolsDropdown';
 import { Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TemplateSearchFilterRowProps {
   density?: Density;
@@ -136,15 +137,16 @@ export function TemplateSearchFilterRow({
           the gallery's own empty state told operators to press a Synthesize
           Team button that did not exist. */}
       {onSynthesizeTeam && (
-        <button
+        <Button
           type="button"
           onClick={onSynthesizeTeam}
           data-testid="gallery-synthesize-team"
-          className="focus-ring px-3 py-2 typo-body rounded-modal border border-hair hover:bg-surface-2 text-foreground transition-colors flex items-center gap-1.5 flex-shrink-0"
+          variant="secondary"
+          size="md"
+          icon={<Users className="w-3.5 h-3.5" aria-hidden="true" />}
         >
-          <Users className="w-3.5 h-3.5" aria-hidden="true" />
           {t.templates.team_synthesis.synthesize_team}
-        </button>
+        </Button>
       )}
 
       {/* Admin tools dropdown -- dev mode only */}

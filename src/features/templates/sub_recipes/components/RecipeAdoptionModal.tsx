@@ -11,6 +11,7 @@ import type { Recipe, BindingValue, RecipeBinding, BindingKind, Eligibility } fr
 import { useRecipeEligibility } from '../useEligibility';
 import { useAdoption } from '../libs/useAdoption';
 import { defaultBindingValues, findMissingBindings } from '../libs/substituteBindings';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RecipeAdoptionModalProps {
   recipe: Recipe;
@@ -92,14 +93,16 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
             </div>
           </div>
           <Tooltip content={t.common.close}>
-            <button
+            <Button
               type="button"
               onClick={onClose}
               aria-label={t.common.close}
-              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 
@@ -150,22 +153,26 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
               </span>
             )}
           </span>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="ml-auto px-3 py-1.5 rounded-interactive border border-card-border bg-surface-2 text-ink-1 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
+            variant="secondary"
+            size="sm"
+            className="ml-auto"
           >
             {t.common.cancel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleAdopt}
             disabled={!canAdopt || pending}
-            className="px-4 py-1.5 rounded-interactive border border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 typo-body cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+            variant="accent"
+            tone="highlight"
+            size="md"
+            icon={<Sparkles className="w-3.5 h-3.5" />}
           >
-            <Sparkles className="w-3.5 h-3.5" />
             {pending ? t.recipes_catalog.adopting_label : t.recipes_catalog.adopt_recipe_label}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>
@@ -184,13 +191,14 @@ function NoPersonaState({ onClose }: { onClose: () => void }) {
       <div className="typo-caption text-foreground mb-4">
         {t.recipes_catalog.no_persona_body}
       </div>
-      <button
+      <Button
         type="button"
         onClick={onClose}
-        className="px-3 py-1.5 rounded-interactive border border-card-border bg-surface-2 text-ink-1 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
+        variant="secondary"
+        size="sm"
       >
         {t.common.close}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -465,18 +473,16 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
               {presets.map((p) => {
                 const isActive = value === p.cron;
                 return (
-                  <button
+                  <Button
                     key={p.cron}
                     type="button"
                     onClick={() => onChange(p.cron)}
-                    className={`px-2 py-1 rounded-full border typo-label transition-colors cursor-pointer ${
-                      isActive
-                        ? 'bg-primary/15 border-primary/35 text-primary'
-                        : 'bg-surface-2 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
-                    }`}
+                    variant={isActive ? 'accent' : 'secondary'}
+                    tone={isActive ? 'highlight' : undefined}
+                    size="xs"
                   >
                     {p.label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -499,7 +505,7 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
             {kind.options.map((opt) => {
               const isActive = selected.has(opt.value);
               return (
-                <button
+                <Button
                   key={opt.value}
                   type="button"
                   onClick={() => {
@@ -508,14 +514,12 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
                     else next.add(opt.value);
                     onChange(next.size > 0 ? Array.from(next) : undefined);
                   }}
-                  className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
-                    isActive
-                      ? 'bg-primary/15 border-primary/35 text-primary'
-                      : 'bg-surface-2 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
-                  }`}
+                  variant={isActive ? 'accent' : 'secondary'}
+                  tone={isActive ? 'highlight' : undefined}
+                  size="xs"
                 >
                   {opt.label}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -526,18 +530,16 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
           {kind.options.map((opt) => {
             const isActive = value === opt.value;
             return (
-              <button
+              <Button
                 key={opt.value}
                 type="button"
                 onClick={() => onChange(opt.value)}
-                className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
-                  isActive
-                    ? 'bg-primary/15 border-primary/35 text-primary'
-                    : 'bg-surface-2 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
-                }`}
+                variant={isActive ? 'accent' : 'secondary'}
+                tone={isActive ? 'highlight' : undefined}
+                size="xs"
               >
                 {opt.label}
-              </button>
+              </Button>
             );
           })}
         </div>

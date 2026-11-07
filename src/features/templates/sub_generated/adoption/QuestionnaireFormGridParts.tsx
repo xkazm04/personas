@@ -21,6 +21,7 @@ import { SelectPills } from './SelectPills';
 import { normalizeOptions, resolveBlockedCredentialCategory } from './questionnaire/questionnaireHelpers';
 import { CredentialPickerCards } from '@/features/vault/components/CredentialPickerCards';
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 // Re-export so importers that imported from this file still resolve
@@ -37,7 +38,7 @@ export function ProgressBar({ answered, total }: { answered: number; total: numb
     <div className="flex items-center gap-3">
       <div className="flex-1 h-1.5 rounded-full bg-foreground/[0.06] overflow-hidden">
         <motion.div
-          className="h-full w-full origin-left rounded-full bg-gradient-to-r from-primary/80 to-primary"
+          className="h-full w-full origin-left rounded-full bg-primary"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: pct / 100 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -117,32 +118,31 @@ function DynamicSelectBody({
         </div>
         <div className="flex gap-2">
           {!isMissingCredential && (
-            <button
+            <Button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-foreground/[0.03] border border-border text-foreground hover:bg-foreground/[0.06] transition-colors"
+              variant="secondary"
+              size="sm"
+              icon={<RefreshCw className="w-3 h-3" />}
             >
-              <RefreshCw className="w-3 h-3" />
               {t.templates.adopt_modal.retry}
-            </button>
+            </Button>
           )}
           {(() => {
             const categoryForAdd = question.vault_category
               ?? (src.source === 'vault' ? src.service_type : null);
             if (!categoryForAdd || !onAddCredential) return null;
             return (
-              <button
+              <Button
                 type="button"
                 onClick={() => onAddCredential(categoryForAdd)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card transition-colors ${
-                  isMissingCredential
-                    ? 'bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25'
-                    : 'bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/20'
-                }`}
+                variant={isMissingCredential ? 'accent' : 'danger'}
+                tone={isMissingCredential ? 'highlight' : undefined}
+                size="sm"
+                icon={<Plus className="w-3 h-3" />}
               >
-                <Plus className="w-3 h-3" />
                 {t.templates.adopt_modal.add_credential}
-              </button>
+              </Button>
             );
           })()}
         </div>
@@ -170,14 +170,16 @@ function DynamicSelectBody({
           })}
         </div>
         {isVaultSourced && onAddCredential && (
-          <button
+          <Button
             type="button"
             onClick={() => onAddCredential(src.service_type)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25 transition-colors"
+            variant="accent"
+            tone="highlight"
+            size="sm"
+            icon={<Plus className="w-3 h-3" />}
           >
-            <Plus className="w-3 h-3" />
             {t.templates.adopt_modal.add_credential}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -234,20 +236,17 @@ function BooleanToggle({
       {['Yes', 'No'].map((opt) => {
         const selected = value.toLowerCase() === opt.toLowerCase();
         return (
-          <button
+          <Button
             key={opt}
             type="button"
             onClick={() => onChange(opt.toLowerCase())}
-            className={`flex-1 px-3 py-1.5 typo-caption rounded-card border transition-all ${
-              selected
-                ? opt === 'Yes'
-                  ? 'bg-status-success/15 border-status-success/30 text-status-success'
-                  : 'bg-status-error/15 border-status-error/30 text-status-error'
-                : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06]'
-            }`}
+            variant={selected ? 'accent' : 'secondary'}
+            tone={selected ? (opt === 'Yes' ? 'success' : 'error') : undefined}
+            size="xs"
+            className="flex-1"
           >
             {opt}
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -371,19 +370,17 @@ export function QuestionCard({
           </span>
         )}
         {hasTip && (
-          <button
+          <Button
             type="button"
             onClick={() => setTipOpen((v) => !v)}
             aria-expanded={tipOpen}
             aria-label={tipOpen ? t.templates.adopt_modal.hide_explanation : t.templates.adopt_modal.show_explanation}
-            className={`flex-shrink-0 mt-0.5 p-0.5 rounded-interactive transition-colors ${
-              tipOpen
-                ? 'text-primary/80 hover:text-primary'
-                : 'text-foreground hover:text-ink-2'
-            }`}
+            variant="ghost"
+            size="icon-sm"
+            className="mt-0.5"
           >
             <Info className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </div>
       )}
@@ -403,14 +400,15 @@ export function QuestionCard({
           <p className="typo-caption text-status-error/80">
             {t.templates.adopt_modal.credential_required.replace('{category}', blockedCategory)}
           </p>
-          <button
+          <Button
             type="button"
             onClick={() => onAddCredential?.(blockedCategory)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/25 transition-colors"
+            variant="danger"
+            size="sm"
+            icon={<Plus className="w-3 h-3" />}
           >
-            <Plus className="w-3 h-3" />
             {t.templates.adopt_modal.add_credential}
-          </button>
+          </Button>
         </div>
       ) : (
       /* Input control */

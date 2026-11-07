@@ -3,6 +3,7 @@ import { Plug } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { parseConnectorMetadata, type ConnectorDefinition } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface IdleSuggestionsProps {
   templateSearch: string;
@@ -33,7 +34,7 @@ export function IdleSuggestions({
         value={templateSearch}
         onChange={(e) => onTemplateSearchChange(e.target.value)}
         placeholder={dp.search_catalog}
-        className="w-full px-3 py-1.5 rounded-modal border border-hair bg-background/40 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
+        className="w-full px-3 py-1.5 rounded-modal border border-hair bg-background/40 typo-body text-foreground placeholder:text-ink-3 focus-ring"
       />
       {templateConnectors.length === 0 ? (
         <p className="typo-body text-foreground">{dp.no_catalog}</p>
@@ -60,7 +61,7 @@ export function IdleSuggestions({
                     <p className="typo-body text-foreground truncate">{conn.category}</p>
                   </div>
                 </div>
-                <button
+                <Button
                   type="button"
                   onClick={async (e) => {
                     e.stopPropagation();
@@ -72,7 +73,9 @@ export function IdleSuggestions({
                     }
                   }}
                   disabled={applyingTemplateId === conn.id}
-                  className="px-2 py-1 typo-body rounded-card border border-hair bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                  variant="accent"
+                  tone="highlight"
+                  size="xs"
                 >
                   {applyingTemplateId === conn.id ? (
                     <span className="inline-flex items-center gap-1">
@@ -82,7 +85,7 @@ export function IdleSuggestions({
                   ) : (
                     dp.use_template
                   )}
-                </button>
+                </Button>
               </div>
               {expandedTemplateId === conn.id && (
                 <div

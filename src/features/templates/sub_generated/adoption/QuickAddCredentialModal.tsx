@@ -9,6 +9,7 @@ import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/t
 import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from '@/lib/log';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const logger = createLogger('quick-add-credential');
@@ -147,14 +148,15 @@ export function QuickAddCredentialModal({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-hair">
           <div className="flex items-center gap-3 min-w-0">
             {phase === 'form' && (
-              <button
+              <Button
                 type="button"
                 onClick={handleBackToPicker}
-                className="p-1 rounded-card hover:bg-surface-2 transition-colors"
+                variant="ghost"
+                size="icon-sm"
                 aria-label={debtText("auto_back_to_picker_2d203d04")}
               >
                 <ArrowLeft className="w-4 h-4 text-foreground" />
-              </button>
+              </Button>
             )}
             <div className="min-w-0">
               <h2 className="typo-body-lg text-foreground truncate">
@@ -169,14 +171,15 @@ export function QuickAddCredentialModal({
               </p>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-card hover:bg-surface-2 transition-colors"
+            variant="ghost"
+            size="icon-sm"
             aria-label="Close"
           >
             <X className="w-4 h-4 text-foreground" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
@@ -201,14 +204,15 @@ export function QuickAddCredentialModal({
                 <p className="typo-body text-foreground">
                   <DebtText k="auto_you_can_still_add_one_from_the_vault_catal_ac9cc338" />
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={handleOpenVaultCatalog}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-hair hover:bg-primary/10 transition-colors typo-body text-foreground"
+                  variant="secondary"
+                  size="sm"
+                  icon={<ExternalLink className="w-3.5 h-3.5" />}
+                  iconRight={<DebtText k="auto_open_vault_catalog_6e8c24e5" />}
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <DebtText k="auto_open_vault_catalog_6e8c24e5" />
-                </button>
+                </Button>
               </div>
             )
           )}
@@ -235,14 +239,16 @@ export function QuickAddCredentialModal({
                 <p className="typo-body text-foreground">
                   <DebtText k="auto_once_the_credential_is_healthy_close_this__e541af46" />
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={handleOpenVaultCatalog}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-card bg-primary/15 hover:bg-primary/25 border border-primary/30 transition-colors typo-body text-foreground"
+                  variant="accent"
+                  tone="highlight"
+                  size="md"
+                  icon={<ExternalLink className="w-4 h-4" />}
+                  iconRight={<DebtText k="auto_open_vault_catalog_efc2651a" />}
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  <DebtText k="auto_open_vault_catalog_efc2651a" />
-                </button>
+                </Button>
               </div>
             )
           )}
@@ -331,15 +337,17 @@ function InlineCredentialForm({
       )}
 
       <div className="flex justify-end gap-2 pt-1">
-        <button
+        <Button
           type="button"
           disabled={saving}
           onClick={onSubmit}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-card bg-primary/20 hover:bg-primary/30 border border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed typo-body text-foreground transition-colors"
+          variant="accent"
+          tone="highlight"
+          size="md"
+          icon={saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
         >
-          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {saving ? 'Testing & saving…' : 'Healthcheck & save'}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -384,7 +392,7 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder ?? ''}
           autoComplete="off"
-          className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
+          className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
         />
       )}
       {field.helpText && (

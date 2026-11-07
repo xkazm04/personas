@@ -130,7 +130,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={`typo-body ${config.text}`}>{finding.title}</span>
-            <span className="typo-body px-1.5 py-0.5 rounded-interactive bg-secondary/5 text-foreground uppercase tracking-wider">
+            <span className="typo-eyebrow px-1.5 py-0.5 rounded-interactive bg-secondary/5 text-foreground">
               {CATEGORY_LABELS[finding.category]}
             </span>
           </div>
@@ -148,7 +148,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
       {expanded && finding.context && (
         <div className="px-3 pb-2.5 pt-0">
           <div className="ml-4 pl-3 border-l-2 border-white/5">
-            <p className="typo-body uppercase tracking-wider text-foreground mb-1">
+            <p className="typo-eyebrow text-foreground mb-1">
               {t.templates.scan.source_label} <span className="text-foreground">{finding.source}</span>
             </p>
             <pre className="typo-body text-foreground whitespace-pre-wrap font-mono bg-black/20 rounded-modal px-2.5 py-2 leading-relaxed">
@@ -186,7 +186,7 @@ function SeveritySection({
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         {icon}
-        <span className="font-medium uppercase tracking-wider">{label}</span>
+        <span className="typo-eyebrow">{label}</span>
         <span className="text-foreground ml-auto">{findings.length}</span>
       </button>
       {open && (
@@ -290,12 +290,12 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         {/* Summary badges */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {result.critical.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-status-error/15 text-status-error border border-status-error/20">
+            <span className="inline-flex items-center gap-1 typo-body text-status-error">
               {result.critical.length} {t.templates.scan.critical_label}
             </span>
           )}
           {result.warnings.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-interactive bg-status-warning/15 text-status-warning border border-status-warning/20">
+            <span className="inline-flex items-center gap-1 typo-body text-status-warning">
               {result.warnings.length} {t.templates.scan.warnings_label}
             </span>
           )}

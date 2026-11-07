@@ -15,6 +15,7 @@ import { SettingsTab } from './tabs/SettingsTab';
 import { ExtractTab } from './tabs/ExtractTab';
 import { DocGhostRows } from './tabs/DocGhostRows';
 import { useCredentialRename } from '@/features/vault/shared/hooks/useCredentialRename';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 type VectorTab = 'documents' | 'search' | 'extract' | 'settings';
@@ -124,34 +125,34 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   autoFocus
                   className="flex-1 min-w-0 typo-heading text-ink-1 bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
-                <button
+                <Button
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
-                  className="p-0.5 rounded-interactive text-status-success hover:text-status-success transition-colors shrink-0"
-                  title={sh.save_name}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  tooltip={sh.save_name}
                   aria-label={sh.save_name}
                 >
                   <Check className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             ) : (
               <>
                 <h2 id="vector-kb-title" className="typo-heading text-ink-1 truncate">
                   {kb?.name || credential.name}
                 </h2>
-                <button
+                <Button
                   type="button"
                   onClick={startEditing}
-                  /* focus-visible:opacity-100 is not decoration: without it the
-                     rename control is in the tab order while painted at zero
-                     opacity, so a keyboard user focuses a button they cannot
-                     see. Hover alone cannot reveal it for them. */
-                  className="p-0.5 rounded-interactive text-foreground hover:text-ink-2 opacity-0 group-hover/name:opacity-100 focus-visible:opacity-100 transition-all shrink-0"
-                  title={sh.rename_credential}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="opacity-0 group-hover/name:opacity-100 focus-visible:opacity-100 shrink-0"
+                  tooltip={sh.rename_credential}
                   aria-label={sh.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -164,14 +165,15 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             )}
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={sh.close}
-          className="p-2 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-2"
+          variant="ghost"
+          size="icon-sm"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Tab bar */}
@@ -283,14 +285,16 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             <div>
               <AlertCircle className="w-10 h-10 text-status-error/40 mx-auto mb-3" aria-hidden />
               <p className="typo-body text-foreground">{t.errors.boundary_title_generic}</p>
-              <button
+              <Button
                 type="button"
                 onClick={() => void refreshKb()}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-surface-2 hover:bg-surface-2 text-foreground transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
+                className="mt-3"
+                icon={<RefreshCw className="w-3 h-3" aria-hidden />}
               >
-                <RefreshCw className="w-3 h-3" aria-hidden />
                 {t.common.retry}
-              </button>
+              </Button>
             </div>
           </div>
         )}

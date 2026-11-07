@@ -2,6 +2,7 @@ import { Monitor, CheckCircle2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ImportedMcpServer } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface McpServerCardProps {
   server: ImportedMcpServer;
@@ -34,18 +35,20 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
           {t.common.imported}
         </span>
       ) : (
-        <button
+        <Button
           type="button"
           onClick={onImport}
           disabled={importing}
-          className="px-3 py-1.5 typo-caption text-role-highlight bg-role-highlight/10 border border-role-highlight/20 rounded-card hover:bg-role-highlight/20 transition-colors disabled:opacity-50"
+          variant="accent"
+          tone="highlight"
+          size="sm"
         >
           {importing ? (
             <LoadingSpinner size="sm" />
           ) : (
             t.common.import_action
           )}
-        </button>
+        </Button>
       )}
     </div>
   );

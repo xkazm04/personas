@@ -3,6 +3,7 @@ import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { AutoCredMode } from '../helpers/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface DesktopBridgeBlockProps {
   connector: ConnectorDefinition;
@@ -27,13 +28,14 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
         </div>
       </div>
       <div className="flex gap-2">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 typo-body text-foreground bg-surface-1 rounded-card hover:bg-surface-2 transition-colors"
+          variant="ghost"
+          size="md"
         >
           {t.common.back}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -50,13 +52,14 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
   const { t, tx } = useTranslation();
   return (
     <div className="flex items-center gap-3">
-      <button
+      <Button
         type="button"
         onClick={onCancel}
-        className="p-1.5 rounded-card hover:bg-surface-2 transition-colors"
+        variant="ghost"
+        size="icon-sm"
       >
         <ArrowLeft className="w-4 h-4 text-foreground" />
-      </button>
+      </Button>
       <div
         className="w-10 h-10 rounded-modal flex items-center justify-center border"
         style={{

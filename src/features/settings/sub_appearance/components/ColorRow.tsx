@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { X } from 'lucide-react';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import Button from '@/features/shared/components/buttons/Button';
 
 // The shared ColorPicker commits a 3-digit hex ("#abc"), but the theme derivation and the
 // contrast math (deriveCustomTheme / contrastRatio hexToRgb) only parse six digits and turn a
@@ -46,6 +48,7 @@ export function ColorRow({
 
   return (
     <div ref={ref} className="relative flex items-center gap-3 py-1.5">
+      <Tooltip content={tx(t.settings.appearance.color_pick_title, { label })}>
       <button
         ref={triggerRef}
         type="button"
@@ -56,22 +59,24 @@ export function ColorRow({
             : 'border-hair hover:border-primary/30 hover:scale-105'
         }`}
         style={{ backgroundColor: displayValue }}
-        title={tx(t.settings.appearance.color_pick_title, { label })}
+        aria-label={tx(t.settings.appearance.color_pick_title, { label })}
         aria-expanded={open}
       />
+      </Tooltip>
       <span className="typo-caption text-foreground w-24 flex-shrink-0">{label}</span>
       <span className="typo-code flex-1 min-w-0 truncate text-foreground">
         {displayValue}
       </span>
       {isOverridden && (
-        <button
+        <Button
           type="button"
           onClick={() => onChange(null)}
-          className="focus-ring p-1 rounded-input text-foreground hover:text-ink-2 hover:bg-primary/5 transition-colors flex-shrink-0"
-          title={t.settings.appearance.reset_to_auto}
+          variant="ghost"
+          size="icon-sm"
+          tooltip={t.settings.appearance.reset_to_auto} aria-label={t.settings.appearance.reset_to_auto}
         >
           <X className="w-3 h-3" />
-        </button>
+        </Button>
       )}
       {!isOverridden && (
         <span className="typo-caption text-foreground flex-shrink-0">{t.settings.appearance.color_auto}</span>

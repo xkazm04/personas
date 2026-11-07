@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 import { AlertTriangle, Clock, Copy, Check, CheckCircle2 } from 'lucide-react';
@@ -93,8 +94,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                       tabIndex={0}
                       role="button"
                       aria-label={tx(db.click_copy_column, { name: col })}
-                      className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 focus:bg-primary/8 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors group relative"
-                      title={tx(db.click_copy_column, { name: col })}
+                      className="px-3 py-2 text-left typo-eyebrow text-foreground whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 focus:bg-primary/8 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors group relative"
                     >
                       <span className="flex items-center gap-1.5">
                         {isColCopied ? (
@@ -105,7 +105,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                         ) : (
                           <>
                             {col}
-                            <Copy className="w-2.5 h-2.5 text-foreground group-hover:text-muted-foreground/40 transition-colors shrink-0" />
+                            <Copy className="w-2.5 h-2.5 text-foreground group-hover:text-ink-3 transition-colors shrink-0" />
                           </>
                         )}
                       </span>
@@ -164,8 +164,8 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                                   ? 'text-foreground italic'
                                   : 'text-foreground hover:bg-primary/5'
                             }`}
-                            title={isCellCopied ? db.copied : tx(db.click_copy_cell, { value: formatCell(cell, { pretty: true }) })}
                           >
+                            <Tooltip content={isCellCopied ? db.copied : tx(db.click_copy_cell, { value: formatCell(cell, { pretty: true }) })}>
                             <span className="block truncate">
                               {isCellCopied ? (
                                 <span className="flex items-center gap-1">
@@ -176,6 +176,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                                 cellText
                               )}
                             </span>
+                            </Tooltip>
                           </td>
                         );
                       })}

@@ -10,6 +10,7 @@
  */
 import { AlertTriangle, Tag } from 'lucide-react';
 import { deriveTemplateCategoryTags } from '../shared/deriveTemplateCategoryTags';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TemplateCategoryPillsProps {
   connectors: string[];
@@ -39,9 +40,7 @@ export function TemplateCategoryPills({
         const Icon = pill.arch?.icon ?? (pill.isUnknown ? AlertTriangle : Tag);
         const color = pill.arch?.color ?? '#f59e0b';
         return (
-          <span
-            key={pill.key}
-            title={pill.isUnknown ? `Unmapped category: ${pill.key}` : pill.label}
+          <Tooltip key={pill.key} content={pill.isUnknown ? `Unmapped category: ${pill.key}` : pill.label}><span
             className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border typo-caption ${
               pill.isUnknown
                 ? 'bg-status-warning/10 border-status-warning/30 text-status-warning'
@@ -51,19 +50,18 @@ export function TemplateCategoryPills({
           >
             <Icon className="w-2.5 h-2.5" />
             <span className="font-medium">{pill.label}</span>
-          </span>
+          </span></Tooltip>
         );
       })}
       {overflow > 0 && (
-        <span
-          className="inline-flex items-center px-1.5 py-0.5 rounded-interactive border border-border bg-foreground/[0.03] typo-caption text-foreground"
-          title={tags
+        <Tooltip content={tags
             .slice(maxVisible)
             .map((p) => p.label)
-            .join(', ')}
+            .join(', ')}><span
+          className="inline-flex items-center px-1.5 py-0.5 rounded-interactive border border-border bg-foreground/[0.03] typo-caption text-foreground"
         >
           +{overflow}
-        </span>
+        </span></Tooltip>
       )}
     </div>
   );

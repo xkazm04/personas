@@ -33,7 +33,7 @@ export function ToolDetail({
   return (
     <div className="border-t border-primary/8 pt-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="typo-heading uppercase text-foreground">
+        <span className="typo-eyebrow text-foreground">
           {sh.test_tool}
         </span>
         <span className="typo-code text-foreground">{currentTool.name}</span>

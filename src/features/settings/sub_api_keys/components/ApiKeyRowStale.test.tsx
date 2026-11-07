@@ -1,6 +1,6 @@
 /** One verdict per key: the stale nudge applies only to keys that can still authenticate. */
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ExternalApiKey } from '@/api/auth/externalApiKeys';
 import { ApiKeyRow } from './ApiKeysSettings';
 
@@ -37,9 +37,11 @@ describe('ApiKeyRow stale chip', () => {
     expect(screen.queryByText('Stale')).toBeNull();
   });
 
-  it('has a tooltip that names both stale rules (never used for 7+ days, idle 30+ days)', () => {
+  it('has a tooltip that names both stale rules (never used for 7+ days, idle 30+ days)', async () => {
     renderRow({ ...base, created_at: new Date(Date.now() - 8 * 86_400_000).toISOString() });
-    const tip = screen.getByText('Stale').closest('span')!.getAttribute('title') ?? '';
+    // The chip speaks through the shared Tooltip now, not a native title: open it by hovering.
+    fireEvent.mouseOver(screen.getByText('Stale'));
+    const tip = (await screen.findByRole('tooltip')).textContent ?? '';
     expect(tip).toMatch(/7\+ days/);
     expect(tip).toMatch(/30\+ days/);
   });

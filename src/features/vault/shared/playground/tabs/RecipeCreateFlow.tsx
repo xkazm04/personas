@@ -44,12 +44,13 @@ export function RecipeCreateFlow({
               <Sparkles className="w-3.5 h-3.5 text-primary" />
               {sh.create_recipe}
             </h4>
-            <button
+            <Button
               onClick={onCancel}
-              className="p-1 rounded-card text-foreground hover:text-ink-2 hover:bg-muted/30 transition-colors"
+              variant="ghost"
+              size="icon-sm"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
 
           <div>
@@ -68,14 +69,15 @@ export function RecipeCreateFlow({
 
           {/* Generate button */}
           {(generator.phase === 'idle' || generator.phase === 'error') && !generator.draft && (
-            <button
+            <Button
               onClick={onGenerate}
               disabled={!description.trim()}
-              className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              variant="primary"
+              size="md"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
             >
-              <Sparkles className="w-3.5 h-3.5" />
               {sh.generate_with_ai}
-            </button>
+            </Button>
           )}
 
           {/* Progress + Terminal strip */}
@@ -162,15 +164,16 @@ export function RecipeCreateFlow({
                 >
                   {sh.accept_save}
                 </Button>
-                <button
+                <Button
                   onClick={() => {
                     generator.reset();
                     onGenerate();
                   }}
-                  className="rounded-modal px-3 py-1.5 typo-body text-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                  variant="ghost"
+                  size="sm"
                 >
                   {sh.regenerate}
-                </button>
+                </Button>
               </div>
             </div>
           )}

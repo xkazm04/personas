@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { MoreVertical, Eye, RefreshCw, Trash2, X } from 'lucide-react';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RowActionMenuProps {
   reviewId: string;
@@ -23,17 +24,19 @@ export function RowActionMenu({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           setOpen(true);
         }}
-        className="p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-surface-2 transition-all"
+        variant="ghost"
+        size="icon-sm"
+        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
         aria-label={t.templates.row_actions.row_actions_label}
       >
         <MoreVertical className="w-4.5 h-4.5 text-foreground" />
-      </button>
+      </Button>
       <BaseModal
         isOpen={open}
         onClose={close}
@@ -50,14 +53,15 @@ export function RowActionMenu({
             <h2 id="row-actions-title" className="typo-heading text-ink-1">
               {t.templates.row_actions.row_actions_label}
             </h2>
-            <button
+            <Button
               type="button"
               onClick={close}
-              className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-foreground hover:text-ink-1"
+              variant="ghost"
+              size="icon-sm"
               aria-label={t.common.close}
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
           <div className="py-1.5">
             <button

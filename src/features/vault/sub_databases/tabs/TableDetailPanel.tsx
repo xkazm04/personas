@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 import type { ConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Cold-load ghost for the Redis key-detail pane.
@@ -125,18 +126,19 @@ export function TableDetailPanel({
               {displayName}
             </span>
             {tables.find((t) => t.table_name === selectedTable)?.table_type === 'VIEW' && (
-              <span className="px-1.5 py-0.5 rounded-interactive typo-body bg-role-agent/10 text-role-agent/70">VIEW</span>
+              <span className="typo-body text-role-agent">VIEW</span>
             )}
             {!isPinned && (
               <Tooltip content={dbt.pin_table}>
-                <button
+                <Button
                   type="button"
                   onClick={() => onPinTable(selectedTable)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-modal typo-body text-status-info/70 hover:bg-status-info/10 transition-colors"
+                  variant="ghost"
+                  size="xs"
+                  icon={<Pin className="w-3 h-3" />}
                 >
-                  <Pin className="w-3 h-3" />
                   {dbt.pin}
-                </button>
+                </Button>
               </Tooltip>
             )}
             {isPinned && (

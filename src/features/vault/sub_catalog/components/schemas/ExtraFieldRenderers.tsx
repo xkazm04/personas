@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import type { ExtraFieldDef } from './schemaFormTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function ExtraFieldRenderer({
   def,
@@ -18,7 +19,7 @@ export function ExtraFieldRenderer({
         <>
           <div className="border-t border-primary/8" />
           <div>
-            <h4 className="typo-heading uppercase text-foreground mb-3">
+            <h4 className="typo-eyebrow text-foreground mb-3">
               {def.sectionTitle}
             </h4>
             <textarea
@@ -27,7 +28,7 @@ export function ExtraFieldRenderer({
               placeholder={def.placeholder}
               aria-label={def.sectionTitle}
               rows={def.rows ?? 4}
-              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-code focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
+              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-code focus-ring focus-visible:border-primary/40 transition-all placeholder:text-ink-3 resize-y"
             />
             {def.helpText && <p className="mt-1 typo-body text-foreground">{def.helpText}</p>}
           </div>
@@ -91,19 +92,18 @@ function KeyValueListField({
       <div className="border-t border-primary/8" />
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h4 className="typo-heading uppercase text-foreground">
+          <h4 className="typo-eyebrow text-foreground">
             {def.sectionTitle}
           </h4>
-          <button
+          <Button
             type="button"
             onClick={() => update([...pairs, { id: crypto.randomUUID(), key: '', value: '' }])}
-            className={`flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border transition-colors ${
-              def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-hair'
-            }`}
+            variant="secondary"
+            size="sm"
+            icon={<Plus className="w-3 h-3" />}
           >
-            <Plus className="w-3 h-3" />
             {def.addLabel ?? s.kv_add}
-          </button>
+          </Button>
         </div>
 
         {pairs.length === 0 && (
@@ -125,7 +125,7 @@ function KeyValueListField({
                 }}
                 placeholder={s.kv_key_placeholder}
                 aria-label={s.kv_key_label}
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground focus-ring placeholder-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground focus-ring placeholder:text-ink-3"
               />
               <span className="text-foreground">=</span>
               <div className="flex-1 relative">
@@ -139,18 +139,20 @@ function KeyValueListField({
                   }}
                   placeholder={s.kv_value_placeholder}
                   aria-label={s.kv_value_label}
-                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground focus-ring placeholder-muted-foreground/30"
+                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground focus-ring placeholder:text-ink-3"
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => toggleVisibility(pair.id)}
                   aria-label={revealed ? s.kv_hide_value : s.kv_show_value}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-ink-2 transition-colors"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2"
                 >
                   {revealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
+                </Button>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   update(pairs.filter((p) => p.id !== pair.id));
@@ -161,10 +163,11 @@ function KeyValueListField({
                   });
                 }}
                 aria-label={s.kv_remove}
-                className="p-1 text-foreground hover:text-status-error transition-colors"
+                variant="ghost"
+                size="icon-sm"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
             );
           })}

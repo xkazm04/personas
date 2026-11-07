@@ -18,6 +18,7 @@ import { createLogger } from "@/lib/log";
 import { extractMessage } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const logger = createLogger("exposure-manager");
@@ -84,7 +85,7 @@ function ResourceExposureCard({
         {parsedTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
             {parsedTags.map((tag) => (
-              <span key={tag} className="typo-caption px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/70">
+              <span key={tag} className="typo-caption text-ink-1">
                 {tag}
               </span>
             ))}
@@ -96,14 +97,15 @@ function ResourceExposureCard({
         onConfirm={() => onDelete(resource.id)}
       >
         {({ requestConfirm }) => (
-          <button
+          <Button
             type="button"
             onClick={requestConfirm}
-            title={t.sharing.remove_exposure}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-status-error transition-colors flex-shrink-0"
+            tooltip={t.sharing.remove_exposure} aria-label={t.sharing.remove_exposure}
+            variant="ghost"
+            size="icon-sm"
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </InlineConfirm>
     </div>
@@ -222,21 +224,23 @@ function AddExposureForm({
       </div>
 
       <div className="flex gap-2 pt-1">
-        <button
+        <Button
           type="button"
           onClick={handleSubmit}
           disabled={!resourceId}
-          className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="primary"
+          size="sm"
         >
           {st.expose_resource}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-surface-2"
+          variant="secondary"
+          size="sm"
         >
           {st.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -330,26 +334,28 @@ export default function ExposureManager() {
           <SectionCard
             title={st.exposed_resources}
             icon={<Package className="w-4 h-4 text-ink-2" />}
-            titleClassName="text-primary"
+            titleClassName="text-ink-1"
             action={
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowExport(true)}
                   data-testid="bundle-export-trigger"
-                  className="px-2.5 py-1 typo-caption text-role-highlight hover:bg-role-highlight/10 transition-colors flex items-center gap-1.5"
+                  variant="ghost"
+                  size="xs"
+                  icon={<Share2 className="w-3.5 h-3.5" />}
                 >
-                  <Share2 className="w-3.5 h-3.5" />
                   {st.export_share_button}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-surface-2 transition-colors flex items-center gap-1.5"
+                  variant="secondary"
+                  size="xs"
+                  icon={<Plus className="w-3.5 h-3.5" />}
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   {st.expose_resource}
-                </button>
+                </Button>
               </div>
             }
           >
