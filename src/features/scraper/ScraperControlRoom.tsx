@@ -190,7 +190,8 @@ function Row({
   const runTest = async () => {
     const next = !testOpen;
     setTestOpen(next);
-    if (next && testRows === null) {
+    // Close and reopen mid-fetch must not start a second dry run of the same page.
+    if (next && testRows === null && !testing) {
       setTesting(true);
       setTestError(null);
       try {
@@ -219,7 +220,7 @@ function Row({
           {!config.enabled && (
             <Tooltip content={t.common.disabled}><span className="size-1.5 rounded-full bg-muted-foreground/40"/></Tooltip>
           )}
-          <span className="text-ink-1">{config.name}</span>
+          <span className="max-w-[280px] truncate text-ink-1">{config.name}</span>
         </div>
         {config.description ? (
           <Tooltip content={config.description}><span className="block max-w-[280px] truncate typo-caption text-ink-3">
