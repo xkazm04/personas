@@ -75,6 +75,8 @@ export function useQuestionnaireKeyboardNav({
       }
 
       if (e.key === 'Enter') {
+        // The Enter that commits an IME composition is not an advance.
+        if (e.isComposing) return;
         if (isTextarea && e.shiftKey) return;
         if (isInput) {
           const inputType = (target as HTMLInputElement).type;
