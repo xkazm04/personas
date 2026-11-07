@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Share2, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
@@ -31,6 +31,8 @@ export function ShareAgentButton({ personaId, sensitive = false }: { personaId: 
   // Publishing is public and irreversible: Share first asks, naming what leaves the machine.
   const [confirming, setConfirming] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  // The popovers belong to one agent: a persona switch must not leave Confirm armed for the new one.
+  useEffect(() => { setOpen(false); setConfirming(false); }, [personaId]);
   const headingId = useId();
   const confirmId = useId();
   // Same dismissal as the readiness popover beside it: Escape and outside click.
