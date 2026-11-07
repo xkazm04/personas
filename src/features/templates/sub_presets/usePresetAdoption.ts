@@ -17,6 +17,7 @@ import { repairTeamHandoff } from '@/api/pipeline/teams';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 export type PresetRowStatus = 'queued' | 'adopting' | 'done' | 'failed';
 
@@ -93,6 +94,8 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
   // and a second press while one runs is dropped.
   const [retrying, setRetrying] = useState(false);
   const retryingRef = useRef(false);
+  // Schema fetches race when the gallery switches presets quickly; only the newest may land.
+  const schemaFetch = useRef(createLatestWins()).current;
 
   // Reset whenever the preset changes (gallery switches presets without
   // unmounting). Kick the schema fetch in the background so the customize
@@ -111,13 +114,15 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     setOverrides({});
     setExpandedRoles(new Set());
     setHandoffRepaired(false);
+    setSchema(null);
+    const token = schemaFetch.next();
     getPresetAdoptionSchema(preset.id)
-      .then(setSchema)
+      .then((next) => { if (schemaFetch.isCurrent(token)) setSchema(next); })
       .catch((err) => {
         silentCatch('usePresetAdoption:loadSchema')(err);
-        setSchema(null);
+        if (schemaFetch.isCurrent(token)) setSchema(null);
       });
-  }, [preset]);
+  }, [preset, schemaFetch]);
 
   // Per-member progress events. Filter by preset_id so two simultaneous
   // adoptions don't bleed into each other's status tables.
