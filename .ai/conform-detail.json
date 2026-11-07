@@ -8351,19 +8351,20 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T13:00:00.000Z",
-      "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T22:47:18.658Z",
+      "worker": "9cae4014-f256-4158-ae01-faed20b94c70",
       "techniques": [
         {
           "technique": "host-routed-approval-round-trip",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/session/launch.rs:280 pre-set full-access stance in an attended session"
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 This is an attended surface with a host approval queue, but the child's native tools are kept, not removed (only the grok arm and the research leg pass --tools \"\" or an allowlist). Full access was pre-set instead of using a permission-prompt delegation hook."
         },
         {
           "technique": "permission-stance-enforcement",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/session/launch.rs:280 no read-only layering for the chat turn"
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 no read-only layering for the chat turn",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -8373,6 +8374,13 @@
           "evaluatedAt": "2026-10-09T16:16:30.000Z",
           "worker": "fa11a4fa-09d8-4f88-99c8-80905ddd1894",
           "reason": "replaced by e6722372-20b3-4f23-a4d7-abf234ee66f2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn runs with --dangerously-skip-permissions and full native tools while the host has an approval queue (src/features/companions/athena/ApprovalCard.tsx:10) that never receives the child's own tool requests; host-routed-approval-round-trip is unrealized though a person is within reach of the turn",
+          "evaluatedAt": "2026-10-14T13:00:00.000Z",
+          "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+          "reason": "replaced by 9cae4014-f256-4158-ae01-faed20b94c70"
         }
       ]
     },

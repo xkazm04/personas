@@ -9581,12 +9581,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn runs with --dangerously-skip-permissions and full native tools while the host has an approval queue (src/features/companions/athena/ApprovalCard.tsx:10) that never receives the child's own tool requests; host-routed-approval-round-trip is unrealized though a person is within reach of the turn",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/companions/athena/ApprovalCard.tsx:11 The chat's approval surface only ever receives Athena's own propose_action ops. The attended Claude chat turn runs with permissions bypassed and full native tools (launch.rs:280), so the child's mid-turn tool requests are never routed to the person sitting at this card.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "schema-driven-ui",
