@@ -22,12 +22,12 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
             </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5 typo-caption text-ink-2">
-            <span className="flex items-center gap-1">
-              <GitBranch className="w-3 h-3" />
-              {pipeline.ref}
+            <span className="flex items-center gap-1 min-w-0">
+              <GitBranch className="w-3 h-3 shrink-0" />
+              <span className="truncate">{pipeline.ref}</span>
             </span>
             <span>·</span>
-            <span>{formatRelative(pipeline.createdAt)}</span>
+            <span className="shrink-0">{formatRelative(pipeline.createdAt)}</span>
             {pipeline.duration != null && (
               <>
                 <span>·</span>

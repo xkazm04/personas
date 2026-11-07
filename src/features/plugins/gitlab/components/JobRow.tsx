@@ -103,7 +103,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
           <ChevronRight className="w-3.5 h-3.5 text-ink-1" />
         )}
         <StatusIcon status={job.status} />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 truncate">
           <span className="typo-body text-ink-2">{job.name}</span>
           <span className="typo-caption text-ink-2 ml-2">{job.stage}</span>
         </div>
