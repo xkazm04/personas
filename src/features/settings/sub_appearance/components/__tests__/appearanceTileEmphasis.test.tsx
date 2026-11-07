@@ -4,7 +4,6 @@ import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import { useThemeStore } from '@/stores/themeStore';
 import AppearanceBrightnessSettings from '../AppearanceBrightnessSettings';
 import AppearanceTextSizeSettings from '../AppearanceTextSizeSettings';
-import AppearanceDensitySettings from '../AppearanceDensitySettings';
 import AppearanceTimezoneSettings from '../AppearanceTimezoneSettings';
 import CustomThemeCreator from '../CustomThemeCreator';
 
@@ -28,11 +27,6 @@ describe('selected picker tile keeps full-strength label text', () => {
   it('text size', () => {
     useThemeStore.setState({ textScale: 'larger' });
     render(<AppearanceTextSizeSettings />);
-    expectSelectedNotDimmed();
-  });
-  it('density', () => {
-    useThemeStore.setState({ density: 'cozy' });
-    render(<AppearanceDensitySettings />);
     expectSelectedNotDimmed();
   });
   it('timezone', () => {

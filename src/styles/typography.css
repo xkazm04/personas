@@ -302,6 +302,29 @@ font-variant-numeric: tabular-nums slashed-zero;
   }
 
 
+
+  /* -- Title tint (restored 2026-11-07) ----------------------------------------
+     The console-style spark took the theme tint off every title tier ("primary
+     only as signal"). Reviewed in the app, the small titles then no longer stood
+     apart from the content under them, so the tint is back, as COLOUR ONLY: the
+     glows and text-shadows stay gone. Two strengths, both mixed from
+     --primary-ink (AA-safe on dark-red) into the foreground; light themes mix
+     less primary so the title stays dark enough to read as ink. An eyebrow that
+     is a HEADING (h2-h6, legend, role=heading) takes the tint too; an eyebrow
+     that is a column head or a field label stays ink-3. */
+  :root {
+    --title-ink: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
+    --title-ink-strong: color-mix(in srgb, var(--primary-ink) 85%, var(--foreground));
+  }
+  :root[class*="light"],
+  [data-theme*="light"] {
+    --title-ink: color-mix(in srgb, var(--primary-ink) 60%, var(--foreground));
+    --title-ink-strong: color-mix(in srgb, var(--primary-ink) 70%, var(--foreground));
+  }
+  :is(h2, h3, h4, h5, h6, legend, [role="heading"]).typo-eyebrow {
+    color: var(--title-ink);
+  }
+
   /* -- Title -------------------------------------------------------------------
      Universal title for form-element labels, toggle rows, and list-item
      headlines. The counterpart of a .typo-caption description: where the
@@ -328,7 +351,7 @@ font-variant-numeric: tabular-nums slashed-zero;
     line-height: 1.4;
     letter-spacing: -0.011em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: var(--ink-1);
+    color: var(--title-ink);
   }
 
 
@@ -339,7 +362,7 @@ font-variant-numeric: tabular-nums slashed-zero;
     line-height: 1.45;
     letter-spacing: -0.011em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: var(--ink-1);
+    color: var(--title-ink);
   }
 
 
@@ -353,7 +376,7 @@ font-variant-numeric: tabular-nums slashed-zero;
     line-height: 1.3;
     letter-spacing: -0.01em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: var(--ink-1);
+    color: var(--title-ink-strong);
   }
 
 
@@ -369,7 +392,7 @@ font-variant-numeric: tabular-nums slashed-zero;
     line-height: 1.3;
     letter-spacing: -0.015em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: var(--ink-1);
+    color: var(--title-ink-strong);
   }
 
 

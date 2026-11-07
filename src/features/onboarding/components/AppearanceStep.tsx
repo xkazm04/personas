@@ -1,4 +1,4 @@
-import { Check, Type, Languages, Rows2 } from 'lucide-react';
+import { Check, Type, Languages } from 'lucide-react';
 import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { switchLanguage, useLanguagePrefetch, useTranslation } from '@/i18n/useTranslation';
@@ -9,7 +9,6 @@ import {
   BrightnessPicker,
   SimpleThemePicker,
 } from '@/features/settings/components/AppearancePickers';
-import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
 import Button from '@/features/shared/components/buttons/Button';
 
 const ONBOARDING_LANGUAGES: { code: Language; label: string; flag: string }[] = [
@@ -34,8 +33,6 @@ export function AppearanceStep() {
   const setTextScale = useThemeStore((s) => s.setTextScale);
   const brightness = useThemeStore((s) => s.brightness);
   const setBrightness = useThemeStore((s) => s.setBrightness);
-  const density = useThemeStore((s) => s.density);
-  const setDensity = useThemeStore((s) => s.setDensity);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const language = useI18nStore((s) => s.language);
@@ -99,14 +96,6 @@ export function AppearanceStep() {
         <TextScalePicker textScale={textScale} setTextScale={setTextScale} />
       </div>
 
-      {/* Density */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Rows2 className="w-4 h-4 text-ink-1" />
-          <span className="typo-body text-ink-1">{t.onboarding.density_label}</span>
-        </div>
-        <DensityToggle density={density} onChange={setDensity} scopeId="onboarding" showLabels />
-      </div>
 
       {/* Dark themes */}
       <div className="space-y-2">

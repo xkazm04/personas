@@ -52,7 +52,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ConfidenceArc` | Semi-circular arc gauge for displaying confidence metrics. |
 | `DataGrid` | Paginated table — page-size selector, row selection + bulk-action toolbar, row drag; caller-owned sort. Else use UnifiedTable. |
 | `DataGridPager` | _(add a `@catalog` tag)_ |
-| `DensityToggle` | DensityToggle - the two-choice density picker, Console (default) and Comfortable (more air); a persisted 'cozy' reads as Comfortab |
+| `DensityToggle` | DensityToggle - a per-list two-choice row density picker (Normal and Comfortable); the app itself has one density since 2026-11-07 |
 | `DesignConnectorGrid` | _(add a `@catalog` tag)_ |
 | `DragHandle` | Visual size of the grip icon. |
 | `DropIndicator` | Orientation of the list the indicator sits in. |

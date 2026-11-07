@@ -68,10 +68,12 @@ muting lines further down.
   (or `typo-data`, or `display/Figs`); the one label tier is `typo-eyebrow`.
 - Ink, not opacity: `text-ink-1..4` (ink-4 is never text), rules `border-hair` / `border-hair-2`,
   surfaces `bg-surface-1|2`, selection `bg-sel`. Titles are ink; primary is only selection, the
-  decided state, focus and the one solid action. No `typo-*` title is tinted any more.
+  decided state, focus and the one solid action. EXCEPT titles (amended 2026-11-07): `typo-title*`,
+  `typo-section-title`, `typo-submodule-header` and a heading-element `typo-eyebrow` carry the
+  theme tint (`--title-ink[-strong]`, colour only, no glow). A `text-*` beside one replaces it.
 - Status = `display/StateMark` (glyph + word), a stroke or a thin bar. No pills.
-- Geometry comes from roles that the density axis rebinds: `--gutter-page`, `--row-h`,
-  `--control-h`, `--control-h-lg`, `--head-h`, `--group-h`. Density never changes type.
+- Geometry comes from roles: `--gutter-page`, `--row-h`, `--control-h`, `--control-h-lg`,
+  `--head-h`, `--group-h`. One density since 2026-11-07 ("Normal"); there is no density setting.
 - Sizes are `--type-N` steps x `--type-f` (typography.css); never a literal px.
 
 ## Type and colour gotchas

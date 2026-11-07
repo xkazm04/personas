@@ -427,7 +427,7 @@
   --density-row-py: calc((var(--row-h) - 1.25rem) / 2);
 
   /* Geometry roles - the density axis owns exactly these (never type sizes).
-     Default = Console; [data-density="comfortable"] below adds air. */
+     One density since 2026-11-07: these values ("Normal") are the app geometry. */
   --gutter-page: 1.25rem;
   --row-h: 2.5rem;
   --control-h: 1.875rem;
@@ -915,18 +915,9 @@ html {
    cozy -> "comfortable" (this block), comfortable/compact -> "compact" (the
    :root defaults, no block needed). No global padding transition: animating
    padding across the node tree triggers expensive layout recalcs. */
-[data-density="comfortable"] {
-  --gutter-page: 1.5rem;
-  --row-h: 3rem;
-  --control-h: 2.25rem;
-  --control-h-lg: 2.5rem;
-  --head-h: 3.25rem;
-  --group-h: 2.25rem;
-}
-
-/* Line-height follows the axis: comfortable opens body leading. */
-[data-density="comfortable"] .typo-body { line-height: 1.55; }
-[data-density="comfortable"] .typo-body-lg { line-height: 1.6; }
+/* (2026-11-07) The density setting is gone: one geometry, the :root defaults
+   ("Normal", the Console geometry). The [data-density="comfortable"] air block
+   was removed with it. */
 
 /* -- Brightness --
    Driven by --app-brightness CSS variable (set from JS).

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
   Wind, SunDim, Contrast, Eye, Sunrise,
-  Palette, Type, Sun, LayoutGrid,
+  Palette, Type, Sun,
   type LucideIcon,
 } from 'lucide-react';
 import { useThemeStore } from '@/stores/themeStore';
@@ -107,12 +107,10 @@ export function useSettingsSearchEntries(): SettingsSearchEntries {
 
     // -- Deep links into Appearance sections ----------------------------
     const themeEntry = settingEntry({ id: 'theme', label: s.theme, description: appearance, icon: icon(Palette), keywords: ['dark', 'light', 'color', 'accent'], onNavigate: goto('appearance') });
-    const densityEntry = settingEntry({ id: 'density', label: s.density, description: appearance, icon: icon(LayoutGrid), keywords: ['compact', 'comfortable', 'spacing', 'layout'], onNavigate: goto('appearance') });
     const sections = [
       themeEntry,
       settingEntry({ id: 'text-size', label: s.text_size, description: appearance, icon: icon(Type), keywords: ['font', 'scale', 'larger', 'readability'], onNavigate: goto('appearance') }),
       settingEntry({ id: 'brightness', label: s.brightness, description: appearance, icon: icon(Sun), keywords: ['bright', 'dim', 'screen'], onNavigate: goto('appearance') }),
-      densityEntry,
     ];
 
     // -- One entry per visible settings tab (tier / dev aware) ----------
@@ -128,7 +126,7 @@ export function useSettingsSearchEntries(): SettingsSearchEntries {
       });
     });
 
-    const recommended = [reduceMotionEntry, dimEntry, highContrastEntry, ambientEntry, themeEntry, densityEntry];
+    const recommended = [reduceMotionEntry, dimEntry, highContrastEntry, ambientEntry, themeEntry];
     const all = [...toggles, ...sections, ...tabs];
     return { all, recommended };
   }, [

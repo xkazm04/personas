@@ -41,7 +41,7 @@ raw Tailwind text-size combos (`custom/no-raw-text-classes` warns). Gate 0
 
 > **Console law (2026-11-06) supersedes the weights and tints below.** Faces: Inter Variable
 > (prose, names) and JetBrains Mono Variable (figures, `typo-eyebrow` = THE mono label tier,
-> `typo-data*`, `typo-code`, the `.num` utility). Titles are ink (`--ink-1`), never primary-tinted;
+> `typo-data*`, `typo-code`, the `.num` utility). Titles carry the theme tint again since 2026-11-07 (`--title-ink`, colour only; see doctrine Console law 5);
 > `typo-card-label` has no glow; `typo-caption` is `--ink-2`, the label tier `--ink-3`. Weights:
 > 400 body/caption, 500 label/data, 600 every title, hero and heading. Sizes (reference scale):
 > hero 28, heading-lg 18, submodule-header 16, heading/title-lg/body-lg 15, title/section-title/
@@ -226,7 +226,7 @@ by CSS variables in `globals.css`.
 | `STATE_DISABLED_OPACITY` | `disabled:is-disabled` | opacity `--disabled-opacity` = 0.45 + cursor + pointer-events-none | Disabled controls |
 | `STATE_LOCKED` | overlay classes | — | Locked cards (overlay, not compounded opacity) |
 
-**Console density axis (2026-11-06):** the geometry roles `--gutter-page` (20px), `--row-h` (40px),
+**One density since 2026-11-07** (the setting was removed; the values below are "Normal" and the comfortable block is gone). **Console density axis (2026-11-06):** the geometry roles `--gutter-page` (20px), `--row-h` (40px),
 `--control-h` (30px), `--control-h-lg` (32px), `--head-h` (44px), `--group-h` (32px) are the
 default; `[data-density="comfortable"]` rebinds them to 24 / 48 / 36 / 40 / 52 / 36. The legacy
 `--density-*` vars are derived from them. Density never changes a type size. A stored `cozy`

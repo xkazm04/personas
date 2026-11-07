@@ -16,10 +16,10 @@ interface DensityToggleProps {
 }
 
 /**
- * @catalog DensityToggle - the two-choice density picker, Console (default) and Comfortable (more air); a persisted 'cozy' reads as Comfortable.
+ * @catalog DensityToggle - a per-list two-choice row density picker (Normal and Comfortable); the app itself has one density since 2026-11-07.
  *
  * Standalone radiogroup with arrow-key navigation; the selected cell is surface-2 with a 2px primary
- * foot, animated via Framer's shared layout transitions. Labels are the Settings > Appearance ones.
+ * foot, animated via Framer's shared layout transitions. Labels are settings.appearance strings.
  */
 export function DensityToggle({ density, onChange, scopeId, showLabels = false }: DensityToggleProps) {
   const { t } = useTranslation();

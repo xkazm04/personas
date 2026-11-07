@@ -5,7 +5,6 @@ import { useThemeStore } from '@/stores/themeStore';
 import AppearanceBrightnessSettings from '../AppearanceBrightnessSettings';
 import AppearanceTextSizeSettings from '../AppearanceTextSizeSettings';
 import AppearanceTimezoneSettings from '../AppearanceTimezoneSettings';
-import AppearanceDensitySettings from '../AppearanceDensitySettings';
 import AppearanceThemingSection from '../AppearanceThemingSection';
 import CustomThemeCreator from '../CustomThemeCreator';
 import { en } from '@/i18n/en';
@@ -50,11 +49,6 @@ describe('Appearance pickers announce the current choice', () => {
     expectExactlyOneChosen(pressedStates());
   });
 
-  it('density (the one that already did)', () => {
-    useThemeStore.setState({ density: 'comfortable' });
-    render(<AppearanceDensitySettings />);
-    expectExactlyOneChosen(pressedStates());
-  });
 
   it('theme swatches', () => {
     useThemeStore.setState({ themeId: 'dark-cyan', customTheme: null });

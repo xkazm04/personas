@@ -57,12 +57,24 @@ Athena Standup "Console" page. Each older decision stays below as a dated, super
    Rows are separated by hairlines; sections by hairlines, not boxes.
 5. **Primary is a signal.** Titles, names and labels are ink. The theme primary marks
    selection, the decided/chosen state, focus (2px ring) and the one solid action per
-   surface. No primary tint on `typo-title*`, `typo-section-title`, `typo-submodule-header`;
-   no glow on `typo-card-label`. This REVERSES the Gate 0/1 (2026-09) call to keep both.
+   surface. No glow on `typo-card-label`.
+   **Amended 2026-11-07 (operator, after reviewing the shipped app): the title tiers are
+   tinted again, colour only.** Untinted, the small titles no longer stood apart from the
+   content under them. `typo-title`, `typo-title-lg` take `--title-ink` (primary-ink 75% into
+   foreground, 60% on light themes); `typo-section-title`, `typo-submodule-header` take
+   `--title-ink-strong` (85% / 70%); a `typo-eyebrow` on a heading element (h2-h6, legend,
+   role=heading) takes `--title-ink`, while eyebrow column heads and field labels stay ink-3.
+   Glows and text-shadows stay gone. The table above reads ink-1 for those rows; the tint wins.
+   Superseded original: "No primary tint on `typo-title*`, `typo-section-title`,
+   `typo-submodule-header` ... This REVERSES the Gate 0/1 (2026-09) call to keep both."
 6. **Instrument header.** `ContentHeader` is one bar: icon, 18px semibold title, mono meta,
    optional one-line summary (the old subtitle, caption/ink-2), actions; hairline under, no
    tinted band; height `--head-h`.
-7. **Density axis.** Console geometry is the default: `--gutter-page` 20px, `--row-h` 40px,
+7. **One density (amended 2026-11-07).** The Console/Comfortable setting was removed after
+   review: the difference did not register, and the separate text-size setting is the real
+   lever. The Console geometry is the only one, named "Normal" where it is labelled; every
+   stored value folds to it (themeStore persist v3). The original axis text follows.
+   Console geometry is the default: `--gutter-page` 20px, `--row-h` 40px,
    `--control-h` 30px, `--control-h-lg` 32px, `--head-h` 44px, `--group-h` 32px.
    `[data-density="comfortable"]` adds air (24 / 48 / 36 / 40 / 52 / 36). Density rebinds
    these roles (and the derived legacy `--density-*`) and **never a type size**. The stored

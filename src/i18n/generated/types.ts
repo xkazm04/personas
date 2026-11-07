@@ -13997,7 +13997,6 @@ export type Translations = {
       theme: string;
       text_size: string;
       brightness: string;
-      density: string;
       timezone: string;
       tabs: {
         limits: string;
@@ -14148,12 +14147,8 @@ export type Translations = {
       high_contrast_hint: string;
       reduce_motion_label: string;
       reduce_motion_hint: string;
-      density: string;
-      density_hint: string;
       density_console_label: string;
-      density_console_desc: string;
       density_comfortable_label: string;
-      density_comfortable_desc: string;
       custom_theme: string;
       custom_theme_active: string;
       custom_theme_hint: string;
@@ -15573,7 +15568,6 @@ export type Translations = {
     interface_mode_description: string;
     language_label: string;
     text_size_label: string;
-    density_label: string;
     dark_label: string;
     light_label: string;
     brightness_label: string;

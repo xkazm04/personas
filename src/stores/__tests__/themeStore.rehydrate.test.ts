@@ -107,33 +107,31 @@ describe('themeStore onRehydrateStorage — customTheme re-injection', () => {
   });
 });
 
-describe('themeStore density — v1 to v2 migration (two choices: Console | Comfortable)', () => {
+describe('themeStore density — one geometry since v3 (Normal)', () => {
   beforeEach(() => {
     localStorage.clear();
     _resetDedupCacheForTests();
     document.documentElement.removeAttribute('data-density');
   });
 
-  async function rehydrateWith(density: string) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { density }, version: 1 }));
+  async function rehydrateWith(density: string, version: number) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { density }, version }));
     await useThemeStore.persist.rehydrate();
     return useThemeStore.getState().density;
   }
 
-  it('cozy (the old air choice) becomes comfortable and applies the air block', async () => {
-    expect(await rehydrateWith('cozy')).toBe('comfortable');
-    expect(document.documentElement.getAttribute('data-density')).toBe('comfortable');
-  });
-
-  it.each(['comfortable', 'compact'])('%s (the old Console geometry) becomes compact', async (old) => {
-    expect(await rehydrateWith(old)).toBe('compact');
+  it.each([
+    ['cozy', 1], ['comfortable', 1], ['compact', 1], ['comfortable', 2], ['compact', 2],
+  ] as const)('%s at v%i becomes compact (Normal)', async (old, version) => {
+    expect(await rehydrateWith(old, version)).toBe('compact');
     expect(document.documentElement.getAttribute('data-density')).toBe('compact');
   });
 
-  it('setDensity folds the retired cozy spelling onto comfortable', () => {
-    useThemeStore.getState().setDensity('cozy');
-    expect(useThemeStore.getState().density).toBe('comfortable');
-    useThemeStore.getState().setDensity('compact');
+  it('setDensity folds every value onto compact', () => {
+    useThemeStore.getState().setDensity('comfortable');
     expect(useThemeStore.getState().density).toBe('compact');
+    useThemeStore.getState().setDensity('cozy');
+    expect(useThemeStore.getState().density).toBe('compact');
+    expect(document.documentElement.getAttribute('data-density')).toBe('compact');
   });
 });
