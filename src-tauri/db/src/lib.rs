@@ -2523,12 +2523,14 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
 
     // Prove the copy is usable before handing it to a test: a torn or truncated
     // copy would otherwise surface as a baffling failure in whichever assertion
-    // touched the database first.
+    // touched the database first. Then the journal `init_db` runs: the mode is
+    // database-wide and the template's is rollback.
     {
         let conn = pool.get()?;
         conn.query_row("SELECT COUNT(*) FROM sqlite_master", [], |r| {
             r.get::<_, i64>(0)
         })?;
+        conn.execute_batch("PRAGMA journal_mode = WAL;")?;
     }
     Ok(pool)
 }
@@ -2972,14 +2974,63 @@ mod boot_tests {
     }
 }
 
+/// The fixture against the boot path, on the one setting a locking question turns
+/// on. Boot runs WAL, so a test on any other journal cannot provoke
+/// `SQLITE_BUSY_SNAPSHOT`, the failure the `Immediate` transactions in this crate
+/// exist to avoid.
+#[cfg(test)]
+mod test_pool_journal_mode_tests {
+    use super::*;
+
+    fn journal_mode(pool: &DbPool) -> Result<String, AppError> {
+        Ok(pool
+            .get()?
+            .query_row("PRAGMA journal_mode", [], |r| r.get("journal_mode"))?)
+    }
+
+    #[test]
+    fn test_pool_opens_in_the_journal_mode_boot_uses() -> Result<(), AppError> {
+        let dir = std::env::temp_dir().join(format!(
+            "personas_journal_mode_test_{}",
+            uuid::Uuid::new_v4()
+        ));
+        let boot = init_db(&dir, None)?;
+        let test_pool = init_test_db()?;
+        assert_eq!(journal_mode(&test_pool)?, journal_mode(&boot)?);
+        drop(boot);
+        let _ = std::fs::remove_dir_all(&dir);
+        Ok(())
+    }
+
+    #[test]
+    fn a_deferred_read_then_write_is_refused_once_a_sibling_commits() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let (reader, writer) = (pool.get()?, pool.get()?);
+        reader
+            .execute_batch("CREATE TABLE seam(x INTEGER NOT NULL); INSERT INTO seam VALUES (1);")?;
+
+        reader.execute_batch("BEGIN DEFERRED")?;
+        let _: i64 = reader.query_row("SELECT x FROM seam", [], |r| r.get("x"))?;
+        writer.execute("UPDATE seam SET x = 2", [])?;
+
+        match reader.execute("UPDATE seam SET x = 3", []) {
+            Err(rusqlite::Error::SqliteFailure(e, _)) => {
+                assert_eq!(e.extended_code, rusqlite::ffi::SQLITE_BUSY_SNAPSHOT);
+            }
+            other => panic!("expected SQLITE_BUSY_SNAPSHOT, got {other:?}"),
+        }
+        reader.execute_batch("ROLLBACK")?;
+        Ok(())
+    }
+}
+
 /// [`ensure_executions_fts`] runs on every production boot and, until now, had
 /// no test anywhere in the crate — `init_test_db` never calls it, so the
 /// backfill it exists for had never actually been executed by a test.
 ///
 /// NOTE (out of scope, recorded so it is not lost): `init_test_db` also differs
-/// from `init_db` by never setting `journal_mode = WAL` and never registering
-/// the CDC/journal connection customizer. Those are separate fidelity gaps
-/// between the test fixture and the real boot path.
+/// from `init_db` by never registering the CDC/journal connection customizer.
+/// That is a separate fidelity gap between the test fixture and the real boot path.
 #[cfg(test)]
 mod executions_fts_tests {
     use super::*;
