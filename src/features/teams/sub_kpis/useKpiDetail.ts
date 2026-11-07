@@ -2,7 +2,7 @@
 // KPIDetailDrawer so the new full-screen KpiDetailModal can reuse the exact same
 // loading (measurements, linked goals, live bindings) and mutations
 // (record-manual / measure-now / pause-resume-archive) without duplicating them.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiBinding } from '@/lib/bindings/DevKpiBinding';
@@ -29,10 +29,21 @@ export function useKpiDetail(kpi: DevKpi) {
   const evaluateKpi = useSystemStore((s) => s.evaluateKpi);
   const updateKpi = useSystemStore((s) => s.updateKpi);
 
-  const [bindings, setBindings] = useState<DevKpiBinding[]>([]);
+  const [rawBindings, setBindings] = useState<DevKpiBinding[]>([]);
+  // Same hazard as the measurements above: a read for the KPI that was open
+  // before this one must not land on this KPI's source section.
+  const kpiIdRef = useRef(kpi.id);
+  kpiIdRef.current = kpi.id;
+  const bindings = useMemo(() => rawBindings.filter((b) => b.kpi_id === kpi.id), [rawBindings, kpi.id]);
 
   const refreshBindings = useCallback(() => {
-    listKpiBindings(kpi.id).then(setBindings).catch((err) => { silentCatch('useKpiDetail:listKpiBindings')(err); setBindings([]); });
+    const requested = kpi.id;
+    listKpiBindings(requested)
+      .then((rows) => { if (kpiIdRef.current === requested) setBindings(rows); })
+      .catch((err) => {
+        silentCatch('useKpiDetail:listKpiBindings')(err);
+        if (kpiIdRef.current === requested) setBindings([]);
+      });
   }, [kpi.id]);
 
   useEffect(() => {
