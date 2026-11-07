@@ -173,7 +173,13 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   const handleReset = useCallback(() => {
     design.reset();
     health.invalidate();
-  }, [design, health]);
+    // Cancelling the preview must not leak this connector's name, captured
+    // values or consent into whatever the next design produces.
+    setCredentialName('');
+    setNegotiatorValues({});
+    oauth.reset();
+    universalOAuth.reset();
+  }, [design, health, oauth, universalOAuth]);
 
   const handleRefine = useCallback(() => {
     const preserved = instruction;
