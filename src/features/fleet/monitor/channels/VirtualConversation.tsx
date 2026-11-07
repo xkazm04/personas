@@ -86,6 +86,7 @@ function VirtualConversationInner<R extends { key: string }>({
   // is a ref because the flip is an EDGE, not a state the render reads.
   const pinned = useRef<string | null>(null);
   const [reserve, setReserve] = useState(0);
+  const lastPin = useRef<string | null>(null);
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -103,9 +104,24 @@ function VirtualConversationInner<R extends { key: string }>({
     fetching.current = false;
   }, [rows.length]);
 
+  // A different conversation is a fresh list: the follow flag, pin, reserve and
+  // unseen count belong to the thread that was open, and an already-loaded
+  // thread (no 0 -> N growth to trigger the follow below) must open at its end.
+  // Declared before the pin effects so a pin armed for the new thread wins.
+  useLayoutEffect(() => {
+    stick.current = true;
+    pinned.current = null;
+    lastPin.current = null;
+    fetching.current = false;
+    prevCount.current = rows.length;
+    setReserve(0);
+    setUnseen(0);
+    if (rows.length > 0) virtualizer.scrollToIndex(rows.length - 1, { align: 'end' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the thread identity only
+  }, [revealKey]);
+
   // Arm the flip. Only the CHANGE matters: re-rendering with the same pinKey
   // must not re-pose a list the reader has since scrolled.
-  const lastPin = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (pinKey === lastPin.current) return;
     lastPin.current = pinKey;
