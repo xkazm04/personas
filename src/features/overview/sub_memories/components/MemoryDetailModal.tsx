@@ -65,7 +65,7 @@ export default function MemoryDetailModal({
               <span className="typo-caption text-ink-2">{formatRelativeTime(memory.created_at)}</span>
             </div>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={onClose}>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -127,8 +127,7 @@ export default function MemoryDetailModal({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Layers className="w-3 h-3 text-status-warning" />
                 {memory.derived_from.map((sourceId) => (
-                  <Tooltip content={sourceId}><span
-                    key={sourceId}
+                  <Tooltip key={sourceId} content={sourceId}><span
                     className="typo-code text-ink-2 border-b border-hair"
                   >
                     {sourceId.slice(0, 8)}
