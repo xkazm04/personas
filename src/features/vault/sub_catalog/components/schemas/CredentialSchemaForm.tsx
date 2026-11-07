@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -105,7 +105,22 @@ export function CredentialSchemaForm({
     );
   }, [config.customHealthcheck, config.serviceTypePrefix, config.title, activeSubType, serviceTypeOverride, nameOverride, name, health, subTypeId, extraState]);
 
+  // CredentialEditForm has no saving state, so a second click while the create
+  // IPCs or the scope picker are in flight would mint a second connector and
+  // credential.
+  const savingRef = useRef(false);
+
   const handleSave = async (fieldValues: Record<string, string>) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    try {
+      await saveOnce(fieldValues);
+    } finally {
+      savingRef.current = false;
+    }
+  };
+
+  const saveOnce = async (fieldValues: Record<string, string>) => {
     const effectiveName = nameOverride ?? name.trim();
     if (!nameOverride && !name.trim()) {
       setError(tx(t.vault.credential_forms.name_required, { label: config.nameLabel }));
