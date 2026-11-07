@@ -250,13 +250,19 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
         }),
         ctrl.signal,
       );
+      // An adapter that ignores the signal still resolves after Cancel; the
+      // user chose consent, so its result must not push the wizard to review.
+      if (ctrl.signal.aborted) {
+        setPhase('consent');
+        return;
+      }
       setExtractedValues(values);
       setIsPartial(partial);
       if (df) setDiscoveredFields(df);
       if (dc) setDiscoveredConnector(dc);
       setPhase('review');
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
+      if (ctrl.signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) {
         setPhase('consent');
         return;
       }
