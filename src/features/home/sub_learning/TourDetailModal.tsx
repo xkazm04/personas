@@ -58,18 +58,18 @@ export function TourDetailModal({
 
         {/* Header */}
         <div className="relative z-10 flex items-start justify-between px-6 py-5 border-b border-hair flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-modal bg-surface-1 border border-hair flex items-center justify-center shadow-elevation-1">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 shrink-0 rounded-modal bg-surface-1 border border-hair flex items-center justify-center shadow-elevation-1">
               <Icon className="w-5 h-5 text-primary" />
             </div>
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 min-w-0">
               {/* Carries the id BaseModal points `aria-labelledby` at — without
                   it the dialog announces as unlabeled. */}
-              <h3 id={`tour-modal-${tour.id}`} className="typo-heading text-ink-1">{tour.title}</h3>
+              <h3 id={`tour-modal-${tour.id}`} className="typo-heading text-ink-1 truncate">{tour.title}</h3>
               <span className="typo-caption">{tx(ht.steps_count, { count: tour.steps.length })}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {isCompleted && (
               <StatusBadge variant="success" icon={<Check className="w-2.5 h-2.5" />}>
                 {ht.done}
