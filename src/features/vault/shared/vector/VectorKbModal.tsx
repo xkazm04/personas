@@ -1,6 +1,7 @@
 import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createLogger } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('vector-kb-modal');
 import { X, FileText, Search, Settings, Brain, Pencil, Check, Table2, AlertCircle, RefreshCw } from 'lucide-react';
@@ -45,6 +46,8 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
   // user no way back (failure-not-empty-success).
   const [loadFailed, setLoadFailed] = useState(false);
   const hasKbRef = useRef(false);
+  // An ingest refresh racing the initial load (or a kb switch) must not let the older answer win.
+  const [loadGen] = useState(createLatestWins);
 
   // Extract kb_id from credential metadata
   const kbId = extractKbId(credential);
@@ -55,17 +58,20 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
     // A refresh after an ingest must not hide the tab that is already painted;
     // only the first (or a retried) load owns the loading state.
     if (!hasKbRef.current) setLoading(true);
+    const token = loadGen.next();
     try {
       const data = await getKnowledgeBase(kbId);
+      if (!loadGen.isCurrent(token)) return;
       hasKbRef.current = true;
       setKb(data);
     } catch (err) {
+      if (!loadGen.isCurrent(token)) return;
       setLoadFailed(true);
       logger.error('Failed to load knowledge base', { error: String(err) });
     } finally {
-      setLoading(false);
+      if (loadGen.isCurrent(token)) setLoading(false);
     }
-  }, [kbId]);
+  }, [kbId, loadGen]);
 
   useEffect(() => {
     if (!kbId) {
