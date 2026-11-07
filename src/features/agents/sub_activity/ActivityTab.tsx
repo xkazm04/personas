@@ -220,6 +220,13 @@ export function ActivityTab() {
     });
     setFailedFeeds([]);
     setTruncatedFeeds([]);
+    // Capability, tag and status values belong to the persona that offered them:
+    // carried onto another persona they match nothing, and the dropdowns that
+    // could clear them may not even render there, so the feed reads as empty.
+    setStatusFilter('all');
+    setUseCaseFilter('all');
+    setTagFilter('all');
+    setStarredOnly(false);
   }, [personaId]);
 
   useEffect(() => { loadData(); }, [loadData]);
