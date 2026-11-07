@@ -84,6 +84,7 @@ export function useTrainingSession(): TrainingSession {
   const [sessionSummary, setSessionSummary] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState(false);
   const answerRef = useRef<HTMLTextAreaElement>(null);
+  const submittingRef = useRef(false);
 
   const savedCount = questions.filter((q) => q.saved).length;
 
@@ -231,7 +232,12 @@ export function useTrainingSession(): TrainingSession {
 
   const handleSubmitAnswer = async () => {
     if (!answerDraft.trim() || !activeTwinId) return;
+    // In-flight guard: a second Enter/click while the first is still saving or
+    // generating a follow-up would record the same answer twice.
+    if (submittingRef.current) return;
     const q = questions[currentIdx]; if (!q) return;
+    submittingRef.current = true;
+    try {
     const trimmedAnswer = answerDraft.trim();
     setAiDrafted(false);
     const updated = [...questions]; updated[currentIdx] = { ...q, answer: trimmedAnswer }; setQuestions(updated);
@@ -258,6 +264,7 @@ export function useTrainingSession(): TrainingSession {
       }
     }
     await advanceOrComplete(updated, currentIdx + 1);
+    } finally { submittingRef.current = false; }
   };
 
   const handleSkipFollowup = async () => {
