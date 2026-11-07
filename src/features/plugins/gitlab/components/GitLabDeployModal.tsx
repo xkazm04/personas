@@ -51,11 +51,6 @@ export function GitLabDeployModal({
     onFetchProjects();
   }, [onFetchProjects]);
 
-  // A success banner describes the deploy it came from, not the next selection.
-  useEffect(() => {
-    setResult(null);
-  }, [selectedPersonaId, selectedProjectId]);
-
   const handleSelectTemplate = async (template: CiCdTemplate) => {
     if (!onCreateFromTemplate || isCreatingFromTemplate) return;
     setIsCreatingFromTemplate(true);

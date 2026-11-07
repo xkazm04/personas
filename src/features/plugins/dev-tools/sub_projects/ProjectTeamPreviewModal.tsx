@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Activity, ChevronDown, ExternalLink, Layers, Users, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -17,6 +17,7 @@ import { listTeamMembers, listTeamConnections, listPipelineRuns } from '@/api/pi
 import { TeamGraphPreview } from './TeamGraphPreview';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -82,18 +83,25 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
   // Re-fetch just the run list. Cheap (single indexed SELECT) — runs only
   // when a PIPELINE_STATUS event for this team arrives, so the steady-state
   // cost when nothing is running is zero.
+  const loadWins = useRef(createLatestWins()).current;
+  const runsWins = useRef(createLatestWins()).current;
   const refetchRuns = useCallback(async () => {
+    const token = runsWins.next();
     try {
       const r = await listPipelineRuns(team.id);
+      if (!runsWins.isCurrent(token)) return;
       setRuns(r.slice(0, RECENT_RUN_LIMIT));
       setLivePulseAt(Date.now());
     } catch (err) {
       silentCatch('features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal:refetchRuns')(err);
     }
-  }, [team.id]);
+  }, [team.id, runsWins]);
 
   useEffect(() => {
     if (!open) return;
+    // A team switch or close while a load is in flight must not land the old
+    // team's members/runs (or clear the new load's spinner).
+    const token = loadWins.next();
     setLoading(true);
     setMembers(null);
     setConnections(null);
@@ -104,18 +112,21 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
       listPipelineRuns(team.id),
     ])
       .then(([m, c, r]) => {
+        if (!loadWins.isCurrent(token)) return;
         setMembers(m);
         setConnections(c);
         setRuns(r.slice(0, RECENT_RUN_LIMIT));
       })
       .catch((err) => {
         silentCatch('features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal:fetch')(err);
+        if (!loadWins.isCurrent(token)) return;
         setMembers([]);
         setConnections([]);
         setRuns([]);
       })
-      .finally(() => setLoading(false));
-  }, [open, team.id]);
+      .finally(() => { if (loadWins.isCurrent(token)) setLoading(false); });
+    return () => { loadWins.next(); runsWins.next(); };
+  }, [open, team.id, loadWins, runsWins]);
 
   // Subscribe to PIPELINE_STATUS while the modal is open. Backend emits this
   // every time a pipeline run transitions (queued → running → completed/failed)
