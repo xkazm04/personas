@@ -158,7 +158,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 value={tagInput}
                 onChange={(e) => { setTagInput(e.target.value); setShowSuggestions(true); }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && tagInput.trim()) addTag(tagInput);
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing && tagInput.trim()) addTag(tagInput);
                   if (e.key === 'Escape') { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }
                 }}
                 onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
