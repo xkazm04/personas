@@ -101,7 +101,7 @@ function SearchChipInputImpl({
         onFocus={() => setBrowsing(true)}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && aiSearchMode && onAiSearchSubmit && inputValue.trim()) {
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing && aiSearchMode && onAiSearchSubmit && inputValue.trim()) {
             e.preventDefault();
             onAiSearchSubmit(inputValue.trim());
           }
