@@ -127,6 +127,9 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
       return;
     }
     let cancelled = false;
+    // The panel stays mounted while another cell is selected: drop the previous
+    // cell's calls so a slow or failed fetch never shows them under the new one.
+    setToolCalls(null);
     labGetToolCalls(resultId, resultKind)
       .then((rows) => {
         if (!cancelled) setToolCalls(rows);
