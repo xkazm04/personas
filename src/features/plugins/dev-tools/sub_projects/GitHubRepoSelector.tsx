@@ -12,6 +12,7 @@ const Github = ({ className }: { className?: string }) => (
 import { listCredentials, healthcheckCredential } from '@/api/vault/credentials';
 import { executeApiRequest } from '@/api/system/apiProxy';
 import { silentCatch } from '@/lib/silentCatch';
+import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import {
   repoPagePath,
   walkRepoPages,
@@ -75,6 +76,15 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Escape closes just the dropdown. Without this the host modal's Escape handler
+  // took the key and the whole project form (with its unsaved edits) closed.
+  useAppKeyboard((e) => {
+    if (e.key !== 'Escape') return false;
+    setOpen(false);
+    setSearch('');
+    return true;
+  }, { enabled: open, priority: 90 });
 
   // Discover the GitHub credential, healthcheck it, fetch repos. Re-runs when
   // the preferred credential changes so the dropdown always lists repositories
