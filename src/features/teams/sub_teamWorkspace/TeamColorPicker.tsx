@@ -43,8 +43,7 @@ export function TeamColorPicker({ value, onChange }: TeamColorPickerProps) {
         const name = t.pipeline[nameKey];
         const isSelected = value === hex;
         return (
-          <Tooltip content={name}><PressSurface
-            key={hex}
+          <Tooltip key={hex} content={name}><PressSurface
             onPress={() => onChange(hex)}
             aria-pressed={isSelected}
           >
