@@ -21,6 +21,7 @@
  * Added 2026-04-08 as part of the LangSmith/Arcade MCP gateway pattern
  * (finding #1 + Phase C follow-up from the /research run on the same date).
  */
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Trash2, Plus, Loader2 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -92,19 +93,23 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
   const [newMemberDisplayName, setNewMemberDisplayName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
+  const [refreshGen] = useState(createLatestWins);
   const refresh = useCallback(async () => {
+    const token = refreshGen.next();
     setIsLoading(true);
     setLoadFailure(null);
     try {
       const memberRows = await listMcpGatewayMembers(credential.id);
+      if (!refreshGen.isCurrent(token)) return;
       setMembers(memberRows);
       if (credentials.length === 0) await fetchCredentials();
     } catch (e) {
+      if (!refreshGen.isCurrent(token)) return;
       setLoadFailure({ raw: e });
     } finally {
-      setIsLoading(false);
+      if (refreshGen.isCurrent(token)) setIsLoading(false);
     }
-  }, [credential.id, credentials.length, fetchCredentials]);
+  }, [credential.id, credentials.length, fetchCredentials, refreshGen]);
 
   useEffect(() => {
     refresh();

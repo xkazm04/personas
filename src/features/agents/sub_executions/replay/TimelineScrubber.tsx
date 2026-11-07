@@ -168,8 +168,6 @@ export function TimelineScrubber({
                       : 'bg-primary/25'
                 }`}
                 style={{ left: `${x}%` }}
-                // The track scrubs on pointerdown; a marker click must only toggle the fork point.
-                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSetForkPoint(isFork ? null : s.step_index);
