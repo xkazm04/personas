@@ -44,6 +44,7 @@ use crate::db::models::{
 use crate::db::repos::communication::alert_rules as alert_repo;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::execution::audit_incidents as incident_repo;
+use crate::db::repos::execution::cost_spike::cost_spike_reading;
 use crate::db::repos::execution::metrics as metrics_repo;
 use crate::engine::event_registry::emit_event_bus;
 use crate::AppState;
@@ -114,9 +115,10 @@ pub struct MetricsSnapshot {
     pub successful_executions: i64,
     pub failed_executions: i64,
     pub total_cost_usd: f64,
-    /// Average daily cost over the spike window (baseline).
+    /// Average daily cost of the active days before today (baseline). 0.0 is no
+    /// reading, and a `cost_spike` rule then declines to evaluate.
     pub avg_daily_cost_usd: f64,
-    /// Cost of the most recent chart day ("today").
+    /// Cost of today, 0.0 on a day nothing ran.
     pub today_cost_usd: f64,
 }
 
@@ -142,11 +144,10 @@ pub fn evaluate_rule(rule: &AlertRule, m: &MetricsSnapshot) -> (bool, f64) {
         }
         AlertMetric::Cost => m.total_cost_usd,
         AlertMetric::CostSpike => {
-            if m.avg_daily_cost_usd > 0.0 {
-                m.today_cost_usd / m.avg_daily_cost_usd
-            } else {
-                0.0
+            if m.avg_daily_cost_usd <= 0.0 {
+                return (false, 0.0); // no reading, which is not a ratio of 0
             }
+            m.today_cost_usd / m.avg_daily_cost_usd
         }
         AlertMetric::Executions => m.total_executions as f64,
     };
@@ -211,20 +212,20 @@ fn snapshot_for_scope(
 ) -> Result<MetricsSnapshot, crate::error::AppError> {
     let summary = metrics_repo::get_summary(pool, Some(SUMMARY_WINDOW_DAYS), persona_id)?;
     let chart = metrics_repo::get_chart_data(pool, Some(SPIKE_WINDOW_DAYS), persona_id)?;
-    let points = &chart.chart_points;
-    let avg_daily = if points.is_empty() {
-        0.0
-    } else {
-        points.iter().map(|p| p.cost).sum::<f64>() / points.len() as f64
-    };
-    let today = points.last().map(|p| p.cost).unwrap_or(0.0);
+    let series: Vec<(&str, f64)> = chart
+        .chart_points
+        .iter()
+        .map(|p| (p.date.as_str(), p.cost))
+        .collect();
+    let today_date = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let spike = cost_spike_reading(&series, &today_date);
     Ok(MetricsSnapshot {
         total_executions: summary.total_executions,
         successful_executions: summary.successful_executions,
         failed_executions: summary.failed_executions,
         total_cost_usd: summary.total_cost_usd,
-        avg_daily_cost_usd: avg_daily,
-        today_cost_usd: today,
+        avg_daily_cost_usd: spike.baseline.unwrap_or(0.0),
+        today_cost_usd: spike.today,
     })
 }
 
@@ -417,6 +418,18 @@ mod tests {
             total_cost_usd: 3.5,
             avg_daily_cost_usd: 1.0,
             today_cost_usd: 2.5,
+        }
+    }
+
+    #[test]
+    fn cost_spike_without_a_baseline_declines_on_any_operator() {
+        let m = MetricsSnapshot {
+            avg_daily_cost_usd: 0.0,
+            ..snapshot()
+        };
+        for op in [AlertOperator::Gt, AlertOperator::Lt] {
+            let (fired, _) = evaluate_rule(&rule(AlertMetric::CostSpike, op, 2.0), &m);
+            assert!(!fired);
         }
     }
 
