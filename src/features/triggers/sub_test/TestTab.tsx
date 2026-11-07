@@ -43,6 +43,8 @@ export function TestTab() {
 
   const [testResult, setTestResult] = useState<PersonaEvent | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  // Synchronous guard: two clicks inside one frame both see isTesting=false.
+  const firingRef = useRef(false);
 
   // Id of the event most recently appended to `recentEvents` by our own test
   // fire. The prefill effect below reruns whenever `recentEvents` changes so
@@ -194,7 +196,7 @@ export function TestTab() {
   // instead of only proving the bus accepted a payload.
   const listeners = useMemo(
     () => listenersForEventType(subscriptions, activeEventType || null, (et) => !!findTemplateByEventType(et), triggers),
-    [subscriptions, activeEventType],
+    [subscriptions, activeEventType, triggers],
   );
 
   const handleTestFire = async () => {
@@ -202,7 +204,8 @@ export function TestTab() {
     // Defense in depth: the disabled `canFire` check prevents this in practice,
     // but keyboard "Enter" inside the textarea or other corner cases could still
     // route here. Refuse to silently drop the payload.
-    if (isInvalidJson) return;
+    if (isInvalidJson || firingRef.current) return;
+    firingRef.current = true;
     setIsTesting(true);
     setTestResult(null);
     try {
@@ -220,6 +223,7 @@ export function TestTab() {
       // The user pressed Publish: a failure is owed to them, not to the console.
       toastCatch("features/triggers/sub_test/TestTab:testFire")(err);
     } finally {
+      firingRef.current = false;
       setIsTesting(false);
     }
   };
