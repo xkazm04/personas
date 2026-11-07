@@ -11901,15 +11901,24 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:40:51.000Z",
-      "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:16:56.749Z",
+      "worker": "faa8a94e-800a-417f-b054-7eea09fbf115",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 targets are personas with distinct workloads, not provider x model x prompt over the same cases",
-          "carriedFrom": "2026-10-09"
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:20 Rows are personas measured on their own traffic, not declared targets run over identical cases."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:8 Cost is a persona's daily burn folded into a weighted composite, not a cost axis across alternative configurations for one workload."
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/useLeaderboardData.ts:6 Here 'benchmark' means a fleet-average reference row, not a frozen eval dataset."
         }
       ],
       "superseded": [
@@ -11919,6 +11928,13 @@
           "evaluatedAt": "2026-10-09T17:25:35.000Z",
           "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
           "reason": "replaced by 7afe9251-781d-42b9-8c30-19c0da4120c9"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks personas doing different jobs by production health signals; no shared case set or model targets, so the subject's precondition (evidence for which model serves one workload) does not hold",
+          "evaluatedAt": "2026-10-16T17:40:51.000Z",
+          "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
+          "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
         }
       ]
     },
@@ -15340,74 +15356,85 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T00:57:12.869Z",
-      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:16:56.749Z",
+      "worker": "faa8a94e-800a-417f-b054-7eea09fbf115",
       "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:4 A single-target preview, not a matrix."
+        },
         {
           "technique": "async-run-queue-with-cancel",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useBuild.ts:131 Cancellation controls persona construction, not a benchmark job."
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:152 This is a one-off draft preview, not a long paid benchmark run."
         },
         {
           "technique": "axes-and-caveats-live-at-the-surface",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useBuild.ts:70 Matrix completeness counts resolved persona-build dimensions rather than benchmark axes."
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:70 Matrix completeness counts resolved persona-build dimensions rather than benchmark axes.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:639 The launch generates a persona build, outside benchmark-matrix spend approval."
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:639 The launch generates a persona build, outside benchmark-matrix spend approval.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "cheapest-sufficient-configuration",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:64 Template suitability uses keyword overlap, not measured cost and paired model-quality evidence."
+          "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:64 Template suitability uses keyword overlap, not measured cost and paired model-quality evidence.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:156 The preview reads one capability's sample input rather than sampling a benchmark corpus."
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:156 The preview reads one capability's sample input rather than sampling a benchmark corpus.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "determinism-stamping",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:202 The pass condition summarizes tool checks, not a reproducible benchmark score."
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:202 The pass condition summarizes tool checks, not a reproducible benchmark score.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "entitlement-exhaustion-is-not-ill-health",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:185 The report tests one draft persona's tools rather than a matrix of plan-reached targets."
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:185 The report tests one draft persona's tools rather than a matrix of plan-reached targets.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "failure-clustering-recommendations",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:234 Refinement submits operator feedback to a build conversation, not benchmark failure-cluster recommendations."
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:234 Refinement submits operator feedback to a build conversation, not benchmark failure-cluster recommendations.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "graded-case-difficulty",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:53 The threshold governs lexical template matching, not case difficulty."
+          "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:53 The threshold governs lexical template matching, not case difficulty.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "handicap-disclosure-in-the-result-row",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:144 The panel retrieves one preview execution's artifacts, not comparative result rows."
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:144 The panel retrieves one preview execution's artifacts, not comparative result rows.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "sampling-knobs-are-axes-not-strings",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useBuild.ts:97 The option selects build interaction mode rather than a benchmark reasoning-effort axis."
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:97 The option selects build interaction mode rather than a benchmark reasoning-effort axis.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "self-hosted-residency-is-part-of-the-target",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:581 The launch creates a persona record rather than admitting a local model to a benchmark."
-        },
-        {
-          "technique": "target-matrix-runs",
-          "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:189 Stored results are per-tool draft checks rather than provider/model/prompt-by-case measurements."
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:581 The launch creates a persona record rather than admitting a local model to a benchmark.",
+          "carriedFrom": "2026-10-17"
         }
       ],
       "superseded": [
@@ -15417,6 +15444,13 @@
           "evaluatedAt": "2026-10-10T02:06:36.108Z",
           "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
           "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:137 Recursive searches found neither benchmark nor prompt_variant, and the opened simulation call previews one selected draft capability while lifecycle testing checks tools rather than comparing model targets.",
+          "evaluatedAt": "2026-10-17T00:57:12.869Z",
+          "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
+          "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
         }
       ]
     },
@@ -15452,74 +15486,86 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T00:57:12.869Z",
-      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:16:56.749Z",
+      "worker": "faa8a94e-800a-417f-b054-7eea09fbf115",
       "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:77 The matrix is KPI category × context, not a declared target matrix."
+        },
         {
           "technique": "async-run-queue-with-cancel",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/composeTask.ts:76 The background task composes KPI measurement machinery, not benchmark cells."
+          "evidence": "src/features/teams/sub_factory/composeTask.ts:76 The background task composes KPI measurement machinery, not benchmark cells.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "axes-and-caveats-live-at-the-surface",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:26 These columns describe project KPI categories, not benchmark target axes."
+          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:26 These columns describe project KPI categories, not benchmark target axes.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/MeasureSetupModal.tsx:145 The paid activity configures a KPI measurement; it is not a comparative benchmark matrix."
+          "evidence": "src/features/teams/sub_factory/MeasureSetupModal.tsx:145 The paid activity configures a KPI measurement; it is not a comparative benchmark matrix.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "cheapest-sufficient-configuration",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryModel.ts:177 The aggregate computes KPI health rather than recommending a model configuration."
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:177 The aggregate computes KPI health rather than recommending a model configuration.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryData.tsx:282 The data source loads KPI measurement history, not evaluation-case samples."
+          "evidence": "src/features/teams/sub_factory/factoryData.tsx:282 The data source loads KPI measurement history, not evaluation-case samples.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "determinism-stamping",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryPrimitives.tsx:33 The visualization consumes numerical series rather than benchmark generation/judging verdicts."
+          "evidence": "src/features/teams/sub_factory/factoryPrimitives.tsx:33 The visualization consumes numerical series rather than benchmark generation/judging verdicts.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "entitlement-exhaustion-is-not-ill-health",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryData.tsx:276 This failure path concerns loading project KPIs, not a plan-reached benchmark target."
+          "evidence": "src/features/teams/sub_factory/factoryData.tsx:276 This failure path concerns loading project KPIs, not a plan-reached benchmark target.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "failure-clustering-recommendations",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryModel.ts:264 Attention items identify critical project KPIs rather than rubric failure clusters."
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:264 Attention items identify critical project KPIs rather than rubric failure clusters.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "graded-case-difficulty",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryModel.ts:165 Tiers encode KPI priority, not ordered evaluation-case difficulty."
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:165 Tiers encode KPI priority, not ordered evaluation-case difficulty.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "handicap-disclosure-in-the-result-row",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/KpiConsole.tsx:60 The rationale explains a KPI derivation decision, not a comparative workload concession."
+          "evidence": "src/features/teams/sub_factory/KpiConsole.tsx:60 The rationale explains a KPI derivation decision, not a comparative workload concession.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "sampling-knobs-are-axes-not-strings",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/useAddKpi.ts:106 The declaration configures a KPI's measurement and cadence, not model sampling settings."
+          "evidence": "src/features/teams/sub_factory/useAddKpi.ts:106 The declaration configures a KPI's measurement and cadence, not model sampling settings.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "self-hosted-residency-is-part-of-the-target",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:55 The comparison data consists of project-readiness passports rather than locally served model targets."
-        },
-        {
-          "technique": "target-matrix-runs",
-          "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryData.tsx:286 The matrix assembles projects, code contexts, and KPIs rather than target-by-case results."
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:55 The comparison data consists of project-readiness passports rather than locally served model targets.",
+          "carriedFrom": "2026-10-17"
         }
       ],
       "superseded": [
@@ -15529,6 +15575,13 @@
           "evaluatedAt": "2026-10-10T02:06:36.108Z",
           "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
           "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:77 Recursive searches found neither benchmark nor prompt_variant, while the opened matrix declares KPI-category columns and the scorecard search hit describes project readiness rather than provider comparison.",
+          "evaluatedAt": "2026-10-17T00:57:12.869Z",
+          "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
+          "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
         }
       ]
     },
@@ -15537,74 +15590,86 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T00:57:12.869Z",
-      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:16:56.749Z",
+      "worker": "faa8a94e-800a-417f-b054-7eea09fbf115",
       "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:86 The use-case × context membership grid is not a target matrix over shared cases."
+        },
         {
           "technique": "async-run-queue-with-cancel",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useUseCases.ts:109 The background operation scans project features, not benchmark cases."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useUseCases.ts:109 The background operation scans project features, not benchmark cases.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "axes-and-caveats-live-at-the-surface",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:100 Grid columns represent active use cases, not benchmark target axes."
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:100 Grid columns represent active use cases, not benchmark target axes.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:131 The hook reads existing tracing data rather than initiating a paid benchmark matrix."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:131 The hook reads existing tracing data rather than initiating a paid benchmark matrix.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "cheapest-sufficient-configuration",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:92 Cost is attributed to source contexts rather than used to select a sufficient model."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:92 Cost is attributed to source contexts rather than used to select a sufficient model.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useUseCases.ts:48 The fetched rows describe project features, not production-derived evaluation cases."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useUseCases.ts:48 The fetched rows describe project features, not production-derived evaluation cases.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "determinism-stamping",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:90 Scan completion refreshes source-context groups rather than publishing a benchmark verdict."
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:90 Scan completion refreshes source-context groups rather than publishing a benchmark verdict.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "entitlement-exhaustion-is-not-ill-health",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:159 The error feed retrieves Sentry issues, not terminal refusals from benchmark targets."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:159 The error feed retrieves Sentry issues, not terminal refusals from benchmark targets.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "failure-clustering-recommendations",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:75 Errors are attributed by source context rather than clustered from per-case rubric scores."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:75 Errors are attributed by source context rather than clustered from per-case rubric scores.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "graded-case-difficulty",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useCaseKind.ts:15 Use-case kinds classify software features rather than ordered evaluation difficulty."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useCaseKind.ts:15 Use-case kinds classify software features rather than ordered evaluation difficulty.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "handicap-disclosure-in-the-result-row",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:138 The aggregation sums observed feature spend rather than publishing comparative workload measurements."
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:138 The aggregation sums observed feature spend rather than publishing comparative workload measurements.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "sampling-knobs-are-axes-not-strings",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx:72 The authored setting selects manual KPI measurement, not model sampling controls."
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx:72 The authored setting selects manual KPI measurement, not model sampling controls.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "self-hosted-residency-is-part-of-the-target",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx:36 Pinning applies to a source-code context, not model weights or accelerator residency."
-        },
-        {
-          "technique": "target-matrix-runs",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/ContextGroupRowsStats.tsx:64 The cross-tab counts feature-to-context memberships rather than target-by-case results."
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx:36 Pinning applies to a source-code context, not model weights or accelerator residency.",
+          "carriedFrom": "2026-10-17"
         }
       ],
       "superseded": [
@@ -15614,6 +15679,13 @@
           "evaluatedAt": "2026-10-10T02:06:36.108Z",
           "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
           "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:86 Recursive searches found neither benchmark nor prompt_variant, and the opened ledger maps feature membership across source contexts while runtime hooks project existing spend and Sentry issues rather than execute comparative benchmarks.",
+          "evaluatedAt": "2026-10-17T00:57:12.869Z",
+          "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
+          "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
         }
       ]
     },
@@ -15622,15 +15694,14 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:32.000Z",
-      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:16:56.749Z",
+      "worker": "faa8a94e-800a-417f-b054-7eea09fbf115",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:14 lazy-loaded subtabs; no benchmark run, target or scorecard is rendered here",
-          "carriedFrom": "2026-10-10"
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:14 The shell routes to dashboard subtabs. It declares no benchmark targets."
         }
       ],
       "superseded": [
@@ -15640,6 +15711,13 @@
           "evaluatedAt": "2026-10-10T02:06:36.108Z",
           "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
           "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 Overview shell lazy-loads subtabs, and the health popup covers install/config health; a grep of all 20 context paths finds no benchmark, scorecard or arena code, so the precondition (benchmark evidence for a model choice) does not hold",
+          "evaluatedAt": "2026-10-21T12:44:32.000Z",
+          "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+          "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
         }
       ]
     },

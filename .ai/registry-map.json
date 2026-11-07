@@ -24244,12 +24244,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 Overview shell lazy-loads subtabs, and the health popup covers install/config health; a grep of all 20 context paths finds no benchmark, scorecard or arena code, so the precondition (benchmark evidence for a model choice) does not hold",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 This context is the Overview routing shell, dashboard widgets and the system-health/install panel; searches of overview/components for benchmark, prompt_variant, promptVariant, reasoningEffort and dataset_version returned zero files, so no cross-provider benchmark operation lives here.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
+          "revisionsBehind": 1
         },
         {
           "subject": "background-jobs",
@@ -25242,12 +25241,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks personas doing different jobs by production health signals; no shared case set or model targets, so the subject's precondition (evidence for which model serves one workload) does not hold",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:20 The leaderboard ranks personas doing different jobs on live production health signals, with no shared case set and no provider/model/prompt-variant targets; searches of sub_leaderboard for provider, prompt_variant, promptVariant and reasoningEffort found nothing, and its 'benchmark' hits are only a fleet-average reference row (useLeaderboardData.ts:6), so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -27167,12 +27165,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:137 Recursive searches found neither benchmark nor prompt_variant, and the opened simulation call previews one selected draft capability while lifecycle testing checks tools rather than comparing model targets.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:4 The simulate panel dry-runs one selected capability of one draft persona (simulateBuildDraft at :152) with its configured model, not the same cases across competing targets; searches of components/matrix for benchmark, prompt_variant, promptVariant, reasoningEffort and dataset_version returned zero files.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
+          "revisionsBehind": 1
         },
         {
           "subject": "translation-pipeline-topology",
@@ -29456,13 +29453,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:86 Recursive searches found neither benchmark nor prompt_variant, and the opened ledger maps feature membership across source contexts while runtime hooks project existing spend and Sentry issues rather than execute comparative benchmarks.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:86 The ledger's columns are use-cases and its cells are context membership, a codebase map rather than a model comparison; searches of sub_context for benchmark, provider, prompt_variant, promptVariant and reasoningEffort returned zero files.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "standards-layered-runtime",
@@ -38566,12 +38562,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:77 Recursive searches found neither benchmark nor prompt_variant, while the opened matrix declares KPI-category columns and the scorecard search hit describes project readiness rather than provider comparison.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:77 The Factory matrix's columns are project KPI categories over code contexts, not provider × model × prompt-variant targets; searches of sub_factory for benchmark, prompt_variant, promptVariant, reasoningEffort and dataset_version found nothing (its 'provider' hits are React context providers and one CI provider), so no benchmark evidence for a model choice is produced here.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-gates",
