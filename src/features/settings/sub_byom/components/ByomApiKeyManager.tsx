@@ -13,7 +13,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
 import { secretSafeErrorCode } from '../libs/secretSafeError';
-import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger('ByomApiKeyManager');
 
