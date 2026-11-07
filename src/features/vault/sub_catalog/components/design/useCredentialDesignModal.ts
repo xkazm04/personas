@@ -91,7 +91,7 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && orch.phase === 'idle') {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && orch.phase === 'idle') {
       e.preventDefault();
       orch.start();
     }

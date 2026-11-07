@@ -88,7 +88,7 @@ export function DonePhase({
               value={refinementText}
               onChange={(e) => setRefinementText(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   handleRefineSubmit();
                 }
