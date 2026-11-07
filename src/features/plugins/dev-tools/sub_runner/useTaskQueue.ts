@@ -5,6 +5,7 @@ import { useLayeredList, type LayeredPage } from '@/hooks/utility/data/useLayere
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import * as devApi from '@/api/devTools/devTools';
 import type { DevTask } from '@/lib/bindings/DevTask';
 
@@ -135,6 +136,7 @@ export function useTaskQueue({ projectId, statusFilter, enabled = true }: UseTas
   const filterKey = `${projectId ?? 'all'}::${statusFilter}`;
 
   const [counts, setCounts] = useState<TaskCounts>({});
+  const countsLatest = useRef(createLatestWins()).current;
   const [contextWarnings, setContextWarnings] = useState<Record<string, string[]>>({});
 
   // Patches applied since the last server page. Re-applied whenever the
@@ -166,9 +168,12 @@ export function useTaskQueue({ projectId, statusFilter, enabled = true }: UseTas
 
   const refreshCounts = useCallback(() => {
     if (!enabled) return;
+    // Latest wins: a slow counts read for the previous project must not
+    // overwrite the filter chips after the project switched.
+    const token = countsLatest.next();
     devApi
       .tasksPage(projectId, undefined, 1)
-      .then((page) => setCounts(page.counts))
+      .then((page) => { if (countsLatest.isCurrent(token)) setCounts(page.counts); })
       .catch(silentCatch('features/plugins/dev-tools/sub_runner/useTaskQueue:counts'));
   }, [projectId, enabled]);
 
