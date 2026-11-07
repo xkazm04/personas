@@ -128,6 +128,16 @@ export default function GeneratedReviewsTab({
     difficultyFilter, setupFilter,
   );
 
+  // Keep compare selections current across refresh/rebuild, and drop a
+  // template from the tray once it is deleted so the tray never compares a ghost.
+  const { refreshFrom: refreshCompare, remove: removeFromCompare } = compare;
+  useEffect(() => { refreshCompare(gallery.allItems); }, [gallery.allItems, refreshCompare]);
+  const { handleDeleteReview } = actions;
+  const handleDeleteAndUncompare = useCallback(async (id: string) => {
+    await handleDeleteReview(id);
+    removeFromCompare(id);
+  }, [handleDeleteReview, removeFromCompare]);
+
   const compareColumns = useMemo(
     () => buildComparison(compare.selected, actions.connectorReadiness),
     [compare.selected, actions.connectorReadiness],
@@ -326,8 +336,8 @@ export default function GeneratedReviewsTab({
           modals={modals}
           onToggleExpand={handleToggleExpand}
           onViewFlows={onViewFlows}
-          onDeleteReview={actions.handleDeleteReview}
-          onAddCredential={actions.handleAddCredential}
+          onDeleteReview={handleDeleteAndUncompare}
+onAddCredential={actions.handleAddCredential}
           rebuildReviewId={rebuild.reviewId}
           rebuildPhase={rebuild.phase}
           onResetRebuild={handleResetRebuild}
@@ -360,7 +370,7 @@ export default function GeneratedReviewsTab({
           onClose={() => modals.close('detail')}
           review={modals.find('detail')?.review ?? null}
           onAdopt={(review) => modals.open({ type: 'adopt', review })}
-          onDelete={actions.handleDeleteReview}
+          onDelete={handleDeleteAndUncompare}
           onViewFlows={(review) => {
             modals.close('detail');
             onViewFlows(review);
