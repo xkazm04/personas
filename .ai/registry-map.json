@@ -17416,14 +17416,10 @@
           "revision": 5,
           "changedAt": "2026-10-23",
           "confidence": "probable",
+          "source": "retained",
           "state": "conformant",
           "evidence": "src/hooks/execution/usePersonaExecution.ts:389 execution output/status are produced by the native runner (src-tauri/src/engine/runner/mod.rs:737) and the hooks only subscribe on the local bus and render - no connection, reconnect or backoff state lives in the throttleable view",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
-          "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-21"
         },
         {
           "subject": "hitl-approval",

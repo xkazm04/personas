@@ -37280,56 +37280,74 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:55:31.762Z",
-      "worker": "8d819755-f96f-4df7-96ca-6e716addef91",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T03:30:41.403Z",
       "techniques": [
         {
           "technique": "native-owned-stream",
-          "verdict": "realized",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 view subscribes to EXECUTION_STATUS emitted natively (src-tauri/src/engine/runner/mod.rs:737); disconnect only unlistens, reload replays the persisted transcript instead of holding a stream"
+          "verdict": "conformant",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 The view is a pure renderer of the local bus, and the background-execution listener catches runs the user is not looking at. Display buffers have hard caps (MAX_STREAM_LINES=5000 at useCorrelatedCliStream.ts:78)."
         },
         {
           "technique": "native-side-owns-the-target-set",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:20 the only command this context calls is a read (getExecutionLogLines) - information only, the technique discriminator excludes it"
-        },
-        {
-          "technique": "capability-presence-contract",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the context uses only the event bus, which every host the app ships to provides; no host-specific capability is reached"
-        },
-        {
-          "technique": "non-stealing-overlay",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
-        },
-        {
-          "technique": "query-transparent-overlay",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+          "verdict": "conformant",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:57 Log replay sends an execution id plus the caller persona. The native get_execution_log_lines looks up the execution, checks its owner, and resolves the log itself."
         },
         {
           "technique": "observer-perturbation",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:86 The traces read the product's own runner events. Liveness (silence_ms) is computed by the native owner and only displayed here. There is no structural query over a foreign application."
+        },
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:2 The only native surface used is the event bus, which every host this shell targets provides; there is no single-host capability to classify."
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:164 Output goes into React state rendered in the app's own views; these hooks create no native surface."
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "layout-resolved-input-synthesis",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "unexported-capability-ladder",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "permission-gate-vector",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol",
+          "carriedFrom": "2026-10-21"
         }
-      ]
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 execution output/status are produced by the native runner (src-tauri/src/engine/runner/mod.rs:737) and the hooks only subscribe on the local bus and render - no connection, reconnect or backoff state lives in the throttleable view",
+          "evaluatedAt": "2026-10-21T17:55:31.762Z",
+          "worker": "8d819755-f96f-4df7-96ca-6e716addef91",
+          "reason": "replaced by 9a9f73df-3f58-4889-80fc-314cae8afb00"
+        }
+      ],
+      "withdrawn": {
+        "worker": "9a9f73df-3f58-4889-80fc-314cae8afb00",
+        "state": "conformant",
+        "at": "2026-11-07T03:31:18.347819+00:00",
+        "reason": "reviewer (sonnet): The technique anchored at usePersonaExecution.ts:2 says the event bus is the only native surface used. But usePersonaExecution.ts:20 imports getExecutionLogLines from '@/api/agents/executions', which calls the native get_execution_log_lines command. The seat's own technique at line 57 says so too, s"
+      }
     },
     "b0cf3902-0739-40a8-8c76-ae594f41421b/native-shell-integration": {
       "context": "plugins-dev-tools-context",
@@ -45757,6 +45775,21 @@
           "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:87 Escape comes from the desktop keyboard into the document; no host keeps keys for itself"
         }
       ]
+    },
+    "f838d49f-2928-441e-ac8d-f6e6c412b262/native-shell-integration": {
+      "context": "shared-glyph",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T03:30:41.403Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "9a9f73df-3f58-4889-80fc-314cae8afb00",
+        "state": "not-applicable",
+        "at": "2026-11-07T03:31:18.544351+00:00",
+        "reason": "reviewer (sonnet): The anchor index.ts:12 is only an export line, so it does not show that the context never reaches the native process. The context imports @/lib/connectors/connectorMeta, @/stores/themeStore and @/hooks/utility/interaction/useMotion, and I could not confirm those never reach the native process. It al"
+      }
     }
   }
 }
