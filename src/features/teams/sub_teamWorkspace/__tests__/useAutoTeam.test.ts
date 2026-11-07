@@ -94,3 +94,22 @@ describe('useAutoTeam apply', () => {
     expect(result.current.connectionCount).toBe(1);
   });
 });
+
+describe('useAutoTeam suggest', () => {
+  it('a suggestion superseded by reset + a new suggest never lands', async () => {
+    let releaseOld: (v: unknown) => void = () => {};
+    const NEW_BP = { ...BLUEPRINT, description: 'newer' };
+    api.suggestTopologyLlm
+      .mockImplementationOnce(() => new Promise((r) => { releaseOld = r; }))
+      .mockResolvedValueOnce(NEW_BP);
+    const { result } = renderHook(() => useAutoTeam());
+    act(() => result.current.setQuery('first'));
+    act(() => { result.current.suggest(); });
+    act(() => result.current.reset());
+    act(() => result.current.setQuery('second'));
+    await act(async () => { result.current.suggest(); });
+    await waitFor(() => expect(result.current.blueprint?.description).toBe('newer'));
+    await act(async () => { releaseOld(BLUEPRINT); });
+    expect(result.current.blueprint?.description).toBe('newer');
+  });
+});

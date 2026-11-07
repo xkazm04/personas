@@ -8,6 +8,7 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { silentCatch } from '@/lib/silentCatch';
 import { classifyUnknownErrorFull } from '@/lib/errors/errorPipeline';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 
 export type AutoTeamPhase =
@@ -62,10 +63,15 @@ export function useAutoTeam(): AutoTeamState {
   // 'previewing' and would otherwise both run a full team-creation flow,
   // orphaning the first team. A ref flips synchronously, before any re-render.
   const applyingRef = useRef(false);
+  // suggest() is async and reset() only flips cancelledRef, which the next suggest()
+  // clears again: a reset-then-resuggest let the OLD answer land after the new one.
+  // A latest-wins slot makes every superseded or reset suggestion inert.
+  const suggestGuard = useRef(createLatestWins());
 
   const suggest = useCallback(async () => {
     if (!query.trim()) return;
     cancelledRef.current = false;
+    const token = suggestGuard.current.next();
     setError(null);
     setBlueprint(null);
     setPhase('suggesting');
@@ -77,7 +83,7 @@ export function useAutoTeam(): AutoTeamState {
       } catch {
         bp = await suggestTopology(query.trim());
       }
-      if (cancelledRef.current) return;
+      if (cancelledRef.current || !suggestGuard.current.isCurrent(token)) return;
 
       if (bp.members.length === 0) {
         setError(t.pipeline.auto_team_no_match);
@@ -88,7 +94,7 @@ export function useAutoTeam(): AutoTeamState {
       setBlueprint(bp);
       setPhase('previewing');
     } catch (err) {
-      if (cancelledRef.current) return;
+      if (cancelledRef.current || !suggestGuard.current.isCurrent(token)) return;
       silentCatch('useAutoTeam:preview')(err);
       setError(classifyUnknownErrorFull(err).friendly.message);
       setPhase('error');
@@ -276,6 +282,7 @@ export function useAutoTeam(): AutoTeamState {
 
   const reset = useCallback(() => {
     cancelledRef.current = true;
+    suggestGuard.current.next();
     applyingRef.current = false;
     setPhase('idle');
     setQuery('');
