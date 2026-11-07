@@ -270,7 +270,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={classes}
         style={mergedStyle}
         aria-busy={loading || ariaBusy || undefined}
-        aria-pressed={pressed}
+        // `pressed` wins; otherwise a caller's own aria-pressed (in `rest`) survives instead of
+        // being overwritten with undefined by this later attribute.
+        aria-pressed={pressed ?? rest['aria-pressed']}
         onClick={onClick ? handleClick : undefined}
       >
         {loading && isIconOnly ? (

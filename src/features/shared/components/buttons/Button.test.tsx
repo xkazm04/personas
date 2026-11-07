@@ -177,3 +177,14 @@ describe('Button double-submit guard', () => {
     expect(stop).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Button aria-pressed', () => {
+  it('keeps a caller aria-pressed when the pressed prop is not set', () => {
+    render(<Button aria-pressed={true}>Bold</Button>);
+    expect(screen.getByRole('button').getAttribute('aria-pressed')).toBe('true');
+  });
+  it('lets the pressed prop win over a caller aria-pressed', () => {
+    render(<Button pressed={false} aria-pressed={true}>Bold</Button>);
+    expect(screen.getByRole('button').getAttribute('aria-pressed')).toBe('false');
+  });
+});
