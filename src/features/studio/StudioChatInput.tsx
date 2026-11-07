@@ -14,6 +14,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
@@ -126,10 +127,16 @@ export default function StudioChatInput({
   // (Claude Code reads the image). File path, not clipboard — Windows paste is broken.
   const pickReference = async () => {
     if (working) return;
-    const path = await open({
-      multiple: false,
-      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
-    });
+    let path: Awaited<ReturnType<typeof open>>;
+    try {
+      path = await open({
+        multiple: false,
+        filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
+      });
+    } catch (e) {
+      silentCatch('features/studio/StudioChatInput:pickReference')(e);
+      return;
+    }
     if (typeof path === 'string') {
       void sendTurn(
         activeId,
