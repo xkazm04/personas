@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import { storeBus, AccessorKey } from '@/lib/storeBus';
 import { getSlaDashboard } from '@/api/overview/sla';
 import { getHealthBundle } from '@/api/overview/health';
 import { log } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
 // IPC rejects with a serialized AppError OBJECT, never an Error, so the old
 // `instanceof Error ? .message : String(x)` ladder put "[object Object]" in the banner.
 import { extractMessage } from '@/lib/silentCatch';
@@ -93,7 +94,11 @@ export function useStatusPageData() {
   const [healingError, setHealingError] = useState<string | null>(null);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
 
+  // Poll, visibility-return and manual refresh can overlap; only the newest wins.
+  const latest = useRef(createLatestWins()).current;
+
   const loadData = useCallback(async () => {
+    const token = latest.next();
     setLoading(true);
     setError(null);
     try {
@@ -105,6 +110,7 @@ export function useStatusPageData() {
         getSlaDashboard(30),
         getHealthBundle(30, 200),
       ]);
+      if (!latest.isCurrent(token)) return; // superseded by a newer load
 
       if (slaResult.status === 'fulfilled') {
         setSlaStats(slaResult.value.persona_stats);
@@ -139,13 +145,14 @@ export function useStatusPageData() {
 
       setLastRefreshedAt(Date.now());
     } catch (err) {
+      if (!latest.isCurrent(token)) return;
       const msg = extractMessage(err);
       log.warn('useStatusPageData', 'Failed to load status page data', { error: msg });
       setError(msg);
     } finally {
-      setLoading(false);
+      if (latest.isCurrent(token)) setLoading(false);
     }
-  }, [fetchExecutionDashboard]);
+  }, [fetchExecutionDashboard, latest]);
 
   // Initial load + 60s auto-refresh while the tab is visible. Without this
   // the status page is a permanent snapshot from mount time — its entire
