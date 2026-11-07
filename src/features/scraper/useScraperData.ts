@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   deleteScraperConfig,
@@ -63,6 +63,7 @@ export function useScraperData(): ScraperData {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
+  const runningRef = useRef(new Set<string>());
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -105,6 +106,10 @@ export function useScraperData(): ScraperData {
 
   const run = useCallback(
     async (id: string) => {
+      // In-flight guard: a second click on Run (or the same scrape started from
+      // another variant) while one is running would start a duplicate extract.
+      if (runningRef.current.has(id)) return null;
+      runningRef.current.add(id);
       setRunningId(id);
       try {
         const summary = await runScraperConfig(id);
@@ -114,6 +119,7 @@ export function useScraperData(): ScraperData {
         toastCatch('scraper action')(e);
         return null;
       } finally {
+        runningRef.current.delete(id);
         setRunningId(null);
       }
     },
