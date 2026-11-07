@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   History,
   RotateCcw,
@@ -46,6 +46,8 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
   const setupBranches = useSystemStore((s) => s.gitlabSetupPersonaBranches);
   const rollbackPersona = useSystemStore((s) => s.gitlabRollbackPersona);
 
+  const rollingBackRef = useRef(false);
+
   const loadVersions = useCallback(() => {
     if (projectId && selectedPersonaName) {
       fetchVersions(projectId, selectedPersonaName);
@@ -54,19 +56,26 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
   }, [projectId, selectedPersonaName, fetchVersions, fetchBranches]);
 
   useEffect(() => {
+    // Tag names (v1.0.0...) repeat across projects: an armed Confirm must not
+    // survive a project or persona switch and fire against the new list.
+    setConfirmRollback(null);
     loadVersions();
   }, [loadVersions]);
 
   const handleRollback = async (version: GitLabPersonaVersion) => {
-    if (!projectId || !selectedPersonaName) return;
+    if (!projectId || !selectedPersonaName || loading) return;
     if (confirmRollback !== version.tagName) {
       setConfirmRollback(version.tagName);
       return;
     }
+    if (rollingBackRef.current) return;
+    rollingBackRef.current = true;
     try {
       await rollbackPersona(projectId, selectedPersonaName, version.tagName);
       setConfirmRollback(null);
-    } catch (err) { silentCatch("features/plugins/gitlab/components/GitOpsVersionHistory:catch1")(err); }
+    } catch (err) { silentCatch("features/plugins/gitlab/components/GitOpsVersionHistory:catch1")(err); } finally {
+      rollingBackRef.current = false;
+    }
   };
 
   const handleSetupBranches = async () => {
@@ -214,7 +223,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                   key={version.tagName}
                   version={version}
                   isConfirming={confirmRollback === version.tagName}
-                  rollingBack={rollingBack}
+                  rollingBack={rollingBack || loading}
                   onRollback={() => handleRollback(version)}
                   onCancelRollback={() => setConfirmRollback(null)}
                 />
@@ -331,6 +340,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
               <Button
                 type="button"
                 onClick={onRollback}
+                disabled={rollingBack}
                 tooltip={tx(t.gitlab.rollback_to_version, { version: version.version })}
                 variant="ghost"
                 size="sm"
