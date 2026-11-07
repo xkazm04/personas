@@ -80,6 +80,13 @@ export function CredentialSchemaForm({
   const activeSubType = (config.subTypes.find((st) => st.id === subTypeId) ?? config.subTypes[0])!;
   const hasHealthcheck = !!activeSubType.healthcheck || !!config.customHealthcheck;
 
+  // Extra fields feed the healthcheck (customHealthcheck reads extraState), so
+  // an edit makes the previous verdict stale just like a field edit does.
+  const setExtraStateAndInvalidate = useCallback<typeof setExtraState>((u) => {
+    setExtraState(u);
+    health.invalidate();
+  }, [health]);
+
   const handleSubTypeChange = useCallback((id: string) => {
     setSubTypeId(id);
     health.invalidate();
@@ -249,7 +256,7 @@ export function CredentialSchemaForm({
       )}
 
       {config.extraFields?.map((ef) => (
-        <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraState} />
+        <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraStateAndInvalidate} />
       ))}
 
       {error && <p id="schema-form-error" role="alert" className="typo-body text-status-error">{error}</p>}
