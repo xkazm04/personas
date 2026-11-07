@@ -1,0 +1,125 @@
+{
+ "schema": "conform-run/1",
+ "worker": "1c8d130b-7199-4fd6-af63-f1835ddc82be",
+ "subject": "agent-cli-transport",
+ "evaluatedAt": "2026-11-07T03:01:22.025372+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "workspace-governance",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:314 run_standards_scan builds its own spawn from headless_claude_args instead of going through the spawn_headless_claude door, and never calls force_subscription_auth. A metered Anthropic key in the app env therefore bills every standards scan, and the scan runs with skip-permissions in the project root: a scanner with an editor's stance.",
+   "techniques": [
+    {
+     "technique": "subscription-auth-selection",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:329 Only the env_removals from build_cli_args are applied (CLAUDECODE / DISABLE_PROMPT_CACHING*), with no ANTHROPIC_* key. Compare cli_process.rs:516, where the shared door bakes the strip in. The strip lives at the call site, and this call site forgot it."
+    },
+    {
+     "technique": "permission-stance-enforcement",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 The standards scan is a readonly-scan by purpose. It inherits the full-bypass flag through headless_claude_args and runs with current_dir set to the repo root, with no plan mode, tool allowlist or write denylist."
+    },
+    {
+     "technique": "output-normalization",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:69 NDJSON lines go through a typed envelope (FindingEnvelope), and non-envelope lines are skipped. That is a partial realization: I did not check how in-envelope error subtypes are handled."
+    }
+   ]
+  },
+  {
+   "context": "hooks-utility-data",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/utility/data/useCliReadiness.ts:40 Every probe failure that is not a missing binary (init timeout, EOF, a non-init transcript) collapses into 'no_session', so an unknown probe result renders as a confident 'sign in'. The status vocabulary has no unknown value at all.",
+   "techniques": [
+    {
+     "technique": "availability-probe",
+     "verdict": "deviation",
+     "evidence": "src/hooks/utility/data/useCliReadiness.ts:5 Installed and authorized are split (good), but the result has no unknown state. Line 40 maps unclassified failures to unauthorized, against unknown-is-not-a-value."
+    },
+    {
+     "technique": "fallback-ladder",
+     "verdict": "deviation",
+     "evidence": "src/hooks/utility/data/useEngineCapabilities.ts:71 Installed-ness for operation gating comes from healthCheckLocal's claude_cli item, which tries candidate names in health.rs, not from the spawn-path probe that useCliReadiness uses (probeCliCapabilities, line 62). These are two predicates for one fact, so the shell gate and the operation gate can disagree."
+    }
+   ]
+  },
+  {
+   "context": "stores-util",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/agentStore.ts:43 The composed store persists only the host's chat-session row id, selected persona and chat mode, and spawns nothing. Searching src/stores for ANTHROPIC_API_KEY, dangerously-skip-permissions, force_subscription_auth, output-format, stream-json and spawn_headless found zero files, so no technique of the subject has a seam here. Child thread custody (claudeSessionId) lives in other slices, outside this context's files.",
+   "techniques": [],
+   "absenceTerms": [
+    "ANTHROPIC_API_KEY",
+    "dangerously-skip-permissions",
+    "force_subscription_auth",
+    "output-format",
+    "spawn_headless"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-cli-transport",
+   "context": "agents-deployment",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "engine-project-tracking",
+   "reason": "evidence leans on runner/mod.rs, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-07T03:01:22.025372+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [
+    "output-normalization",
+    "permission-stance-enforcement",
+    "subscription-auth-selection"
+   ],
+   "deviations": 1,
+   "context": "workspace-governance",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T03:01:22.025372+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [
+    "availability-probe",
+    "fallback-ladder"
+   ],
+   "deviations": 1,
+   "context": "hooks-utility-data",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T03:01:22.025372+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "stores-util",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

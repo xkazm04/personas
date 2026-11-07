@@ -17822,12 +17822,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/utility/data/useCliReadiness.ts:40 collapses every non-missing-binary probe failure (incl. init timeout, EOF) into 'no_session', so unknown renders as 'sign in'; useEngineCapabilities.ts:71 derives installed-ness from a second predicate (healthCheckLocal's claude_cli, resolved by where/which, not the spawn resolver), so the shell gate and the operation gate can disagree on one machine",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/utility/data/useCliReadiness.ts:40 Every probe failure that is not a missing binary (init timeout, EOF, a non-init transcript) collapses into 'no_session', so an unknown probe result renders as a confident 'sign in'. The status vocabulary has no unknown value at all.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-gates",
@@ -37190,12 +37189,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/agentStore.ts:43 the composed store persists only the host chat-session row id (activeChatSessionId), not the child's Claude thread id, and spawns nothing; thread custody for persona chat is decided in chatSlice/backend (already judged on stores-slices-agents), so no technique of the subject has a seam in this context",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/agentStore.ts:43 The composed store persists only the host's chat-session row id, selected persona and chat mode, and spawns nothing. Searching src/stores for ANTHROPIC_API_KEY, dangerously-skip-permissions, force_subscription_auth, output-format, stream-json and spawn_headless found zero files, so no technique of the subject has a seam here. Child thread custody (claudeSessionId) lives in other slices, outside this context's files.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
@@ -47212,13 +47210,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:252-253 run_standards_scan hand-builds its spawn from headless_claude_args and never calls force_subscription_auth (no occurrence in the file; build_cli_args env_removals at src-tauri/engine/src/prompt/cli_args.rs:206-220 carry no ANTHROPIC_* key), so a metered key in the app env silently bills every standards scan, while the shared door spawn_headless_claude (cli_process.rs:426) bakes the strip in; the scan also runs with skip-permissions in the project root (cli_args.rs:107) as a scanner wearing an editor's stance",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:314 run_standards_scan builds its own spawn from headless_claude_args instead of going through the spawn_headless_claude door, and never calls force_subscription_auth. A metered Anthropic key in the app env therefore bills every standards scan, and the scan runs with skip-permissions in the project root: a scanner with an editor's stance.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "supply-chain",
