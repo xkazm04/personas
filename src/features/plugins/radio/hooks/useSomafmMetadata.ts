@@ -35,10 +35,10 @@ export function useSomafmMetadata(slug: string | null): StreamMetadata | null {
   const [meta, setMeta] = useState<StreamMetadata | null>(null);
 
   useEffect(() => {
-    if (!slug) {
-      setMeta(null);
-      return;
-    }
+    // Drop the previous station's track right away so it never shows under
+    // the new station while the first fetch is in flight.
+    setMeta(null);
+    if (!slug) return;
     let cancelled = false;
     const fetchOnce = () => {
       radioFetchSomafmMetadata(slug)
