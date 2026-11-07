@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMemo } from 'react';
 import {
   X,
@@ -73,6 +73,11 @@ export function TemplateDetailModal({
   const tpl = t.templates;
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const TAB_CONFIG = useTabConfig();
+
+  // A different template opened under the same modal instance must start on
+  // the overview, not on whichever tab the previous one left active.
+  const reviewId = review?.id;
+  useEffect(() => { setActiveTab('overview'); }, [reviewId]);
 
   const flows = useMemo(
     () => (review ? parseJsonOrDefault<UseCaseFlow[]>(review.use_case_flows, []) : []),

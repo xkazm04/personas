@@ -44,9 +44,6 @@ export function SegmentedTabs<T extends string>({
   const autoId = useId();
   const indicatorId = layoutId ?? `segmented-tabs-${autoId}`;
   const prefix = idPrefix ?? `segtabs-${autoId}`;
-  // Roving tab stop: the active tab, unless it is disabled or matches no tab, then the first enabled one.
-  const activeIdx = tabs.findIndex((tb) => tb.id === activeTab && !tb.disabled);
-  const tabStop = activeIdx >= 0 ? activeIdx : tabs.findIndex((tb) => !tb.disabled);
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const focusEnabled = useCallback(
@@ -141,7 +138,7 @@ export function SegmentedTabs<T extends string>({
               aria-controls={panelId}
               aria-label={tab.ariaLabel}
               data-testid={tab.testId}
-              tabIndex={index === tabStop ? 0 : -1}
+              tabIndex={active ? 0 : -1}
               disabled={tab.disabled}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, index)}
@@ -174,7 +171,7 @@ export function SegmentedTabs<T extends string>({
             aria-controls={panelId}
             aria-label={tab.ariaLabel}
             data-testid={tab.testId}
-            tabIndex={index === tabStop ? 0 : -1}
+            tabIndex={active ? 0 : -1}
             disabled={tab.disabled}
             onClick={() => !tab.disabled && onTabChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
