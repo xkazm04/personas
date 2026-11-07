@@ -84,16 +84,22 @@ export function TriggerAddForm({
   // Latest-wins: a slower preview of an older expression must not overwrite
   // (or clear the spinner of) the preview of the expression now in the field.
   const cronPreviewWins = useRef(createLatestWins()).current;
+  // Which (expression, zone) the held preview answers. Submitting inside the
+  // debounce window must not validate against the preview of an older expression.
+  const previewKeyRef = useRef('');
   const fetchCronPreview = useCallback(async (expr: string, tz?: string) => {
     const seq = cronPreviewWins.next();
-    if (!expr.trim()) { setCronPreview(null); setCronLoading(false); return; }
+    if (!expr.trim()) { previewKeyRef.current = ''; setCronPreview(null); setCronLoading(false); return; }
     setCronLoading(true);
     try {
       const preview = await previewCronSchedule(expr.trim(), 5, tz);
-      if (cronPreviewWins.isCurrent(seq)) setCronPreview(preview);
+      if (cronPreviewWins.isCurrent(seq)) {
+        previewKeyRef.current = `${expr.trim()}|${tz ?? ''}`;
+        setCronPreview(preview);
+      }
     } catch (err) {
       silentCatch('TriggerAddForm:previewCronSchedule')(err);
-      if (cronPreviewWins.isCurrent(seq)) setCronPreview(null);
+      if (cronPreviewWins.isCurrent(seq)) { previewKeyRef.current = ''; setCronPreview(null); }
     } finally {
       if (cronPreviewWins.isCurrent(seq)) setCronLoading(false);
     }
@@ -105,6 +111,9 @@ export function TriggerAddForm({
     cronDebounceRef.current = setTimeout(() => { fetchCronPreview(cronExpression, scheduleTimezone); }, 400);
     return () => { if (cronDebounceRef.current) clearTimeout(cronDebounceRef.current); };
   }, [cronExpression, scheduleMode, triggerType, scheduleTimezone, fetchCronPreview]);
+
+  // An error raised for one trigger type must not sit under another type's form.
+  useEffect(() => { setValidationError(null); }, [triggerType]);
 
   const handleCronPreset = (expr: string) => {
     setCronExpression(expr);
@@ -166,7 +175,8 @@ export function TriggerAddForm({
   const handleAddTrigger = async () => {
     if (isCreating) return;
     const result = buildTriggerConfig({
-      triggerType, scheduleMode, interval, cronExpression, cronPreview,
+      triggerType, scheduleMode, interval, cronExpression,
+      cronPreview: previewKeyRef.current === `${cronExpression.trim()}|${scheduleTimezone ?? ''}` ? cronPreview : null,
       scheduleTimezone, scheduleMaxBackfill,
       endpoint, selectedEventId, hmacSecret, listenEventType, sourceFilter,
       watchPaths, watchEvents, watchRecursive, globFilter,
