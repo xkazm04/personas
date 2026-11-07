@@ -45721,6 +45721,42 @@
           "reason": "replaced by 1c8d130b-7199-4fd6-af63-f1835ddc82be"
         }
       ]
+    },
+    "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/native-shell-integration": {
+      "context": "fleet-monitor-shell",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T03:20:41.279Z",
+      "worker": "1b85e610-3e32-4c7c-a98a-996dc6a63d60",
+      "techniques": [
+        {
+          "technique": "native-owned-stream",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/useMonitorData.ts:929 View polls are suspended on visibilitychange and when the monitor is hidden; must-arrive signals are native-emitted events"
+        },
+        {
+          "technique": "native-side-owns-the-target-set",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:85 The executing command takes persona and use-case ids; the free-text input is the operator's prompt, which is the product's own payload"
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/monitorVisibility.ts:7 The full-screen monitor is an in-document overlay, so no native window focus is involved (hidden state is made inert)"
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/monitorVisibility.ts:12 Nothing reads a foreign application under the overlay; hit-testing and the a11y tree are dropped in-document when hidden"
+        },
+        {
+          "technique": "host-forwarded-key-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:87 Escape comes from the desktop keyboard into the document; no host keeps keys for itself"
+        }
+      ]
     }
   }
 }

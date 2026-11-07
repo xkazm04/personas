@@ -14946,7 +14946,11 @@
           "revision": 5,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/fleet/monitor/useMonitorData.ts:843 Events that must arrive come from the native side, while the view-owned review/message polls are written down as visible-only and suspended when the overlay is hidden, which is the deliberate, documented split the technique asks for.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:838495bb60a986c6",
+          "evaluatedRevision": 6
         },
         {
           "subject": "app-shell",
