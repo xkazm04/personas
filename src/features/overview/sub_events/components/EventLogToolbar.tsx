@@ -139,7 +139,7 @@ export function EventLogToolbar({
             onChange={(e) => setViewName(e.target.value)}
             placeholder={t.overview.events.view_name_placeholder}
             className="flex-1 px-2 h-[var(--control-h)] typo-body rounded-interactive bg-background/50 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-hair-2"
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
             autoFocus
           />
           <Button variant="primary" size="sm" onClick={handleSaveView} disabled={!viewName.trim()}>
