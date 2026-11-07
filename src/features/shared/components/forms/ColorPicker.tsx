@@ -161,6 +161,7 @@ export function ColorPicker({ value, onChange, size = 'md', ...fieldProps }: Col
             onClick={() => onChange(DEFAULT_PERSONA_COLOR)}
             className="p-1.5 rounded-lg border border-dashed border-primary/20 text-foreground hover:text-foreground hover:border-primary/30 transition-all"
             title={t.shared.forms_extra.reset_to_default}
+            aria-label={t.shared.forms_extra.reset_to_default}
           >
             <X className="w-3.5 h-3.5" />
           </button>

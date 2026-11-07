@@ -67,6 +67,7 @@ export function FilterBar<T extends string = string>({
               type="button"
               key={opt.id}
               onClick={() => onChange(opt.id)}
+              aria-pressed={isActive}
               data-testid={`filter-btn-${opt.id}`}
               className={`relative px-3 typo-label transition-colors focus-ring flex items-center gap-1.5 ${
                 index > 0 ? 'border-l border-hair-2' : ''
