@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useCredentialOAuth } from '@/features/vault/shared/hooks/useCredentialOAuth';
 import { useUniversalOAuth } from '@/hooks/design/oauth/useUniversalOAuth';
 import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
@@ -88,7 +88,12 @@ export function useCatalogHandlers({
     dispatch({ type: 'PICK_CONNECTOR', connector, parentSearch: credentialSearch });
   }, [credentialSearch, dispatch, oauth, universalOAuth]);
 
-  const handleCreateCredential = async (values: Record<string, string>) => {
+  // The form has no saving state of its own (onCreateCredential is fire and
+  // forget), so a second click during the create IPC, or while the scope picker
+  // is open over the still-mounted form, minted a duplicate credential.
+  const creatingRef = useRef(false);
+
+  const createCredentialOnce = async (values: Record<string, string>) => {
     if (!catalogFormData) return;
     const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
     const serviceType = catalogFormData.connector.name;
@@ -116,6 +121,16 @@ export function useCatalogHandlers({
       .catch(silentCatch('useCatalogHandlers:scopePromptAfterCreate'));
     dispatch({ type: 'GO_LIST' });
     setCredentialSearch('');
+  };
+
+  const handleCreateCredential = async (values: Record<string, string>) => {
+    if (creatingRef.current) return;
+    creatingRef.current = true;
+    try {
+      await createCredentialOnce(values);
+    } finally {
+      creatingRef.current = false;
+    }
   };
 
   const handleCliSaved = async () => {
