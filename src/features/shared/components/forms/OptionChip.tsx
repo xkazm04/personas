@@ -57,7 +57,7 @@ export const OptionChip = forwardRef<HTMLButtonElement, OptionChipProps>(
         {...optionSelectionProps(role, selected)}
       >
         {icon ? <span className="flex-shrink-0">{icon}</span> : null}
-        <span className="min-w-0">{children}</span>
+        <span className="inline-flex min-w-0 items-center gap-1.5">{children}</span>
         {count != null ? <span className="num typo-caption text-ink-3">{count}</span> : null}
       </button>
     );

@@ -39,7 +39,7 @@ export const OptionRow = forwardRef<HTMLButtonElement, OptionRowProps>(
         onClick={onSelect}
         {...optionSelectionProps(role, selected)}
       >
-        <span className="min-w-0 flex-1">{children}</span>
+        <span className="flex min-w-0 flex-1 items-center gap-2">{children}</span>
         {meta != null ? <span className="num typo-caption text-ink-3 flex-shrink-0">{meta}</span> : null}
       </button>
     );

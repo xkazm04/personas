@@ -1,5 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
+import { optionSelectionProps, type OptionRole } from '../forms/OptionChip';
+
 export interface PressSurfaceProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'className' | 'children'> {
   /** Fired on click / Enter / Space. */
@@ -31,7 +33,9 @@ export const PressSurface = forwardRef<HTMLButtonElement, PressSurfaceProps>(
       .join(' ');
     return (
       <button
-        aria-pressed={selected}
+        // Role-aware selection: option/tab rows get aria-selected, radio/menu rows aria-checked,
+        // a plain press target aria-pressed. The caller's own aria-* in rest still wins.
+        {...optionSelectionProps(rest.role as OptionRole | undefined, selected)}
         {...rest}
         ref={ref}
         type={type}
