@@ -7,6 +7,7 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { pipelineForAgent } from './pipelineHelpers';
+import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
 import { StateMark } from '@/features/shared/components/display/StateMark';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -29,11 +30,21 @@ export function GitLabAgentList({
   redeployingAgentId,
 }: GitLabAgentListProps) {
   const { t } = useTranslation();
+  const pipelineCount = useSystemStore((s) => s.gitlabPipelines.length);
+  const fetchPipelines = useSystemStore((s) => s.gitlabFetchPipelines);
   useEffect(() => {
     if (projectId) {
       onFetchAgents(projectId);
     }
   }, [projectId, onFetchAgents]);
+
+  // One pipeline read for the whole list. Each row used to fire its own when the
+  // project had no pipelines, so N agents meant N identical concurrent requests.
+  useEffect(() => {
+    if (projectId && pipelineCount === 0) {
+      fetchPipelines(projectId);
+    }
+  }, [projectId, pipelineCount, fetchPipelines]);
 
   if (!projectId) {
     return (
@@ -85,10 +96,11 @@ export function GitLabAgentList({
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <PipelineStatusBadge projectId={projectId} agentName={agent.name} />
+            <PipelineStatusBadge agentName={agent.name} />
             <Button
               type="button"
-              onClick={() => onRedeploy(agent.name)}
+              // The store sets the banner, then rethrows: uncaught here it was an unhandled rejection.
+              onClick={() => { void onRedeploy(agent.name).catch(silentCatch('GitLabAgentList:redeploy')); }}
               disabled={redeployingAgentId === agent.name}
               tooltip={t.gitlab.redeploy_agent}
               variant="ghost"
@@ -132,16 +144,9 @@ export function GitLabAgentList({
 // Pipeline status badge (reads latest pipeline from store)
 // ---------------------------------------------------------------------------
 
-function PipelineStatusBadge({ projectId, agentName }: { projectId: number; agentName: string }) {
+function PipelineStatusBadge({ agentName }: { agentName: string }) {
   const { t, tx } = useTranslation();
   const pipelines = useSystemStore((s) => s.gitlabPipelines);
-  const fetchPipelines = useSystemStore((s) => s.gitlabFetchPipelines);
-
-  useEffect(() => {
-    if (pipelines.length === 0) {
-      fetchPipelines(projectId);
-    }
-  }, [projectId, pipelines.length, fetchPipelines]);
 
   // THIS agent's pipeline, or nothing. `pipelines[0]` is the project's latest
   // and was being painted on every row, so a sibling's failed build sat next to
