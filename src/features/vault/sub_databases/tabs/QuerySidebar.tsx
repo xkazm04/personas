@@ -66,7 +66,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 autoFocus
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsCreating(false); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { e.stopPropagation(); setIsCreating(false); } }}
                 placeholder={db.query_title_placeholder}
                 className="flex-1 px-2.5 py-1.5 rounded-modal typo-body bg-background/50 border border-hair text-foreground focus-ring placeholder:text-foreground"
               />
@@ -111,6 +111,9 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               // The row is the only way to open a saved query. Without a key
               // handler the keyboard could reach the star/trash affordances
               // inside it but never select the query itself.
+              // Keys bubbling up from the star/trash buttons are theirs: handling them here
+              // would cancel the button's own activation and select the row instead.
+              if (e.target !== e.currentTarget) return;
               if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(q.id); }
             }}
           >
