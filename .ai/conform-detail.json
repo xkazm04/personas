@@ -8397,19 +8397,23 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:16:30.000Z",
-      "worker": "fa11a4fa-09d8-4f88-99c8-80905ddd1894",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T22:20:00.284Z",
+      "worker": "0b916119-7b9a-48f3-993f-7d845ef736d3",
       "techniques": [
         {
           "technique": "permission-stance-enforcement",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/task_executor.rs:1636 the edit stance's first belt (containment in an isolated worktree) silently downgrades to the live checkout for auto-run tasks too (run_one_task_for_auto -> run_task_execution), and the downgrade is surfaced only as a transient live-panel line, never on the desk's TaskCard or PrBridge (src/features/plugins/dev-tools/sub_runner/PrBridge.tsx:176)"
-        },
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:122 The edit seam's first belt is containment. Here an unattended wave can author in the live checkout, and the only signal is a transient output line, not a durable desk indicator."
+        }
+      ],
+      "superseded": [
         {
-          "technique": "permission-stance-enforcement",
-          "verdict": "realized (edit opt-in defaults off)",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:46 unattended auto-heal re-dispatch is an explicit operator toggle that defaults to off"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:122 the desk launches unattended Auto-Run edit waves whose tasks, when isolation fails, edit the operator's live project root (src-tauri/src/commands/infrastructure/task_executor.rs:1636, justified at :1243 by 'a person present', which an auto-run wave lacks) - and no run-desk file renders the recorded worktree_fallback_reason/worktree_branch; PrBridge.tsx:176 invents a dev-tools/ branch instead of the autopilot/ branch the agent actually authored on, so the operator cannot tell from the desk which runs were contained.",
+          "evaluatedAt": "2026-10-09T16:16:30.000Z",
+          "worker": "fa11a4fa-09d8-4f88-99c8-80905ddd1894",
+          "reason": "replaced by 0b916119-7b9a-48f3-993f-7d845ef736d3"
         }
       ]
     },
@@ -19900,22 +19904,32 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:52:43.000Z",
-      "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T22:20:00.284Z",
+      "worker": "0b916119-7b9a-48f3-993f-7d845ef736d3",
       "techniques": [
         {
           "technique": "output-normalization",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/ChatThread.tsx:15 takes an already-normalized prose error prop and has zero importers; the live persona-chat failure path is judged on stores-slices-agents"
+          "evidence": "src/features/agents/components/ChatThread.tsx:15 takes an already-normalized prose error prop and has zero importers; the live persona-chat failure path is judged on stores-slices-agents",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dated-capability-matrix",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/QuickEditPanel.tsx:5 picks a model id from the model catalog; it encodes no CLI capability"
+          "evidence": "src/features/agents/components/QuickEditPanel.tsx:5 picks a model id from the model catalog; it encodes no CLI capability",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "Matched lexically on thread/selector/chat - UI 'thread' vocabulary resonating with thread-custody-across-resume; the subject's precondition (a host spawning an agent CLI) does not hold for presentational chat primitives."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/ChatThread.tsx:25 pure presentational primitives (chat thread, avatars, icon pickers, quick-edit model picker) that spawn no CLI and consume no envelope; ChatThread has no importer in src/ at all, so no technique's precondition (spawning a headless coding-agent CLI or rendering its probe/fallback/failure classes) holds here",
+          "evaluatedAt": "2026-10-12T11:52:43.000Z",
+          "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+          "reason": "replaced by 0b916119-7b9a-48f3-993f-7d845ef736d3"
+        }
+      ]
     },
     "50bf2ad0-3da7-4405-991a-6e22695903a2/agent-cli-transport": {
       "context": "companion-narration-ops",

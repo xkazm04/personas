@@ -27856,12 +27856,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/components/ChatThread.tsx:25 pure presentational primitives (chat thread, avatars, icon pickers, quick-edit model picker) that spawn no CLI and consume no envelope; ChatThread has no importer in src/ at all, so no technique's precondition (spawning a headless coding-agent CLI or rendering its probe/fallback/failure classes) holds here",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/components/QuickEditPanel.tsx:14 These are presentational persona primitives: the quick-edit panel only hands a catalog-picked model back to its parent, and nothing here spawns a CLI or reads an envelope. A recursive search of src/features/agents/components found none of the subject's spawn/stance/envelope vocabulary, and ChatThread has no importer under that path.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -33894,13 +33893,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:122 the desk launches unattended Auto-Run edit waves whose tasks, when isolation fails, edit the operator's live project root (src-tauri/src/commands/infrastructure/task_executor.rs:1636, justified at :1243 by 'a person present', which an auto-run wave lacks) - and no run-desk file renders the recorded worktree_fallback_reason/worktree_branch; PrBridge.tsx:176 invents a dev-tools/ branch instead of the autopilot/ branch the agent actually authored on, so the operator cannot tell from the desk which runs were contained.",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:122 The desk starts unattended Auto-Run edit waves. Those tasks share TaskWorkspace::fallback, which runs in the operator's live project root when isolation fails (task_executor.rs:1216, :1642), and that fallback is justified at :1241-1242 by a person being present, which an auto-run wave lacks. No run-desk file renders the recorded worktree_branch or fallback_reason (a search of sub_runner finds neither), so the operator cannot tell from the desk which edit runs were contained.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "self-healing",
