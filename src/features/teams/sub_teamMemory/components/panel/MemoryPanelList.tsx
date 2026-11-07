@@ -60,7 +60,7 @@ export default function MemoryPanelList({
       {/* Category chips */}
       <div className="flex gap-1 px-3 py-2 overflow-x-auto scrollbar-hide">
         {CATEGORY_FILTERS.map((cat) => (
-          <Button variant="secondary" size="xs" className="whitespace-nowrap" key={cat} onClick={() => onCategoryChange(cat)}>
+          <Button variant="secondary" size="xs" className="whitespace-nowrap" key={cat} pressed={activeCategory === cat} onClick={() => onCategoryChange(cat)}>
             {cat === 'all' ? t.common.all : tokenLabel(t, 'memory_category', cat)}
           </Button>
         ))}

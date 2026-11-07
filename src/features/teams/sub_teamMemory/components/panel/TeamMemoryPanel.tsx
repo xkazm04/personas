@@ -50,12 +50,15 @@ export default function TeamMemoryPanel({
     try { await onLoadMore(); } finally { setLoadingMore(false); }
   }, [onLoadMore]);
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleCategoryChange = (cat: string) => {
+    // A pending search debounce closed over the PREVIOUS category and would
+    // fire after this click, re-filtering the list with the old chip.
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setActiveCategory(cat);
     onFilter(cat === 'all' ? undefined : cat, searchQuery || undefined);
   };
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
@@ -78,6 +81,9 @@ export default function TeamMemoryPanel({
   }, [onFilterByRun]);
 
   const handleClearAllFilters = useCallback(() => {
+    // Same stale-timer hazard: a debounced search typed just before the click
+    // would re-apply the search the user just cleared.
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setActiveCategory('all');
     setSearchQuery('');
     setActiveRunFilter(null);
