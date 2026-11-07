@@ -90,6 +90,45 @@ pub fn classify_error(error: &str) -> Option<ErrorCategory> {
     None
 }
 
+/// Quota-aware admission cooldowns (seconds). When a completed execution failed
+/// against the AI provider's limit, the engine pauses admitting NEW work for
+/// this long so the fleet doesn't burn the whole queue against the same limit.
+/// A short pause for transient rate limits (429); a longer one for session/
+/// usage caps (which reset on the order of hours — a probe execution after the
+/// cooldown re-arms if the limit is still in force, or resumes admission if not).
+const QUOTA_COOLDOWN_RATE_SECS: i64 = 120;
+const QUOTA_COOLDOWN_SESSION_SECS: i64 = 900;
+
+/// How long a failed run pauses engine admission for the whole fleet, if at all.
+///
+/// The output is the model's own text, so a run that wrote about a rate limit
+/// must not pause anything. It counts only when it carries the usage-limit
+/// vocabulary, the case it is read for: the CLI's "You've hit your session limit"
+/// lands in output.
+pub fn quota_cooldown_secs(error: &str, output: &str, now: chrono::DateTime<Utc>) -> Option<i64> {
+    let text = if super::parser::parse_usage_limit(output).is_some() {
+        format!("{error} {output}")
+    } else {
+        error.to_string()
+    };
+    match classify_error(&text)? {
+        ErrorCategory::SessionLimit => {
+            // Align the admission pause to the limit's ACTUAL reset when
+            // the CLI message carries one ("resets 1:50pm" / unix ts). A
+            // fixed 900s cooldown re-admitted a fresh wave into the
+            // still-active limit every 15 min — 58 burned executions over
+            // one 5h window (2026-06-10). Clamped to [60s, 6h]; the fixed
+            // fallback covers messages with no parseable timestamp.
+            let aligned = super::parser::parse_usage_limit(&text)
+                .and_then(|i| i.resets_at)
+                .map(|t| ((t - now).num_seconds() + 120).clamp(60, 6 * 3600));
+            Some(aligned.unwrap_or(QUOTA_COOLDOWN_SESSION_SECS))
+        }
+        ErrorCategory::RateLimit => Some(QUOTA_COOLDOWN_RATE_SECS),
+        _ => None,
+    }
+}
+
 // =============================================================================
 // Circuit breaker state
 // =============================================================================
@@ -778,6 +817,53 @@ pub fn build_failover_chain_with_policy(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const EXIT_1: &str = "Execution failed (exit code 1): boom";
+
+    #[test]
+    fn output_that_only_mentions_a_limit_arms_no_cooldown() {
+        for output in [
+            "I added a retry on HTTP 429 to the client",
+            "The doc explains how a rate limit works",
+            "the server said too many requests",
+        ] {
+            assert_eq!(
+                quota_cooldown_secs(EXIT_1, output, Utc::now()),
+                None,
+                "{output}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_limit_in_the_error_still_arms() {
+        let now = Utc::now();
+        assert_eq!(
+            quota_cooldown_secs("HTTP 429 from provider", "", now),
+            Some(120)
+        );
+        assert_eq!(
+            quota_cooldown_secs("Session limit reached", "", now),
+            Some(900)
+        );
+    }
+
+    #[test]
+    fn the_clis_session_limit_in_output_still_arms() {
+        // A whole second, so the aligned pause below is exact.
+        let now = chrono::DateTime::from_timestamp(Utc::now().timestamp(), 0).unwrap();
+        assert_eq!(
+            quota_cooldown_secs(EXIT_1, "You've hit your session limit", now),
+            Some(900)
+        );
+        let reset = (now + chrono::Duration::hours(1)).timestamp();
+        let aligned = quota_cooldown_secs(
+            EXIT_1,
+            &format!("You've hit your session limit|{reset}"),
+            now,
+        );
+        assert_eq!(aligned, Some(3720));
+    }
 
     /// Returns the cumulative count of errors that `classify_error` could not
     /// classify. Useful for test diagnostics.

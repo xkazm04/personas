@@ -2105,15 +2105,6 @@ fn claim_orphaned_queued_row(pool: &DbPool, exec_id: &str) -> bool {
 // Extracted sub-functions for start_execution post-processing
 // =============================================================================
 
-/// Quota-aware admission cooldowns (seconds). When a completed execution failed
-/// against the AI provider's limit, the engine pauses admitting NEW work for
-/// this long so the fleet doesn't burn the whole queue against the same limit.
-/// A short pause for transient rate limits (429); a longer one for session/
-/// usage caps (which reset on the order of hours — a probe execution after the
-/// cooldown re-arms if the limit is still in force, or resumes admission if not).
-const QUOTA_COOLDOWN_RATE_SECS: i64 = 120;
-const QUOTA_COOLDOWN_SESSION_SECS: i64 = 900;
-
 /// A queued fix-loop re-entry — plain data, so the producer side (inside the
 /// execution pipeline) never names `execute_persona_inner`'s future type.
 pub struct FixReentryRequest {
@@ -2452,32 +2443,16 @@ async fn handle_execution_result(
     // session/usage/rate limit, arm the engine's admission cooldown so the rest
     // of the fleet stops running straight into the same limit (the soak showed
     // 94% of failures were session-limit — bursts that the concurrency cap
-    // alone can't prevent). Reactive + always-on; classifies on the error AND
-    // the output (the CLI's "You've hit your session limit" lands in output).
+    // alone can't prevent). Reactive + always-on; `quota_cooldown_secs` decides,
+    // and reads the output only for the CLI's usage-limit message.
     // Auto-clears by expiry: a probe execution after the cooldown either
     // succeeds (admission resumes) or re-arms it. `drain_*`/`admit` honour it.
     if !result.success {
-        let blob = format!(
-            "{} {}",
+        let cooldown_secs = failover::quota_cooldown_secs(
             result.error.as_deref().unwrap_or(""),
-            result.output.as_deref().unwrap_or("")
+            result.output.as_deref().unwrap_or(""),
+            chrono::Utc::now(),
         );
-        let cooldown_secs = match failover::classify_error(&blob) {
-            Some(error_taxonomy::ErrorCategory::SessionLimit) => {
-                // Align the admission pause to the limit's ACTUAL reset when
-                // the CLI message carries one ("resets 1:50pm" / unix ts). A
-                // fixed 900s cooldown re-admitted a fresh wave into the
-                // still-active limit every 15 min — 58 burned executions over
-                // one 5h window (2026-06-10). Clamped to [60s, 6h]; the fixed
-                // fallback covers messages with no parseable timestamp.
-                let aligned = parser::parse_usage_limit(&blob)
-                    .and_then(|i| i.resets_at)
-                    .map(|t| ((t - chrono::Utc::now()).num_seconds() + 120).clamp(60, 6 * 3600));
-                Some(aligned.unwrap_or(QUOTA_COOLDOWN_SESSION_SECS))
-            }
-            Some(error_taxonomy::ErrorCategory::RateLimit) => Some(QUOTA_COOLDOWN_RATE_SECS),
-            _ => None,
-        };
         if let Some(secs) = cooldown_secs {
             let until = chrono::Utc::now() + chrono::Duration::seconds(secs);
             tracker.lock().await.set_quota_cooldown(until);
