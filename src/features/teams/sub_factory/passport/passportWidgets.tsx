@@ -2,6 +2,7 @@
 // atoms both variants (Grid + Wall) compose. Keeping the seal / pips / gap mark
 // identical across variants is deliberate: the cell LAYOUT diverges per variant
 // metaphor, but a "readiness seal" should read the same wherever it appears.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Bot, CheckCircle2, ShieldCheck, Layers, Plug, Check, Minus, Info, type LucideIcon } from 'lucide-react';
@@ -147,21 +148,20 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
 
   return (
     <>
-      <Tooltip content={`What "${label}" means`}><button
+      <Tooltip content={`What "${label}" means`}><PressSurface
         ref={triggerRef}
-        type="button"
-        onClick={(e) => {
+        onPress={(e) => {
           // Read the rect NOW — e.currentTarget is detached by the time a
           // state-updater callback runs.
           const rect = e.currentTarget.getBoundingClientRect();
           setAnchor((a) => (a ? null : rect));
         }}
         aria-expanded={Boolean(anchor)}
-        className="group/rl inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.05] transition-colors cursor-help focus-ring"
+        className="group/rl inline-flex items-center gap-1 rounded-interactive -mx-1 px-1 py-0.5 cursor-help"
       >
         <span className="typo-caption text-ink-3 group-hover/rl:text-ink-2 transition-colors">{label}</span>
         <Info className="w-3 h-3 flex-shrink-0 text-primary/70 opacity-0 group-hover/rl:opacity-100 transition-opacity" aria-hidden />
-      </button></Tooltip>
+      </PressSurface></Tooltip>
       {anchor && pos && createPortal(
         <div
           ref={panelRef}

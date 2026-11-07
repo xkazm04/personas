@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { ArrowRight, Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
@@ -33,11 +34,10 @@ function ShowcaseCard({ preset, onPick }: { preset: import('@/lib/bindings/TeamP
   const image = presetBackgroundImage(preset.id);
 
   return (
-    <button
-      type="button"
-      onClick={onPick}
+    <PressSurface
+      onPress={onPick}
       data-testid={`preset-showcase-${preset.id}`}
-      className="group text-left rounded-modal border border-hair bg-surface-1 overflow-hidden flex flex-col transition-all hover:border-hair hover:shadow-elevation-2"
+      className="group rounded-modal border border-hair bg-surface-1 overflow-hidden flex flex-col hover:border-hair hover:shadow-elevation-2"
     >
       {/* Illustration header */}
       <div
@@ -75,6 +75,6 @@ function ShowcaseCard({ preset, onPick }: { preset: import('@/lib/bindings/TeamP
           </span>
         </div>
       </div>
-    </button>
+    </PressSurface>
   );
 }

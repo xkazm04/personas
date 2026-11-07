@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -137,10 +138,9 @@ export default function TeamMemoryPanel({
 
       {stats && stats.total > 0 && (
         <div className="border-t border-hair px-3 py-2">
-          <button
-            type="button"
+          <PressSurface
             className="flex items-center justify-between w-full typo-body text-foreground hover:text-ink-2"
-            onClick={() => setStatsExpanded(!statsExpanded)}
+            onPress={() => setStatsExpanded(!statsExpanded)}
           >
             {/* `getTeamMemoryStats(teamId, category, search)` takes no runId --
                 these stats, and the per-category counts under them, always
@@ -153,7 +153,7 @@ export default function TeamMemoryPanel({
               {activeRunFilter && <span className="typo-caption text-ink-2 flex-shrink-0">{pt.stats_team_wide}</span>}
             </span>
             {statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+          </PressSurface>
           {statsExpanded && (
             <div className="mt-1.5 space-y-0.5">
               {stats.category_counts.map(([cat, count]) => (

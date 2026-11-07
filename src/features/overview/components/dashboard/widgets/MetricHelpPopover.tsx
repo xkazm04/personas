@@ -120,13 +120,14 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
               <span className="font-medium">{t.overview.metric_help_popover.click}</span> {info.navigatesTo}
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-            className="mt-2.5 w-full typo-caption text-center py-1 rounded-card bg-surface-1 hover:bg-primary/10 text-ink-2 hover:text-ink-2 transition-colors"
+            className="mt-2.5 w-full"
           >
             {t.overview.metric_help_popover.got_it}
-          </button>
+          </Button>
         </div>
       )}
     </div>

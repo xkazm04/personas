@@ -9,6 +9,7 @@
 // Data derives from dev_milestones rows only — no percentages are stored; the
 // full exit-criteria machinery stays in the plan rail
 // (features/notepad/plan/useProjectPlan.ts).
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { ChevronRight, Flag } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
@@ -137,14 +138,13 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
     return <div className={shared} data-testid="cover-roadmap">{body}</div>;
   }
   return (
-    <Tooltip content={tx(t.ship.cover_open_aria, { name: projectName })}><button
-      type="button"
-      onClick={onOpenShip}
+    <Tooltip content={tx(t.ship.cover_open_aria, { name: projectName })}><PressSurface
+      onPress={onOpenShip}
       aria-label={tx(t.ship.cover_open_aria, { name: projectName })}
-      className={`group/roadmap w-full rounded-card transition-colors hover:bg-primary/[0.05] focus-ring ${shared}`}
+      className={`group/roadmap w-full rounded-card  hover:bg-primary/[0.05]  ${shared}`}
       data-testid="cover-roadmap"
     >
       {body}
-    </button></Tooltip>
+    </PressSurface></Tooltip>
   );
 }

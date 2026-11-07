@@ -5,6 +5,7 @@
 // procedure (built-in recipe, else AI composes ONCE) → live test against the
 // real API → user confirms → the procedure freezes and is replayed
 // deterministically on every future measurement.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Cable, Check, Plus, Sparkles, X, Zap } from 'lucide-react';
 
@@ -209,18 +210,17 @@ export function KPIConnectWizard({
               <p className="typo-body text-foreground mb-2">{t.kpis.wizard_type_hint}</p>
               <div className="space-y-1.5" role="radiogroup" aria-label={t.kpis.wizard_type_section}>
                 {types.map((mt) => (
-                  <button
+                  <PressSurface
                     key={mt.id}
-                    type="button"
                     role="radio"
                     aria-checked={metricTypeId === mt.id}
-                    onClick={() => void pickType(mt)}
-                    className="w-full text-left rounded-card border border-hair bg-surface-1 hover:bg-surface-2 px-3 py-2 transition-colors focus-ring"
+                    onPress={() => void pickType(mt)}
+                    className="w-full rounded-card border border-hair bg-surface-1 px-3 py-2"
                     data-testid={`kpi-metric-type-${mt.id}`}
                   >
                     <span className="typo-body text-foreground">{mt.label}</span>
                     <span className="typo-caption text-ink-2 block">{mt.contract}</span>
-                  </button>
+                  </PressSurface>
                 ))}
                 {types.length === 0 && <LoadingSpinner size="sm" />}
               </div>
@@ -236,11 +236,10 @@ export function KPIConnectWizard({
               ) : (
                 <div className="space-y-1.5">
                   {matches.map((c) => (
-                    <button
+                    <PressSurface
                       key={c.credential_id}
-                      type="button"
-                      onClick={() => void compose(c)}
-                      className="w-full flex items-center gap-2.5 text-left rounded-card border border-hair bg-surface-1 hover:bg-surface-2 px-3 py-2 transition-colors focus-ring"
+                      onPress={() => void compose(c)}
+                      className="w-full flex items-center gap-2.5 rounded-card border border-hair bg-surface-1 px-3 py-2"
                       data-testid={`kpi-wizard-cred-${c.credential_id}`}
                     >
                       <span className="min-w-0 flex-1">
@@ -252,7 +251,7 @@ export function KPIConnectWizard({
                         </span>
                       </span>
                       <ComposedByBadge composedBy={c.has_recipe ? 'recipe' : 'llm'} />
-                    </button>
+                    </PressSurface>
                   ))}
                 </div>
               )}

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Check } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -42,10 +43,9 @@ export function TeamColorPicker({ value, onChange }: TeamColorPickerProps) {
         const name = t.pipeline[nameKey];
         const isSelected = value === hex;
         return (
-          <Tooltip content={name}><button
+          <Tooltip content={name}><PressSurface
             key={hex}
-            type="button"
-            onClick={() => onChange(hex)}
+            onPress={() => onChange(hex)}
             aria-pressed={isSelected}
           >
             <span
@@ -56,7 +56,7 @@ export function TeamColorPicker({ value, onChange }: TeamColorPickerProps) {
                 <Check className="w-3.5 h-3.5 text-foreground " />
               )}
             </span>
-          </button></Tooltip>
+          </PressSurface></Tooltip>
         );
       })}
     </div>

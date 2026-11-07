@@ -1,6 +1,7 @@
 // The open station's instrument strip, on the waterline: live work, the next
 // release, spend, errors, blockers. Six columns of label-over-value, so row
 // metadata spreads instead of leaving the strip flying empty.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { daysLate } from '../soundingsModel';
 import { Tide } from '../soundingsParts';
 import type { Station } from '../soundingsModel';
@@ -15,12 +16,11 @@ export function StationStrip({ station }: { station: Station }) {
   const quiet = island.fleet.length === 0 && island.personasRunning.length === 0 && island.runners.length === 0;
 
   return (
-    <button
-      type="button"
+    <PressSurface
       className={liftedKey === FILE ? 'sd-strip sd-lifted' : 'sd-strip'}
       aria-label={tx(m.soundings_strip_aria, { name: island.name })}
       data-testid="sd-strip"
-      onClick={(e) => { e.stopPropagation(); openCard(FILE); }}
+      onPress={(e) => { e.stopPropagation(); openCard(FILE); }}
     >
       <div>
         <span className="sd-in-l typo-label">{m.world_fleet}</span>
@@ -73,6 +73,6 @@ export function StationStrip({ station }: { station: Station }) {
         <span className="sd-in-v typo-data">{island.blockers}</span>
       </div>
       <div className="sd-in-more"><kbd>I</kbd><span>{m.soundings_details}</span></div>
-    </button>
+    </PressSurface>
   );
 }

@@ -8,6 +8,7 @@
 // The chosen direction (+ optional custom instructions) dispatches a FLEET
 // terminal in the project's repo root — Fleet is the LLM engine here, not the
 // Dev Runner. The cell's icon then flips to the state-tinted terminal icon.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useMemo, useRef, useState } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { MessagesSquare, Rocket, ScanSearch, ShieldCheck, Sparkles, X } from 'lucide-react';
@@ -161,9 +162,8 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           {(() => {
             const on = selected === GUIDED_ID;
             return (
-              <button
-                type="button"
-                onClick={() => setSelected(on ? null : GUIDED_ID)}
+              <PressSurface
+                onPress={() => setSelected(on ? null : GUIDED_ID)}
                 className="text-left rounded-card px-3 py-2.5 transition-colors focus-ring"
                 style={{
                   border: `1px solid ${on ? INK.violet : `${INK.violet}44`}`,
@@ -181,16 +181,15 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
                 <span className="block typo-caption text-ink-3 mt-0.5 pl-[22px]">
                   {w.setup_row_guided_hint}
                 </span>
-              </button>
+              </PressSurface>
             );
           })()}
           {directions.map((d) => {
             const on = selected === d.id;
             return (
-              <button
+              <PressSurface
                 key={d.id}
-                type="button"
-                onClick={() => setSelected(on ? null : d.id)}
+                onPress={() => setSelected(on ? null : d.id)}
                 className="text-left rounded-card px-3 py-2.5 transition-colors focus-ring"
                 style={{
                   border: `1px solid ${on ? INK.teal : 'rgba(148,163,184,.18)'}`,
@@ -208,7 +207,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
                   )}
                 </span>
                 <span className="block typo-caption text-ink-3 mt-0.5 pl-4">{d.hint}</span>
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -223,17 +222,17 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           data-testid="row-setup-instruction"
         />
 
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={busy || !selected || !raw}
           onClick={deploy}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption transition-colors focus-ring hover:bg-foreground/[0.05] disabled:is-disabled"
-          style={{ color: INK.teal, border: `1px solid ${INK.teal}55` }}
+          className="mt-3 w-full"
+          icon={<Rocket className="w-3.5 h-3.5" aria-hidden />}
           data-testid="row-setup-deploy"
         >
-          <Rocket className="w-3.5 h-3.5" aria-hidden />
           {busy ? w.setup_row_dispatching : w.setup_row_deploy}
-        </button>
+        </Button>
         <p className="typo-caption text-ink-3 text-center mt-1.5">
           {w.setup_row_note}
         </p>

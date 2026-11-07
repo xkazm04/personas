@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useMemo } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { ExternalLink, ChevronDown } from 'lucide-react';
@@ -174,15 +175,14 @@ export function LeaderboardMatrixView({
                   )}
                 </td>
                 <td className="px-3 py-1.5 align-middle border-t border-hair">
-                  <button
-                    type="button"
-                    onClick={() => onNavigateToAgent(entry.personaId)}
-                    className="group/agent flex items-center gap-2.5 min-w-0 text-left"
+                  <PressSurface
+                    onPress={() => onNavigateToAgent(entry.personaId)}
+                    className="group/agent flex items-center gap-2.5 min-w-0"
                   >
                     <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} name={entry.personaName} display="pop" frameSize="sm" />
                     <span className="typo-body text-foreground truncate group-hover/agent:text-primary transition-colors">{entry.personaName}</span>
                     <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/agent:opacity-100 text-primary/70 transition-opacity" />
-                  </button>
+                  </PressSurface>
                 </td>
                 {RANK_OPTIONS.map((opt) => (
                   <MetricCell

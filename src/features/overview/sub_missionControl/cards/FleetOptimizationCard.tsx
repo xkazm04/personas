@@ -6,6 +6,7 @@
  * Memory Actions and the main content grid.
  */
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Sparkles,
@@ -139,11 +140,10 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
     <div
       className={`animate-fade-slide-in rounded-modal border ${config.border} ${config.bg} overflow-hidden`}
     >
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
+      <PressSurface
+        onPress={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3"
       >
         <div className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${config.badge} border`}>
           <Icon className="w-4 h-4" />
@@ -164,7 +164,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
         <div className="flex-shrink-0 text-foreground">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
-      </button>
+      </PressSurface>
 
       {expanded && (
           <div

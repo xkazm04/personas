@@ -7,6 +7,7 @@
 //                 composes the retrieval query → live test → freeze).
 //   · derived   → one of the orchestrator's own DB metrics.
 //   · manual    → no automated measurement; scored by the rating + pros/cons.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { KitButton } from '@/features/shared/components/kit';
 import Button from '@/features/shared/components/buttons/Button';
@@ -133,17 +134,16 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
             const Icon = m.icon;
             const on = mech === m.kind;
             return (
-              <button
+              <PressSurface
                 key={m.kind}
-                type="button"
-                onClick={() => { setMech(m.kind); setMsg(null); compose.reset(); }}
-                className={`rounded-card border px-2.5 py-2 text-left transition-colors ${on ? 'border-primary bg-sel' : 'border-hair bg-surface-1 hover:bg-surface-2'}`}
+                onPress={() => { setMech(m.kind); setMsg(null); compose.reset(); }}
+                className={`rounded-card border px-2.5 py-2   ${on ? 'border-primary bg-sel' : 'border-hair bg-surface-1 hover:bg-surface-2'}`}
                 data-testid={`measure-mech-${m.kind}`}
               >
                 <Icon className="w-4 h-4 mb-1 text-ink-2" />
                 <span className="typo-title block">{words.kind[m.kind]}</span>
                 <span className="typo-caption block">{blurbs[m.kind]}</span>
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -235,10 +235,10 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
               <p className="typo-body text-ink-2">{w.setup_derived_intro}</p>
               <div className="space-y-1.5" role="radiogroup" aria-label={w.setup_derived_aria}>
                 {DERIVED_METRICS.map((d) => (
-                  <button key={d.id} type="button" role="radio" aria-checked={derived === d.id} onClick={() => setDerived(d.id)} className={`w-full text-left rounded-card border px-3 py-2 transition-colors ${derived === d.id ? 'border-primary bg-sel' : 'border-hair bg-surface-1 hover:bg-surface-2'}`}>
+                  <PressSurface key={d.id} role="radio" aria-checked={derived === d.id} onPress={() => setDerived(d.id)} className={`w-full  rounded-card border px-3 py-2  ${derived === d.id ? 'border-primary bg-sel' : 'border-hair bg-surface-1 hover:bg-surface-2'}`}>
                     <span className="typo-title block">{words.derived[d.id]?.label ?? d.label}</span>
                     <span className="typo-caption block">{words.derived[d.id]?.hint ?? d.hint}</span>
-                  </button>
+                  </PressSurface>
                 ))}
               </div>
               <Button variant="primary" size="sm" disabled={busy} onClick={() => void applyConfig('derived', JSON.stringify({ metric: derived }))}>{w.setup_use_metric}</Button>

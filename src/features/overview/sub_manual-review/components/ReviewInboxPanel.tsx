@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import Button from '@/features/shared/components/buttons/Button';
@@ -117,22 +118,22 @@ export function ReviewInboxPanel({
             {revealedReviews.map((review, reviewIndex) => (
               <RevealItem key={review.id} revealId={review.id} order={reviewIndex - reveal.newSince} hasEntered={reviewEnter.hasEntered} markEntered={reviewEnter.markEntered} className="flex items-start">
                 {review.status === 'pending' && (
-                  <button
-                    onClick={(e) => {
+                  <PressSurface
+                    onPress={(e) => {
                       e.stopPropagation();
                       onToggleSelect(review.id);
                     }}
                     role="checkbox"
                     aria-checked={selectedIds.has(review.id)}
                     aria-label={t.overview.dc_select_review}
-                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground hover:text-ink-3 transition-colors"
+                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground"
                   >
                     {selectedIds.has(review.id) ? (
                       <CheckSquare className="w-3.5 h-3.5 text-primary" />
                     ) : (
                       <Square className="w-3.5 h-3.5" />
                     )}
-                  </button>
+                  </PressSurface>
                 )}
                 <div className={`flex-1 min-w-0 ${review.status !== 'pending' ? 'pl-8' : ''}`}>
                   <InboxItem

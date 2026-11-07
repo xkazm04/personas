@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { memo } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Ear, ExternalLink } from 'lucide-react';
@@ -102,9 +103,8 @@ export const StreamRow = memo(function StreamRow({
   const verb = head.verb ? labels.verb[head.verb] : null;
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(row)}
+    <PressSurface
+      onPress={() => onOpen(row)}
       /* TWO INSET SHADOWS, NOT A BORDER. The leading 2px rail is the team's
          colour (identity of the channel); the trailing 1px hairline is the row
          divider the log needs to read as a ledger rather than a wall of text.
@@ -119,7 +119,7 @@ export const StreamRow = memo(function StreamRow({
         height: ROW_HEIGHT,
         boxShadow: `inset 2px 0 0 ${team.teamColor}, inset 0 -1px 0 var(--hair)`,
       }}
-      className="w-full text-left flex items-center gap-2 px-3 hover:bg-surface-2 transition-colors"
+      className="w-full flex items-center gap-2 px-3"
     >
       <span className="typo-data text-ink-3 flex-shrink-0">{hhmmss(item.at)}</span>
       <span className={`flex-shrink-0 ${tone}`}>
@@ -167,6 +167,6 @@ export const StreamRow = memo(function StreamRow({
           #{item.assignmentId.slice(0, 4)}
         </span></Tooltip>
       )}
-    </button>
+    </PressSurface>
   );
 });

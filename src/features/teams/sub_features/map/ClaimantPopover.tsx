@@ -14,6 +14,7 @@
 // scroll and resize), dismissed by the shared `useClickOutside` (outside press
 // AND Escape), announced as a dialog with a translated name, and returning
 // focus on close.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -63,13 +64,12 @@ export function ClaimantPopover({ triggerRef, features, title, onPick, onClose }
       <ul className="flex flex-col">
         {features.map((f) => (
           <li key={f.id}>
-            <button
-              type="button"
-              onClick={() => onPick(f.id)}
-              className="w-full truncate rounded-interactive px-2 py-1.5 text-left typo-body text-foreground hover:bg-surface-2 focus-ring"
+            <PressSurface
+              onPress={() => onPick(f.id)}
+              className="w-full truncate rounded-interactive px-2 py-1.5 typo-body text-foreground"
             >
               {f.name}
-            </button>
+            </PressSurface>
           </li>
         ))}
       </ul>

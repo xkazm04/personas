@@ -1,6 +1,7 @@
 // The open station widened into a water column: the instrument strip on the
 // waterline, the four lane heads, the lane dividers, and one frame per reading
 // placed at its own depth (four lanes x the same four bands as the chart).
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { CSSProperties } from 'react';
 
 import { laneScore, LANES } from '../soundingsModel';
@@ -39,10 +40,9 @@ export function StationColumn() {
           marked.has(`${island.slug}:${node.key}`) ? 'sd-marked' : '',
         ].filter(Boolean).join(' ');
         return (
-          <button
+          <PressSurface
             key={node.key}
             ref={(el) => { if (el) frameRefs.current.set(node.key, el); else frameRefs.current.delete(node.key); }}
-            type="button"
             className={cls}
             data-sd="frame"
             data-band={node.status === 'solid' ? 3 : undefined}
@@ -52,13 +52,13 @@ export function StationColumn() {
             aria-label={node.detail
               ? tx(m.soundings_frame_aria_detail, { dim: dimLabel(node.key), status: statusWord(node.status), detail: toolText(node.detail) })
               : tx(m.soundings_frame_aria, { dim: dimLabel(node.key), status: statusWord(node.status) })}
-            onClick={(e) => { e.stopPropagation(); setReadKey(node.key); openCard(node.key); }}
+            onPress={(e) => { e.stopPropagation(); setReadKey(node.key); openCard(node.key); }}
           >
             <StatusMark status={node.status} />
             <span className="sd-fl">{dimLabel(node.key)}</span>
             <Ladder node={node} />
             <span className={node.detail ? 'sd-ff' : 'sd-ff sd-none'}>{second}</span>
-          </button>
+          </PressSurface>
         );
       })}
     </div>

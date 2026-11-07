@@ -5,6 +5,7 @@
 // Scale is the constraint: 25 plots over 200+ contexts have to stay legible, so
 // a plot with many contexts scrolls inside its own frame and never overflows
 // into its neighbour.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useRef, useState } from 'react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -70,12 +71,11 @@ function SquareButton({
   return (
     <>
       <Tooltip content={<span className="block max-w-[18rem]">{label}<br />{used}</span>}>
-        <button
+        <PressSurface
           ref={ref}
-          type="button"
           aria-label={label}
           data-testid="features-map-square"
-          onClick={activate}
+          onPress={activate}
           style={{
             background: hollow ? 'transparent' : SQUARE_FILL[tone],
             borderColor: hollow ? 'color-mix(in srgb, var(--foreground) 30%, transparent)' : 'transparent',
@@ -89,7 +89,7 @@ function SquareButton({
               className="absolute -right-0.5 -top-0.5 h-[6px] w-[6px] rounded-full bg-role-agent"
             />
           ) : null}
-        </button>
+        </PressSurface>
       </Tooltip>
       {picking ? (
         <ClaimantPopover

@@ -3,6 +3,7 @@
 // Nothing here is a sentence. The name is the only prose, and when it has to be
 // clipped it carries the full name in the shared tooltip rather than leaving
 // the reader with a word cut in half.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { CouncilGlyph } from '@/features/plugins/dev-tools/sub_context/councilGlyph';
@@ -42,15 +43,14 @@ export function FeatureRowItem({
   const spanText = tx(t.span_label, { crossed: row.span, total: totalGroups });
 
   return (
-    <button
-      type="button"
+    <PressSurface
       role="option"
       aria-selected={selected}
       data-testid="features-row"
       data-feature-slug={feature.slug}
-      onClick={() => onSelect(feature.id)}
+      onPress={() => onSelect(feature.id)}
       onDoubleClick={() => onOpen(feature.id)}
-      className={`flex w-full items-start gap-2.5 border-l-2 px-3 py-2 text-left focus-ring ${
+      className={`flex w-full items-start gap-2.5 border-l-2 px-3 py-2   ${
         selected
           ? 'border-l-primary bg-primary/10'
           : 'border-l-transparent hover:bg-surface-2'
@@ -97,6 +97,6 @@ export function FeatureRowItem({
           )}
         </span>
       </span>
-    </button>
+    </PressSurface>
   );
 }

@@ -1,6 +1,7 @@
 // The chart's top bar: where you are (crumbs), what you are reading (the
 // waterline sentence), the help door, and the hairline of station marks that
 // keeps every project visible even while one is open.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { DimKey } from '../../lib/dimRegistry';
 import { stationSpan } from '../soundingsGeometry';
 import { useSoundingsModel } from '../context';
@@ -16,24 +17,24 @@ export function ChartHeader() {
   return (
     <header className="sd-top">
       <nav className="sd-crumbs" aria-label={m.soundings_where}>
-        <button type="button" aria-current={level === 0 ? 'location' : undefined} onClick={goL0}>{m.world_portfolio}</button>
+        <PressSurface aria-current={level === 0 ? 'location' : undefined} onPress={goL0}>{m.world_portfolio}</PressSurface>
         {level >= 1 && curStation && (
           <>
             <span className="sd-sep" aria-hidden>{'›'}</span>
-            <button type="button" aria-current={level === 1 ? 'location' : undefined} onClick={() => { if (level === 2) closeCard(); }}>{curStation.island.name}</button>
+            <PressSurface aria-current={level === 1 ? 'location' : undefined} onPress={() => { if (level === 2) closeCard(); }}>{curStation.island.name}</PressSurface>
           </>
         )}
         {level === 2 && curStation && liftedKey && (
           <>
             <span className="sd-sep" aria-hidden>{'›'}</span>
-            <button type="button" aria-current="location">
+            <PressSurface aria-current="location" onPress={() => undefined}>
               {liftedKey === FILE ? m.soundings_details : dimLabel(liftedKey as DimKey)}
-            </button>
+            </PressSurface>
           </>
         )}
       </nav>
       <ReadingLine />
-      <button type="button" className="sd-topbtn" aria-label={m.soundings_help_aria} onClick={() => setHelpOpen(true)}>?</button>
+      <PressSurface className="sd-topbtn" aria-label={m.soundings_help_aria} onPress={() => setHelpOpen(true)}>?</PressSurface>
       {g && (
         <div className="sd-hair" aria-hidden>
           {stations.map((s) => {

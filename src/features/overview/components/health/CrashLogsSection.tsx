@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useEffect } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import {
@@ -144,15 +145,14 @@ Clear
                 const CrashIcon = isAutoCred ? AlertTriangle : XCircle;
                 return (
                 <div key={log.filename} className="rounded-card border border-hair bg-background/40 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLog(selectedLog === log.filename ? null : log.filename)}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-surface-2 transition-colors"
+                  <PressSurface
+                    onPress={() => setSelectedLog(selectedLog === log.filename ? null : log.filename)}
+                    className="w-full flex items-center gap-2 px-3 py-2"
                   >
                     <CrashIcon className={`w-3.5 h-3.5 flex-shrink-0 ${isAutoCred ? 'text-status-warning' : 'text-status-error'}`} />
                     <span className="typo-code text-ink-2 truncate">{log.filename}</span>
                     <span className={`ml-auto typo-heading ${crashColor}`}>{crashLabel}</span>
-                  </button>
+                  </PressSurface>
                   {selectedLog === log.filename && (
                     <div className="border-t border-hair px-3 py-2">
                       <pre className="typo-code text-ink-2 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
@@ -167,15 +167,14 @@ Clear
               {/* Frontend crashes persisted to SQLite */}
               {!loadingLogs && frontendDbLogs.map((log) => (
                 <div key={log.id} className="rounded-card border border-hair bg-background/40 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLog(selectedLog === log.id ? null : log.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-surface-2 transition-colors"
+                  <PressSurface
+                    onPress={() => setSelectedLog(selectedLog === log.id ? null : log.id)}
+                    className="w-full flex items-center gap-2 px-3 py-2"
                   >
                     <Monitor className="w-3.5 h-3.5 text-status-info flex-shrink-0" />
                     <span className="typo-body text-ink-2 truncate">{log.message}</span>
                     <span className="ml-auto typo-heading text-status-info flex-shrink-0">{log.component}</span>
-                  </button>
+                  </PressSurface>
                   {selectedLog === log.id && (
                     <div className="border-t border-hair px-3 py-2 space-y-1">
                       <p className="typo-body text-foreground">
@@ -199,15 +198,14 @@ Clear
               {/* Fallback: localStorage-only crashes not yet in SQLite */}
               {!loadingLogs && uniqueLsLogs.map((log, i) => (
                 <div key={`fe-${i}`} className="rounded-card border border-hair bg-background/40 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLog(selectedLog === `fe-${i}` ? null : `fe-${i}`)}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-surface-2 transition-colors"
+                  <PressSurface
+                    onPress={() => setSelectedLog(selectedLog === `fe-${i}` ? null : `fe-${i}`)}
+                    className="w-full flex items-center gap-2 px-3 py-2"
                   >
                     <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
                     <span className="typo-body text-ink-2 truncate">{log.message}</span>
                     <span className="ml-auto typo-heading text-status-warning flex-shrink-0">{log.component}</span>
-                  </button>
+                  </PressSurface>
                   {selectedLog === `fe-${i}` && (
                     <div className="border-t border-hair px-3 py-2 space-y-1">
                       <p className="typo-body text-foreground">

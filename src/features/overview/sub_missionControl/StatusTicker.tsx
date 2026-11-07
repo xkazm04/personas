@@ -3,6 +3,7 @@
 // 2026-08-25 monitoring consolidation. The errors field now deep-links to the
 // Incidents inbox (the Health tab it used to open was consolidated away).
 
+import Button from '@/features/shared/components/buttons/Button';
 import { memo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -21,7 +22,7 @@ export const StatusTicker = memo(function StatusTicker({
   const fieldCls = 'flex items-center gap-1.5 typo-eyebrow';
   // errors / runs / synced are shortcuts into the tab that owns each metric;
   // "sources" stays inert — it has no single dedicated destination.
-  const linkCls = `${fieldCls} text-ink-2 rounded-interactive px-1 -mx-1 hover:text-ink-1 transition-colors focus-ring`;
+  const linkCls = `${fieldCls} text-ink-2`;
   return (
     <div className="rounded-card border border-hair bg-surface-1 px-4 py-2 flex items-center gap-5 overflow-x-auto">
       <span className="typo-eyebrow flex-shrink-0">{t.overview.dashboard.status_label}</span>
@@ -29,18 +30,18 @@ export const StatusTicker = memo(function StatusTicker({
         <span>{t.overview.dashboard.status_sources}</span>
         <span className="num">{pipelineSources}</span>
       </div>
-      <button type="button" onClick={() => onNavigate('incidents')} className={linkCls}>
+      <Button variant="ghost" size="sm" onClick={() => onNavigate('incidents')} className={linkCls}>
         <span>{t.overview.dashboard.status_errors}</span>
         <span className={`num ${pipelineErrors > 0 ? 'text-status-error' : 'text-status-success'}`}>{pipelineErrors}</span>
-      </button>
-      <button type="button" onClick={() => onNavigate('executions')} className={linkCls}>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => onNavigate('executions')} className={linkCls}>
         <span>{t.overview.dashboard.status_runs}</span>
         <Numeric value={totalExecutions} unit="count" />
-      </button>
-      <button type="button" onClick={() => onNavigate('home')} className={`${linkCls} ml-auto flex-shrink-0`}>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => onNavigate('home')} className={`${linkCls} ml-auto flex-shrink-0`}>
         <span>{t.overview.dashboard.status_synced}</span>
         <span className="num">{lastSyncedLabel}</span>
-      </button>
+      </Button>
     </div>
   );
 });

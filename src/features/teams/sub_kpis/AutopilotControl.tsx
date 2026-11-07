@@ -14,6 +14,7 @@
  * `projectId`. The mode→capability matrix it advertises is enforced in
  * `engine/autopilot.rs`; keep the copy below in sync with that matrix.
  */
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 import { useEffect, useState } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Power, Activity, Lightbulb, Rocket, type LucideIcon } from 'lucide-react';
@@ -82,25 +83,22 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
   return (
     <div className={className}>
       <span className="block typo-label text-ink-3 mb-1.5">{t.kpis.autopilot_label}</span>
-      <div role="radiogroup" aria-label={t.kpis.autopilot_label} className="inline-flex rounded-interactive border border-hair bg-surface-1 p-0.5">
+      <div role="radiogroup" aria-label={t.kpis.autopilot_label} className="inline-flex gap-1">
         {MODES.map((m) => {
           const Icon = m.icon;
           const isActive = m.mode === mode;
           return (
-            <Tooltip content={m.desc(t)}><button
-              key={m.mode}
-              type="button"
-              role="radio"
-              aria-checked={isActive}
-              disabled={busy || mode === null}
-              onClick={() => select(m.mode)}
-              className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 typo-caption transition-colors disabled:is-disabled ${
-                isActive ? 'bg-background shadow-elevation-1' : 'text-ink-3 hover:text-ink-2'
-              }`}
-              style={isActive ? { color: m.accent } : undefined}
-            >
-              <Icon className="w-3.5 h-3.5" /> {m.label(t)}
-            </button></Tooltip>
+            <Tooltip key={m.mode} content={m.desc(t)}>
+              <OptionChip
+                role="radio"
+                selected={isActive}
+                disabled={busy || mode === null}
+                onSelect={() => select(m.mode)}
+                icon={<Icon className="w-3.5 h-3.5" />}
+              >
+                {m.label(t)}
+              </OptionChip>
+            </Tooltip>
           );
         })}
       </div>

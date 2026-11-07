@@ -12,6 +12,7 @@
 // watches that environment, and is the only thing this component writes. A slot
 // can honestly be detected-but-unbound (we see Postgres, nothing is wired) or
 // bound-but-undetected (a connector is wired, the code shows nothing yet).
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Check, ChevronDown, Plug, X } from 'lucide-react';
@@ -103,11 +104,10 @@ export function EnvConnectorSlot({
             )}
             {candidates.map((c) => (
               <li key={c.id}>
-                <button
-                  type="button"
+                <PressSurface
                   disabled={busy}
-                  onClick={() => { onAssign(c.id); setPicking(false); }}
-                  className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring disabled:is-disabled"
+                  onPress={() => { onAssign(c.id); setPicking(false); }}
+                  className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive"
                 >
                   <ConnectorGlyph serviceType={c.serviceType} size="w-3.5 h-3.5" />
                   <span className="typo-caption text-ink-2 truncate flex-1 min-w-0 text-left">{c.name}</span>
@@ -115,7 +115,7 @@ export function EnvConnectorSlot({
                     <span className="typo-caption text-[var(--status-error)] shrink-0" style={{ fontWeight: 400 }}>{d.envslot_unhealthy}</span>
                   )}
                   {bound?.id === c.id && <Check className="w-3 h-3 text-primary shrink-0" aria-hidden />}
-                </button>
+                </PressSurface>
               </li>
             ))}
           </ul>

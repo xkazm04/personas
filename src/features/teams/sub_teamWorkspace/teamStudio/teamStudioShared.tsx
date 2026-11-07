@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useMemo, useState } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import Button from '@/features/shared/components/buttons/Button';
@@ -52,11 +53,10 @@ interface UseCaseToggleRowProps {
 export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseToggleRowProps) {
   const { enabled } = useCase;
   return (
-    <button
-      type="button"
+    <PressSurface
       disabled={busy}
-      onClick={() => onToggle(!enabled)}
-      className={`group/uc w-full flex items-start gap-2 px-2 py-1.5 rounded-interactive text-left transition-colors disabled:is-disabled ${
+      onPress={() => onToggle(!enabled)}
+      className={`group/uc w-full flex items-start gap-2 px-2 py-1.5 rounded-interactive    ${
         enabled ? 'hover:bg-status-success/10' : 'hover:bg-surface-2'
       }`}
       aria-pressed={enabled}
@@ -84,7 +84,7 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
           </span>
         )}
       </span>
-    </button>
+    </PressSurface>
   );
 }
 
@@ -165,17 +165,16 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                 </p>
               ) : (
                 available.map((p) => (
-                  <button
+                  <PressSurface
                     key={p.id}
                     data-testid="team-add-item"
-                    type="button"
                     disabled={adding}
-                    onClick={() => void handleAdd(p.id)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left hover:bg-surface-2 disabled:is-disabled transition-colors"
+                    onPress={() => void handleAdd(p.id)}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive"
                   >
                     <PersonaIcon icon={p.icon} color={p.color} display="pop" frameSize="sm" />
                     <span className="typo-body text-foreground truncate">{p.name}</span>
-                  </button>
+                  </PressSurface>
                 ))
               )}
               {excludedDrafts > 0 && (

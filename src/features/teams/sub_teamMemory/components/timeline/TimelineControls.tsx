@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { GitCommitVertical, ChevronRight } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import Button from '@/features/shared/components/buttons/Button';
@@ -38,10 +39,9 @@ export function RunMarker({
   return (
     <div className="relative">
       {/* Run header */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-modal border transition-colors text-left ${
+      <PressSurface
+        onPress={onToggle}
+        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-modal border   ${
           isFiltered
             ? 'bg-role-agent/15 border-role-agent/25'
             : 'bg-surface-1 border-hair hover:border-hair'
@@ -69,7 +69,7 @@ export function RunMarker({
           <RelativeTime timestamp={group.firstCreatedAt} className="typo-body text-foreground" />
         </div>
         <ChevronRight className={`w-3 h-3 text-foreground transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
-      </button>
+      </PressSurface>
 
       {/* Expanded memories */}
       {isExpanded && (

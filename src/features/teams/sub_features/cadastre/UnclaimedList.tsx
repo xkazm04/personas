@@ -5,6 +5,7 @@
 // feature in memory. The product has no door that creates a feature from this
 // page, so each row offers the one that exists: open it in the Context Map,
 // where features are declared. Nothing is invented here.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { ContextCell, TFeatures } from '../featuresModel';
 
 export function unclaimedDomId(id: string): string {
@@ -55,9 +56,9 @@ export function UnclaimedList({ cells, groupName, focus, onFocus, onHover, onOpe
           >
             <i className="sw f-open" aria-hidden="true" />
             <span className="cn">{c.context.name}</span>
-            <button type="button" className="btn sm" onClick={(e) => { e.stopPropagation(); onOpenContext(); }}>
+            <PressSurface className="btn sm" onPress={(e) => { e.stopPropagation(); onOpenContext(); }}>
               {t.open_in_context_map}
-            </button>
+            </PressSurface>
           </div>
         )),
       ])}

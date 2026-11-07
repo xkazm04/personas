@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Send, Trash2, ExternalLink, Check, X, Copy, Wand2, Loader2, CheckCircle2,
@@ -470,10 +471,9 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
           </span>
         </div>
       ) : !showFeedback ? (
-        <button
-          type="button"
-          onClick={() => setShowFeedback(true)}
-          className="group inline-flex items-center gap-3 px-5 py-4 mt-3 w-full text-left rounded-card border border-hair bg-surface-1 hover:bg-surface-2 transition-colors"
+        <PressSurface
+          onPress={() => setShowFeedback(true)}
+          className="group inline-flex items-center gap-3 px-5 py-4 mt-3 w-full rounded-card border border-hair bg-surface-1"
         >
           <Wand2 className="w-4 h-4 text-ink-3 flex-shrink-0" />
           <span className="typo-body-lg text-ink-2">
@@ -482,7 +482,7 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
           <span className="ml-auto typo-label text-ink-1">
             {t.overview.reports_view.improve_agent}
           </span>
-        </button>
+        </PressSurface>
       ) : (
         <div className="rounded-card border border-hair bg-surface-1 px-5 py-4 mt-3">
           <p className="typo-label text-ink-1 mb-3">

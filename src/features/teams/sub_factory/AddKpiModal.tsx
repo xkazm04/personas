@@ -7,6 +7,7 @@
 // Free-form "describe a KPI and let AI build the whole thing" lives with Athena
 // (the chat orb), not here — this is the structured authoring surface. State +
 // actions live in `useAddKpi`; this file is the presentational shell.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Plus, Loader2, Sparkles, X, MessageSquare } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 
@@ -125,17 +126,16 @@ export function AddKpiModal({
           </div>
 
           {/* Hand off to Athena for a guided conversational setup. */}
-          <button
-            type="button"
-            onClick={askAthena}
-            className="w-full flex items-center gap-2 rounded-card border border-hair bg-primary/[0.06] hover:bg-primary/[0.12] transition-colors px-3 py-2 text-left"
+          <PressSurface
+            onPress={askAthena}
+            className="w-full flex items-center gap-2 rounded-card border border-hair bg-primary/[0.06] px-3 py-2"
             data-testid="factory-ask-athena-kpi"
           >
             <MessageSquare className="w-4 h-4 text-primary flex-shrink-0" />
             <span className="typo-caption text-ink-2">
               {w.setup_ask_athena_lead} <span className="text-foreground font-medium">{w.setup_ask_athena_link}</span> {w.setup_ask_athena_tail}
             </span>
-          </button>
+          </PressSurface>
 
           {k.msg && <p className="typo-caption text-status-error">{k.msg}</p>}
         </div>

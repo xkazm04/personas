@@ -55,6 +55,7 @@
  * Dispatch: the two acts are not peers, and a destructive control the same size
  * and shape as the primary one is how the wrong one gets pressed.
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { Rocket, Trash2 } from 'lucide-react';
 
@@ -167,10 +168,9 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
           never folded into it — an act that half worked must not read as one
           that worked. */}
       {ctl.report && (
-        <button
-          type="button"
-          onClick={ctl.dismissReport}
-          className={`focus-ring block w-full rounded-interactive px-2 py-1 text-left typo-caption ${
+        <PressSurface
+          onPress={ctl.dismissReport}
+          className={` block w-full rounded-interactive px-2 py-1  typo-caption ${
             ctl.report.error
               ? 'bg-status-error/10 text-status-error'
               : 'bg-status-success/10 text-status-success'
@@ -203,7 +203,7 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
                 )}
               </>
             ))}
-        </button>
+        </PressSurface>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
@@ -51,23 +52,22 @@ function RunPicker({ roleLabel, runs, value, excluded, onChange }: RunPickerProp
       {({ close, focusIndex }) => (
         <div className="py-1 bg-secondary/95">
           {selectable.map(([id, count], i) => (
-            <button
+            <PressSurface
               key={id}
-              type="button"
               role="option"
               aria-selected={id === value}
-              onClick={() => {
+              onPress={() => {
                 onChange(id);
                 close();
               }}
-              className={`w-full text-left px-2 py-1 typo-caption transition-colors ${
+              className={`w-full  px-2 py-1 typo-caption  ${
                 i === focusIndex || id === value
                   ? 'bg-primary/10 text-foreground'
                   : 'text-ink-2 hover:bg-surface-2'
               }`}
             >
               {shortId(id)} ({count})
-            </button>
+            </PressSurface>
           ))}
         </div>
       )}

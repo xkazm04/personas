@@ -19,6 +19,7 @@
 //    title  typo-body font-semibold text-foreground
 //    label  typo-caption text-ink-3
 //    value  typo-caption text-foreground  + fontWeight 400
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { LucideIcon } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Check, Code2, Plug, Rocket, Unplug, X } from 'lucide-react';
@@ -263,11 +264,10 @@ export function CandidateRow({ credential, healthy, selected, busy, onClick }: {
   const d = t.plugins.dev_tools;
   const label = healthy === false ? d.envslot_unhealthy : healthy === true ? d.monitoring_health_ok : d.monitoring_health_unknown;
   return (
-    <button
-      type="button"
+    <PressSurface
       disabled={busy}
-      onClick={onClick}
-      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring disabled:is-disabled"
+      onPress={onClick}
+      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive"
     >
       <ToolMark label={credential.name} serviceType={credential.serviceType} size={18} />
       <span className="typo-caption text-ink-2 truncate flex-1 min-w-0 text-left" style={{ fontWeight: 400 }}>{credential.name}</span>
@@ -277,7 +277,7 @@ export function CandidateRow({ credential, healthy, selected, busy, onClick }: {
         aria-label={label}
       /></Tooltip>
       {selected && <Check className="w-3 h-3 text-primary shrink-0" aria-hidden />}
-    </button>
+    </PressSurface>
   );
 }
 
@@ -307,14 +307,13 @@ export function CandidateList({ row, busy, onAssign, onCancel }: {
           />
         ))}
       </div>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="px-3 py-1.5 border-t border-hair typo-caption text-ink-3 hover:text-foreground transition-colors text-left"
+      <PressSurface
+        onPress={onCancel}
+        className="px-3 py-1.5 border-t border-hair typo-caption text-ink-3 hover:text-foreground"
         style={{ fontWeight: 400 }}
       >
         {t.common.cancel}
-      </button>
+      </PressSurface>
     </div>
   );
 }

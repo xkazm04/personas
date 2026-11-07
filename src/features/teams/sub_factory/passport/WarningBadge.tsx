@@ -3,6 +3,7 @@
 // KPIs. Click → an anchored popover (portalled, so the matrix's overflow-x-auto
 // never clips it) listing each off-track signal; clicking one deep-links into that
 // KPI's console. Mirrors QuickEditPopover's positioning, minus the edit footer.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { createPortal } from 'react-dom';
@@ -108,16 +109,15 @@ function WarningPopover({
       <ul className="max-h-64 overflow-y-auto p-1.5 space-y-0.5">
         {items.map((it) => (
           <li key={it.kpiId}>
-            <button
-              type="button"
-              onClick={() => onJump(it.groupId, it.kpiId)}
-              className="group/w w-full text-left rounded-interactive px-2 py-1.5 flex items-center gap-2 transition-colors hover:bg-status-error/10"
+            <PressSurface
+              onPress={() => onJump(it.groupId, it.kpiId)}
+              className="group/w w-full rounded-interactive px-2 py-1.5 flex items-center gap-2"
             >
               <span className="w-2 h-2 rounded-full flex-shrink-0 bg-status-error" aria-hidden />
               <span className="typo-body-lg text-foreground min-w-0 flex-1 truncate">{it.name}</span>
               <span className="typo-data-lg text-ink-3 flex-shrink-0">{it.current ?? '—'}/{it.target}{it.unit}</span>
               <ArrowUpRight className="w-4 h-4 flex-shrink-0 opacity-0 group-hover/w:opacity-100 text-primary/70 transition-opacity" aria-hidden />
-            </button>
+            </PressSurface>
           </li>
         ))}
       </ul>

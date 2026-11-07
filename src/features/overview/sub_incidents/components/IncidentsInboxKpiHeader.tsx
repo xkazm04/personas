@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AlertCircle, CheckCircle2, AlertTriangle, Activity, ShieldCheck } from 'lucide-react';
 import type { AuditIncidentSummary } from '@/lib/bindings/AuditIncidentSummary';
@@ -158,11 +159,10 @@ interface TileProps {
 function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = false }: TileProps) {
   const accent = toneClass(tone);
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-3 rounded-card border p-3 text-left transition-colors focus-ring ${
+      className={`flex items-center gap-3 rounded-card border p-3    ${
         active
           ? 'border-primary bg-sel'
           : 'border-hair bg-surface-1 hover:bg-surface-2'
@@ -185,7 +185,7 @@ function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = fal
         )}
         {sublabel && <span className="typo-caption text-ink-3 truncate">{sublabel}</span>}
       </div>
-    </button>
+    </PressSurface>
   );
 }
 

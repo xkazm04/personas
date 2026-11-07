@@ -4,6 +4,7 @@
 // deficiencies are the only things standing; an unwired/absent value is a blue
 // INVITATION ("set up →"), not a grey gap. Owned by the Factory — the cockpit
 // bench keeps its own copies until it is consolidated.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
@@ -143,19 +144,18 @@ export function InkTabs<T extends string>({ tabs, active, onChange, label, icon:
       {tabs.map((t) => {
         const on = t.id === active;
         return (
-          <button
+          <PressSurface
             key={t.id}
-            type="button"
             role="tab"
             aria-selected={on}
-            onClick={() => onChange(t.id)}
-            className={`typo-eyebrow pb-0.5 border-b transition-colors focus-ring ${
+            onPress={() => onChange(t.id)}
+            className={`typo-eyebrow pb-0.5 border-b   ${
               on ? 'text-ink-1' : 'text-ink-3 hover:text-ink-2 border-transparent'
             }`}
             style={on ? { borderColor: INK.teal } : undefined}
           >
             {t.label}
-          </button>
+          </PressSurface>
         );
       })}
     </div>

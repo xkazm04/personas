@@ -4,6 +4,7 @@
 // far along". Rows navigate to the Run Desk (the queue surface that owns the
 // full task rows) with this project active — same door discipline as the
 // persona popover routing through the Monitor's navigate switch.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Cog } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -43,10 +44,9 @@ export function RunnerListPopover({ rows, x, y, onOpen, onClose }: {
         const running = task.status === 'running';
         return (
           <li key={task.id}>
-            <button
-              type="button"
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-input typo-body transition-colors text-ink-2 hover:bg-surface-2 hover:text-foreground focus-ring"
-              onClick={() => { onOpen(); onClose(); }}
+            <PressSurface
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-input typo-body text-ink-2 hover:text-foreground"
+              onPress={() => { onOpen(); onClose(); }}
               data-testid={`mm-runner-row-${task.id}`}
             >
               {/* Hollow dot for queued, filled for running — the same encoding
@@ -64,7 +64,7 @@ export function RunnerListPopover({ rows, x, y, onOpen, onClose }: {
                   ? `${Math.round(Math.min(task.progress, 100))}%`
                   : tokenLabel(t, 'execution', task.status)}
               </span>
-            </button>
+            </PressSurface>
           </li>
         );
       })}

@@ -7,6 +7,7 @@
 // that led with a state colour would be leading with a claim about 14% of
 // itself. The bottom row is the rest of the denominator as small stat cards,
 // the figure dominant and its label underneath, absence included.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { Estate, EstateProject, KpiTally } from './kpiEstate';
@@ -113,9 +114,9 @@ function Crumb({
     );
   }
   return (
-    <button type="button" onClick={onClick} className={`${className} focus-ring`}>
+    <PressSurface onPress={onClick} className={`${className} `}>
       {body}
-    </button>
+    </PressSurface>
   );
 }
 

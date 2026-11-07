@@ -5,6 +5,7 @@
 // The project switch is the product's own picker in the page header above, and
 // the theme is the app's; the band carries only the DEV rehearsal switch at its
 // right, the 19 / 100 the winner used to prove the register holds at scale.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatPercent } from '@/lib/utils/formatters';
 
@@ -57,23 +58,22 @@ export function CadastreHeader({ share, waiting, trouble, unclaimed, filter, onF
 
       <div className="b-tags" role="group" aria-label={t.cadastre_tags_label} onMouseLeave={() => onHover(null)} onBlur={() => onHover(null)}>
         {tags.map((tag) => (
-          <button
+          <PressSurface
             key={tag.move}
-            type="button"
             className={`ftag ${tag.cls}`}
             data-role="cad-tag"
             data-move={tag.move}
             data-testid={`cad-tag-${tag.move}`}
             aria-pressed={filter === tag.move}
             disabled={tag.count === 0}
-            onClick={() => onFilter(tag.move)}
+            onPress={() => onFilter(tag.move)}
             onMouseEnter={() => onHover(tag.move)}
             onFocus={() => onHover(tag.move)}
           >
             <b>{tag.count}</b>
             <span>{tag.words}</span>
             <kbd className="kbd">{tag.key}</kbd>
-          </button>
+          </PressSurface>
         ))}
       </div>
 
@@ -81,12 +81,12 @@ export function CadastreHeader({ share, waiting, trouble, unclaimed, filter, onF
 
       {rehearsal ? (
         <div className="seg" role="group" aria-label={t.cadastre_rehearsal_label}>
-          <button type="button" className={rehearsal.big ? '' : 'is-on'} aria-pressed={!rehearsal.big} onClick={rehearsal.big ? rehearsal.onToggle : undefined} data-testid="cad-rehearsal-real">
+          <PressSurface className={rehearsal.big ? '' : 'is-on'} aria-pressed={!rehearsal.big} onPress={() => { if (rehearsal.big) rehearsal.onToggle(); }} data-testid="cad-rehearsal-real">
             {rehearsal.real}
-          </button>
-          <button type="button" className={rehearsal.big ? 'is-on' : ''} aria-pressed={rehearsal.big} onClick={rehearsal.big ? undefined : rehearsal.onToggle} data-testid="cad-rehearsal-100">
+          </PressSurface>
+          <PressSurface className={rehearsal.big ? 'is-on' : ''} aria-pressed={rehearsal.big} onPress={() => { if (!rehearsal.big) rehearsal.onToggle(); }} data-testid="cad-rehearsal-100">
             100
-          </button>
+          </PressSurface>
           <span className="seg-k">
             <kbd className="kbd">d</kbd>
           </span>

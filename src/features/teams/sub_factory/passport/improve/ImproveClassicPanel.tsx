@@ -14,6 +14,7 @@
 // The OPERATIONS live in `useImproveActions`, not here — Console v2 renders the
 // same ones in the modal's own visual language, and "queue for all N projects"
 // must not exist twice.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Rocket, ScanSearch, ChevronDown, ChevronRight } from 'lucide-react';
@@ -97,9 +98,9 @@ export function ImproveClassicPanel({ slug, rowKey, onDone }: {
             )}
           </div>
           {a.kind === 'task' && ops.batchSize(a) > 1 && (
-            <button type="button" onClick={() => void ops.runBatch(a)} disabled={ops.busy === a.id} className="block ml-auto mt-1 typo-caption text-primary hover:underline disabled:is-disabled">
+            <PressSurface onPress={() => void ops.runBatch(a)} disabled={ops.busy === a.id} className="block ml-auto mt-1 typo-caption text-primary hover:underline">
               Queue for all {ops.batchSize(a)} projects that need this →
-            </button>
+            </PressSurface>
           )}
         </div>
       ))}

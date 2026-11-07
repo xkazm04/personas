@@ -5,6 +5,7 @@
 // The row says WHAT is true; what to do about it, and what is inside, live in
 // the tooltip on the name (`BookPreviewTip`), so every row is one line tall and
 // the table reads as a table.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import { CoverageBar, SizeBar } from '../../estate/CoverageBar';
@@ -33,10 +34,10 @@ export function BookRowLine({
 
       <td className="w-[34%] max-w-0 py-2.5 pr-3 align-middle">
         <Tooltip placement="right" content={<BookPreviewTip row={row} below={below} />}>
-          <button type="button" onClick={onOpen} className="block w-full rounded-interactive text-left focus-ring">
+          <PressSurface onPress={onOpen} className="block w-full rounded-interactive">
             <span className={`block truncate ${KT.name}`}>{row.label}</span>
             {row.context && <span className={`block truncate ${KT.meta}`}>{row.context}</span>}
-          </button>
+          </PressSurface>
         </Tooltip>
       </td>
 

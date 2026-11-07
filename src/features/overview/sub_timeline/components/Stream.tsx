@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Radio, Search, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
@@ -74,12 +75,11 @@ function FacetRow({
 }) {
   return (
     <Tooltip content={hint}>
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={on}
       disabled={count === 0 && !on}
-      className={`w-full flex items-center gap-2 px-2 min-h-[var(--row-h)] rounded-interactive text-left transition-colors disabled:is-disabled ${
+      className={`w-full flex items-center gap-2 px-2 min-h-[var(--row-h)] rounded-interactive    ${
         on ? 'bg-sel' : 'hover:bg-surface-2'
       }`}
     >
@@ -94,7 +94,7 @@ function FacetRow({
       <span className="ml-auto typo-data text-ink-3 flex-shrink-0">
         {count === null ? '—' : count}
       </span>
-    </button>
+    </PressSurface>
     </Tooltip>
   );
 }
@@ -264,12 +264,11 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
               const on = lens.kinds.has(k);
               const total = kindTotals?.[k];
               return (
-                <button
+                <PressSurface
                   key={k}
-                  type="button"
-                  onClick={() => toggle('kinds', k)}
+                  onPress={() => toggle('kinds', k)}
                   aria-pressed={on}
-                  className={`w-full flex items-center gap-2 px-2 min-h-[var(--row-h)] rounded-interactive text-left transition-colors ${
+                  className={`w-full flex items-center gap-2 px-2 min-h-[var(--row-h)] rounded-interactive   ${
                     on ? 'bg-sel' : 'hover:bg-surface-2'
                   }`}
                 >
@@ -280,7 +279,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   <span className="ml-auto typo-data text-ink-3">
                     {total ?? '·'}
                   </span>
-                </button>
+                </PressSurface>
               );
             })}
           </FacetGroup>
@@ -289,12 +288,11 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
           {memoryModes && (
             <FacetGroup title={t.monitor.stream_group_memory_view}>
               {(['list', 'timeline', 'diff'] as MemoryMode[]).map((m) => (
-                <button
+                <PressSurface
                   key={m}
-                  type="button"
-                  onClick={() => setMemoryMode(m)}
+                  onPress={() => setMemoryMode(m)}
                   aria-pressed={lens.memoryMode === m}
-                  className={`w-full px-2 min-h-[var(--row-h)] rounded-interactive text-left typo-caption capitalize transition-colors ${
+                  className={`w-full px-2 min-h-[var(--row-h)] rounded-interactive  typo-caption capitalize  ${
                     lens.memoryMode === m ? 'bg-sel text-ink-1' : 'text-ink-2 hover:bg-surface-2'
                   }`}
                 >
@@ -303,7 +301,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                     : m === 'timeline'
                       ? t.monitor.stream_memory_mode_timeline
                       : t.monitor.stream_memory_mode_list}
-                </button>
+                </PressSurface>
               ))}
             </FacetGroup>
           )}

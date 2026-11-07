@@ -1,6 +1,7 @@
 // Soundings L2 — the four columns of the project file. Each one is a label, a
 // list or key-value grid, and the doors that belong to it; none of them knows
 // where it sits.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 
@@ -24,25 +25,25 @@ export function FleetColumn({ station, h }: { station: Station; h: CardHandlers 
       <ul className="sd-d-list">
         {island.fleet.map((s) => (
           <li key={s.id}>
-            <button type="button" className="sd-sess" data-state={s.state} aria-label={tx(m.soundings_open_session, { name: s.label })} onClick={() => h.onSession(s.id)}>
+            <PressSurface className="sd-sess" data-state={s.state} aria-label={tx(m.soundings_open_session, { name: s.label })} onPress={() => h.onSession(s.id)}>
               <i />{s.label}
-            </button>
+            </PressSurface>
             <span className={s.state === 'awaiting_input' ? 'sd-late-t' : 'sd-muted'} style={s.state === 'awaiting_input' ? { color: 'var(--sd-lilac)' } : undefined}>{fleetWord(s.state)}</span>
           </li>
         ))}
         {island.personasRunning.length > 0 && (
           <li>
-            <button type="button" className="sd-sess" data-state="persona" aria-label={m.soundings_open_personas} onClick={(e) => h.onPersonas(anchorOf(e))}>
+            <PressSurface className="sd-sess" data-state="persona" aria-label={m.soundings_open_personas} onPress={(e) => h.onPersonas(anchorOf(e))}>
               <i />{island.personasRunning.join(', ')}
-            </button>
+            </PressSurface>
             <span className="sd-muted">{m.world_persona_running}</span>
           </li>
         )}
         {island.runners.length > 0 && (
           <li>
-            <button type="button" className="sd-sess" data-state="runner" aria-label={m.soundings_open_runners} onClick={(e) => h.onRunners(anchorOf(e))}>
+            <PressSurface className="sd-sess" data-state="runner" aria-label={m.soundings_open_runners} onPress={(e) => h.onRunners(anchorOf(e))}>
               <i />{tx(island.runners.length === 1 ? m.soundings_runners_one : m.soundings_runners_other, { count: island.runners.length })}
-            </button>
+            </PressSurface>
             <span className="sd-muted">{m.lane_runners}</span>
           </li>
         )}
@@ -68,7 +69,7 @@ export function ShipColumn({ station, h }: { station: Station; h: CardHandlers }
       <span className="sd-c-lab typo-label">{m.world_next_ship}</span>
       {ship?.next ? (
         <>
-          <button type="button" className="sd-d-ship sd-d-ship-btn" onClick={h.onShip}>{ship.next}</button>
+          <PressSurface className="sd-d-ship sd-d-ship-btn" onPress={h.onShip}>{ship.next}</PressSurface>
           <div className="sd-d-tiderow"><Tide ship={ship} className="sd-d-tide" /></div>
           <dl className="sd-d-kv">
             <dt>{m.soundings_shipped}</dt>
@@ -137,13 +138,13 @@ export function RelationsColumn({ station, stations, edges, h }: {
         if (o === undefined) return null;
         const name = stations[o]!.island.name;
         return (
-          <button type="button" className="sd-d-rel" key={`${e.from}-${e.to}-${e.kind}`} aria-label={tx(m.soundings_follow_current, { name, label: e.label ?? '' })} onClick={(ev) => { ev.stopPropagation(); h.onFollow(o, e); }}>
+          <PressSurface className="sd-d-rel" key={`${e.from}-${e.to}-${e.kind}`} aria-label={tx(m.soundings_follow_current, { name, label: e.label ?? '' })} onPress={(ev) => { ev.stopPropagation(); h.onFollow(o, e); }}>
             <svg width="24" height="10" viewBox="0 0 24 10" aria-hidden>
               <path d="M1.5 9 C1.5 1.5 22.5 1.5 22.5 9" fill="none" stroke="var(--sd-ink3)" strokeWidth="1.4" strokeDasharray={e.kind === 'similarity' ? '3 3' : undefined} />
             </svg>
             <span>{name}</span>
             {e.label && <span className="sd-muted">{e.label}</span>}
-          </button>
+          </PressSurface>
         );
       })}
     </div>

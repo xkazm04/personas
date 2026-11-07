@@ -1,6 +1,7 @@
 // The register: every deed, grouped by whose move it is, with the filter box
 // `/` lands in and the sort the page shares with the Board. In unclaimed mode
 // (`u`) the same column lists the ground nobody claims instead.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { ReactNode, RefObject } from 'react';
 
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
@@ -139,18 +140,18 @@ export function Register(p: RegisterProps) {
               <span className={`fpill ${p.filter === 'waiting' ? 'gate' : p.filter === 'trouble' ? 'trouble' : 'open'}`}>
                 {p.filter === 'waiting' ? t.cadastre_only_waiting : p.filter === 'trouble' ? t.cadastre_only_trouble : t.cadastre_only_unclaimed}
               </span>
-              <button type="button" className="fclear" onClick={p.onClearFilter} data-testid="cad-filter-clear">
+              <PressSurface className="fclear" onPress={p.onClearFilter} data-testid="cad-filter-clear">
                 {og ? t.cadastre_clear_register : t.cadastre_clear_all}
                 <kbd className="kbd">Esc</kbd>
-              </button>
+              </PressSurface>
             </>
           ) : (
             <>
               <div className="seg" role="group" aria-label={t.sort_label}>
                 {FEATURE_SORTS.map((s) => (
-                  <button key={s} type="button" className={p.sort === s ? 'is-on' : ''} aria-pressed={p.sort === s} onClick={() => p.onSort(s)}>
+                  <PressSurface key={s} className={p.sort === s ? 'is-on' : ''} aria-pressed={p.sort === s} onPress={() => p.onSort(s)}>
                     {sortLabel(s, t)}
-                  </button>
+                  </PressSurface>
                 ))}
               </div>
               <kbd className="kbd">s</kbd>

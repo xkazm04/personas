@@ -20,6 +20,7 @@
 // each entry point land straight in its natural lane. The modal is `6xl` and
 // tall because these surfaces are a two-panel board and a skills × projects
 // matrix, not a list.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { ArrowRight, ChevronLeft, Puzzle, Rocket, Wand2 } from 'lucide-react';
@@ -154,10 +155,9 @@ function ChoiceCard({ icon: Icon, title, body, meta, onClick, testid }: {
   testid: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group relative overflow-hidden flex flex-col items-start text-left gap-2 p-5 rounded-card border border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair transition-colors focus-ring"
+    <PressSurface
+      onPress={onClick}
+      className="group relative overflow-hidden flex flex-col items-start gap-2 p-5 rounded-card border border-hair bg-surface-1 hover:border-hair"
       data-testid={testid}
     >
       {/* illustrative background watermark — the lane's icon, oversized + faint */}
@@ -169,6 +169,6 @@ function ChoiceCard({ icon: Icon, title, body, meta, onClick, testid }: {
       <CardTitle icon={Icon} title={title} />
       <span className="relative typo-caption text-ink-3" style={{ fontWeight: 400 }}>{body}</span>
       <span className="relative typo-label text-ink-3 mt-auto pt-1">{meta}</span>
-    </button>
+    </PressSurface>
   );
 }

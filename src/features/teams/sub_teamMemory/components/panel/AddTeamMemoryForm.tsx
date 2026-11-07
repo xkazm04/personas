@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useRef, useState } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Plus, X, ChevronDown } from 'lucide-react';
@@ -101,20 +102,19 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
           {({ close, focusIndex }) => (
             <div className="py-1 bg-secondary/95">
               {CATEGORIES.map((c, idx) => (
-                <button
+                <PressSurface
                   key={c}
-                  type="button"
                   role="option"
                   aria-selected={category === c}
-                  onClick={() => { setCategory(c); close(); }}
-                  className={`w-full text-left px-2 py-1 typo-body transition-colors ${
+                  onPress={() => { setCategory(c); close(); }}
+                  className={`w-full  px-2 py-1 typo-body  ${
                     idx === focusIndex || category === c
                       ? 'bg-primary/10 text-foreground'
                       : 'text-ink-2 hover:bg-surface-2'
                   }`}
                 >
                   {tokenLabel(t, 'memory_category', c)}
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}
@@ -135,14 +135,16 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
         </div>
       </div>
 
-      <button
-        type="button"
-        className="w-full typo-body py-1.5 rounded-card bg-role-agent/15 text-role-agent hover:bg-role-agent/25 transition-colors disabled:is-disabled"
+      <Button
+        variant="accent"
+        tone="agent"
+        size="sm"
+        className="w-full"
         disabled={!title.trim() || !content.trim()}
         onClick={() => { void handleSubmit(); }}
       >
         {t.pipeline.save_memory}
-      </button>
+      </Button>
     </div>
   );
 }

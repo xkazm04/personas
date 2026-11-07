@@ -5,6 +5,7 @@
 // is biased toward information density per pixel — minimal vertical
 // padding, mono-font numerics, persistent column sort affordance.
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -373,10 +374,10 @@ export default function MemoriesPageDense() {
                 <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-hair bg-background shadow-elevation-3 p-1">
                   <p className="px-2 py-1.5 typo-eyebrow text-ink-3">{t.overview.memories.reflect_pick_persona}</p>
                   {reflectablePersonas.map((p) => (
-                    <button type="button" className="w-full flex items-center justify-between gap-3 px-2 min-h-[var(--row-h)] rounded-interactive typo-body text-ink-2 hover:bg-surface-2 transition-colors" key={p.id} onClick={() => handleReflect(p.id)}>
+                    <PressSurface className="w-full flex items-center justify-between gap-3 px-2 min-h-[var(--row-h)] rounded-interactive typo-body text-ink-2" key={p.id} onPress={() => handleReflect(p.id)}>
                       <span className="truncate">{p.name}</span>
                       <span className="typo-data text-ink-3 flex-shrink-0">{p.count}</span>
-                    </button>
+                    </PressSurface>
                   ))}
                 </div>
               )}

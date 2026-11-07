@@ -96,14 +96,15 @@ function MiniPanel({
   const tooFew = points.length < 3;
   return (
     <div className={PANEL} data-testid="kpi-layer-panel">
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="inline"
         onClick={() => onOpen(kpi.id)}
         aria-label={kpi.name}
-        className="typo-label text-ink-2 truncate max-w-full text-left hover:text-primary focus-ring rounded-interactive"
+        className="truncate max-w-full text-left"
       >
         {kpi.name}
-      </button>
+      </Button>
       <LazyChart
         fallback={<div className={GHOST} style={{ animationDelay: '150ms' }} aria-hidden="true" />}
         render={(R) => (

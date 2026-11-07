@@ -6,6 +6,7 @@
 // declared — the SAME `navigateTo` switch the Monitor's activity rows use, so
 // the destination never depends on which surface the click came from. A row
 // whose process declares no destination (or a demo island's) stays inert.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useState } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Bot } from 'lucide-react';
@@ -75,14 +76,13 @@ export function PersonaListPopover({ rows, x, y, onOpen, onClose }: {
         return (
           <li key={row.personaId}>
             {row.navigable ? (
-              <Tooltip content={t.mastermind.persona_open}><button
-                type="button"
-                className={`${layout} rounded-md transition-colors hover:bg-surface-2 hover:text-foreground focus-ring`}
-                onClick={() => { onOpen(row.personaId); onClose(); }}
+              <Tooltip content={t.mastermind.persona_open}><PressSurface
+                className={`${layout} rounded-md  hover:bg-surface-2 hover:text-foreground `}
+                onPress={() => { onOpen(row.personaId); onClose(); }}
                 data-testid={`mm-persona-row-${row.personaId}`}
               >
                 {body}
-              </button></Tooltip>
+              </PressSurface></Tooltip>
             ) : (
               <div className={`${layout} cursor-default`} data-testid={`mm-persona-row-${row.personaId}`}>{body}</div>
             )}

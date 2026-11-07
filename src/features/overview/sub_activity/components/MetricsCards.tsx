@@ -31,14 +31,15 @@ export function AnomalyBadge({ anomaly, onClickExecution, onOpenDrilldown }: Ano
       <AlertTriangle className="w-3.5 h-3.5 text-status-warning mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
         {onOpenDrilldown ? (
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="inline"
             onClick={onOpenDrilldown}
             aria-label={t.overview.metrics_cards.open_anomaly_drilldown}
-            className="typo-heading text-status-warning text-left hover:text-status-warning underline decoration-amber-400/30 cursor-pointer"
+            className="typo-heading text-left"
           >
             {headline}
-          </button>
+          </Button>
         ) : (
           <p className="typo-heading text-status-warning">{headline}</p>
         )}

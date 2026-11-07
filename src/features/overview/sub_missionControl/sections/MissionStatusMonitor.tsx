@@ -3,6 +3,7 @@
 // chip + the fleet's worst rows first, each with the per-day uptime strip.
 // Rows deep-link to the persona; the standalone status page no longer exists.
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useMemo } from 'react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { CheckCircle2, AlertCircle, XCircle, Circle } from 'lucide-react';
@@ -124,10 +125,9 @@ export function MissionStatusMonitor() {
 function MonitorRow({ entry, onClick }: { entry: CompositeHealthEntry; onClick: () => void }) {
   const th = GRADE_THEME[entry.grade];
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors focus-ring"
+    <PressSurface
+      onPress={onClick}
+      className="relative w-full flex items-center gap-2.5 px-3 py-2"
     >
       <span className={`absolute left-0 inset-y-0 w-0.5 ${th.bar} ${entry.grade === 'healthy' ? 'opacity-30' : 'opacity-70'}`} aria-hidden="true" />
       <GradeDot grade={entry.grade} />
@@ -145,6 +145,6 @@ function MonitorRow({ entry, onClick }: { entry: CompositeHealthEntry; onClick: 
       <span className={`inline-flex items-center px-1.5 py-0.5 rounded-input border shrink-0 ${th.chip}`}>
         <span className="typo-data">{entry.score}</span>
       </span>
-    </button>
+    </PressSurface>
   );
 }

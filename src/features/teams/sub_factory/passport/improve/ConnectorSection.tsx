@@ -4,6 +4,7 @@
 // shown enabled (a healthy credential exists in the vault → click to wire it and
 // re-derive readiness) or disabled (not connected yet → click routes to the Vault
 // to add one). Reads the user's vault + a live health dot per connected tool.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useMemo, useState } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Plug, ExternalLink } from 'lucide-react';
@@ -106,12 +107,11 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
               const toolStatus = tx(d.improve_conn_tool_status, { tool: tool.label, status });
               return (
                 <Tooltip key={tool.name} content={toolStatus}>
-                  <button
-                    type="button"
-                    onClick={() => (enabled && cred ? connect(cred) : openVault())}
+                  <PressSurface
+                    onPress={() => (enabled && cred ? connect(cred) : openVault())}
                     disabled={enabled && cred ? binding === cred.id : false}
                     aria-label={toolStatus}
-                    className={`group/tool relative flex flex-col items-center gap-1 w-[4.25rem] px-1.5 py-2 rounded-interactive border transition-colors disabled:is-disabled ${
+                    className={`group/tool relative flex flex-col items-center gap-1 w-[4.25rem] px-1.5 py-2 rounded-interactive border   ${
                       enabled
                         ? 'border-hair bg-primary/[0.07] hover:bg-primary/[0.14]'
                         : 'border-hair bg-surface-1 opacity-55 hover:opacity-100 hover:bg-secondary/25'
@@ -127,7 +127,7 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
                       ? <ThemedConnectorIcon url={iconUrl} label={tool.label} color={color} size="w-5 h-5" />
                       : <Fallback className="w-5 h-5" style={{ color }} />}
                     <span className="typo-label text-ink-2 w-full truncate text-center">{tool.label}</span>
-                  </button>
+                  </PressSurface>
                 </Tooltip>
               );
             })}

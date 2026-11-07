@@ -149,7 +149,6 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
     return next;
   };
 
-  const chipVariant = (active: boolean) => (active ? 'secondary' : 'ghost') as 'secondary' | 'ghost';
 
   return (
     <div
@@ -193,7 +192,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
           </div>
           <div className="flex flex-wrap gap-1">
             <Button
-              variant={chipVariant(contextIds.size === 0)}
+              variant="ghost" pressed={contextIds.size === 0}
               size="xs"
               disabled={busy}
               onClick={() => setContextIds(new Set())}
@@ -215,7 +214,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
             {contexts.map((c) => (
               <Button
                 key={c.id}
-                variant={chipVariant(contextIds.has(c.id))}
+                variant="ghost" pressed={contextIds.has(c.id)}
                 size="xs"
                 disabled={busy}
                 onClick={() => setContextIds((prev) => toggle(prev, c.id))}
@@ -240,7 +239,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
             {TARGETS.map((n) => (
               <Button
                 key={n ?? 'auto'}
-                variant={chipVariant(targetCount === n)}
+                variant="ghost" pressed={targetCount === n}
                 size="xs"
                 disabled={busy}
                 onClick={() => setTargetCount(n)}
@@ -277,10 +276,9 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
                     {agents.map((a) => (
                       <Button
                         key={a.key}
-                        variant={chipVariant(agentKeys.has(a.key))}
+                        variant="ghost" pressed={agentKeys.has(a.key)}
                         size="xs"
                         disabled={busy}
-                        aria-pressed={agentKeys.has(a.key)}
                         onClick={() => toggleAgent(a.key)}
                         tooltip={a.description}
                         data-testid={`mm-scan-agent-${a.key}`}

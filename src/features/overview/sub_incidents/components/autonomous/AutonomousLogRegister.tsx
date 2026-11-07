@@ -10,6 +10,7 @@
 // the width buys the title room it was losing to truncation. Header cells
 // align over the same grid so columns scan top-to-bottom.
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -47,8 +48,8 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
         const SourceIcon = sourceTableIcon(inc.sourceTable);
         const latency = resumeLatencyLabel(inc);
         return (
-          <button type="button" onClick={() => props.onOpenIncident(inc)} style={{ gridTemplateColumns: GRID }}
-            className={`group grid w-full items-center gap-3 border-b border-b-primary/[0.06] px-4 py-2 text-left transition-colors hover:bg-secondary/25 focus-ring ${index % 2 === 1 ? 'bg-primary/[0.02]' : ''}`}>
+          <PressSurface onPress={() => props.onOpenIncident(inc)} style={{ gridTemplateColumns: GRID }}
+            className={`group grid w-full items-center gap-3 border-b border-b-primary/[0.06] px-4 py-2   hover:bg-secondary/25  ${index % 2 === 1 ? 'bg-primary/[0.02]' : ''}`}>
             <span className="text-right typo-data text-status-success">{latency ?? '—'}</span>
             <Tooltip content={sourceTableLabel(t, inc.sourceTable)}><span className={`flex h-7 w-7 items-center justify-center rounded-card border ${severityBadgeClass(inc.severity)}`}>
               <SourceIcon className="h-3.5 w-3.5" />
@@ -56,7 +57,7 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
             <Tooltip content={inc.title}><span className="truncate typo-body text-foreground">{inc.title}</span></Tooltip>
             <span className="truncate typo-body text-foreground">{inc.personaName ?? '—'}</span>
             <ArrowUpRight className="h-3.5 w-3.5 justify-self-end text-ink-3 transition-colors group-hover:text-primary" aria-label={l.open_incident} />
-          </button>
+          </PressSurface>
         );
       }}
     />

@@ -6,6 +6,7 @@
 // It is an interactive surface (its rows are buttons), so it stays open while
 // the pointer crosses into it; the element is always mounted and hidden when
 // idle, which is how the winner's `#tip` sat in its page.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useLayoutEffect, useRef } from 'react';
 
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
@@ -53,21 +54,21 @@ function ParcelBody({ hover, claims, onOpen, onUnclaimed, t, tDev, tx }: ParcelT
           <>
             <span className="t-label">{tx(fs.length === 1 ? t.cadastre_tip_claimed_one : t.cadastre_tip_claimed_other, { count: fs.length })}</span>
             {fs.slice(0, 6).map((r) => (
-              <button key={r.key} type="button" onClick={() => onOpen(r.key)} data-testid="cad-tip-claimant">
+              <PressSurface key={r.key} onPress={() => onOpen(r.key)} data-testid="cad-tip-claimant">
                 <span className="rkk">{r.rank}</span>
                 <DeedGlyph kind={r.row.kind} tDev={tDev} />
                 <span>{r.row.feature.name}</span>
-              </button>
+              </PressSurface>
             ))}
             {fs.length > 6 ? <span className="dim">{tx(t.cadastre_tip_more, { count: fs.length - 6 })}</span> : null}
           </>
         ) : (
           <>
             <span className="t-label">{t.cadastre_tip_nobody}</span>
-            <button type="button" onClick={onUnclaimed}>
+            <PressSurface onPress={onUnclaimed}>
               <kbd className="kbd">u</kbd>
               <span>{t.cadastre_tip_all_unclaimed}</span>
-            </button>
+            </PressSurface>
           </>
         )}
       </div>

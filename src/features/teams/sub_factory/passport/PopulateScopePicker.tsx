@@ -10,6 +10,7 @@
 // gates), not what the lane is in the abstract. "Context map: 12 groups and
 // current, will be left alone" is the sentence that lets someone uncheck it
 // with confidence.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Check } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -49,13 +50,12 @@ export function PopulateScopePicker({ gates, lanes, onChange }: {
           const on = lanes.includes(lane);
           const m = meta[lane];
           return (
-            <button
+            <PressSurface
               key={lane}
-              type="button"
               role="checkbox"
               aria-checked={on}
-              onClick={() => toggle(lane)}
-              className={`flex items-start gap-2.5 rounded-card border px-3 py-2 text-left transition-colors focus-ring ${
+              onPress={() => toggle(lane)}
+              className={`flex items-start gap-2.5 rounded-card border px-3 py-2    ${
                 on ? 'border-primary/50 bg-primary/[0.07]' : 'border-foreground/[0.1] hover:bg-foreground/[0.03]'
               }`}
               data-testid={`populate-lane-${lane}`}
@@ -74,7 +74,7 @@ export function PopulateScopePicker({ gates, lanes, onChange }: {
                 </span>
                 <span className="typo-caption block text-ink-2">{m.detail}</span>
               </span>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

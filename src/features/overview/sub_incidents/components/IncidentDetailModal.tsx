@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -275,17 +276,16 @@ export function IncidentDetailModal({
               <ul className="flex flex-col gap-1">
                 {siblings.map((sib) => (
                   <li key={sib.id}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenIncident?.(sib)}
-                      className="flex w-full items-center gap-2 rounded-card border border-hair bg-surface-1 px-3 py-2 text-left hover:bg-surface-2 transition-colors focus-ring"
+                    <PressSurface
+                      onPress={() => onOpenIncident?.(sib)}
+                      className="flex w-full items-center gap-2 rounded-card border border-hair bg-surface-1 px-3 py-2"
                     >
                       <StatusShape status={severityShapeStatus(sib.severity)} size="sm" />
                       <span className="typo-body text-foreground truncate flex-1 min-w-0">{sib.title}</span>
                       <span className="typo-caption text-ink-2 shrink-0">
                         {sourceTableLabel(t, sib.sourceTable)} · {relativeTime(t, sib.createdAt)}
                       </span>
-                    </button>
+                    </PressSurface>
                   </li>
                 ))}
               </ul>

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { tokenLabel } from '@/i18n/tokenMaps';
@@ -106,20 +107,18 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
             </span>
             <div className="flex items-center gap-0.5">
               {Array.from({ length: IMPORTANCE_DOTS }).map((_, i) => (
-                <button
-                  type="button"
+                <PressSurface
                   key={i}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${i < dots ? 'bg-status-warning' : 'bg-primary/10'} hover:bg-status-warning`}
                   // Re-clicking the rung a memory already sits on writes nothing:
                   // the dot row is coarser than the 1-10 field behind it, so an
                   // unguarded click could round-trip the value into a different
                   // number with no visible change to the dots.
-                  onClick={() => {
+                  onPress={() => {
                     const next = dotsToImportance(i);
                     if (next !== memory.importance) onImportanceChange(memory.id, next);
                   }}
-                  aria-label={`${pt.importance_label} ${dotsToImportance(i)}`}
-                />
+                  aria-label={`${pt.importance_label} ${dotsToImportance(i)}`}>{null}</PressSurface>
               ))}
             </div>
             {revisions.length > 0 && (

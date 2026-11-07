@@ -1,5 +1,6 @@
 // Declaring or editing one branch. The floor only appears for `must_hold`,
 // because it is the only scope a floor can fail.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 
@@ -127,15 +128,14 @@ export function ScenarioForm({ useCaseId, scenario, onSubmit, onClose, t, tCommo
               <ul role="presentation">
                 {SCENARIO_SCOPES.map((option) => (
                   <li key={option} role="presentation">
-                    <button
-                      type="button"
+                    <PressSurface
                       role="option"
                       aria-selected={option === scope}
-                      onClick={() => { setScope(option); close(); }}
-                      className="w-full rounded-interactive px-2 py-1.5 text-left typo-body text-foreground hover:bg-surface-2 focus-ring"
+                      onPress={() => { setScope(option); close(); }}
+                      className="w-full rounded-interactive px-2 py-1.5 typo-body text-foreground"
                     >
                       {scopeLabel(option, t)}
-                    </button>
+                    </PressSurface>
                   </li>
                 ))}
               </ul>

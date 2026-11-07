@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Check, GitMerge, ChevronDown, X } from 'lucide-react';
@@ -80,7 +81,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
 
   return (
     <div className={`rounded-modal border transition-colors ${isActive ? 'border-hair bg-surface-1' : 'border-hair bg-background/30'}`}>
-      <Tooltip content={isProcessing ? mc.processing : undefined}><button type="button" onClick={onToggle} disabled={isProcessing} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:is-disabled">
+      <Tooltip content={isProcessing ? mc.processing : undefined}><PressSurface onPress={onToggle} disabled={isProcessing} className="w-full flex items-center gap-3 px-3 py-2.5">
         {kindBadge(conflict.kind, mc[`kind_${conflict.kind}`])}
         <span className="typo-body text-foreground flex-1 truncate">
           {stripHtml(conflict.memoryA.title)}
@@ -89,7 +90,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
         </span>
         {similarityBadge(conflict.similarity)}
         <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${isActive ? 'rotate-180' : ''}`} />
-      </button></Tooltip>
+      </PressSurface></Tooltip>
 
       {isActive && (
         <div className="animate-fade-slide-in overflow-hidden">

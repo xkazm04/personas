@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { tokenLabel } from '@/i18n/tokenMaps';
@@ -101,20 +102,19 @@ export default function MemoryRowDetail({
           {({ close, focusIndex }) => (
             <div className="py-1 bg-secondary/95">
               {CATEGORIES.map((c, idx) => (
-                <button
+                <PressSurface
                   key={c}
-                  type="button"
                   role="option"
                   aria-selected={editCategory === c}
-                  onClick={() => { setEditCategory(c); close(); }}
-                  className={`w-full text-left px-2 py-1 typo-body transition-colors ${
+                  onPress={() => { setEditCategory(c); close(); }}
+                  className={`w-full  px-2 py-1 typo-body  ${
                     idx === focusIndex || editCategory === c
                       ? 'bg-primary/10 text-foreground'
                       : 'text-ink-2 hover:bg-surface-2'
                   }`}
                 >
                   {tokenLabel(t, 'memory_category', c)}
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import Button from '@/features/shared/components/buttons/Button';
@@ -244,11 +245,10 @@ function RosterRow({
   const { t, tx } = useTranslation();
   const ts = t.pipeline.team_studio;
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={selected}
-      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-card border text-left transition-colors ${
+      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-card border   ${
         selected
           ? 'border-primary/40 bg-surface-1'
           : 'border-transparent hover:bg-secondary/25'
@@ -279,7 +279,7 @@ function RosterRow({
         </div>
       </div>
       <MemberTierChip tier={member.modelTier} />
-    </button>
+    </PressSurface>
   );
 }
 

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback, useEffect, useMemo, type CSSProperties } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -387,10 +388,10 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
           {pending.map((r, i) => {
             const isActive = i === reviewIdx;
             return (
-              <button
+              <PressSurface
                 key={r.id}
-                onClick={() => selectReview(i)}
-                className={`w-full text-left px-3 py-2.5 transition-colors border-l-2 ${isActive ? 'border-l-primary bg-primary/8' : 'border-l-transparent hover:bg-surface-2'
+                onPress={() => selectReview(i)}
+                className={`w-full  px-3 py-2.5  border-l-2 ${isActive ? 'border-l-primary bg-primary/8' : 'border-l-transparent hover:bg-surface-2'
                   }`}
               >
                 <div className="flex items-center gap-2">
@@ -411,7 +412,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                     className="ml-4 block truncate mt-0.5"
                   />
                 )}
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -473,11 +474,14 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                               const v = decisionVerdicts[d.id];
                               const dotColor = v === 'accept' ? 'bg-status-success' : v === 'reject' ? 'bg-status-error' : i === decisionIdx ? 'bg-primary' : 'bg-foreground/20';
                               return (
-                                <button
+                                <PressSurface
                                   key={d.id}
-                                  onClick={() => { setDecisionDir(i > decisionIdx ? 1 : -1); setDecisionIdx(i); }}
-                                  className={`w-2 h-2 rounded-full transition-all ${dotColor} ${i === decisionIdx ? 'scale-125' : ''}`}
-                                />
+                                  onPress={() => { setDecisionDir(i > decisionIdx ? 1 : -1); setDecisionIdx(i); }}
+                                  aria-label={`${i + 1}/${decisions.length}`}
+                                  className={`w-2 h-2 rounded-full ${dotColor} ${i === decisionIdx ? 'scale-125' : ''}`}
+                                >
+                                  {null}
+                                </PressSurface>
                               );
                             })}
                           </div>
@@ -593,11 +597,10 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                           <span className="font-medium">{t.overview.review_focus.quick_actions}</span>
                         </div>
                         {suggestedActions.map((action, i) => (
-                          <Tooltip content={onDispatchAction ? t.overview.review_focus.carry_out_hint : undefined}><button
+                          <Tooltip content={onDispatchAction ? t.overview.review_focus.carry_out_hint : undefined}><PressSurface
                             key={i}
-                            type="button"
                             disabled={isProcessing}
-                            onClick={() => {
+                            onPress={() => {
                               if (onDispatchAction) {
                                 onDispatchAction(current!.id, action);
                               } else {
@@ -605,11 +608,11 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                                 setActionNotes(action);
                               }
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-surface-1 border border-hair hover:bg-primary/10 hover:border-hair disabled:is-disabled transition-colors text-left"
+                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-surface-1 border border-hair hover:border-hair"
                           >
                             <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center typo-heading flex-shrink-0">{i + 1}</span>
                             {action}
-                          </button></Tooltip>
+                          </PressSurface></Tooltip>
                         ))}
                       </div>
                     </>
@@ -629,26 +632,26 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                       }}
                       icon={<X className="w-5 h-5" />}
                       label={hasMultipleDecisions ? t.overview.review_focus.reject_all : t.overview.review.reject}
-                      colorClasses="text-status-error hover:bg-status-error/10"
-                      activeClasses="bg-status-error/10"
+                      colorClasses="text-status-error"
+                      activeClasses="bg-surface-1"
                       notes={actionNotes}
                       onNotesChange={setActionNotes}
                       onConfirm={handleConfirmAction}
                       isProcessing={isProcessing}
-                      confirmColor="bg-status-error/20 hover:bg-status-error/30 text-status-error"
+                      confirmTone="error"
                     />
                     <ActionZone
                       active={activeAction === 'retry'}
                       onClick={() => { setActiveAction(activeAction === 'retry' ? null : 'retry'); setActionNotes(''); }}
                       icon={<RotateCcw className="w-5 h-5" />}
                       label={t.overview.review_focus.retry_with_changes}
-                      colorClasses="text-status-warning hover:bg-status-warning/10"
-                      activeClasses="bg-status-warning/10"
+                      colorClasses="text-status-warning"
+                      activeClasses="bg-surface-1"
                       notes={actionNotes}
                       onNotesChange={setActionNotes}
                       onConfirm={handleConfirmAction}
                       isProcessing={isProcessing}
-                      confirmColor="bg-status-warning/20 hover:bg-status-warning/30 text-status-warning"
+                      confirmTone="warning"
                     />
                     <ActionZone
                       active={activeAction === 'approve'}
@@ -660,13 +663,13 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                       }}
                       icon={<Check className="w-5 h-5" />}
                       label={hasMultipleDecisions ? t.overview.review_focus.accept_all : t.overview.review.approve}
-                      colorClasses="text-status-success hover:bg-status-success/10"
-                      activeClasses="bg-status-success/10"
+                      colorClasses="text-status-success"
+                      activeClasses="bg-surface-1"
                       notes={actionNotes}
                       onNotesChange={setActionNotes}
                       onConfirm={handleConfirmAction}
                       isProcessing={isProcessing}
-                      confirmColor="bg-status-success/20 hover:bg-status-success/30 text-status-success"
+                      confirmTone="success"
                     />
                   </div>
                   <div className="text-center py-1.5 typo-caption text-ink-2 border-t border-hair">

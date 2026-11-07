@@ -4,6 +4,7 @@
 // not: the shape of the roster (one mark per feature, in move order), how much
 // of the codebase a feature claims (one stacked bar, and the band's ONE large
 // number), and four counted chips that are also the page's filters.
+import { OptionChip, type OptionTone } from '@/features/shared/components/forms/OptionChip';
 import { useRef } from 'react';
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -34,7 +35,7 @@ interface ChipSpec {
   id: BandFilter;
   count: number;
   label: string;
-  tone: string;
+  tone: OptionTone;
 }
 
 export function BoardBand({
@@ -59,10 +60,10 @@ export function BoardBand({
   const claimed = contexts > 0 ? totals.core / contexts : null;
 
   const chips: ChipSpec[] = [
-    { id: 'waiting', count: totals.waitingOnYou, label: t.chip_waiting, tone: 'text-status-pending border-status-pending/40 bg-status-pending/10' },
-    { id: 'trouble', count: totals.inTrouble, label: t.chip_trouble, tone: 'text-status-error border-status-error/40 bg-status-error/10' },
-    { id: 'unclaimed', count: unclaimedContexts, label: t.chip_unclaimed, tone: 'text-foreground border-border bg-surface-1' },
-    { id: 'untouched', count: untouchedGroups, label: t.chip_untouched, tone: 'text-status-warning border-status-warning/40 bg-status-warning/10' },
+    { id: 'waiting', count: totals.waitingOnYou, label: t.chip_waiting, tone: 'info' },
+    { id: 'trouble', count: totals.inTrouble, label: t.chip_trouble, tone: 'error' },
+    { id: 'unclaimed', count: unclaimedContexts, label: t.chip_unclaimed, tone: 'neutral' },
+    { id: 'untouched', count: untouchedGroups, label: t.chip_untouched, tone: 'warning' },
   ];
 
   return (
@@ -113,18 +114,15 @@ export function BoardBand({
           const active = filter === chip.id;
           return (
             <Tooltip key={chip.id} content={active ? t.chip_clear : chip.label}>
-              <button
-                type="button"
+              <OptionChip
                 data-testid={`features-chip-${chip.id}`}
-                aria-pressed={active}
-                onClick={() => onFilter(active ? null : chip.id)}
-                className={`inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 typo-caption focus-ring ${chip.tone} ${
-                  active ? 'ring-2 ring-primary/60' : ''
-                }`}
+                selected={active}
+                tone={chip.tone}
+                count={chip.count}
+                onSelect={() => onFilter(active ? null : chip.id)}
               >
-                <Numeric value={chip.count} unit="count" className="typo-data" />
-                <span>{chip.label}</span>
-              </button>
+                {chip.label}
+              </OptionChip>
             </Tooltip>
           );
         })}

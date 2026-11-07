@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useMemo, useCallback } from 'react';
 import { StateMark } from '@/features/shared/components/display/StateMark';
 import { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -249,10 +250,9 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
 
   return (
     <div className="mx-4 md:mx-6">
-      <button
-        type="button"
-        onClick={() => setExpanded((p) => !p)}
-        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-modal border transition-all text-left cursor-pointer ${
+      <PressSurface
+        onPress={() => setExpanded((p) => !p)}
+        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-modal border    ${
           expanded ? 'bg-status-warning/8 border-status-warning/25' : 'bg-status-warning/5 border-status-warning/15 hover:border-status-warning/25 hover:bg-status-warning/10'
         }`}
       >
@@ -277,7 +277,7 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
           )}
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-      </button>
+      </PressSurface>
 
       {expanded && (
           <div className="animate-fade-slide-in overflow-hidden">

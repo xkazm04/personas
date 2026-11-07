@@ -9,6 +9,7 @@
  * the chart logs it, so a miss is visible instead of looking like a dead
  * keypress.
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 
@@ -89,19 +90,20 @@ export function IslandJumpPalette({
         <ul role="listbox" aria-label={t.mastermind.jump_label} className="max-h-64 overflow-y-auto">
           {results.map((island, i) => (
             <li key={island.slug}>
-              <button
-                type="button"
+              <PressSurface
                 role="option"
                 aria-selected={i === cursor}
+                // The jump fires on mousedown (keeps the input focused); the click has nothing left to do.
+                onPress={() => undefined}
                 onMouseDown={(e) => { e.preventDefault(); onJump(island.slug); onClose(); }}
                 onMouseEnter={() => setCursor(i)}
                 data-testid={`mm-jump-option-${island.slug}`}
-                className={`w-full text-left px-3 py-1.5 typo-body truncate transition-colors ${
+                className={`w-full  px-3 py-1.5 typo-body truncate  ${
                   i === cursor ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-surface-2'
                 }`}
               >
                 {island.name}
-              </button>
+              </PressSurface>
             </li>
           ))}
         </ul>

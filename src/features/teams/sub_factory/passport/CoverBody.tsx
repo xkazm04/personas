@@ -6,6 +6,7 @@
 // moved to the Compare table's per-project actions row (PassportActionsRow).
 // Exported (via ProjectsPassportWall) for reuse as the Mastermind project
 // sidebar's header.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Activity, ArrowUpRight, Boxes, Database, KeyRound, Server } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { LucideIcon } from 'lucide-react';
@@ -111,10 +112,10 @@ export function CoverBody({
           <span className="w-3 h-3 rounded-full shrink-0" style={{ background: worst }} aria-hidden />
         )}
         {openable ? (
-          <Tooltip content={p.identity.purpose}><button type="button" onClick={() => onOpen!(p.identity.slug)} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
+          <Tooltip content={p.identity.purpose}><PressSurface onPress={() => onOpen!(p.identity.slug)} className="group/cov inline-flex items-center gap-1 min-w-0">
             <span className="typo-body-lg tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
             <ArrowUpRight className="w-5 h-5 flex-shrink-0 opacity-0 group-hover/cov:opacity-100 text-primary/70 transition-opacity" aria-hidden />
-          </button></Tooltip>
+          </PressSurface></Tooltip>
         ) : (
           <Tooltip content={p.identity.purpose}><span className="typo-body-lg tracking-tight truncate block">{p.identity.name}</span></Tooltip>
         )}
