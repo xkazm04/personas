@@ -44,6 +44,10 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
   // AppError object, so String(err) printed "[object Object]").
   const [error, setError] = useState<unknown>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Identity of the result the component currently shows; a response for an
+  // earlier result must not overwrite the newer one's state.
+  const keyRef = useRef(`${resultId}:${resultKind}`);
+  keyRef.current = `${resultId}:${resultKind}`;
 
   useEffect(() => {
     setEvents(null);
@@ -52,17 +56,23 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
   }, [resultId, resultKind]);
 
   useEffect(() => {
-    if (!open || events !== null || loading) return;
+    // A failed load parks in `error` (loading flips back to false); without the
+    // error guard this effect re-fires and retries the IPC call in a tight loop.
+    if (!open || events !== null || loading || error != null) return;
+    const key = `${resultId}:${resultKind}`;
     setLoading(true);
-    setError(null);
     labGetResultEvents(resultId, resultKind, PAGE_SIZE, 0)
       .then((rows) => {
+        if (keyRef.current !== key) return;
         setEvents(rows);
         setHasMore(rows.length === PAGE_SIZE);
       })
-      .catch((err) => { silentCatch('LabEventStream:labGetResultEvents')(err); setError(err ?? new Error('unknown')); })
+      .catch((err) => {
+        silentCatch('LabEventStream:labGetResultEvents')(err);
+        if (keyRef.current === key) setError(err ?? new Error('unknown'));
+      })
       .finally(() => setLoading(false));
-  }, [open, events, loading, resultId, resultKind]);
+  }, [open, events, loading, error, resultId, resultKind]);
 
   const loadMore = useCallback(() => {
     if (!events || loadingMore || !hasMore) return;
@@ -83,7 +93,12 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
   return (
     <details
       className="group"
-      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+      onToggle={(e) => {
+        const next = (e.target as HTMLDetailsElement).open;
+        setOpen(next);
+        // Re-opening after a failure is the retry gesture.
+        if (next) setError(null);
+      }}
     >
       <summary className="flex items-center gap-1.5 typo-label text-ink-1 cursor-pointer hover:text-ink-3">
         <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
