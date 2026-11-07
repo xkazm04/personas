@@ -7965,13 +7965,12 @@
           "revision": 10,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/credentials/cli_capture.rs:1-14 shells out to gcloud/gh/vercel/netlify/heroku to extract already-issued OAuth tokens as app credentials; none is a coding-agent CLI run as an LLM transport (oauth.rs and cli_capture.rs carry zero claude/codex/gemini references) — the subject's precondition (spawning a headless coding-agent CLI as prompt-in/answer-out) does not hold in this context.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:455 The earlier not-applicable verdict is wrong. spawn_claude_and_collect is a second, hand-rolled Claude CLI spawn door used by credential design, the negotiator and the auto-credential browser. That browser drives Playwright over arbitrary third-party web pages (auto_cred_browser.rs:609) while the child inherits the full host environment, so untrusted page content runs next to every app secret.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "retrieval",
@@ -13770,13 +13769,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2350 persona executions (children that read connector/web content) spawn via CliProcessDriver, whose build_and_spawn_core (src-tauri/engine/src/cli_process.rs:928) inherits the FULL host env (incl. PERSONAS_API_KEY set at boot/finalize.rs:52, already delivered to the sidecar by name at cli_mcp_config.rs:154) while the probe at cli_process.rs:774 env_clears to an allowlist; untrusted-content children must get a built env, not a denylist. Billing strip itself is right: last-applied at cli_process.rs:960, vault refuses reserved names at runner/credentials.rs:932",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:598 The hourly pulse consolidator runs a pure text-to-JSON turn (generate seam) over notes the prompt itself labels UNTRUSTED, yet spawns the CLI with full tool access and no deny list. It also inherits the whole host environment, so an injected note runs against an agent that can use every tool and see every app secret.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-gates",

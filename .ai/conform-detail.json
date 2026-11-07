@@ -45824,6 +45824,71 @@
         "at": "2026-11-07T03:31:18.544351+00:00",
         "reason": "reviewer (sonnet): The anchor index.ts:12 is only an export line, so it does not show that the context never reaches the native process. The context imports @/lib/connectors/connectorMeta, @/stores/themeStore and @/hooks/utility/interaction/useMotion, and I could not confirm those never reach the native process. It al"
       }
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/agent-cli-transport": {
+      "context": "engine-project-tracking",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T23:29:42.458Z",
+      "worker": "d5fd826c-7224-4efb-ae2d-d7489d83c886",
+      "techniques": [
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:598 A generate-mode call should hold no tool grants. Instead it gets the widest stance, and defends with prompt delimiters ('asked it nicely'). The empty scratch cwd removes only ambient CLAUDE.md/hooks."
+        },
+        {
+          "technique": "subscription-auth-selection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2386 Persona executions (connector/web content) use the non-scrubbed spawn, which inherits the full host env incl. PERSONAS_API_KEY set at boot (finalize.rs:52). spawn_scrubbed exists (cli_process.rs) but is opt-in and used only for drive.mjs. The consolidator's own Command::new at consolidator.rs:425 inherits the env the same way. Billing strip itself is right (see output note)."
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:493 Concatenates every assistant text block and never reads the result event's is_error/subtype. Failure is a bare non-zero exit plus stderr (line 528), not a typed outcome. Stdout/stderr are kept separate (good)."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2350 persona executions (children that read connector/web content) spawn via CliProcessDriver, whose build_and_spawn_core (src-tauri/engine/src/cli_process.rs:928) inherits the FULL host env (incl. PERSONAS_API_KEY set at boot/finalize.rs:52, already delivered to the sidecar by name at cli_mcp_config.rs:154) while the probe at cli_process.rs:774 env_clears to an allowlist; untrusted-content children must get a built env, not a denylist. Billing strip itself is right: last-applied at cli_process.rs:960, vault refuses reserved names at runner/credentials.rs:932",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by d5fd826c-7224-4efb-ae2d-d7489d83c886"
+        }
+      ]
+    },
+    "1092db16-982f-4d99-b71b-14e6cf704a4f/agent-cli-transport": {
+      "context": "commands-credentials",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T23:29:42.458Z",
+      "worker": "d5fd826c-7224-4efb-ae2d-d7489d83c886",
+      "techniques": [
+        {
+          "technique": "subscription-auth-selection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:455 No env_clear/allowlist for a child reading untrusted web content. The billing strip IS applied last (line 482, force_subscription_auth), but at a call site whose own comment records that it was once missing there."
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:547 Non-JSON stdout lines are appended into the answer text (stream noise poisons the parse). The result event's is_error/subtype is not read. Failure is the last stderr line (line 611), not a typed outcome. Stdin write errors are discarded."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/cli_capture.rs:1-14 shells out to gcloud/gh/vercel/netlify/heroku to extract already-issued OAuth tokens as app credentials; none is a coding-agent CLI run as an LLM transport (oauth.rs and cli_capture.rs carry zero claude/codex/gemini references) — the subject's precondition (spawning a headless coding-agent CLI as prompt-in/answer-out) does not hold in this context.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by d5fd826c-7224-4efb-ae2d-d7489d83c886"
+        }
+      ]
     }
   }
 }
