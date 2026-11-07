@@ -10,6 +10,7 @@ import type { KnowledgeBase } from "@/api/vault/database/vectorKb";
 import type { UseDriveKnowledgeResult } from "./useDriveKnowledge";
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const TITLE_ID = "drive-kb-picker-title";
 
@@ -82,12 +83,11 @@ export function KbPickerDialog({
           )}
 
           {knowledge.knowledgeBases.map((kb) => (
-            <button
+            <PressSurface
               key={kb.id}
-              type="button"
               disabled={pending}
-              onClick={() => onPick(kb)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 hover:border-hair-2 transition-colors text-left disabled:is-disabled focus-ring"
+              onPress={() => onPick(kb)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-card border border-hair"
             >
               <Brain className="w-4 h-4 text-ink-2 shrink-0" />
               <span className="flex-1 min-w-0 typo-body text-foreground truncate">
@@ -96,7 +96,7 @@ export function KbPickerDialog({
               <span className="typo-caption text-foreground tabular-nums shrink-0">
                 {tx(d.kb_docs_n, { count: kb.documentCount })}
               </span>
-            </button>
+            </PressSurface>
           ))}
 
           {creating ? (
@@ -125,14 +125,13 @@ export function KbPickerDialog({
               </Button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setCreating(true)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-card border border-dashed border-primary/25 typo-body text-foreground hover:border-hair-2 hover:bg-secondary/30 transition-colors focus-ring"
+            <PressSurface
+              onPress={() => setCreating(true)}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-card border border-dashed border-hair-2 typo-body"
             >
               <Plus className="w-4 h-4 shrink-0" />
               {d.kb_create_new}
-            </button>
+            </PressSurface>
           )}
         </div>
       </div>

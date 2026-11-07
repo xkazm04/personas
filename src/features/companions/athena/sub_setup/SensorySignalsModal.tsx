@@ -14,6 +14,7 @@ import {
 import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /**
  * "What did Athena see?" view. Lists ambient signals captured by the
@@ -151,19 +152,9 @@ export function SensorySignalsModal({
 
         <div className="flex flex-wrap gap-1.5 px-5 py-2.5 border-b border-foreground/10 shrink-0">
           {filterChips.map((chip) => (
-            <button
-              key={chip.id}
-              type="button"
-              onClick={() => setFilter(chip.id)}
-              className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors focus-ring ${
-                filter === chip.id
-                  ? 'bg-primary/15 text-primary'
-                  : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
-              }`}
-              aria-pressed={filter === chip.id}
-            >
+            <OptionChip key={chip.id} onSelect={() => setFilter(chip.id)} selected={filter === chip.id}>
               {chip.label}
-            </button>
+            </OptionChip>
           ))}
         </div>
 

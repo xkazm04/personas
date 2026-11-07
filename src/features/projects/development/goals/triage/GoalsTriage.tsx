@@ -28,6 +28,7 @@ import { AcceptRejectControls } from '../acceptancePrimitives';
 import { GoalStatusChip, GoalStatusDot, KpiGauge, TriageEmpty } from './triageBits';
 import { bucketize, byLane, relTime, toRows, type GoalKpi, type GoalRow, type TriageGoal } from './triageModel';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export interface GoalsTriageProps {
   goals: TriageGoal[];
@@ -176,16 +177,12 @@ function ContextStrip({ label, rows }: { label: string; rows: GoalRow[] }) {
   if (rows.length === 0) return null;
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive hover:bg-surface-1 transition-colors focus-ring"
-      >
+      <PressSurface onPress={() => setOpen((v) => !v)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive">
         {open ? <ChevronDown className="w-3.5 h-3.5 text-ink-2" /> : <ChevronRight className="w-3.5 h-3.5 text-ink-2" />}
         <span className="typo-label text-ink-3">{label}</span>
         <span className="typo-caption text-ink-2 num">{rows.length}</span>
         <span className="h-px flex-1 bg-surface-2" />
-      </button>
+      </PressSurface>
       {open && (
         <ul className="pl-6 pr-2 pb-1 space-y-0.5">
           {rows.map((row) => (

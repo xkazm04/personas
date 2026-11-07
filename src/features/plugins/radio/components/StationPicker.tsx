@@ -9,6 +9,7 @@ import type { StationSourceKind } from '@/stores/slices/system/radioSlice';
 import type { Station } from '@/lib/bindings/Station';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface StationPickerProps {
   stations: Station[];
@@ -92,13 +93,11 @@ export default function StationPicker({
       station.source.kind === 'youtubeTracks' ? station.source.tracks.length : null;
     return (
       <li key={station.id}>
-        <button
-          type="button"
-          onClick={() => onPick(station.id)}
+        <PressSurface
+          onPress={() => onPick(station.id)}
           onContextMenu={(e) => onRowContextMenu(e, station.id)}
-          className={`w-full flex items-center gap-3 px-3 py-2 typo-body text-left transition-colors ${
-            active ? 'bg-secondary/40' : 'hover:bg-secondary/20'
-          }`}
+          className="w-full flex items-center gap-3 px-3 py-2 typo-body"
+          selected={active}
         >
           <span
             aria-hidden
@@ -127,7 +126,7 @@ export default function StationPicker({
             </p>
           </div>
           {active && <Check className="w-4 h-4 text-foreground shrink-0" />}
-        </button>
+        </PressSurface>
       </li>
     );
   };
@@ -205,35 +204,25 @@ export default function StationPicker({
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            role="menuitem"
-            className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-ink-2 hover:bg-secondary/30 transition-colors"
-            onClick={() => {
+          <PressSurface role="menuitem" onPress={() => {
               setStationDisabled(contextStation.id, true);
               setContextMenu(null);
-            }}
-          >
+            }} className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-ink-2">
             <EyeOff className="w-3.5 h-3.5 text-foreground" />
             {t.radio.row_menu_hide}
-          </button>
+          </PressSurface>
           {contextStation.sourceUrl && (
-            <button
-              type="button"
-              role="menuitem"
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-ink-2 hover:bg-secondary/30 transition-colors"
-              onClick={() => {
+            <PressSurface role="menuitem" onPress={() => {
                 if (contextStation.sourceUrl) {
                   openExternalUrl(contextStation.sourceUrl).catch(
                     silentCatch('radio:open-source'),
                   );
                 }
                 setContextMenu(null);
-              }}
-            >
+              }} className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-ink-2">
               <ExternalLink className="w-3.5 h-3.5 text-foreground" />
               {t.radio.row_menu_open_source}
-            </button>
+            </PressSurface>
           )}
         </div>
       )}

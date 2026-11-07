@@ -10,6 +10,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 
 import { ProjectLabel } from './NoteCardBits';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** Past this many projects the popover grows a type-ahead filter. */
 const SEARCH_AFTER = 6;
@@ -110,18 +111,17 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
           {rows.map((row, index) => {
             const selected = row.id === note.projectId;
             return (
-              <button
+              <PressSurface
                 key={row.id ?? '__none'}
-                type="button"
                 role="option"
                 aria-selected={selected}
-                onClick={() => {
+                onPress={() => {
                   onSelect(row.id);
                   close();
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors focus-ring ${
-                  index === focusIndex ? 'bg-surface-1' : 'hover:bg-surface-1'
-                }`}
+                className={`w-full flex items-center gap-2.5 px-3 py-1.5 ${index === focusIndex ? 'bg-surface-1' : ''}`}
+                selected={selected}
+                aria-pressed={undefined}
               >
                 <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${row.id ? 'text-ink-2 ' : 'text-ink-3 '}`} aria-hidden />
                 <span className="flex-1 min-w-0 flex flex-col">
@@ -129,7 +129,7 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
                   {row.path && <span className="typo-caption text-ink-2 truncate">{row.path}</span>}
                 </span>
                 {selected && <Check className="w-3.5 h-3.5 flex-shrink-0 text-primary" aria-hidden />}
-              </button>
+              </PressSurface>
             );
           })}
           {scoped.length === 0 && (

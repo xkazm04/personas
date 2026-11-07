@@ -354,15 +354,10 @@ export function OrbDecisionBubble() {
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {decision.options.map((opt, i) => (
               <Tooltip content={opt.hint ?? opt.label} key={opt.key}>
-                <button
-                  type="button"
+                <Button
                   data-testid={`athena-decision-option-${i + 1}`}
                   onClick={() => pick(opt)}
-                  className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
-                    opt.danger
-                      ? 'bg-status-error/10 border border-status-error/20 hover:bg-status-error/20 hover:border-status-error/30 text-status-error'
-                      : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/30 text-primary'
-                  }`}
+                  variant={opt.danger ? 'danger' : 'secondary'} size="sm"
                 >
                   <span
                     className={`inline-flex items-center justify-center w-4 h-4 rounded-interactive typo-caption ${
@@ -375,7 +370,7 @@ export function OrbDecisionBubble() {
                   <span className="text-left whitespace-normal break-words min-w-0">
                     {opt.label}
                   </span>
-                </button>
+                </Button>
               </Tooltip>
             ))}
 
@@ -403,29 +398,31 @@ export function OrbDecisionBubble() {
           {/* Fully-hide X — top-upper corner. Collapses the bubble to the
               restore peek (distinct from the bottom minimize/expand handle). */}
           <Tooltip content={t.athena.decision_dismiss}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => setHidden(true)}
               data-testid="athena-decision-dismiss"
               aria-label={t.athena.decision_dismiss}
-              className="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-background/95 border border-primary/25 text-foreground shadow-elevation-2 ring-2 ring-background hover:border-primary/50 transition"
+              className="absolute -top-2.5 -right-2.5 z-10"
             >
               <X className="w-3 h-3" />
-            </button>
+            </Button>
           </Tooltip>
 
           {/* The arrow/handle — minimize ⇄ expand; points at the orb. */}
           <Tooltip content={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}>
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="icon-xs"
               onClick={() => setCollapsed((c) => !c)}
               data-testid="athena-decision-toggle"
               aria-label={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}
-              className="absolute -bottom-3 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-background shadow-elevation-2 ring-2 ring-background hover:brightness-110 transition"
               style={handleSide}
+              className="absolute -bottom-3 z-10"
             >
               {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
+            </Button>
           </Tooltip>
         </>
       )}

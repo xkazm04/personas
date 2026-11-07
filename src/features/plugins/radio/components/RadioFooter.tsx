@@ -28,6 +28,7 @@ import VolumePopover from './VolumePopover';
 import Button from '@/features/shared/components/buttons/Button';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * Time we give either engine to reach `playing` state after a play/load.
  * Past this, treat the source as unavailable: surface a toast and (for
@@ -700,15 +701,9 @@ export default function RadioFooter() {
             aria-label={t.radio.expand_button} />
         </Tooltip>
         <Tooltip content={t.radio.expand_button}>
-          <button
-            type="button"
-            onClick={() => setDetailsOpen((v) => !v)}
-            className="relative typo-caption text-ink-2 hover:text-foreground text-left transition-colors min-w-0 flex-1"
-            aria-label={t.radio.expand_button}
-            aria-expanded={detailsOpen}
-          >
+          <PressSurface onPress={() => setDetailsOpen((v) => !v)} aria-label={t.radio.expand_button} aria-expanded={detailsOpen} className="relative typo-caption text-ink-2 hover:text-foreground min-w-0 flex-1">
             <TitleCrossfade text={titleLine} />
-          </button>
+          </PressSurface>
         </Tooltip>
         {isYoutube && progress && progress.durationSec > 0 && (
           <Tooltip content={tx(t.radio.progress_label, {

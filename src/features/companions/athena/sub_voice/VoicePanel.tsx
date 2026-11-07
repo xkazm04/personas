@@ -9,6 +9,7 @@ import {
   type AthenaTtsEngine,
 } from '@/stores/slices/system/athenaSlice';
 import { lazyRetry } from '@/lib/lazyRetry';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 // The engine panels are the tab's heavy parts (model lists, previews,
 // downloads). They load as their own chunks and arrive one after the other
@@ -136,15 +137,11 @@ interface EngineButtonProps {
 
 function EngineButton({ active, onClick, icon, label, caption }: EngineButtonProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={active}
-      className={`text-left rounded-card border p-3 transition-colors focus-ring ${
-        active
-          ? 'border-hair-2 bg-surface-2'
-          : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
-      }`}
+      className="text-left rounded-card border border-hair p-3"
+      selected={active}
     >
       <div className="flex items-center gap-2">
         <span className={active ? 'text-ink-2' : 'text-foreground'}>{icon}</span>
@@ -155,6 +152,6 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
         </span>
       </div>
       <p className="typo-caption mt-1">{caption}</p>
-    </button>
+    </PressSurface>
   );
 }

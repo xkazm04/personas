@@ -3,6 +3,7 @@ import { Plus, X, Link2, Zap, Layers, Building2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 type DepthColor = 'emerald' | 'amber' | 'violet';
 
@@ -127,15 +128,15 @@ export function TaskModal({
                 const tw = DEPTH_COLOR_CLASSES[opt.color];
                 const ring = selected ? tw.selectedRing : 'border-hair hover:border-hair';
                 return (
-                  <button
+                  <PressSurface
                     key={opt.value}
-                    type="button"
-                    onClick={() => setDepth(opt.value)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-surface-1 transition-all ${ring}`}
+                    onPress={() => setDepth(opt.value)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border ${ring}`}
+                    selected={selected}
                   >
                     <Icon className={`w-4 h-4 ${selected ? tw.selectedIcon : 'text-foreground'}`} />
                     <span className="typo-caption text-foreground">{dr[opt.labelKey]}</span>
-                  </button>
+                  </PressSurface>
                 );
               })}
             </div>

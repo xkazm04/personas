@@ -37,6 +37,7 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 
 
@@ -743,13 +744,9 @@ function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: Acti
   return (
     <li>
       {clickable ? (
-        <button
-          type="button"
-          onClick={() => onJump(event)}
-          className="w-full text-left hover:bg-surface-2 transition-colors"
-        >
+        <PressSurface onPress={() => onJump(event)} className="w-full">
           {inner}
-        </button>
+        </PressSurface>
       ) : (
         inner
       )}

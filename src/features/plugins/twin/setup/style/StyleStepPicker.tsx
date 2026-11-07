@@ -9,6 +9,7 @@ import { Dices, Palette, SkipForward } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { STYLE_PRESETS } from './stylePresets';
 import type { StyleStart } from './styleContract';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface StyleStepPickerProps {
   value: StyleStart | null;
@@ -27,21 +28,19 @@ interface TileProps {
 
 function Tile({ selected, onSelect, title, body, icon, testId, dashed }: TileProps) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <PressSurface
+      onPress={onSelect}
       aria-pressed={selected}
       data-testid={testId}
-      className={`focus-ring text-left flex gap-2 rounded-interactive border px-3 py-2 transition-colors ${
-        dashed ? 'border-dashed' : ''
-      } ${selected ? 'border-hair-2 bg-surface-2' : 'border-primary/10 hover:bg-secondary/40'}`}
+      className={`flex gap-2 rounded-interactive border border-hair px-3 py-2 ${dashed ? 'border-dashed' : ''}`}
+      selected={selected}
     >
       <span className="mt-0.5 flex-shrink-0 text-primary" aria-hidden="true">{icon}</span>
       <span className="min-w-0">
         <span className="block typo-title">{title}</span>
         <span className="block typo-caption">{body}</span>
       </span>
-    </button>
+    </PressSurface>
   );
 }
 

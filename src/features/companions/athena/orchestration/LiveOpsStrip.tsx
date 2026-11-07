@@ -16,6 +16,7 @@ import { parseDigest, type ParsedOp, type ParsedSession } from './parseDigest';
 import Button from '@/features/shared/components/buttons/Button';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * D7 — Live ops view in the chat panel. Renders the operative-memory
  * digest (the same text Athena sees in her prompt every turn) as a
@@ -116,13 +117,12 @@ function OpCard({
   const statusTone = toneForStatus(op.status);
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02]">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-start gap-1.5 px-2 py-1.5 typo-caption text-foreground hover:bg-foreground/[0.04] transition-colors rounded-interactive text-left"
+      <PressSurface
+        onPress={onToggle}
         aria-expanded={expanded}
         data-testid="companion-live-ops-op"
         data-op-id={op.id8}
+        className="w-full flex items-start gap-1.5 px-2 py-1.5 typo-caption text-foreground rounded-interactive"
       >
         <Chevron className="size-3 shrink-0 mt-0.5" />
         <Tooltip content={op.status}>
@@ -149,7 +149,7 @@ function OpCard({
             </span>
           </div>
         </div>
-      </button>
+      </PressSurface>
       {expanded && op.sessions.length > 0 && (
         <ol className="space-y-1.5 px-2 pb-2 pl-7">
           {op.sessions.map((sess) => (

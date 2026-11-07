@@ -13,6 +13,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GitHubRepoSelector } from '../GitHubRepoSelector';
 import type { SourceMode } from './pipelineTypes';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface SourceControlStepProps {
   sourceMode: SourceMode;
@@ -169,21 +170,17 @@ function ModeButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={active}
-      className={`flex flex-col items-start gap-1 px-3 py-2.5 text-left border rounded-input transition-colors ${
-        active
-          ? 'bg-sel border-primary'
-          : 'bg-surface-1 border-hair hover:bg-surface-1'
-      }`}
+      className="flex flex-col items-start gap-1 px-3 py-2.5 border border-hair rounded-input"
+      selected={active}
     >
       <span className="flex items-center gap-1.5 typo-caption text-foreground">
         <Icon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-ink-2'}`} />
         {label}
       </span>
       <span className="typo-caption text-foreground">{hint}</span>
-    </button>
+    </PressSurface>
   );
 }

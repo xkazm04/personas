@@ -33,10 +33,11 @@ import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { sessionLabel, sessionStateMeta } from '../../fleetSessionModel';
 import { QUEUE_TILE_H, QUEUE_TILE_W } from '../../gridGeometry';
-import { AFFORDANCE_BTN, FleetNode } from '../node/FleetNode';
+import { FleetNode } from '../node/FleetNode';
 import { originLabel } from './originLabel';
 import type { QueueItem } from './useQueueModel';
 import type { QueueActions } from './useQueueActions';
+import Button from '@/features/shared/components/buttons/Button';
 
 type Confirm = 'cancel' | 'start' | null;
 
@@ -129,23 +130,43 @@ export const QueueTile = memo(function QueueTile({
 
       {item.locked && onRecap && (
         <Tooltip content={s.grid_session_recap_open}>
-          <button type="button" onClick={() => onRecap(session)} aria-label={s.grid_session_recap_open} data-testid="fleet-queue-recap" className={AFFORDANCE_BTN}>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => onRecap(session)}
+            aria-label={s.grid_session_recap_open}
+            data-testid="fleet-queue-recap"
+          >
             <ScanEye className="h-2.5 w-2.5" aria-hidden />
-          </button>
+          </Button>
         </Tooltip>
       )}
 
       {queued && onNudge && (
         <>
           <Tooltip content={s.queue_move_up}>
-            <button type="button" className={AFFORDANCE_BTN} disabled={first} onClick={() => onNudge(item.sessionId, -1)} aria-label={s.queue_move_up} data-testid="fleet-queue-up">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={first}
+              onClick={() => onNudge(item.sessionId, -1)}
+              aria-label={s.queue_move_up}
+              data-testid="fleet-queue-up"
+            >
               <ChevronUp className="h-2.5 w-2.5" aria-hidden />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content={s.queue_move_down}>
-            <button type="button" className={AFFORDANCE_BTN} disabled={last} onClick={() => onNudge(item.sessionId, 1)} aria-label={s.queue_move_down} data-testid="fleet-queue-down">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={last}
+              onClick={() => onNudge(item.sessionId, 1)}
+              aria-label={s.queue_move_down}
+              data-testid="fleet-queue-down"
+            >
               <ChevronDown className="h-2.5 w-2.5" aria-hidden />
-            </button>
+            </Button>
           </Tooltip>
         </>
       )}
@@ -153,27 +174,39 @@ export const QueueTile = memo(function QueueTile({
       {queued && (
         <>
           <Tooltip content={s.queue_start_now}>
-            <button type="button" onClick={() => setConfirm('start')} aria-label={s.queue_start_now} data-testid="fleet-queue-start-now" className={AFFORDANCE_BTN}>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setConfirm('start')}
+              aria-label={s.queue_start_now}
+              data-testid="fleet-queue-start-now"
+            >
               <Zap className="h-2.5 w-2.5" aria-hidden />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content={s.queue_cancel}>
-            <button type="button" onClick={() => setConfirm('cancel')} aria-label={s.queue_cancel} data-testid="fleet-queue-cancel" className={`${AFFORDANCE_BTN} hover:text-status-error`}>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setConfirm('cancel')}
+              aria-label={s.queue_cancel}
+              data-testid="fleet-queue-cancel"
+            >
               <X className="h-2.5 w-2.5" aria-hidden />
-            </button>
+            </Button>
           </Tooltip>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             ref={menuBtn}
-            type="button"
             onClick={openMenu}
             aria-haspopup="menu"
             aria-expanded={menu !== null}
             aria-label={tx(s.queue_menu_aria, { name: label })}
             data-testid="fleet-queue-menu"
-            className={AFFORDANCE_BTN}
           >
             <MoreHorizontal className="h-2.5 w-2.5" aria-hidden />
-          </button>
+          </Button>
         </>
       )}
     </>

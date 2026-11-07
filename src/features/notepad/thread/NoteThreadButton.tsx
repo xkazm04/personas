@@ -11,6 +11,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import { useNoteUnread } from './noteThreadStore';
 import { NoteThreadPopover } from './NoteThreadPopover';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function NoteThreadButton({
   noteId,
@@ -42,18 +43,17 @@ export function NoteThreadButton({
   return (
     <>
       <Tooltip content={label} placement="bottom">
-        <button
+        <Button
+          variant="ghost"
+          size="xs"
           ref={ref}
-          type="button"
           onClick={() => onOpenChange(!open)}
           aria-label={label}
           aria-expanded={open}
           aria-haspopup="dialog"
           data-testid={testId}
           data-unread={unread}
-          className={`relative h-6 min-w-6 px-1 rounded-input flex items-center justify-center gap-1 transition-[opacity,color,background-color] focus-ring ${
-            unread > 0 ? 'text-primary bg-surface-1 hover:bg-primary/15' : 'text-foreground hover:bg-surface-1'
-          } ${quiet ? 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100' : ''}`}
+          className={quiet ? 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100' : ''}
         >
           <MessagesSquare className="w-3.5 h-3.5" aria-hidden />
           <AnimatePresence initial={false} mode="popLayout">
@@ -71,7 +71,7 @@ export function NoteThreadButton({
               </motion.span>
             )}
           </AnimatePresence>
-        </button>
+        </Button>
       </Tooltip>
       {open && (
         <NoteThreadPopover noteId={noteId} noteTitle={noteTitle} anchorRef={ref} onClose={() => onOpenChange(false)} />

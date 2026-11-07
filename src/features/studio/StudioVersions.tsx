@@ -9,6 +9,7 @@ import type { BuildVersion } from '@/lib/bindings/BuildVersion';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 // C7 — version history: each build turn commits a snapshot; this lists them and
 // restores the project's files to a chosen one. After a restore the preview reloads.
@@ -98,12 +99,11 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
             <EmptyState art="archive" size="sm" title={t.studio.no_versions_yet} />
           ) : (
             versions.map((v, i) => (
-              <button
+              <PressSurface
                 key={v.sha}
-                type="button"
                 role="menuitem"
-                onClick={() => setPending(v)}
-                className="group flex w-full items-start gap-2 rounded-interactive px-2 py-1.5 text-left transition-colors hover:bg-secondary/60"
+                onPress={() => setPending(v)}
+                className="group flex w-full items-start gap-2 rounded-interactive px-2 py-1.5"
               >
                 <RotateCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-2 group-hover:text-primary" />
                 <span className="min-w-0 flex-1">
@@ -112,7 +112,7 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
                   </span>
                   <span className="block typo-caption text-ink-2">{v.when}</span>
                 </span>
-              </button>
+              </PressSurface>
             ))
           )}
         </div>

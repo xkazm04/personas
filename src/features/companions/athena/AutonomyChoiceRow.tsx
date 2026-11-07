@@ -2,6 +2,7 @@
 // Arrow keys move the choice, as a radio group should; only the checked
 // choice sits in the tab order.
 import { useRef, type KeyboardEvent } from 'react';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 export interface Choice<T extends string> {
   id: T;
@@ -45,24 +46,21 @@ export function ChoiceRow<T extends string>({
       {choices.map((ch, i) => {
         const checked = ch.id === value;
         return (
-          <button
+          <OptionChip
             key={ch.id}
             ref={(el) => {
               refs.current[i] = el;
             }}
-            type="button"
             role="radio"
-            aria-checked={checked}
             tabIndex={i === current ? 0 : -1}
             disabled={disabled}
-            onClick={() => onChoose(ch.id)}
+            onSelect={() => onChoose(ch.id)}
             data-testid={ch.testId}
-            className={`min-w-0 rounded-interactive px-2 py-1.5 typo-caption text-center transition-colors focus-ring disabled:is-disabled ${
-              checked ? 'bg-primary/20 text-primary shadow-elevation-1' : 'text-ink-2 hover:bg-secondary/70 hover:text-foreground'
-            }`}
+            className="min-w-0 justify-center"
+            selected={checked}
           >
             {ch.label}
-          </button>
+          </OptionChip>
         );
       })}
     </div>

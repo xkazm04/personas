@@ -7,6 +7,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useDecisionKeys } from '../useDecisionKeys';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 // The question card (contest A/3): large, informative, grows out of the orb's
 // corner and shrinks back when answered. It says what Athena is asking, why (her
@@ -88,16 +89,15 @@ export default function GuideQuestionCard({
           <ol className="mt-4 space-y-2">
             {options.map((o, i) => (
               <li key={`${i}-${o}`}>
-                <button
-                  type="button"
-                  onClick={() => onAnswer(o)}
-                  className="flex w-full items-center gap-3 rounded-card border border-border bg-background/50 px-4 py-3 text-left transition-colors hover:border-primary/70 hover:bg-primary/10 focus-visible:border-primary focus-visible:outline-none"
+                <PressSurface
+                  onPress={() => onAnswer(o)}
+                  className="flex w-full items-center gap-3 rounded-card border border-border bg-background/50 px-4 py-3 hover:border-primary/70 hover:bg-primary/10 focus-visible:border-primary focus-visible:outline-none"
                 >
                   <kbd className="flex h-6 w-6 shrink-0 items-center justify-center rounded-interactive border border-border font-mono typo-body text-ink-2">
                     {i + 1}
                   </kbd>
                   <span className="typo-title-lg text-foreground">{o}</span>
-                </button>
+                </PressSurface>
               </li>
             ))}
           </ol>

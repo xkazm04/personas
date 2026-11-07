@@ -7,6 +7,7 @@ import type {
   CreateAthenaStepId,
 } from '../../engine/createAthenaTypes';
 import { StageHero } from './StageHero';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Left rail: hero on top, the numbered step list (the wizard IS a sequence,
@@ -87,16 +88,15 @@ function StepRow({
   if (revisitable) {
     return (
       <li>
-        <button
-          type="button"
-          className={`${rowClass} hover:bg-secondary/40 focus-ring transition-colors duration-fast motion-reduce:transition-none`}
-          onClick={() => onGoTo(step.id)}
+        <PressSurface
+          onPress={() => onGoTo(step.id)}
           data-testid={testId}
           data-status={step.status}
+          className={rowClass}
         >
           <StepMarker index={index} status={step.status} />
           <span className={labelClass}>{label}</span>
-        </button>
+        </PressSurface>
       </li>
     );
   }

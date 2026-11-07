@@ -76,11 +76,11 @@ export function FinderToolbar(p: Props) {
   const ic = "w-3.5 h-3.5";
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 border-b border-border glass-md" data-testid="finder-toolbar">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2 border-b border-hair bg-surface-1" data-testid="finder-toolbar">
       <IconAction label={f.sidebar_toggle} onClick={() => prefs.setSidebarOpen(!view.sidebarOpen)}>
         <PanelLeft className={ic} />
       </IconAction>
-      <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/30 border border-border">
+      <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-surface-1 border border-hair">
         <IconAction label={f.back} onClick={drive.goBack} disabled={!drive.canGoBack}>
           <ArrowLeft className={ic} />
         </IconAction>
@@ -90,7 +90,7 @@ export function FinderToolbar(p: Props) {
         <IconAction label={f.up} onClick={drive.goUp} disabled={!drive.currentPath}>
           <ArrowUp className={ic} />
         </IconAction>
-        <span aria-hidden className="w-px h-4 bg-border mx-0.5" />
+        <span aria-hidden className="w-px h-4 bg-hair mx-0.5" />
         <IconAction label={f.refresh} onClick={drive.refresh}>
           <RefreshCw className={ic} />
         </IconAction>
@@ -109,7 +109,7 @@ export function FinderToolbar(p: Props) {
 
       {p.viewSwitch}
 
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         {hasSelection ? (
           <>
             <Button
@@ -117,19 +117,20 @@ export function FinderToolbar(p: Props) {
               size="sm"
               icon={<Move className={ic} />}
               onClick={(e) => p.onMoveTo(e.currentTarget.getBoundingClientRect())}
+              className="whitespace-nowrap"
             >
               {f.move_to}
             </Button>
-            <Button variant="secondary" size="sm" icon={<FolderOutput className={ic} />} onClick={p.onExport}>
+            <Button variant="secondary" size="sm" icon={<FolderOutput className={ic} />} onClick={p.onExport} className="whitespace-nowrap">
               {f.export_to}
             </Button>
           </>
         ) : (
-          <Button variant="ghost" size="sm" icon={<FolderPlus className={ic} />} onClick={p.onNewFolder}>
+          <Button variant="ghost" size="sm" icon={<FolderPlus className={ic} />} onClick={p.onNewFolder} className="whitespace-nowrap">
             {f.new_folder}
           </Button>
         )}
-        <Button variant="ghost" size="sm" icon={<FolderInput className={ic} />} onClick={p.onImport}>
+        <Button variant="ghost" size="sm" icon={<FolderInput className={ic} />} onClick={p.onImport} className="whitespace-nowrap">
           {f.import}
         </Button>
         <IconAction label={t.plugins.drive.signatures_button} onClick={p.onOpenSignatures}>

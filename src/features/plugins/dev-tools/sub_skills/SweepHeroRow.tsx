@@ -11,6 +11,7 @@ import type { WsRow } from './SkillsManagerPage';
 import { LastUsed, UsageCount } from './skillsManagerBits';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
   row: WsRow;
@@ -34,14 +35,13 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
             <visual.icon className="w-3.5 h-3.5" aria-hidden strokeWidth={1.75} />
           </span></Tooltip>
         )}
-        <button
-          type="button"
-          onClick={() => onInfo(row.entry.name)}
-          className="min-w-0 text-left hover:text-primary transition-colors"
+        <PressSurface
+          onPress={() => onInfo(row.entry.name)}
           data-testid="skills-manager-ws-scan-sweep"
+          className="min-w-0 hover:text-primary"
         >
           <span className="typo-caption text-foreground">{row.entry.name}</span>
-        </button>
+        </PressSurface>
         <span className="flex-1" />
         <UsageCount usage={row.usage} />
         <LastUsed usage={row.usage} />

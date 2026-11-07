@@ -39,6 +39,7 @@ import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * The Orphans tile reads `stats.orphanCount` (every unlinked note in the vault)
  * while the list beside it read `listOrphans(15)`. The number and the list did
@@ -270,10 +271,9 @@ export default function GraphPanel() {
                 const tileClass =
                   'px-3 py-3 rounded-modal bg-surface-1 border border-hair flex flex-col items-start gap-1';
                 return expandable ? (
-                  <button
+                  <PressSurface
                     key={s.key}
-                    type="button"
-                    onClick={() => void expandOrphans()}
+                    onPress={() => void expandOrphans()}
                     disabled={orphansExpanding}
                     aria-busy={orphansExpanding}
                     data-testid="vault-stat-orphans-expand"
@@ -281,10 +281,10 @@ export default function GraphPanel() {
                       shown: orphans.length,
                       total: stats.orphanCount,
                     })}
-                    className={`${tileClass} text-left transition-colors hover:border-status-warning/40 hover:bg-status-warning/5 focus-ring disabled:is-disabled`}
+                    className={`${tileClass}`}
                   >
                     {body}
-                  </button>
+                  </PressSurface>
                 ) : (
                   <div key={s.key} data-testid={`vault-stat-${s.key}`} className={tileClass}>
                     {body}
@@ -331,11 +331,7 @@ export default function GraphPanel() {
               <div className="space-y-1.5 max-h-96 overflow-y-auto">
                 {searchHits.map((hit) => (
                   <Tooltip content={t.plugins.obsidian_brain.open_in_obsidian} key={hit.path}>
-                    <button
-                      type="button"
-                      onClick={() => openNoteInObsidian(vaultName, hit.path)}
-                      className="group w-full text-left px-3 py-2.5 rounded-modal border border-hair hover:border-hair-2 hover:bg-surface-1 transition-colors focus-ring"
-                    >
+                    <PressSurface onPress={() => openNoteInObsidian(vaultName, hit.path)} className="group w-full px-3 py-2.5 rounded-modal border border-hair">
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <p className="typo-heading typo-card-label truncate transition-colors">{hit.title}</p>
                         <span className="flex items-center gap-1.5 flex-shrink-0">
@@ -344,7 +340,7 @@ export default function GraphPanel() {
                         </span>
                       </div>
                       <p className="typo-caption text-ink-2 line-clamp-2">{hit.snippet}</p>
-                    </button>
+                    </PressSurface>
                   </Tooltip>
                 ))}
               </div>
@@ -378,14 +374,10 @@ export default function GraphPanel() {
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {orphans.map((o) => (
                   <Tooltip content={o.path} key={o.path}>
-                    <button
-                      type="button"
-                      onClick={() => openNoteInObsidian(vaultName, o.path)}
-                      className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card bg-surface-1 hover:bg-surface-2 transition-colors focus-ring text-left"
-                    >
+                    <PressSurface onPress={() => openNoteInObsidian(vaultName, o.path)} className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card bg-surface-1 hover:bg-surface-2">
                       <span className="typo-caption text-ink-2 truncate flex-1 group-hover:text-ink-2 transition-colors">{o.title}</span>
                       <ExternalLink className="w-3 h-3 text-ink-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
+                    </PressSurface>
                   </Tooltip>
                 ))}
               </div>
@@ -399,17 +391,13 @@ export default function GraphPanel() {
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {mocs.map((m) => (
                   <Tooltip content={m.path} key={m.path}>
-                    <button
-                      type="button"
-                      onClick={() => openNoteInObsidian(vaultName, m.path)}
-                      className="group w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card bg-surface-1 hover:bg-surface-2 transition-colors focus-ring text-left"
-                    >
+                    <PressSurface onPress={() => openNoteInObsidian(vaultName, m.path)} className="group w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card bg-surface-1 hover:bg-surface-2">
                       <span className="typo-caption text-ink-2 truncate group-hover:text-ink-2 transition-colors">{m.title}</span>
                       <span className="flex items-center gap-1.5 flex-shrink-0">
                         <span className="typo-caption text-status-success">{m.outgoingLinkCount} →</span>
                         <ExternalLink className="w-3 h-3 text-ink-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </span>
-                    </button>
+                    </PressSurface>
                   </Tooltip>
                 ))}
               </div>

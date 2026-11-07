@@ -7,6 +7,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 
 import { parseDriveMovePayload } from "../../hooks/useDrive";
 import { DRIVE_MOVE_MIME, type DriveApi } from "../types";
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export const hasFilesPayload = (e: React.DragEvent) =>
   e.dataTransfer?.types?.includes("Files") ?? false;
@@ -96,27 +97,19 @@ export function TreeNode({
     [drive, node.path, hasChildren, expand],
   );
 
-  const stateClass = dropActive
-    ? "bg-accent/20 ring-1 ring-accent/60 text-foreground"
-    : activeDragCount
-      ? "ring-1 ring-accent/20 text-foreground"
-      : isActive
-        ? "bg-primary/15 ring-1 ring-primary/40 text-foreground"
-        : "text-foreground hover:bg-secondary/50";
-
   return (
     <div role="treeitem" aria-level={depth + 1} aria-expanded={hasChildren ? expanded : undefined} aria-selected={isActive}>
-      <button
-        type="button"
-        onClick={() => {
+      <PressSurface
+        onPress={() => {
           drive.navigate(node.path);
           if (hasChildren && !expanded) expand();
         }}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`relative w-full flex items-center gap-1.5 py-1 pr-2 rounded-input text-left typo-body transition-colors duration-fast focus-ring ${stateClass}`}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
+        className={`relative w-full flex items-center gap-1.5 py-1 pr-2 rounded-input typo-body text-ink-1 ${dropActive ? 'ring-1 ring-accent/60 bg-surface-2' : activeDragCount ? 'ring-1 ring-accent/20' : ''}`}
+        selected={isActive && !dropActive}
       >
         {Array.from({ length: depth }).map((_, i) => (
           <span
@@ -152,7 +145,7 @@ export function TreeNode({
             {activeDragCount}
           </span>
         ) : null}
-      </button>
+      </PressSurface>
       {expanded && children.length > 0 && (
         <div role="group">
           {children.map((child) => (

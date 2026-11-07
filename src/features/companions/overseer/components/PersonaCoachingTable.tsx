@@ -14,6 +14,7 @@ import { rosterScoreDelta, rosterMomentum, MOMENTUM_TONE, type Momentum } from '
 import type { DirectorRosterEntry } from '@/api/director';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 // Shared column template so the header and every row line up.
 const ROW_GRID = 'grid grid-cols-[1.6fr_52px_60px_72px_1.4fr_auto_auto] items-center gap-3';
@@ -95,17 +96,13 @@ export function PersonaCoachingTable({
         <span>{t.director.col_flags}</span>
         <span className="text-right">{t.director.roster_col_last}</span>
         <Tooltip content={t.director.only_flagged}>
-          <button
-            type="button"
-            onClick={() => onFilterChange(toggleFilter(filter, { type: 'flagged' }))}
+          <OptionChip
+            onSelect={() => onFilterChange(toggleFilter(filter, { type: 'flagged' }))}
             disabled={flaggedCount === 0}
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill normal-case tracking-normal transition-colors disabled:is-disabled focus-ring ${
-              onlyFlagged ? 'bg-surface-2 text-ink-2 border border-hair-2' : 'text-foreground border border-transparent hover:bg-secondary/40'
-            }`}
-          >
+            selected={onlyFlagged}
+          ><span className="inline-flex items-center gap-1.5">
             <ListFilter className="w-3 h-3" />
-            <span className="tabular-nums">{flaggedCount}</span>
-          </button>
+            <span className="tabular-nums">{flaggedCount}</span></span></OptionChip>
         </Tooltip>
       </div>
 

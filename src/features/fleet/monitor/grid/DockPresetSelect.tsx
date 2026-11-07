@@ -8,6 +8,7 @@ import { Check, ChevronUp } from 'lucide-react';
 
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { DOCK_CHIP, DOCK_CHIP_ON } from './dock/dockChrome';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export function DockPresetSelect({
   presets,
@@ -51,24 +52,23 @@ export function DockPresetSelect({
         presets.map((p, i) => {
           const selected = p === value;
           return (
-            <button
+            <PressSurface
               key={p ?? '__default'}
-              type="button"
               role="option"
               aria-selected={selected}
-              onClick={() => {
+              onPress={() => {
                 onChange(p);
                 close();
               }}
-              className={`flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1 text-left typo-caption text-foreground transition-colors hover:bg-surface-1 ${
-                focusIndex === i ? 'bg-surface-1' : ''
-              }`}
+              className={`flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1 typo-caption ${focusIndex === i ? 'bg-surface-1' : ''}`}
+              selected={selected}
+              aria-pressed={undefined}
             >
               <span className="w-3 flex-shrink-0">
                 {selected && <Check className="h-3 w-3 text-primary" aria-hidden />}
               </span>
               {format(p)}
-            </button>
+            </PressSurface>
           );
         })
       }

@@ -9,6 +9,7 @@ import StudioChecklistStepper from '../StudioChecklistStepper';
 import type { BuildPhase } from '../studioBuildModel';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export interface GuideGoalsRailHandle {
   /** Open the "add a goal" field and focus it (the G key). */
@@ -177,18 +178,17 @@ const GuideGoalsRail = forwardRef<
                   className="w-full rounded-input border border-primary/50 bg-background/60 px-3 py-2 typo-body text-foreground outline-none placeholder:text-ink-2"
                 />
               ) : (
-                <button
-                  type="button"
+                <PressSurface
                   disabled={!canAdd}
-                  onClick={() => setAdding(true)}
-                  className="flex w-full items-center justify-between rounded-interactive border border-dashed border-border px-3 py-2 typo-body text-ink-2 transition-colors hover:border-primary/60 hover:text-foreground disabled:is-disabled"
+                  onPress={() => setAdding(true)}
+                  className="flex w-full items-center justify-between rounded-interactive border border-dashed border-border px-3 py-2 typo-body text-ink-2 hover:text-foreground"
                 >
                   <span className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     {g.add_goal}
                   </span>
                   <kbd className="rounded-interactive border border-border px-1.5 font-mono typo-caption text-ink-2">G</kbd>
-                </button>
+                </PressSurface>
               )}
             </div>
           </div>

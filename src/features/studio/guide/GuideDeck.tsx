@@ -87,16 +87,10 @@ export default function GuideDeck({
             <p className="mt-1 line-clamp-2 typo-body text-ink-2">{why(c)}</p>
             <p className="mt-2 typo-caption text-ink-2">{estimate}</p>
             <div className="mt-3 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => onAccept(c)}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 typo-title transition-colors ${
-                  i === 0 ? 'bg-primary text-background hover:bg-primary/90' : 'border border-border text-foreground hover:border-primary/60'
-                }`}
-              >
+              <Button onClick={() => onAccept(c)} variant={i === 0 ? 'primary' : 'secondary'} size="md">
                 {i === 0 ? g.do_it : g.yes}
                 <kbd className="rounded-interactive border border-current/40 px-1 font-mono typo-caption">{i + 1}</kbd>
-              </button>
+              </Button>
               <Button type="button" onClick={() => onDecline(c)} variant="ghost" size="sm">
                 {g.not_now}
               </Button>

@@ -3,6 +3,8 @@ import { Check, ChevronDown, FolderGit2 } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { searchItems } from '@/features/shared/components/display/facetedTableModel';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RepoFilterProps {
   /** Repositories in this mode, largest first, with their session counts. */
@@ -39,19 +41,18 @@ export function RepoFilter({ repos, total, value, onChange }: RepoFilterProps) {
       onSearchChange={setQuery}
       onSelectFocused={(i) => pick(options[i])}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
           onClick={toggle}
           aria-expanded={isOpen}
           data-testid="process-repo-filter"
-          className={`inline-flex items-center gap-2 rounded-interactive border px-3 py-1.5 typo-body focus-ring transition-colors ${
-            value ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-foreground hover:bg-secondary/40'
-          }`}
+          pressed={Boolean(value)}
         >
           <FolderGit2 className="h-4 w-4" />
           {value ?? p.repo_all}
           <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (
@@ -59,20 +60,19 @@ export function RepoFilter({ repos, total, value, onChange }: RepoFilterProps) {
           {options.map((o, i) => {
             const active = o.name === value;
             return (
-              <button
-                type="button"
+              <PressSurface
                 key={o.name ?? '*'}
                 role="option"
                 aria-selected={active}
-                onClick={() => pick(o, close)}
-                className={`flex w-full items-center gap-3 px-3 py-2 typo-body transition-colors hover:bg-secondary/40 ${
-                  i === focusIndex ? 'bg-secondary/40' : ''
-                } ${active ? 'text-primary' : 'text-foreground'}`}
+                onPress={() => pick(o, close)}
+                className={`flex w-full items-center gap-3 px-3 py-2 typo-body ${i === focusIndex ? 'bg-surface-1' : ''}`}
+                selected={active}
+                aria-pressed={undefined}
               >
                 <span className="flex-1 truncate text-left">{o.name ?? p.repo_all}</span>
                 <span className="typo-caption tabular-nums">{o.n}</span>
                 <Check className={`h-4 w-4 flex-shrink-0 ${active ? 'text-primary' : 'invisible'}`} />
-              </button>
+              </PressSurface>
             );
           })}
         </div>

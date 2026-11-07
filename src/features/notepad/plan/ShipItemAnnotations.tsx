@@ -17,6 +17,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PLAN_INK } from './planInk';
 import { itemVerdict } from '@/lib/milestone/shipDuality';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const STARS = [1, 2, 3, 4, 5] as const;
 
@@ -83,16 +84,15 @@ function NoteEditor({ name, testid, description, onSave, disabled }: {
 
   if (!editing) {
     return (
-      <button
-        type="button"
+      <PressSurface
         disabled={disabled}
-        onClick={() => setEditing(true)}
-        className={`min-w-0 flex-1 text-left typo-caption truncate rounded-interactive px-1 py-0.5 transition-colors hover:bg-foreground/[0.05] focus-ring disabled:pointer-events-none ${description ? 'text-ink-2' : 'text-ink-3'}`}
+        onPress={() => setEditing(true)}
         aria-label={tx(t.ship.note_aria, { name })}
         data-testid={testid}
+        className={`min-w-0 flex-1 typo-caption truncate rounded-interactive px-1 py-0.5 ${description ? 'text-ink-2' : 'text-ink-3'}`}
       >
         {description ?? t.ship.note_add}
-      </button>
+      </PressSurface>
     );
   }
   return (

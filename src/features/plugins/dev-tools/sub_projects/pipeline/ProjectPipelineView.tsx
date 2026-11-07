@@ -12,6 +12,7 @@ import type { PipelineStage, SourceMode, PipelineFieldId } from './pipelineTypes
 import { parseStandards, resolveBranchName } from './standardsConfig';
 import { silentCatch } from '@/lib/silentCatch';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface ProjectPipelineViewProps {
   name: string;
@@ -165,15 +166,14 @@ function KvRow({
   // popover anchored to the row; a pencil affordance fades in on hover.
   if (onEdit && field) {
     return (
-      <Tooltip content={dp.pipeline_edit_field}><button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onEdit(field, e.currentTarget.getBoundingClientRect()); }}
+      <Tooltip content={dp.pipeline_edit_field}><PressSurface
+        onPress={(e) => { e.stopPropagation(); onEdit(field, e.currentTarget.getBoundingClientRect()); }}
         aria-label={`${label} — ${dp.pipeline_edit_field}`}
-        className="group flex items-center gap-2 min-w-0 w-full text-left -mx-1 px-1 py-0.5 rounded-interactive hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors"
+        className="group flex items-center gap-2 min-w-0 w-full -mx-1 px-1 py-0.5 rounded-interactive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       >
         {body}
         <Pencil className="w-2.5 h-2.5 text-primary/60 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-      </button></Tooltip>
+      </PressSurface></Tooltip>
     );
   }
 

@@ -8,6 +8,7 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 const LOG_PAINT_LINES = 200;
 
 function tailLines(text: string, n: number): string {
@@ -95,11 +96,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
 
   return (
     <div className={`rounded-modal border ${statusBg(job.status)}`}>
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="w-full text-left p-2.5 flex items-center gap-2.5"
-      >
+      <PressSurface onPress={handleToggle} className="w-full p-2.5 flex items-center gap-2.5">
         {isExpanded ? (
           <ChevronDown className="w-3.5 h-3.5 text-ink-1" />
         ) : (
@@ -126,7 +123,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
             </a>
           </Tooltip>
         )}
-      </button>
+      </PressSurface>
 
       {isExpanded && (
         <div className="px-3 pb-3">

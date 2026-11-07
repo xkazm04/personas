@@ -4,6 +4,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface StyleTileProps {
   selected: boolean;
@@ -16,16 +17,12 @@ interface StyleTileProps {
 
 export function StyleTile({ selected, onSelect, title, body, icon, testId }: StyleTileProps) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <PressSurface
+      onPress={onSelect}
       aria-pressed={selected}
       data-testid={testId}
-      className={`focus-ring text-left flex gap-2.5 rounded-card border px-3 py-3 transition-colors min-h-[5rem] ${
-        selected
-          ? 'border-primary bg-primary/10 shadow-elevation-2'
-          : 'border-primary/15 bg-card-bg hover:border-primary/40 hover:shadow-elevation-1'
-      }`}
+      className="flex gap-2.5 rounded-card border border-hair px-3 py-3 min-h-[5rem]"
+      selected={selected}
     >
       <span className="mt-0.5 flex-shrink-0 text-primary" aria-hidden>
         {icon}
@@ -34,7 +31,7 @@ export function StyleTile({ selected, onSelect, title, body, icon, testId }: Sty
         <span className="block typo-title text-foreground">{title}</span>
         <span className="block typo-caption">{body}</span>
       </span>
-    </button>
+    </PressSurface>
   );
 }
 

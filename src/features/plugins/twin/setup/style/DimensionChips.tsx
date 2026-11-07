@@ -12,6 +12,7 @@ import { Pin } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { STYLE_DIMENSIONS, STYLE_MAX, type StyleDimension, type TwinStyleDims, type TwinStylePins } from './styleContract';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface DimensionChipsProps {
   dims: TwinStyleDims;
@@ -71,18 +72,16 @@ export function DimensionChips({ dims, pins, onTogglePin, dense }: DimensionChip
         return (
           <li key={dim}>
             <Tooltip content={hint}>
-              <button
-                type="button"
-                onClick={() => onTogglePin(dim, value)}
+              <PressSurface
+                onPress={() => onTogglePin(dim, value)}
                 aria-pressed={pinned}
                 aria-label={hint}
                 data-testid={`style-pin-${dim}`}
-                className={`focus-ring w-full flex items-center gap-2 min-w-0 px-1.5 py-0.5 rounded-interactive border transition-colors ${
-                  pinned ? 'border-primary/40 bg-primary/10' : 'border-transparent hover:bg-secondary/40'
-                }`}
+                className="w-full flex items-center gap-2 min-w-0 px-1.5 py-0.5 rounded-interactive border border-transparent"
+                selected={pinned}
               >
                 {body}
-              </button>
+              </PressSurface>
             </Tooltip>
           </li>
         );

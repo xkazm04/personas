@@ -3,6 +3,7 @@ import { CircleDot, Square } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFleetDebugLog } from './useFleetDebugLog';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Arm/disarm the fleet debug recorder from the grid header (DEV builds only).
@@ -35,17 +36,13 @@ export function FleetDebugLogButton() {
   const label = active ? t.plugins.fleet.debug_log_stop : t.plugins.fleet.debug_log_start;
 
   return (
-    <Tooltip content={active ? (path ?? label) : t.plugins.fleet.debug_log_start_title}><button
-      type="button"
+    <Tooltip content={active ? (path ?? label) : t.plugins.fleet.debug_log_start_title}><Button
+      variant="ghost"
+      size="sm"
       data-testid="fleet-debug-log-toggle"
       onClick={toggle}
       disabled={busy}
-      aria-pressed={active}
-      className={`flex items-center gap-1.5 rounded-interactive border px-2 py-1 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
-        active
-          ? 'border-hair bg-surface-1 text-status-error hover:bg-status-error/20'
-          : 'border-hair text-foreground hover:bg-surface-1'
-      }`}
+      pressed={active}
     >
       {active ? (
         <>
@@ -63,6 +60,6 @@ export function FleetDebugLogButton() {
           {label}
         </>
       )}
-    </button></Tooltip>
+    </Button></Tooltip>
   );
 }

@@ -5,6 +5,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 import StudioDesignKnobs from './StudioDesignKnobs';
 import type { BuildEffort, BuildStyle } from '@/api/webbuild';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 // C1 effort knob + C4 voice/style picker — per-project build controls in a small
 // popover off the chat input. Writes to the active runtime so every turn (manual,
@@ -57,21 +59,18 @@ export default function StudioBuildSettings({ id }: { id: string }) {
 
   return (
     <div ref={wrapRef} className="relative shrink-0">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         data-testid="studio-settings"
         onClick={() => setOpen((v) => !v)}
         aria-label={t.studio.build_settings}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
-          open
-            ? 'bg-secondary/60 text-primary'
-            : 'text-ink-2 hover:bg-secondary/60 hover:text-primary'
-        }`}
+        pressed={open}
       >
         <Settings2 className="h-4 w-4" />
-      </button>
+      </Button>
       {/* Click-away dismissal. The panel floats over the live preview and every
           other Studio popover (the tab picker) already closes this way; without
           it the only exit was hitting the gear again. */}
@@ -164,14 +163,8 @@ function Seg({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-interactive px-2 py-0.5 typo-label transition-colors ${
-        active ? 'bg-primary/20 text-primary' : 'bg-secondary/40 text-ink-2 hover:text-foreground'
-      }`}
-    >
+    <OptionChip onSelect={onClick} selected={active}>
       {children}
-    </button>
+    </OptionChip>
   );
 }

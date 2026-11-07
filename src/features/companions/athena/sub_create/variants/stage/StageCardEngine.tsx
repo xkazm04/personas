@@ -11,6 +11,7 @@ import type {
   CreateAthenaCard,
   InstallState,
 } from '../../engine/createAthenaTypes';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** Engine choice + the install that follows it. */
 
@@ -34,18 +35,15 @@ export function StageCardEnginePick({
         {card.options.map((opt) => {
           const selected = opt.id === card.selected;
           return (
-            <button
+            <PressSurface
               key={opt.id}
-              type="button"
               role="radio"
-              aria-checked={selected}
-              onClick={() => actions.selectEngine(opt.id)}
-              className={`text-left rounded-card border p-4 focus-ring transition-colors duration-fast motion-reduce:transition-none ${
-                selected
-                  ? 'border-primary bg-primary/10'
-                  : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
-              }`}
+              onPress={() => actions.selectEngine(opt.id)}
               data-testid={`create-athena-engine-${opt.id}`}
+              className="text-left rounded-card border border-hair p-4"
+              selected={selected}
+              aria-checked={selected}
+              aria-pressed={undefined}
             >
               <div className="flex items-center gap-2">
                 <span className="typo-title">{copy[opt.id].title}</span>
@@ -64,7 +62,7 @@ export function StageCardEnginePick({
                 </span>
               </div>
               <p className="typo-caption text-ink-2 mt-1.5">{copy[opt.id].desc}</p>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

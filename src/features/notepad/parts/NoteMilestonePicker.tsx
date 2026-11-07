@@ -26,6 +26,7 @@ import { createLatestWins } from '@/stores/util/latestWins';
 
 import { useNotepadPlanSummaries, useNotepadStatus } from '../useNotepad';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
   /** Null when the note has no project — the caller renders the blocked
@@ -109,17 +110,16 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
     >
       {({ close, focusIndex }) => (
         <div className="py-1 min-w-[16rem]">
-          <button
-            type="button"
+          <PressSurface
             role="option"
             aria-selected={false}
-            onClick={() => { onCreate(); close(); }}
-            className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 transition-colors hover:bg-surface-1 focus-ring ${focusIndex === 0 ? 'bg-surface-1' : ''}`}
+            onPress={() => { onCreate(); close(); }}
             data-testid="notepad-milestone-new"
+            className={`w-full flex items-center gap-2 px-3 py-2 typo-caption ${focusIndex === 0 ? 'bg-surface-1' : ''}`}
           >
             <Plus className="w-3.5 h-3.5 text-ink-2" aria-hidden />
             <span className="text-ink-2">{t.notepad.milestone_new}</span>
-          </button>
+          </PressSurface>
 
           {open.length > 0 && <div className="my-1 h-px bg-surface-1" aria-hidden />}
 
@@ -134,20 +134,19 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
             </p>
           )}
           {open.map((m, i) => (
-            <button
+            <PressSurface
               key={m.id}
-              type="button"
               role="option"
               aria-selected={false}
-              onClick={() => { onPick(m.id); close(); }}
-              className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 min-w-0 transition-colors hover:bg-surface-1 focus-ring ${focusIndex === i + 1 ? 'bg-surface-1' : ''}`}
+              onPress={() => { onPick(m.id); close(); }}
+              className={`w-full flex items-center gap-2 px-3 py-2 min-w-0 typo-caption ${focusIndex === i + 1 ? 'bg-surface-1' : ''}`}
             >
               <Check className="w-3.5 h-3.5 text-ink-2 shrink-0" aria-hidden />
               <span className="min-w-0 flex flex-col">
                 <span className="text-ink-2 truncate">{m.name}</span>
                 {m.goal && <span className="text-ink-2 truncate">{m.goal}</span>}
               </span>
-            </button>
+            </PressSurface>
           ))}
 
           {/* An empty list is a real answer — every open milestone already has a

@@ -16,6 +16,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GOAL_STATUSES, goalStatusLabel } from './goalStatus';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /** Quick target-date presets (offset in days from now; ASAP = today). */
 type TargetChoice = 'asap' | '1day' | '1week';
@@ -211,21 +212,16 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
                 const selected = targetChoice === c;
                 const label = c === 'asap' ? dl.goal_target_asap : c === '1day' ? dl.goal_target_1day : dl.goal_target_1week;
                 return (
-                  <button
+                  <OptionChip
                     key={c}
-                    type="button"
                     role="radio"
-                    aria-checked={selected}
                     // Click again to clear (no target).
-                    onClick={() => setTargetChoice(selected ? null : c)}
-                    className={`flex-1 px-2 py-2 typo-caption rounded-input border transition-colors focus-ring ${
-                      selected
-                        ? 'border-hair bg-surface-1 text-role-agent'
-                        : 'border-hair bg-surface-1 text-foreground hover:bg-surface-1'
-                    }`}
+                    onSelect={() => setTargetChoice(selected ? null : c)}
+                    className="flex-1 justify-center"
+                    selected={selected}
                   >
                     {label}
-                  </button>
+                  </OptionChip>
                 );
               })}
             </div>

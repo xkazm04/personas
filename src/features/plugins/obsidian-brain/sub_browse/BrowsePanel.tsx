@@ -25,6 +25,7 @@ import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineE
 import Button from '@/features/shared/components/buttons/Button';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * Rows in the first viewport that play the one-shot entrance ripple when the
  * vault tree first loads (35ms stagger via RevealItem, id-guarded per vault
@@ -68,19 +69,12 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
   if (!node.isDir) {
     const isSelected = selectedPath === node.path;
     return (
-      <button
-        type="button"
-        onClick={() => onSelect(node.path)}
-        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card transition-colors group focus-ring ${
-          isSelected ? 'bg-surface-2 border border-hair-2' : 'hover:bg-surface-1 border border-transparent'
-        }`}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
-      >
+      <PressSurface onPress={() => onSelect(node.path)} style={{ paddingLeft: `${depth * 16 + 8}px` }} className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card border ${isSelected ? 'border-hair-2' : 'border-transparent'}`} selected={isSelected}>
         <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-ink-2' : 'text-ink-2'}`} />
         <span className={`typo-caption truncate ${isSelected ? 'text-ink-2' : 'text-ink-1 group-hover:text-ink-1'}`}>
           {node.name}
         </span>
-      </button>
+      </PressSurface>
     );
   }
 
@@ -88,16 +82,11 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => {
+      <PressSurface onPress={() => {
           const next = !expanded;
           setExpanded(next);
           if (next) onExpandFolder(node.path);
-        }}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-surface-1 transition-colors focus-ring"
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
-      >
+        }} style={{ paddingLeft: `${depth * 16 + 8}px` }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card">
         {expanded ? (
           <ChevronDown className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
         ) : (
@@ -108,7 +97,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
         {node.noteCount > 0 && (
           <span className="typo-caption text-ink-2 ml-auto">{node.noteCount}</span>
         )}
-      </button>
+      </PressSurface>
       {expanded && loadingChildren && node.children.length === 0 && (
         <div
           className="flex items-center gap-2 px-2 py-1.5 animate-fade-in"

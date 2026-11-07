@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 import type { SkillEntry } from '@/api/devTools/devTools';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export default function SkillListSidebar({ skills, selected, onSelect }: {
   skills: SkillEntry[];
@@ -47,16 +48,13 @@ export default function SkillListSidebar({ skills, selected, onSelect }: {
           const active = s.name === selected;
           return (
             <li key={s.name}>
-              <button
-                type="button"
+              <PressSurface
                 role="option"
                 aria-selected={active}
-                onClick={() => onSelect(active ? null : s.name)}
-                className={`w-full flex items-baseline gap-2 px-3 py-2 text-left transition-colors border-l-2 min-w-0 ${
-                  active
-                    ? 'border-primary bg-surface-1'
-                    : 'border-transparent hover:bg-surface-1'
-                }`}
+                onPress={() => onSelect(active ? null : s.name)}
+                className={`w-full flex items-baseline gap-2 px-3 py-2 border-l-2 min-w-0 ${active ? 'border-primary' : 'border-transparent'}`}
+                selected={active}
+                aria-pressed={undefined}
               >
                 <span className={`typo-body truncate ${active ? 'text-primary' : 'text-foreground'}`}>
                   {s.name}
@@ -67,7 +65,7 @@ export default function SkillListSidebar({ skills, selected, onSelect }: {
                 >
                   v{s.version ?? '1.0'}
                 </span>
-              </button>
+              </PressSurface>
             </li>
           );
         })}

@@ -17,6 +17,7 @@ import type { KbIngestProgressPayload } from "@/lib/eventRegistry";
 import { useKbIngestProgress } from "./kbIngestListener";
 
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 const TITLE_ID = "drive-knowledge-drawer-title";
 
@@ -117,22 +118,15 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
   }, [extractBlocked, tab]);
 
   const tabButton = (id: Tab, label: string, Icon: typeof Brain) => (
-    <button
-      type="button"
+    <OptionChip
       role="tab"
-      aria-selected={tab === id}
       disabled={id === "extract" && extractBlocked}
       data-testid={`drive-kb-tab-${id}`}
-      onClick={() => setTab(id)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body transition-colors focus-ring ${
-        tab === id
-          ? "bg-surface-2 border border-hair-2 text-ink-2"
-          : "border border-transparent text-foreground hover:bg-secondary/50"
-      } disabled:is-disabled`}
-    >
+      onSelect={() => setTab(id)}
+      selected={tab === id}
+    ><span className="inline-flex items-center gap-1.5">
       <Icon className="w-3.5 h-3.5" />
-      {label}
-    </button>
+      {label}</span></OptionChip>
   );
 
   return (

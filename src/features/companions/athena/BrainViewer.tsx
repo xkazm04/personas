@@ -61,6 +61,7 @@ import { BASE_REPLY_SENTENCES } from './chat/refs/replyFold';
 import { parseIdentityClaims } from './identityClaims';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 type KindLabelKey =
   | 'episodes'
@@ -344,11 +345,10 @@ function TypesView() {
       {KINDS.map(({ kind, icon: Icon, labelKey, descKey, family }) => {
         const accent = FAMILY_ACCENT[family];
         return (
-          <button
-            type="button"
+          <PressSurface
             key={kind}
-            onClick={() => setBrainView({ open: true, kind, id: null })}
-            className="relative overflow-hidden text-left rounded-card border border-foreground/10 hover:border-primary/30 bg-foreground/[0.02] hover:bg-primary/5 px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-elevation-2 focus-ring"
+            onPress={() => setBrainView({ open: true, kind, id: null })}
+            className="relative overflow-hidden rounded-card border border-foreground/10 hover:border-primary/30 bg-foreground/[0.02] hover:bg-primary/5 px-4 py-3 hover:-translate-y-0.5 hover:shadow-elevation-2"
           >
             {/* Left accent bar — the family's colour, clipped to the card radius. */}
             <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${accent.bar}`} />
@@ -368,7 +368,7 @@ function TypesView() {
                   ? t.athena.brain_one_item
                   : `${counts[kind]} ${t.athena.brain_items}`}
             </div>
-          </button>
+          </PressSurface>
         );
       })}
     </div>
@@ -462,10 +462,9 @@ function ListView({ kind }: { kind: BrainKind }) {
               hasEntered={(id) => index >= LIST_CASCADE_ROWS || enter.hasEntered(id)}
               markEntered={enter.markEntered}
             >
-              <button
-                type="button"
-                onClick={() => setBrainView({ open: true, kind, id: item.id })}
-                className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] transition-colors focus-ring flex items-start gap-3"
+              <PressSurface
+                onPress={() => setBrainView({ open: true, kind, id: item.id })}
+                className="w-full px-5 py-3 flex items-start gap-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
@@ -491,7 +490,7 @@ function ListView({ kind }: { kind: BrainKind }) {
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
-              </button>
+              </PressSurface>
             </RevealItem>
           </li>
         ))}

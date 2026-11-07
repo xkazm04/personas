@@ -10,6 +10,7 @@ import { useStudioHistory } from '../studioHistory';
 import type { StudioPreviewState } from '../useStudioPreview';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 // The main frame: the app being built, wrapped and given full focus (contest
 // A/1). A thin header says what the frame shows in plain words; the address,
@@ -61,15 +62,9 @@ export default function GuideFrame({
           // TODO(prototype, 2026-09-25): two sheet styles until one is chosen.
           <div role="group" aria-label={g.sheet_style_label} className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border p-0.5">
             {(['drafting', 'plan'] as const).map((style) => (
-              <button
-                key={style}
-                type="button"
-                aria-pressed={sheetStyle === style}
-                onClick={() => setSheetStyle(style)}
-                className={`rounded-interactive px-2 py-0.5 typo-caption ${sheetStyle === style ? 'bg-primary/15 text-primary' : 'hover:bg-secondary/60'}`}
-              >
+              <OptionChip key={style} onSelect={() => setSheetStyle(style)} selected={sheetStyle === style}>
                 {style === 'drafting' ? g.sheet_style_drafting : g.sheet_style_plan}
-              </button>
+              </OptionChip>
             ))}
           </div>
         )}

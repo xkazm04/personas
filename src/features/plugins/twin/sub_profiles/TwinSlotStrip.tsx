@@ -9,6 +9,7 @@ import {
   type TwinSlotStatus,
 } from '../shared/twinStatus';
 import type { TwinReadiness } from '../useTwinReadiness';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * The thin strip along the bottom of a twin card: Bio / Tone / Brain /
@@ -54,17 +55,16 @@ export function TwinSlotStrip({ readiness, onOpenSlot }: TwinSlotStripProps) {
               </span>
             }
           >
-            <button
-              type="button"
-              onClick={() => onOpenSlot(id)}
+            <PressSurface
+              onPress={() => onOpenSlot(id)}
               aria-label={`${label}, ${statusLabel}`}
-              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 transition-colors hover:bg-secondary/30 first:rounded-bl-card last:rounded-br-card"
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 first:rounded-bl-card last:rounded-br-card"
             >
               <StatusMarker status={status} dot={entry.dot} ring={entry.ring} />
               <span className={`typo-label truncate ${status === 'empty' ? 'text-muted' : entry.text}`}>
                 {label}
               </span>
-            </button>
+            </PressSurface>
           </Tooltip>
         );
       })}

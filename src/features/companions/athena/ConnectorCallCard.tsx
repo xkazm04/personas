@@ -17,6 +17,7 @@ import { capabilityLabel, connectorDisplayName } from './athenaLabels';
 import { useAthenaStore } from './athenaStore';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Inline chat-card that surfaces the live state of a `connector_use`
@@ -94,11 +95,10 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
       data-job-id={job.id}
       data-job-status={job.status}
     >
-      <button
-        type="button"
-        onClick={() => hasBody && setOpen((v) => !v)}
+      <PressSurface
+        onPress={() => hasBody && setOpen((v) => !v)}
         disabled={!hasBody}
-        className="flex items-center gap-2 w-full text-left typo-body disabled:cursor-default"
+        className="flex items-center gap-2 w-full typo-body disabled:cursor-default"
       >
         {hasBody ? (
           <Chevron className="w-3.5 h-3.5 text-foreground shrink-0" />
@@ -122,7 +122,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
         <span className="typo-caption text-foreground shrink-0">
           {statusLabel}
         </span>
-      </button>
+      </PressSurface>
       {open && hasBody && (
         <div className="mt-2 pl-5 border-l border-foreground/10 typo-caption text-foreground">
           {failed && job.errorText ? (

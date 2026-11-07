@@ -113,20 +113,17 @@ export function VoiceControlPopover() {
   return (
     <div ref={wrapRef} className="relative">
       <Tooltip content={c.voice_controls_label}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => setOpen((o) => !o)}
           data-testid="companion-voice-control"
-          className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring ${
-            voiceEnabled
-              ? 'bg-primary/15 text-primary'
-              : 'text-foreground hover:text-foreground hover:bg-foreground/5'
-          }`}
           aria-label={c.voice_controls_label}
           aria-expanded={open}
+          pressed={voiceEnabled}
         >
           <VolumeIcon className="w-4 h-4" />
-        </button>
+        </Button>
       </Tooltip>
 
       {open && (

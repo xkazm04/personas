@@ -30,6 +30,7 @@ import { NoteProjectPicker } from './parts/NoteProjectPicker';
 import { NoteQuickWrite } from './parts/NoteQuickWrite';
 import { reviewKeyEffect, splitHighlight, type CardAction } from './deskModel';
 import type { BubbleIntent } from './parts/NoteCardBubble';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** One keyboard verb aimed at this card. `seq` makes a repeated key a new command. */
 export interface CardCommand {
@@ -325,7 +326,7 @@ export function NoteDeskCard({
           </div>
         </div>
 
-        <button type="button" onClick={onOpen} className="text-left rounded-input focus-ring">
+        <PressSurface onPress={onOpen} className="rounded-input">
           <span className="block typo-title-lg line-clamp-2">
             {titleHit ? (
               <>
@@ -337,7 +338,7 @@ export function NoteDeskCard({
               note.title
             )}
           </span>
-        </button>
+        </PressSurface>
         {selected && (
           <span className="sr-only">{t.notepad.desk_selected_note}</span>
         )}
@@ -345,10 +346,10 @@ export function NoteDeskCard({
         {summary && <GoalsBar note={note} summary={summary} />}
 
         {result ? (
-          <button type="button" onClick={onOpen} className="flex-1 min-h-0 text-left rounded-input focus-ring">
+          <PressSurface onPress={onOpen} className="flex-1 min-h-0 rounded-input">
             <span className={`block typo-label mb-1 ${meta.tone.text}`}>{t.notepad.result_title}</span>
             <span className="typo-body text-ink-2 line-clamp-4">{result}</span>
-          </button>
+          </PressSurface>
         ) : (
           <NoteQuickWrite note={note} onPatch={onPatch} onOpen={onOpen} autoFocus={autoFocus} />
         )}

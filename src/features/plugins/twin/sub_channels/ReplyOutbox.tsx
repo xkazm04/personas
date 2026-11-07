@@ -15,6 +15,7 @@ import type { TwinChannelKind } from '@/api/enums';
 import * as twinApi from '@/api/twin/twin';
 import { silentCatch } from '@/lib/silentCatch';
 import { Collapse } from '@/features/shared/components/display/Collapse';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /* ------------------------------------------------------------------ *
  *  ReplyOutbox — draft-reply staging with approve-before-send.
@@ -276,19 +277,14 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
             screen the tap regenerates immediately. */}
         <div className="flex flex-wrap items-center gap-1.5 mt-2" role="group" aria-label={tc.steerLabel}>
           {STEER_CHIPS.map((key) => (
-            <button
+            <OptionChip
               key={key}
-              type="button"
-              onClick={() => handleSteer(tc[key])}
+              onSelect={() => handleSteer(tc[key])}
               disabled={drafting}
-              className={`px-2 py-1 rounded-full border typo-caption transition-colors focus-ring disabled:is-disabled ${
-                directions.trim() === tc[key]
-                  ? 'border-hair-2 bg-surface-2 text-ink-2'
-                  : 'border-primary/15 bg-secondary/30 text-foreground hover:border-hair-2 hover:text-ink-2'
-              }`}
+              selected={directions.trim() === tc[key]}
             >
               {tc[key]}
-            </button>
+            </OptionChip>
           ))}
         </div>
       </div>

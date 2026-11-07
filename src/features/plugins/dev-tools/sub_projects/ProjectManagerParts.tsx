@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAnchoredPortalPosition } from '@/features/shared/components/forms/useAnchoredPortalPosition';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** Fixed menu width — needed up front to right-align the portal to the trigger. */
 const MENU_WIDTH = 160;
@@ -91,26 +92,22 @@ export function ProjectRowMenu({
               zIndex: 9990,
             }}
           >
-            <button
-              type="button"
+            <PressSurface
               role="menuitem"
-              onClick={handleEdit}
-              className="w-full flex items-center gap-2 px-3 py-2 typo-caption text-left text-foreground hover:bg-surface-2 transition-colors"
+              onPress={handleEdit}
+              className="w-full flex items-center gap-2 px-3 py-2 typo-caption text-foreground"
             >
               <Pencil className="w-3 h-3" />
               {t.plugins.dev_projects.edit_project}
-            </button>
-            <button
-              type="button"
+            </PressSurface>
+            <PressSurface
               role="menuitem"
-              onClick={handleDelete}
-              className={`w-full flex items-center gap-2 px-3 py-2 typo-caption text-left transition-colors ${
-                confirming ? 'bg-status-error/10 text-status-error' : 'text-status-error hover:bg-status-error/5'
-              }`}
+              onPress={handleDelete}
+              className={`w-full flex items-center gap-2 px-3 py-2 typo-caption text-status-error ${confirming ? 'bg-status-error/10' : ''}`}
             >
               <Trash2 className="w-3 h-3" />
               {confirming ? `Delete "${projectName.slice(0, 12)}"?` : 'Delete Project'}
-            </button>
+            </PressSurface>
           </div>
         </>,
         document.body,

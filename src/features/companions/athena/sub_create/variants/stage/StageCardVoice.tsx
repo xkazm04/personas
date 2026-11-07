@@ -6,6 +6,7 @@ import type {
   CreateAthenaCard,
   VoiceOption,
 } from '../../engine/createAthenaTypes';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Voice pick: a two-column grid of voice tiles, each with a play/stop
@@ -52,20 +53,21 @@ function VoiceTile({
       data-testid={`create-athena-voice-${voice.voiceId}`}
       data-selected={selected ? 'true' : 'false'}
     >
-      <button
-        type="button"
+      <PressSurface
         role="radio"
-        aria-checked={selected}
-        onClick={() => actions.selectVoice(voice.voiceId)}
-        className="flex-1 min-w-0 text-left focus-ring rounded-interactive"
+        onPress={() => actions.selectVoice(voice.voiceId)}
         data-testid={`create-athena-voice-select-${voice.voiceId}`}
+        className="flex-1 min-w-0 rounded-interactive"
+        selected={selected}
+        aria-checked={selected}
+        aria-pressed={undefined}
       >
         <span className="flex items-center gap-1.5">
           <span className="typo-label text-foreground truncate">{voice.label}</span>
           {selected && <Check className="w-3.5 h-3.5 text-primary shrink-0" aria-label={c.create_voice_selected} />}
         </span>
         {voice.meta && <span className="block typo-caption text-ink-2 truncate">{voice.meta}</span>}
-      </button>
+      </PressSurface>
       <Button
         variant={playing ? 'primary' : 'secondary'}
         size="icon-sm"

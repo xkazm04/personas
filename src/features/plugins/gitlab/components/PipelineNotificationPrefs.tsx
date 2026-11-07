@@ -7,36 +7,20 @@ import {
 } from '../hooks/usePipelineNotifications';
 import { DEPLOYMENT_TOKENS } from '@/features/agents/sub_deployment/components/deploymentTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 
-function Toggle({ checked, onChange, label, id }: {
+function Toggle({ checked, onChange, label }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label: string;
-  id: string;
+  id?: string;
 }) {
   return (
-    <label htmlFor={id} className="flex items-center justify-between py-1.5 cursor-pointer group">
+    <label className="flex items-center justify-between py-1.5 cursor-pointer group">
       <span className="typo-body text-ink-1 group-hover:text-ink-2 transition-colors">
         {label}
       </span>
-      <button
-        type="button"
-        id={id}
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/40 ${
-          checked
-            ? 'bg-status-warning/20 border-status-warning/40'
-            : 'bg-surface-2 border-hair'
-        }`}
-      >
-        <span
-          className={`inline-block h-3.5 w-3.5 rounded-full bg-secondary shadow-elevation-1 transition-transform duration-200 ${
-            checked ? 'translate-x-4' : 'translate-x-0.5'
-          }`}
-        />
-      </button>
+      <AccessibleToggle checked={checked} onChange={() => onChange(!checked)} label={label} size="sm" />
     </label>
   );
 }
@@ -64,24 +48,7 @@ export function PipelineNotificationPrefs() {
           )}
           {t.gitlab.pipeline_notifications}
         </h3>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={prefs.enabled}
-          aria-label={t.gitlab.enable_pipeline_notifications}
-          onClick={() => update({ enabled: !prefs.enabled })}
-          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/40 ${
-            prefs.enabled
-              ? 'bg-status-warning/20 border-status-warning/40'
-              : 'bg-surface-2 border-hair'
-          }`}
-        >
-          <span
-            className={`inline-block h-3.5 w-3.5 rounded-full bg-secondary shadow-elevation-1 transition-transform duration-200 ${
-              prefs.enabled ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        <AccessibleToggle checked={prefs.enabled} onChange={() => update({ enabled: !prefs.enabled })} label={t.gitlab.enable_pipeline_notifications} size="sm" />
       </div>
 
       {prefs.enabled && (
@@ -108,29 +75,12 @@ export function PipelineNotificationPrefs() {
             onChange={(v) => update({ onCanceled: v })}
           />
           <div className="pt-1.5 mt-1.5 border-t border-hair">
-            <label htmlFor="notif-sound" className="flex items-center justify-between py-1.5 cursor-pointer group">
+            <label className="flex items-center justify-between py-1.5 cursor-pointer group">
               <span className="flex items-center gap-1.5 typo-body text-ink-1 group-hover:text-ink-2 transition-colors">
                 <Volume2 className="w-3.5 h-3.5 text-ink-1" />
                 {t.gitlab.play_sound}
               </span>
-              <button
-                type="button"
-                id="notif-sound"
-                role="switch"
-                aria-checked={prefs.sound}
-                onClick={() => update({ sound: !prefs.sound })}
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/40 ${
-                  prefs.sound
-                    ? 'bg-status-warning/20 border-status-warning/40'
-                    : 'bg-surface-2 border-hair'
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 rounded-full bg-secondary shadow-elevation-1 transition-transform duration-200 ${
-                    prefs.sound ? 'translate-x-4' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
+              <AccessibleToggle checked={prefs.sound} onChange={() => update({ sound: !prefs.sound })} label={t.gitlab.play_sound} size="sm" />
             </label>
           </div>
         </div>

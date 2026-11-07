@@ -3,6 +3,7 @@ import type { SkillEntry } from '@/api/devTools/devTools';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   skill: SkillEntry;
@@ -21,12 +22,11 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
   const f = t.plugins.fleet;
   return (
     <div className="group flex items-center gap-1 rounded-card border border-transparent hover:border-hair hover:bg-surface-1 transition-colors">
-      <Tooltip content={canApply ? `/${skill.name}` : f.skills_drawer_no_target}><button
-        type="button"
+      <Tooltip content={canApply ? `/${skill.name}` : f.skills_drawer_no_target}><PressSurface
         data-testid={`fleet-drawer-apply-${skill.name}`}
         disabled={!canApply}
-        onClick={() => onLoad(skill.name)}
-        className="flex-1 min-w-0 text-left px-2 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+        onPress={() => onLoad(skill.name)}
+        className="flex-1 min-w-0 px-2 py-1.5"
       >
         <div className="flex items-center gap-1.5">
           <Terminal className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
@@ -50,7 +50,7 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
         {skill.description && (
           <p className="typo-caption text-ink-2 truncate mt-0.5 pl-4.5">{skill.description}</p>
         )}
-      </button></Tooltip>
+      </PressSurface></Tooltip>
       <Button variant="ghost" size="icon-sm"
         type="button"
         data-testid={`fleet-drawer-install-${skill.name}`}

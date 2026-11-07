@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import type { SkillInstallResult } from '@/lib/bindings/SkillInstallResult';
 import type { SkillInstallPreview } from '@/api/devTools/devTools';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   open: boolean;
@@ -123,20 +124,16 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
             </span>
             <div className="max-h-[220px] overflow-y-auto border border-hair rounded-modal p-1.5 bg-surface-1 space-y-0.5 mb-3">
               {projects.map((p) => (
-                <button
+                <PressSurface
                   key={p.id}
-                  type="button"
                   data-testid={`skill-install-target-${p.id}`}
-                  onClick={() => setTargetId(p.id)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left transition-colors ${
-                    targetId === p.id
-                      ? 'bg-surface-1 border border-hair'
-                      : 'hover:bg-surface-1 border border-transparent'
-                  }`}
+                  onPress={() => setTargetId(p.id)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card"
+                  selected={targetId === p.id}
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-foreground shrink-0" aria-hidden="true" />
                   <span className="typo-caption truncate">{p.name}</span>
-                </button>
+                </PressSurface>
               ))}
             </div>
 

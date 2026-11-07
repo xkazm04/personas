@@ -35,6 +35,7 @@ import {
   type SttEngineStatus,
   type WhisperModelListing,
 } from '@/api/companion';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Voice-input (speech-to-text) configuration. Lives at the bottom of the
@@ -130,16 +131,12 @@ interface EngineButtonProps {
 
 function EngineButton({ active, onClick, icon, label, caption, disabled = false }: EngineButtonProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       disabled={disabled}
       aria-pressed={active}
-      className={`text-left rounded-card border p-3 transition-colors focus-ring disabled:is-disabled ${
-        active
-          ? 'border-hair-2 bg-surface-2'
-          : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
-      }`}
+      className="text-left rounded-card border border-hair p-3"
+      selected={active}
     >
       <div className="flex items-center gap-2">
         <span className={active ? 'text-ink-2' : 'text-foreground'}>{icon}</span>
@@ -148,7 +145,7 @@ function EngineButton({ active, onClick, icon, label, caption, disabled = false 
         </span>
       </div>
       <p className="typo-caption mt-1">{caption}</p>
-    </button>
+    </PressSurface>
   );
 }
 

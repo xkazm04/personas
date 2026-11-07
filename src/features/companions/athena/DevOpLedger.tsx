@@ -32,6 +32,7 @@ import {
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export function DevOpLedger() {
   const { t, tx } = useTranslation();
@@ -119,12 +120,11 @@ export function DevOpLedger() {
       data-testid="companion-dev-ledger"
     >
       <div className="flex w-full items-center">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
+      <PressSurface
+        onPress={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 focus-ring"
         data-testid="companion-dev-ledger-toggle"
+        className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5"
       >
         <Tooltip content={c.dev_ledger_hint}>
           <span className="flex items-center gap-1 typo-caption text-status-warning flex-shrink-0">
@@ -154,7 +154,7 @@ export function DevOpLedger() {
         ) : (
           <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" aria-hidden />
         )}
-      </button>
+      </PressSurface>
         <DevConversationLogButton />
         <Tooltip content={c.dev_self_review_hint}>
           <Button
@@ -207,36 +207,28 @@ export function DevOpLedger() {
                 </div>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   <Tooltip content={c.dev_ledger_verdict_up}>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => setVerdict(e, 'up')}
-                      aria-pressed={e.userVerdict === 'up'}
                       aria-label={c.dev_ledger_verdict_up}
                       data-testid={`dev-ledger-up-${e.opId}`}
-                      className={`p-1 rounded-interactive transition-colors focus-ring ${
-                        e.userVerdict === 'up'
-                          ? 'bg-status-success/15 text-status-success'
-                          : 'text-ink-3 hover:text-status-success hover:bg-status-success/10'
-                      }`}
+                      pressed={e.userVerdict === 'up'}
                     >
                       <ThumbsUp className="w-3 h-3" />
-                    </button>
+                    </Button>
                   </Tooltip>
                   <Tooltip content={c.dev_ledger_verdict_down}>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => setVerdict(e, 'down')}
-                      aria-pressed={e.userVerdict === 'down'}
                       aria-label={c.dev_ledger_verdict_down}
                       data-testid={`dev-ledger-down-${e.opId}`}
-                      className={`p-1 rounded-interactive transition-colors focus-ring ${
-                        e.userVerdict === 'down'
-                          ? 'bg-status-error/15 text-status-error'
-                          : 'text-ink-3 hover:text-status-error hover:bg-status-error/10'
-                      }`}
+                      pressed={e.userVerdict === 'down'}
                     >
                       <ThumbsDown className="w-3 h-3" />
-                    </button>
+                    </Button>
                   </Tooltip>
                 </div>
               </div>

@@ -9,6 +9,7 @@ import { applySkillToSessions } from './applySkillToSessions';
 import { useSkillData } from './sub_skills/useSkillData';
 import { SkillInstallModal } from './sub_skills/SkillInstallModal';
 import { SkillLibraryRow } from './SkillLibraryRow';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 interface Props {
   open: boolean;
@@ -141,20 +142,14 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
         <div className="flex items-center gap-1 px-3 py-2 shrink-0">
           <div className="inline-flex items-center rounded-card border border-hair bg-surface-1 p-0.5" role="group" aria-label={f.skill_source_label}>
             {sources.map((s) => (
-              <button
+              <OptionChip
                 key={s.id}
-                type="button"
                 data-testid={`fleet-drawer-source-${s.id}`}
-                aria-pressed={source === s.id}
-                onClick={() => setSource(s.id)}
-                className={`px-2 py-0.5 rounded-card typo-caption transition-colors ${
-                  source === s.id
-                    ? 'bg-surface-1 text-primary border border-hair'
-                    : 'text-foreground hover:bg-surface-1 border border-transparent'
-                }`}
+                onSelect={() => setSource(s.id)}
+                selected={source === s.id}
               >
                 {s.label}
-              </button>
+              </OptionChip>
             ))}
           </div>
           <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={fetchSkills} aria-label={t.common.refresh} title={t.common.refresh}>

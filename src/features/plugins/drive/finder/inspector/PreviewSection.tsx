@@ -7,6 +7,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { visualForEntry } from "../../designTokens";
 import { useEntryMedia } from "../quicklook/useEntryMedia";
 import { InspectorSection } from "./InspectorSection";
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const INSPECTOR_TEXT_CHARS = 4000;
 
@@ -70,14 +71,13 @@ export function PreviewSection({
   } else if (media.kind === "image" && media.url) {
     body = (
       <Tooltip content={f.insp_preview_open}>
-        <button
-          type="button"
-          onClick={() => onQuickLook(entry)}
+        <PressSurface
+          onPress={() => onQuickLook(entry)}
           aria-label={f.insp_preview_open}
-          className="block w-full rounded-card border border-card-border bg-card-bg p-1 overflow-hidden hover:border-primary/40 transition-colors cursor-zoom-in focus-ring"
+          className="block w-full rounded-card border border-card-border bg-card-bg p-1 overflow-hidden hover:border-primary/40 cursor-zoom-in"
         >
           <img src={media.url} alt={entry.name} className="rounded-input max-w-full max-h-56 object-contain mx-auto" />
-        </button>
+        </PressSurface>
       </Tooltip>
     );
   } else {

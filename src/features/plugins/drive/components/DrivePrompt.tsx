@@ -50,17 +50,9 @@ export function DriveConfirm({
           >
             {t.plugins.drive.cancel}
           </Button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className={`px-3 py-1.5 rounded-input typo-body border transition-colors focus-ring ${
-              danger
-                ? "bg-status-error/20 text-status-error border-status-error/40 hover:bg-status-error/20"
-                : "bg-status-info/20 text-status-info border-status-info/40 hover:bg-status-info/20"
-            }`}
-          >
+          <Button onClick={onConfirm} variant={danger ? 'danger' : 'primary'} size="sm">
             {t.plugins.drive.confirm}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>

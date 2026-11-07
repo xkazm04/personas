@@ -51,6 +51,7 @@ import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { detectRepoProvider } from '../sub_overview/adapters';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 
 // ---------------------------------------------------------------------------
@@ -438,11 +439,10 @@ export function PrBridge({ task }: { task: DevTask }) {
         />
       )}
       {/* Collapsible header */}
-      <button
-        type="button"
-        onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2 transition-colors text-left"
+      <PressSurface
+        onPress={() => setExpanded((p) => !p)}
         aria-expanded={expanded}
+        className="w-full flex items-center gap-3 px-4 py-2.5"
       >
         <div className="w-7 h-7 rounded-card bg-surface-1 border border-hair flex items-center justify-center flex-shrink-0">
           <GitPullRequest className="w-3.5 h-3.5 text-status-success" />
@@ -465,7 +465,7 @@ export function PrBridge({ task }: { task: DevTask }) {
         {expanded
           ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
           : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
-      </button>
+      </PressSurface>
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3">

@@ -22,6 +22,7 @@ import { ProviderMark, STATS_GROUP, WeekBorder, WindowCluster } from './RowParts
 import { reloginView, type ReloginView } from './reloginModel';
 import type { ReloginActs } from './reloginActs';
 import { windowIn, type PlanModel, type ProviderModel } from './useResourceModel';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** A hover-revealed icon act at the row's end: zero width until the row is looked at. */
 const REVEAL_ACT = 'focus-ring inline-flex h-5 w-0 flex-shrink-0 items-center justify-center overflow-hidden rounded-interactive text-foreground opacity-0 focus-visible:w-5 focus-visible:opacity-100 group-hover/row:w-5 group-hover/row:opacity-70 group-focus-within/row:w-5 group-focus-within/row:opacity-70';
@@ -95,15 +96,14 @@ export function PlanRow({
       <span className="flex min-w-0 flex-1 items-center gap-1.5">
         <Tooltip content={canSwitch ? `${name} · ${t.monitor.usage_accounts_switch}` : name}>
           {canSwitch ? (
-            <button
-              type="button"
-              onClick={onSwitch}
+            <PressSurface
+              onPress={onSwitch}
               aria-label={tx(t.monitor.usage_accounts_switch_aria, { email: name })}
-              className={`focus-ring rounded-interactive ${nameClass}`}
               data-testid="fleet-usage-switch"
+              className={nameClass}
             >
               {name}
-            </button>
+            </PressSurface>
           ) : (
             <span className={nameClass} data-testid="fleet-usage-name">{name}</span>
           )}

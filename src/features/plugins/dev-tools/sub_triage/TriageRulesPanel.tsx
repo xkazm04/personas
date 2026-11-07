@@ -10,6 +10,7 @@ import { RuleRow, SuggestionRow } from './TriageRuleRows';
 import { TriageRuleForm } from './TriageRuleForm';
 import { TONE_CHIP } from './triageTones';
 import { PrimarySoftButton } from './PrimarySoftButton';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface TriageRulesPanelProps {
   projectId: string;
@@ -69,12 +70,11 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
   return (
     <div className="border border-border/20 rounded-modal bg-surface-1 overflow-hidden">
       {/* A disclosure header, not a Button: a full-width row that opens the panel body. */}
-      <button
-        type="button"
-        onClick={() => setExpanded(v => !v)}
+      <PressSurface
+        onPress={() => setExpanded(v => !v)}
         aria-expanded={expanded}
         data-testid="triage-rules-toggle"
-        className="flex items-center gap-2 w-full px-3 py-2 typo-caption text-foreground transition-colors focus-ring"
+        className="flex items-center gap-2 w-full px-3 py-2 typo-caption text-foreground"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Zap className="w-3 h-3" />
@@ -82,7 +82,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
         {rules.length > 0 && (
           <span className="ml-auto text-foreground">{tx(rules.length === 1 ? t.plugins.dev_triage.rules_count_one : t.plugins.dev_triage.rules_count_other, { count: rules.length })}</span>
         )}
-      </button>
+      </PressSurface>
 
       {expanded && (
         <div className="px-3 pb-3 space-y-2 border-t border-border/15 pt-2">

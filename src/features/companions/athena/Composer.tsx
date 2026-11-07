@@ -42,6 +42,7 @@ import {
   filterSlashPresets,
   type SlashPreset,
 } from './SlashPalette';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function Composer({
   disabled,
@@ -330,33 +331,25 @@ export function Composer({
                   ? t.athena.dictate_listening_hint
                   : t.athena.dictate_start_hint
             }>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               data-testid="companion-mic"
               onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
               disabled={disabled}
-              className={`rounded-interactive transition-colors focus-ring disabled:is-disabled ${
-                compact ? 'p-1.5' : 'p-2'
-              } ${
-                dictation.listening
-                  ? 'bg-status-error/15 text-status-error hover:bg-status-error/20'
-                  : dictation.error
-                    ? 'bg-status-warning/10 text-status-warning hover:bg-status-warning/20'
-                    : 'bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground'
-              }`}
               aria-label={
                 dictation.listening
                   ? t.athena.dictate_stop
                   : t.athena.dictate_start
               }
-              aria-pressed={dictation.listening}
+              pressed={dictation.listening}
             >
               {dictation.listening ? (
                 <MicOff className="w-4 h-4" />
               ) : (
                 <Mic className="w-4 h-4" />
               )}
-            </button>
+            </Button>
           </Tooltip>
         )}
         {/* a11y — announce when the mic goes hot; the visual cue is color-only. */}
@@ -365,18 +358,16 @@ export function Composer({
             {dictation.listening ? t.athena.dictate_listening_hint : ''}
           </span>
         )}
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="icon-sm"
           onClick={submit}
           disabled={disabled || !draft.trim() || paletteOpen}
           data-testid="companion-send"
-          className={`rounded-interactive bg-primary text-primary-foreground disabled:is-disabled hover:opacity-90 transition-opacity focus-ring ${
-            compact ? 'p-1.5' : 'p-2'
-          }`}
           aria-label={t.athena.send}
         >
           <Send className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

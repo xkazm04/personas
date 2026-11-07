@@ -20,6 +20,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const RECENT_RUN_LIMIT = 6;
 
@@ -207,12 +208,11 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                 const personaGroup = persona?.home_team_id ? groupMetaById.get(persona.home_team_id) : null;
                 return (
                   <li key={m.id} className="rounded-card bg-surface-1 border border-hair">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedMemberId(isExpanded ? null : m.id)}
+                    <PressSurface
+                      onPress={() => setExpandedMemberId(isExpanded ? null : m.id)}
                       aria-expanded={isExpanded}
                       disabled={!persona}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-surface-1 disabled:hover:bg-transparent transition-colors text-left rounded-card"
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 disabled:hover:bg-transparent rounded-card"
                     >
                       <PersonaIcon
                         icon={persona?.icon ?? null}
@@ -237,7 +237,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                           className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         />
                       )}
-                    </button>
+                    </PressSurface>
                     {isExpanded && persona && (
                       <div className="px-3 pb-3 pt-1 space-y-2 border-t border-hair">
                         {persona.description && (

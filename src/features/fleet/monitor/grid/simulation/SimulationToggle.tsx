@@ -17,6 +17,7 @@ import { FlaskConical } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { isTestBuild, toggleSimulation, useSimulationEnabled } from './simulationMode';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function SimulationToggle() {
   const { t } = useTranslation();
@@ -27,21 +28,17 @@ export function SimulationToggle() {
 
   return (
     <Tooltip content={enabled ? t.monitor.grid_simulation_on : t.monitor.grid_simulation_off}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={toggleSimulation}
-        aria-pressed={enabled}
         data-testid="fleet-grid-simulation-toggle"
         data-simulating={enabled}
         aria-label={t.monitor.grid_simulation}
-        className={`focus-ring inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-interactive border typo-caption transition-colors ${
-          enabled
-            ? 'border-status-warning bg-status-warning text-background shadow-elevation-1'
-            : 'border-hair bg-surface-2 text-status-warning hover:bg-status-warning/20'
-        }`}
+        pressed={enabled}
       >
         <FlaskConical className="h-3 w-3 flex-shrink-0" aria-hidden />
-      </button>
+      </Button>
     </Tooltip>
   );
 }

@@ -31,6 +31,7 @@ import { DebtText } from '@/i18n/DebtText';
 
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export default function SetupPanel() {
   const { t, tx } = useTranslation();
@@ -254,16 +255,7 @@ export default function SetupPanel() {
             <div className="space-y-1.5">
               <p className="typo-label text-ink-2">{t.plugins.obsidian_brain.detected_vaults}</p>
               {visibleDetectedVaults.map((v) => (
-                <button
-                  type="button"
-                  key={v.path}
-                  onClick={() => { setVaultPath(v.path); setConnectionResult(null); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-modal border transition-colors focus-ring ${
-                    vaultPath === v.path
-                      ? 'border-hair-2 bg-surface-2'
-                      : 'border-hair hover:border-hair hover:bg-surface-1'
-                  }`}
-                >
+                <PressSurface key={v.path} onPress={() => { setVaultPath(v.path); setConnectionResult(null); }} className="w-full px-3 py-2.5 rounded-modal border border-hair" selected={vaultPath === v.path}>
                   <div className="flex items-center gap-2.5">
                     <ActivityDot tone={vaultPath === v.path ? 'active' : 'off'} />
                     <div className="min-w-0">
@@ -271,7 +263,7 @@ export default function SetupPanel() {
                       <p className="typo-caption text-ink-2 truncate">{v.path}</p>
                     </div>
                   </div>
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}

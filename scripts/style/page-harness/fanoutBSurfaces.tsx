@@ -54,6 +54,10 @@ export const FANOUT_B_MODULES: Record<string, HarnessModule> = {
     load: () => import('@/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage'),
     prepare: () => prepareProjects('llm-overview'),
   },
+  'plugins/dev-tools/contest': {
+    load: () => import('@/features/plugins/dev-tools/contest/ContestPage'),
+    prepare: () => prepareProjects('task-runner'),
+  },
   'projects/goals': {
     load: () => import('@/features/projects/development/goals/GoalsPage'),
     prepare: async () => {

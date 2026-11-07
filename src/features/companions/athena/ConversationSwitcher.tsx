@@ -12,6 +12,7 @@ import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 import { DEFAULT_CONVERSATION_ID, useAthenaStore } from './athenaStore';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 type ThreadStatus = 'awaiting' | 'working' | 'idle';
 
@@ -184,14 +185,12 @@ export function ConversationSwitcher() {
               }
               return (
                 <div key={c.id} className="group relative flex items-center">
-                  <button
-                    type="button"
+                  <PressSurface
                     role="menuitem"
-                    onClick={() => switchTo(c)}
+                    onPress={() => switchTo(c)}
                     data-testid={`companion-conversation-${c.id}`}
-                    className={`flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left transition-colors focus-ring ${
-                      c.id === activeId ? 'bg-primary/15' : 'hover:bg-foreground/5'
-                    }`}
+                    className="flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-interactive"
+                    selected={c.id === activeId} aria-pressed={undefined}
                   >
                     <StatusDot status={status} />
                     <span className="flex-1 min-w-0 typo-body truncate">{c.title ?? '—'}</span>
@@ -200,7 +199,7 @@ export function ConversationSwitcher() {
                         {c.unreadCount}
                       </span>
                     )}
-                  </button>
+                  </PressSurface>
                   <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       type="button"

@@ -26,6 +26,7 @@ import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export default function WorkspacesAtlas() {
   const { t, tx } = useTranslation();
@@ -48,10 +49,9 @@ export default function WorkspacesAtlas() {
             .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
           const isOpen = openId === ws.id;
           return (
-            <button
+            <PressSurface
               key={ws.id}
-              type="button"
-              onClick={() => {
+              onPress={() => {
                 // Opening a territory on the map IS entering it: the footer
                 // breadcrumb and every scoped project list read `activeId`
                 // from the store, so a local-only `openId` would leave the
@@ -61,9 +61,8 @@ export default function WorkspacesAtlas() {
                 if (!isOpen) switchWorkspace(ws.id);
               }}
               aria-pressed={isOpen}
-              className={`relative overflow-hidden rounded-card border p-4 text-left transition-colors ${
-                isOpen ? 'border-primary/40 bg-surface-1' : 'border-hair hover:bg-surface-1'
-              }`}
+              className="relative overflow-hidden rounded-card border border-hair p-4"
+              selected={isOpen}
             >
               <div className="flex items-center gap-2 mb-3">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ws.color }} />
@@ -96,7 +95,7 @@ export default function WorkspacesAtlas() {
                   <span className="typo-caption text-ink-3">{tw.no_projects_yet}</span>
                 )}
               </div>
-            </button>
+            </PressSurface>
           );
         })}
 
@@ -105,14 +104,13 @@ export default function WorkspacesAtlas() {
             <CreateWorkspaceInline autoFocus />
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setCreating(true)}
-            className="rounded-card border border-dashed border-hair p-4 flex flex-col items-center justify-center gap-2 text-ink-2 hover:text-foreground hover:bg-surface-1 transition-colors min-h-32"
+          <PressSurface
+            onPress={() => setCreating(true)}
+            className="rounded-card border border-dashed border-hair p-4 flex flex-col items-center justify-center gap-2 text-ink-2 hover:text-foreground min-h-32"
           >
             <Plus className="w-5 h-5" />
             <span className="typo-body">{tw.new_workspace}</span>
-          </button>
+          </PressSurface>
         )}
       </div>
 

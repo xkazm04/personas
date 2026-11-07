@@ -64,8 +64,25 @@ export function fanoutBTapes({ RECORDED_AT, PERSONAS }) {
     ]);
   }
 
+  // ---- plugins/dev-tools/contest ------------------------------------------
+  const PHASES = ['running', 'review', 'decided', 'decided', 'judging', 'draft', 'failed'];
+  const CONTESTS = PHASES.map((phase, i) => ({
+    projectId: 'p-atlas', projectName: 'Atlas', contestId: 'ct-' + (i + 1), title: ['Restyle the login flow', 'Dashboard empty states', 'Billing export layout', 'Onboarding checklist', 'Queue dead-letter view', 'Settings density', 'Search results card'][i],
+    date: new Date(T0 - i * D).toISOString().slice(0, 10), phase, seatCount: 3, variantsPerSeat: 2,
+    seatSpecs: ['claude:opus@high', 'claude:sonnet@medium', 'codex:gpt-5@high'], winner: phase === 'decided' ? 'A/2' : null,
+    winnerSeatSpec: phase === 'decided' ? 'claude:opus@high' : null, shortlist: phase === 'review' ? ['A/1', 'B/2'] : [], parentId: null, round: null,
+    updatedAtMs: T0 - i * H * 5,
+    ledger: { timeoutMin: 30, notBeforeMs: null, judgesEnabled: true, chain: { step: 'idle', reason: null, updatedAtMs: null }, seats: [], variants: [], judgesLead: null },
+  }));
+  function contest() {
+    return withCalls('plugins/dev-tools/contest', 'Synthetic: seven contests across running, review, decided, judging, draft and failed.', [
+      { cmd: 'contest_list', response: CONTESTS },
+    ]);
+  }
+
   return {
     builders: {
+      'plugins/dev-tools/contest': contest,
       'plugins/dev-tools/skills': () => withCalls('plugins/dev-tools/skills', 'Synthetic: Factory landing base; registry and memory coverage answered empty.', [
         { cmd: 'dev_tools_registry_snapshot', response: { registries: [], links: [], knowledgeRoot: null } },
         { cmd: 'dev_tools_memory_skill_coverage', response: [

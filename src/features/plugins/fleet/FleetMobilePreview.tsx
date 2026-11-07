@@ -7,6 +7,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { FLEET_STATE_META, fleetStateCounts } from './fleetStateMeta';
 import { useNowTick, formatAgo } from './relativeAgo';
 import { replyToSession } from './replyToSession';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Mobile companion preview — a render of the fleet glance view inside a phone
@@ -149,15 +150,14 @@ export function FleetMobilePreview() {
                         className="rounded-interactive border border-hair bg-surface-1 px-2 py-1 typo-body text-role-agent"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <button
-                            type="button"
+                          <PressSurface
                             data-testid={`fleet-preview-reply-${item.id}`}
-                            onClick={() => { setReplyTo(item.id); setReplyText(''); }}
+                            onPress={() => { setReplyTo(item.id); setReplyText(''); }}
                             aria-label={tx(t.plugins.fleet.reply_to, { name: item.name })}
-                            className="truncate text-left transition-colors hover:text-role-agent"
+                            className="truncate hover:text-role-agent"
                           >
                             {item.name}
-                          </button>
+                          </PressSurface>
                           <span className="shrink-0 text-role-agent">{formatAgo(t, item.lastActivityMs, now)}</span>
                         </div>
                         {replyTo === item.id && (

@@ -29,6 +29,7 @@ import { orbDock } from './athenaOrbDock';
 import Button from '@/features/shared/components/buttons/Button';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /** Longest preview we render before clamping. Enough for a real paragraph. */
 const PREVIEW_CHARS = 420;
 
@@ -86,18 +87,17 @@ export function OrbUnreadBubble() {
 
         {/* The reply itself. Clicking the text opens the chat — the whole point
             of showing it here is deciding whether to go read the rest. */}
-        <button
-          type="button"
-          onClick={openChat}
+        <PressSurface
+          onPress={openChat}
           data-testid="athena-unread-open"
           aria-label={c.orb_unread_open}
-          className="mt-1.5 block w-full text-left rounded-input px-1 -mx-1 py-0.5 hover:bg-foreground/[0.05] transition-colors focus-ring"
+          className="mt-1.5 block w-full rounded-input px-1 -mx-1 py-0.5"
         >
           <MarkdownRenderer
             content={shown}
             className="athena-chat-md typo-caption max-h-32 overflow-hidden"
           />
-        </button>
+        </PressSurface>
 
         <div className="mt-2 flex items-center gap-1.5">
           {/* Replay reuses the transcript's own read-aloud control, so "hear it
@@ -119,15 +119,16 @@ export function OrbUnreadBubble() {
         {/* Dismiss = mark read. Deliberately not "hide": leaving the badge up
             after the user has read the words here would make it lie. */}
         <Tooltip content={c.orb_unread_dismiss}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={() => useAthenaStore.getState().clearUnreadReplies()}
             data-testid="athena-unread-dismiss"
             aria-label={c.orb_unread_dismiss}
-            className="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-background/95 border border-primary/25 text-foreground shadow-elevation-2 ring-2 ring-background hover:border-primary/50 transition"
+            className="absolute -top-2.5 -right-2.5 z-10"
           >
             <X className="w-3 h-3" />
-          </button>
+          </Button>
         </Tooltip>
       </div>
     </motion.div>

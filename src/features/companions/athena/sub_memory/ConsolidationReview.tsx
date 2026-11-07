@@ -28,6 +28,7 @@ import {
 } from '@/api/companion';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Rows/cards in the first viewport that play the one-shot entrance cascade
@@ -176,11 +177,7 @@ export function ConsolidationReview({
                   hasEntered={(id) => index >= RUN_CASCADE_ROWS || enterRuns.hasEntered(id)}
                   markEntered={enterRuns.markEntered}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setActiveRunId(run.id)}
-                    className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
-                  >
+                  <PressSurface onPress={() => setActiveRunId(run.id)} className="w-full px-5 py-3">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <span className="typo-caption text-foreground">
                         {run.summary
@@ -199,7 +196,7 @@ export function ConsolidationReview({
                         {run.errorText}
                       </div>
                     )}
-                  </button>
+                  </PressSurface>
                 </RevealItem>
               </li>
             ))}

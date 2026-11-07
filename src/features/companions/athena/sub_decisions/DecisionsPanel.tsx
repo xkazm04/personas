@@ -10,6 +10,7 @@ import {
   DecisionsGhostRows,
   ScopeBanner,
 } from './sharedBlocks';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Retrospective view of every design decision Athena has logged across
@@ -141,21 +142,17 @@ function RailItem({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={active}
-      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border-l-2 text-left transition-colors focus-ring ${
-        active
-          ? 'border-l-fuchsia-400 bg-surface-2 text-foreground'
-          : 'border-l-transparent text-foreground hover:bg-foreground/[0.05]'
-      }`}
+      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-interactive"
+      selected={active}
     >
       <span className="typo-body truncate flex-1">{label}</span>
       <span className={`typo-caption shrink-0${active ? ' text-ink-2' : ''}`}>
         {count}
       </span>
-    </button>
+    </PressSurface>
   );
 }
 

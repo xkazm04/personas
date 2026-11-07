@@ -18,6 +18,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { clampToBound, FLEET_MAX_PARALLEL_SESSIONS_BOUNDS, isWithin } from '@/features/settings/sub_limits/autopilotBounds';
+import Button from '@/features/shared/components/buttons/Button';
 
 const BOUND = FLEET_MAX_PARALLEL_SESSIONS_BOUNDS;
 
@@ -57,7 +58,6 @@ export function MaxParallelStepper({
   const hint = over
     ? tx(s.queue_cap_over_hint, { running, cap, over: overAdmitted })
     : tx(s.queue_cap_hint, { running, cap });
-  const btn = 'focus-ring flex h-5 w-5 items-center justify-center rounded-interactive text-ink-2 transition-colors hover:bg-surface-1 hover:text-ink-1 disabled:opacity-25 disabled:hover:bg-transparent';
   const canEdit = setting.loaded && !disabled;
 
   return (
@@ -71,15 +71,27 @@ export function MaxParallelStepper({
         data-testid="fleet-max-parallel"
         data-over={over || undefined}
       >
-        <button type="button" className={btn} onClick={() => write(cap - 1)} disabled={!canEdit || cap <= BOUND.min} aria-label={s.queue_cap_decrease}>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => write(cap - 1)}
+          disabled={!canEdit || cap <= BOUND.min}
+          aria-label={s.queue_cap_decrease}
+        >
           <Minus className="h-3 w-3" aria-hidden />
-        </button>
+        </Button>
         <span className={`px-0.5 typo-caption num ${over ? 'text-status-warning' : 'text-foreground'}`} data-testid="fleet-max-parallel-readout">
           <Numeric value={running} /> / <Numeric value={cap} />
         </span>
-        <button type="button" className={btn} onClick={() => write(cap + 1)} disabled={!canEdit || cap >= BOUND.max} aria-label={s.queue_cap_increase}>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => write(cap + 1)}
+          disabled={!canEdit || cap >= BOUND.max}
+          aria-label={s.queue_cap_increase}
+        >
           <Plus className="h-3 w-3" aria-hidden />
-        </button>
+        </Button>
       </div>
     </Tooltip>
   );

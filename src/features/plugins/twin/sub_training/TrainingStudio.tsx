@@ -245,19 +245,15 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
               aria-label={t.training.studioDirectionsLabel}
             />
             <Tooltip content={directionsDirty ? t.training.studioSaveDirections : t.training.studioDirectionsSaved}>
-              <button
-                type="button"
+              <Button
                 onClick={() => void handleSaveDirections()}
                 disabled={busy || savingDirections || (!directionsDirty && !savedDirectives)}
                 aria-label={t.training.studioSaveDirections}
-                className={`flex-shrink-0 inline-flex items-center justify-center w-9 rounded-card border transition-colors focus-ring disabled:is-disabled ${
-                  directionsDirty
-                    ? 'border-hair-2 bg-surface-2 text-ink-2 hover:bg-surface-2'
-                    : 'border-status-success/30 bg-status-success/5 text-status-success'
-                }`}
+                className="shrink-0"
+                variant={directionsDirty ? 'secondary' : 'accent'} tone="success" size="icon-sm"
               >
                 {savingDirections ? <Loader2 className="w-4 h-4 animate-spin" /> : directionsDirty ? <Bookmark className="w-4 h-4" /> : <BookmarkCheck className="w-4 h-4" />}
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -360,16 +356,14 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                       </Button>
                     </Tooltip>
                     <Tooltip content={t.training.studioSaveApproved.replace('{count}', '')}>
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
                         onClick={() => updateRow(row.id, { include: !row.include })}
-                        aria-pressed={row.include}
-                        className={`inline-flex items-center justify-center w-7 h-7 rounded-interactive border transition-colors focus-ring ${
-                          row.include ? 'bg-status-success/15 border-status-success/40 text-status-success' : 'bg-secondary/40 border-primary/10 text-foreground hover:text-status-success'
-                        }`}
+                        pressed={row.include}
                       >
                         <Check className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     </Tooltip>
                     <Tooltip content={t.training.studioRemoveRow}>
                       <Button

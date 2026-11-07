@@ -31,6 +31,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PLAN_INK } from './planInk';
 import type { DualitySummary } from '@/lib/milestone/shipDuality';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * The objective's length bound, in characters.
@@ -81,13 +82,12 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
     );
   }
   return (
-    <button
-      type="button"
+    <PressSurface
       disabled={!editable}
-      onClick={() => setEditing(true)}
-      className="group inline-flex items-center gap-2 min-w-0 text-left rounded-interactive px-1 -mx-1 py-0.5 transition-colors hover:bg-foreground/[0.04] focus-ring disabled:pointer-events-none"
+      onPress={() => setEditing(true)}
       aria-label={tx(t.ship.goal_edit_aria, { name })}
       data-testid="ship-milestone-goal"
+      className="group inline-flex items-center gap-2 min-w-0 rounded-interactive px-1 -mx-1 py-0.5 disabled:pointer-events-none"
     >
       <span className={`typo-title-lg truncate`}>
         {goal && goal.trim() !== '' ? goal : t.ship.goal_empty}
@@ -95,7 +95,7 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
       {editable && (
         <Pencil className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
       )}
-    </button>
+    </PressSurface>
   );
 }
 

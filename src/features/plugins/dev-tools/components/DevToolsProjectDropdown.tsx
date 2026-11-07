@@ -9,6 +9,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { extractMessage } from '@/lib/silentCatch';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger('devtools-project-dropdown');
 
@@ -103,13 +105,7 @@ export function DevToolsProjectDropdown({
       onSelectFocused={handleSelect}
       ariaLabel="Select DevTools project"
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
-          onClick={toggle}
-          className={`w-full flex items-center justify-between px-4 py-3 typo-body rounded-card border border-hair bg-background/80 text-foreground transition-all hover:border-hair focus:outline-none ${
-            isOpen ? 'border-hair' : ''
-          }`}
-        >
+        <Button variant="secondary" size="md" onClick={toggle} className="w-full justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
             <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
             {loading ? (
@@ -137,7 +133,7 @@ export function DevToolsProjectDropdown({
               isOpen ? 'rotate-180' : ''
             }`}
           />
-        </button>
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (
@@ -173,23 +169,18 @@ export function DevToolsProjectDropdown({
                 const isSelected = project.id === value;
                 const isFocused = i === focusIndex;
                 return (
-                  <button
+                  <PressSurface
                     key={project.id}
-                    type="button"
                     role="option"
                     aria-selected={isSelected}
                     data-testid={`devtools-project-option-${project.id}`}
-                    onClick={() => {
+                    onPress={() => {
                       onSelect(project);
                       close();
                     }}
-                    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
-                      isFocused
-                        ? 'bg-surface-1'
-                        : isSelected
-                          ? 'bg-surface-2'
-                          : 'hover:bg-surface-1'
-                    }`}
+                    className={`w-full px-4 py-2.5 flex items-center gap-3 ${isFocused ? 'bg-surface-1' : ''}`}
+                    selected={isSelected}
+                    aria-pressed={undefined}
                   >
                     <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -212,7 +203,7 @@ export function DevToolsProjectDropdown({
                     {isSelected && (
                       <Check className="w-4 h-4 text-primary flex-shrink-0" />
                     )}
-                  </button>
+                  </PressSurface>
                 );
               })}
             </div>

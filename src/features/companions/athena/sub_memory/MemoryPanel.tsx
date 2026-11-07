@@ -111,32 +111,29 @@ export default function MemoryPanel() {
   }, [addToast, t]);
 
   return (
-    <div className="h-full -mx-4 -mb-6 sm:-mx-6 lg:-mx-8 rounded-card overflow-hidden border border-foreground/10 bg-secondary/40 flex flex-col">
-      <div className="px-4 py-2 border-b border-foreground/10 flex items-center justify-between gap-2 shrink-0">
-        <div className="min-w-0">
-          <div className="typo-caption text-foreground">
+    <div className="h-full -mx-4 -mb-6 sm:-mx-6 lg:-mx-8 rounded-card overflow-hidden border border-hair bg-surface-1 flex flex-col">
+      <div className="px-4 py-2 border-b border-hair flex flex-wrap items-center justify-between gap-x-4 gap-y-2 shrink-0">
+        <div className="min-w-0 flex-1 basis-[22rem]">
+          <div className="typo-eyebrow text-ink-3">
             {t.athena.memory_bulk_actions_title}
           </div>
-          <div className="typo-caption text-foreground hidden sm:block">
+          <div className="typo-caption text-ink-2 hidden sm:block">
             {t.athena.memory_bulk_actions_desc}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Tooltip content={t.athena.memory_run_consolidation}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setView('consolidation')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption focus-ring transition-colors ${
-                view === 'consolidation'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-foreground/5 hover:bg-foreground/10 text-ink-2'
-              }`}
+              pressed={view === 'consolidation'}
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">
                 {t.athena.memory_run_consolidation}
               </span>
-            </button>
+            </Button>
           </Tooltip>
           <Button
             type="button"

@@ -24,6 +24,7 @@ import { HUB_REJECT_REASONS, type HubDeskProps } from '../hubContract';
 import { queueEntries } from './laneModel';
 import { QueueEntryHeader, QueueGhost } from './QueueFrame';
 import { SampleProposalList } from './SampleProposalList';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export function QueueLane({ feed }: HubDeskProps) {
   const { t: tRoot, tx } = useTranslation();
@@ -79,12 +80,10 @@ export function QueueLane({ feed }: HubDeskProps) {
             const meta = HUB_KIND_META[entry.kind];
             return (
               <li key={entry.id}>
-                <button
-                  type="button"
-                  onClick={() => setIndex(i)}
-                  className={`w-full text-left px-2 py-1.5 rounded-interactive flex items-start gap-2 transition-colors focus-ring ${
-                    i === at ? `${meta.bg} border ${meta.border}` : 'border border-transparent hover:bg-secondary/40'
-                  }`}
+                <PressSurface
+                  onPress={() => setIndex(i)}
+                  className={`w-full px-2 py-1.5 rounded-interactive flex items-start gap-2 border ${i === at ? meta.border : 'border-transparent'}`}
+                  selected={i === at}
                 >
                   <meta.Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${meta.text}`} />
                   <span className="min-w-0 flex-1">
@@ -93,7 +92,7 @@ export function QueueLane({ feed }: HubDeskProps) {
                     </span>
                     <RelativeTime timestamp={entry.at} className="typo-label text-foreground tabular-nums" />
                   </span>
-                </button>
+                </PressSurface>
               </li>
             );
           })}

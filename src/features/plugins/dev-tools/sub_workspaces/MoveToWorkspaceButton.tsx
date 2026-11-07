@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { assignProject, type Workspace } from './workspaceStore';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export function MoveToWorkspaceButton({ workspaces, selectedIds, onMoved }: {
   workspaces: Workspace[];
@@ -55,24 +56,22 @@ export function MoveToWorkspaceButton({ workspaces, selectedIds, onMoved }: {
             <span className="typo-label text-ink-2">{COPY.heading}</span>
           </div>
           {workspaces.map((w) => (
-            <button
+            <PressSurface
               key={w.id}
-              type="button"
-              onClick={() => move(w.id)}
-              className="w-full flex items-center gap-2 px-3 py-2 typo-body text-left text-ink-2 hover:bg-surface-1 hover:text-foreground transition-colors"
+              onPress={() => move(w.id)}
+              className="w-full flex items-center gap-2 px-3 py-2 typo-body text-ink-2 hover:text-foreground"
             >
               <span className="w-2.5 h-2.5 rounded-interactive flex-shrink-0" style={{ background: w.color }} aria-hidden />
               <span className="truncate">{w.name}</span>
-            </button>
+            </PressSurface>
           ))}
-          <button
-            type="button"
-            onClick={() => move(null)}
-            className="w-full flex items-center gap-2 px-3 py-2 typo-body text-left text-ink-2 hover:bg-surface-1 hover:text-foreground transition-colors border-t border-hair"
+          <PressSurface
+            onPress={() => move(null)}
+            className="w-full flex items-center gap-2 px-3 py-2 typo-body text-ink-2 hover:text-foreground border-t border-hair"
           >
             <span className="w-2.5 h-2.5 rounded-interactive border border-dashed border-foreground/30 flex-shrink-0" aria-hidden />
             {COPY.none}
-          </button>
+          </PressSurface>
         </div>
       )}
     </div>

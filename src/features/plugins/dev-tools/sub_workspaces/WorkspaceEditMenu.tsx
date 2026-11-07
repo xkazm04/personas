@@ -76,22 +76,19 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
         ))}
       </div>
       <div className="flex items-center gap-1">
-        <button
-          type="button"
+        <Button
+          variant="danger"
+          size="xs"
           onClick={() => {
             if (!confirming) { setConfirming(true); return; }
             deleteWorkspace(ws.id);
             onClose();
           }}
-          className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive typo-caption transition-colors focus-ring ${
-            confirming
-              ? 'bg-status-error/15 text-status-error'
-              : 'text-status-error/80 hover:bg-status-error/10 hover:text-status-error'
-          }`}
+          className={confirming ? 'bg-status-error/15' : ''}
         >
           <Trash2 className="w-3.5 h-3.5" aria-hidden />
           {confirming ? COPY.deleteConfirm : COPY.delete}
-        </button>
+        </Button>
         <Button variant="ghost" size="icon-sm"
           type="button"
           onClick={() => { commitName(); onClose(); }}

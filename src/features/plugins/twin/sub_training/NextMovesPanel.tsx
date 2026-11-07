@@ -8,6 +8,7 @@ import { TRAINING_TOPIC_PRESETS, TRAINING_TOPIC_WINDOW } from './useTrainingSess
 import { scoreTopicCoverage, topicByCommunication, type PresetId } from './topicCoverage';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * "Where to go next" panel rendered on the training completion screen.
@@ -120,11 +121,10 @@ export function NextMovesPanel({ onPick }: Props) {
             const Icon = r.icon;
             const label = t.training[r.labelKey];
             return (
-              <button
+              <PressSurface
                 key={r.id}
-                type="button"
-                onClick={() => onPick(r.id)}
-                className={`group flex items-center gap-3 p-3 rounded-card border transition-all hover:shadow-elevation-1 text-left ${r.tint}`}
+                onPress={() => onPick(r.id)}
+                className="group flex items-center gap-3 p-3 rounded-card border border-hair"
               >
                 <span className="w-9 h-9 rounded-interactive bg-card/60 border border-primary/15 flex items-center justify-center flex-shrink-0">
                   <Icon className="w-4 h-4" />
@@ -136,7 +136,7 @@ export function NextMovesPanel({ onPick }: Props) {
                   </span>
                 </span>
                 <ArrowRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
-              </button>
+              </PressSurface>
             );
           })}
         </div>

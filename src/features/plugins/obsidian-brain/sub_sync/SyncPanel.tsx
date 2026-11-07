@@ -25,6 +25,7 @@ import ConflictDiffView from './ConflictDiffView';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 export default function SyncPanel() {
   const { t, tx } = useTranslation();
@@ -262,18 +263,9 @@ export default function SyncPanel() {
             )}
             <div className="flex flex-wrap gap-2">
               {filteredPersonas.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => togglePersona(p.id)}
-                  className={`px-3 py-1.5 rounded-card typo-caption transition-colors border focus-ring ${
-                    selectedPersonaIds.has(p.id)
-                      ? 'bg-surface-2 text-ink-2 border-hair-2'
-                      : 'bg-surface-1 text-ink-1 border-hair hover:border-hair'
-                  }`}
-                >
+                <OptionChip key={p.id} onSelect={() => togglePersona(p.id)} selected={selectedPersonaIds.has(p.id)}>
                   {p.name}
-                </button>
+                </OptionChip>
               ))}
               {personas.length === 0 && (
                 <EmptyState art="agents" size="sm" title={t.plugins.obsidian_brain.no_personas_found} />

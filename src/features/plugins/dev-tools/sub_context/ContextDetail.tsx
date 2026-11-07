@@ -12,6 +12,7 @@ import { TRACK_COLOR } from '@/features/teams/sub_kpis/kpiMeta';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import type { ContextItem } from './contextMapTypes';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export default function ContextDetail({
   ctx,
@@ -193,10 +194,9 @@ export default function ContextDetail({
           <ul className="space-y-1.5">
             {linkedGoals.map(({ goal, tasksTotal, tasksDone }) => (
               <li key={goal.id}>
-                <Tooltip content={t.plugins.dev_tools.context_detail_goal_jump_tooltip}><button
-                  type="button"
-                  onClick={() => handleGoalJump(goal.id)}
-                  className="w-full text-left rounded-modal border border-hair bg-surface-1 px-2.5 py-2 hover:border-hair hover:bg-surface-2 transition-colors"
+                <Tooltip content={t.plugins.dev_tools.context_detail_goal_jump_tooltip}><PressSurface
+                  onPress={() => handleGoalJump(goal.id)}
+                  className="w-full rounded-modal border border-hair bg-surface-1 px-2.5 py-2 hover:border-hair hover:bg-surface-2"
                 >
                   <div className="flex items-center gap-2">
                     <span className="typo-caption text-foreground truncate flex-1">{goal.title}</span>
@@ -208,7 +208,7 @@ export default function ContextDetail({
                       {tx(t.plugins.dev_tools.context_detail_task_summary, { done: tasksDone, total: tasksTotal })}
                     </p>
                   )}
-                </button></Tooltip>
+                </PressSurface></Tooltip>
               </li>
             ))}
           </ul>

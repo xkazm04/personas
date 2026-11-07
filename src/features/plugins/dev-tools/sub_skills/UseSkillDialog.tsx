@@ -22,6 +22,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { ArgsField, DialogFooter, PreviewLine, SkillDescription } from './UseSkillShared';
 import { ContextPickerModal } from './contextPicker/ContextPickerModal';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export type DispatchTarget = 'fleet' | 'cmd';
 export type ContextMode = 'specific' | 'recommended' | 'all';
@@ -181,11 +182,10 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
               </Row>
               {mode === 'specific' && (
                 <div className="pl-24">
-                  <button
-                    type="button"
-                    onClick={() => setPickerOpen(true)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair bg-surface-1 hover:border-primary/40 transition-colors text-left"
+                  <PressSurface
+                    onPress={() => setPickerOpen(true)}
                     data-testid="use-skill-open-picker"
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair bg-surface-1 hover:border-primary/40"
                   >
                     <span className="typo-caption text-foreground truncate flex-1 min-w-0">
                       {picked.length === 0
@@ -195,7 +195,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
                           : tx(d.ctx_picker_summary, { first: picked[0]!, n: picked.length - 1 })}
                     </span>
                     <SlidersHorizontal className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-                  </button>
+                  </PressSurface>
                 </div>
               )}
             </>

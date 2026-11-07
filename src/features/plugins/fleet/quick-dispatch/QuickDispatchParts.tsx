@@ -3,6 +3,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { FLEET_STATE_META } from '../fleetStateMeta';
 import type { QuickDispatchController } from './quickDispatchController';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Shared leaf pieces used by every Quick Dispatch variant — hoisted the moment
@@ -57,12 +58,11 @@ export function RecentDispatchRow({
 }) {
   const meta = FLEET_STATE_META.find((m) => m.id === session.state);
   return (
-    <button
-      type="button"
-      onClick={c.openFleetPage}
+    <PressSurface
+      onPress={c.openFleetPage}
       aria-label={c.quickT.recent_open_aria}
-      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-foreground/[0.04] transition-colors text-left"
       data-testid="quick-dispatch-recent-row"
+      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive"
     >
       <span
         className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta?.dot ?? 'bg-surface-2'}`}
@@ -76,7 +76,7 @@ export function RecentDispatchRow({
         showTooltip={false}
         className="ml-auto shrink-0 typo-caption text-foreground"
       />
-    </button>
+    </PressSurface>
   );
 }
 

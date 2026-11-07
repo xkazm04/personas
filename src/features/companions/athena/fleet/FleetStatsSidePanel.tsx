@@ -17,6 +17,7 @@ import { parseDigest } from '../orchestration/parseDigest';
 import Button from '@/features/shared/components/buttons/Button';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * Live "what Athena has running" content for the companion chat's inner
  * side-panel slot (see `AthenaSidePanel`).
@@ -368,15 +369,14 @@ function PanelRow({
     <li>
       {onClick ? (
         <Tooltip content={actionLabel}>
-          <button
-            type="button"
-            onClick={onClick}
+          <PressSurface
+            onPress={onClick}
             data-testid={testId}
             aria-label={actionLabel ? `${title} — ${actionLabel}` : title}
-            className="w-full text-left rounded-input bg-secondary/30 hover:bg-secondary/60 px-1.5 py-1 transition-colors focus-ring"
+            className="w-full rounded-input px-1.5 py-1"
           >
             {body}
-          </button>
+          </PressSurface>
         </Tooltip>
       ) : (
         <div data-testid={testId} className="rounded-input bg-secondary/20 px-1.5 py-1">

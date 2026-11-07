@@ -35,6 +35,7 @@ import {
   useFilteredGroups,
   useMemberCounts,
 } from './contextMapPerf';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** One shared empty array, so a context with no features still hands the
  *  memoised row a referentially stable prop. */
@@ -187,16 +188,14 @@ export default function ContextLedger(props: ContextLedgerProps) {
               const selected = uc.id === selectedUseCaseId;
               return (
                 <Tooltip key={uc.id} content={`${uc.name} · ${tx(t.uc_span_count, { count: uc.context_ids.length })}`}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectUseCase(selected ? null : uc.id)}
+                  <PressSurface
+                    onPress={() => onSelectUseCase(selected ? null : uc.id)}
                     aria-pressed={selected}
-                    className={`h-full flex items-start justify-center pt-0.5 rounded-t transition-colors ${
-                      selected ? 'bg-primary/15' : 'hover:bg-surface-1'
-                    }`}
+                    className="h-full flex items-start justify-center pt-0.5 rounded-t"
+                    selected={selected}
                   >
                     <Icon className={`w-3.5 h-3.5 ${KIND_TEXT[meta.stem]}`} />
-                  </button>
+                  </PressSurface>
                 </Tooltip>
               );
             })

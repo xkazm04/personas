@@ -12,6 +12,7 @@ import type { FleetRunSummary } from '@/lib/bindings/FleetRunSummary';
 import { listRuns, runReport } from '@/api/fleet/fleet';
 import { FleetRunSessionRow } from './FleetRunSessionRow';
 import { buildRunMarkdown, formatTokens } from './fleetRunMarkdown';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /**
  * Run harvest — the fleet reports what it delivered.
@@ -96,20 +97,14 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
         {runs.length > 1 && (
           <div className="flex flex-wrap gap-1.5 border-b border-hair px-4 py-2">
             {runs.map((r) => (
-              <button
+              <OptionChip
                 key={r.runId}
-                type="button"
                 data-testid={`fleet-harvest-run-${r.runId}`}
-                onClick={() => setRunId(r.runId)}
-                aria-pressed={r.runId === runId}
-                className={`rounded-interactive border px-2 py-0.5 typo-caption transition-colors ${
-                  r.runId === runId
-                    ? 'border-primary/40 bg-primary/15 text-foreground'
-                    : 'border-hair bg-surface-1 hover:bg-surface-1'
-                }`}
+                onSelect={() => setRunId(r.runId)}
+                selected={r.runId === runId}
               >
                 {`${runLabel(r)} · ${r.finishedCount}/${r.sessionCount}`}
-              </button>
+              </OptionChip>
             ))}
           </div>
         )}

@@ -35,6 +35,7 @@ import { AutopilotSwitch } from './AutopilotSwitch';
 import { MaxParallelStepper } from './MaxParallelStepper';
 import { BOARD_VARIANTS, type BoardVariant } from './queue/boardVariant';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /** The layout strip's id prefix; the board body declares itself its panel. */
 export const BOARD_TABS_PREFIX = 'fleet-board';
@@ -58,27 +59,20 @@ function StateTally({
   return (
     <div className="flex flex-shrink-0 items-center gap-1.5" data-testid="fleet-grid-tally">
       {SQUARE_STATE_ORDER.map((s) => (
-        <button
+        <OptionChip
           key={s}
-          type="button"
-          onClick={() => onPick(s)}
-          aria-pressed={active === s}
+          onSelect={() => onPick(s)}
           aria-label={filterAria(labels[s])}
           data-testid={`fleet-grid-tally-${s}`}
-          className={`inline-flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 typo-caption text-foreground transition-colors ${
-            active === s
-              ? 'border-primary/60 bg-primary/15'
-              : 'border-border bg-surface-1 hover:border-primary/30'
-          }`}
-        >
+          selected={active === s}
+        ><span className="inline-flex items-center gap-1.5">
           <span
             className={`h-2 w-2 flex-shrink-0 rounded-full ${SQUARE_VISUAL[s].accent} ${
               SQUARE_VISUAL[s].pulse ? 'animate-pulse' : ''
             }`}
           />
           <span className="opacity-70">{labels[s]}</span>
-          <span className="num">{totals[s]}</span>
-        </button>
+          <span className="num">{totals[s]}</span></span></OptionChip>
       ))}
     </div>
   );

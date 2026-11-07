@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { FleetKillConfirm } from './FleetKillConfirm';
 import { formatAgo } from './relativeAgo';
 import { canHibernateState, isTombstoneState } from './fleetStateMeta';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 
 /**
@@ -170,17 +171,13 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
 
   return (
     <>
-    <Tooltip content={session.cwd}><button
-      type="button"
-      onClick={handleOpen}
+    <Tooltip content={session.cwd}><PressSurface
+      onPress={handleOpen}
       onPointerEnter={refreshProvenance}
       data-testid={`fleet-session-row-${session.id}`}
       data-active={isActive || undefined}
-      className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-card border transition-colors text-left ${
-        isActive
-          ? 'border-primary/30 bg-surface-1'
-          : 'border-transparent hover:border-hair hover:bg-surface-1'
-      }`}
+      className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-card border ${isActive ? 'border-primary/30' : 'border-transparent'}`}
+      selected={isActive}
     >
       <FleetStatusDots state={session.state} reason={provenance} />
       {session.dozing && (
@@ -295,7 +292,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           </span>
         </>
       )}
-    </button></Tooltip>
+    </PressSurface></Tooltip>
     {confirmKill && (
       <FleetKillConfirm
         label={session.name ?? session.projectLabel}

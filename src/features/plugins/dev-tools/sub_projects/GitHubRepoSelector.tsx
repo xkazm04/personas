@@ -19,6 +19,7 @@ import {
   type RepoCredState,
 } from './githubRepoPaging';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Parse a repo URL into owner/name. Accepts any http(s) host with at least a
@@ -219,10 +220,9 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
         {t.plugins.dev_projects.github_repository}
         <span className="typo-caption text-foreground">{t.plugins.dev_projects.optional}</span>
       </label>
-      <button
-        type="button"
-        onClick={() => { setOpen(!open); setTimeout(() => searchRef.current?.focus(), 50); }}
-        className="w-full flex items-center gap-2 px-3 py-2 typo-body bg-surface-1 border border-hair rounded-modal hover:bg-surface-1 transition-colors text-left"
+      <PressSurface
+        onPress={() => { setOpen(!open); setTimeout(() => searchRef.current?.focus(), 50); }}
+        className="w-full flex items-center gap-2 px-3 py-2 typo-body bg-surface-1 border border-hair rounded-modal hover:bg-surface-1"
       >
         <Github className="w-4 h-4 text-foreground flex-shrink-0" />
         {selectedRepoName ? (
@@ -231,7 +231,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
           <span className="flex-1 text-foreground">{t.plugins.dev_projects.select_repository}</span>
         )}
         <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+      </PressSurface>
 
       {open && (
         <>
@@ -266,13 +266,10 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                 </div>
               ) : (
                 filtered.map((repo) => (
-                  <button
+                  <PressSurface
                     key={repo.full_name}
-                    type="button"
-                    onClick={() => handleSelect(repo)}
-                    className={`w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-surface-2 transition-colors ${
-                      value === repo.html_url ? 'bg-surface-1' : ''
-                    }`}
+                    onPress={() => handleSelect(repo)}
+                    className={`w-full flex items-start gap-2 px-3 py-2 ${value === repo.html_url ? 'bg-sel' : ''}`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -285,7 +282,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                         <p className="typo-caption text-foreground truncate mt-0.5">{repo.description}</p>
                       )}
                     </div>
-                  </button>
+                  </PressSurface>
                 ))
               )}
             </div>

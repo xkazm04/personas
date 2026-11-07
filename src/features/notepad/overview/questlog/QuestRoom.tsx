@@ -13,6 +13,7 @@ import type { NoteOverviewProps } from '../types';
 import type { GoalSignals } from './goalSignals';
 import { railOf, type QuestZone } from './questlogModel';
 import { QuestRoomBands, type QuestMilestoneGroup } from './QuestRoomBands';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** One rung above the desk: the room is the surface in front of the operator. */
 const QUESTLOG_ROOM_KEY_PRIORITY = NOTEPAD_LAYER_PRIORITY + 2;
@@ -138,15 +139,11 @@ export function QuestRoom({
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="notepad-questlog-room">
       <div className="shrink-0 px-8 pt-2 pb-3 flex items-center gap-4 flex-wrap">
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-8 px-2.5 rounded-interactive inline-flex items-center gap-2 typo-caption text-foreground hover:bg-surface-1 focus-ring"
-        >
+        <Button variant="ghost" size="sm" onClick={onClose}>
           <ArrowLeft className="w-4 h-4" aria-hidden />
           {t.notepad.desk_room_back}
           <Keycap>{DESK_KEY.escape}</Keycap>
-        </button>
+        </Button>
         <h2 className="typo-heading-lg text-foreground m-0 truncate min-w-0">{zone.name}</h2>
         <div className="flex items-center gap-1.5 flex-wrap">
           {counts.map(([status, count]) => {

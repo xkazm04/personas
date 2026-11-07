@@ -15,6 +15,7 @@
 import { twinStatusEntry, type TwinSlotStatus } from '../shared/twinStatus';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SetupChecklistItem, SetupFocus } from './setupContract';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface SetupReadinessRowProps {
   checklist: SetupChecklistItem[];
@@ -63,16 +64,13 @@ export function SetupReadinessRow({ checklist, score, focus, onFocus }: SetupRea
         const entry = twinStatusEntry(item.status);
         const active = item.id === focus;
         return (
-          <button
+          <PressSurface
             key={item.id}
-            type="button"
-            onClick={() => onFocus(item.id)}
+            onPress={() => onFocus(item.id)}
             aria-current={active ? 'step' : undefined}
             data-testid={`setup-readiness-${item.id}`}
-            className={[
-              'group relative flex-1 min-w-0 flex items-center gap-2 px-3 py-1.5 text-left transition-colors',
-              active ? 'bg-secondary/60' : 'hover:bg-secondary/40',
-            ].join(' ')}
+            className="group relative flex-1 min-w-0 flex items-center gap-2 px-3 py-1.5"
+            selected={active}
           >
             <StatusGlyph status={item.status} />
             <span className="min-w-0 flex items-baseline gap-2">
@@ -93,7 +91,7 @@ export function SetupReadinessRow({ checklist, score, focus, onFocus }: SetupRea
               ].join(' ')}
             />
             {active && <span aria-hidden className="absolute left-0 top-0 h-0.5 w-full bg-primary/50" />}
-          </button>
+          </PressSurface>
         );
       })}
 

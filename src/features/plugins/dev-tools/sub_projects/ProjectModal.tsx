@@ -32,6 +32,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { listCredentials } from '@/api/vault/credentials';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 type ModalPhase = 'form' | 'created';
 
@@ -341,13 +342,11 @@ export function ProjectModal({
 
             {/* Codebase connector opt-in (create mode, last step only) */}
             {!isEdit && isLastStep && (
-              <button
-                type="button"
-                onClick={() => setCreateConnector((v) => !v)}
+              <PressSurface
+                onPress={() => setCreateConnector((v) => !v)}
                 aria-pressed={createConnector}
-                className={`mt-4 w-full flex items-start gap-3 px-3 py-3 text-left border rounded-input transition-colors ${
-                  createConnector ? 'bg-sel border-primary' : 'bg-surface-1 border-hair hover:bg-surface-1'
-                }`}
+                className="mt-4 w-full flex items-start gap-3 px-3 py-3 border border-hair rounded-input"
+                selected={createConnector}
               >
                 {createConnector
                   ? <CheckCircle2 className="w-4 h-4 text-ink-2 flex-shrink-0 mt-0.5" />
@@ -358,7 +357,7 @@ export function ProjectModal({
                     {dp.create_codebase_connector_desc.replace('{name}', name.trim() || dp.project_name)}
                   </span>
                 </span>
-              </button>
+              </PressSurface>
             )}
 
             {/* Footer */}

@@ -59,7 +59,7 @@ export function FinderBreadcrumb({ drive, activeDragCount, onEditPath }: Props) 
   return (
     <nav
       aria-label={f.breadcrumb_aria}
-      className="flex items-center gap-0.5 min-w-0 flex-1 px-1.5 py-0.5 rounded-card bg-secondary/30 border border-border"
+      className="flex items-center gap-0.5 min-w-[9rem] flex-1 px-1.5 py-0.5 rounded-card bg-surface-1 border border-hair"
     >
       {crumbs.map((crumb, i) => {
         const isLast = i === crumbs.length - 1;

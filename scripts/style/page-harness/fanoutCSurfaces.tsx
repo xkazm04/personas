@@ -60,6 +60,18 @@ export const FANOUT_C_MODULES: Record<string, HarnessModule> = {
     load: () => import('@/features/plugins/drive/DrivePage'),
     prepare: () => { useSystemStore.setState({ sidebarSection: 'plugins', pluginTab: 'drive' } as never); },
   },
+  'plugins/obsidian-brain': {
+    load: () => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'),
+    prepare: () => { useSystemStore.setState({ sidebarSection: 'plugins', pluginTab: 'obsidian-brain' } as never); },
+  },
+  'plugins/gitlab': {
+    load: () => import('@/features/plugins/gitlab/components/GitLabPanel'),
+    prepare: () => { useSystemStore.setState({ sidebarSection: 'plugins' } as never); },
+  },
+  studio: {
+    load: () => import('@/features/studio/StudioPage'),
+    prepare: () => { useSystemStore.setState({ sidebarSection: 'studio' } as never); },
+  },
   'twin/profiles': twinTab('profiles'),
   'twin/hub': twinTab('hub'),
 };

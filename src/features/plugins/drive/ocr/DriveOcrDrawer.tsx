@@ -27,6 +27,7 @@ import { BaseModal } from "@/features/shared/components/modals";
 import { isOcrCancellation, type useOcr } from "./useOcr";
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const TITLE_ID = "drive-ocr-drawer-title";
 
@@ -211,20 +212,17 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {(["gemini", "claude"] as const).map((b) => (
-                  <button
+                  <PressSurface
                     key={b}
-                    type="button"
-                    onClick={() => setBackend(b)}
+                    onPress={() => setBackend(b)}
                     disabled={phase === "running"}
-                    className={`rounded-input border px-3 py-2 typo-body text-left transition-colors focus-ring ${backend === b
-                        ? "border-hair-2 bg-surface-2 text-ink-2 "
-                        : "border-primary/20 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:border-primary/30"
-                      } disabled:is-disabled`}
+                    className="rounded-input border border-hair px-3 py-2 typo-body"
+                    selected={backend === b}
                   >
                     {b === "gemini"
                       ? t.plugins.drive.ocr_backend_gemini
                       : t.plugins.drive.ocr_backend_claude}
-                  </button>
+                  </PressSurface>
                 ))}
               </div>
             </div>

@@ -14,9 +14,11 @@ import { listDirectorVerdicts, runDirectorMemoryCleanup, getDirectorBrainHistory
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { ScoreSparkline } from '../ScoreSparkline';
-import { scoreTone, toneFill } from '../directorScore';
+import { scoreTone } from '../directorScore';
 import { attentionFlags, FLAG_TONE, type AttentionFlag } from '../attention';
 import { categoryMeta, categoryLabel } from '../categoryMeta';
+import { PressSurface } from '@/features/shared/components/buttons';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 const SEVERITY_LINE: Record<string, string> = {
   error: 'var(--status-error)',
@@ -221,34 +223,21 @@ export function PersonaDetailModal({
           {/* category filter — only when the history spans more than one kind */}
           {presentCategories.length > 1 && (
             <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
-              <button
-                type="button"
-                onClick={() => setCatFilter(null)}
-                className={`px-2 py-0.5 rounded-pill typo-caption transition-colors focus-ring ${
-                  catFilter === null ? 'bg-surface-2 text-ink-2 border border-hair-2' : 'text-foreground border border-transparent hover:bg-secondary/40'
-                }`}
-              >
+              <OptionChip onSelect={() => setCatFilter(null)} selected={catFilter === null}>
                 {t.director.category_all}
-              </button>
+              </OptionChip>
               {presentCategories.map((c) => {
                 const meta = categoryMeta(c);
                 const active = catFilter === c;
                 const Icon = meta.icon;
                 return (
-                  <button
+                  <OptionChip
                     key={c}
-                    type="button"
-                    onClick={() => setCatFilter(active ? null : c)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill typo-caption transition-colors focus-ring border"
-                    style={
-                      active
-                        ? { color: meta.color, backgroundColor: toneFill(meta.color, 16), borderColor: meta.color }
-                        : { color: 'var(--foreground)', borderColor: 'transparent' }
-                    }
-                  >
+                    onSelect={() => setCatFilter(active ? null : c)}
+                    selected={active}
+                  ><span className="inline-flex items-center gap-1.5">
                     <Icon className="w-3 h-3" />
-                    {categoryLabel(t, c)}
-                  </button>
+                    {categoryLabel(t, c)}</span></OptionChip>
                 );
               })}
             </div>
@@ -268,10 +257,9 @@ export function PersonaDetailModal({
                     className="relative overflow-hidden rounded-card border border-primary/10 bg-secondary/15"
                   >
                     <span aria-hidden className="absolute inset-y-0 left-0 w-0.5" style={{ background: SEVERITY_LINE[v.severity] ?? SEVERITY_LINE.info }} />
-                    <button
-                      type="button"
-                      onClick={() => setExpanded(open ? null : v.reviewId)}
-                      className="w-full flex items-center gap-2 pl-3 pr-2.5 py-2 text-left hover:bg-secondary/30 transition-colors"
+                    <PressSurface
+                      onPress={() => setExpanded(open ? null : v.reviewId)}
+                      className="w-full flex items-center gap-2 pl-3 pr-2.5 py-2"
                     >
                       <Chevron className="w-3.5 h-3.5 text-foreground shrink-0" />
                       <span className={`typo-eyebrow shrink-0 ${SEVERITY_CHIP[v.severity] ?? SEVERITY_CHIP.info}`}>
@@ -292,7 +280,7 @@ export function PersonaDetailModal({
                       })()}
                       <span className="typo-body text-foreground truncate flex-1">{v.title}</span>
                       <RelativeTime timestamp={v.createdAt} className="typo-caption text-foreground shrink-0" />
-                    </button>
+                    </PressSurface>
                     {open && (
                       <div className="pl-8 pr-4 pb-3 pt-0.5 space-y-2 animate-fade-slide-in">
                         {v.description && <p className="typo-body text-foreground">{v.description}</p>}

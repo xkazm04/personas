@@ -11,6 +11,7 @@ import { presetVisual } from '../../constants/presetSkills';
 import type { SkillRunRow } from './useSkillsAnalytics';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const GRID = 'grid grid-cols-[minmax(0,1.6fr)_5.5rem_4rem_6rem_4.5rem_5rem_2.5rem] items-center gap-3';
 
@@ -65,7 +66,11 @@ function SkillCell({ row, onOpenInfo }: { row: SkillRunRow; onOpenInfo: (skill: 
         </span>
       )}
       <span className="min-w-0">
-        <button type="button" onClick={() => onOpenInfo(row.skill)} className="typo-caption text-foreground truncate block text-left hover:text-primary transition-colors" data-testid={`skill-history-name-${row.skill}`}>{row.skill}</button>
+        <PressSurface
+          onPress={() => onOpenInfo(row.skill)}
+          data-testid={`skill-history-name-${row.skill}`}
+          className="typo-caption text-foreground truncate block hover:text-primary"
+        >{row.skill}</PressSurface>
         {row.args && <span className="typo-label text-ink-3 truncate block">{row.args}</span>}
       </span>
     </span>

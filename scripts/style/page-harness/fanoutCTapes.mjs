@@ -97,6 +97,6 @@ export function fanoutCTapes({ RECORDED_AT, PERSONAS }) {
   ];
   const extra = { 'plugins/drive': DRIVE, 'curator/process': PROCESS, 'curator/blueprint': BLUEPRINT };
   const tape = (id, note) => () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note, calls: [...base, ...(extra[id] ?? [])] });
-  const ids = ['plugins/browse', 'companions/landing', 'athena/setup', 'athena/memory', 'athena/decisions', 'curator/council', 'curator/blueprint', 'curator/process', 'plugins/drive', 'twin/profiles', 'twin/hub'];
+  const ids = ['plugins/browse', 'companions/landing', 'athena/setup', 'athena/memory', 'athena/decisions', 'curator/council', 'curator/blueprint', 'curator/process', 'plugins/drive', 'twin/profiles', 'twin/hub', 'plugins/obsidian-brain', 'plugins/gitlab', 'studio'];
   return { builders: Object.fromEntries(ids.map((id) => [id, tape(id, 'Synthetic (partition C): companions status, personas.')])) };
 }

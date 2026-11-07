@@ -13,6 +13,8 @@ import { useSavedVaultConfigs } from './useSavedVaultConfigs';
 import { extractMessage } from '@/lib/silentCatch';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 interface SavedConfigsSidebarProps {
   /** Called after a config is activated (e.g. to reload panel state). */
   onSelect?: (config: ObsidianVaultConfig) => void;
@@ -85,11 +87,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                     : 'border-hair hover:border-hair hover:bg-surface-1'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => selectConfig(cfg)}
-                  className="w-full text-left px-3 py-2.5 focus-ring rounded-modal"
-                >
+                <PressSurface onPress={() => selectConfig(cfg)} className="w-full px-3 py-2.5 rounded-modal">
                   <div className="flex items-center gap-2 min-w-0">
                     <p
                       className={`typo-heading truncate flex-1 ${
@@ -103,16 +101,11 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                   <p className="typo-caption text-ink-2 truncate mt-0.5">
                     {cfg.vaultPath}
                   </p>
-                </button>
+                </PressSurface>
                 <Tooltip content={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}>
-                  <button
-                    type="button"
-                    onClick={(e) => void removeConfig(e, cfg)}
-                    className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-status-error/10 text-ink-1 hover:text-status-error focus-ring"
-                    aria-label={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
-                  >
+                  <Button variant="ghost" size="icon-xs" onClick={(e) => void removeConfig(e, cfg)} aria-label={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })} className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </Tooltip>
               </div>
             );

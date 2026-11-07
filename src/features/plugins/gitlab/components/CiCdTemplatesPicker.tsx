@@ -9,6 +9,7 @@ import {
   type GitLabTierId,
 } from '../data/cicdTemplates';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface CiCdTemplatesPickerProps {
   userTier: GitLabTierId;
@@ -21,18 +22,14 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
 
   return (
     <div className="space-y-2">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 w-full text-left"
-      >
+      <PressSurface onPress={() => setExpanded(!expanded)} className="flex items-center gap-2 w-full">
         <Cpu className="w-4 h-4 text-status-warning" />
         <span className="typo-body text-ink-1">{t.gitlab.cicd_agent_templates}</span>
         {expanded
           ? <ChevronUp className="w-3.5 h-3.5 text-ink-1 ml-auto" />
           : <ChevronDown className="w-3.5 h-3.5 text-ink-1 ml-auto" />
         }
-      </button>
+      </PressSurface>
 
       {expanded && (
         <div className="space-y-2">
@@ -58,17 +55,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
               const tierDef = getTierDef(template.minTier);
 
               return (
-                <button
-                  key={template.id}
-                  type="button"
-                  disabled={!available}
-                  onClick={() => onSelectTemplate(template)}
-                  className={`text-left p-3 rounded-modal border transition-colors ${
-                    available
-                      ? 'border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair cursor-pointer'
-                      : 'border-hair bg-surface-1 opacity-50 cursor-not-allowed'
-                  }`}
-                >
+                <PressSurface key={template.id} disabled={!available} onPress={() => onSelectTemplate(template)} className="p-3 rounded-modal border border-hair">
                   <div className="flex items-start gap-2.5">
                     <span className="typo-heading-lg mt-0.5">{template.icon}</span>
                     <div className="flex-1 min-w-0">
@@ -91,7 +78,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                       </span>
                     </div>
                   </div>
-                </button>
+                </PressSurface>
               );
             })}
           </div>

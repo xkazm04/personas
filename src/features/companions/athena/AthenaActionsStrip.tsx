@@ -5,6 +5,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useAthenaStore } from './athenaStore';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Durable, in-chat ledger of everything Athena did WITHOUT asking this session
@@ -38,10 +39,9 @@ export function AthenaActionsStrip() {
       data-action-count={actions.length}
     >
       <div className="flex items-center gap-2 px-2.5 py-1.5">
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center gap-2 flex-1 min-w-0 typo-caption text-foreground focus-ring rounded-card text-left"
+        <PressSurface
+          onPress={() => setCollapsed((v) => !v)}
+          className="flex items-center gap-2 flex-1 min-w-0 typo-caption text-foreground rounded-card"
         >
           <Chevron className="w-3.5 h-3.5 shrink-0 text-foreground" />
           <Zap className="w-3.5 h-3.5 shrink-0 text-primary" aria-hidden />
@@ -49,7 +49,7 @@ export function AthenaActionsStrip() {
             {t.athena.athena_actions_title}
           </span>
           <span className="shrink-0 tabular-nums text-foreground">{actions.length}</span>
-        </button>
+        </PressSurface>
         <Button
           type="button"
           onClick={clearAthenaActions}

@@ -14,6 +14,7 @@ import {
   type LiveMessage, type LiveVariantProps,
 } from './liveModel';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
 
@@ -109,11 +110,10 @@ export function IslandCapsule({ m, waiting, remainingMs, lifetimeMs, paused, onD
       }`}
       style={{ backgroundImage: `linear-gradient(90deg, ${mix(accent, 22)}, transparent 55%)` }}
     >
-      <button
-        type="button"
-        onClick={() => onOpen(m)}
+      <PressSurface
+        onPress={() => onOpen(m)}
         data-testid={m.source === 'notepad' ? `live-stack-notepad-open-${m.noteId}` : undefined}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        className="flex min-w-0 flex-1 items-center gap-2"
       >
         <RingedAvatar m={m} size="sm" />
         <span className="typo-title max-w-[30%] flex-shrink-0 truncate" style={{ color: accent }}>
@@ -121,7 +121,7 @@ export function IslandCapsule({ m, waiting, remainingMs, lifetimeMs, paused, onD
         </span>
         {m.context && <span className="typo-caption max-w-[30%] flex-shrink-0 truncate text-foreground">{m.context}</span>}
         {m.message && <span className="typo-body min-w-0 flex-1 truncate text-foreground">{m.message}</span>}
-      </button>
+      </PressSurface>
       {waiting > 0 && (
         <span className="typo-label flex-shrink-0 rounded-interactive bg-primary/15 px-1.5 text-primary">+{waiting}</span>
       )}
@@ -151,7 +151,7 @@ export function IslandCard({ m, index, withActions, reducedMotion, onDismiss, on
       }`}
       style={{ backgroundImage: `linear-gradient(135deg, ${mix(accent, 14)}, transparent 45%)` }}
     >
-      <button type="button" onClick={() => onOpen(m)} className="flex min-w-0 flex-1 items-start gap-3 text-left">
+      <PressSurface onPress={() => onOpen(m)} className="flex min-w-0 flex-1 items-start gap-3">
         <RingedAvatar m={m} size="md" />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-2">
@@ -164,7 +164,7 @@ export function IslandCard({ m, index, withActions, reducedMotion, onDismiss, on
           </span>
           {m.message && <span className="typo-body mt-1.5 line-clamp-3 block text-foreground">{m.message}</span>}
         </span>
-      </button>
+      </PressSurface>
       <ActCluster m={m} onDismiss={onDismiss} />
       {actions && <div className="w-full pl-11">{actions}</div>}
     </motion.div>

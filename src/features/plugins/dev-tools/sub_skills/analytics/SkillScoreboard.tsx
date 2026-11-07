@@ -11,6 +11,7 @@ import type { DevTask } from '@/lib/bindings/DevTask';
 import { presetVisual } from '../../constants/presetSkills';
 import type { ProjRow } from '../SkillsManagerPage';
 import type { SkillRunRow } from './useSkillsAnalytics';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface SkillScore {
   name: string;
@@ -113,13 +114,12 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
 
   const GRID = 'grid grid-cols-[minmax(0,1.6fr)_4.5rem_5.5rem_4.5rem_4.5rem_4.5rem] items-center gap-3';
   const SortHead = ({ k, label }: { k: SortKey; label: string }) => (
-    <button
-      type="button"
-      onClick={() => setSort(k)}
-      className={`inline-flex items-center justify-end gap-1 typo-eyebrow transition-colors ${sort === k ? 'text-ink-2' : 'text-ink-3 hover:text-ink-2'}`}
+    <PressSurface
+      onPress={() => setSort(k)}
+      className={`inline-flex items-center justify-end gap-1 typo-eyebrow ${sort === k ? 'text-ink-2' : 'text-ink-3'}`}
     >
       {label}<ArrowUpDown className="w-3 h-3" aria-hidden />
-    </button>
+    </PressSurface>
   );
 
   const top = sorted[0];
@@ -161,7 +161,11 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
                       <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
                     </span>
                   )}
-                  <button type="button" onClick={() => onOpenInfo(row.name)} className="typo-caption text-foreground truncate text-left hover:text-primary transition-colors" data-testid={`skill-scoreboard-name-${row.name}`}>{row.name}</button>
+                  <PressSurface
+                    onPress={() => onOpenInfo(row.name)}
+                    data-testid={`skill-scoreboard-name-${row.name}`}
+                    className="typo-caption text-foreground truncate hover:text-primary"
+                  >{row.name}</PressSurface>
                 </span>
                 <span className="typo-caption text-ink-2 num text-right">{row.invokes30d || '—'}</span>
                 <span className="typo-caption text-ink-2 num text-right">

@@ -4,6 +4,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Add-to-scope picker — a searchable list of non-system personas not yet in the
@@ -76,11 +77,10 @@ export function AddToScopeModal({
               const added = justAdded.has(p.id);
               return (
                 <li key={p.id}>
-                  <button
-                    type="button"
+                  <PressSurface
                     disabled={added}
-                    onClick={() => add(p.id)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-card hover:bg-secondary/40 transition-colors text-left disabled:is-disabled"
+                    onPress={() => add(p.id)}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-card"
                   >
                     <PersonaIcon icon={p.icon} color={p.color} size="w-4 h-4" />
                     <span className="typo-body text-foreground truncate flex-1">{p.name}</span>
@@ -91,7 +91,7 @@ export function AddToScopeModal({
                     ) : (
                       <Plus className="w-4 h-4 text-ink-2" />
                     )}
-                  </button>
+                  </PressSurface>
                 </li>
               );
             })}

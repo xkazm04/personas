@@ -105,19 +105,20 @@ export function CoverageChip({ icon, count, label, stem, onJump, jumpTitle }: Co
 
   if (active && onJump) {
     return (
-      <Tooltip content={jumpTitle}><button
-        type="button"
+      <Tooltip content={jumpTitle}><Button
+        variant="link"
+        size="inline"
         aria-label={jumpTitle}
         onClick={(e) => {
           // The row itself is clickable (opens the context) — don't do both.
           e.stopPropagation();
           onJump();
         }}
-        className={`${cls} hover:underline underline-offset-2`}
+        className={cls}
       >
         {icon}
         {count}
-      </button></Tooltip>
+      </Button></Tooltip>
     );
   }
 

@@ -6,6 +6,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import type { TwinChannelKind } from '@/api/enums';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /* ------------------------------------------------------------------ *
  *  ContactThread — recent logged messages with the selected contact.
  *
@@ -90,14 +91,13 @@ export function ContactThread({
             <li key={c.id}>
               {replyable ? (
                 <Tooltip content={t.threadReplyTo}>
-                  <button
-                    type="button"
-                    onClick={() => onReplyTo(c.content)}
+                  <PressSurface
+                    onPress={() => onReplyTo(c.content)}
                     aria-label={t.threadReplyTo}
-                    className="group w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-surface-2 transition-colors focus-ring"
+                    className="group w-full flex items-start gap-2 px-3 py-2"
                   >
                     {row}
-                  </button>
+                  </PressSurface>
                 </Tooltip>
               ) : (
                 <span className="flex items-start gap-2 px-3 py-2">{row}</span>

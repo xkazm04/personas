@@ -9,6 +9,7 @@ import type {
 import { RecallChip } from './RecallChip';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * Per-turn rollup of what Athena's brain pulled into the system prompt.
  * Renders as a single collapsed line above the assistant bubble; clicking
@@ -77,11 +78,10 @@ export function RecallStrip({
       className="rounded-card border border-foreground/10 bg-secondary/40 px-3 py-1.5 typo-caption text-foreground"
       data-testid="companion-recall-strip"
     >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 w-full text-left hover:text-ink-2 transition-colors rounded-interactive"
+      <PressSurface
+        onPress={() => setOpen((v) => !v)}
         aria-expanded={open}
+        className="flex items-center gap-1.5 w-full hover:text-ink-2 rounded-interactive"
       >
         <Chevron className="w-3 h-3" />
         <Brain className="w-3 h-3" />
@@ -96,7 +96,7 @@ export function RecallStrip({
             </span>
           </Tooltip>
         )}
-      </button>
+      </PressSurface>
       {open && totalMemories > 0 && (
         <div className="mt-2 space-y-1.5">
           <ChipGroup

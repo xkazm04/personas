@@ -26,6 +26,7 @@ import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { Persona } from '@/lib/bindings/Persona';
 import { TeamReadinessChip } from '@/features/teams/components/TeamReadinessChip';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   steps: TeamAssignmentStep[];
@@ -159,17 +160,12 @@ function StepRow({
     <li className="border-b border-hair last:border-b-0">
       <div className={`${GRID} px-2.5 py-2`}>
         <Icon className={`w-4 h-4 shrink-0 ${tint} ${spin ? 'animate-spin' : ''}`} aria-label={statusLabel} />
-        <button
-          type="button"
-          onClick={() => hasOutput && setOpen((v) => !v)}
-          className={`min-w-0 flex items-center gap-1.5 text-left typo-body text-foreground ${hasOutput ? '' : 'cursor-default'}`}
-          aria-expanded={hasOutput ? open : undefined}
-        >
+        <PressSurface onPress={() => hasOutput && setOpen((v) => !v)} aria-expanded={hasOutput ? open : undefined} className={`min-w-0 flex items-center gap-1.5 typo-body ${hasOutput ? '' : 'cursor-default'}`}>
           {hasOutput && (open
             ? <ChevronDown className="w-3.5 h-3.5 shrink-0 text-ink-2" />
             : <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-2" />)}
           <span className="truncate">{step.title}</span>
-        </button>
+        </PressSurface>
         <OwnerCell persona={persona} fallback="—" />
         {awaiting ? (
           <span className="flex items-center gap-0.5 shrink-0 w-12 justify-end">

@@ -1,6 +1,7 @@
 import { CornerDownLeft, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDecisionKeys } from './useDecisionKeys';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 // A1 — Athena's decision as a first-class steering moment: a titled card with the
 // question, concrete numbered option rows (click OR press 1–N to answer), and a
@@ -29,19 +30,18 @@ export default function StudioDecision({
         {options.length > 0 && (
           <div className="mt-2.5 flex flex-col gap-1">
             {options.map((o, i) => (
-              <button
+              <PressSurface
                 key={o}
-                type="button"
                 data-testid="studio-decision-option"
-                onClick={() => onAnswer(o)}
-                className="group flex items-center gap-2.5 rounded-interactive border border-border bg-background/70 px-2.5 py-2 text-left typo-body text-foreground transition-colors hover:border-primary/50 hover:bg-primary/15"
+                onPress={() => onAnswer(o)}
+                className="group flex items-center gap-2.5 rounded-interactive border border-border bg-background/70 px-2.5 py-2 typo-body text-foreground hover:border-primary/50 hover:bg-primary/15"
               >
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-secondary/60 font-mono typo-caption text-ink-2 transition-colors group-hover:border-primary/40 group-hover:text-primary">
                   {i + 1}
                 </span>
                 <span className="min-w-0 flex-1">{o}</span>
                 <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-transparent transition-colors group-hover:text-primary/70" />
-              </button>
+              </PressSurface>
             ))}
           </div>
         )}

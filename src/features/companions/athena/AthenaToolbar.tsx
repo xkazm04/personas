@@ -29,6 +29,8 @@ import { VoiceControlPopover } from './VoiceControlPopover';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 /**
  * Right-edge sidebar with three groups:
  *
@@ -387,21 +389,17 @@ function ToolbarButton({
 }) {
   return (
     <Tooltip content={label}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={onClick}
         disabled={disabled}
         data-testid={testId}
-        className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring disabled:is-disabled ${
-          active
-            ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
-            : 'text-foreground hover:text-foreground hover:bg-foreground/5'
-        }`}
         aria-label={label}
-        aria-pressed={active}
+        pressed={active}
       >
         {icon}
-      </button>
+      </Button>
     </Tooltip>
   );
 }
@@ -428,28 +426,19 @@ function PluginToggleButton({
 }) {
   return (
     <Tooltip content={label}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={onClick}
         data-testid={testId}
         data-companion-plugin-enabled={enabled ? 'true' : 'false'}
-        className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-all focus-ring ${
-          enabled
-            ? 'bg-primary/25 text-primary ring-1 ring-primary/60'
-            : 'text-foreground hover:text-foreground hover:bg-foreground/5'
-        }`}
         // Themed glow that tracks the active theme's primary, instead of the
         // old hardcoded blue rgba that was off-brand on every non-blue theme.
-        style={
-          enabled
-            ? { boxShadow: '0 0 10px color-mix(in srgb, var(--primary) 40%, transparent)' }
-            : undefined
-        }
         aria-label={label}
-        aria-pressed={enabled}
+        pressed={enabled}
       >
         {icon}
-      </button>
+      </Button>
     </Tooltip>
   );
 }
@@ -555,17 +544,16 @@ function ConnectorIconButton({
           className={`absolute ${menuSide === 'right' ? 'left-9' : 'right-9'} top-0 z-50 min-w-[160px] rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3 py-1`}
           role="menu"
         >
-          <button
-            type="button"
-            onClick={() => {
+          <PressSurface
+            onPress={() => {
               setMenuOpen(false);
               onRemove();
             }}
-            className="w-full text-left px-3 py-1.5 typo-caption text-ink-2 hover:bg-foreground/5 focus-ring"
             role="menuitem"
+            className="w-full px-3 py-1.5 typo-caption text-ink-2"
           >
             {t.athena.connectors_remove_from_sidebar}
-          </button>
+          </PressSurface>
         </div>
       )}
     </div>

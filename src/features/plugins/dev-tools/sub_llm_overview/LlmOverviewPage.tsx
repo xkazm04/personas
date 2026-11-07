@@ -297,15 +297,16 @@ export default function LlmOverviewPage() {
               )}
               {proposable && (
                 <Tooltip content={dt.llm_propose_tooltip}>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={() => void proposeUseCase(name)}
                     disabled={busy}
                     aria-label={tx(dt.llm_propose_aria, { name })}
-                    className="shrink-0 grid place-items-center w-4 h-4 rounded-full border border-hair text-ink-3 hover:text-primary hover:border-primary/40 hover:bg-surface-2 transition disabled:opacity-40 focus-ring"
+                    className="shrink-0"
                   >
                     {busy ? <LoadingSpinner size="xs" /> : <Plus className="w-2.5 h-2.5" />}
-                  </button>
+                  </Button>
                 </Tooltip>
               )}
             </span>

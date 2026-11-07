@@ -7,6 +7,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import { prefetchNotepadHost } from './notepadHostChunk';
 import { beginNotepadOpen } from './notepadTiming';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Footer toggle for the notepad layer.
@@ -40,22 +41,18 @@ export default function NotepadFooterIcon() {
   // style, delay and place. `aria-label` still carries the name.
   return (
     <Tooltip content={label} placement="top">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={handleClick}
         onPointerEnter={prefetchNotepadHost}
         onFocus={prefetchNotepadHost}
         data-testid="footer-notepad"
         aria-label={label}
-        aria-pressed={open}
-        className={`w-7 h-7 rounded-card flex items-center justify-center transition-colors ${
-          open
-            ? 'text-primary bg-surface-1 hover:bg-primary/15 ring-1 ring-primary/30'
-            : 'text-foreground hover:bg-surface-1'
-        }`}
+        pressed={open}
       >
         <NotepadText className="w-5 h-5" aria-hidden />
-      </button>
+      </Button>
     </Tooltip>
   );
 }

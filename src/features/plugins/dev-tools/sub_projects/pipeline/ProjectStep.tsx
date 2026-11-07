@@ -9,6 +9,7 @@ import { FolderOpen, Pencil } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { type ProjectType, PROJECT_TYPES } from '../projectManagerTypes';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 interface ProjectStepProps {
   isEdit: boolean;
@@ -82,19 +83,9 @@ export function ProjectStep({
         </label>
         <div className="flex flex-wrap gap-1.5">
           {PROJECT_TYPES.map((pt) => (
-            <button
-              key={pt.id}
-              type="button"
-              onClick={() => onTypeChange(pt.id)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border transition-all ${
-                projectType === pt.id
-                  ? `${pt.color} ring-1 ring-current/20`
-                  : 'bg-surface-1 border-hair text-foreground hover:bg-surface-1'
-              }`}
-            >
+            <OptionChip key={pt.id} onSelect={() => onTypeChange(pt.id)} selected={projectType === pt.id}><span className="inline-flex items-center gap-1.5">
               <span>{pt.icon}</span>
-              {pt.label}
-            </button>
+              {pt.label}</span></OptionChip>
           ))}
         </div>
       </div>

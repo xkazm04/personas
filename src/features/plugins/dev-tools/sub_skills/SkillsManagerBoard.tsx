@@ -20,6 +20,7 @@ import { SweepHeroRow } from './SweepHeroRow';
 import { UseSkillDialog } from './UseSkillDialog';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; skill: SkillEntry; tracked: boolean };
 
@@ -107,16 +108,15 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
     const Icon = sort.dir === 'asc' ? ArrowUp : ArrowDown;
     const arrow = on ? <Icon className="w-3 h-3 flex-shrink-0" aria-hidden /> : null;
     return (
-      <button
-        type="button"
-        onClick={() => sort.toggle(k)}
-        className={`inline-flex items-center gap-1 w-full typo-eyebrow transition-colors focus-ring rounded-interactive whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${on ? 'text-ink-2' : 'text-ink-3 hover:text-ink-2'}`}
+      <PressSurface
+        onPress={() => sort.toggle(k)}
         data-testid={`skills-manager-sort-${k}`}
+        className={`inline-flex items-center gap-1 w-full typo-eyebrow rounded-interactive whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${on ? 'text-ink-2' : 'text-ink-3'}`}
       >
         {align === 'right' && arrow}
         {label}
         {align === 'left' && arrow}
-      </button>
+      </PressSurface>
     );
   };
   return (
@@ -265,14 +265,13 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
       {/* Name cell: memory icon + name (click → skill info modal) */}
       <span className="flex items-center gap-2 min-w-0">
         <MemoryBindingButton binding={r.entry.memory} onSwitch={(next) => onSwitchMemory(r.entry.name, next)} />
-        <button
-          type="button"
-          onClick={() => onOpenInfo(r.entry.name)}
-          className="min-w-0 text-left hover:text-primary transition-colors"
+        <PressSurface
+          onPress={() => onOpenInfo(r.entry.name)}
           data-testid={`skills-manager-proj-${r.entry.name}`}
+          className="min-w-0 hover:text-primary"
         >
           <span className="typo-caption text-foreground truncate">{r.entry.name}</span>
-        </button>
+        </PressSurface>
       </span>
       {/* Coverage — its own column; click opens the context-coverage detail. */}
       <span className="flex justify-end">
@@ -347,11 +346,13 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
                         <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
                       </span></Tooltip>
                     )}
-                    <button type="button" onClick={() => onOpenInfo(entry.name)}
-                      className={`typo-caption truncate text-left hover:text-primary transition-colors ${installed ? 'text-ink-3' : 'text-foreground'}`}
-                      data-testid={`skills-manager-ws-${entry.name}`}>
+                    <PressSurface
+                      onPress={() => onOpenInfo(entry.name)}
+                      data-testid={`skills-manager-ws-${entry.name}`}
+                      className={`typo-caption truncate ${installed ? 'text-ink-3' : 'text-ink-1'}`}
+                    >
                       {entry.name}
-                    </button>
+                    </PressSurface>
                   </span>
                   <UsageCount usage={usage} />
                   <LastUsed usage={usage} />

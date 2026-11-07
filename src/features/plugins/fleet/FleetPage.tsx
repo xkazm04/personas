@@ -9,6 +9,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useFleetOrphanScan } from './useFleetOrphanScan';
 import { resumeAllOrphans } from './resumeAllOrphans';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
@@ -98,20 +99,14 @@ export default function FleetPage() {
           const Icon = tabDef.icon;
           const active = tab === tabDef.id;
           return (
-            <button
+            <OptionChip
               key={tabDef.id}
-              type="button"
               data-testid={`fleet-tab-${tabDef.id}`}
-              onClick={() => setTab(tabDef.id)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-card typo-body transition-colors ${
-                active
-                  ? 'bg-surface-1 text-primary border border-hair'
-                  : 'text-foreground hover:text-foreground hover:bg-surface-1 border border-transparent'
-              }`}
-            >
+              onSelect={() => setTab(tabDef.id)}
+              selected={active}
+            ><span className="inline-flex items-center gap-1.5">
               <Icon className="w-3.5 h-3.5" />
-              {f[tabDef.labelKey]}
-            </button>
+              {f[tabDef.labelKey]}</span></OptionChip>
           );
         })}
         {orphanCount > 0 && (

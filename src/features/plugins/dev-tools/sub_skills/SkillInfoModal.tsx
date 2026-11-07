@@ -17,6 +17,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PRESET_SKILLS, presetVisual } from '../constants/presetSkills';
 import { commandVariations, metaFromPreset, metaFromSkillMd, type SkillMeta } from './skillMeta';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** Read a skill's SKILL.md, trying the project copy then the global one, and
  *  both filename casings (SKILL.md / skill.md live in the wild). */
@@ -103,14 +104,15 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
                   <ul className="space-y-1">
                     {commandVariations(meta).map((v) => (
                       <li key={v.command}>
-                        <button type="button"
-                          onClick={() => { copy(v.command); addToast(d.skills_info_copied, 'success'); }}
-                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-background/70 border border-hair hover:border-primary/30 transition-colors group text-left"
-                          data-testid={`skill-info-cmd-${v.note}`}>
+                        <PressSurface
+                          onPress={() => { copy(v.command); addToast(d.skills_info_copied, 'success'); }}
+                          data-testid={`skill-info-cmd-${v.note}`}
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-background/70 border border-hair hover:border-primary/30 group"
+                        >
                           <span className="font-mono typo-caption text-primary truncate">{v.command}</span>
                           <span className="typo-label text-ink-3 flex-shrink-0">· {v.note}</span>
                           <Copy className="w-3 h-3 ml-auto text-ink-3 group-hover:text-ink-2 flex-shrink-0" aria-hidden />
-                        </button>
+                        </PressSurface>
                       </li>
                     ))}
                   </ul>

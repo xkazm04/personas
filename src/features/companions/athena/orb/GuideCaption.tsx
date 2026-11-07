@@ -58,9 +58,6 @@ export function GuideCaption() {
     ? { left: -7, top: 18, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderRight: '7px solid var(--color-primary)' }
     : { right: -7, top: 18, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '7px solid var(--color-primary)' };
 
-  const ctrl =
-    'w-6 h-6 rounded-full flex items-center justify-center text-ink-2 hover:bg-secondary focus-ring transition-colors disabled:is-disabled disabled:hover:bg-transparent';
-
   return (
     <div
       data-testid="athena-guide-caption"
@@ -135,16 +132,16 @@ export function GuideCaption() {
       <div className="mt-2 flex items-center justify-between">
         {isMulti ? (
           <Tooltip content={t.athena.guide_back}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               data-testid="athena-guide-back"
               onClick={() => previousGuidance()}
               disabled={stepIndex === 0}
-              className={ctrl}
               aria-label={t.athena.guide_back}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </Tooltip>
         ) : (
           <span />
@@ -153,39 +150,39 @@ export function GuideCaption() {
         <div className="flex items-center gap-1">
           {isMulti && (
             <Tooltip content={playing ? t.athena.guide_pause : t.athena.guide_resume}>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => (playing ? pauseGuidance() : resumeGuidance())}
-                className={ctrl}
                 aria-label={playing ? t.athena.guide_pause : t.athena.guide_resume}
               >
                 {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              </button>
+              </Button>
             </Tooltip>
           )}
           {isMulti && (
             <Tooltip content={t.athena.guide_skip}>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 data-testid="athena-guide-skip"
                 onClick={() => advanceGuidance()}
-                className={ctrl}
                 aria-label={t.athena.guide_skip}
               >
                 <SkipForward className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </Tooltip>
           )}
           <Tooltip content={t.athena.guide_stop}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               data-testid="athena-guide-stop"
               onClick={() => stopGuidance()}
-              className={ctrl}
               aria-label={t.athena.guide_stop}
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>

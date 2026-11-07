@@ -6,6 +6,7 @@ import {
   FLEET_STATE_META, laneOfState, FLEET_LANE_ORDER, FLEET_LANE_LABEL_KEY, FLEET_LANE_TONE,
 } from './fleetStateMeta';
 import { FleetLimitEtaChip } from './FleetLimitEtaChip';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface FleetFooterPopoverProps {
   counts: Record<FleetSessionState, number>;
@@ -105,15 +106,16 @@ export function FleetFooterPopover({
       )}
 
       <div className="mt-1 pt-1 border-t border-hair">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           data-testid="footer-fleet-open-page"
           onClick={onOpenPage}
-          className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-input typo-caption text-foreground hover:bg-surface-1 transition-colors"
+          className="w-full justify-center"
         >
           <ExternalLink className="w-3 h-3" />
           {t.plugins.fleet.footer_open_page}
-        </button>
+        </Button>
         <p className="px-2 pb-0.5 text-center typo-caption text-foreground">{hint}</p>
       </div>
     </div>

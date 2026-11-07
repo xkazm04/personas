@@ -19,6 +19,7 @@ import { useModuleSubscription } from '@/hooks/utility/data/useModuleSubscriptio
 import { useTranslation } from '@/i18n/useTranslation';
 import { openContest } from '@/features/plugins/dev-tools/contest/ContestLiveFeeder';
 import { contestListSlots } from '@/features/plugins/dev-tools/contest/hooks/contestStore';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** The contest's title from the list cache, or `null` while it does not know
  *  it. With no project the id is ambiguous, so it answers only when exactly
@@ -52,19 +53,18 @@ export function ContestColumnHeader({ projectId, contestId, seats }: {
       triggerFocusable={!linked}
       triggerClassName="flex w-full"
     >
-      <button
-        type="button"
+      <PressSurface
         disabled={!linked}
-        onClick={() => { if (projectId) openContest({ projectId, contestId }); }}
+        onPress={() => { if (projectId) openContest({ projectId, contestId }); }}
         data-testid="fleet-grid-column-header"
         data-contest-id={contestId}
         data-contest-project-id={projectId ?? undefined}
-        className="focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left text-foreground transition-colors hover:bg-surface-1 disabled:is-disabled"
+        className="flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-foreground"
       >
         <Trophy className="h-3 w-3 flex-shrink-0 self-center opacity-60" aria-hidden />
         <span className="min-w-0 flex-1 truncate typo-label">{name}</span>
         <span className="flex-shrink-0 typo-caption num opacity-50">{seats}</span>
-      </button>
+      </PressSurface>
     </Tooltip>
   );
 }

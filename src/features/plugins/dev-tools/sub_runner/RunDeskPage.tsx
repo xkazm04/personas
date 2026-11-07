@@ -24,6 +24,7 @@ import {
   type TaskStatus, type TaskStatusFilter,
 } from './useTaskQueue';
 import type { DevTask } from '@/lib/bindings/DevTask';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /** Rows "Heal all" may pull past the loaded window. Matches RunDeskControls'
  *  BULK_LIMIT so the two failure-facing buttons act on the same set. */
@@ -185,19 +186,9 @@ export default function RunDeskPage() {
               const count = f === 'all' ? total : counts[f] ?? 0;
               const active = statusFilter === f;
               return (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setStatusFilter(f)}
-                  className={`inline-flex items-center gap-1.5 rounded-interactive px-2.5 min-h-[var(--control-h)] typo-caption border transition-colors ${
-                    active
-                      ? 'bg-sel text-ink-1 border-primary'
-                      : 'text-ink-2 border-hair hover:border-hair-2'
-                  }`}
-                >
+                <OptionChip key={f} onSelect={() => setStatusFilter(f)} selected={active}><span className="inline-flex items-center gap-1.5">
                   {f === 'all' ? t.common.all : tokenLabel(t, 'execution', f)}
-                  <span className="num text-ink-3">{count}</span>
-                </button>
+                  <span className="num text-ink-3">{count}</span></span></OptionChip>
               );
             })}
           </div>

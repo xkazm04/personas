@@ -13,6 +13,7 @@ import { phaseProgress, tabDotClass } from './studioBuildModel';
 import { silentCatch } from '@/lib/silentCatch';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 // Browser-style tab strip. Each open project is a tab carrying its own live
@@ -143,9 +144,8 @@ export default function StudioTabBar({
               active ? 'border-primary bg-secondary/50' : 'border-transparent hover:bg-secondary/30'
             }`}
           >
-            <button
-              type="button"
-              onClick={() => setActive(id)}
+            <PressSurface
+              onPress={() => setActive(id)}
               // Which tab is active was carried by colour alone — a distinction
               // no screen-reader user and no high-contrast setting can see.
               aria-current={active ? 'true' : undefined}
@@ -155,18 +155,19 @@ export default function StudioTabBar({
             >
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
               <span className="max-w-[10rem] truncate">{name}</span>
-            </button>
-            <button
-              type="button"
+            </PressSurface>
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => closeTab(id)}
               aria-label={tx(t.studio.close_tab, { name })}
               // `opacity-0` + `group-hover:opacity-100` alone makes this a
               // control you can Tab to but cannot see — the focus ring lands on
               // a fully transparent button. Reveal it on focus too.
-              className="mr-1 shrink-0 rounded-interactive p-0.5 text-ink-2 opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              className="mr-1 shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
             >
               <X className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         );
       })}
@@ -226,14 +227,13 @@ export default function StudioTabBar({
                       {recent.map((p) => {
                         const prog = phaseProgress(history[p.id]?.phases ?? []);
                         return (
-                          <button
+                          <PressSurface
                             key={p.id}
-                            type="button"
-                            onClick={() => {
+                            onPress={() => {
                               setPickerOpen(false);
                               void startExisting(p.id, p.name);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-ink-2 hover:bg-secondary/50 hover:text-foreground"
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-ink-2 hover:text-foreground"
                           >
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
                             <Tooltip content={t.studio.saved_progress_hint}>
@@ -244,7 +244,7 @@ export default function StudioTabBar({
                                 {prog.done}/{prog.total}
                               </span>
                             </Tooltip>
-                          </button>
+                          </PressSurface>
                         );
                       })}
                     </>
@@ -261,25 +261,20 @@ export default function StudioTabBar({
                           <Tooltip content={
                               blocked ? t.studio.not_next_js_hint : p.root_path
                             }>
-                            <button
+                            <PressSurface
                               key={p.id}
-                              type="button"
                               disabled={blocked}
                               // `blocked` is the ADVISORY hint from the probe
                               // above, and the probe can fail — in which case
                               // every row here reads as openable. The authority is
                               // the store's own guard, which re-checks and refuses
                               // with an explanation exactly like the browse path.
-                              onClick={() => {
+                              onPress={() => {
                                 if (blocked) return;
                                 setPickerOpen(false);
                                 void openImportable(p.id, p.name);
                               }}
-                              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
-                                blocked
-                                  ? 'cursor-not-allowed text-ink-3'
-                                  : 'text-ink-2 hover:bg-secondary/50 hover:text-foreground'
-                              }`}
+                              className={`flex w-full items-center gap-2 px-3 py-1.5 text-md ${blocked ? 'text-ink-3' : 'text-ink-2'}`}
                             >
                               <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-ink-2" />
                               <span className="min-w-0 flex-1 truncate">{p.name}</span>
@@ -288,7 +283,7 @@ export default function StudioTabBar({
                                   {t.studio.not_next_js}
                                 </span>
                               )}
-                            </button>
+                            </PressSurface>
                           </Tooltip>
                         );
                       })}

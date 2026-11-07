@@ -219,8 +219,9 @@ export default function StudioChatInput({
             {goals && (
               <>
                 {view && <ToolbarDivider />}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={goals.onToggle}
                   data-testid="studio-plan-button"
                   aria-label={
@@ -229,11 +230,8 @@ export default function StudioChatInput({
                       : guideStrings(t).goals
                   }
                   aria-expanded={goals.open}
-                  className={`relative flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
-                    goals.open
-                      ? 'bg-secondary/70 text-primary'
-                      : 'text-ink-2 hover:bg-secondary/60 hover:text-primary'
-                  }`}
+                  className="relative shrink-0"
+                  pressed={goals.open}
                 >
                   <ListChecks className="h-4 w-4" />
                   {hasPlan && (
@@ -247,7 +245,7 @@ export default function StudioChatInput({
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
                     </span>
                   )}
-                </button>
+                </Button>
               </>
             )}
             <div className="flex-1" />
@@ -278,18 +276,16 @@ export default function StudioChatInput({
                 {t.studio.stop}
               </Button>
             ) : (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
                 aria-label={autonomous ? t.studio.stop_autonomous : t.studio.build_autonomously}
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors ${
-                  autonomous
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-ink-2 hover:bg-secondary/60 hover:text-primary'
-                }`}
+                className="shrink-0"
+                pressed={autonomous}
               >
                 {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-              </button>
+              </Button>
             )}
           </div>
 

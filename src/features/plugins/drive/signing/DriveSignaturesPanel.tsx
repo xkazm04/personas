@@ -23,6 +23,7 @@ import type { DocumentSignature, VerifyDocumentResult } from "@/api/signing";
 import type { useSigning } from "./useSigning";
 
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const TITLE_ID = "drive-signatures-panel-title";
 
@@ -217,13 +218,9 @@ function SignatureRow({
     <div className="px-4 py-3 border-b border-primary/10 hover:bg-secondary/30 group transition-colors">
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <button
-            type="button"
-            onClick={onReveal}
-            className="typo-body typo-card-label truncate text-left transition-colors focus-ring"
-          >
+          <PressSurface onPress={onReveal} className="typo-body typo-card-label truncate">
             {sig.file_name}
-          </button>
+          </PressSurface>
           <div className="mt-1.5 flex items-center gap-3 typo-caption text-foreground">
             <span className="flex items-center gap-1">
               <User className="w-3 h-3" />

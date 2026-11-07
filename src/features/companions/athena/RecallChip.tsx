@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { BrainKind, CompanionRecallLane } from '@/api/companion';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * One memory chip in the recall strip, carrying WHY it is there.
  *
@@ -97,18 +98,17 @@ export function RecallChip({
 
   return (
     <Tooltip content={`${description} — ${t.athena.recall_open_in_brain.replace('{title}', entry.title)}`}>
-      <button
-        type="button"
-        onClick={() => onOpen(kind, entry.id)}
-        className={`${baseClass} text-left hover:bg-surface-2 hover:border-hair-2 transition-colors focus-ring cursor-pointer`}
+      <PressSurface
+        onPress={() => onOpen(kind, entry.id)}
         aria-label={description}
         data-testid="companion-recall-chip"
         data-kind={kind}
         data-id={entry.id}
         data-lane={entry.lane}
+        className={baseClass}
       >
         {body}
-      </button>
+      </PressSurface>
     </Tooltip>
   );
 }

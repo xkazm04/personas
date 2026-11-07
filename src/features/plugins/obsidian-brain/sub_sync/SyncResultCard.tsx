@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, ArrowUpFromLine, ArrowDownToLine, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Collapse } from '@/features/shared/components/display/Collapse';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Normalized, direction-tagged summary of a push or pull sync. Built from
@@ -72,14 +73,8 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
   const hasBreakdown = pills.length > 0 || summary.errors.length > 0;
 
   return (
-    // eslint-disable-next-line custom/prefer-section-card -- bespoke collapsible card: rich header (icon + count pills + timestamp + chevron) that SectionCard's fixed header can't express
     <div className={`bg-surface-1 border border-hair rounded-card overflow-hidden`}>
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        disabled={!hasBreakdown}
-        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-surface-2 transition-colors select-none disabled:cursor-default disabled:hover:bg-transparent"
-      >
+      <PressSurface onPress={() => setCollapsed((c) => !c)} disabled={!hasBreakdown} className="w-full flex items-center gap-3 px-3.5 py-2.5 select-none disabled:cursor-default disabled:hover:bg-transparent">
         <span className={`flex-shrink-0 w-7 h-7 rounded-card border flex items-center justify-center ${accent.iconBg}`}>
           <DirIcon className={`w-3.5 h-3.5 ${accent.icon}`} />
         </span>
@@ -112,7 +107,7 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
             <ChevronRight className="w-3.5 h-3.5 text-ink-2" />
           </motion.span>
         )}
-      </button>
+      </PressSurface>
 
       <Collapse open={!collapsed && hasBreakdown} unmountWhenClosed duration={200}>
         <div className="border-t border-hair px-3.5 pb-3.5 pt-3 space-y-3">

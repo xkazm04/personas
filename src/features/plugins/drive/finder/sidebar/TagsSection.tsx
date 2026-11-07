@@ -10,6 +10,7 @@ import { parseDriveMovePayload } from "../../hooks/useDrive";
 import { tagColorClass } from "../tagColor";
 import type { DriveMetaApi } from "../types";
 import { hasMovePayload } from "./TreeNode";
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   meta: DriveMetaApi;
@@ -60,12 +61,11 @@ export function TagsSection({ meta, activeTagId, onPickTag, onManageTags }: Prop
             const active = tag.id === activeTagId;
             const over = tag.id === dropTag;
             return (
-              <button
+              <PressSurface
                 key={tag.id}
-                type="button"
                 role="listitem"
                 aria-pressed={active}
-                onClick={() => onPickTag(tag)}
+                onPress={() => onPickTag(tag)}
                 onDragOver={(e) => {
                   if (!hasMovePayload(e)) return;
                   e.preventDefault();
@@ -81,17 +81,12 @@ export function TagsSection({ meta, activeTagId, onPickTag, onManageTags }: Prop
                   const paths = parseDriveMovePayload(e);
                   if (paths) applyTag(tag, paths).catch(silentCatch("finder:tag-drop"));
                 }}
-                className={`w-full flex items-center gap-2 py-1 px-2 rounded-input text-left typo-body transition-colors duration-fast focus-ring ${
-                  over
-                    ? "bg-accent/20 ring-1 ring-accent/60"
-                    : active
-                      ? "bg-primary/15 ring-1 ring-primary/40"
-                      : "text-foreground hover:bg-secondary/50"
-                }`}
+                className={`w-full flex items-center gap-2 py-1 px-2 rounded-input typo-body ${over ? 'ring-1 ring-accent/60 bg-surface-2' : ''}`}
+                selected={active}
               >
                 <span aria-hidden className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${tagColorClass(tag.color)}`} />
                 <span className="truncate flex-1">{tag.name}</span>
-              </button>
+              </PressSurface>
             );
           })}
         </div>
