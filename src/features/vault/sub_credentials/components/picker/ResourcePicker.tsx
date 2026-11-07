@@ -237,6 +237,8 @@ export function ResourcePicker({
               )
             : st.items;
           const picked = selections[spec.id] ?? [];
+          // Parent pick cleared: the fetch is deferred, so say why the list is empty.
+          const blockedDep = st.fetched ? undefined : (spec.depends_on ?? []).find((d) => !selections[d]?.length);
           // Picks that don't appear in the freshly-fetched list — most often
           // because the resource was deleted upstream, or the credential lost
           // access to it. Only computed once we have a real response (not on
@@ -350,7 +352,11 @@ export function ResourcePicker({
                     )}
                     {!st.loading && visible.length === 0 && (
                       <p className="px-3 py-2 typo-caption text-foreground">
-                        {q ? t.vault.resource_picker.no_matches : t.vault.resource_picker.nothing_to_pick}
+                        {q
+                          ? t.vault.resource_picker.no_matches
+                          : blockedDep
+                            ? tx(t.vault.resource_picker.pick_first, { dep: blockedDep })
+                            : t.vault.resource_picker.nothing_to_pick}
                       </p>
                     )}
                     {visible.map((item) => {
