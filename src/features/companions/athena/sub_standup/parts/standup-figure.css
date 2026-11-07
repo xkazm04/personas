@@ -108,9 +108,12 @@
 .sc-blk--filler { fill: var(--sc-fg-4); }
 .sc-blk--proposed { fill: none; stroke: var(--sc-warn); stroke-width: 1; stroke-dasharray: 3 2; }
 
-/* ---- the opened row: read, palette, presses ---- */
-.sc-detail { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 0.625rem; max-width: 68rem;
-  padding: 0.125rem var(--sc-gut) 0.75rem 0.75rem; cursor: default; animation: sc-in var(--duration-normal) ease-out; }
+/* ---- the decision modal: read, palette, presses (portalled, so it carries the page's block itself) ---- */
+.sc-modal { font-family: var(--sc-sans); font-size: var(--sc-fs-body); line-height: var(--sc-lh-body); letter-spacing: -0.006em; color: var(--sc-fg); }
+.sc-modal__body { display: flex; flex-direction: column; gap: 0.75rem; outline: none; }
+.sc-modal__foot { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.sc-modal__pos { color: var(--sc-fg-3); }
+.sc-modal__foot .sc-acts { margin-left: 0; justify-content: flex-end; }
 .sc-read { display: flex; align-items: baseline; gap: 0.75rem; margin: 0; max-width: 80ch; color: var(--sc-fg-2); }
 .sc-read .sc-micro { flex: none; }
 .sc-choices { display: flex; flex-direction: column; border: 1px solid var(--sc-hair-2); border-radius: 6px; overflow: hidden; background: var(--sc-bg); }
@@ -134,14 +137,11 @@
 .sc-typer__input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font: inherit; color: var(--sc-fg); }
 .sc-typer__input::placeholder { color: var(--sc-fg-3); }
 .sc-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.125rem 0.25rem; margin-left: -0.4375rem; }
-@keyframes sc-in { from { opacity: 0; } to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .sc-row, .sc-choice, .sc-blk, .sc-press { transition: none; }
-  .sc-detail { animation: none; }
 }
 :root[data-motion="reduce"] :is(.sc-row, .sc-choice, .sc-blk, .sc-press) { transition: none; }
-:root[data-motion="reduce"] .sc-detail { animation: none; }
 
 /* A narrow body (the 1280 window): narrower name and state column, the header voice takes its own line. */
 @container sc (max-width: 1150px) {

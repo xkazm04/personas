@@ -22,6 +22,12 @@ export interface ViewInput {
   forecast: readonly ForecastSlot[];
   utilization: readonly HostUtilizationPoint[];
   projectNames: Readonly<Record<string, string>>;
+  /**
+   * True once the project list has loaded: a card or ask naming a project that
+   * is not in `projectNames` is then a deleted project and is not drawn (an
+   * armed revision is immutable, so the backend cannot drop it from the plan).
+   */
+  projectsKnown?: boolean;
   personaNames: Readonly<Record<string, string>>;
   /** Per project, the last standups oldest first; absent = not recorded. */
   history: Readonly<Record<string, TickState[]>>;
@@ -124,7 +130,7 @@ interface RowContext {
 
 /** One "waits for you" row per parked ask, bound to its project's direction item (for Talk it through). */
 function holdRows(s: Standup, input: ViewInput, ctx: RowContext): RowView[] {
-  return (s.report?.projects ?? []).flatMap((p) => p.parked.map((ask): RowView => {
+  return (s.report?.projects ?? []).filter((p) => live(p.projectId, input)).flatMap((p) => p.parked.map((ask): RowView => {
     const item = s.plan.items.find((i) => i.projectId === p.projectId && i.kind === 'direction');
     return {
       key: `ask:${ask.eventId}`, kind: 'hold', group: 'waits', itemId: item?.id, projectId: p.projectId,
@@ -160,11 +166,16 @@ function countsOf(rows: readonly RowView[]): Counts {
   return c;
 }
 
+/** Is this project still registered (or is the list not known yet, or is there no project)? */
+function live(projectId: string | undefined, input: ViewInput): boolean {
+  return !input.projectsKnown || !projectId || projectId in input.projectNames;
+}
+
 export function buildView(input: ViewInput): StandupView {
   const s = input.standup;
   const { past, night } = windowsFor(input.nowMs, s?.armedAt);
   const ctx: RowContext = { armed: s?.status === 'armed', past, night, report: new Map((s?.report?.projects ?? []).map((p) => [p.projectId, p])) };
-  const itemRows = [...(s?.plan.items ?? [])].sort((a, b) => a.priority - b.priority).map((i) => itemRow(i, input, ctx));
+  const itemRows = (s?.plan.items ?? []).filter((i) => live(i.projectId, input)).sort((a, b) => a.priority - b.priority).map((i) => itemRow(i, input, ctx));
   const all = [...itemRows, ...(s ? holdRows(s, input, ctx) : [])];
   const groups: RowGroup[] = GROUP_ORDER.map((id) => ({ id, rows: all.filter((r) => r.group === id) })).filter((g) => g.rows.length > 0);
   const planned = itemRows.filter((r) => r.kind === 'direction' && ['decided', 'running', 'done'].includes(r.state));

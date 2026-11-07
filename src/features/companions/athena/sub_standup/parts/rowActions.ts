@@ -32,9 +32,10 @@ export function useRowActions(c: StandupController, source: StandupSource): RowA
       undo: (row) => send(statePatch(row, 'proposed')),
       talk: (row) => {
         if (!row.itemId) return;
+        set({ decide: false });
         void discuss(row.itemId).then((id) => { if (id) openAthenaChat(id); });
       },
-      dossier: () => set({ dossier: true }),
+      dossier: () => set({ dossier: true, decide: false }),
     };
   }, [pick, typed, set, patch, discuss]);
 }

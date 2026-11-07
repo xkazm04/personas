@@ -42,18 +42,36 @@ idle capacity is backfilled. Standup absorbed Night Shift's planning (see below)
 
 **The page.** One column grid: every project is a line through Today (the away log), the Decision
 and Tonight (the forecast), under one instrument bar (Athena's sentence, a decided/total plan meter,
-what waits on you) and a pinned Machine row (host CPU, tonight's lanes and dead spots). The selected
-row opens in place with Athena's read and her directions as a numbered palette; the footer holds the
-plan in figures and the one accent press (Arm, or End and Amend). Inter for names and prose,
-JetBrains Mono for every figure, hairline rules, a glyph and a word for every state
-(`sub_standup/parts/StandupPage.tsx`; screenshots in `docs/design/standup/`).
+what waits on you) and a pinned Machine row (host CPU, tonight's lanes and dead spots). A click on
+a row, or Enter, opens its decision in a modal: Athena's read, her directions as a numbered
+palette (focus starts on her pick, so Enter decides), the typed line and the key-hinted presses
+(`parts/DecisionModal.tsx`). The keys keep working under it: 1-4 pick, E types, S skips, T talks it
+through, Backspace undoes, j/k walk to the next card, ArrowRight opens the dossier, and a pick moves
+on to the next open card. The footer holds the plan in figures and the one accent press (Arm, or
+End and Amend). Inter for names and prose, JetBrains Mono for every figure, hairline rules, a glyph
+and a word for every state (`sub_standup/parts/StandupPage.tsx`; screenshots in
+`docs/design/standup/`). The page always reads live IPC; `sub_standup/fixture/` is test data.
+
+**Plan with Athena.** While a revision is being decided, the header's "Plan with Athena" opens her
+chat on a thread of its own per standup revision (`Standup · rev N · <id>`; a second press reopens
+it) and sends her the cards as an app prompt (filed as `Standup`, never as the operator's words):
+the in-app mirror of `/athena --standup`. She walks the open cards, proposes directions grounded in
+what moved, asks, and writes each answer onto its card with her `standup_decide` op, which edits
+only a draft and never arms; the go-gate stays the Arm press on the page
+(`sub_standup/data/standupChat.ts`). It replaced the "Propose directions" press.
+
+**Deleted projects leave the plan.** A card whose project was deleted is dropped from the live
+draft (on the next read, and right after a delete in the app) and is not carried into the next
+revision; an armed revision is immutable, so the page hides its dead-project rows once the project
+list has loaded.
 
 **The page decides; chat is optional.** One card per registered, switched-on project (status
 `active`, project switch on). Each card carries an evidence line, Athena's proposals (her pick
 marked) and the operator's resolution: pick a proposal, edit it, write one, or skip; plus the
 window (`day` / `night` / `any`), an optional earliest start and a priority. "Talk it through"
-opens Athena in her own conversation bound to that project (seeded with the evidence and the
-proposals; a second click reuses the thread), and the agreed direction lands back on the card.
+opens Athena in her own conversation bound to that project (seeded with the evidence, the
+proposals and the card's ids; a second click reuses the thread), and she writes the agreed
+direction back onto the card with `standup_decide`.
 Agent changes are cards too: `create_agent` (name, role, charter) and `retune_agent` (a steward's
 pacing). The away rules sit beside the cards: which decisions Athena may take herself while the
 operator is away (default: scope, goals, dependency bumps, retunes, creating an agent) and which

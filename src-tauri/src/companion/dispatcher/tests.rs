@@ -527,6 +527,161 @@ fn comment_on_note_refuses_an_unknown_note_without_writing() {
     );
 }
 
+// -- the Standup: standup_decide --------------------------------------------
+
+/// `standup_decide` is an auto-fire op with its own arm: no approval card
+/// (it edits his own draft; the go-gate stays on the page), not a lookup.
+#[test]
+fn standup_decide_is_an_auto_fire_op() {
+    assert!(!ALLOWED_ACTIONS.contains(&"standup_decide"));
+    assert!(!READ_OPS.contains(&"standup_decide"));
+    assert!(!CHAT_AUTO_FIRE_APPROVAL_ACTIONS.contains(&"standup_decide"));
+    assert!(AUTO_FIRE_ACTIONS.contains(&"standup_decide"));
+}
+
+/// A user DB with a draft standup holding one card for project `p1`, and a
+/// system DB that registers `p1` as "alpha".
+fn standup_fixture() -> (
+    UserDbPool,
+    crate::db::DbPool,
+    crate::companion::standup::Standup,
+) {
+    let user = crate::db::init_test_user_db().expect("user db");
+    let sys = crate::db::init_test_db().expect("system db");
+    {
+        let conn = sys.conn("dispatcher_test").expect("conn");
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path, status, created_at, updated_at)
+             VALUES ('p1', 'alpha', 'C:/w/alpha', 'active', '2026-08-01', '2026-08-01')",
+            [],
+        )
+        .expect("project");
+    }
+    let seeds = vec![crate::companion::standup::plan::ProjectSeed {
+        id: "p1".into(),
+        name: "alpha".into(),
+        root: "C:/w/alpha".into(),
+    }];
+    let (s, _) =
+        crate::companion::standup::plan::open(&user, "dev-1", 1_000, &seeds, None).expect("open");
+    (user, sys, s)
+}
+
+/// A valid decide writes the patch onto the draft's card, reports the
+/// revision for the turn to emit `standup://updated`, tells her what landed
+/// (project name and the chosen text), and strips the op line.
+#[test]
+fn standup_decide_patches_the_drafts_card() {
+    let (user, sys, s) = standup_fixture();
+    let item_id = s.plan.items[0].id.clone();
+    let op = format!(
+        r###"{{"op":"propose_action","action":"standup_decide","params":{{"standup_id":"{}","item_id":"{item_id}","chosen":"Ship the importer","window":"night"}}}}"###,
+        s.id
+    );
+    let text = format!("Done.\nOP: {op}\nArm it on the page.");
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+
+    assert_eq!(
+        out.standup_updates,
+        vec![s.id.clone()],
+        "warnings: {:?}",
+        out.warnings
+    );
+    assert!(
+        !out.cleaned_text.contains("standup_decide"),
+        "{}",
+        out.cleaned_text
+    );
+    let after = crate::companion::standup::plan::require(&user, &s.id).expect("standup");
+    let card = &after.plan.items[0];
+    assert_eq!(card.chosen.as_deref(), Some("Ship the importer"));
+    assert_eq!(card.window, crate::companion::standup::StandupWindow::Night);
+    assert_eq!(
+        card.state,
+        crate::companion::standup::StandupItemState::Edited
+    );
+    assert_eq!(
+        after.status,
+        crate::companion::standup::StandupStatus::Draft,
+        "never arms"
+    );
+
+    let episodes =
+        crate::companion::brain::episodic::list_recent(&user, "default", 10).expect("episodes");
+    let note = episodes
+        .iter()
+        .find(|e| e.content.contains("standup_decide"))
+        .expect("the outcome lands as a system note");
+    assert!(note.content.contains("alpha"), "{}", note.content);
+    assert!(
+        note.content.contains("Ship the importer"),
+        "{}",
+        note.content
+    );
+
+    // Omitting `standup_id` targets the live draft; skip lands too.
+    let skip = format!(
+        r###"OP: {{"op":"propose_action","action":"standup_decide","params":{{"item_id":"{item_id}","state":"skipped"}}}}"###
+    );
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &skip).expect("dispatch ok");
+    assert_eq!(
+        out.standup_updates,
+        vec![s.id.clone()],
+        "warnings: {:?}",
+        out.warnings
+    );
+    let after = crate::companion::standup::plan::require(&user, &s.id).expect("standup");
+    assert_eq!(
+        after.plan.items[0].state,
+        crate::companion::standup::StandupItemState::Skipped
+    );
+}
+
+/// An armed revision is immutable from chat: refused, nothing written,
+/// nothing to emit.
+#[test]
+fn standup_decide_refuses_a_non_draft_revision() {
+    let (user, sys, s) = standup_fixture();
+    assert!(crate::companion::standup::plan::claim_armed(&user, &s.id, 1_500).expect("arm"));
+    let item_id = s.plan.items[0].id.clone();
+    let op = format!(
+        r###"OP: {{"op":"propose_action","action":"standup_decide","params":{{"standup_id":"{}","item_id":"{item_id}","chosen":"Something else"}}}}"###,
+        s.id
+    );
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &op).expect("dispatch ok");
+    assert!(out.standup_updates.is_empty());
+    assert!(
+        out.warnings
+            .iter()
+            .any(|w| w.contains("standup_decide refused") && w.contains("armed")),
+        "{:?}",
+        out.warnings
+    );
+    let after = crate::companion::standup::plan::require(&user, &s.id).expect("standup");
+    assert_eq!(after.plan.items[0].chosen, None, "nothing was written");
+}
+
+/// A card id the standup does not hold is refused, never applied to another.
+#[test]
+fn standup_decide_refuses_an_unknown_item() {
+    let (user, sys, s) = standup_fixture();
+    let op = format!(
+        r###"OP: {{"op":"propose_action","action":"standup_decide","params":{{"standup_id":"{}","item_id":"sti_nope","chosen":"Ship it"}}}}"###,
+        s.id
+    );
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &op).expect("dispatch ok");
+    assert!(out.standup_updates.is_empty());
+    assert!(
+        out.warnings
+            .iter()
+            .any(|w| w.contains("standup_decide refused") && w.contains("no card `sti_nope`")),
+        "{:?}",
+        out.warnings
+    );
+    let after = crate::companion::standup::plan::require(&user, &s.id).expect("standup");
+    assert!(after.plan.items.iter().all(|i| i.chosen.is_none()));
+}
+
 /// Without the app DB there is nothing to post into: refuse, do not pretend.
 #[test]
 fn comment_on_note_fails_closed_without_the_notepad() {

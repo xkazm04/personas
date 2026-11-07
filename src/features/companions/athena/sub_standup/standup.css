@@ -1,6 +1,6 @@
 /*
  * Athena > Standup: the shared overlays' treatment (dossier drawer, away-rules
- * sheet, key legend, fixture switch) and the host fill. The page itself is
+ * sheet, key legend) and the host fill. The page itself is
  * styled by parts/standup-page.css + parts/standup-figure.css (`sc-`).
  * Type is a typo-* class on each element and every colour is a token
  * (--primary, --status-*, --role-*, the kit's --rule/--line) or color-mix()
@@ -41,7 +41,6 @@
 .su-k--agent_created, .su-k--agent_retuned { fill: var(--role-highlight); }
 
 .su-kbd { display: inline-block; min-width: 1.25rem; padding: 0 0.3rem; text-align: center; border: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent); border-bottom-width: 2px; border-radius: var(--radius-interactive, 0.375rem); background: var(--background); color: var(--foreground); }
-.su-fixture { color: var(--role-agent); outline: 1px dotted var(--role-agent); outline-offset: -1px; }
 .su-error { color: var(--status-error); }
 
 @media (prefers-reduced-motion: reduce) {

@@ -635,7 +635,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       },
       "dossier": {},
       "keys": {},
-      "fixture": {},
       "actions": {},
       "console": {
         "col": {},
@@ -646,7 +645,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "detail": {},
         "footer": {},
         "kinds": {}
-      }
+      },
+      "chat": {}
     },
     "orchestration": {}
   },

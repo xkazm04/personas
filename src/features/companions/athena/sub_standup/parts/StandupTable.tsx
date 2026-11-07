@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 
 import { GhostRows } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -8,6 +8,7 @@ import type { StandupController } from './pageTypes';
 import { clockLabel } from '../model/timeAxis';
 import { useAxes } from './axis';
 import { ColumnHead } from './ColumnHead';
+import { DecisionModal } from './DecisionModal';
 import { MachineRow } from './MachineRow';
 import { StandupRow } from './StandupRow';
 import { useRowActions } from './rowActions';
@@ -22,16 +23,18 @@ interface Props {
 /**
  * The page body: one scroller holding the sticky column head, the pinned
  * machine row and the grouped rows, all on the same column grid. Group heads
- * are quiet sticky separators; the cursor (`c.ui.sel`) is kept in view.
+ * are quiet sticky separators; the cursor (`c.ui.sel`) is kept in view and
+ * its decision opens in a modal (Enter or a click).
  */
 export const StandupTable = memo(function StandupTable({ view, source, c, loading }: Props) {
   const { t } = useTranslation();
-  const { sel, zoom, typing } = c.ui;
+  const { sel, zoom, typing, decide } = c.ui;
   const axes = useAxes(view, zoom);
   const act = useRowActions(c, source);
   const editable = view.life === 'decide';
   const selectedKey = view.rows[sel]?.key;
   const { set, select } = c;
+  const onOpen = useCallback((index: number) => { select(index); set({ decide: true }); }, [select, set]);
 
   // Follow the cursor, but never on mount: the page opens at its top, not scrolled to row 0's detail.
   const lastKey = useRef<string | undefined>(undefined);
@@ -81,13 +84,9 @@ export const StandupTable = memo(function StandupTable({ view, source, c, loadin
                     row={row}
                     index={index}
                     selected={index === sel}
-                    editable={editable}
-                    typing={typing === row.key}
-                    proposing={source.proposing}
                     axes={axes}
                     rug={zoom === 'today'}
-                    act={act}
-                    onSelect={select}
+                    onOpen={onOpen}
                   />
                 );
               })}
@@ -95,6 +94,16 @@ export const StandupTable = memo(function StandupTable({ view, source, c, loadin
           ))}
         </div>
       )}
+      <DecisionModal
+        row={view.rows[sel]}
+        open={decide}
+        index={sel}
+        total={view.rows.length}
+        editable={editable}
+        typing={typing === selectedKey}
+        act={act}
+        onClose={() => set({ decide: false, typing: null })}
+      />
     </div>
   );
 });

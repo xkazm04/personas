@@ -23,6 +23,8 @@
 pub mod model;
 
 pub mod arm;
+/// `standup_decide`: Athena writes one card's decision from chat.
+pub mod decide;
 pub mod plan;
 mod plan_import;
 pub mod propose;

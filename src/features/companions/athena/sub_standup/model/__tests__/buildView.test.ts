@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildFixture } from '../../fixture/standupFixture';
+import { applyPatch, buildFixture } from '../../fixture/standupFixture';
 import { buildView } from '../buildView';
-import { applyPatch, pickPatch, typedPatch } from '../patch';
+import { pickPatch, typedPatch } from '../patch';
 
 const view = (s: Parameters<typeof buildFixture>[0]) => buildView(buildFixture(s));
 
@@ -74,5 +74,18 @@ describe('patches', () => {
     expect(item).toMatchObject({ state: 'accepted', chosen: row.proposals[1]!.text, window: 'night', priority: 1 });
     const after = buildView({ ...fx, standup: next }).rows.find((r) => r.key === 'i-cc')!;
     expect(after).toMatchObject({ state: 'decided', chosenIndex: 1 });
+  });
+});
+
+describe('deleted projects', () => {
+  it('once the project list is known, a card or ask of an unregistered project is not drawn', () => {
+    const fx = buildFixture('return');
+    const { castlecontrol: _gone, ...rest } = fx.projectNames;
+    const shown = buildView({ ...fx, projectNames: rest, projectsKnown: true });
+    expect(shown.rows.some((r) => r.projectId === 'castlecontrol')).toBe(false);
+    expect(shown.rows.some((r) => r.key === 'i-a1')).toBe(true); // a project-less agent card stays
+    // while the list is still loading, nothing is hidden
+    const loading = buildView({ ...fx, projectNames: rest, projectsKnown: false });
+    expect(loading.rows.some((r) => r.projectId === 'castlecontrol')).toBe(true);
   });
 });

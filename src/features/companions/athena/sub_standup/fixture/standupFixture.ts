@@ -1,12 +1,14 @@
 /**
- * DEV fixture, part 2: the three lives of one standup on the staged record,
- * as the exact wire shapes the IPC returns (so the page renders them through
- * the same `buildView` path as live data). Never imported outside a DEV branch.
+ * Test fixture, part 2: the three lives of one standup on the staged record,
+ * as the exact wire shapes the IPC returns (so tests and the screenshot
+ * harness render them through the same `buildView` path as live data).
+ * Imported by tests only; the page itself always reads live IPC.
  */
 import type { ForecastSlot } from '@/lib/bindings/ForecastSlot';
 import type { HostUtilizationPoint } from '@/lib/bindings/HostUtilizationPoint';
 import type { Standup } from '@/lib/bindings/Standup';
 import type { StandupItem } from '@/lib/bindings/StandupItem';
+import type { StandupItemPatch } from '@/lib/bindings/StandupItemPatch';
 import type { StandupReport } from '@/lib/bindings/StandupReport';
 import type { ViewInput } from '../model/buildView';
 import { at, DAY_EVENTS, HISTORY, NIGHT_EVENTS, PERSONAS, PROJECTS, PROPOSALS } from './fixtureRecord';
@@ -110,5 +112,22 @@ export function buildFixture(scenario: FixtureScenario): FixtureData {
     history: HISTORY,
     refusals: { 'i-r1': 'A headless App Master on the Lynx PC holds mage-arena-vr (heartbeat headless_master:23144). This plan will not dispatch it.' },
     nowMs: NOW[scenario],
+  };
+}
+
+/** Apply a patch the way the backend does: absent fields stay unchanged. */
+export function applyPatch(standup: Standup, patch: StandupItemPatch): Standup {
+  return {
+    ...standup,
+    plan: {
+      items: standup.plan.items.map((item) => (item.id !== patch.id ? item : {
+        ...item,
+        ...(patch.state !== undefined && { state: patch.state }),
+        ...(patch.chosen !== undefined && { chosen: patch.chosen }),
+        ...(patch.window !== undefined && { window: patch.window }),
+        ...(patch.priority !== undefined && { priority: patch.priority }),
+        ...(patch.notBeforeMs !== undefined && { notBeforeMs: patch.notBeforeMs }),
+      })),
+    },
   };
 }

@@ -21666,7 +21666,7 @@
     "page_subtitle": "Setup, memory inspector, and voice configuration for your thinking partner.",
     "standup": {
       "page_subtitle": "Reconcile what moved, decide the day and night, and arm the plan Athena runs.",
-      "placeholder":"No standup yet. Open one to reconcile what moved, pick tomorrow's directions and arm the plan.",
+      "placeholder": "No standup yet. Open one to reconcile what moved, pick tomorrow's directions and arm the plan.",
       "title": "Standup",
       "empty_title": "No standup open",
       "nothing_title": "Nothing to decide",
@@ -21684,7 +21684,6 @@
       },
       "voice": {
         "none": "No standup open.",
-        "proposing": "Reading what moved and writing directions.",
         "decide": "{n} to decide, {w} only you can answer.",
         "nothing": "Nothing to decide this time.",
         "all_decided": "Everything decided. Arm when ready.",
@@ -21725,7 +21724,6 @@
         "refused": "held elsewhere",
         "waits": "only you can answer",
         "blank": "press E to type the direction",
-        "proposing": "Athena is writing directions",
         "filler": "fills dead spots, report only",
         "skipped": "off tonight",
         "directions": "{n} directions",
@@ -21845,17 +21843,10 @@
         "amend": "amend: a new revision",
         "keys": "this card"
       },
-      "fixture": {
-        "badge": "fixture",
-        "label": "Data source (DEV)",
-        "off": "Live",
-        "decide": "Decide",
-        "armed": "Armed",
-        "return": "Return"
-      },
       "actions": {
-        "propose": "Propose directions",
-        "open": "Open a standup"
+        "open": "Open a standup",
+        "plan": "Plan with Athena",
+        "plan_hint": "Opens Athena’s chat and walks the open cards with you; she writes each decision back here."
       },
       "console": {
         "col": {
@@ -21933,6 +21924,17 @@
           "sweep": "Sweeps",
           "backfill": "Backfills"
         }
+      },
+      "chat": {
+        "title": "Standup · rev {n} · {id}",
+        "intro": "Let’s run this standup together in chat, the way /athena --standup does it (revision {n}, standup {id}).",
+        "steps": "Walk the open cards with me one at a time. For each, ground two to four directions in what moved, name your pick, and ask me. When I decide, write it onto the card with standup_decide: one op per card, the direction text and a window, or skip. Agent-change cards are accept or skip. For the settled cards, only ask if something changed. Arming stays mine, on the Standup page: tell me when every card is decided.",
+        "open_head": "Open cards ({n}):",
+        "settled_head": "Already settled ({n}):",
+        "waits_head": "Waiting on me ({n}):",
+        "item": "item",
+        "on_card": "On the card",
+        "your_pick": "your pick"
       }
     },
     "tab_setup": "Setup",

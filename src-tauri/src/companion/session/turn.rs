@@ -550,6 +550,7 @@ async fn send_turn_inner(
                 progress_beats: Vec::new(),
                 notepad_status_changes: Vec::new(),
                 note_comments: Vec::new(),
+                standup_updates: Vec::new(),
                 reports: Vec::new(),
                 refs: Default::default(),
             }
@@ -970,6 +971,10 @@ async fn send_turn_inner(
     }
     for comment in &dispatched.note_comments {
         crate::commands::infrastructure::dev_tools::notepad::emit_note_comment(app, comment);
+    }
+    // A card `standup_decide` wrote: the Standup page re-reads on the event.
+    for standup_id in &dispatched.standup_updates {
+        crate::companion::standup::service::emit_updated(app, standup_id);
     }
 
     // Inline chat-cards. Emitted once per turn with the full list so the

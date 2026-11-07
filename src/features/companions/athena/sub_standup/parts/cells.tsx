@@ -46,13 +46,13 @@ export function TodayCell({ row, axes, rug }: { row: RowView; axes: Axes; rug: b
 
 interface Said { lead?: string; text: string; strong: boolean }
 
-function decisionText(row: RowView, proposing: boolean, { t, tx }: ReturnType<typeof useTranslation>): Said {
+function decisionText(row: RowView, { t, tx }: ReturnType<typeof useTranslation>): Said {
   const d = t.athena.standup.console.decision;
   const r = t.athena.standup.row;
   switch (row.state) {
     case 'refused': return { text: row.refusal || d.refused, strong: false };
     case 'waits': return { text: row.ask?.options.length ? row.ask.options.join(' / ') : r.waits, strong: false };
-    case 'blank': return { text: proposing && !row.evidence ? r.proposing : d.blank, strong: false };
+    case 'blank': return { text: d.blank, strong: false };
     case 'filler': return { text: row.headline || r.filler, strong: false };
     case 'skipped': return { text: row.headline || r.skipped, strong: false };
     case 'proposed': {
@@ -67,8 +67,8 @@ function decisionText(row: RowView, proposing: boolean, { t, tx }: ReturnType<ty
 }
 
 /** Decision: the state mark on its fixed column, then the text (a decided direction never clips). */
-export function DecisionCell({ row, proposing }: { row: RowView; proposing: boolean }) {
-  const { lead, text, strong } = decisionText(row, proposing, useTranslation());
+export function DecisionCell({ row }: { row: RowView }) {
+  const { lead, text, strong } = decisionText(row, useTranslation());
   return (
     <div className="sc-cell sc-c3 sc-dec">
       <StateMark row={row} />

@@ -11,11 +11,10 @@ import { Figs } from './prims';
 type T = ReturnType<typeof useTranslation>;
 
 /** Athena's one sentence about the standup, in the header bar. */
-function sentence(view: StandupView, proposing: boolean, { t, tx }: T): string {
+function sentence(view: StandupView, { t, tx }: T): string {
   const v = t.athena.standup.voice;
   const c = view.counts;
   if (view.life === 'none') return v.none;
-  if (proposing) return v.proposing;
   if (view.life === 'decide' && c.proposed > 0) return tx(v.decide, { n: c.proposed, w: c.waits });
   if (view.life === 'decide' && view.rows.length === 0) return v.nothing;
   if (view.life === 'decide') return v.all_decided;
@@ -50,11 +49,11 @@ function SinceLine({ since }: { since: SinceLast }) {
   );
 }
 
-/** ONE instrument bar: identity | Athena's sentence | the plan meter | presses + the DEV fixture switch. */
-export const StandupHeader = memo(function StandupHeader({ view, proposing, actions }: { view: StandupView; proposing: boolean; actions: ReactNode }) {
+/** ONE instrument bar: identity | Athena's sentence | the plan meter | the presses. */
+export const StandupHeader = memo(function StandupHeader({ view, actions }: { view: StandupView; actions: ReactNode }) {
   const tr = useTranslation();
   const s = tr.t.athena.standup;
-  const busy = proposing || view.counts.running > 0;
+  const busy = view.counts.running > 0;
   return (
     <header className="sc-head">
       <div className="sc-head__bar">
@@ -68,7 +67,7 @@ export const StandupHeader = memo(function StandupHeader({ view, proposing, acti
         </div>
         <div className="sc-voice">
           <AthenaAvatar state={busy ? 'thinking' : 'idle'} size={28} />
-          <span className="sc-say"><Figs text={sentence(view, proposing, tr)} /></span>
+          <span className="sc-say"><Figs text={sentence(view, tr)} /></span>
         </div>
         {view.life !== 'none' && <Meter counts={view.counts} />}
         <div className="sc-head__actions">{actions}</div>

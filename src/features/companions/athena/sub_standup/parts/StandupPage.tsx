@@ -6,13 +6,15 @@
  * prose, JetBrains Mono for every figure, hairline rules, glyph + word states,
  * one accent for decisions and selection.
  */
-import { CalendarClock, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { CalendarClock, MessageSquare } from 'lucide-react';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { startStandupChat } from '../data/standupChat';
 import type { StandupSource } from '../data/types';
 import type { StandupView } from '../model/types';
-import { FixtureSwitch } from './FixtureSwitch';
 import type { StandupPageProps } from './pageTypes';
 import { Press } from './prims';
 import { StandupErrors } from './StandupErrors';
@@ -23,15 +25,25 @@ import './fonts';
 import './standup-page.css';
 import './standup-figure.css';
 
-/** The presses that start work, as ghost controls (with no standup, the empty state carries Open). */
+/**
+ * The presses that start work, as ghost controls (with no standup, the empty state carries Open).
+ * While deciding, the interview moves to Athena's chat (the in-app `/athena --standup`).
+ */
 function Starts({ view, source }: { view: StandupView; source: StandupSource }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const s = t.athena.standup.actions;
+  const [starting, setStarting] = useState(false);
   if (view.life === 'decide') {
+    const plan = () => {
+      setStarting(true);
+      void startStandupChat(view, t, tx).finally(() => setStarting(false));
+    };
     return (
-      <Press tone="line" busy={source.busy.propose} icon={<Sparkles className="sc-ico" aria-hidden="true" />} onClick={() => { void source.actions.propose(); }}>
-        {s.propose}
-      </Press>
+      <Tooltip content={s.plan_hint} placement="bottom">
+        <Press tone="line" busy={starting} icon={<MessageSquare className="sc-ico" aria-hidden="true" />} onClick={plan} data-testid="standup-plan-chat">
+          {s.plan}
+        </Press>
+      </Tooltip>
     );
   }
   if (view.life === 'ended') {
@@ -55,7 +67,7 @@ function Paints() {
   );
 }
 
-export function StandupPage({ view, source, c, fixture, onFixture, loading, rules }: StandupPageProps) {
+export function StandupPage({ view, source, c, loading, rules }: StandupPageProps) {
   const { t } = useTranslation();
   const s = t.athena.standup;
   const body = view.life === 'none' && !loading ? (
@@ -80,13 +92,7 @@ export function StandupPage({ view, source, c, fixture, onFixture, loading, rule
       <Paints />
       <StandupHeader
         view={view}
-        proposing={source.proposing}
-        actions={(
-          <>
-            <Starts view={view} source={source} />
-            <FixtureSwitch fixture={fixture} onFixture={onFixture} />
-          </>
-        )}
+        actions={<Starts view={view} source={source} />}
       />
       <StandupErrors source={source} />
       {body}

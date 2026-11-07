@@ -3,28 +3,23 @@ import { memo } from 'react';
 import type { RowView } from '../model/types';
 import type { Axes } from './axis';
 import { DecisionCell, NameCell, TodayCell, TonightCell } from './cells';
-import type { RowActions } from './rowActions';
-import { RowDetail } from './RowDetail';
 
 interface Props {
   row: RowView;
   index: number;
   selected: boolean;
-  editable: boolean;
-  typing: boolean;
-  proposing: boolean;
   axes: Axes;
   rug: boolean;
-  act: RowActions;
-  onSelect: (index: number) => void;
+  /** Select the row and open its decision modal. */
+  onOpen: (index: number) => void;
 }
 
 /**
  * One standup line: name | today | decision | tonight on the page's one grid.
  * Memoised, so moving the cursor re-renders only the two rows whose
- * `selected` flipped. The selected row opens its detail under columns 2-4.
+ * `selected` flipped. A click selects the row and opens its decision modal.
  */
-export const StandupRow = memo(function StandupRow({ row, index, selected, editable, typing, proposing, axes, rug, act, onSelect }: Props) {
+export const StandupRow = memo(function StandupRow({ row, index, selected, axes, rug, onOpen }: Props) {
   return (
     <div
       id={`sc-row-${row.key}`}
@@ -33,13 +28,12 @@ export const StandupRow = memo(function StandupRow({ row, index, selected, edita
       data-testid={`standup-row-${row.key}`}
       data-state={row.state}
       className={`sc-row sc-grid ${selected ? 'is-sel' : ''}`}
-      onClick={() => onSelect(index)}
+      onClick={() => onOpen(index)}
     >
       <NameCell row={row} />
       <TodayCell row={row} axes={axes} rug={rug} />
-      <DecisionCell row={row} proposing={proposing} />
+      <DecisionCell row={row} />
       <TonightCell row={row} axes={axes} />
-      {selected && <RowDetail row={row} editable={editable} typing={typing} proposing={proposing} act={act} />}
     </div>
   );
 });

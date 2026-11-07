@@ -1,24 +1,9 @@
 import type { KeyboardEvent } from 'react';
 
-import { Ghost } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { RowView } from '../model/types';
 import { Key } from './prims';
 import { StateGlyph } from './StateMark';
-
-/** While proposals stream in: three ghost lines in the palette's own geometry. */
-export function GhostChoices() {
-  return (
-    <div className="sc-choices" aria-busy="true">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="sc-choice is-ghost" aria-hidden="true">
-          <Key>{i + 1}</Key>
-          <span className="sc-choice__text"><Ghost width={`${60 - i * 10}%`} height="0.9rem" /><Ghost width="85%" /></span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /**
  * Athena's directions as a command palette: the number key in a mono keycap,
@@ -55,7 +40,7 @@ export function ChoiceList({ row, editable, onPick }: { row: RowView; editable: 
             <Key solid={chosen}>{i + 1}</Key>
             <span className="sc-choice__text">
               <span className="sc-choice__title">{p.text}</span>
-              {p.rationale && <span className="sc-choice__why sc-clamp1">{p.rationale}</span>}
+              {p.rationale && <span className="sc-choice__why">{p.rationale}</span>}
             </span>
             <span className="sc-choice__tail">
               {p.recommended && <span className="sc-pick">{t.athena.standup.console.detail.pick}</span>}

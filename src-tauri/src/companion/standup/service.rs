@@ -4,6 +4,7 @@
 //! adapters over the same code. Database work runs on a blocking thread; every
 //! write emits `standup://updated` (`StandupUpdatedPayload`).
 
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -62,6 +63,39 @@ pub fn project_seeds(db: &DbPool) -> Result<Vec<ProjectSeed>, AppError> {
     )
 }
 
+/// Every registered project id, whatever its status or switch: the set a card
+/// must name to stay on the plan (a switched-off project still exists).
+fn existing_project_ids(db: &DbPool) -> Result<HashSet<String>, AppError> {
+    Ok(crate::db::repos::dev_tools::list_projects(db, None)?
+        .into_iter()
+        .map(|p| p.id)
+        .collect())
+}
+
+/// Drop the live draft's cards whose project was deleted. Returns the draft's
+/// id when something was removed (the caller emits `standup://updated`).
+fn prune_live_draft(db: &DbPool, user_db: &UserDbPool) -> Result<Option<String>, AppError> {
+    let existing = existing_project_ids(db)?;
+    Ok(plan::prune_live_draft(user_db, &existing)?.map(|s| s.id))
+}
+
+/// After a project is deleted: drop its card from the live draft and tell an
+/// open Standup page, so the row leaves without a reload. Best-effort: the
+/// delete already succeeded, so a failure here is logged, never returned.
+pub async fn prune_deleted_projects(app: &AppHandle) {
+    match blocking(app, "prune_deleted_projects", |db, user_db| {
+        prune_live_draft(&db, &user_db)
+    })
+    .await
+    {
+        Ok(Some(id)) => emit_updated(app, &id),
+        Ok(None) => {}
+        Err(e) => {
+            tracing::warn!(error = %e, "standup: deleted project's card not pruned from the live draft")
+        }
+    }
+}
+
 /// This device's id (v1 always plans for this device).
 fn device_id(db: &DbPool) -> String {
     crate::cloud::sync::cursor::resolve_device_id(db)
@@ -108,36 +142,44 @@ fn import_terminal_plan_once(db: &DbPool, user_db: &UserDbPool) -> Option<String
 
 /// The live standup (newest draft or armed revision), if any.
 pub async fn current(app: &AppHandle) -> Result<Option<Standup>, AppError> {
-    let (imported, current) = blocking(app, "current", |db, user_db| {
+    let (imported, pruned, current) = blocking(app, "current", |db, user_db| {
         let imported = import_terminal_plan_once(&db, &user_db);
-        Ok((imported, plan::current(&user_db)?))
+        let pruned = prune_live_draft(&db, &user_db)?;
+        Ok((imported, pruned, plan::current(&user_db)?))
     })
     .await?;
-    if let Some(id) = imported {
+    if let Some(id) = imported.filter(|id| pruned.as_deref() != Some(id.as_str())) {
+        emit_updated(app, &id);
+    }
+    if let Some(id) = pruned {
         emit_updated(app, &id);
     }
     Ok(current)
 }
 
 /// Open a standup: revision 1, the live draft, or revision n+1 of the armed
-/// plan (`plan::open`).
+/// plan (`plan::open`). Cards of deleted projects leave either way: pruned
+/// from a live draft, never carried into revision n+1.
 pub async fn open(app: &AppHandle) -> Result<Standup, AppError> {
-    let (imported, (s, created)) = blocking(app, "open", |db, user_db| {
+    let (imported, pruned, (s, created)) = blocking(app, "open", |db, user_db| {
         let imported = import_terminal_plan_once(&db, &user_db);
         let projects = project_seeds(&db)?;
+        let existing = existing_project_ids(&db)?;
+        let pruned = plan::prune_live_draft(&user_db, &existing)?.map(|s| s.id);
         let opened = plan::open(
             &user_db,
             &device_id(&db),
             chrono::Utc::now().timestamp_millis(),
             &projects,
+            Some(&existing),
         )?;
-        Ok((imported, opened))
+        Ok((imported, pruned, opened))
     })
     .await?;
     if let Some(id) = imported.filter(|id| *id != s.id) {
         emit_updated(app, &id);
     }
-    if created {
+    if created || pruned.as_deref() == Some(s.id.as_str()) {
         emit_updated(app, &s.id);
     }
     Ok(s)
@@ -280,8 +322,10 @@ fn discuss_title(project_name: &str, item_id: &str) -> String {
 }
 
 /// The seed Athena's thread opens with: the project, what moved and the
-/// directions on the card, as one self-contained assistant turn.
-fn discuss_seed(project_name: &str, item: &super::model::StandupItem) -> String {
+/// directions on the card, as one self-contained assistant turn. The last line
+/// names the card and its standup, which is what `standup_decide` takes to
+/// write the agreed direction back.
+fn discuss_seed(standup_id: &str, project_name: &str, item: &super::model::StandupItem) -> String {
     let mut text = format!("Let's talk through {project_name} for this standup.");
     if !item.evidence.trim().is_empty() {
         text.push_str(&format!("\n\nWhat moved: {}", item.evidence.trim()));
@@ -297,6 +341,7 @@ fn discuss_seed(project_name: &str, item: &super::model::StandupItem) -> String 
         text.push_str(&format!("\n\nOn the card now: {c}"));
     }
     text.push_str("\n\nTell me what you want this project to reach, and I'll put the agreed direction back on the card.");
+    text.push_str(&format!("\n\n(card {} of standup {standup_id})", item.id));
     text
 }
 
@@ -332,7 +377,7 @@ pub async fn discuss(app: &AppHandle, standup_id: &str, item_id: &str) -> Result
             &user_db,
             &conv.id,
             crate::companion::brain::episodic::EpisodeRole::Assistant,
-            &discuss_seed(&project_name, item),
+            &discuss_seed(&s.id, &project_name, item),
         )?;
         Ok(conv.id)
     })
@@ -366,9 +411,13 @@ mod tests {
             recommended: true,
         }];
         item.chosen = Some("Ship it".into());
-        let seed = discuss_seed("alpha", &item);
+        let seed = discuss_seed("stu_1", "alpha", &item);
         assert!(seed.contains("What moved: last: a1 fix"));
         assert!(seed.contains("- Ship it (my pick): ready"));
         assert!(seed.contains("On the card now: Ship it"));
+        assert!(
+            seed.ends_with(&format!("(card {} of standup stu_1)", item.id)),
+            "the ids `standup_decide` writes back with close the seed: {seed}"
+        );
     }
 }

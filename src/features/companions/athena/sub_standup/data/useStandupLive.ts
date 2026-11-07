@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listProjects } from '@/api/devTools/devTools';
 import {
   hostUtilizationSeries, standupArm, standupCurrent, standupDiscuss, standupEnd, standupEvents, standupForecast,
-  standupOpen, standupPropose, standupSetAwayRules, standupUpdateItem,
+  standupOpen, standupSetAwayRules, standupUpdateItem,
 } from '@/api/companion/standup';
 import type { AwayRules } from '@/lib/bindings/AwayRules';
 import type { Standup } from '@/lib/bindings/Standup';
@@ -18,8 +18,6 @@ import type { BusyAction, StandupSource } from './types';
 import { useRegion } from './useRegion';
 
 const EVENTS_LIMIT = 400;
-/** The proposal job's own IPC budget; past it the ghosts give way to whatever arrived. */
-const PROPOSING_MAX_MS = 180_000;
 const EMPTY: never[] = [];
 /** A list answer that came back absent reads as empty, never as a crash. */
 const list = <T,>(p: Promise<T[] | null | undefined>): Promise<T[]> => p.then((x) => x ?? []);
@@ -43,7 +41,6 @@ export function useStandupLive(enabled: boolean, longHistory: boolean): StandupS
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [busy, setBusy] = useState<Partial<Record<BusyAction, boolean>>>({});
   const [actionError, setActionError] = useState<string>();
-  const [proposingSince, setProposingSince] = useState<number | null>(null);
   const [override, setOverride] = useState<Standup | null | undefined>(undefined);
 
   const current = useRegion<Standup | null>('standupCurrent', enabled ? 'on' : 'off', null, () => (enabled ? standupCurrent() : null));
@@ -116,11 +113,6 @@ export function useStandupLive(enabled: boolean, longHistory: boolean): StandupS
 
   const actions = useMemo<StandupSource['actions']>(() => ({
     open: () => run('open', 'standupOpen', standupOpen),
-    propose: () => run('propose', 'standupPropose', async () => {
-      if (!id) return;
-      setProposingSince(Date.now());
-      return standupPropose(id);
-    }),
     patch: (patch: StandupItemPatch) => run(null, 'standupUpdateItem', async () => (id ? standupUpdateItem(id, patch) : undefined)),
     setRules: (rules: AwayRules) => run(null, 'standupSetAwayRules', async () => (id ? standupSetAwayRules(id, rules) : undefined)),
     arm: () => run('arm', 'standupArm', async () => (id ? standupArm(id) : undefined)),
@@ -137,16 +129,15 @@ export function useStandupLive(enabled: boolean, longHistory: boolean): StandupS
     clearError: () => setActionError(undefined),
   }), [id, run]);
 
-  const proposing = proposingSince !== null && nowMs - proposingSince < PROPOSING_MAX_MS
-    && Boolean(standup?.plan.items.some((i) => i.kind === 'direction' && i.proposals.length === 0 && !i.evidence));
 
   const projectNames = useMemo(() => Object.fromEntries(projects.data.map((p) => [p.id, p.name])), [projects.data]);
   const personaNames = useMemo(() => Object.fromEntries(personas.map((p) => [p.id, p.name])), [personas]);
   const refusals = useMemo(() => refusalsFrom(events.data), [events.data]);
+  const projectsKnown = !projects.loading && !projects.error;
   const input = useMemo(() => ({
     standup, events: events.data, forecast: forecast.data, utilization: utilization.data,
-    projectNames, personaNames, history: EMPTY_HISTORY, refusals, nowMs,
-  }), [standup, events.data, forecast.data, utilization.data, projectNames, personaNames, refusals, nowMs]);
+    projectNames, projectsKnown, personaNames, history: EMPTY_HISTORY, refusals, nowMs,
+  }), [standup, events.data, forecast.data, utilization.data, projectNames, projectsKnown, personaNames, refusals, nowMs]);
 
   return {
     kind: 'live',
@@ -155,7 +146,6 @@ export function useStandupLive(enabled: boolean, longHistory: boolean): StandupS
     loading: { standup: current.loading, events: events.loading, machine: utilization.loading || forecast.loading },
     errors: { standup: current.error, events: events.error, machine: utilization.error ?? forecast.error, action: actionError },
     busy,
-    proposing,
     actions,
   };
 }

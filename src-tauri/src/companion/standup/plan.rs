@@ -357,11 +357,53 @@ pub fn history(pool: &UserDbPool, limit: i32) -> Result<Vec<StandupSummary>, App
         .collect()
 }
 
+/// Drop every item whose `project_id` names a project that no longer exists.
+/// `existing` is EVERY registered project id (any status, enabled or not): a
+/// switched-off project still exists and keeps its card; only a deleted one
+/// leaves. An item with no project (a project-less agent change) stays.
+/// Returns whether anything was removed.
+pub fn prune_dead_projects(items: &mut Vec<StandupItem>, existing: &HashSet<String>) -> bool {
+    let before = items.len();
+    items.retain(|i| {
+        i.project_id
+            .as_deref()
+            .map_or(true, |pid| existing.contains(pid))
+    });
+    items.len() != before
+}
+
+/// Prune the live DRAFT's dead-project cards ([`prune_dead_projects`]) in one
+/// immediate transaction, writing only when something was removed. Returns the
+/// pruned draft, or `None` when there is no live draft, the live revision is
+/// armed (immutable: the page hides its dead rows itself), or nothing was dead.
+pub fn prune_live_draft(
+    pool: &UserDbPool,
+    existing: &HashSet<String>,
+) -> Result<Option<Standup>, AppError> {
+    let mut conn = pool.get()?;
+    let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let pruned = match current_in(&tx)? {
+        Some(mut s) if s.status == StandupStatus::Draft => {
+            if prune_dead_projects(&mut s.plan.items, existing) {
+                write_plan_in(&tx, &s)?;
+                Some(s)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    };
+    tx.commit()?;
+    Ok(pruned)
+}
+
 /// Open a standup. No live revision: a fresh draft revision 1 with one
 /// `direction` card per project and the default away rules. A live DRAFT: that
 /// draft, unchanged. A live ARMED revision: revision n+1 as a draft, its items
 /// copied with their state (ids kept, so the arm can tell a carried item from
-/// a changed one), plus a card for any project registered since.
+/// a changed one), minus the cards of projects that no longer exist (when
+/// `existing` names every registered project id; `None` carries every card),
+/// plus a card for any project registered since.
 ///
 /// Returns the standup and whether this call created it.
 pub fn open(
@@ -369,6 +411,7 @@ pub fn open(
     device_id: &str,
     now_ms: i64,
     projects: &[ProjectSeed],
+    existing: Option<&HashSet<String>>,
 ) -> Result<(Standup, bool), AppError> {
     let mut conn = pool.get()?;
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -380,6 +423,9 @@ pub fn open(
         }
         Some(armed) => {
             let mut items = armed.plan.items.clone();
+            if let Some(existing) = existing {
+                prune_dead_projects(&mut items, existing);
+            }
             let next_priority = items.iter().map(|i| i.priority).max().unwrap_or(-1) + 1;
             let mut extra = 0;
             for p in projects {
@@ -735,7 +781,7 @@ mod tests {
     #[test]
     fn open_fresh_seeds_one_direction_per_project_with_default_rules() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (s, created) = open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (s, created) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         assert!(created);
         assert_eq!(s.revision, 1);
         assert_eq!(s.status, StandupStatus::Draft);
@@ -756,8 +802,8 @@ mod tests {
     #[test]
     fn open_on_a_draft_returns_that_draft() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (first, _) = open(&pool, "dev-1", 1_000, &projects()).unwrap();
-        let (again, created) = open(&pool, "dev-1", 2_000, &projects()).unwrap();
+        let (first, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
+        let (again, created) = open(&pool, "dev-1", 2_000, &projects(), None).unwrap();
         assert!(!created);
         assert_eq!(again, first);
         assert_eq!(history(&pool, 10).unwrap().len(), 1);
@@ -766,7 +812,7 @@ mod tests {
     #[test]
     fn open_on_armed_writes_revision_n_plus_one_with_items_copied() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (first, _) = open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (first, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         let item_id = first.plan.items[0].id.clone();
         patch_item(
             &pool,
@@ -789,7 +835,7 @@ mod tests {
             name: "gamma".into(),
             root: "C:/w/gamma".into(),
         });
-        let (second, created) = open(&pool, "dev-1", 2_000, &more).unwrap();
+        let (second, created) = open(&pool, "dev-1", 2_000, &more, None).unwrap();
         assert!(created);
         assert_eq!(second.revision, 2);
         assert_eq!(second.parent_id.as_deref(), Some(first.id.as_str()));
@@ -811,7 +857,7 @@ mod tests {
     #[test]
     fn armed_revision_refuses_edits_and_a_second_claim() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (s, _) = open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (s, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         assert!(claim_armed(&pool, &s.id, 1_100).unwrap());
         assert!(!claim_armed(&pool, &s.id, 1_200).unwrap());
         let err = set_away_rules(&pool, &s.id, &AwayRules::default()).unwrap_err();
@@ -849,7 +895,7 @@ mod tests {
     #[test]
     fn end_stores_status_and_is_once() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (s, _) = open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (s, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         assert!(mark_ended(&pool, &s.id, 3_000, None).unwrap());
         assert!(!mark_ended(&pool, &s.id, 4_000, None).unwrap());
         let ended = require(&pool, &s.id).unwrap();
@@ -865,7 +911,7 @@ mod tests {
             backfill_candidates(&pool).unwrap().is_empty(),
             "nothing armed"
         );
-        let (s, _) = open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (s, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         let a = s.plan.items[0].id.clone();
         let b = s.plan.items[1].id.clone();
         let filler_id = mutate_draft(&pool, &s.id, |s| {
@@ -896,7 +942,7 @@ mod tests {
     #[test]
     fn refused_items_are_read_back_through_the_lineage() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (s, _) = open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (s, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         let a = s.plan.items[0].id.clone();
         assert!(claim_armed(&pool, &s.id, 1_100).unwrap());
         insert_event(
@@ -906,8 +952,96 @@ mod tests {
             serde_json::json!({ "itemId": a, "reason": REFUSAL_HEADLESS_MASTER }),
         )
         .unwrap();
-        let (child, _) = open(&pool, "dev-1", 2_000, &projects()).unwrap();
+        let (child, _) = open(&pool, "dev-1", 2_000, &projects(), None).unwrap();
         assert!(refused_item_ids(&pool, &child.id).unwrap().contains(&a));
         assert!(dispatched_item_ids(&pool, &child.id).unwrap().is_empty());
+    }
+
+    fn ids(names: &[&str]) -> HashSet<String> {
+        names.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn prune_drops_only_cards_of_projects_that_no_longer_exist() {
+        let mut agent = seed_item("p1", "d", 2);
+        agent.kind = StandupItemKind::CreateAgent;
+        agent.project_id = None;
+        let agent_id = agent.id.clone();
+        let mut items = vec![seed_item("p1", "d", 0), seed_item("gone", "d", 1), agent];
+        assert!(prune_dead_projects(&mut items, &ids(&["p1", "p2"])));
+        let kept: Vec<Option<&str>> = items.iter().map(|i| i.project_id.as_deref()).collect();
+        assert_eq!(
+            kept,
+            vec![Some("p1"), None],
+            "the dead card left; the project-less card stayed"
+        );
+        assert!(items.iter().any(|i| i.id == agent_id));
+        assert!(
+            !prune_dead_projects(&mut items, &ids(&["p1"])),
+            "nothing dead: nothing removed"
+        );
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn reopening_an_armed_plan_leaves_a_deleted_projects_card_behind() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        let (first, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
+        assert!(claim_armed(&pool, &first.id, 1_500).unwrap());
+        // p2 was deleted; p3 exists but is switched off (not a seed) and
+        // never had a card, so it does not gain one.
+        let alive = vec![projects()[0].clone()];
+        let (second, created) =
+            open(&pool, "dev-1", 2_000, &alive, Some(&ids(&["p1", "p3"]))).unwrap();
+        assert!(created);
+        let pids: Vec<Option<&str>> = second
+            .plan
+            .items
+            .iter()
+            .map(|i| i.project_id.as_deref())
+            .collect();
+        assert_eq!(pids, vec![Some("p1")]);
+        // The armed parent is immutable and still holds both cards.
+        assert_eq!(require(&pool, &first.id).unwrap().plan.items.len(), 2);
+    }
+
+    #[test]
+    fn reopening_keeps_a_switched_off_projects_card() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        let (first, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
+        assert!(claim_armed(&pool, &first.id, 1_500).unwrap());
+        // p2 is no longer a seed (disabled) but still exists.
+        let alive = vec![projects()[0].clone()];
+        let (second, _) = open(&pool, "dev-1", 2_000, &alive, Some(&ids(&["p1", "p2"]))).unwrap();
+        assert_eq!(second.plan.items.len(), 2);
+    }
+
+    #[test]
+    fn prune_live_draft_writes_only_a_draft_that_held_a_dead_card() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        assert!(
+            prune_live_draft(&pool, &ids(&[])).unwrap().is_none(),
+            "no standup"
+        );
+        let (s, _) = open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
+        assert!(
+            prune_live_draft(&pool, &ids(&["p1", "p2"]))
+                .unwrap()
+                .is_none(),
+            "nothing dead"
+        );
+        let pruned = prune_live_draft(&pool, &ids(&["p1"])).unwrap().unwrap();
+        assert_eq!(pruned.id, s.id);
+        assert_eq!(pruned.plan.items.len(), 1);
+        assert_eq!(
+            require(&pool, &s.id).unwrap().plan.items.len(),
+            1,
+            "written"
+        );
+
+        // An armed revision is never rewritten.
+        assert!(claim_armed(&pool, &s.id, 1_100).unwrap());
+        assert!(prune_live_draft(&pool, &ids(&[])).unwrap().is_none());
+        assert_eq!(require(&pool, &s.id).unwrap().plan.items.len(), 1);
     }
 }

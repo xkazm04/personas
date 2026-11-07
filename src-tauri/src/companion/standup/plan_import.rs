@@ -364,7 +364,7 @@ mod tests {
     #[test]
     fn an_open_draft_is_never_imported_over() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (draft, _) = plan::open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (draft, _) = plan::open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         let tmp = tempfile::tempdir().unwrap();
         let f = write_sample(tmp.path(), "2026-10-30");
         assert!(import_file(&pool, &f, 5_000, "dev-1", 6_000, &projects())
@@ -376,7 +376,7 @@ mod tests {
     #[test]
     fn an_armed_plan_gets_the_import_as_revision_n_plus_one() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (first, _) = plan::open(&pool, "dev-1", 1_000, &projects()).unwrap();
+        let (first, _) = plan::open(&pool, "dev-1", 1_000, &projects(), None).unwrap();
         assert!(plan::claim_armed(&pool, &first.id, 1_100).unwrap());
         let tmp = tempfile::tempdir().unwrap();
         let f = write_sample(tmp.path(), "2026-10-30");

@@ -4,7 +4,7 @@ import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 
 import type { StandupSource } from './data/types';
 import { openAthenaChat } from './data/openAthenaChat';
-import { clampSel, reduceKey, type Intent, type UiState } from './model/keymap';
+import { clampSel, nextOpen, reduceKey, type Intent, type UiState } from './model/keymap';
 import { pickPatch, statePatch, typedPatch } from './model/patch';
 import type { RowView, StandupView } from './model/types';
 
@@ -18,7 +18,7 @@ function fromEditable(target: EventTarget | null): boolean {
 }
 
 /**
- * The page's UI state (selection, dossier, sheets, zoom) and the B/1 keymap:
+ * The page's UI state (selection, decision modal, dossier, sheets, zoom) and the B/1 keymap:
  * one registration on the app keyboard ladder routed through the pure
  * `reduceKey`, never from an input, never with a modifier held, and each
  * intent run through the source.
@@ -36,9 +36,11 @@ export function useStandupController(view: StandupView, source: StandupSource, u
     if (intent.type === 'arm') void actions.arm();
     else if (intent.type === 'amend') void actions.open();
     else if (intent.type === 'talk' && intent.row.itemId) {
+      // The chat opens on its own layer: the decision modal steps aside for it.
+      setUi((u) => ({ ...u, decide: false }));
       void actions.discuss(intent.row.itemId).then((id) => { if (id) openAthenaChat(id); });
     }
-  }, [actions]);
+  }, [actions, setUi]);
 
   // The page's keymap sits on the app's keyboard ladder (focus-management): above the app cheat
   // sheet (20) so "?" opens THIS page's legend while the standup is up, below `;` nav mode (30)
@@ -58,10 +60,12 @@ export function useStandupController(view: StandupView, source: StandupSource, u
   const sel = view.rows.length ? clampSel(ui.sel, view) : 0;
 
   const select = useCallback((index: number) => setUi((u) => (u.sel === index ? u : { ...u, sel: index, typing: null })), [setUi]);
+  // A pointer or Enter pick advances like the number keys do: the modal walks on to the next open card.
   const pick = useCallback((row: RowView, index: number) => {
     if (view.life !== 'decide') return;
     run({ type: 'pick', row, index });
-  }, [run, view.life]);
+    setUi((u) => ({ ...u, sel: nextOpen(view, u.sel), typing: null }));
+  }, [run, view, setUi]);
   const typed = useCallback((row: RowView, text: string | null) => {
     setUi((u) => ({ ...u, typing: null }));
     const patch = text === null ? null : typedPatch(row, text);

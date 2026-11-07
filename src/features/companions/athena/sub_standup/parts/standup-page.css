@@ -5,7 +5,7 @@
  * Colour is mixed from the theme (foreground/background/primary/status), so
  * dark and light are both designed. Rhythm: 4px. No looping motion.
  */
-.sc-page, .sc-legend {
+.sc-page, .sc-legend, .sc-modal {
   /* type: Inter for names and prose, JetBrains Mono for every figure */
   --sc-sans: 'Inter Variable', var(--font-sans);
   --sc-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
@@ -52,7 +52,7 @@
   font-family: var(--sc-sans); font-size: var(--sc-fs-body); line-height: var(--sc-lh-body);
   letter-spacing: -0.006em; font-optical-sizing: auto;
 }
-:is(.sc-page, .sc-legend) :is(.sc-num, .sc-hero, .sc-micro, .sc-key, .sc-rev, .sc-meta, .sc-tick, .sc-nowtag, .sc-state__word, .sc-group__count, .sc-since__stamp, .sc-pick, .sc-dec__lead, .sc-press__meta) {
+:is(.sc-page, .sc-legend, .sc-modal) :is(.sc-num, .sc-hero, .sc-micro, .sc-key, .sc-rev, .sc-meta, .sc-tick, .sc-nowtag, .sc-state__word, .sc-group__count, .sc-since__stamp, .sc-pick, .sc-dec__lead, .sc-press__meta) {
   font-family: var(--sc-mono); font-variant-numeric: tabular-nums slashed-zero; font-variant-ligatures: none; font-feature-settings: 'calt' 0; letter-spacing: 0;
 }
 .sc-paints { position: absolute; width: 0; height: 0; overflow: hidden; }

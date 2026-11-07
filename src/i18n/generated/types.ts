@@ -21690,7 +21690,6 @@ export type Translations = {
       };
       voice: {
         none: string;
-        proposing: string;
         decide: string;
         nothing: string;
         all_decided: string;
@@ -21731,7 +21730,6 @@ export type Translations = {
         refused: string;
         waits: string;
         blank: string;
-        proposing: string;
         filler: string;
         skipped: string;
         directions: string;
@@ -21851,17 +21849,10 @@ export type Translations = {
         amend: string;
         keys: string;
       };
-      fixture: {
-        badge: string;
-        label: string;
-        off: string;
-        decide: string;
-        armed: string;
-        return: string;
-      };
       actions: {
-        propose: string;
         open: string;
+        plan: string;
+        plan_hint: string;
       };
       console: {
         col: {
@@ -21939,6 +21930,17 @@ export type Translations = {
           sweep: string;
           backfill: string;
         };
+      };
+      chat: {
+        title: string;
+        intro: string;
+        steps: string;
+        open_head: string;
+        settled_head: string;
+        waits_head: string;
+        item: string;
+        on_card: string;
+        your_pick: string;
       };
     };
     tab_setup: string;

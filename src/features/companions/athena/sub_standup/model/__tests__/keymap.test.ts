@@ -17,13 +17,22 @@ describe('reduceKey: movement and layers', () => {
     expect(press(INITIAL_UI, Array(99).fill('j'), decide).sel).toBe(decide.rows.length - 1);
   });
 
-  it('Enter opens the dossier, Escape closes it before it cancels typing', () => {
+  it('Enter opens the decision modal, ArrowRight the dossier; Escape peels one layer at a time', () => {
     const open = reduceKey(INITIAL_UI, 'Enter', decide).ui;
-    expect(open.dossier).toBe(true);
+    expect(open.decide).toBe(true);
+    expect(reduceKey(open, 'Enter', decide).ui).toEqual(open);
     const typing = { ...open, typing: 'i-b1' };
     const once = reduceKey(typing, 'Escape', decide).ui;
-    expect(once).toMatchObject({ dossier: false, typing: 'i-b1' });
-    expect(reduceKey(once, 'Escape', decide).ui.typing).toBeNull();
+    expect(once).toMatchObject({ decide: true, typing: null });
+    expect(reduceKey(once, 'Escape', decide).ui.decide).toBe(false);
+    const dossier = reduceKey(open, 'ArrowRight', decide).ui;
+    expect(dossier).toMatchObject({ dossier: true, decide: false });
+    expect(reduceKey(dossier, 'Escape', decide).ui.dossier).toBe(false);
+  });
+
+  it('j/k move the modal to the next card and keep it open', () => {
+    const open = reduceKey(INITIAL_UI, 'Enter', decide).ui;
+    expect(reduceKey(open, 'j', decide).ui).toMatchObject({ sel: 1, decide: true });
   });
 
   it('an open sheet owns the keyboard: nothing moves or decides, "?" closes only the legend', () => {

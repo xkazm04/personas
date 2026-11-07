@@ -1028,7 +1028,7 @@ mod tests {
 
     /// A draft with p1 (night, queue), p2 (charter), p3 (skipped).
     fn armed_draft(pool: &UserDbPool) -> Standup {
-        let (s, _) = plan::open(pool, "dev-1", 1_000, &seeds()).unwrap();
+        let (s, _) = plan::open(pool, "dev-1", 1_000, &seeds(), None).unwrap();
         let ids: Vec<String> = s.plan.items.iter().map(|i| i.id.clone()).collect();
         choose(
             pool,
@@ -1143,7 +1143,7 @@ mod tests {
         arm_with(&pool, &s.id, 2_000, 9_000, &fx).unwrap();
         assert_eq!(fx.dispatches.borrow().len(), 2);
 
-        let (child, created) = plan::open(&pool, "dev-1", 3_000, &seeds()).unwrap();
+        let (child, created) = plan::open(&pool, "dev-1", 3_000, &seeds(), None).unwrap();
         assert!(created);
         // Change one direction; leave the other carried.
         choose(
@@ -1173,7 +1173,7 @@ mod tests {
     #[test]
     fn creates_are_returned_for_the_approval_op_not_run_inline() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let (s, _) = plan::open(&pool, "dev-1", 1_000, &[]).unwrap();
+        let (s, _) = plan::open(&pool, "dev-1", 1_000, &[], None).unwrap();
         plan::mutate_draft(&pool, &s.id, |s| {
             let mut item = plan::seed_item("p1", "dev-1", 0);
             item.kind = StandupItemKind::CreateAgent;

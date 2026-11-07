@@ -12,6 +12,8 @@ export interface UiState {
   sel: number;
   /** Key of the row whose direction is being typed. */
   typing: string | null;
+  /** The decision modal is open on the selected row. */
+  decide: boolean;
   dossier: boolean;
   rules: boolean;
   keys: boolean;
@@ -27,7 +29,7 @@ export type Intent =
   | { type: 'arm' }
   | { type: 'amend' };
 
-export const INITIAL_UI: UiState = { sel: 0, typing: null, dossier: false, rules: false, keys: false, zoom: 'today' };
+export const INITIAL_UI: UiState = { sel: 0, typing: null, decide: false, dossier: false, rules: false, keys: false, zoom: 'today' };
 
 /** A row still waiting for the operator's call. */
 export function isOpen(row: RowView): boolean {
@@ -59,10 +61,13 @@ export function reduceKey(ui: UiState, key: string, view: StandupView): Result {
   const k = key.length === 1 ? key.toLowerCase() : key;
   switch (k) {
     case '?': return keep({ keys: true });
-    case 'Escape': return ui.dossier ? keep({ dossier: false }) : keep({ typing: null });
+    // Escape peels one layer: the dossier, then the typed line, then the decision modal.
+    case 'Escape': return ui.dossier ? keep({ dossier: false }) : ui.typing ? keep({ typing: null }) : keep({ decide: false });
     case 'j': case 'ArrowDown': return keep({ sel: clampSel(ui.sel + 1, view), typing: null });
     case 'k': case 'ArrowUp': return keep({ sel: clampSel(ui.sel - 1, view), typing: null });
-    case 'Enter': case 'ArrowRight': return row ? keep({ dossier: true }) : keep({});
+    // Enter opens the decision modal on the row; inside it Enter belongs to the focused control.
+    case 'Enter': return row && !ui.decide ? keep({ decide: true }) : keep({});
+    case 'ArrowRight': return row ? keep({ dossier: true, decide: false }) : keep({});
     case 'ArrowLeft': return keep({ dossier: false });
     case 'z': return keep({ zoom: ui.zoom === 'today' ? '12d' : 'today' });
     case 'r': return view.id ? keep({ rules: true }) : keep({});
