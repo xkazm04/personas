@@ -269,7 +269,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               <span className="flex-shrink-0">{icon}</span>
             ) : null}
             {labelContent != null && labelContent !== false ? (
-              <span className={dimClass || undefined}>{labelContent}</span>
+              // inline-flex: a caller that passes an icon INSIDE children (common after the
+              // console-style raw-button conversion) must not stack, since preflight makes svg
+              // display:block. Icon + text children lay out on one line with the button's gap.
+              <span className={`inline-flex min-w-0 items-center gap-[inherit] ${dimClass}`.trim()}>{labelContent}</span>
             ) : null}
             {iconRight ? (
               <span className={`flex-shrink-0 ${dimClass}`.trim()}>{iconRight}</span>
