@@ -10,6 +10,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /* -- Select checkbox cell -------------------------------------------- */
 
@@ -26,20 +27,19 @@ export const SelectCell = memo(function SelectCell({
     // A real button with checkbox semantics — the previous bare div was
     // invisible to keyboard and screen-reader users on the roster's primary
     // selection affordance. The persona name is the accessible name.
-    <button
-      type="button"
+    <PressSurface
       role="checkbox"
       aria-checked={selected}
       aria-label={persona.name}
-      onClick={(e) => {
+      onPress={(e) => {
         e.stopPropagation();
         onToggle(persona.id);
       }}
-      className="w-full h-full flex items-center justify-center transition-colors rounded-card hover:bg-primary/[0.04] cursor-pointer"
+      className="w-full h-full flex items-center justify-center rounded-card"
     >
       <div
         className={`w-4 h-4 shrink-0 rounded-interactive border transition-all flex items-center justify-center ${
-          selected ? 'bg-primary/80 border-primary/60' : 'border-primary/25 hover:border-primary/50'
+          selected ? 'bg-primary/80 border-primary/60' : 'border-hair-2'
         }`}
       >
         <AnimatePresence initial={false}>
@@ -59,7 +59,7 @@ export const SelectCell = memo(function SelectCell({
           )}
         </AnimatePresence>
       </div>
-    </button>
+    </PressSurface>
   );
 });
 
@@ -86,7 +86,7 @@ export const FavoriteCell = memo(function FavoriteCell({
       <Button
         type="button"
         aria-label={label}
-        aria-pressed={isFavorite}
+        pressed={isFavorite}
         onClick={(e) => {
           e.stopPropagation();
           onToggle(persona.id);

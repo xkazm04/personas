@@ -10,6 +10,7 @@
  * and early when the device is not paired or not reachable, and that answer
  * belongs next to the device the operator picked.
  */
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { useState } from 'react';
 import { Check, ChevronDown, Send } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
@@ -94,23 +95,10 @@ export function RemoteInstructionComposer({ peerId: fixedPeerId }: { peerId?: st
             {({ close }) => (
               <div className="py-1">
                 {devices.map((device) => (
-                  <button
-                    key={device.peerId}
-                    type="button"
-                    role="option"
-                    aria-selected={device.peerId === peerId}
-                    data-testid={`remote-instruction-device-${device.peerId}`}
-                    onClick={() => {
-                      setPeerId(device.peerId);
-                      close();
-                    }}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-surface-2 ${
-                      device.peerId === peerId ? 'text-primary' : 'text-foreground'
-                    }`}
-                  >
+                  <OptionRow key={device.peerId} role="option" selected={device.peerId === peerId} data-testid={`remote-instruction-device-${device.peerId}`} onSelect={() => { setPeerId(device.peerId); close(); }}>
                     <span className="flex-1 text-left truncate">{device.displayName}</span>
                     {device.peerId === peerId && <Check className="w-3.5 h-3.5 shrink-0" aria-hidden />}
-                  </button>
+                  </OptionRow>
                 ))}
               </div>
             )}

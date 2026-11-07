@@ -120,11 +120,16 @@ export function PersonaRunner() {
             icon={<Monitor className="w-5 h-5" />}
           >{t.agents.executions.connect_remote}</Button>
         ) : (
-          <button type="button" data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
+          <Button
+            variant={isExecuting ? 'danger' : 'primary'}
+            size="lg"
+            block
+            data-testid="execute-persona-btn"
+            onClick={isExecuting ? exec.handleStop : exec.handleExecute}
             disabled={isBudgetBlocked}
-            className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-modal typo-heading transition-all ${isBudgetBlocked ? 'bg-surface-2 text-ink-1 cursor-not-allowed' : isExecuting ? 'bg-status-error/80 hover:bg-status-error text-ink-1 shadow-elevation-3 shadow-red-500/20' : 'bg-surface-1 hover:from-primary/90 hover:to-accent/90 text-ink-1 shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
+          >
             {isExecuting ? (<><Square className="w-5 h-5" />{t.agents.executions.stop_execution}</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? t.agents.executions.execute_on_cloud : t.agents.executions.execute_persona}</>)}
-          </button>
+          </Button>
         )}
         {!IS_MOBILE && (
           <Button

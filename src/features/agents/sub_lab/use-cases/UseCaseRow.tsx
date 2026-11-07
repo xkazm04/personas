@@ -137,19 +137,16 @@ export function UseCaseRow({
                   isEnabled
                     ? 'Pause this capability (stops triggers + subscriptions)'
                     : 'Activate this capability'
-                }><button
-                type="button"
+                }><Button
+                variant={isEnabled ? 'accent' : 'secondary'}
+                tone={isEnabled ? 'success' : undefined}
+                size="icon-sm"
                 onClick={() => onToggleEnabled(useCase.id, !isEnabled)}
                 disabled={toggling}
                 data-testid={`use-case-toggle-${useCase.id}`}
-                className={`p-1.5 rounded-card border transition-colors ${
-                  isEnabled
-                    ? 'bg-status-success/10 border-status-success/20 text-status-success hover:bg-status-success/20'
-                    : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25'
-                } ${toggling ? 'opacity-50 cursor-wait' : ''}`}
                 aria-label={isEnabled ? 'Pause capability' : 'Activate capability'}>
                 {isEnabled ? <Power className="w-3.5 h-3.5" /> : <PowerOff className="w-3.5 h-3.5" />}
-              </button></Tooltip>
+              </Button></Tooltip>
             )}
 
             {/* Play button */}
@@ -161,18 +158,13 @@ export function UseCaseRow({
                     : isExecuting && !isActive
                       ? 'Another use case is executing'
                       : `Run ${useCase.title}`
-              }><button
-              type="button"
+              }><Button
+              variant={isActive ? 'accent' : 'secondary'}
+              tone={isActive ? 'info' : undefined}
+              size="icon-sm"
               onClick={() => onExecute(useCase.id, useCase.sample_input ?? undefined)}
               disabled={playDisabled}
-              data-testid={`use-case-run-${useCase.id}`}
-              className={`p-1.5 rounded-card border transition-colors ${
-                isActive
-                  ? 'bg-primary/20 border-primary/30 text-primary'
-                  : playDisabled
-                    ? 'bg-surface-1 border-hair text-ink-1 cursor-not-allowed'
-                    : 'bg-surface-2 border-hair text-ink-1 hover:bg-surface-2 hover:text-primary hover:border-primary/25'
-              }`}>
+              data-testid={`use-case-run-${useCase.id}`}>
               {isActive ? (
                 <span className="relative flex h-3.5 w-3.5 items-center justify-center">
                   <span className="animate-ping absolute h-full w-full rounded-full bg-primary opacity-40" />
@@ -183,7 +175,7 @@ export function UseCaseRow({
               ) : (
                 <Play className="w-3.5 h-3.5" />
               )}
-            </button></Tooltip>
+            </Button></Tooltip>
 
             {/* Simulate button (Phase C3) — bypasses enable gate, suppresses notifications */}
             {onSimulate && (
@@ -214,18 +206,13 @@ export function UseCaseRow({
 
             {/* Config toggle */}
             {onToggleConfig && (
-              <Tooltip content={t.shared.use_cases_extra.configure_model}><button
-                type="button"
-                onClick={() => onToggleConfig(useCase.id)}
-                className={`p-1.5 rounded-card border transition-colors ${
-                  configExpanded
-                    ? 'bg-role-agent/15 border-role-agent/25 text-role-agent'
-                    : hasAnyConfig
-                      ? 'bg-surface-2 border-hair text-role-agent hover:text-role-agent hover:border-role-agent/25'
-                      : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-2 hover:border-primary/25'
-                }`}>
+              <Tooltip content={t.shared.use_cases_extra.configure_model}><Button
+                variant="secondary"
+                size="icon-sm"
+                pressed={configExpanded}
+                onClick={() => onToggleConfig(useCase.id)}>
                 <Settings2 className="w-3.5 h-3.5" />
-              </button></Tooltip>
+              </Button></Tooltip>
             )}
           </div>
         </div>

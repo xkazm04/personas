@@ -13,6 +13,7 @@ import { useVaultConnectorTiles, type VaultTile } from "./useVaultConnectorTiles
 import { BrandMark } from "./BrandMark";
 import { MoreButton } from "./MoreButton";
 import { QS } from "./copy";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 /** Tiles shown inline before the rest move behind "All apps". */
 const INLINE_LIMIT = 9;
@@ -20,13 +21,10 @@ const INLINE_LIMIT = 9;
 function AppTile({ tile, on, onToggle }: { tile: VaultTile; on: boolean; onToggle: () => void }) {
   const color = tile.meta.color;
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={on}
-      className={`relative flex items-center gap-2.5 p-2 rounded-card border text-left transition-colors ${
-        on ? "" : "border-card-border hover:bg-surface-2"
-      } ${tile.usable || on ? "" : "opacity-60 hover:opacity-100"}`}
+    <PressSurface
+      onPress={onToggle}
+      selected={on}
+      className={`relative flex items-center gap-2.5 p-2 rounded-card border border-hair ${tile.usable || on ? "" : "opacity-60 hover:opacity-100"}`}
       style={on ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.1) } : undefined}
     >
       <BrandMark meta={tile.meta} size={32} />
@@ -41,7 +39,7 @@ function AppTile({ tile, on, onToggle }: { tile: VaultTile; on: boolean; onToggl
           <Check className="w-3 h-3 text-background" strokeWidth={3} />
         </span>
       )}
-    </button>
+    </PressSurface>
   );
 }
 

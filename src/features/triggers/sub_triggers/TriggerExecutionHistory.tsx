@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import Button from '@/features/shared/components/buttons/Button';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 // --- Execution Row --------------------------------------------------
 
 interface ExecutionRowProps {
@@ -34,11 +35,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
   return (
     <div className="rounded-modal bg-background/30 border border-hair overflow-hidden">
       {/* Summary row */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-surface-1 transition-colors"
-      >
+      <PressSurface onPress={onToggle} className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body">
         {hasPayload ? (
           isExpanded
             ? <ChevronDown className="w-3 h-3 text-ink-1 flex-shrink-0" />
@@ -59,7 +56,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
         <span className="text-ink-1 ml-auto typo-body">
           {formatRelativeTime(exec.started_at)}
         </span>
-      </button>
+      </PressSurface>
 
       {/* Expanded detail */}
       {isExpanded && (
@@ -147,18 +144,14 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
 
   return (
     <>
-      <button
-        type="button"
-        onClick={toggle}
-        className="flex items-center gap-1.5 pt-1 border-t border-hair typo-body text-ink-1 hover:text-ink-3 transition-colors w-full"
-      >
+      <Button variant="ghost" size="xs" onClick={toggle} className="w-full justify-start">
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <History className="w-3 h-3" />
         {t.triggers.execution_history}
         {history.stats.totalRuns > 0 && (
           <span className="text-ink-1 ml-1">({history.stats.totalRuns})</span>
         )}
-      </button>
+      </Button>
 
       {open && (
           <div

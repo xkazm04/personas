@@ -49,19 +49,7 @@ export function ColorRow({
   return (
     <div ref={ref} className="relative flex items-center gap-3 py-1.5">
       <Tooltip content={tx(t.settings.appearance.color_pick_title, { label })}>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        className={`focus-ring w-7 h-7 rounded-card border flex-shrink-0 transition-all cursor-pointer ${
-          open
-            ? 'border-primary/40 ring-2 ring-primary/20'
-            : 'border-hair hover:border-primary/30 hover:scale-105'
-        }`}
-        style={{ backgroundColor: displayValue }}
-        aria-label={tx(t.settings.appearance.color_pick_title, { label })}
-        aria-expanded={open}
-      />
+      <Button ref={triggerRef} variant="secondary" size="icon-sm" onClick={() => setOpen((p) => !p)} className="flex-shrink-0" style={{ backgroundColor: displayValue }} aria-label={tx(t.settings.appearance.color_pick_title, { label })} aria-expanded={open} />
       </Tooltip>
       <span className="typo-caption text-foreground w-24 flex-shrink-0">{label}</span>
       <span className="typo-code flex-1 min-w-0 truncate text-foreground">

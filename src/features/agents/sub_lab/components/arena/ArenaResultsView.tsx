@@ -12,6 +12,7 @@ import { scoreLabel } from '../shared/scoreLabel';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { DebtText } from '@/i18n/DebtText';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 interface UserRatingEntry {
@@ -327,14 +328,10 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     const isSelected = selectedCell?.scenario === scenario && selectedCell?.model === mid;
                     return (
                       <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-surface-1' : ''} ${r.status === 'failed' || r.status === 'error' ? 'bg-status-error/5' : ''}`}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCell(isSelected ? null : { scenario, model: mid })}
-                          className={`w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1.5 transition-all ${
-                            isSelected
-                              ? 'bg-surface-1 ring-1 ring-primary/25 shadow-elevation-1'
-                              : 'hover:bg-surface-2'
-                          }`}
+                        <PressSurface
+                          onPress={() => setSelectedCell(isSelected ? null : { scenario, model: mid })}
+                          selected={isSelected}
+                          className="w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1.5"
                         >
                           {r.status === 'running' || r.status === 'queued' || r.status === 'pending' ? (
                             <span className="flex items-center gap-1 typo-caption text-ink-2">
@@ -358,7 +355,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                               </div>
                             </>
                           )}
-                        </button>
+                        </PressSurface>
                       </td>
                     );
                   })}

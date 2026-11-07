@@ -116,15 +116,16 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
               {t.agents.glyph_db_scope_loading}
             </span>
           ) : error ? (
-            <button
-              type="button"
+            <Button
+              variant="link"
+              size="inline"
               onClick={() => void fetchTables(true)}
-              className="inline-flex items-center gap-1.5 typo-caption text-status-error cursor-pointer hover:underline"
+              className="typo-caption text-status-error"
             >
               <AlertCircle className="w-3.5 h-3.5" />
               {t.agents.glyph_db_scope_error}
               <RefreshCw className="w-3 h-3" />
-            </button>
+            </Button>
           ) : tableNames.length === 0 ? (
             <span className="typo-caption text-ink-2 italic">{t.agents.glyph_db_scope_empty}</span>
           ) : (

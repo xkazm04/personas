@@ -22,6 +22,7 @@ import { ExpandedRowContent } from './ExpandedRowContent';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ComfortableRowProps {
   review: PersonaDesignReview;
@@ -107,18 +108,19 @@ function ComfortableRowImpl({
         data-testid={`template-row-${review.id}`}
       >
         <div className="w-20 px-4 py-4 flex-shrink-0 flex items-center gap-1.5">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={(e) => { e.stopPropagation(); if (!compareDisabled) onToggleCompare(review); }}
             disabled={compareDisabled}
-            aria-pressed={isCompareSelected}
+            pressed={isCompareSelected}
             aria-label={isCompareSelected ? t.templates.compare.remove_from_compare : t.templates.compare.add_to_compare}
             data-testid={`compare-toggle-${review.id}`}
-            className={`flex-shrink-0 rounded-interactive outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] ${
+            className={`flex-shrink-0 transition-opacity ${
               isCompareSelected
                 ? 'opacity-100'
                 : compareDisabled
-                  ? 'opacity-0 group-hover:opacity-30 focus-visible:opacity-30 cursor-not-allowed'
+                  ? 'opacity-0 group-hover:opacity-30 focus-visible:opacity-30'
                   : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
             }`}
           >
@@ -127,7 +129,7 @@ function ComfortableRowImpl({
             ) : (
               <Square className="w-4 h-4 text-foreground" />
             )}
-          </button>
+          </Button>
           {isExpanded ? (
             <ChevronDown className="w-4.5 h-4.5 text-foreground" />
           ) : (

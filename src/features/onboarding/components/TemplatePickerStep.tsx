@@ -21,6 +21,7 @@ import type { TemplateLoadState } from './useOnboardingState';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import Button from '@/features/shared/components/buttons/Button';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 export function TemplatePickerStep({
   templates,
   loadState,
@@ -122,20 +123,7 @@ export function TemplatePickerStep({
           const isRecommended = score > 0;
 
           return (
-            <button
-              type="button"
-              key={review.id}
-              data-testid={`template-card-${review.id}`}
-              data-recommended={isRecommended ? 'true' : 'false'}
-              onClick={() => onSelect(review.id)}
-              className={`text-left rounded-modal border p-4 transition-all group ${
-                isSelected
-                  ? 'bg-role-agent/10 border-role-agent/30 shadow-elevation-2 shadow-violet-500/10'
-                  : isRecommended
-                    ? 'bg-role-agent/5 border-role-agent/20 hover:bg-role-agent/10 hover:border-role-agent/30'
-                    : 'bg-surface-1 border-hair hover:bg-surface-2 hover:border-hair'
-              }`}
-            >
+            <PressSurface key={review.id} data-testid={`template-card-${review.id}`} data-recommended={isRecommended ? 'true' : 'false'} selected={isSelected} onPress={() => onSelect(review.id)} className="rounded-modal border border-hair p-4 group">
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -170,7 +158,7 @@ export function TemplatePickerStep({
                   </div>
                 )}
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

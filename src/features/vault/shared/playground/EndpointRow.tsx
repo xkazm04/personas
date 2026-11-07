@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { ChevronDown, ChevronRight, Play, CheckCircle2, XCircle, MinusCircle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ApiEndpoint } from '@/api/system/apiProxy';
@@ -38,12 +39,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
           div with role="row", unreachable by keyboard and silent about its
           state), and Try sits beside it rather than inside it. */}
       <div className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-surface-1 transition-colors">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={isExpanded}
-          className="flex-1 min-w-0 flex items-center gap-2.5 text-left"
-        >
+        <PressSurface onPress={onToggle} aria-expanded={isExpanded} className="flex-1 min-w-0 flex items-center gap-2.5">
           {isExpanded ? (
             <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
           ) : (
@@ -65,7 +61,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               {endpoint.summary}
             </span>
           )}
-        </button>
+        </PressSurface>
 
         {/* Test result badge */}
         {testResult && <TestBadge result={testResult} skipLabel={t.common.skip} />}

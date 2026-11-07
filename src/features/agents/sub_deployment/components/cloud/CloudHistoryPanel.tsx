@@ -18,7 +18,7 @@ import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { createLatestWins } from '@/stores/util/latestWins';
-import { Button } from '@/features/shared/components/buttons';
+import { Button, PressSurface } from '@/features/shared/components/buttons';
 
 const EXEC_CASCADE_ROWS = 14;
 /** Page size requested from the orchestrator; a full page means older runs may exist. */
@@ -301,15 +301,16 @@ export function CloudHistoryPanel() {
             {stale ? t.agents.health_check.stale : t.agents.executions.live}
           </div>
         )}
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => { void fetchData('manual'); }}
           disabled={isLoading}
-          className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
+          className={historyLastPolled == null ? 'ml-auto' : ''}
+          icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           {t.common.refresh}
-        </button>
+        </Button>
       </div>
 
       {/* Top errors */}
@@ -319,12 +320,11 @@ export function CloudHistoryPanel() {
           {stats.topErrors.map((cluster, i) => {
             const active = errorCluster === cluster.message;
             return (
-              <button
+              <PressSurface
                 key={i}
-                type="button"
                 data-testid="cloud-top-error"
-                aria-pressed={active}
-                onClick={() => {
+                selected={active}
+                onPress={() => {
                   if (active) {
                     setErrorCluster(null);
                     return;
@@ -332,16 +332,12 @@ export function CloudHistoryPanel() {
                   setErrorCluster(cluster.message);
                   setFilterStatus('failed');
                 }}
-                className={`w-full flex items-center gap-2 typo-caption p-2 rounded-card border text-left transition-colors focus-ring cursor-pointer ${
-                  active
-                    ? 'bg-status-error/15 border-status-error/30'
-                    : 'bg-status-error/5 border-status-error/10 hover:bg-status-error/10'
-                }`}
+                className="w-full flex items-center gap-2 p-2 border-b border-hair"
               >
                 <AlertTriangle className="w-3 h-3 text-status-error shrink-0" />
-                <span className="text-ink-1 truncate flex-1">{cluster.message}</span>
-                <span className="text-status-error font-medium shrink-0">{cluster.count}x</span>
-              </button>
+                <span className="typo-caption text-ink-1 truncate flex-1">{cluster.message}</span>
+                <span className="typo-caption num text-status-error shrink-0">{cluster.count}x</span>
+              </PressSurface>
             );
           })}
         </div>
@@ -395,13 +391,14 @@ export function CloudHistoryPanel() {
             {dt.history.no_executions_found}
           </p>
           {(filterPersona || filterStatus || errorCluster) && (
-            <button
-              type="button"
+            <Button
+              variant="link"
+              size="inline"
               onClick={clearFilters}
-              className="mt-2 typo-caption text-primary hover:text-primary/80 transition-colors"
+              className="mt-2 typo-caption"
             >
               {dt.history.clear_filters}
-            </button>
+            </Button>
           )}
         </div>
       ) : (

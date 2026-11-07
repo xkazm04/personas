@@ -20,6 +20,7 @@
  * intentionally omitted — vault pickers always authorize one concrete
  * credential slot, never "use every credential I have".
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useMemo } from 'react';
 import { Check, Plus } from 'lucide-react';
 import type { DiscoveredItem } from '@/api/discovery/discovery';
@@ -95,12 +96,7 @@ export function CredentialPickerCards({
         // parent can open its add-credential modal.
         if (item.value === ADD_FROM_VAULT_SENTINEL) {
           return (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => toggle(item.value)}
-              className="group relative flex flex-col items-center gap-2 p-3 rounded-card border border-dashed border-hair-2 hover:bg-surface-2 text-center transition-colors"
-            >
+            <PressSurface key={item.value} onPress={() => toggle(item.value)} className="group relative flex flex-col items-center gap-2 p-3 rounded-card border border-dashed border-hair-2 text-center">
               <span className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-card border border-dashed border-border/60 group-hover:border-primary/40 transition-colors">
                 <Plus className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" />
               </span>
@@ -112,7 +108,7 @@ export function CredentialPickerCards({
                   {item.sublabel}
                 </span>
               )}
-            </button>
+            </PressSurface>
           );
         }
 
@@ -122,21 +118,7 @@ export function CredentialPickerCards({
         const isSelected = selectedValues.has(item.value);
         const sublabel = meta.label !== item.label ? meta.label : item.sublabel;
         return (
-          <button
-            key={item.value}
-            type="button"
-            role={multi ? 'checkbox' : 'radio'}
-            aria-checked={isSelected}
-            onClick={() => toggle(item.value)}
-            // Vertical card: icon on top, label below. Tiles read more
-            // like a logo grid than a settings list — the icon does the
-            // recognition work and the label confirms.
-            className={`group relative flex flex-col items-center gap-2 p-3 rounded-card border text-center transition-all ${
-              isSelected
-                ? 'bg-primary/10 border-primary/40 shadow-elevation-1'
-                : 'bg-foreground/[0.02] border-border hover:bg-foreground/[0.05] hover:border-foreground/15'
-            }`}
-          >
+          <PressSurface key={item.value} role={multi ? "checkbox" : "radio"} aria-checked={isSelected} aria-pressed={undefined} selected={isSelected} onPress={() => toggle(item.value)} className={`group relative flex flex-col items-center gap-2 p-3 rounded-card border text-center ${isSelected ? 'border-hair-2' : 'border-hair'}`}>
             {/* Solid neutral plate — many connector SVGs are dark-fill
                 (e.g. ElevenLabs is brand-black). On a dark theme they'd
                 vanish against `bg-foreground/[0.03]`; the white-95 plate
@@ -197,7 +179,7 @@ export function CredentialPickerCards({
                 {item.badge}
               </span></Tooltip>
             )}
-          </button>
+          </PressSurface>
         );
       })}
     </div>

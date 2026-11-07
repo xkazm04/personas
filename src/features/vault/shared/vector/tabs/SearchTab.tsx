@@ -1,3 +1,4 @@
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, FileText, Clock, ArrowRight, ChevronDown } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
@@ -49,16 +50,9 @@ function CompactListbox<T extends string | number>({ ariaLabel, value, options, 
       {({ close }) => (
         <>
           {options.map((o) => (
-            <button
-              type="button"
-              key={String(o.value)}
-              role="option"
-              aria-selected={o.value === value}
-              onClick={() => { onChange(o.value); close(); }}
-              className={`flex w-full items-center px-3 py-1.5 text-left typo-caption transition-colors hover:bg-surface-2 ${o.value === value ? 'text-primary' : 'text-foreground'}`}
-            >
+            <OptionRow key={String(o.value)} role="option" selected={o.value === value} onSelect={() => { onChange(o.value); close(); }}>
               {o.label}
-            </button>
+            </OptionRow>
           ))}
         </>
       )}

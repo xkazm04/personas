@@ -3,6 +3,7 @@ import type { TourStepDef, TourStepId } from '@/stores/slices/system/tourSlice';
 import { getStepColors } from './tourConstants';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 interface StepProgressProps {
   steps: TourStepDef[];
   currentIndex: number;
@@ -39,15 +40,7 @@ export function StepProgress({
           isCurrent && !isCompleted && subStepIndex != null && step.subSteps.length > 0;
 
         return (
-          <Tooltip content={step.title}><button
-            type="button"
-            key={step.id}
-            onClick={() => onJump(i)}
-            data-testid={`tour-step-${step.id}`}
-            className={`group flex items-center gap-2.5 px-1 py-1.5 text-left rounded-card transition-colors ${
-              i > 0 ? 'border-t border-hair' : ''
-            } ${isCurrent ? '' : 'hover:bg-surface-1'}`}
-            aria-current={isCurrent ? 'step' : undefined}>
+          <Tooltip content={step.title}><PressSurface key={step.id} onPress={() => onJump(i)} data-testid={`tour-step-${step.id}`} className={`group flex items-center gap-2.5 px-1 py-1.5 rounded-card ${i > 0 ? 'border-t border-hair' : ''}`} aria-current={isCurrent ? 'step' : undefined}>
             <span
               className={`flex items-center justify-center w-5 h-5 rounded-full typo-caption flex-shrink-0 border ${
                 isCompleted
@@ -75,7 +68,7 @@ export function StepProgress({
                 {subStepIndex}/{step.subSteps.length}
               </span>
             )}
-          </button></Tooltip>
+          </PressSurface></Tooltip>
         );
       })}
     </div>

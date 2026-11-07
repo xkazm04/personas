@@ -39,6 +39,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 
 export type SourceKind = 'local' | 'codebase' | 'database';
@@ -396,14 +397,10 @@ function SingleCodebaseCard({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-card border transition-all text-left ${
-        selected
-          ? 'bg-primary/15 border-primary/30 text-primary'
-          : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
-      }`}
+    <OptionRow
+      onSelect={onClick}
+      selected={selected}
+      className="gap-2.5"
     >
       <FolderGit2 className="w-4 h-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
@@ -412,7 +409,7 @@ function SingleCodebaseCard({
           <div className="typo-caption text-foreground truncate">{project.root_path}</div>
         )}
       </div>
-    </button>
+    </OptionRow>
   );
 }
 
@@ -428,20 +425,16 @@ function SingleCredentialCard({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-card border transition-all text-left ${
-        selected
-          ? 'bg-primary/15 border-primary/30 text-primary'
-          : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
-      }`}
+    <OptionRow
+      onSelect={onClick}
+      selected={selected}
+      className="gap-2.5"
     >
       <Database className="w-4 h-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="font-medium truncate">{name}</div>
         <div className="typo-caption text-foreground truncate">{serviceType}</div>
       </div>
-    </button>
+    </OptionRow>
   );
 }

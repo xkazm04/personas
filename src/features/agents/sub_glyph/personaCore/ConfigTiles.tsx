@@ -16,6 +16,7 @@ import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { useTranslation } from "@/i18n/useTranslation";
 import { ACCENT, CONFLICT_ACCENT, CONFLICT_STYLES, EFFORT_ACCENT, EFFORT_TIERS, MODEL_TIERS } from "./catalog";
 import type { PersonaCore } from "./types";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface RadioOptionProps {
   role: "radio";
@@ -165,8 +166,8 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
         const h = 12 + i * 6; // ascending
         return (
           <Tooltip key={e.id} content={t.agents[e.blurbKey]}>
-            <button type="button" onClick={() => core.setEffort(e.id)} data-testid={`core-effort-${e.id}`} {...option(e.id)}
-              className="flex-1 flex flex-col items-center gap-1 cursor-pointer group">
+            <PressSurface onPress={() => core.setEffort(e.id)} data-testid={`core-effort-${e.id}`} {...option(e.id)}
+              className="flex-1 flex flex-col items-center gap-1 group">
               {/* The OFF bar is a semantic class, not an inline literal-white
                   fill: an inline style outranks the app's [data-theme^="light"]
                   overrides, so the unlit steps painted white-on-white in light
@@ -177,7 +178,7 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
                 style={{ height: h, background: on ? colorWithAlpha(EFFORT_ACCENT, core.state.effort === e.id ? 0.9 : 0.5) : undefined }}
               />
               <span className={`typo-body ${core.state.effort === e.id ? "text-ink-1" : "text-ink-1 group-hover:text-ink-1"}`}>{t.models[`effort_${e.id}`]}</span>
-            </button>
+            </PressSurface>
           </Tooltip>
         );
       })}

@@ -22,7 +22,7 @@ export function AuthMethodTabs({
           type="button"
           key={method.id}
           onClick={() => onMethodChange(method)}
-          aria-pressed={activeAuthMethodId === method.id}
+          pressed={activeAuthMethodId === method.id}
           variant={activeAuthMethodId === method.id ? 'accent' : 'ghost'}
           tone={activeAuthMethodId === method.id ? 'highlight' : undefined}
           size="sm"

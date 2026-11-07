@@ -8,6 +8,7 @@ import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
 import { CELL_KEY_TO_DIM } from "./glyphLayoutHelpers";
 import { useTranslation } from "@/i18n/useTranslation";
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 interface GlyphAnswerCardProps {
@@ -101,15 +102,14 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
           {options.length > 0 && (
             <div className={dlg ? "flex flex-col gap-2 items-start" : "flex flex-wrap gap-2"}>
               {options.map((opt, i) => (
-                <button
+                <PressSurface
                   key={i}
-                  type="button"
-                  onClick={() => submit(opt)}
-                  className={`border typo-body text-ink-1 transition-colors cursor-pointer bg-surface-1 hover:bg-primary/20 ${dlg ? "w-full text-left px-3.5 py-2.5 rounded-none" : "px-2.5 py-1.5 rounded-full"}`}
+                  onPress={() => submit(opt)}
+                  className={`border bg-surface-1 ${dlg ? "w-full px-3.5 py-2.5 rounded-none" : "px-2.5 py-1.5 rounded-full"}`}
                   style={{ borderColor: `${color}40` }}
                 >
                   {opt}
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}
@@ -124,11 +124,13 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
               style={{ borderColor: `${color}40` }}
               autoFocus
             />
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="md"
               onClick={() => submit(text)}
               disabled={!text.trim()}
-              className={`border typo-body text-ink-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 transition-colors ${dlg ? "px-4 rounded-none" : "px-3 py-2 rounded-modal"}`}
+              icon={<Send className="w-3.5 h-3.5" />}
+              className={dlg ? "px-4 rounded-none" : ""}
               style={{
                 background: `${color}33`,
                 borderColor: `${color}66`,
@@ -136,7 +138,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
             >
               <Send className="w-3.5 h-3.5" />
               {t.common.send}
-            </button>
+            </Button>
           </div>
         </>
       )}

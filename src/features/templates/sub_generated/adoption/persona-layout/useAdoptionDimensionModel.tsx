@@ -35,6 +35,7 @@ import type { AdoptionConnectorCard } from './AdoptionLeftPanel';
 import { AdoptionAnswerCard } from './AdoptionAnswerCard';
 import { ErrorPolicyCard } from './ErrorPolicyCard';
 import type { PersonaLayoutAdoptionModelProps } from './personaLayoutAdoptionTypes';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const POLICY_TOGGLE_DIMS = new Set<GlyphDimension>(['memory', 'review']);
 const BUILT_IN_INBOX: ChannelSpecV2 = {
@@ -464,27 +465,25 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
     <span aria-hidden />
   ) : canContinue ? (
     <Tooltip content={t.templates.adopt_modal.persona_layout_continue_to_build}>
-    <button
-      type="button"
-      onClick={onContinue}
+    <PressSurface
+      onPress={onContinue}
       data-testid="adopt-continue-to-build"
-      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-6 py-3 rounded-modal border border-hair-2 bg-surface-1 hover:bg-surface-2 text-ink-1 cursor-pointer transition-colors"
+      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-6 py-3 rounded-modal border border-hair-2 text-ink-1"
     >
       <ChevronRight className="w-5 h-5 text-primary" />
       <span className="typo-label text-foreground">{t.templates.adopt_modal.persona_layout_continue_to_build}</span>
-    </button>
+    </PressSurface>
     </Tooltip>
   ) : globalRemaining > 0 ? (
     <Tooltip content={t.templates.adopt_modal.persona_layout_center_open_questions_title}>
-    <button
-      type="button"
-      onClick={openFirstUnanswered}
-      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-5 py-3 rounded-modal border border-hair-2 bg-surface-1 hover:bg-surface-2 text-ink-1 cursor-pointer transition-colors"
+    <PressSurface
+      onPress={openFirstUnanswered}
+      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-5 py-3 rounded-modal border border-hair-2 text-ink-1"
     >
       <span className="typo-data font-mono text-status-warning">{globalRemaining}</span>
       <span className="typo-label text-ink-1">{globalRemaining === 1 ? t.templates.adopt_modal.persona_layout_center_questions_to_answer_one : t.templates.adopt_modal.persona_layout_center_questions_to_answer_other}</span>
       <span className="typo-caption text-foreground italic group-hover:text-ink-2 transition-colors">{t.templates.adopt_modal.persona_layout_center_click_to_start}</span>
-    </button>
+    </PressSurface>
     </Tooltip>
   ) : continueDisabledReason ? (
     <span className="typo-caption text-status-warning italic pointer-events-none inline-flex items-center gap-1.5 max-w-[14rem] text-center">

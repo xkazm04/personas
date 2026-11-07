@@ -200,20 +200,8 @@ export default function ScheduleCalendar({
 
           {/* View toggle */}
           <div className="flex rounded-card border border-hair overflow-hidden">
-            <Button
-              type="button"
-              aria-pressed={view === 'week'}
-              onClick={() => setView('week')}
-              variant={view === 'week' ? 'secondary' : 'ghost'}
-              size="sm"
-            >{t.schedules.week}</Button>
-            <Button
-              type="button"
-              aria-pressed={view === 'month'}
-              onClick={() => setView('month')}
-              variant={view === 'month' ? 'secondary' : 'ghost'}
-              size="sm"
-            >{t.schedules.month}</Button>
+            <Button pressed={view === 'week'} onClick={() => setView('week')} variant="ghost" size="sm">{t.schedules.week}</Button>
+            <Button pressed={view === 'month'} onClick={() => setView('month')} variant="ghost" size="sm">{t.schedules.month}</Button>
           </div>
         </div>
       </div>
@@ -257,19 +245,8 @@ function LegendToggle({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={active}
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card border transition-all ${
-        active
-          ? 'border-hair bg-surface-1 text-ink-1 hover:bg-surface-2'
-          : 'border-hair bg-transparent text-ink-1 hover:text-ink-2 hover:border-hair line-through decoration-foreground/30'
-      }`}
-    >
+    <Button variant="ghost" size="xs" role="switch" aria-checked={active} aria-label={ariaLabel} onClick={onClick} className={active ? '' : 'line-through'}>
       {children}
-    </button>
+    </Button>
   );
 }

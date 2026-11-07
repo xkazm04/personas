@@ -244,7 +244,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       {response && (
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 typo-caption">
-            <span className="font-medium text-ink-1 uppercase tracking-wider">{dt.response_label}</span>
+            <span className="typo-eyebrow text-ink-2">{dt.response_label}</span>
             <span className={`px-1.5 py-0.5 rounded-interactive font-medium ${
               response.status === 'success'
                 ? 'bg-status-success/10 text-status-success'

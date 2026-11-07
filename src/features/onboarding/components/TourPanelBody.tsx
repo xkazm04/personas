@@ -9,6 +9,7 @@ import { StepProgress } from './StepProgress';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 interface TourPanelBodyProps {
   currentIndex: number;
   completedSteps: Record<TourStepId, boolean>;
@@ -122,11 +123,7 @@ export function TourPanelBody({
                       active ? `${colors.subtle} ${colors.accent}` : 'border-primary/8 bg-surface-1'
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => useTourStore.getState().goToSubStep(i)}
-                      className="flex items-center gap-2 flex-1 min-w-0 px-2 py-1.5 text-left"
-                    >
+                    <PressSurface onPress={() => useTourStore.getState().goToSubStep(i)} className="flex items-center gap-2 flex-1 min-w-0 px-2 py-1.5">
                       {done ? (
                         <Check className="w-3 h-3 text-status-success flex-shrink-0" />
                       ) : (
@@ -145,18 +142,12 @@ export function TourPanelBody({
                           {sub.label}
                         </span>
                       </Tooltip>
-                    </button>
+                    </PressSurface>
                     {locatable && (
                       <Tooltip content={t.onboarding.tour_locate_title}>
-                        <button
-                          type="button"
-                          onClick={() => focusTourHighlight(sub.highlightTestId)}
-                          aria-label={t.onboarding.tour_locate_title}
-                          data-testid={`tour-locate-${sub.id}`}
-                          className={`flex-shrink-0 mr-1 p-1 rounded-card ${colors.text} hover:bg-surface-2 transition-colors`}
-                        >
+                        <Button variant="ghost" size="icon-xs" onClick={() => focusTourHighlight(sub.highlightTestId)} aria-label={t.onboarding.tour_locate_title} data-testid={`tour-locate-${sub.id}`} className="flex-shrink-0 mr-1">
                           <Crosshair className="w-3 h-3" />
-                        </button>
+                        </Button>
                       </Tooltip>
                     )}
                   </div>
@@ -190,15 +181,10 @@ export function TourPanelBody({
             icon={<Check className="w-3.5 h-3.5 flex-shrink-0" />}
           ><span className="truncate">{t.onboarding.complete_tour}</span></Button>
         ) : isStepCompleted ? (
-          <button
-            type="button"
-            onClick={onNext}
-            data-testid="tour-btn-next"
-            className={`flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal ${colors.subtle} ${colors.text} border ${colors.accent} hover:brightness-125 transition-all min-w-0`}
-          >
+          <Button variant="primary" size="sm" onClick={onNext} data-testid="tour-btn-next" className="min-w-0">
             <span className="truncate">{t.onboarding.continue_button}</span>
             <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
-          </button>
+          </Button>
         ) : (
           // Step not yet done. De-emphasizing Skip was not enough: it was still
           // the right-hand footer button and still called the same `onNext`, so

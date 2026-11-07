@@ -6,6 +6,7 @@
  * and reports the selected ids up; the dialog turns each into a
  * `personas:execute:persona:<id>` scope.
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -97,21 +98,10 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
           {filtered.map((p) => {
             const isSelected = selectedIds.has(p.id);
             return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onToggle(p.id)}
-                aria-pressed={isSelected}
-                disabled={disabled}
-                className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:is-disabled ${
-                  isSelected
-                    ? 'border-primary/40 bg-primary/10'
-                    : 'border-border/30 bg-surface-1 hover:bg-surface-2'
-                }`}
-              >
+              <PressSurface key={p.id} onPress={() => onToggle(p.id)} selected={isSelected} disabled={disabled} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair">
                 <input type="checkbox" checked={isSelected} readOnly tabIndex={-1} aria-hidden="true" />
                 <span className="typo-caption text-foreground truncate">{p.name}</span>
-              </button>
+              </PressSurface>
             );
           })}
         </div>

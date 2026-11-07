@@ -5,6 +5,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTrigger } from '@/lib/types/types';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 // The destructive-action gate intercepts triggers that fire a run autonomously
 // on external input: SCHEDULER-fired (schedule + polling, held at scheduler
 // tick) and WEBHOOK (held at dispatch — UAT F-MAJOR-11, an alert/ticket
@@ -67,23 +68,13 @@ export function UnattendedModeSection({ trigger }: { trigger: PersonaTrigger }) 
         {options.map((o) => {
           const selected = mode === o.id;
           return (
-            <button
-              key={o.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              disabled={saving}
-              onClick={() => choose(o.id)}
-              className={`flex items-start gap-2 px-3 py-2 rounded-card border text-left transition-colors disabled:opacity-60 ${
-                selected ? o.sel : 'border-hair hover:bg-surface-1'
-              }`}
-            >
+            <PressSurface key={o.id} role="radio" aria-checked={selected} aria-pressed={undefined} selected={selected} disabled={saving} onPress={() => choose(o.id)} className="flex items-start gap-2 px-3 py-2 rounded-card border border-hair">
               <o.Icon className={`w-4 h-4 mt-0.5 shrink-0 ${selected ? o.iconCls : 'text-ink-1'}`} />
               <div className="min-w-0">
                 <div className="typo-body text-ink-1">{o.label}</div>
                 <div className="typo-caption text-ink-2">{o.desc}</div>
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

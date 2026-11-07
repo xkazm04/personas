@@ -1,3 +1,4 @@
+import Button from '@/features/shared/components/buttons/Button';
 import { LayoutTemplate, Sparkles, Plug, ArrowRight, Globe } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -154,12 +155,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           <p className="typo-eyebrow text-foreground text-center">{t.vault.quick_start}</p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {quickConnectors.map((connector) => (
-              <button
-                type="button"
-                key={connector.id}
-                onClick={() => onQuickStart(connector)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair transition-all typo-body"
-              >
+              <Button key={connector.id} variant="secondary" size="sm" onClick={() => onQuickStart(connector)}>
                 <div
                   className="w-4.5 h-4.5 rounded-interactive flex items-center justify-center"
                   style={{ backgroundColor: `${connector.color}15` }}
@@ -171,7 +167,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
                   )}
                 </div>
                 <span className="text-foreground">{connector.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </motion.div>

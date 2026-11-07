@@ -20,6 +20,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface ToolInvocationCardProps {
   tool: PersonaToolDefinition;
@@ -99,13 +100,12 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
       className="rounded-modal border border-hair bg-surface-1 overflow-hidden"
     >
       {/* Header */}
-      <button
-        type="button"
+      <PressSurface
         data-testid={`tool-card-toggle-${tool.name}`}
-        onClick={() => setExpanded(!expanded)}
+        onPress={() => setExpanded(!expanded)}
         aria-expanded={expanded}
         aria-controls={bodyId}
-        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-surface-1 transition-colors"
+        className="w-full flex items-center gap-2.5 px-3.5 py-2.5"
       >
         {expanded ? (
           <ChevronDown className="w-3.5 h-3.5 text-ink-1" />
@@ -114,7 +114,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
         )}
         <Wrench className="w-3.5 h-3.5 text-ink-1" />
         <span className="typo-body text-ink-1 truncate">{tool.name}</span>
-        <span className="inline-flex items-center gap-1 typo-body text-ink-1">
+        <span className="inline-flex items-center gap-1 typo-caption text-ink-3">
           <TypeIcon className="w-2.5 h-2.5" />
           {t.agents.tool_runner[`kind_${toolType}`]}
         </span>
@@ -139,7 +139,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
             <Numeric value={Number(result.duration_ms)} unit="ms" />
           </span>
         )}
-      </button>
+      </PressSurface>
 
       {/* Expanded body */}
       {expanded && (

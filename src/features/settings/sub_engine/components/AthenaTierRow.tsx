@@ -1,3 +1,4 @@
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { Check, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FormField } from '@/features/shared/components/forms/FormField';
@@ -62,21 +63,10 @@ function TierSelect({ options, value, onChange, ariaLabel, testId, disabled, inp
       {({ close }) => (
         <div className="py-1">
           {options.map((o) => (
-            <button
-              key={o.id || 'default'}
-              type="button"
-              role="option"
-              aria-selected={o.id === value}
-              data-testid={`${testId}-option-${o.id || 'default'}`}
-              onClick={() => {
-                onChange(o.id);
-                close();
-              }}
-              className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-surface-2 ${o.id === value ? 'text-primary' : 'text-foreground'}`}
-            >
+            <OptionRow key={o.id || "default"} role="option" selected={o.id === value} data-testid={`${testId}-option-${o.id || "default"}`} onSelect={() => { onChange(o.id); close(); }}>
               <span className="flex-1 text-left truncate">{o.label}</span>
               {o.id === value && <Check className="w-3.5 h-3.5 shrink-0" aria-hidden />}
-            </button>
+            </OptionRow>
           ))}
         </div>
       )}

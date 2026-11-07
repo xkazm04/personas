@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { usePendingTriggerFires } from '@/features/triggers/hooks/usePendingTriggerFires';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
+import Button from '@/features/shared/components/buttons/Button';
 interface PendingApprovalsBadgeProps {
   /** Scope to one agent's triggers. Omit for the workspace-wide count. */
   personaId?: string;
@@ -39,13 +40,9 @@ export function PendingApprovalsBadge({ personaId, onClick }: PendingApprovalsBa
   }
 
   return (
-    <Tooltip content={t.triggers.pending_approval.badge_title}><button
-      type="button"
-      data-testid="pending-approvals-badge"
-      onClick={onClick}
-      className={`${className} hover:bg-status-warning/20 transition-colors`}>
+    <Tooltip content={t.triggers.pending_approval.badge_title}><Button variant="accent" tone="warning" size="xs" data-testid="pending-approvals-badge" onClick={onClick}>
       <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
       {label}
-    </button></Tooltip>
+    </Button></Tooltip>
   );
 }

@@ -43,16 +43,13 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               placeholder={t.triggers.auto_generated_hint}
               className={`w-full px-3 py-2 pr-10 bg-background/50 border border-hair rounded-modal text-ink-1 placeholder-ink-3 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'typo-code' : ''}`}
             />
-            <Tooltip content={showHmacSecret ? t.triggers.hide_secret : t.triggers.show_secret}><button
-              type="button"
-              onClick={() => setShowHmacSecret(!showHmacSecret)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-ink-1 hover:text-ink-1 transition-colors">
+            <Tooltip content={showHmacSecret ? t.triggers.hide_secret : t.triggers.show_secret}><Button variant="ghost" size="icon-xs" aria-label={showHmacSecret ? t.triggers.hide_secret : t.triggers.show_secret} onClick={() => setShowHmacSecret(!showHmacSecret)} className="absolute right-2.5 top-1/2 -translate-y-1/2">
               {showHmacSecret ? (
                 <EyeOff className="w-4 h-4" />
               ) : (
                 <Eye className="w-4 h-4" />
               )}
-            </button></Tooltip>
+            </Button></Tooltip>
           </div>
           <Button aria-label={t.triggers.generate_secret}
             type="button"

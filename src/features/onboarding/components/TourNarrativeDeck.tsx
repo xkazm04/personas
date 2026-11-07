@@ -122,15 +122,10 @@ export function TourNarrativeDeck({
           </div>
           {canShowMe && (
             <Tooltip content={t.onboarding.tour_show_me_title}>
-              <button
-                type="button"
-                onClick={() => onShowMe(activeHighlight)}
-                data-testid="tour-deck-show-me"
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption border ${colors.accent} ${colors.subtle} ${colors.text} hover:brightness-125 transition-all flex-shrink-0`}
-              >
+              <Button variant="secondary" size="xs" onClick={() => onShowMe(activeHighlight)} data-testid="tour-deck-show-me" className="flex-shrink-0">
                 <Crosshair className="w-3 h-3" />
                 {t.onboarding.tour_show_me}
-              </button>
+              </Button>
             </Tooltip>
           )}
           <Tooltip content={collapsed ? t.onboarding.tour_deck_expand : t.onboarding.tour_deck_collapse}>
@@ -207,15 +202,10 @@ export function TourNarrativeDeck({
                   <p className="typo-caption text-ink-2 italic text-center">
                     {t.onboarding.tour_explore_to_continue}
                   </p>
-                  <button
-                    type="button"
-                    onClick={handleAcknowledge}
-                    data-testid="tour-btn-acknowledge"
-                    className={`flex items-center gap-2 px-4 py-2 typo-heading rounded-modal ${colors.subtle} ${colors.text} border ${colors.accent} hover:brightness-125 transition-all`}
-                  >
+                  <Button variant="primary" size="md" onClick={handleAcknowledge} data-testid="tour-btn-acknowledge">
                     <Eye className="w-3.5 h-3.5" />
                     {t.onboarding.tour_acknowledge}
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <p className="typo-caption text-ink-2 italic text-center">

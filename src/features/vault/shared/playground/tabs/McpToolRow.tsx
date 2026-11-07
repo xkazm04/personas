@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, ChevronRight, Play } from 'lucide-react';
 import type { McpTool } from '@/api/agents/mcpTools';
@@ -30,12 +31,7 @@ export function ToolRow({
           is invalid HTML, and its inner Run button was reached by neither a
           screen reader's button list nor a reliable keyboard path. */}
       <div className="flex items-center gap-2.5 px-3 py-2 hover:bg-surface-1 transition-colors">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={isExpanded}
-          className="flex-1 min-w-0 flex items-center gap-2.5 text-left"
-        >
+        <PressSurface onPress={onToggle} aria-expanded={isExpanded} className="flex-1 min-w-0 flex items-center gap-2.5">
           {isExpanded ? (
             <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
           ) : (
@@ -51,7 +47,7 @@ export function ToolRow({
               {tool.description}
             </span>
           )}
-        </button>
+        </PressSurface>
 
         <Button
           variant="accent"

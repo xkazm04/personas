@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, getTriggerTemplates } from '@/lib/utils/platform/triggerConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 export interface TriggerQuickTemplatesProps {
   onApplyTemplate: (templateId: string) => void;
 }
@@ -23,18 +24,13 @@ export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplates
           const meta = TRIGGER_TYPE_META[tpl.triggerType] || DEFAULT_TRIGGER_META;
           const Icon = meta.Icon;
           return (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() => onApplyTemplate(tpl.id)}
-              className="flex items-start gap-2.5 p-2.5 rounded-modal border border-hair bg-background/30 hover:border-primary/25 hover:bg-surface-1 transition-all text-left group"
-            >
+            <PressSurface key={tpl.id} onPress={() => onApplyTemplate(tpl.id)} className="flex items-start gap-2.5 p-2.5 rounded-modal border border-hair group">
               <Icon className={`w-4 h-4 mt-0.5 ${meta.color} shrink-0`} />
               <div className="min-w-0">
                 <p className="typo-body text-ink-1 truncate">{tpl.label}</p>
                 <p className="typo-body text-ink-1 line-clamp-1">{tpl.description}</p>
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

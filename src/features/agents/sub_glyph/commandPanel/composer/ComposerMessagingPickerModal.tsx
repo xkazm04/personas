@@ -38,6 +38,7 @@ import {
   isFullyConfigured,
 } from "../messagingChannelDefaults";
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 interface ComposerMessagingPickerModalProps {
@@ -314,15 +315,14 @@ export function ComposerMessagingPickerModal({
           return pinBuiltIn ? (
             <div className={cls}>{content}</div>
           ) : (
-            <button
-              type="button"
-              onClick={toggleBuiltIn}
+            <PressSurface
+              onPress={toggleBuiltIn}
               role="checkbox"
               aria-checked={builtInSelected}
-              className={`${cls} w-full transition-colors hover:border-primary/35`}
+              className={`${cls} w-full`}
             >
               {content}
-            </button>
+            </PressSurface>
           );
         })()}
 
@@ -553,11 +553,10 @@ export function ComposerMessagingPickerModal({
               {unselectedPickables.map((p) => {
                 const meta = p.connector.meta;
                 return (
-                  <button
+                  <PressSurface
                     key={p.key}
-                    type="button"
-                    onClick={() => toggle(p)}
-                    className="group relative flex items-center gap-3 p-3 rounded-card border transition-all text-left border-hair bg-surface-1 hover:border-primary/35 hover:bg-primary/[0.04]"
+                    onPress={() => toggle(p)}
+                    className="group relative flex items-center gap-3 p-3 rounded-card border border-hair bg-surface-1"
                   >
                     <div
                       className="shrink-0 w-10 h-10 rounded-interactive flex items-center justify-center overflow-hidden"
@@ -581,7 +580,7 @@ export function ComposerMessagingPickerModal({
                         {p.channelType}
                       </div>
                     </div>
-                  </button>
+                  </PressSurface>
                 );
               })}
             </div>

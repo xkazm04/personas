@@ -85,17 +85,10 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       const safeUrl = sanitizeExternalUrl(url);
       return (
         <span className="inline-flex items-center gap-1">
-          <button
-            type="button"
-            onClick={safeUrl ? () => onOpenUrl(safeUrl) : undefined}
-            disabled={!safeUrl}
-            className={`text-left inline-flex items-center gap-1 ${
-              safeUrl ? 'text-primary hover:underline' : 'text-foreground cursor-not-allowed'
-            }`}
-          >
+          <Button variant="link" size="inline" onClick={safeUrl ? () => onOpenUrl(safeUrl) : undefined} disabled={!safeUrl} className="text-left">
             {children}
             <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-50" />
-          </button>
+          </Button>
           {safeUrl && <CopyButton text={safeUrl} />}
         </span>
       );

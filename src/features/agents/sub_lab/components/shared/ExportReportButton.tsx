@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { FileDown, ClipboardCopy, Check, Loader2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { LIST_ITEM_GAP, TOOLS_BTN_STANDARD } from '@/lib/utils/designTokens';
+import { LIST_ITEM_GAP } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   generateHtmlReport,
@@ -12,6 +12,7 @@ import {
   type LabRunAny,
   type LabResultAny,
 } from '../../libs/reportGenerator';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExportReportButtonProps {
   mode: ReportMode;
@@ -52,29 +53,29 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
 
   return (
     <div className={`flex items-center ${LIST_ITEM_GAP.dense}`}>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="sm"
         onClick={handleDownloadHtml}
         disabled={downloading}
         data-testid="export-report-html"
-        className={`inline-flex items-center ${LIST_ITEM_GAP.dense} ${TOOLS_BTN_STANDARD} rounded-interactive typo-caption text-ink-1 bg-surface-2 hover:bg-surface-2 border border-hair transition-colors disabled:opacity-50`}
       >
         {downloading
           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
           : <FileDown className="w-3.5 h-3.5" />}
         {lab.export_download_html}
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
         onClick={handleCopyMarkdown}
         data-testid="export-report-md"
-        className={`inline-flex items-center ${LIST_ITEM_GAP.dense} ${TOOLS_BTN_STANDARD} rounded-interactive typo-caption text-ink-1 bg-surface-2 hover:bg-surface-2 border border-hair transition-colors`}
       >
         {copyState === 'copied'
           ? <Check className="w-3.5 h-3.5 text-status-success" />
           : <ClipboardCopy className="w-3.5 h-3.5" />}
         {copyState === 'copied' ? lab.export_copied : lab.export_copy_markdown}
-      </button>
+      </Button>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { memo, useMemo, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { CloudCog, KeyRound, Cloud, Terminal } from 'lucide-react';
 import type { ByomPolicy, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult } from '@/api/system/byom';
@@ -310,19 +311,10 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
           {PROVIDER_OPTIONS.map((prov) => {
             const isBlocked = policy.blocked_providers.includes(prov.id);
             return (
-              <button
-                type="button"
-                key={prov.id}
-                onClick={() => toggleProvider(prov.id, 'blocked')}
-                className={`p-3 rounded-card border text-left typo-body transition-all ${
-                  isBlocked
-                    ? 'border-status-error/30 bg-status-error/10 text-foreground'
-                    : 'border-hair text-foreground hover:border-hair'
-                }`}
-              >
+              <PressSurface key={prov.id} onPress={() => toggleProvider(prov.id, "blocked")} className={`p-3 rounded-card border typo-body text-foreground ${isBlocked ? 'border-status-error/30' : 'border-hair'}`}>
                 {prov.label}
                 {isBlocked && <span className="ml-2 text-status-error">{s.blocked}</span>}
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -382,15 +374,7 @@ function ProviderCard({
   const Icon = card.icon;
   return (
     <div className="flex flex-col gap-1.5">
-      <button
-        type="button"
-        onClick={onClick}
-        className={`p-3 rounded-card border text-left transition-all flex flex-col gap-2 ${
-          enabled
-            ? 'border-status-success/30 bg-status-success/10 text-foreground'
-            : 'border-hair text-foreground hover:border-primary/25 hover:bg-surface-1'
-        }`}
-      >
+      <PressSurface onPress={onClick} className={`p-3 rounded-card border flex flex-col gap-2 text-foreground ${enabled ? 'border-status-success/30' : 'border-hair'}`}>
         <span className="flex items-center gap-2">
           <Icon className={`w-5 h-5 shrink-0 ${enabled ? 'text-status-success' : 'text-ink-2'}`} />
           <span className="typo-body">{card.label}</span>
@@ -401,7 +385,7 @@ function ProviderCard({
             {statusText}
           </span>
         )}
-      </button>
+      </PressSurface>
       {footer}
     </div>
   );

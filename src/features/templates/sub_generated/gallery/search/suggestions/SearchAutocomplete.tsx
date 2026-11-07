@@ -6,6 +6,7 @@ import type { CategoryWithCount } from '@/api/overview/reviews';
 import { categoryLabel, getCategoryMeta } from '../filters/searchConstants';
 import { DIFFICULTY_OPTIONS, SETUP_OPTIONS, DIFFICULTY_META, SETUP_META } from '../../../shared/templateComplexity';
 import type { QueryChip } from './useStructuredQuery';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 type ChipType = QueryChip['type'];
 interface SuggestionItem { chip: QueryChip; icon: LucideIcon; color: string }
@@ -167,22 +168,17 @@ export function SearchAutocomplete({
                 const Icon = suggestion.icon;
                 const isFocused = focusIndex === idx;
                 return (
-                  <button
+                  <OptionRow
                     key={`${suggestion.chip.type}-${suggestion.chip.value}`}
                     id={`search-suggestion-${idx}`}
                     role="option"
-                    aria-selected={isFocused}
-                    type="button"
-                    onClick={() => onSelect(suggestion.chip)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-card outline-none ${
-                      isFocused
-                        ? 'bg-role-agent/10 text-ink-1'
-                        : 'text-foreground hover:bg-primary/5'
-                    }`}
+                    onSelect={() => onSelect(suggestion.chip)}
+                    selected={isFocused}
+                    className="gap-2.5 px-3 py-2"
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" style={{ color: suggestion.color }} />
                     <span className="flex-1 text-left">{suggestion.chip.label}</span>
-                  </button>
+                  </OptionRow>
                 );
               })}
             </div>

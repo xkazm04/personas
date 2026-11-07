@@ -35,6 +35,7 @@ import { getCachedDesignResult } from '../cards/reviewParseCache';
 import { OverviewTab } from './OverviewTab';
 import { UseCasesTab } from './UseCasesTab';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 type DetailTab = 'overview' | 'use_cases' | 'prompt' | 'connectors';
 
@@ -207,8 +208,7 @@ export function TemplateDetailModal({
             const TabIcon = tab.icon;
             const isActive = effectiveTab === tab.key;
             return (
-              <button
-                type="button"
+              <PressSurface
                 key={tab.key}
                 role="tab"
                 id={`tab-${tab.key}`}
@@ -216,19 +216,15 @@ export function TemplateDetailModal({
                 aria-controls={`tabpanel-${tab.key}`}
                 tabIndex={isActive ? 0 : -1}
                 data-tab={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center gap-2 px-4 py-3 typo-body transition-colors rounded-t-card ${
-                  isActive
-                    ? 'text-role-agent'
-                    : 'text-foreground hover:text-ink-2 hover:bg-white/3'
-                }`}
+                onPress={() => setActiveTab(tab.key)}
+                className={`relative flex items-center gap-2 px-4 py-3 typo-body rounded-t-card ${isActive ? 'text-ink-1' : 'text-ink-2'}`}
               >
-                <TabIcon className={`w-4 h-4 ${isActive ? 'text-role-agent/80' : ''}`} />
+                <TabIcon className="w-4 h-4" />
                 {tab.label}
                 {isActive && (
                   <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
                 )}
-              </button>
+              </PressSurface>
             );
           })}
         </div>

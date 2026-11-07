@@ -4,6 +4,7 @@ import { categoryLabel, getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../../shared/architecturalCategories';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 export function FilterChips({
   selectedCategory,
@@ -168,29 +169,19 @@ export function FilterChips({
               const isActive = (coverageFilter ?? 'all') === opt.value;
               const Icon = opt.icon;
               const count = coverageCounts?.[opt.countKey];
-              // Selection is one signal (bg-sel + ink-1), not a per-coverage hue.
-              const activeClass = 'bg-sel text-ink-1';
               return (
-                <button
-                  type="button"
+                <OptionChip
                   key={opt.value}
                   role="radio"
-                  aria-checked={isActive}
+                  selected={isActive}
                   tabIndex={isActive ? 0 : -1}
                   data-value={opt.value}
-                  onClick={() => onCoverageFilterChange(opt.value)}
-                  className={`px-2.5 py-1.5 typo-body transition-colors flex items-center gap-1 ${
-                    isActive ? activeClass : 'text-foreground hover:text-ink-2 hover:bg-surface-2'
-                  }`}
+                  onSelect={() => onCoverageFilterChange(opt.value)}
+                  icon={Icon ? <Icon className="w-3 h-3" /> : undefined}
+                  count={count !== undefined && count > 0 ? count : undefined}
                 >
-                  {Icon && <Icon className="w-3 h-3" />}
                   {opt.label}
-                  {count !== undefined && count > 0 && (
-                    <span className={`ml-0.5 typo-data ${isActive ? 'opacity-80' : 'opacity-50'}`}>
-                      {count}
-                    </span>
-                  )}
-                </button>
+                </OptionChip>
               );
             })}
           </div>

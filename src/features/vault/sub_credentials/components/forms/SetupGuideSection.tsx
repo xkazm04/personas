@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -14,12 +15,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
 
   return (
     <div className="border border-hair rounded-modal overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-surface-1 transition-colors"
-      >
+      <PressSurface onPress={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center gap-2 px-3.5 py-2.5">
         {open ? (
           <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         ) : (
@@ -28,7 +24,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
         <span className="typo-body text-foreground">
           {tx(t.vault.forms.how_to_get_connector, { connectorLabel })}
         </span>
-      </button>
+      </PressSurface>
       {open && (
           <div
             className="animate-fade-slide-in overflow-hidden"

@@ -1,5 +1,5 @@
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('vector-kb-modal');
@@ -187,31 +187,9 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
           const Icon = tab.icon;
           const isActive = tab.id === activeTab;
           return (
-            <button
-              type="button"
-              key={tab.id}
-              role="tab"
-              id={`vector-kb-tab-${tab.id}`}
-              aria-selected={isActive}
-              aria-controls={`vector-kb-panel-${tab.id}`}
-              tabIndex={isActive ? 0 : -1}
-              onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body transition-colors ${
-                isActive
-                  ? 'text-ink-1'
-                  : 'text-foreground hover:text-ink-2'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
+            <OptionChip key={tab.id} role="tab" id={`vector-kb-tab-${tab.id}`} aria-controls={`vector-kb-panel-${tab.id}`} tabIndex={isActive ? 0 : -1} selected={isActive} onSelect={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }} icon={<Icon className="w-3.5 h-3.5" />}>
               {sh[tab.labelKey]}
-              {isActive && (
-                <motion.div
-                  layoutId="vectorKbTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-role-agent/60 rounded-full"
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-              )}
-            </button>
+            </OptionChip>
           );
         })}
       </div>

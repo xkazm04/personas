@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import { Search, Users, ChevronRight } from "lucide-react";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { debtText } from '@/i18n/DebtText';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 export interface PersonaSummary {
@@ -54,16 +55,12 @@ export const ComposerEventPersonaList = forwardRef<HTMLInputElement, ComposerEve
               const active = p.id === activePersonaId;
               const sCount = draft.filter((e) => e.personaId === p.id).length;
               return (
-                <button
+                <PressSurface
                   key={p.id}
-                  type="button"
+                  selected={active}
                   aria-current={active ? "true" : undefined}
-                  onClick={() => onSelectPersona(p.id)}
-                  className={`w-full flex items-center gap-2.5 p-2 rounded-interactive text-left transition-colors ${
-                    active
-                      ? "bg-primary/15 border border-primary/40"
-                      : "border border-transparent hover:bg-surface-1"
-                  }`}
+                  onPress={() => onSelectPersona(p.id)}
+                  className="w-full flex items-center gap-2.5 p-2 rounded-interactive"
                 >
                   <div
                     className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center typo-caption"
@@ -80,7 +77,7 @@ export const ComposerEventPersonaList = forwardRef<HTMLInputElement, ComposerEve
                     )}
                   </div>
                   {active && <ChevronRight className="w-3.5 h-3.5 text-ink-1" />}
-                </button>
+                </PressSurface>
               );
             })
           )}

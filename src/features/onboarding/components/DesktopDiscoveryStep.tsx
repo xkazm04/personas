@@ -166,18 +166,7 @@ export function DesktopDiscoveryStep({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => onApprove(app.connector_name)}
-                disabled={isApproved || isApproving}
-                className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-card transition-colors flex-shrink-0 ${
-                  isApproved
-                    ? 'bg-status-success/10 text-status-success border border-status-success/20 cursor-default'
-                    : isApproving
-                      ? 'bg-role-agent/10 text-role-agent border border-role-agent/20 cursor-wait'
-                      : 'bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25'
-                }`}
-              >
+              <Button variant="accent" tone={isApproved ? 'success' : 'agent'} size="sm" onClick={() => onApprove(app.connector_name)} disabled={isApproved || isApproving} className="flex-shrink-0">
                 {isApproved ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
@@ -188,7 +177,7 @@ export function DesktopDiscoveryStep({
                 ) : (
                   t.onboarding.approve
                 )}
-              </button>
+              </Button>
             </div>
           );
         })}

@@ -48,7 +48,6 @@ function IconTile({
   destination,
   active,
   firing,
-  delay,
 }: {
   destination: Destination;
   active: boolean;
@@ -59,20 +58,8 @@ function IconTile({
     <motion.span
       title={destination.label}
       className={`group relative flex flex-col items-center justify-start cursor-default transition-[filter,color] duration-200 hover:brightness-125 ${
-        active ? 'text-primary' : 'text-foreground hover:text-ink-3'
+        active || firing ? 'text-primary' : 'text-foreground hover:text-ink-3'
       }`}
-      animate={
-        firing
-          ? {
-              filter: [
-                'drop-shadow(0 0 0 transparent)',
-                'drop-shadow(0 0 10px color-mix(in srgb, var(--color-primary) 55%, transparent))',
-                'drop-shadow(0 0 0 transparent)',
-              ],
-            }
-          : {}
-      }
-      transition={firing ? { duration: 1.1, delay, repeat: Infinity, ease: 'easeInOut' } : undefined}
     >
       <span className="relative aspect-square w-full flex items-center justify-center">
         {destination.kind === 'channel' && destination.meta ? (

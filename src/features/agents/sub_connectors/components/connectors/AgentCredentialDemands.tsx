@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { isCredentialVerified } from '@/lib/credentials/healthState';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 export function AgentCredentialDemands() {
   const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -263,11 +264,10 @@ function DemandCard({
                 {t.agents.connectors.dm_link_existing}
               </p>
               {demand.matchingCredentials.map((cred) => (
-                <button
+                <PressSurface
                   key={cred.id}
-                  type="button"
-                  onClick={() => onReuse(cred.id)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card hover:bg-surface-2 transition-colors text-left cursor-pointer"
+                  onPress={() => onReuse(cred.id)}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card"
                 >
                   <Key className="w-3 h-3 text-status-success" />
                   <span className="typo-caption text-ink-2 flex-1 truncate">{cred.name}</span>
@@ -277,7 +277,7 @@ function DemandCard({
                   {cred.healthcheck_last_success === false && (
                     <AlertTriangle className="w-3 h-3 text-status-error" />
                   )}
-                </button>
+                </PressSurface>
               ))}
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Wrench, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface ToolsSectionProps {
   tools: PersonaToolDefinition[];
@@ -14,27 +15,26 @@ export function ToolsSection({ tools }: ToolsSectionProps) {
 
   return (
     <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setToolsExpanded(!toolsExpanded)}
+      <PressSurface
+        onPress={() => setToolsExpanded(!toolsExpanded)}
         aria-expanded={toolsExpanded}
-        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-surface-1 transition-colors focus-ring"
+        className="w-full flex items-center gap-2 px-3.5 py-2.5"
       >
         {toolsExpanded ? (
-          <ChevronDown className="w-4 h-4 text-primary" />
+          <ChevronDown className="w-4 h-4 text-ink-3" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-primary" />
+          <ChevronRight className="w-4 h-4 text-ink-3" />
         )}
-        <Wrench className="w-5 h-5 text-primary" />
+        <Wrench className="w-5 h-5 text-ink-3" />
         <span className="typo-submodule-header">
           {tx(t.agents.connectors.ts_configured, { count: tools.length })}
         </span>
         {!toolsExpanded && tools.length > 0 && (
-          <span className="typo-body text-ink-1 truncate flex-1">
+          <span className="typo-body text-ink-2 truncate flex-1">
             {tools.slice(0, 4).map((t) => t.name).join(', ')}{tools.length > 4 ? `, +${tools.length - 4}` : ''}
           </span>
         )}
-      </button>
+      </PressSurface>
 
       {toolsExpanded && (
           <div

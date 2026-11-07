@@ -179,14 +179,7 @@ export default function SchedulesOverlay() {
           <div className="flex items-center gap-3">
             {/* Scheduler engine status */}
             {schedulerStats && (
-              <Tooltip content={schedulerStats.running ? t.schedules.engine_running_title : t.schedules.engine_stopped_title}><button
-                type="button"
-                onClick={handleToggleScheduler}
-                className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card border transition-colors ${
-                  schedulerStats.running
-                    ? 'bg-status-success/10 border-status-success/20 text-status-success hover:bg-status-success/20'
-                    : 'bg-status-error/10 border-status-error/20 text-status-error hover:bg-status-error/20'
-                }`}>
+              <Tooltip content={schedulerStats.running ? t.schedules.engine_running_title : t.schedules.engine_stopped_title}><Button variant="accent" tone={schedulerStats.running ? 'success' : 'error'} size="xs" onClick={handleToggleScheduler}>
                 {schedulerStats.running ? (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
@@ -198,7 +191,7 @@ export default function SchedulesOverlay() {
                     {t.schedules.engine_off}
                   </>
                 )}
-              </button></Tooltip>
+              </Button></Tooltip>
             )}
 
             {/* Stats badges */}

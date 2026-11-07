@@ -7,6 +7,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Kbd } from '@/features/shared/components/display/Kbd';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface QuickEditPanelProps {
   persona: Persona;
@@ -135,20 +136,22 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
             if (next) setModel(next.model ?? next.id);
           }}
           renderTrigger={({ isOpen, toggle }) => (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="md"
+              pressed={isOpen}
               onClick={toggle}
               aria-expanded={isOpen}
               aria-labelledby={`quick-edit-model-label-${persona.id}`}
               data-testid="quick-edit-model-trigger"
-              className="flex items-center gap-2 w-full rounded-card bg-surface-1 border border-hair px-3 py-2 typo-body text-ink-1 outline-none focus:border-role-agent/50 transition-colors"
+              className="w-full"
             >
               {unrecognized && <AlertTriangle className="w-3.5 h-3.5 text-status-warning shrink-0" />}
               <span className="flex-1 text-left truncate">
                 {selected?.label ?? (model || t.shared.use_cases_extra.model_placeholder)}
               </span>
               <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            </Button>
           )}
         >
           {({ close }) => (
@@ -157,23 +160,19 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
                 const value = option.model ?? option.id;
                 const active = value === model || option.id === model;
                 return (
-                  <button
-                    type="button"
+                  <OptionRow
                     key={option.id}
                     role="option"
-                    aria-selected={active}
+                    selected={active}
                     data-testid={`quick-edit-model-option-${option.id}`}
-                    onClick={() => {
+                    onSelect={() => {
                       setModel(value);
                       close();
                     }}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 typo-body transition-colors hover:bg-surface-2 ${
-                      active ? 'text-primary' : 'text-ink-1'
-                    }`}
+                    meta={active ? <Check className="w-3.5 h-3.5 text-primary" /> : undefined}
                   >
-                    <span className="flex-1 text-left truncate">{option.label}</span>
-                    {active && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                  </button>
+                    <span className="block truncate">{option.label}</span>
+                  </OptionRow>
                 );
               })}
             </div>

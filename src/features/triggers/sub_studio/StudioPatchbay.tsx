@@ -114,24 +114,12 @@ export function StudioPatchbay() {
     <div className="relative flex-1 flex min-h-0 min-w-0 overflow-hidden" data-testid="studio-switchboard">
       {/* Edge toggle tabs — always visible, never reflow the canvas. Rails
           themselves render as absolute overlays below, hidden by default. */}
-      <button
-        type="button"
-        onClick={() => setSourceRailOpen((v) => !v)}
-        aria-expanded={sourceRailOpen}
-        aria-label={sourceRailOpen ? st.close_sources_rail : st.open_sources_rail}
-        className="absolute left-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-r-card border border-l-0 border-hair bg-background px-1.5 py-3 text-ink-1 transition-colors hover:bg-secondary"
-      >
+      <Button variant="secondary" size="icon-sm" onClick={() => setSourceRailOpen((v) => !v)} aria-expanded={sourceRailOpen} aria-label={sourceRailOpen ? st.close_sources_rail : st.open_sources_rail} className="absolute left-0 top-1/2 z-30 -translate-y-1/2 rounded-l-none border-l-0">
         {sourceRailOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
-      </button>
-      <button
-        type="button"
-        onClick={() => setTargetRailOpen((v) => !v)}
-        aria-expanded={targetRailOpen}
-        aria-label={targetRailOpen ? st.close_targets_rail : st.open_targets_rail}
-        className="absolute right-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-l-card border border-r-0 border-hair bg-background px-1.5 py-3 text-ink-1 transition-colors hover:bg-secondary"
-      >
+      </Button>
+      <Button variant="secondary" size="icon-sm" onClick={() => setTargetRailOpen((v) => !v)} aria-expanded={targetRailOpen} aria-label={targetRailOpen ? st.close_targets_rail : st.open_targets_rail} className="absolute right-0 top-1/2 z-30 -translate-y-1/2 rounded-r-none border-r-0">
         {targetRailOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
-      </button>
+      </Button>
 
       {/* ── Unified ledger ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0">

@@ -8,6 +8,7 @@ import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export function ConnectorFilterDropdown({
   availableConnectors,
@@ -105,11 +106,10 @@ export function ConnectorFilterDropdown({
               const meta = getConnectorMeta(item.name);
               const isSelected = connectorFilter.includes(item.name);
               return (
-                <button
-                  type="button"
+                <PressSurface
                   key={item.name}
-                  onClick={() => toggleConnector(item.name)}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-primary/5 transition-colors"
+                  onPress={() => toggleConnector(item.name)}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5"
                 >
                   <div
                     className="w-6 h-6 rounded-card flex items-center justify-center flex-shrink-0"
@@ -130,7 +130,7 @@ export function ConnectorFilterDropdown({
                   >
                     {isSelected && <CheckCircle2 className="w-3 h-3 text-role-agent" />}
                   </div>
-                </button>
+                </PressSurface>
               );
             })}
             {filtered.length === 0 && (
@@ -142,16 +142,17 @@ export function ConnectorFilterDropdown({
 
           {connectorFilter.length > 0 && (
             <div className="border-t border-hair px-1 py-1">
-              <button
-                type="button"
+              <Button
                 onClick={() => {
                   setConnectorFilter([]);
                   setIsOpen(false);
                 }}
-                className="w-full px-3.5 py-2 text-left typo-body text-foreground hover:text-ink-1 hover:bg-primary/5 rounded-modal transition-colors"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
               >
                 {t.templates.search.clear_all}
-              </button>
+              </Button>
             </div>
           )}
         </div>

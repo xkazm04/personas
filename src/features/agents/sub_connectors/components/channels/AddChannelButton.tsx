@@ -21,17 +21,19 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
     <Listbox
       ariaLabel={t.agents.connectors.ch_add}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
+          pressed={isOpen}
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="flex items-center gap-2 px-3 py-2 rounded-modal border border-dashed border-hair hover:border-primary/40 typo-body text-ink-1 hover:text-primary/80 transition-all w-full"
+          className="w-full"
+          icon={<Plus className="w-4 h-4" />}
         >
-          <Plus className="w-4 h-4" />
           {t.agents.connectors.ch_add}
           <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       )}
     >
       {({ close }) => (

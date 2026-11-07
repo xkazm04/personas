@@ -9,6 +9,7 @@ import type { ResolvedConnectorReadiness } from '../../../shared/useConnectorRea
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface TemplateCardBodyProps {
   connectors: string[];
@@ -59,20 +60,19 @@ export function TemplateCardBody({
           {displayFlows.length > 0 ? (
             <div className="space-y-1.5">
               {displayFlows.slice(0, 4).map((flow) => (
-                <button
-                  type="button"
+                <PressSurface
                   key={flow.id}
-                  onClick={(e) => {
+                  onPress={(e) => {
                     e.stopPropagation();
                     onViewFlows();
                   }}
-                  className="flex items-center gap-2 w-full text-left group/flow hover:text-role-agent transition-colors rounded-input focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                  className="flex items-center gap-2 w-full group/flow rounded-input"
                 >
                   <CircleDot className="w-3 h-3 text-role-agent/60 flex-shrink-0" />
                   <span className="typo-body text-foreground group-hover/flow:text-role-agent truncate">
                     {flow.name}
                   </span>
-                </button>
+                </PressSurface>
               ))}
               {displayFlows.length > 4 && (
                 <span className="typo-body text-foreground pl-5">

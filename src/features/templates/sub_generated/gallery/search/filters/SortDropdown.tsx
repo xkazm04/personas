@@ -5,6 +5,7 @@ import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewpor
 import { useTranslation } from '@/i18n/useTranslation';
 import { SORT_OPTIONS } from './searchConstants';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 export function SortDropdown({
   sortBy,
@@ -50,21 +51,17 @@ export function SortDropdown({
             const optSort = option.value.replace(/_(?:asc|desc)$/, '');
             const isSelected = optSort === sortBy && option.dir === sortDir;
             return (
-              <button
-                type="button"
+              <OptionRow
                 key={option.value}
-                onClick={() => {
+                onSelect={() => {
                   onSortChange(optSort, option.dir);
                   setIsOpen(false);
                 }}
-                className={`w-full px-3.5 py-2.5 text-left typo-body transition-colors ${
-                  isSelected
-                    ? 'text-role-agent bg-role-agent/10'
-                    : 'text-foreground hover:bg-primary/5'
-                }`}
+                selected={isSelected}
+                className="px-3.5 py-2.5"
               >
                 {t.templates.search[option.labelKey]}
-              </button>
+              </OptionRow>
             );
           })}
         </div>

@@ -3,6 +3,8 @@ import { Hash, Send, Mail, Bell, Check, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { CredentialMetadata } from '@/lib/types/types';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 export function channelIcon(type: string) {
   switch (type) {
@@ -38,56 +40,56 @@ export function CredentialPicker({
       itemCount={creds.length + 1}
       onSelectFocused={handleSelectFocused}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
+          pressed={isOpen}
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-hair rounded-modal typo-body text-ink-1 focus-ring transition-all"
+          className="w-full"
         >
           {selected ? (
             <>
               {channelIcon(selected.service_type)}
               <span className="flex-1 text-left truncate">{selected.name}</span>
-              <span className="typo-body text-ink-1">{selected.service_type}</span>
+              <span className="typo-caption text-ink-3">{selected.service_type}</span>
             </>
           ) : (
-            <span className="flex-1 text-left text-ink-1">{t.agents.connectors.cp_select}</span>
+            <span className="flex-1 text-left text-ink-2">{t.agents.connectors.cp_select}</span>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 text-ink-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+          <ChevronDown className={`w-3.5 h-3.5 text-ink-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (
         <>
-          <button
-            type="button"
+          <OptionRow
             role="option"
-            aria-selected={!selectedId}
-            onClick={() => { onChange(''); close(); }}
-            className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
-              focusIndex === 0 ? 'bg-surface-2' : 'hover:bg-surface-2'
-            } ${!selectedId ? 'text-ink-1' : 'text-ink-1'}`}
+            selected={!selectedId}
+            onSelect={() => { onChange(''); close(); }}
+            className={focusIndex === 0 ? 'bg-surface-2' : ''}
           >
-            <span className="text-ink-1">&mdash;</span>
-            <span>{t.common.none}</span>
-          </button>
+            <span className="flex items-center gap-3">
+              <span className="text-ink-3">&mdash;</span>
+              <span>{t.common.none}</span>
+            </span>
+          </OptionRow>
           {creds.map((cred, i) => (
-            <button
+            <OptionRow
               key={cred.id}
-              type="button"
               role="option"
-              aria-selected={cred.id === selectedId}
-              onClick={() => { onChange(cred.id); close(); }}
-              className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
-                focusIndex === i + 1 ? 'bg-surface-2' : 'hover:bg-surface-2'
-              } ${cred.id === selectedId ? 'text-ink-1' : 'text-ink-1'}`}
+              selected={cred.id === selectedId}
+              onSelect={() => { onChange(cred.id); close(); }}
+              className={focusIndex === i + 1 ? 'bg-surface-2' : ''}
+              meta={cred.service_type}
             >
-              {channelIcon(cred.service_type)}
-              <span className="flex-1 text-left truncate">{cred.name}</span>
-              <span className="typo-body text-ink-1">{cred.service_type}</span>
-              {cred.id === selectedId && <Check className="w-3 h-3 text-status-success flex-shrink-0" />}
-            </button>
+              <span className="flex items-center gap-3">
+                {channelIcon(cred.service_type)}
+                <span className="flex-1 truncate">{cred.name}</span>
+                {cred.id === selectedId && <Check className="w-3 h-3 text-status-success flex-shrink-0" />}
+              </span>
+            </OptionRow>
           ))}
           {creds.length === 0 && (
             <div className="px-3 py-2 typo-body text-ink-1">{t.agents.connectors.cp_no_creds}</div>

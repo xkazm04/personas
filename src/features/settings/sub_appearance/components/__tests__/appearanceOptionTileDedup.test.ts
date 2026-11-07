@@ -7,7 +7,7 @@ import { join } from 'node:path';
  * the Appearance*Settings pickers + the tile, by the tile's shared class string.
  */
 const dir = join(__dirname, '..');
-const TILE_CLASSES = 'rounded-modal border transition-colors text-center';
+const TILE_CLASSES = 'rounded-modal border border-hair text-center';
 
 describe('picker option-tile markup is not hand-copied', () => {
   it('exactly one implementation across the Appearance pickers', () => {

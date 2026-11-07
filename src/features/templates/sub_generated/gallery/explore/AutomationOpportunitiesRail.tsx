@@ -5,6 +5,7 @@ import type { AutomationOpportunity } from './useAutomationDiscovery';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface AutomationOpportunitiesRailProps {
   opportunities: AutomationOpportunity[];
@@ -151,10 +152,9 @@ function TemplateRow({
   dimmed?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-status-warning/5 transition-colors ${
+    <PressSurface
+      onPress={onClick}
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card ${
         dimmed ? 'opacity-60' : ''
       }`}
     >
@@ -167,6 +167,6 @@ function TemplateRow({
           {template.adoption_count}
         </span>
       )}
-    </button>
+    </PressSurface>
   );
 }

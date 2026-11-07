@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { memo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -50,11 +51,7 @@ export const PeerCard = memo(function PeerCard({
       <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
 
       {/* Info */}
-      <button
-        type="button"
-        onClick={() => onSelect(peer.peer_id)}
-        className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
-      >
+      <PressSurface onPress={() => onSelect(peer.peer_id)} className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground truncate">
             {peer.display_name}
@@ -71,7 +68,7 @@ export const PeerCard = memo(function PeerCard({
             <RelativeTime timestamp={peer.last_seen_at} showTooltip={false} />
           </span>
         </div>
-      </button>
+      </PressSurface>
 
       {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0">

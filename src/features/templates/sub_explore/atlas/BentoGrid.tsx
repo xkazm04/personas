@@ -11,6 +11,7 @@ import { DOMAINS, domainArt, domainLabel } from '../exploreDomains';
 import { useExploreCatalog } from '../useExploreCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const SPANS = ['sm:col-span-2 sm:row-span-2', 'sm:col-span-2', 'sm:row-span-2'];
 
@@ -30,22 +31,21 @@ export function BentoGrid({ onPick }: { onPick: (domainId: string) => void }) {
         const span = SPANS[idx] ?? '';
         const big = idx === 0;
         return (
-          <button
+          <PressSurface
             key={d.id}
-            type="button"
-            onClick={() => onPick(d.id)}
-            className={`group relative overflow-hidden rounded-card border border-hair hover:border-primary/30 text-left transition-all ${span}`}
+            onPress={() => onPick(d.id)}
+            className={`group relative overflow-hidden rounded-card border border-hair ${span}`}
           >
             <img src={domainArt(d, isDark)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
             <div className="absolute inset-0" style={{ background: `linear-gradient(to top, var(--background) 16%, transparent 62%), radial-gradient(120% 80% at 70% 20%, ${d.color}22, transparent)` }} />
             <div className="relative h-full flex flex-col justify-end p-3.5 gap-0.5">
-              <span className={`text-foreground drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)] ${big ? 'typo-heading-lg' : 'typo-heading'}`}>{domainLabel(d, t.explore)}</span>
+              <span className={`text-foreground ${big ? 'typo-heading-lg' : 'typo-heading'}`}>{domainLabel(d, t.explore)}</span>
               <div className="flex items-center gap-1.5">
                 <span className="typo-caption" style={{ color: d.color }}>{templateCounts[d.id] ?? 0}</span>
                 <span className="typo-caption text-ink-2">{t.explore.agents}</span>
               </div>
             </div>
-          </button>
+          </PressSurface>
         );
       })}
     </div>

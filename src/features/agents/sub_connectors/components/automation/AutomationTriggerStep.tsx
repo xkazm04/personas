@@ -9,6 +9,7 @@ import type { PersonaCapability } from '@/lib/personas/capabilities';
 import { DebtText } from '@/i18n/DebtText';
 import { GithubRepoPicker } from './AutomationPlatformListings';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 
 interface AutomationTriggerStepProps {
@@ -79,18 +80,13 @@ export function AutomationTriggerStep({
         ) : (
           <div className="flex items-center gap-1.5">
             {(['n8n', 'github_actions', 'zapier', 'custom'] as AutomationPlatform[]).map((p) => (
-              <button
-                type="button"
+              <OptionChip
                 key={p}
-                onClick={() => { setPlatform(p); setGithubRepo(null); }}
-                className={`px-2.5 py-1 typo-body rounded-modal border transition-colors ${
-                  platform === p
-                    ? `${PLATFORM_CONFIG[p]?.bg ?? ''} ${PLATFORM_CONFIG[p]?.color ?? ''} border-current/30`
-                    : 'border-hair text-ink-1 hover:text-ink-3 hover:border-hair'
-                }`}
+                selected={platform === p}
+                onSelect={() => { setPlatform(p); setGithubRepo(null); }}
               >
                 {PLATFORM_CONFIG[p] ? t.agents.connectors[PLATFORM_CONFIG[p].labelKey] : p}
-              </button>
+              </OptionChip>
             ))}
           </div>
         )}

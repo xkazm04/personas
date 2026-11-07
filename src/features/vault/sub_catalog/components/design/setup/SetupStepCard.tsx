@@ -43,7 +43,7 @@ export function SetupStepCard({
           size="sm"
           className="mt-0.5 shrink-0"
           aria-label={t.vault.design_phases.mark_step_complete}
-          aria-pressed={isCompleted}
+          pressed={isCompleted}
         >
           {isCompleted ? (
             <CheckCircle className="w-4 h-4 text-status-success" />

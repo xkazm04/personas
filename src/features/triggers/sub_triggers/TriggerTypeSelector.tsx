@@ -6,6 +6,7 @@ import {
 } from '@/lib/utils/platform/triggerConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 export interface TriggerTypeSelectorProps {
   selectedCategory: TriggerCategory | null;
   triggerType: string;
@@ -48,34 +49,7 @@ export function TriggerTypeSelector({
           const isSelected = triggerType === option.type;
 
           return (
-            <button
-              key={option.type}
-              ref={(el) => { triggerTypeRefs.current[index] = el; }}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={isSelected ? 0 : -1}
-              onClick={() => setTriggerType(option.type)}
-              onKeyDown={(e) => {
-                let nextIndex = -1;
-                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  nextIndex = (index + 1) % typeOptions.length;
-                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  nextIndex = (index - 1 + typeOptions.length) % typeOptions.length;
-                }
-                if (nextIndex >= 0) {
-                  setTriggerType(typeOptions[nextIndex]!.type);
-                  triggerTypeRefs.current[nextIndex]?.focus();
-                }
-              }}
-              className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all focus-ring ${
-                isSelected
-                  ? 'border-primary/30 bg-surface-1 ring-1 ring-primary/20'
-                  : 'border-hair bg-background/50 hover:border-primary/25 hover:bg-surface-1'
-              }`}
-            >
+            <PressSurface key={option.type} ref={(el) => { triggerTypeRefs.current[index] = el; }} role="radio" aria-checked={isSelected} aria-pressed={undefined} selected={isSelected} tabIndex={isSelected ? 0 : -1} onPress={() => setTriggerType(option.type)} onKeyDown={(e) => { let nextIndex = -1; if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextIndex = (index + 1) % typeOptions.length; } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); nextIndex = (index - 1 + typeOptions.length) % typeOptions.length; } if (nextIndex >= 0) { setTriggerType(typeOptions[nextIndex]!.type); triggerTypeRefs.current[nextIndex]?.focus(); } }} className="flex flex-col gap-1.5 p-3 rounded-modal border border-hair">
               <div className="flex items-center gap-2">
                 <Icon className={`w-4 h-4 ${colorClass}`} />
                 <span className="typo-body text-ink-1">
@@ -85,7 +59,7 @@ export function TriggerTypeSelector({
               <span className="typo-caption text-ink-2">
                 {option.description}
               </span>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

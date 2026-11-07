@@ -110,21 +110,9 @@ export function SharedEventsTab() {
       render: (e) => {
         const count = routesByEntry.get(e.id)?.length ?? 0;
         return (
-          <button
-            type="button"
-            aria-label={`${m.routing_title} — ${e.name}`}
-            onClick={(ev) => {
-              ev.stopPropagation();
-              setRoutingFor({ entry: e, anchor: ev.currentTarget.getBoundingClientRect() });
-            }}
-            className={`inline-flex items-center justify-center min-w-7 px-2 py-0.5 rounded-full typo-caption border transition-colors ${
-              count > 0
-                ? 'bg-primary/10 text-primary border-primary/25 hover:bg-primary/20'
-                : 'bg-surface-2 text-ink-1 border-hair hover:bg-surface-2'
-            }`}
-          >
+          <Button variant="accent" size="xs" aria-label={`${m.routing_title} — ${e.name}`} className="min-w-7" onClick={(ev) => { ev.stopPropagation(); setRoutingFor({ entry: e, anchor: ev.currentTarget.getBoundingClientRect() }); }}>
             {count > 0 ? count : '—'}
-          </button>
+          </Button>
         );
       },
     },
@@ -180,14 +168,9 @@ export function SharedEventsTab() {
             className="w-full pl-8 pr-7 py-1.5 typo-caption rounded-input bg-surface-2 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
           {search && (
-            <button
-              type="button"
-              onClick={() => setSearch('')}
-              aria-label={t.triggers.clear_search_label}
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-            >
+            <Button variant="ghost" size="icon-xs" onClick={() => setSearch('')} aria-label={t.triggers.clear_search_label} className="absolute right-2 top-1/2 -translate-y-1/2">
               <X className="w-3 h-3 text-ink-2 hover:text-ink-1" />
-            </button>
+            </Button>
           )}
         </div>
         <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react';
 import { IMPORT_SOURCES, importSourceLabel, importSourceDescription, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -43,12 +44,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
         {IMPORT_SOURCES.map((source) => {
           const Icon = ICON_MAP[source.icon] ?? FileText;
           return (
-            <button
-              key={source.id}
-              type="button"
-              onClick={() => onSelect(source.id)}
-              className="flex items-start gap-3 p-3 rounded-modal border border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair transition-all text-left group"
-            >
+            <PressSurface key={source.id} onPress={() => onSelect(source.id)} className="flex items-start gap-3 p-3 rounded-modal border border-hair group">
               <div
                 className="w-9 h-9 rounded-card border flex items-center justify-center flex-shrink-0 mt-0.5"
                 style={{ backgroundColor: `${source.color}12`, borderColor: `${source.color}30` }}
@@ -66,7 +62,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
                   </StatusBadge>
                 )}
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

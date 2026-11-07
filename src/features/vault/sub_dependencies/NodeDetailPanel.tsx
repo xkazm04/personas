@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { X } from 'lucide-react';
 import type { GraphNode } from './credentialGraph';
 import { KIND_ICONS } from './graphConstants';
@@ -48,18 +49,13 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
             if (!connNode) return null;
             const ConnIcon = KIND_ICONS[connNode.kind];
             return (
-              <button
-                key={edge.id}
-                type="button"
-                onClick={() => onNodeClick(connNode.id)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-surface-2 transition-colors text-left cursor-pointer"
-              >
+              <PressSurface key={edge.id} onPress={() => onNodeClick(connNode.id)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card">
                 <ConnIcon className="w-3 h-3 flex-shrink-0" style={{ color: connNode.color }} />
                 <span className="typo-caption text-foreground truncate flex-1">{connNode.label}</span>
                 {edge.label && (
                   <span className="typo-caption text-foreground">{edge.label}</span>
                 )}
-              </button>
+              </PressSurface>
             );
           })}
         </div>

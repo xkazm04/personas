@@ -22,6 +22,7 @@ import { resolveIcon, type EventRow, type Connection, type SourceClass } from '.
 import { StateMark } from '@/features/shared/components/display/StateMark';
 import Button from '@/features/shared/components/buttons/Button';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 export interface LiveCable { row: EventRow; connection: Connection | null }
 
 type StudioStrings = ReturnType<typeof useStudioComposer>['st'];
@@ -74,12 +75,11 @@ export function LiveCableRow({ cb, t, st, personas, dim, vitals, toggling, onRen
           </Tooltip>
         ) : (
           <Tooltip content={st.proto_rename_event}>
-            <button type="button" onClick={() => onRename(row)}
-              className="flex items-center gap-1.5 min-w-0 px-2 py-1 rounded-input border border-hair bg-surface-1 text-ink-1 text-left hover:border-hair-2 transition-colors">
+            <PressSurface onPress={() => onRename(row)} className="flex items-center gap-1.5 min-w-0 px-2 py-1 rounded-input border border-hair">
               <EventIcon className="w-3.5 h-3.5 shrink-0 text-ink-1" />
               <span className="typo-body line-clamp-2 break-words">{eventLabel}</span>
               <Pencil className="w-3 h-3 shrink-0 text-ink-1 opacity-0 group-hover:opacity-60 transition-opacity" />
-            </button>
+            </PressSurface>
           </Tooltip>
         )}
         <span aria-hidden className={`flex-1 min-w-3 ${wire}`} />

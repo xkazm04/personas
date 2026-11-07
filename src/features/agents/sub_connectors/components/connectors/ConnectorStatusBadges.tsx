@@ -6,6 +6,7 @@ import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorT
 import { isStaleResult, isUnreachable, STATUS_CONFIG, credentialMatchesConnector } from '../../libs/connectorTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface LinkPickerProps {
@@ -34,14 +35,14 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
               <>
                 <p className="px-3 py-1.5 typo-heading text-ink-1 uppercase border-b border-hair">{t.agents.connectors.st_best_match}</p>
                 {matchingCreds.map((cred) => (
-                  <button type="button" key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors border-b border-hair last:border-0">
+                  <PressSurface key={cred.id} onPress={() => onLinkCredential(status.name, cred.id, cred.name)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 border-b border-hair last:border-0">
                     <Star className="w-3 h-3 text-status-warning flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <Tooltip content={cred.name}><p className="typo-body text-ink-1 truncate">{cred.name}</p></Tooltip>
                       <p className="typo-body text-ink-1">{cred.service_type}</p>
                     </div>
-                  </button>
+                  </PressSurface>
                 ))}
               </>
             )}
@@ -51,14 +52,14 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
                   <p className="px-3 py-1.5 typo-heading text-ink-1 uppercase border-b border-hair">{t.agents.connectors.st_other_creds}</p>
                 )}
                 {otherCreds.map((cred) => (
-                  <button type="button" key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors border-b border-hair last:border-0">
+                  <PressSurface key={cred.id} onPress={() => onLinkCredential(status.name, cred.id, cred.name)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 border-b border-hair last:border-0">
                     <div className="w-3 h-3 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <Tooltip content={cred.name}><p className="typo-body text-ink-1 truncate">{cred.name}</p></Tooltip>
                       <p className="typo-body text-ink-1">{cred.service_type}</p>
                     </div>
-                  </button>
+                  </PressSurface>
                 ))}
               </>
             )}
@@ -87,11 +88,11 @@ export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose
           <div className="mt-3 border border-status-info/20 rounded-card bg-background/40">
             <p className="px-3 py-1.5 typo-eyebrow text-status-info border-b border-status-info/10">{t.agents.connectors.st_swap_alt}</p>
             {alternatives.map((alt) => (
-              <button type="button" key={alt} onClick={() => { onSwap(statusName, alt); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-status-info/10 transition-colors border-b border-status-info/5 last:border-0">
+              <PressSurface key={alt} onPress={() => { onSwap(statusName, alt); onClose(); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 border-b border-hair last:border-0">
                 <ArrowLeftRight className="w-3 h-3 text-status-info flex-shrink-0" />
                 <span className="typo-body text-ink-1">{alt}</span>
-              </button>
+              </PressSurface>
             ))}
           </div>
         </div>
@@ -115,13 +116,9 @@ function LastCheckedNote({ result, onRetest }: { result: ConnectorTestResult; on
       <span>{t.agents.connectors.st_last_checked}</span>
       <RelativeTime timestamp={result.testedAt} />
       {stale && onRetest && (
-        <button
-          type="button"
-          onClick={onRetest}
-          className="ml-1 underline underline-offset-2 hover:text-status-warning transition-colors cursor-pointer"
-        >
+        <Button variant="link" size="inline" onClick={onRetest} className="ml-1">
           {t.agents.connectors.st_retest}
-        </button>
+        </Button>
       )}
     </p>
   );

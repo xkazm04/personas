@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, ChevronDown, Check } from 'lucide-react';
+import { Users, ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { inLifecyclePopulation } from './rosterCount';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 /** Sentinel filter id for "personas with no home team". */
 const NO_TEAM = '__ungrouped__';
@@ -147,19 +148,17 @@ export function PersonaGroupDropRail({
               const isFocus = i === focusIndex;
               return (
                 <li key={opt.id ?? '__all__'}>
-                  <button
-                    type="button"
+                  <OptionRow
                     role="option"
-                    aria-selected={isSelected}
-                    onClick={() => {
+                    selected={isSelected}
+                    onSelect={() => {
                       onSelectFilter?.(opt.id);
                       close();
                     }}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 typo-body text-left transition-colors ${
-                      isFocus ? 'bg-surface-2' : 'hover:bg-surface-2'
-                    } ${isSelected ? 'text-ink-1' : 'text-ink-1'}`}
+                    className={isFocus ? 'bg-surface-2' : ''}
+                    meta={opt.count}
                   >
-                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <span className="flex items-center gap-1.5 min-w-0">
                       {opt.color && (
                         <span
                           className="w-2 h-2 rounded-full flex-shrink-0"
@@ -168,11 +167,7 @@ export function PersonaGroupDropRail({
                       )}
                       <span className="truncate">{opt.label}</span>
                     </span>
-                    <span className="inline-flex items-center gap-1.5 flex-shrink-0">
-                      <span className="typo-label font-mono text-ink-1">{opt.count}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
-                    </span>
-                  </button>
+                  </OptionRow>
                 </li>
               );
             })}

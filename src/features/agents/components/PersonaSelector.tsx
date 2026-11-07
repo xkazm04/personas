@@ -4,6 +4,8 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface PersonaSelectorProps {
   value: string;
@@ -67,15 +69,14 @@ export function PersonaSelector({
         if (next) pick(next.id);
       }}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
+          pressed={isOpen}
           onClick={() => { setSearch(''); toggle(); }}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          className={`flex items-center gap-2 px-3 py-2 rounded-card border transition-all min-w-[180px] ${isOpen
-              ? 'border-primary/30 bg-surface-1 ring-1 ring-primary/20'
-              : 'border-hair bg-surface-1 hover:border-primary/25 hover:bg-surface-1'
-            }`}
+          className="min-w-[180px]"
         >
           {selected ? (
             <>
@@ -89,39 +90,35 @@ export function PersonaSelector({
             </>
           )}
           <ChevronDown className={`w-3.5 h-3.5 text-ink-1 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       )}
       menuClassName="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-full min-w-[240px] max-h-[320px] rounded-card border border-hair bg-background shadow-elevation-3 shadow-black/20 overflow-y-auto flex flex-col"
     >
       {({ close, focusIndex }) => (
         <div className="flex-1 py-1">
           {showAllRow && (
-            <button
-              type="button"
+            <OptionRow
               role="option"
-              aria-selected={!value}
-              onClick={() => { pick(''); close(); }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${!value ? 'bg-primary/8 text-ink-1' : 'text-ink-1 hover:bg-surface-1'
-                } ${focusIndex === 0 ? 'bg-surface-2' : ''}`}
-            >
+              selected={!value}
+              onSelect={() => { pick(''); close(); }}
+              className={focusIndex === 0 ? 'bg-surface-2' : ''}
+            ><span className="flex items-center gap-2.5">
               <Bot className="w-4 h-4 text-ink-1 flex-shrink-0" />
               <span className="typo-body flex-1">{t.common.all_personas}</span>
               {!value && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-            </button>
+            </span></OptionRow>
           )}
 
           {filtered.map((p, idx) => {
             const isActive = value === p.id;
             return (
-              <button
+              <OptionRow
                 key={p.id}
-                type="button"
                 role="option"
-                aria-selected={isActive}
-                onClick={() => { pick(p.id); close(); }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 text-ink-1' : 'text-ink-1 hover:bg-surface-1'
-                  } ${focusIndex === idx + offset ? 'bg-surface-2' : ''}`}
-              >
+                selected={isActive}
+                onSelect={() => { pick(p.id); close(); }}
+                className={focusIndex === idx + offset ? 'bg-surface-2' : ''}
+              ><span className="flex items-center gap-2.5">
                 <PersonaIcon icon={p.icon} color={p.color} />
                 <div className="flex-1 min-w-0">
                   <span className="typo-body truncate block">{p.name}</span>
@@ -130,7 +127,7 @@ export function PersonaSelector({
                   )}
                 </div>
                 {isActive && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-              </button>
+              </span></OptionRow>
             );
           })}
 

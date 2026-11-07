@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { fmtCost as fmtCostBase, fmtTokens as fmtTokensBase } from '../../libs/comparisonHelpers';
 import { extractMessage } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface ExecutionPreviewPanelProps {
   personaId: string;
@@ -79,10 +80,9 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
   return (
     <div className="rounded-card border border-hair bg-surface-1 overflow-hidden">
       {/* Compact summary row */}
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-3 px-3 py-2 typo-caption hover:bg-surface-1 transition-colors"
+      <PressSurface
+        onPress={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-3 px-3 py-2 typo-caption"
       >
         <div className="flex items-center gap-1.5 text-ink-1">
           <DollarSign className="w-3 h-3 text-status-success" />
@@ -113,7 +113,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         <div className="ml-auto text-ink-1">
           {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </div>
-      </button>
+      </PressSurface>
 
       {/* Expanded detail */}
       {expanded && (

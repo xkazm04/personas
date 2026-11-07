@@ -17,6 +17,7 @@ import { PersonaRowMenu } from './PersonaRowMenu';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 async function copyDescription(text: string, t: { description_copied: string; copy_failed: string }) {
   const addToast = useToastStore.getState().addToast;
@@ -165,8 +166,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
     >
       {/* Header row: select / icon / name / favorite / menu */}
       <div className={`flex items-start gap-3 ${densityTokens.cardPadding}`}>
-        <button
-          type="button"
+        <PressSurface
           // Same semantics as the desktop SelectCell: a checkbox whose
           // accessible name is the persona and whose state is announced. The
           // value it replaced ('Select' / 'Deselect') was the only hardcoded
@@ -175,17 +175,21 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
           role="checkbox"
           aria-checked={selected}
           aria-label={p.name}
-          onClick={() => onToggleSelect(id)}
-          className={`mt-0.5 w-4 h-4 rounded-interactive border flex-shrink-0 flex items-center justify-center ${
-            selected ? 'bg-primary/80 border-primary/60' : 'border-primary/30'
-          }`}
+          onPress={() => onToggleSelect(id)}
+          className="mt-0.5 flex-shrink-0 rounded-interactive"
         >
-          {selected && (
-            <svg className="w-3 h-3 text-ink-1" viewBox="0 0 12 12" fill="none">
-              <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </button>
+          <span
+            className={`w-4 h-4 rounded-interactive border flex items-center justify-center ${
+              selected ? 'bg-primary/80 border-primary/60' : 'border-hair-2'
+            }`}
+          >
+            {selected && (
+              <svg className="w-3 h-3 text-ink-1" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+        </PressSurface>
         <div
           className="icon-frame icon-frame-pop bg-surface-1 border border-hair flex-shrink-0"
           style={p.color ? { borderColor: `${p.color}30`, backgroundColor: `${p.color}15` } : undefined}
@@ -193,23 +197,22 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
           <PersonaIcon icon={p.icon} color={p.color} size="w-4 h-4" framed frameSize="lg" />
         </div>
         <div className="flex-1 min-w-0">
-          <button
-            type="button"
-            onClick={() => onRowClick(p)}
-            className="typo-label text-ink-1 text-left hover:text-primary transition-colors block truncate w-full"
+          <PressSurface
+            onPress={() => onRowClick(p)}
+            className="block w-full truncate rounded-interactive"
           >
-            {p.name}
-          </button>
+            <span className="typo-label text-ink-1">
+            {p.name}</span>
+          </PressSurface>
           {p.description && (
-            <Tooltip content={t.agents.persona_list.click_to_copy}><button
-              type="button"
-              onClick={(e) => {
+            <Tooltip content={t.agents.persona_list.click_to_copy}><PressSurface
+              onPress={(e) => {
                 e.stopPropagation();
                 void copyDescription(p.description!, t.agents.persona_list);
               }}
-              className="typo-caption text-ink-1 mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-ink-3 transition-colors">
-              {p.description}
-            </button></Tooltip>
+              className="mt-0.5 block w-full cursor-copy rounded-interactive">
+              <span className="typo-caption text-ink-2 leading-snug">{p.description}</span>
+            </PressSurface></Tooltip>
           )}
         </div>
         <Button

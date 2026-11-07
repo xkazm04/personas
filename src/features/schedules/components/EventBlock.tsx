@@ -3,6 +3,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';
 import { EventTooltipContent } from './EventTooltip';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * A calendar chip. It carries the slot's disclosure on hover AND keyboard
  * focus (the shared Tooltip handles both) - exact local time, the slot's
@@ -54,18 +55,7 @@ export function EventBlock({
 
   return (
     <Tooltip content={<EventTooltipContent event={event} conflictGroup={conflictGroup} />}>
-    <button
-      type="button"
-      onClick={onClick}
-      className={`event-block flex items-center gap-1 rounded-interactive text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer w-full max-w-full min-w-0 overflow-hidden ${compact ? 'px-1 py-px typo-caption' : 'px-1.5 py-0.5 typo-caption'
-        }`}
-      style={{
-        ['--ev-color' as string]: color,
-        backgroundColor: bgColor,
-        borderLeft: `${kindStyles[event.kind].borderStyle} ${borderColor}`,
-        opacity: kindStyles[event.kind].opacity,
-      }}
-    >
+    <PressSurface onPress={onClick} className={`event-block flex items-center gap-1 rounded-interactive w-full max-w-full min-w-0 overflow-hidden ${compact ? 'px-1 py-px typo-caption' : 'px-1.5 py-0.5 typo-caption'}`} style={{ ['--ev-color' as string]: color, backgroundColor: bgColor, borderLeft: `${kindStyles[event.kind].borderStyle} ${borderColor}`, opacity: kindStyles[event.kind].opacity }}>
       <span className="event-block-label truncate font-medium min-w-0">{event.agentName}</span>
       {event.kind === 'past-failure' && (
         <XCircle className="w-2.5 h-2.5 text-status-error shrink-0" />
@@ -78,7 +68,7 @@ export function EventBlock({
         // bare foreground icon reads as muted without a low-contrast class.
         <HelpCircle className="w-2.5 h-2.5 text-ink-1 shrink-0" />
       )}
-    </button>
+    </PressSurface>
     </Tooltip>
   );
 }

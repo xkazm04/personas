@@ -14,6 +14,7 @@ import { EVENT_TEMPLATES } from "@/features/agents/sub_glyph/commandPanel/compos
 import { ChoicePill } from "./ChoicePill";
 import { MoreButton } from "./MoreButton";
 import { QS } from "./copy";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const KINDS = [
   { triggerId: "task_completed", label: QS.events.completed },
@@ -65,11 +66,10 @@ export function EventsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMor
           const pc = p.color || FALLBACK;
           return (
             <li key={p.id}>
-              <button
-                type="button"
-                aria-pressed={on}
-                onClick={() => quick.toggleEvent({ personaId: p.id, personaName: p.name, triggerId: kind, description: label })}
-                className={`w-full flex items-center gap-3 p-2 rounded-card border text-left transition-colors ${on ? "" : "border-card-border hover:bg-surface-2"}`}
+              <PressSurface
+                selected={on}
+                onPress={() => quick.toggleEvent({ personaId: p.id, personaName: p.name, triggerId: kind, description: label })}
+                className="w-full flex items-center gap-3 p-2 rounded-card border border-hair"
                 style={on ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.1) } : undefined}
               >
                 <span aria-hidden className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center typo-title" style={{ background: colorWithAlpha(pc, 0.2), color: pc }}>
@@ -80,7 +80,7 @@ export function EventsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMor
                   {count > 0 && <span className="typo-caption text-ink-2">{QS.events.subscribed(count)}</span>}
                 </span>
                 {on && <Check className="w-4 h-4 shrink-0" style={{ color }} />}
-              </button>
+              </PressSurface>
             </li>
           );
         })}

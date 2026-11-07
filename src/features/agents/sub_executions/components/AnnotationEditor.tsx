@@ -120,17 +120,15 @@ export function AnnotationEditor({
         <span className="typo-heading text-ink-1 uppercase">
           {a.annotation_section_title}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={() => setStarred((s) => !s)}
           aria-label={a.annotation_starred_aria}
-          aria-pressed={starred}
-          className={`p-1 rounded-interactive transition-colors ${
-            starred ? 'text-status-warning hover:text-status-warning' : 'text-ink-1 hover:text-ink-2'
-          }`}
+          pressed={starred}
         >
-          <Star className="w-4 h-4" fill={starred ? 'currentColor' : 'none'} />
-        </button>
+          <Star className={starred ? "w-4 h-4 text-status-warning" : "w-4 h-4"} fill={starred ? "currentColor" : "none"} />
+        </Button>
       </div>
 
       <div className="space-y-1.5">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { INPUT_FIELD, STATE_DISABLED_OPACITY } from '@/lib/utils/designTokens';
+import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import Button from '@/features/shared/components/buttons/Button';
 
 interface StringListEditorProps {
@@ -73,16 +73,17 @@ export function StringListEditor({ label, items, onChange, testId }: StringListE
           className={INPUT_FIELD}
           data-testid={`resp-list-${testId}-input`}
         />
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="icon-sm"
           aria-label={t.common.add}
           onClick={add}
           disabled={!pending.trim()}
-          className={`shrink-0 p-2 rounded-interactive border border-hair text-ink-1 hover:text-primary hover:border-primary/30 ${STATE_DISABLED_OPACITY} transition-colors`}
+          className="shrink-0"
           data-testid={`resp-list-${testId}-add`}
         >
           <Plus className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

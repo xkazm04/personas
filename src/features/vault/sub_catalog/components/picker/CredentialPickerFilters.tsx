@@ -96,7 +96,7 @@ export function CredentialPickerFilters({
               type="button"
               onClick={() => onRoleToggle(role)}
               aria-label={label}
-              aria-pressed={activeRole === role}
+              pressed={activeRole === role}
               variant={activeRole === role ? 'accent' : 'secondary'}
               tone={activeRole === role ? 'agent' : undefined}
               size="icon-sm"

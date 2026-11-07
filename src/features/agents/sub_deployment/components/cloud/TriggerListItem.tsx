@@ -8,7 +8,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { AsyncButton, Button } from '@/features/shared/components/buttons';
+import { AsyncButton, Button, PressSurface } from '@/features/shared/components/buttons';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { statusIcon } from './CloudHistoryHelpers';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
@@ -58,10 +58,10 @@ export function TriggerListItem({
   return (
     <div className="rounded-card bg-surface-1 border border-hair overflow-hidden">
       {/* Row */}
-      <button
-        type="button"
-        onClick={onToggleExpand}
-        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-2 transition-colors cursor-pointer"
+      <PressSurface
+        onPress={onToggleExpand}
+        aria-expanded={isExpanded}
+        className="w-full flex items-center gap-3 px-3 py-2"
       >
         {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-ink-1" /> : <ChevronRight className="w-3.5 h-3.5 text-ink-1" />}
         <span className={`${trigger.enabled ? 'text-role-agent' : 'text-ink-1'}`}>
@@ -69,7 +69,7 @@ export function TriggerListItem({
         </span>
         <span className="typo-body text-ink-1 truncate flex-1">
           {personaName}
-          <span className="text-ink-1 ml-2">{triggerTypeLabel(t, trigger.triggerType)}</span>
+          <span className="text-ink-3 ml-2">{triggerTypeLabel(t, trigger.triggerType)}</span>
         </span>
         {config.cron && (
           <span className="inline-flex items-center typo-code text-ink-1">
@@ -78,7 +78,7 @@ export function TriggerListItem({
         )}
         {healthBadge(t, trigger.healthStatus)}
         <Tooltip content={trigger.enabled ? t.common.enabled : t.common.disabled}><span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-status-success' : 'bg-muted-foreground/30'}`}/></Tooltip>
-      </button>
+      </PressSurface>
 
       {/* Expanded detail */}
       {isExpanded && (
@@ -91,7 +91,7 @@ export function TriggerListItem({
             <div><span className="text-ink-1">{dt.label_next_trigger}</span> <span className="text-ink-1"><AbsoluteTime timestamp={trigger.nextTriggerAt} /></span></div>
             {config.cron && <div className="col-span-2"><span className="text-ink-1">{dt.label_cron}</span> <span className="text-ink-1 font-mono">{`${config.cron}`}</span></div>}
             {trigger.healthMessage && (
-              <div className="col-span-2 p-2 rounded-card bg-status-warning/5 border border-status-warning/10 typo-caption text-status-warning">
+              <div className="col-span-2 p-2 rounded-card bg-surface-1 border border-hair typo-caption text-status-warning">
                 {trigger.healthMessage}
               </div>
             )}

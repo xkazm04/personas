@@ -4,6 +4,7 @@ import { categoryLabel, getCategoryMeta, type RoleGroup } from '../search/filter
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 /** Illustration paths keyed by role */
 const ROLE_ILLUSTRATIONS: Record<string, { dark: string; light: string }> = {
@@ -67,11 +68,10 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             const count = categoryCounts.get(catName) ?? 0;
 
             return (
-              <button
+              <PressSurface
                 key={catName}
-                type="button"
-                onClick={() => onSelectCategory(catName)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-primary/5 transition-colors group/cat"
+                onPress={() => onSelectCategory(catName)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card group/cat"
               >
                 <CatIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.color }} />
                 <span className="typo-body text-foreground flex-1 group-hover/cat:text-ink-1 transition-colors">
@@ -80,7 +80,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
                 {count > 0 && (
                   <span className="typo-data text-foreground">{count}</span>
                 )}
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -90,11 +90,10 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
           <div className="border-t border-primary/8 pt-2.5">
             <SectionLabel as="div" className="mb-1.5 px-1">{t.templates.gallery.popular}</SectionLabel>
             {topTemplates.slice(0, 3).map((tmpl) => (
-              <button
+              <PressSurface
                 key={tmpl.id}
-                type="button"
-                onClick={() => onSelectTemplate?.(tmpl)}
-                className="w-full flex items-center gap-2 px-1 py-1 typo-body text-foreground rounded-input hover:bg-primary/5 hover:text-ink-2 transition-colors text-left"
+                onPress={() => onSelectTemplate?.(tmpl)}
+                className="w-full flex items-center gap-2 px-1 py-1 typo-body text-foreground rounded-input"
               >
                 <span className="flex-1 truncate">{tmpl.test_case_name}</span>
                 {tmpl.adoption_count > 0 && (
@@ -103,7 +102,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
                     {tmpl.adoption_count}
                   </span>
                 )}
-              </button>
+              </PressSurface>
             ))}
           </div>
         )}

@@ -172,19 +172,13 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
           <span className="typo-caption text-foreground">{s.webhook_events_known}</span>
           <div className="mt-1 max-h-40 overflow-y-auto flex flex-wrap gap-1.5">
             {choices.map((v) => (
-              <button
-                key={v.eventType}
-                type="button"
-                onClick={() => setPatterns([...patterns, v.eventType])}
-                className={`${CHIP} border-hair bg-surface-2 text-foreground hover:bg-primary/10`}
-              >
-                <Plus className="w-3 h-3 text-primary/60" />
+              <Button key={v.eventType} variant="secondary" size="xs" onClick={() => setPatterns([...patterns, v.eventType])} icon={<Plus className="w-3 h-3" />}>
                 {v.eventType}
                 <span className="font-sans text-foreground">
                   {v.source === 'observed' ? s.webhook_events_source_observed : s.webhook_events_source_builtin}
                   {weeklyCount(v.eventType) ? ` · ${interpolate(s.webhook_events_count_7d, { count: weeklyCount(v.eventType) ?? '' })}` : ''}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>

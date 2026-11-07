@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useId } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -84,7 +85,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
               <Button
                 key={st.id}
                 type="button"
-                aria-pressed={subTypeId === st.id}
+                pressed={subTypeId === st.id}
                 onClick={() => onSubTypeChange(st.id)}
                 variant={subTypeId === st.id ? 'accent' : 'secondary'}
                 tone={subTypeId === st.id ? 'highlight' : undefined}
@@ -100,23 +101,13 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
       ) : (
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
           {config.subTypes.map((st) => (
-            <button
-              key={st.id}
-              type="button"
-              aria-pressed={subTypeId === st.id}
-              onClick={() => onSubTypeChange(st.id)}
-              className={`text-left px-3 py-2.5 rounded-modal typo-body border transition-all ${
-                subTypeId === st.id
-                  ? config.subTypeActiveClass
-                  : 'bg-surface-1 border-hair text-foreground hover:bg-surface-2'
-              }`}
-            >
+            <PressSurface key={st.id} selected={subTypeId === st.id} onPress={() => onSubTypeChange(st.id)} className={`px-3 py-2.5 rounded-modal typo-body text-foreground border ${subTypeId === st.id ? 'border-hair-2' : 'border-hair'}`}>
               <div className="typo-body flex items-center gap-2">
                 {st.color && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color }} />}
                 {st.label}
               </div>
               <div className="typo-body text-foreground mt-0.5">{st.description}</div>
-            </button>
+            </PressSurface>
           ))}
         </div>
       )}

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 export type Rhythm = "once" | "daily" | "weekly" | "monthly";
 
 interface ComposerScheduleRhythmCardProps {
@@ -13,15 +14,10 @@ export function ComposerScheduleRhythmCard({
   icon, title, caption, active, onSelect,
 }: ComposerScheduleRhythmCardProps) {
   return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onSelect}
-      className={`group relative flex flex-col items-start gap-2 p-4 rounded-card border transition-all text-left ${
-        active
-          ? "border-primary/60 bg-surface-1 shadow-elevation-2"
-          : "border-hair bg-surface-1 hover:border-primary/40 hover:bg-primary/[0.04]"
-      }`}
+    <PressSurface
+      selected={active}
+      onPress={onSelect}
+      className="group relative flex flex-col items-start gap-2 p-4 rounded-card border border-hair"
     >
       <div
         className={`w-10 h-10 rounded-interactive flex items-center justify-center transition-colors ${
@@ -40,6 +36,6 @@ export function ComposerScheduleRhythmCard({
           style={{ boxShadow: "0 0 10px rgba(96,165,250,0.8)" }}
         />
       )}
-    </button>
+    </PressSurface>
   );
 }

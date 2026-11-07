@@ -332,7 +332,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 icon={isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
               >{t.triggers.create_relay}</Button>
               <p className="typo-caption text-ink-2">
-                {t.triggers.get_channel_url_prompt} <button type="button" onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-role-agent hover:text-role-agent underline"><DebtText k="auto_smee_io_new_7ce5f637" /></button>
+                {t.triggers.get_channel_url_prompt} <Button variant="link" size="inline" onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))}><DebtText k="auto_smee_io_new_7ce5f637" /></Button>
               </p>
             </div>
           </div>
@@ -446,16 +446,9 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     {/* Right side: actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <CopyButton text={relay.channelUrl} tooltip={t.triggers.copy_channel_url_title} />
-                      <Tooltip content={isActive ? t.triggers.pause_relay : t.triggers.resume_relay}><button
-                        type="button"
-                        onClick={() => handleToggleStatus(relay)}
-                        className={`p-1.5 rounded-card transition-colors ${
-                          isActive
-                            ? 'text-status-warning hover:text-status-warning hover:bg-status-warning/10'
-                            : 'text-status-success hover:text-status-success hover:bg-status-success/10'
-                        }`}>
+                      <Tooltip content={isActive ? t.triggers.pause_relay : t.triggers.resume_relay}><Button variant="accent" tone={isActive ? 'warning' : 'success'} size="icon-sm" onClick={() => handleToggleStatus(relay)}>
                         {isActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                      </button></Tooltip>
+                      </Button></Tooltip>
                       {confirmDeleteId === relay.id ? (
                         <div className="flex items-center gap-1">
                           <Button

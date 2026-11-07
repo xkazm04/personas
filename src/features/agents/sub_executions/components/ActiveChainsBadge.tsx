@@ -7,6 +7,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const logger = createLogger('active-chains-badge');
 const POLL_INTERVAL_MS = 5_000;
@@ -71,11 +72,10 @@ export function ActiveChainsBadge() {
       className="border border-hair bg-surface-1 rounded-modal typo-body"
       data-testid="active-chains-badge"
     >
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
+      <PressSurface
+        onPress={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex items-center gap-2 w-full px-3 py-1.5 text-left"
+        className="flex items-center gap-2 w-full px-3 py-1.5"
       >
         <Waypoints className="w-3.5 h-3.5 text-primary/80" />
         <span className="text-ink-1 font-medium">
@@ -84,7 +84,7 @@ export function ActiveChainsBadge() {
         <span className="ml-auto text-ink-1">
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </span>
-      </button>
+      </PressSurface>
 
       <p role="status">
         {stale && (

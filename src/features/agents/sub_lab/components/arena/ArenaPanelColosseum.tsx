@@ -41,6 +41,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 
@@ -637,23 +639,18 @@ function UseCasePopover({
           {options.map((opt, i) => {
             const active = opt.value === activeValue;
             return (
-              <button
+              <OptionRow
                 key={opt.value}
-                type="button"
                 role="option"
-                aria-selected={active}
-                onClick={() => {
+                selected={active}
+                onSelect={() => {
                   onSelect(opt.value === '__all__' ? null : opt.value);
                   close();
                 }}
-                className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
-                  focusIndex === i ? 'bg-primary/15' : ''
-                } ${
-                  active ? 'text-primary' : 'text-ink-1 hover:bg-surface-1'
-                }`}
+                className={focusIndex === i ? 'bg-surface-2' : ''}
               >
                 {opt.label}
-              </button>
+              </OptionRow>
             );
           })}
         </div>
@@ -794,16 +791,11 @@ function ModelRowCard({
   const { t } = useTranslation();
   const Sigil = heraldry.sigil;
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={selected}
+    <PressSurface
+      onPress={onToggle}
+      selected={selected}
       data-testid={`arena-model-card-${option.id}`}
-      className={`relative overflow-hidden rounded-card border-2 px-3 py-2.5 text-left transition-all focus-ring ${
-        selected
-          ? 'bg-primary/15 border-primary/55 shadow-elevation-3 shadow-primary/15'
-          : 'bg-surface-2 border-hair hover:bg-surface-2 hover:border-primary/40 hover:shadow-elevation-2'
-      }`}
+      className="relative overflow-hidden rounded-card border border-hair px-3 py-2.5"
     >
       {/* Sigil — semi-transparent backdrop */}
       <Sigil
@@ -835,7 +827,7 @@ function ModelRowCard({
         <span className={`h-4 w-px ${selected ? 'bg-primary/45' : 'bg-surface-2'}`} aria-hidden />
         <IconLevel level={heraldry.speed} icon={Zap}        active={selected} title={t.agents.lab.arena_stat_speed} />
       </div>
-    </button>
+    </PressSurface>
   );
 }
 
@@ -951,16 +943,13 @@ function WaxSealButton({
 }) {
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
+      <Button
+        variant="primary"
+        size="lg"
         onClick={onLaunch}
         disabled={!canLaunch}
         data-testid="arena-run-btn"
-        className={`relative group flex items-center gap-3 pl-6 pr-5 py-3 rounded-modal border typo-body-lg transition-all ${
-          canLaunch
-            ? 'bg-surface-1 hover:from-primary/40 hover:via-primary/30 hover:to-accent/30 border-primary/40 text-ink-1 shadow-elevation-3'
-            : 'bg-surface-2 border-hair text-ink-1 cursor-not-allowed'
-        }`}
+        className="relative group gap-3"
       >
         <span
           aria-hidden
@@ -978,7 +967,7 @@ function WaxSealButton({
             {contenders} {contenders === 1 ? 'contender' : 'contenders'}
           </span>
         </span>
-      </button>
+      </Button>
       {!canLaunch && disabledReason && (
         <span className="typo-body text-ink-1 flex items-center gap-1">
           <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />

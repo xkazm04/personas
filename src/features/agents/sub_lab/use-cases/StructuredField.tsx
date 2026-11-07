@@ -1,6 +1,7 @@
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import type { UseCaseInputField } from './UseCasesList';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface StructuredFieldProps {
   field: UseCaseInputField;
@@ -46,17 +47,14 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
       return (
         <div className="flex items-center gap-2">
           <label className="typo-heading text-ink-1 w-24 flex-shrink-0">{field.label}</label>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
+            pressed={!!value}
             onClick={() => onChange(!value)}
-            className={`px-2.5 py-1 rounded-modal typo-heading border transition-all ${
-              value
-                ? 'bg-primary/10 border-primary/25 text-primary'
-                : 'bg-surface-2 border-hair text-ink-1'
-            }`}
           >
             {value ? 'Yes' : 'No'}
-          </button>
+          </Button>
         </div>
       );
     default: // text

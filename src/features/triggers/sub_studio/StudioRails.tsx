@@ -18,24 +18,19 @@ import { FeedIcon } from '@/features/triggers/sub_shared/sharedEventsUi';
 import type { StudioComposer } from './useStudioComposer';
 import Button from '@/features/shared/components/buttons/Button';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 /** A subscribed Marketplace feed as a source card — arms an event_listener on `shared:<slug>`. */
 function MarketplaceSourceCard({ feed, hint, active, onPick }: {
   feed: SharedEventCatalogEntry; hint: string; active: boolean; onPick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-input border text-left transition-colors ${
-        active ? 'border-primary/50 bg-surface-1' : 'border-hair bg-background/40 hover:border-hair-2 hover:bg-surface-2'
-      }`}
-    >
+    <PressSurface onPress={onPick} selected={active} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-input border border-hair">
       <FeedIcon entry={feed} className="w-7 h-7" iconSize="w-4 h-4" />
       <span className="min-w-0 flex-1">
         <span className="typo-body text-ink-1 truncate block">{feed.name}</span>
         <span className="typo-caption text-ink-2 truncate block">{hint}</span>
       </span>
-    </button>
+    </PressSurface>
   );
 }
 

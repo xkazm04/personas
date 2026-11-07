@@ -1,3 +1,4 @@
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { useState } from 'react';
 import { AlertTriangle, ChevronDown, Upload } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
@@ -120,23 +121,9 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
                 {({ close, focusIndex }) => (
                   <div className="py-1 bg-secondary/95">
                     {RESOLUTIONS.map((option, i) => (
-                      <button
-                        key={option}
-                        type="button"
-                        role="option"
-                        aria-selected={current === option}
-                        onClick={() => {
-                          setResolutions((prev) => ({ ...prev, [key]: option }));
-                          close();
-                        }}
-                        className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
-                          i === focusIndex || current === option
-                            ? 'bg-primary/10 text-foreground'
-                            : 'text-ink-2 hover:bg-primary/5'
-                        }`}
-                      >
+                      <OptionRow key={option} role="option" selected={current === option} className={i === focusIndex && current !== option ? "bg-surface-1" : ""} onSelect={() => { setResolutions((prev) => ({ ...prev, [key]: option })); close(); }}>
                         {labels[option]}
-                      </button>
+                      </OptionRow>
                     ))}
                   </div>
                 )}

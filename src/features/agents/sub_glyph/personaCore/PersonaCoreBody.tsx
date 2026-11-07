@@ -75,14 +75,15 @@ export function PersonaCoreBody({ core, onDone, onCrashReset, fill = false }: Pe
       )}
 
       <div className={`flex items-center justify-between gap-2 ${fill ? "pt-3" : "pt-1"} border-t border-card-border/50 flex-shrink-0`}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="xs"
           onClick={core.reset}
           disabled={!core.configured}
-          className={`inline-flex items-center gap-1.5 ${fill ? "typo-body" : "typo-caption"} text-ink-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:text-ink-1`}
+          icon={<RotateCcw className="w-3.5 h-3.5" />}
         >
           <RotateCcw className="w-3.5 h-3.5" /> {t.agents.core_reset}
-        </button>
+        </Button>
         <Button variant="primary" size={fill ? "md" : "sm"} onClick={onDone} data-testid="persona-core-done">{t.common.done}</Button>
       </div>
     </div>

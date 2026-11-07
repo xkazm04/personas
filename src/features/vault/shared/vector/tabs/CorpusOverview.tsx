@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback } from 'react';
 import { Map, ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -47,19 +48,14 @@ export function CorpusOverview({ kbId }: CorpusOverviewProps) {
 
   return (
     <div className="mx-4 mt-3 rounded-card border border-hair bg-surface-1" data-testid="kb-corpus-overview">
-      <button
-        type="button"
-        onClick={toggle}
-        aria-expanded={open}
-        className="w-full flex items-center gap-2 px-3 py-2 typo-body text-foreground focus-ring rounded-card transition-colors"
-      >
+      <PressSurface onPress={toggle} aria-expanded={open} className="w-full flex items-center gap-2 px-3 py-2 rounded-card">
         <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} aria-hidden />
         <Map className="w-4 h-4 shrink-0 text-role-agent/70" aria-hidden />
         <span className="font-medium">{t.vault.shared.corpus_overview_title}</span>
         <span className="typo-caption text-foreground truncate hidden sm:inline">
           {t.vault.shared.corpus_overview_subtitle}
         </span>
-      </button>
+      </PressSurface>
 
       <Collapse open={open}>
         <div className="px-4 pb-3" data-testid="kb-corpus-overview-body">

@@ -12,6 +12,7 @@
  * Skipping saves `{}` (distinct from never-prompted `null`) so we can tell
  * "user declined" from "never shown".
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createKeyedLatestWins } from '@/stores/util/latestWins';
 import { Search, Check, RefreshCw, AlertTriangle, X } from 'lucide-react';
@@ -355,15 +356,7 @@ export function ResourcePicker({
                     {visible.map((item) => {
                       const sel = isSelected(spec.id, item.id);
                       return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => toggleItem(spec, item)}
-                          data-testid={`resource-pick-${spec.id}-${item.id}`}
-                          className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-foreground/5 transition-colors ${
-                            sel ? 'bg-primary/5' : ''
-                          }`}
-                        >
+                        <PressSurface key={item.id} onPress={() => toggleItem(spec, item)} selected={sel} data-testid={`resource-pick-${spec.id}-${item.id}`} className="w-full px-3 py-2 flex items-center gap-2">
                           <span
                             className={`w-4 h-4 rounded-interactive border flex items-center justify-center flex-shrink-0 ${
                               sel
@@ -383,7 +376,7 @@ export function ResourcePicker({
                               </span>
                             )}
                           </span>
-                        </button>
+                        </PressSurface>
                       );
                     })}
                   </div>

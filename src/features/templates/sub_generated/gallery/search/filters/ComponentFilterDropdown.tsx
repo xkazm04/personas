@@ -7,6 +7,7 @@ import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewpor
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface ComponentWithCount {
   key: string;
@@ -112,11 +113,10 @@ export function ComponentFilterDropdown({
               const CatIcon = cat.icon;
               const isSelected = componentFilter.includes(item.key);
               return (
-                <button
+                <PressSurface
                   key={item.key}
-                  type="button"
-                  onClick={() => toggleComponent(item.key)}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-primary/5 transition-colors"
+                  onPress={() => toggleComponent(item.key)}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5"
                 >
                   <div
                     className="w-6 h-6 rounded-card flex items-center justify-center flex-shrink-0"
@@ -137,7 +137,7 @@ export function ComponentFilterDropdown({
                   >
                     {isSelected && <CheckCircle2 className="w-3 h-3 text-role-agent" />}
                   </div>
-                </button>
+                </PressSurface>
               );
             })}
             {filtered.length === 0 && (
@@ -149,16 +149,17 @@ export function ComponentFilterDropdown({
 
           {componentFilter.length > 0 && (
             <div className="border-t border-hair px-1 py-1">
-              <button
-                type="button"
+              <Button
                 onClick={() => {
                   setComponentFilter([]);
                   setIsOpen(false);
                 }}
-                className="w-full px-3.5 py-2 text-left typo-body text-foreground hover:text-ink-1 hover:bg-primary/5 rounded-modal transition-colors"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
               >
                 {t.templates.search.clear_all}
-              </button>
+              </Button>
             </div>
           )}
         </div>

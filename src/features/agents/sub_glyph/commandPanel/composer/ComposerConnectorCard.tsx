@@ -1,6 +1,7 @@
 import { Plug, Check } from "lucide-react";
 import type { HealthyConnector } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import { ComposerBrandIcon } from "./ComposerBrandIcon";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export function humanizeCategory(slug: string): string {
   return slug
@@ -18,16 +19,10 @@ interface ComposerConnectorCardProps {
 export function ComposerConnectorCard({ connector, selected, onToggle }: ComposerConnectorCardProps) {
   const meta = connector.meta;
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onToggle}
-      className={`group relative flex items-center gap-3 p-3 rounded-card border transition-all text-left ${
-        selected
-          ? "border-primary/60 bg-surface-1"
-          : "border-hair bg-surface-1 hover:border-primary/35 hover:bg-primary/[0.04]"
-      }`}
-      style={selected ? { boxShadow: `0 0 18px ${meta.color}33` } : undefined}
+    <PressSurface
+      selected={selected}
+      onPress={onToggle}
+      className="group relative flex items-center gap-3 p-3 rounded-card border border-hair"
     >
       <div
         className="shrink-0 w-10 h-10 rounded-interactive flex items-center justify-center overflow-hidden"
@@ -53,6 +48,6 @@ export function ComposerConnectorCard({ connector, selected, onToggle }: Compose
           <Check className="w-3 h-3 text-ink-1" strokeWidth={3} />
         </span>
       )}
-    </button>
+    </PressSurface>
   );
 }

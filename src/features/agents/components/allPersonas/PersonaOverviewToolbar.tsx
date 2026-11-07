@@ -134,12 +134,15 @@ export function PersonaOverviewToolbar({
           className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card typo-caption bg-surface-1 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:bg-surface-2 focus:border-primary/30 transition-all"
         />
         {search ? (
-          <Tooltip content={t.agents.persona_list.clear_search}><button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            tooltip={t.agents.persona_list.clear_search}
+            aria-label={t.agents.persona_list.clear_search}
             onClick={() => onSearchChange('')}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-interactive text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors">
-            <X className="w-3 h-3" />
-          </button></Tooltip>
+            className="absolute right-1.5 top-1/2 -translate-y-1/2"
+            icon={<X className="w-3 h-3" />}
+          />
         ) : (
           <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"><Kbd>/</Kbd></span>
         )}

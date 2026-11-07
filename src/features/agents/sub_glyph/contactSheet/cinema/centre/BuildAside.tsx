@@ -8,6 +8,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { debtText } from "@/i18n/DebtText";
 import type { PickedRecipe } from "../useCinemaRecipes";
 import { COPY } from "../copy";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 /** The catalog sentence joins its halves with a dash; this surface uses a comma. */
 const undash = (s: string) => s.replace(/\s*[–—]\s*/g, ", ");
@@ -16,17 +17,16 @@ export function LogLine({ lines, onOpen }: { lines: string[]; onOpen: (el: HTMLE
   const latest = lines[lines.length - 1];
   if (!latest) return null;
   return (
-    <button
-      type="button"
-      onClick={(e) => onOpen(e.currentTarget)}
+    <PressSurface
+      onPress={(e) => onOpen(e.currentTarget)}
       aria-label={COPY.buildLog}
       data-testid="sheet-cinema-build-log-open"
-      className="w-full flex items-center gap-2 h-8 px-2.5 rounded-interactive border border-card-border bg-background/60 text-left hover:bg-surface-1"
+      className="w-full flex items-center gap-2 h-8 px-2.5 rounded-interactive border border-hair"
     >
       <Terminal className="w-3.5 h-3.5 shrink-0 text-ink-1" aria-hidden />
       <span className="flex-1 min-w-0 truncate font-mono typo-caption text-ink-1">{latest}</span>
       <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-1" aria-hidden />
-    </button>
+    </PressSurface>
   );
 }
 

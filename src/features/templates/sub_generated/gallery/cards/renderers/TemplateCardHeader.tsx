@@ -7,6 +7,8 @@ import type { TemplateVerification } from '@/lib/types/templateTypes';
 import type { readinessTier } from '../../../shared/adoptionReadiness';
 import type { DifficultyLevel, DifficultyMeta, SetupMeta } from '../../../shared/templateComplexity';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TemplateCardHeaderProps {
   name: string;
@@ -97,42 +99,41 @@ export function TemplateCardHeader({
       </div>
       <div ref={menuRef} className="relative flex-shrink-0">
         {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={(e) => {
             e.stopPropagation();
             setMenuOpen(!menuOpen);
           }}
-          className={`p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-surface-2 transition-all ${motionCss}`}
+          className={`opacity-0 group-hover:opacity-100 focus-visible:opacity-100 ${motionCss}`}
         >
-          <MoreVertical className="w-4.5 h-4.5 text-foreground" />
-        </button>
+          <MoreVertical className="w-3.5 h-3.5" />
+        </Button>
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-hair rounded-card shadow-elevation-4 backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={(e) => {
+            <PressSurface
+              onPress={(e) => {
                 e.stopPropagation();
                 setMenuOpen(false);
                 onViewDetails();
               }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-ink-1"
             >
               <Eye className="w-4 h-4" />
               {tMain.templates.actions.view_details}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
+            </PressSurface>
+            <PressSurface
+              onPress={(e) => {
                 e.stopPropagation();
                 setMenuOpen(false);
                 onDelete();
               }}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
+              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body ${BUTTON_VARIANTS.delete.text}`}
             >
               <Trash2 className="w-4 h-4" />
               Delete
-            </button>
+            </PressSurface>
           </div>
         )}
       </div>

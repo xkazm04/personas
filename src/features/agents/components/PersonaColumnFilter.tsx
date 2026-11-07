@@ -5,6 +5,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaSelectorModal } from '@/features/agents/components/PersonaSelectorModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface PersonaColumnFilterProps {
   value: string;
@@ -27,14 +28,17 @@ export function PersonaColumnFilter({ value, onChange, personas, label = 'Person
 
   return (
     <span className="inline-flex items-center gap-1.5">
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} transition-colors ${isFiltered ? 'text-primary' : 'text-ink-1 hover:text-ink-1'}`}
+      <PressSurface
+        onPress={() => setOpen(true)}
+        selected={isFiltered}
+        aria-pressed={undefined}
+        className="rounded-input -mx-1 px-1"
       >
-        <span>{selected ? selected.name : label}</span>
-        {!selected && <Filter className="w-3 h-3 text-ink-1" />}
-      </button>
+        <span className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} ${isFiltered ? 'text-ink-1' : 'text-ink-2'}`}>
+          <span>{selected ? selected.name : label}</span>
+          {!selected && <Filter className="w-3 h-3 text-ink-3" />}
+        </span>
+      </PressSurface>
       {selected && (
         <Button
           type="button"

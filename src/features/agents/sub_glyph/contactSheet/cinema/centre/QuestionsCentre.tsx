@@ -9,6 +9,7 @@ import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
 import type { FlowStage } from "../useQuestionFlow";
 import { frameNumber } from "../sheetModel";
 import { COPY } from "../copy";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 function useFrameName() {
   const dimText = useGlyphDimText();
@@ -55,17 +56,16 @@ export function AnswersList({ stage, qs, draftOf, onOpen }: AnswersListProps) {
         const { dim, name } = frameName(q);
         return (
           <li key={`${q.cellKey}-${i}`}>
-            <button
-              type="button"
+            <PressSurface
               disabled={sending}
-              onClick={() => onOpen(i)}
-              className="w-full flex items-baseline gap-3 px-3 py-2 rounded-input border border-card-border bg-background/50 text-left hover:bg-surface-1 disabled:opacity-60"
+              onPress={() => onOpen(i)}
+              className="w-full flex items-baseline gap-3 px-3 py-2 rounded-input border border-hair"
             >
               <span className="typo-caption font-mono w-[92px] flex-shrink-0 truncate" style={{ color: dim ? DIM_META[dim].color : undefined }}>
                 {name}
               </span>
               <span className="typo-body text-ink-1 truncate">{draftOf(q)}</span>
-            </button>
+            </PressSurface>
           </li>
         );
       })}

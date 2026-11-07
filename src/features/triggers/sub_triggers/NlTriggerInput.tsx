@@ -112,13 +112,9 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
           className="w-full pl-3 pr-10 py-2 bg-background/50 border border-hair rounded-modal typo-body text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-role-agent/40 focus:ring-1 focus:ring-role-agent/20 transition-all"
         />
         {input && (
-          <button
-            type="button"
-            onClick={handleReset}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-1 hover:text-ink-3 transition-colors"
-          >
+          <Button variant="ghost" size="icon-xs" onClick={handleReset} className="absolute right-2.5 top-1/2 -translate-y-1/2">
             <RotateCcw className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </div>
 

@@ -50,7 +50,6 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
   const [saved, setSaved] = useState(currentRating !== undefined);
 
   const iconSize = compact ? 'w-3.5 h-3.5' : 'w-4 h-4';
-  const btnPad = compact ? 'p-1.5' : 'p-2';
 
   function handleSelect(value: number) {
     setSelected(value);
@@ -77,19 +76,16 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           const Icon = opt.icon;
           const isActive = selected === opt.value;
           return (
-            <Tooltip content={opt.label}><button
-              type="button"
+            <Tooltip content={opt.label}><Button
               key={opt.value}
+              variant="ghost"
+              size="icon-sm"
               onClick={() => handleSelect(opt.value)}
               aria-label={opt.label}
-              aria-pressed={isActive}
-              className={`${btnPad} rounded-card border transition-colors ${
-                isActive
-                  ? `${opt.activeBg} ${opt.activeColor}`
-                  : 'border-transparent text-ink-1 hover:text-ink-3 hover:bg-surface-1'
-              }`}>
+              pressed={isActive}
+              className={isActive ? `${opt.activeBg} ${opt.activeColor}` : ''}>
               <Icon className={iconSize} />
-            </button></Tooltip>
+            </Button></Tooltip>
           );
         })}
 

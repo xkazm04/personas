@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { CheckCircle2, ChevronRight, CircleDot } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import type { DiscoveredApp } from '@/api/system/desktop';
@@ -17,18 +18,7 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
   const meta = getConnectorMeta(app.connector_name);
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      className={`w-full text-left p-3 rounded-modal border transition-all ${
-        disabled
-          ? 'opacity-40 cursor-not-allowed border-hair bg-secondary/10'
-          : selected
-            ? 'border-status-warning/30 bg-status-warning/5'
-            : 'border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair'
-      }`}
-    >
+    <PressSurface onPress={() => onSelect?.()} disabled={disabled} selected={selected && !disabled} className="w-full p-3 rounded-modal border border-hair">
       <div className="flex items-center gap-3">
         <div
           className="w-8 h-8 rounded-card flex items-center justify-center border"
@@ -61,6 +51,6 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
         </div>
         {!disabled && <ChevronRight className="w-4 h-4 text-foreground" />}
       </div>
-    </button>
+    </PressSurface>
   );
 }

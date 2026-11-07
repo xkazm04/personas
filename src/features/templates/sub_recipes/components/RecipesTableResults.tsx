@@ -304,13 +304,12 @@ function Th({ children, className = '', align = 'left', srLabel, sortKey, sort, 
       className={`${base} ${className}`}
       aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="inline"
         onClick={() => onSort(sortKey)}
         aria-label={tx(t.recipes_catalog.sort_by, { label })}
-        className={`inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
-          align === 'right' ? 'justify-end w-full' : ''
-        } ${active ? 'text-foreground' : 'text-foreground hover:text-primary'}`}
+        className={align === 'right' ? 'justify-end w-full' : ''}
       >
         {children}
         {active ? (
@@ -320,7 +319,7 @@ function Th({ children, className = '', align = 'left', srLabel, sortKey, sort, 
         ) : (
           <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
         )}
-      </button>
+      </Button>
     </th>
   );
 }

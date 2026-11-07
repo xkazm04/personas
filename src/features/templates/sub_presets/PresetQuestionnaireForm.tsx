@@ -7,6 +7,7 @@ import { Collapse } from '@/features/shared/components/display/Collapse';
 import type { PresetAdoptionSchema } from '@/lib/bindings/PresetAdoptionSchema';
 import type { PresetMemberAdoptionSchema } from '@/lib/bindings/PresetMemberAdoptionSchema';
 import type { PresetParameterOverrides } from '@/api/templates/teamPresets';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 /**
  * Narrow local view of the `adoption_questions[]` shape that ships
@@ -171,12 +172,11 @@ function MemberSection({
         expanded && hasQuestions ? 'border-hair' : 'border-hair'
       }`}
     >
-      <button
-        type="button"
+      <PressSurface
         data-testid={`preset-questionnaire-member-${member.role}`}
-        onClick={hasQuestions ? onToggle : undefined}
+        onPress={() => { if (hasQuestions) onToggle(); }}
         disabled={!hasQuestions}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary/15 disabled:cursor-default disabled:hover:bg-transparent rounded-card"
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-card"
         aria-expanded={expanded}
         aria-label={
           hasQuestions
@@ -213,7 +213,7 @@ function MemberSection({
                 })
             : t.templates.presets.questionnaire_member_no_config}
         </span>
-      </button>
+      </PressSurface>
 
       <Collapse open={expanded && hasQuestions} unmountWhenClosed duration={180}>
         <div className="px-3 pb-3 pt-2 space-y-3 border-t border-hair">

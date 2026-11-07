@@ -113,13 +113,9 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
         </div>
       ))}
 
-      <button
-        type="button"
-        onClick={addField}
-        className="flex items-center justify-center gap-1 rounded-interactive border border-dashed border-hair py-2 typo-caption text-ink-3 hover:border-primary/40 hover:text-ink-1 transition-colors"
-      >
+      <Button variant="secondary" size="sm" onClick={addField} className="justify-center">
         <Plus className="size-3.5" /> Add field
-      </button>
+      </Button>
     </div>
   );
 }

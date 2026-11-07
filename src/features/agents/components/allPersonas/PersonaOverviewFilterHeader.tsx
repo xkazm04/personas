@@ -5,6 +5,8 @@ import { ChevronDown, Filter } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useMenuKeyboard } from '@/hooks/utility/interaction/useMenuKeyboard';
+import { PressSurface } from '@/features/shared/components/buttons';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 export interface FilterOption {
   value: string;
@@ -96,10 +98,9 @@ export function PersonaOverviewFilterHeader({
   return (
     <>
       <Tooltip content={hint}>
-      <button
+      <PressSurface
         ref={btnRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
+        onPress={() => setOpen((v) => !v)}
         // Same disclosure semantics as the batch bar's team menu: the trigger
         // announces that it opens a menu and whether it is open, and the
         // options are menu items. Without these a screen reader hears a plain
@@ -110,17 +111,17 @@ export function PersonaOverviewFilterHeader({
         // so a filterable column header is typographically identical to the
         // plain and sortable headers it sits beside. `-mx-1.5` cancels the
         // button's own padding, keeping the label on the cell's text x-axis.
-        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input typo-eyebrow transition-colors ${
-          isFiltered
-            ? 'text-primary bg-primary/8 hover:bg-primary/12'
-            : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2'
-        }`}
+        selected={isFiltered}
+        aria-pressed={undefined}
+        className="group inline-flex items-center px-1.5 py-1 -mx-1.5 rounded-input"
       >
-        <Filter className={`w-3 h-3 ${isFiltered ? 'opacity-100' : 'opacity-50 group-hover:opacity-80'}`} />
-        <span className="truncate">{label}</span>
-        {isFiltered && <span className="w-1 h-1 rounded-full bg-primary" aria-hidden />}
-        <ChevronDown className={`w-2.5 h-2.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+        <span className={`inline-flex items-center gap-1.5 typo-eyebrow ${isFiltered ? 'text-ink-1' : 'text-ink-2 group-hover:text-ink-1'}`}>
+          <Filter className={`w-3 h-3 ${isFiltered ? 'text-primary' : 'text-ink-3'}`} />
+          <span className="truncate">{label}</span>
+          {isFiltered && <span className="w-1 h-1 rounded-full bg-primary" aria-hidden />}
+          <ChevronDown className={`w-2.5 h-2.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </span>
+      </PressSurface>
       </Tooltip>
       {open &&
         createPortal(
@@ -135,24 +136,18 @@ export function PersonaOverviewFilterHeader({
             {options.map((opt) => {
               const selected = value === opt.value;
               return (
-                <button
+                <OptionRow
                   key={opt.value}
-                  type="button"
                   role="menuitemradio"
-                  aria-checked={selected}
-                  onClick={() => {
+                  selected={selected}
+                  onSelect={() => {
                     onChange(opt.value);
                     setOpen(false);
                   }}
-                  className={`w-full px-3 py-1.5 typo-caption text-left transition-colors flex items-center gap-2 ${
-                    selected
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-ink-1 hover:bg-surface-2'
-                  }`}
-                >
+                ><span className="flex items-center gap-2">
                   {opt.icon && <span className="flex-shrink-0">{opt.icon}</span>}
                   <span className="truncate flex-1">{opt.label}</span>
-                </button>
+                </span></OptionRow>
               );
             })}
           </div>,

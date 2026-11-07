@@ -35,6 +35,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * First-paint default while `getDeadLetterConfig` is in flight. Matches the
  * historical Rust default; the real cap is fetched on mount and overrides
@@ -751,10 +752,7 @@ export function DeadLetterTab() {
               return (
                 <div key={group.key} className="rounded-card border border-status-error/20 bg-status-error/5">
                   <div className="flex items-center justify-between gap-3 p-3">
-                    <Tooltip content={expanded ? t.triggers.dead_letter_group_collapse : t.triggers.dead_letter_group_expand}><button
-                      type="button"
-                      onClick={() => toggleGroup(group.key)}
-                      className="flex items-start gap-2 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
+                    <Tooltip content={expanded ? t.triggers.dead_letter_group_collapse : t.triggers.dead_letter_group_expand}><PressSurface onPress={() => toggleGroup(group.key)} className="flex items-start gap-2 flex-1 min-w-0">
                       {expanded ? (
                         <ChevronDown className="w-4 h-4 text-ink-1 shrink-0 mt-0.5" />
                       ) : (
@@ -776,7 +774,7 @@ export function DeadLetterTab() {
                           event={{ status: 'dead_letter', error_message: group.representative || null }}
                         />
                       </div>
-                    </button></Tooltip>
+                    </PressSurface></Tooltip>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <Button
                         type="button"

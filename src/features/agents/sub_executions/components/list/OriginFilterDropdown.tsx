@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { EXECUTION_ORIGINS, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { ORIGIN_META, originLabel } from './OriginBadge';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface OriginFilterDropdownProps {
   value: ExecutionOrigin | null;
@@ -48,25 +49,21 @@ export function OriginFilterDropdown({ value, onChange }: OriginFilterDropdownPr
             const active = option === value;
             const Icon = option === null ? Route : ORIGIN_META[option].icon;
             return (
-              <button
-                type="button"
+              <OptionRow
                 key={option ?? 'all'}
                 role="option"
-                aria-selected={active}
-                onClick={() => {
+                selected={active}
+                onSelect={() => {
                   onChange(active ? null : option);
                   close();
                 }}
-                className={`flex items-center gap-2 w-full px-3 py-1.5 typo-body transition-colors hover:bg-surface-2 ${
-                  active ? 'text-primary' : 'text-ink-1'
-                }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span className="flex-1 text-left">
                   {option === null ? e.origin_filter_all : originLabel(t, option)}
                 </span>
                 {active && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-              </button>
+              </OptionRow>
             );
           })}
         </div>

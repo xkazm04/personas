@@ -7,6 +7,7 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useMenuKeyboard } from '@/hooks/utility/interaction/useMenuKeyboard';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface PersonaBatchTeamMenuProps {
   /** Shared busy flag of the batch bar: a move cannot start while another bulk action runs. */
@@ -46,9 +47,6 @@ export function PersonaBatchTeamMenu({ busy, onPick }: PersonaBatchTeamMenuProps
     onPick(homeTeamId);
   };
 
-  const itemClass =
-    'w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2 focus-visible:bg-surface-2 focus:outline-none transition-colors text-left';
-
   return (
     <div ref={wrapRef} className="relative">
       <Button
@@ -78,19 +76,19 @@ export function PersonaBatchTeamMenu({ busy, onPick }: PersonaBatchTeamMenuProps
             </p>
           )}
           {sortedTeams.map((g) => (
-            <button key={g.id} type="button" role="menuitem" onClick={() => pick(g.id)} className={itemClass}>
+            <OptionRow key={g.id} role="menuitem" onSelect={() => pick(g.id)}><span className="flex items-center gap-2">
               <span
                 className="w-2 h-2 rounded-full flex-shrink-0"
                 style={{ backgroundColor: colorWithAlpha(g.color || '#6366f1', 0.9) }}
               />
               <span className="truncate">{g.name}</span>
-            </button>
+            </span></OptionRow>
           ))}
           <div className="my-1 border-t border-hair" />
-          <button type="button" role="menuitem" onClick={() => pick(null)} className={itemClass}>
+          <OptionRow role="menuitem" onSelect={() => pick(null)}><span className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-surface-2 flex-shrink-0" />
             {t.agents.persona_list.batch_move_to_ungrouped}
-          </button>
+          </span></OptionRow>
         </div>
       )}
     </div>

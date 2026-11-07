@@ -5,6 +5,7 @@
  * origin-bound, scoped, expiring key the cloud app claims once. Mounted once at
  * the app root (mirrors RemoteApprovalPrompt).
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useEffect, useState } from 'react';
 import { Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -130,18 +131,10 @@ export default function PairApprovalModal() {
           ) : (
             <div className="space-y-1 max-h-40 overflow-y-auto">
               {current.requested_scopes.map((scope) => (
-                <button
-                  key={scope}
-                  type="button"
-                  onClick={() => toggleScope(scope)}
-                  disabled={busy}
-                  className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:is-disabled ${
-                    scopes.has(scope) ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1'
-                  }`}
-                >
+                <PressSurface key={scope} onPress={() => toggleScope(scope)} selected={scopes.has(scope)} disabled={busy} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair">
                   <input type="checkbox" checked={scopes.has(scope)} readOnly tabIndex={-1} />
                   <code className="typo-code text-foreground truncate">{scope}</code>
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}

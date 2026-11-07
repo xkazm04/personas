@@ -1,4 +1,5 @@
 import { Zap } from 'lucide-react';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialTemplateEvent, CredentialEvent } from '@/lib/types/types';
 import {
@@ -52,24 +53,13 @@ export function EventTemplateCard({
         </div>
 
         {/* Toggle */}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isEnabled}
-          aria-label={tx(t.vault.event_config.template_trigger_aria, { name: template.name })}
-          onClick={() => onToggle(template.id, template.name)}
+        <AccessibleToggle
+          checked={isEnabled}
+          onChange={() => onToggle(template.id, template.name)}
+          label={tx(t.vault.event_config.template_trigger_aria, { name: template.name })}
           disabled={isSaving}
-          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-            isEnabled ? 'bg-status-warning' : 'bg-surface-2'
-          } ${isSaving ? 'opacity-50' : ''}`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-secondary transition-transform ${
-              isEnabled ? 'translate-x-5' : 'translate-x-0'
-            }`}
-          />
-          <span className="sr-only">Toggle {template.name}</span>
-        </button>
+          className="flex-shrink-0"
+        />
       </div>
 
       {/* Event-type-specific config (visible when enabled) */}

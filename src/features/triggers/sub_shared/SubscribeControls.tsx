@@ -46,16 +46,7 @@ export function SubscribeButton({ entryId, subscription, subscribe, unsubscribe 
   const m = t.triggers.marketplace;
   const { subscribed, busy, toggle } = useSubscribeToggle(entryId, subscription, subscribe, unsubscribe);
   return (
-    <button
-      type="button"
-      onClick={(e) => { e.stopPropagation(); void toggle(); }}
-      disabled={busy}
-      className={`group/sub inline-flex items-center gap-1 px-2.5 py-1 typo-caption rounded-input transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-        subscribed
-          ? 'bg-status-success/10 text-status-success hover:bg-status-error/10 hover:text-status-error'
-          : 'bg-primary/10 text-primary hover:bg-primary/20'
-      }`}
-    >
+    <Button variant={subscribed ? 'accent' : 'secondary'} tone={subscribed ? 'success' : undefined} size="xs" onClick={(e) => { e.stopPropagation(); void toggle(); }} disabled={busy} className="group/sub">
       {subscribed ? (
         <>
           <Check className="w-3 h-3 group-hover/sub:hidden" />
@@ -68,7 +59,7 @@ export function SubscribeButton({ entryId, subscription, subscribe, unsubscribe 
           {m.subscribe}
         </>
       )}
-    </button>
+    </Button>
   );
 }
 

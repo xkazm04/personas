@@ -9,7 +9,6 @@ import { useToastStore } from '@/stores/toastStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import Button from '@/features/shared/components/buttons/Button';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 interface ChatMessageContentProps {
@@ -114,13 +113,15 @@ function CodeBlock({
         {children}
       </pre>
       {!language && (
-        <Tooltip content={t.agents.chat_thread.copy_code}><button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          tooltip={t.agents.chat_thread.copy_code}
           onClick={handleCopy}
-          className="absolute top-1.5 right-1.5 p-1 rounded-interactive text-ink-1 opacity-0 group-hover/code:opacity-100 hover:text-ink-1 hover:bg-surface-1 transition-all"
-          aria-label={t.agents.chat_thread.copy_code}>
-          {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
-        </button></Tooltip>
+          className="absolute top-1.5 right-1.5 opacity-0 group-hover/code:opacity-100 focus-visible:opacity-100"
+          aria-label={t.agents.chat_thread.copy_code}
+          icon={copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
+        />
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import { getTriggerArmState } from './triggerArmState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 interface TriggerRowProps {
   trigger: PersonaTrigger;
   expanded: boolean;
@@ -24,11 +25,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
   return (
     <div className="animate-fade-slide-in"
     >
-      <button
-        type="button"
-        onClick={onToggleExpand}
-        className="flex items-center gap-2.5 w-full p-3 text-left focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-modal"
-      >
+      <PressSurface onPress={onToggleExpand} className="flex items-center gap-2.5 w-full p-3 rounded-modal">
         <TriggerStatusSummary trigger={trigger} />
 
         <span className="ml-auto flex items-center gap-2">
@@ -81,7 +78,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
 
           <ChevronDown className={`w-3.5 h-3.5 text-ink-1 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
         </span>
-      </button>
+      </PressSurface>
     </div>
   );
 });

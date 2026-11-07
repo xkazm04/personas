@@ -10,6 +10,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from './reviewParseCache';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export function ReviewExpandedDetail({
   review,
@@ -66,11 +67,10 @@ export function ReviewExpandedDetail({
           <SectionLabel>{t.templates.review_detail.use_case_flows}</SectionLabel>
           <div className="flex items-center gap-3 flex-wrap">
             {flows.map((flow) => (
-              <button
+              <PressSurface
                 key={flow.id}
-                type="button"
-                onClick={onViewDiagram}
-                className="bg-role-agent/5 border border-role-agent/15 rounded-modal px-4 py-3 text-left hover:bg-role-agent/10 hover:border-role-agent/25 transition-all group min-w-[180px]"
+                onPress={onViewDiagram}
+                className="bg-surface-1 border border-hair rounded-modal px-4 py-3 group min-w-[180px]"
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Workflow className="w-4 h-4 text-role-agent/70 group-hover:text-role-agent transition-colors" />
@@ -85,7 +85,7 @@ export function ReviewExpandedDetail({
                 <div className="typo-body text-role-agent/50 mt-1.5 group-hover:text-role-agent/70 transition-colors">
                   {t.templates.review_detail.view_diagram}
                 </div>
-              </button>
+              </PressSurface>
             ))}
           </div>
         </div>

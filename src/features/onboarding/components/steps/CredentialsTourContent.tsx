@@ -5,6 +5,7 @@ import {
 import { useTourStore } from '@/stores/tourStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 const FEATURED_CATEGORIES = [
   { id: 'ai', label: 'AI', icon: Zap, color: '#6C3AEF' },
   { id: 'messaging', label: 'Messaging', icon: Globe, color: '#6366f1' },
@@ -61,17 +62,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
           {FEATURED_CATEGORIES.map((cat) => {
             const isBrowsed = interactions.categoriesBrowsed.includes(cat.id);
             return (
-              <button
-                type="button"
-                key={cat.id}
-                onClick={() => recordInteraction('category', cat.id)}
-                data-testid={`tour-cred-category-${cat.id}`}
-                className={`flex flex-col items-center gap-1 p-2 rounded-modal border transition-all ${
-                  isBrowsed
-                    ? 'bg-status-success/5 border-status-success/20'
-                    : 'border-hair hover:border-hair hover:bg-surface-2'
-                }`}
-              >
+              <PressSurface key={cat.id} selected={isBrowsed} onPress={() => recordInteraction('category', cat.id)} data-testid={`tour-cred-category-${cat.id}`} className="flex flex-col items-center gap-1 p-2 rounded-modal border border-hair">
                 <div
                   className="w-6 h-6 rounded-card flex items-center justify-center"
                   style={{ backgroundColor: `${cat.color}20` }}
@@ -80,7 +71,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
                 </div>
                 <span className="typo-caption text-ink-2 truncate w-full text-center">{cat.label}</span>
                 {isBrowsed && <Check className="w-2.5 h-2.5 text-status-success" />}
-              </button>
+              </PressSurface>
             );
           })}
         </div>

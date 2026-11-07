@@ -14,6 +14,7 @@ import { Power } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export type CapabilitySegmentState = 'answered' | 'blocked' | 'pending';
 
@@ -84,12 +85,11 @@ export function CapabilityTagSwitcher({
           >
             <div className="flex items-center gap-1.5 min-w-0">
               <Tooltip content={item.title}>
-              <button
-                type="button"
+              <PressSurface
                 role="tab"
                 aria-selected={isActive}
-                onClick={() => onActiveChange(item.id)}
-                className="flex-1 min-w-0 flex items-center gap-2 text-left cursor-pointer"
+                onPress={() => onActiveChange(item.id)}
+                className="flex-1 min-w-0 flex items-center gap-2"
               >
                 <span
                   className={`flex-1 min-w-0 truncate typo-caption ${
@@ -101,7 +101,7 @@ export function CapabilityTagSwitcher({
                 <span className={`typo-caption font-mono tabular-nums shrink-0 ${countColor(item)}`}>
                   {item.answered}/{item.total}
                 </span>
-              </button>
+              </PressSurface>
               </Tooltip>
               <Button
                 type="button"

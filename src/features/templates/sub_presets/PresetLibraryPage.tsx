@@ -12,6 +12,7 @@ import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { PresetPreviewModal } from './PresetPreviewModal';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 /** Preset ids that ship a symbolic Leonardo illustration (dark + light). Other
  *  presets fall back to a color-gradient tile. */
@@ -127,11 +128,10 @@ function PresetTile({ preset, art, big, memberLabel, onOpen }: {
 }) {
   const color = preset.color || '#6366f1';
   return (
-    <button
-      type="button"
-      onClick={onOpen}
+    <PressSurface
+      onPress={onOpen}
       data-testid={`preset-card-${preset.id}`}
-      className="group relative w-full h-full overflow-hidden rounded-card border border-hair hover:border-primary/30 text-left transition-all"
+      className="group relative w-full h-full overflow-hidden rounded-card border border-hair"
     >
       {art ? (
         <img src={art} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
@@ -146,7 +146,7 @@ function PresetTile({ preset, art, big, memberLabel, onOpen }: {
           {memberLabel}
         </span>
       </div>
-    </button>
+    </PressSurface>
   );
 }
 

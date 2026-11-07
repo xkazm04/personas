@@ -6,6 +6,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface QuickStatsBarProps {
   personaId: string;
@@ -179,15 +180,14 @@ function StatChip({
     // hover AND keyboard focus (golden path: tooltip.md).
     return (
       <Tooltip content={`${label}: ${value}`}>
-        <button
-          type="button"
-          onClick={onClick}
+        <PressSurface
+          onPress={onClick}
           data-testid={testId}
           aria-label={`${label}: ${value}`}
-          className={`${className} hover:text-ink-1 transition-colors focus-ring cursor-pointer`}
+          className="rounded-interactive -mx-1 px-1"
         >
-          {body}
-        </button>
+          <span className={className}>{body}</span>
+        </PressSurface>
       </Tooltip>
     );
   }

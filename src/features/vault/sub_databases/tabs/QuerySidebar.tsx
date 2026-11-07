@@ -128,7 +128,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             <Button
               type="button"
               aria-label={q.is_favorite ? db.remove_favorite : db.add_favorite}
-              aria-pressed={q.is_favorite}
+              pressed={q.is_favorite}
               onClick={(e) => { e.stopPropagation(); handleToggleFavorite(q.id, q.is_favorite); }}
               variant="ghost"
               size="icon-sm"

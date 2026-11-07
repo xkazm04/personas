@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const logger = createLogger("use-case-history");
 
@@ -115,10 +116,9 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
 
         return (
           <div key={exec.id} className="px-4 py-2">
-            <button
-              type="button"
-              onClick={() => setExpandedId(isExpanded ? null : exec.id)}
-              className="w-full flex items-center gap-3 text-left"
+            <PressSurface
+              onPress={() => setExpandedId(isExpanded ? null : exec.id)}
+              className="w-full flex items-center gap-3"
             >
               <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusInfo.className}`} />
               <span className="typo-heading text-ink-1 capitalize w-20 flex-shrink-0">
@@ -149,7 +149,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
                   icon={<RotateCw className="w-3 h-3" />}
                 />
               )}
-            </button>
+            </PressSurface>
 
             {/* Expanded detail */}
             {isExpanded && (

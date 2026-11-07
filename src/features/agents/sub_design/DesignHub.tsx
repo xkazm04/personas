@@ -1,5 +1,4 @@
 import { Suspense, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { ScrollText, ClipboardList, Brain, Plug } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
@@ -7,6 +6,7 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DesignSubTab } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 // The four standing surfaces stay one deferred chunk each. Connectors keeps
 // its own module (it pulls the vault + verification machinery); the three
@@ -98,40 +98,30 @@ export function DesignHub() {
         <div
           ref={tablistRef}
           role="tablist"
-          className="flex items-center flex-1 min-w-0 overflow-x-auto scrollbar-none"
+          className="flex items-center gap-1 flex-1 min-w-0 py-1.5 overflow-x-auto scrollbar-none"
         >
           {SUB_TABS.map((tab, index) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
             const label = subtabLabels[tab.labelKey] ?? tab.labelKey;
             return (
-              <button
-                type="button"
+              <OptionChip
                 key={tab.id}
                 role="tab"
                 id={`design-subtab-tab-${tab.id}`}
-                aria-selected={isActive}
+                selected={isActive}
                 // Only the selected tab names the panel: the others' panels are
                 // not mounted, and a reference to an absent id dangles.
                 aria-controls={isActive ? `design-subtab-panel-${tab.id}` : undefined}
                 tabIndex={isActive ? 0 : -1}
                 data-testid={`design-subtab-${tab.id}`}
-                onClick={() => setDesignSubTab(tab.id)}
+                onSelect={() => setDesignSubTab(tab.id)}
                 onKeyDown={(e) => handleTabKeyDown(e, index)}
-                className={`relative flex items-center gap-1.5 px-3 py-2 typo-body transition-colors whitespace-nowrap ${
-                  isActive ? 'text-primary' : 'text-ink-1 hover:text-ink-1'
-                }`}
+                className="whitespace-nowrap"
+                icon={<Icon className="w-3.5 h-3.5" />}
               >
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {label}
-                {isActive && (
-                  <motion.div
-                    layoutId="designSubTab"
-                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
-              </button>
+              </OptionChip>
             );
           })}
         </div>

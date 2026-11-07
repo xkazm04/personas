@@ -6,6 +6,7 @@ import { summarizeAnswer } from './questionnaireHelpers';
 import type { QuestionnaireThreadState } from './types';
 import { DebtText } from '@/i18n/DebtText';
 import { QuestionnaireCategoryRail, useCategoryBuckets } from './QuestionnaireCategoryRail';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 function statusIconFor(state: QuestionnaireThreadState) {
@@ -47,14 +48,11 @@ function ThreadItem({
   const StatusIcon = statusIconFor(effectiveState);
   const statusColor = statusColorFor(effectiveState);
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-current={state === 'current' ? 'step' : undefined}
-      className={`w-full text-left rounded-card px-3 py-2.5 transition-colors group relative ${
-        state === 'current'
-          ? 'bg-primary/10 border border-primary/25'
-          : 'hover:bg-foreground/[0.04] border border-transparent'
+      className={`w-full rounded-card px-3 py-2.5 group relative border ${
+        state === 'current' ? 'bg-sel border-hair-2' : 'border-transparent'
       }`}
     >
       {state === 'current' && (
@@ -94,7 +92,7 @@ function ThreadItem({
           ) : null}
         </div>
       </div>
-    </button>
+    </PressSurface>
   );
 }
 

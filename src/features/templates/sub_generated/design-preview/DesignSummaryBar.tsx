@@ -2,6 +2,7 @@ import { Plug, Wrench, Zap, MessageSquare, CheckCircle, AlertTriangle, XCircle, 
 import { useTranslation } from '@/i18n/useTranslation';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import type { AgentIR, DesignTestResult } from '@/lib/types/designTypes';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export type DesignSection = 'connectors' | 'events' | 'messages';
 
@@ -58,14 +59,13 @@ export function DesignSummaryBar({ result, channelCount, subscriptionCount, feas
           </>
         );
         return onJump ? (
-          <button
+          <PressSurface
             key={p.label}
-            type="button"
-            onClick={() => onJump(p.target)}
-            className={`${base} hover:bg-secondary/70 hover:border-hair transition-colors cursor-pointer`}
+            onPress={() => onJump(p.target)}
+            className={base}
           >
             {inner}
-          </button>
+          </PressSurface>
         ) : (
           <span key={p.label} className={base}>
             {inner}

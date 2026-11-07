@@ -1,8 +1,8 @@
 import { AlertCircle, Play, Rocket, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import Button from '@/features/shared/components/buttons/Button';
 
-const ACTION_BTN = 'mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-hair hover:bg-primary/20 hover:text-primary transition-colors';
 
 function StateCard({ icon: Icon, tone, title, body, action }: {
   icon: LucideIcon;
@@ -35,7 +35,7 @@ export function ExecutionListError({ onRetry }: { onRetry: () => void }) {
       tone="error"
       title={e.load_failed_title}
       body={e.load_failed_body}
-      action={<button type="button" onClick={onRetry} className={ACTION_BTN}>{t.common.retry}</button>}
+      action={<Button variant="secondary" size="sm" onClick={onRetry} className="mt-4">{t.common.retry}</Button>}
     />
   );
 }

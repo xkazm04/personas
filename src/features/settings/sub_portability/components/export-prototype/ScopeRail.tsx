@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Bot, Users, KeyRound, FolderGit2, BookOpen, Fingerprint, Sparkles, Boxes, Eraser, Lock, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExportKind, ExportPicker } from './types';
@@ -71,16 +72,7 @@ export function ScopeRail({
         const c = picker.counts[key];
         const active = scope === key;
         return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onScope(key)}
-            aria-current={active}
-            data-testid={`portability-scope-${key}`}
-            className={`relative flex items-center gap-2.5 pl-3 pr-2.5 py-2.5 rounded-card text-left transition-colors ${
-              active ? 'bg-primary/10 border border-hair' : 'border border-transparent hover:bg-surface-1'
-            }`}
-          >
+          <PressSurface key={key} onPress={() => onScope(key)} aria-current={active} aria-pressed={undefined} selected={active} data-testid={`portability-scope-${key}`} className="relative flex items-center gap-2.5 pl-3 pr-2.5 py-2.5 rounded-card">
             {active && <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-primary" />}
             <span className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${accent}`}>
               <Icon className="w-4 h-4" />
@@ -94,7 +86,7 @@ export function ScopeRail({
             {ENCRYPTED.has(key) && (
               <Lock className="w-3 h-3 text-status-warning flex-shrink-0" aria-label={p.encrypted_scope} />
             )}
-          </button>
+          </PressSurface>
         );
       })}
 

@@ -24,7 +24,7 @@ import { PersonaGroupDropRail } from '../PersonaGroupDropRail';
 /** The count chip rendered beside an option's label. */
 function countOf(label: string): string | null {
   const option = screen.getAllByRole('option').find((o) => o.textContent?.includes(label));
-  return option?.querySelector('.font-mono')?.textContent ?? null;
+  return option?.querySelector('.num')?.textContent ?? null;
 }
 
 describe('PersonaGroupDropRail - counts match the rows the roster lists', () => {

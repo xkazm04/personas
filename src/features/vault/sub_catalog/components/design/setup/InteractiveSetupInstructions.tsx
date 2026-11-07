@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback, useMemo, useEffect, useId } from 'react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import ReactMarkdown from 'react-markdown';
@@ -91,11 +92,7 @@ export function InteractiveSetupInstructions({
     <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
       {/* Header -- grouped controls with separate buttons */}
       <div className="w-full flex items-center gap-2 px-4 py-3 hover:bg-surface-1 transition-colors" role="group" aria-label={dp.setup_instructions}>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 flex-1 text-left rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-role-agent/40"
-        >
+        <PressSurface onPress={() => setIsOpen(!isOpen)} aria-expanded={isOpen} className="flex items-center gap-2 flex-1 rounded-card">
           <ListChecks className="w-3.5 h-3.5 text-ink-1 shrink-0" />
           <span className="typo-body text-ink-1 flex-1">
             {dp.setup_instructions}
@@ -114,7 +111,7 @@ export function InteractiveSetupInstructions({
           >
             <ChevronDown className="w-3.5 h-3.5 text-foreground" />
           </div>
-        </button>
+        </PressSurface>
 
         {/* Open setup page shortcut */}
         {firstSetupUrl && (

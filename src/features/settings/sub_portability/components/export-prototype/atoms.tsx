@@ -1,4 +1,5 @@
 import { Check, Minus } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // ---------------------------------------------------------------------------
@@ -20,11 +21,11 @@ export function SelectBox({
 }) {
   const checked = state === true || state === 'all';
   const indeterminate = state === 'some';
-  const px = size === 'sm' ? 'w-4 h-4' : 'w-[18px] h-[18px]';
   const ic = size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3';
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="icon-xs"
       role="checkbox"
       aria-checked={indeterminate ? 'mixed' : checked}
       aria-label={ariaLabel}
@@ -33,9 +34,7 @@ export function SelectBox({
         e.stopPropagation();
         onChange();
       }}
-      className={`${px} rounded-input flex items-center justify-center flex-shrink-0 transition-all duration-200 bg-surface-2 border border-hair ${
-        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-primary/40'
-      }`}
+      className="flex-shrink-0"
     >
       {checked && !indeterminate && (
         <span className="animate-fade-slide-in">
@@ -47,7 +46,7 @@ export function SelectBox({
           <Minus className={`${ic} text-status-success`} strokeWidth={3} />
         </span>
       )}
-    </button>
+    </Button>
   );
 }
 

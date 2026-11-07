@@ -51,7 +51,7 @@ export function AutomationConditionStep({
   return (
     <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
-        <div className="px-3.5 py-2.5 rounded-modal bg-accent/5 border border-accent/15">
+        <div className="px-3.5 py-2.5 rounded-modal bg-surface-1 border border-hair">
           <p className="typo-body text-ink-1">
             <span className="font-medium text-accent">{t.agents.connectors.auto_ai_recommendation}</span>{' '}
             {designResult.platform_reasoning}

@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ExtractStep, OutputStep, PreviewStep, ScheduleStep, SourceStep, STEPS, stepComplete } from './EditorSteps';
 import type { EditorVariantProps } from './useScrapeForm';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * The scrape editor — a guided assembly line. One pipeline step at a time with a
  * progress rail down the left; you can't lose your place, and each step is fully
@@ -41,13 +42,7 @@ export function ScrapeEditorWizard({ form, isEdit, saving, onCancel, onSave }: E
             const active = i === step;
             return (
               <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => setStep(i)}
-                  className={`flex w-full items-center gap-2.5 rounded-interactive px-2.5 py-2 text-left transition-colors ${
-                    active ? 'bg-surface-1 text-ink-1' : 'text-ink-3 hover:bg-surface-2'
-                  }`}
-                >
+                <PressSurface onPress={() => setStep(i)} selected={active} className="flex w-full items-center gap-2.5 rounded-interactive px-2.5 py-2">
                   <span
                     className={`flex size-5 shrink-0 items-center justify-center rounded-full typo-caption ${
                       done ? 'bg-status-success/15 text-status-success' : active ? 'bg-primary/20 text-ink-1' : 'bg-surface-2'
@@ -56,7 +51,7 @@ export function ScrapeEditorWizard({ form, isEdit, saving, onCancel, onSave }: E
                     {done ? <Check className="size-3" /> : i + 1}
                   </span>
                   <span className="typo-caption">{t.plugins.scraper.step_labels[s.id]}</span>
-                </button>
+                </PressSurface>
               </li>
             );
           })}

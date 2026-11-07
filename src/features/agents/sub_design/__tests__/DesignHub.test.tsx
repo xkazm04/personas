@@ -36,9 +36,9 @@ describe('DesignHub sub-tab fallback', () => {
     );
     renderHub();
     expect(await screen.findByTestId('panel-manifest')).toBeTruthy();
-    expect(screen.getByTestId('design-subtab-manifest').className).toContain('text-primary');
+    expect(screen.getByTestId('design-subtab-manifest').getAttribute('aria-selected')).toBe('true');
     for (const id of TABS.slice(1)) {
-      expect(screen.getByTestId(`design-subtab-${id}`).className).not.toContain('text-primary');
+      expect(screen.getByTestId(`design-subtab-${id}`).getAttribute('aria-selected')).toBe('false');
     }
   });
 

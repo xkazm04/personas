@@ -24,6 +24,7 @@ import { createTrigger } from '@/api/pipeline/triggers';
 import { draftLinkToTriggerInput } from '@/features/triggers/sub_studio/libs/studioCommit';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 export interface WireFeedToPersonaModalProps {
   entry: SharedEventCatalogEntry;
   onClose: () => void;
@@ -87,19 +88,9 @@ export function WireFeedToPersonaModal({ entry, onClose }: WireFeedToPersonaModa
             <ul className="space-y-1" role="radiogroup" aria-label={m.wire_title}>
               {sorted.map((p) => (
                 <li key={p.id}>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={selected === p.id}
-                    onClick={() => setSelected(p.id)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-interactive typo-caption transition-colors ${
-                      selected === p.id
-                        ? 'bg-primary/15 text-primary border border-primary/35'
-                        : 'bg-surface-2 text-ink-1 border border-card-border hover:border-hair-2'
-                    }`}
-                  >
+                  <OptionRow role="radio" selected={selected === p.id} onSelect={() => setSelected(p.id)}>
                     {p.name}
-                  </button>
+                  </OptionRow>
                 </li>
               ))}
             </ul>

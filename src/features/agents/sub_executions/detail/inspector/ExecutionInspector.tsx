@@ -6,6 +6,7 @@ import { parseToolSteps, durationColor } from './inspectorTypes';
 import { InspectorStatStrip, StepIO } from './inspectorShared';
 import { SubagentTree } from './SubagentTree';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface ExecutionInspectorProps {
   execution: PersonaExecution;
@@ -61,13 +62,11 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
             const durMs = step.duration_ms != null ? Number(step.duration_ms) : null;
             const isActive = i === Math.min(selected, steps.length - 1);
             return (
-              <button
-                type="button"
+              <PressSurface
                 key={step.step_index}
-                onClick={() => setSelected(i)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-left border-b border-hair last:border-b-0 transition-colors ${
-                  isActive ? 'bg-surface-1 border-l-2 border-l-primary' : 'hover:bg-surface-2 border-l-2 border-l-transparent'
-                }`}
+                onPress={() => setSelected(i)}
+                selected={isActive}
+                className="w-full flex items-center gap-2 px-3 py-2 border-b border-hair last:border-b-0"
               >
                 <span className="typo-code text-ink-1 w-4 text-right flex-shrink-0">{step.step_index}</span>
                 <span className="typo-code text-ink-1 truncate flex-1">{step.tool_name}</span>
@@ -75,7 +74,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
                   <Clock className="w-2.5 h-2.5" />
                   {durMs != null ? formatDuration(durMs) : e.pending}
                 </span>
-              </button>
+              </PressSurface>
             );
           })}
         </div>

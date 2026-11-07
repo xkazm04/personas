@@ -27,6 +27,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface PersonaIconPickerModalProps {
   isOpen: boolean;
@@ -223,21 +224,18 @@ export function PersonaIconPickerModal({
                 const iconValue = toAgentIconValue(entry.id);
                 const isSelected = value === iconValue;
                 return (
-                  <Tooltip content={entry.label}><button
+                  <Tooltip content={entry.label}><PressSurface
                     key={entry.id}
-                    type="button"
-                    onClick={() => handlePick(iconValue)}
-                    className={`group relative aspect-square w-full rounded-modal border flex flex-col items-center justify-center gap-2 p-3 transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-primary ring-2 ring-primary/30 bg-surface-1 scale-[1.03]'
-                        : 'border-hair bg-background/40 hover:bg-surface-2 hover:border-primary/30 hover:scale-[1.02]'
-                    }`}
-                    style={isSelected ? { backgroundColor: `${entry.suggestedColor}1f` } : undefined}>
+                    onPress={() => handlePick(iconValue)}
+                    selected={isSelected}
+                    className={`group relative aspect-square w-full rounded-modal border flex flex-col items-center justify-center gap-2 p-3 ${
+                      isSelected ? 'border-primary' : 'border-hair'
+                    }`}>
                     <PersonaIcon icon={iconValue} color={null} size="w-[72%] h-[72%]" />
                     <span className="typo-caption text-ink-2 truncate w-full text-center">
                       {entry.label}
                     </span>
-                  </button></Tooltip>
+                  </PressSurface></Tooltip>
                 );
               })}
             </div>
@@ -286,19 +284,20 @@ export function PersonaIconPickerModal({
                           : 'border-hair bg-background/40 hover:bg-surface-2 hover:border-primary/30'
                       }`}
                     >
-                      <Tooltip content={t.shared.forms_extra.your_icons}><button
-                        type="button"
-                        onClick={() => handlePick(iconValue)}
-                        className="absolute inset-0 flex items-center justify-center p-3 cursor-pointer">
+                      <Tooltip content={t.shared.forms_extra.your_icons}><PressSurface
+                        onPress={() => handlePick(iconValue)}
+                        className="absolute inset-0 flex items-center justify-center p-3 rounded-modal">
                         <PersonaIcon icon={iconValue} color={null} size="w-[72%] h-[72%]" />
-                      </button></Tooltip>
-                      <Tooltip content={t.shared.forms_extra.remove_custom_icon}><button
-                        type="button"
+                      </PressSurface></Tooltip>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        tooltip={t.shared.forms_extra.remove_custom_icon}
                         onClick={(e) => { deleteAnchorRef.current = e.currentTarget; setPendingDeleteId(assetId); }}
                         aria-label={t.shared.forms_extra.remove_custom_icon}
-                        className="absolute top-1 right-1 p-1 rounded-card bg-background/80 text-ink-1 opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-secondary transition-all cursor-pointer">
-                        <Trash2 className="w-3 h-3" />
-                      </button></Tooltip>
+                        className="absolute top-1 right-1 bg-background/80 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                        icon={<Trash2 className="w-3 h-3" />}
+                      />
                     </div>
                   );
                 })}

@@ -15,7 +15,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { parseDesignContext } from '@/features/agents/shared/designContext';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { BaseModal } from '@/features/shared/components/modals';
-import { Button } from '@/features/shared/components/buttons';
+import { Button, PressSurface } from '@/features/shared/components/buttons';
 
 const TITLE_ID = 'add-persona-modal-title';
 
@@ -162,11 +162,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
 
         {capabilityStep && (
           <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
-            <button
-              type="button"
-              onClick={() => handleCapabilityPick(null)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-card border border-hair hover:border-status-success/40 hover:bg-status-success/5 transition-colors text-left"
-            >
+            <PressSurface onPress={() => handleCapabilityPick(null)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal border border-hair">
               <div className="icon-frame bg-status-success/10 flex-shrink-0">
                 <Users className="w-3.5 h-3.5 text-status-success" />
               </div>
@@ -174,7 +170,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                 <div className="typo-caption text-ink-2"><DebtText k="auto_persona_wide_8f9b90e5" /></div>
                 <div className="typo-caption text-ink-2"><DebtText k="auto_all_capabilities_run_for_this_event_18d928d7" /></div>
               </div>
-            </button>
+            </PressSurface>
             {capabilityOptions.length > 0 && (
               <div className="pt-1">
                 <div className="px-2 py-1 typo-eyebrow text-ink-1">
@@ -182,12 +178,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                 </div>
                 <div className="space-y-1">
                   {capabilityOptions.map(uc => (
-                    <button
-                      type="button"
-                      key={uc.id}
-                      onClick={() => handleCapabilityPick(uc.id)}
-                      className="w-full flex items-start gap-3 px-3 py-2 rounded-modal bg-card border border-primary/8 hover:border-role-external/40 hover:bg-role-external/5 transition-colors text-left"
-                    >
+                    <PressSurface key={uc.id} onPress={() => handleCapabilityPick(uc.id)} className="w-full flex items-start gap-3 px-3 py-2 rounded-modal border border-hair">
                       <div className="icon-frame bg-role-external/10 flex-shrink-0 mt-0.5">
                         <Layers className="w-3.5 h-3.5 text-role-external" />
                       </div>
@@ -197,7 +188,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                           <div className="typo-caption text-ink-2 line-clamp-2">{uc.description}</div>
                         )}
                       </div>
-                    </button>
+                    </PressSurface>
                   ))}
                 </div>
               </div>
@@ -251,13 +242,9 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
               {search ? (
                 <div className="flex flex-col items-center gap-2">
                   <span>{t.triggers.no_matching_personas_found}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSearch('')}
-                    className="text-primary hover:text-primary/80 transition-colors"
-                  >
+                  <Button variant="link" size="inline" onClick={() => setSearch('')}>
                     {t.triggers.clear_search_label}
-                  </button>
+                  </Button>
                 </div>
               ) : t.triggers.add_persona_all_connected}
             </div>
@@ -282,12 +269,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
 
               <div className="grid grid-cols-2 gap-1">
                 {ps.map(p => (
-                  <button
-                    type="button"
-                    key={p.id}
-                    onClick={() => handlePersonaPick(p)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card border border-primary/8 hover:border-status-success/40 hover:bg-status-success/5 transition-colors text-left group"
-                  >
+                  <PressSurface key={p.id} onPress={() => handlePersonaPick(p)} className="flex items-center gap-2 px-2.5 py-2 rounded-modal border border-hair group">
                     <div className="icon-frame bg-status-success/10 flex-shrink-0">
                       <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed frameSize={"lg"} />
                     </div>
@@ -295,7 +277,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                       <div className="typo-body-lg text-ink-1 truncate">{p.name}</div>
                     </div>
                     <Plus className="w-3.5 h-3.5 text-status-success group-hover:text-status-success transition-colors flex-shrink-0" />
-                  </button>
+                  </PressSurface>
                 ))}
               </div>
             </div>

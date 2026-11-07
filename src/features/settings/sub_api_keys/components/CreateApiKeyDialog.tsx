@@ -9,6 +9,7 @@
  * `personas:execute:persona:<id>` scope per pick (no blanket execute). Keys are
  * time-boxed by default.
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -154,40 +155,23 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
               {AVAILABLE_SCOPES.map((scope) => {
                 const isSelected = selectedScopes.has(scope.id);
                 return (
-                  <button
-                    key={scope.id}
-                    type="button"
-                    onClick={() => toggleScope(scope.id)}
-                    aria-pressed={isSelected}
-                    disabled={submitting}
-                    className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:is-disabled ${
-                      isSelected ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1 hover:bg-surface-2'
-                    }`}
-                  >
+                  <PressSurface key={scope.id} onPress={() => toggleScope(scope.id)} selected={isSelected} disabled={submitting} className="w-full flex items-start gap-2 px-3 py-2 rounded-card border border-hair">
                     <input type="checkbox" checked={isSelected} readOnly className="mt-0.5" tabIndex={-1} aria-hidden="true" />
                     <div className="flex-1 min-w-0">
                       <code className="typo-code text-foreground">{scope.id}</code>
                       <p className="typo-caption text-foreground mt-0.5">{s[scope.descriptionKey]}</p>
                     </div>
-                  </button>
+                  </PressSurface>
                 );
               })}
 
-              <button
-                type="button"
-                onClick={() => setAllowExecute((v) => !v)}
-                aria-pressed={allowExecute}
-                disabled={submitting}
-                className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:is-disabled ${
-                  allowExecute ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-surface-1 hover:bg-surface-2'
-                }`}
-              >
+              <PressSurface onPress={() => setAllowExecute((v) => !v)} selected={allowExecute} disabled={submitting} className="w-full flex items-start gap-2 px-3 py-2 rounded-card border border-hair">
                 <input type="checkbox" checked={allowExecute} readOnly className="mt-0.5" tabIndex={-1} aria-hidden="true" />
                 <div className="flex-1 min-w-0">
                   <span className="typo-body text-foreground">{s.scope_execute_label}</span>
                   <p className="typo-caption text-foreground mt-0.5">{s.scope_execute_desc}</p>
                 </div>
-              </button>
+              </PressSurface>
             </div>
 
             {allowExecute && (

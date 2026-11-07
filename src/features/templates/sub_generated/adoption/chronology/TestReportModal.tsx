@@ -19,6 +19,7 @@ import { CatalogCredentialModal } from '../../gallery/modals/CatalogCredentialMo
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 // ---------------------------------------------------------------------------
@@ -111,16 +112,14 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
               <h3 className="typo-eyebrow text-foreground">{t.templates.test_report.test_scope}</h3>
             </div>
             <div className="flex-1 overflow-y-auto py-1">
-              <button
-                type="button"
-                onClick={() => setSelectedTool(null)}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
-                  selectedTool === null ? 'bg-primary/8 border-r-2 border-primary' : 'hover:bg-surface-1'
-                }`}
+              <PressSurface
+                onPress={() => setSelectedTool(null)}
+                selected={selectedTool === null}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5"
               >
                 <FileText className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
                 <span className="typo-label text-foreground">{t.templates.test_report.overview}</span>
-              </button>
+              </PressSurface>
               {results.map((r) => (
                 <ToolTab key={r.tool_name} result={r} isActive={selectedTool === r.tool_name} onClick={() => setSelectedTool(r.tool_name)} />
               ))}
@@ -172,12 +171,10 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
     : '';
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
-        isActive ? 'bg-primary/8 border-r-2 border-primary' : 'hover:bg-surface-1'
-      }`}
+    <PressSurface
+      onPress={onClick}
+      selected={isActive}
+      className="w-full flex items-center gap-2.5 px-4 py-2.5"
     >
       {statusIcon}
       <div className="flex-1 min-w-0">
@@ -192,7 +189,7 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
         )}
         {latencyLabel && <span className={`typo-caption ${latencyColor}`}>{latencyLabel}</span>}
       </div>
-    </button>
+    </PressSurface>
   );
 }
 

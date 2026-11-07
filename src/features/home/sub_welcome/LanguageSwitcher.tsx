@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { switchLanguage, useLanguagePrefetch } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 type ScriptFamily = 'latin' | 'cjk' | 'indic' | 'arabic' | 'cyrillic';
 
 type LanguageEntry = {
@@ -75,22 +76,7 @@ export function LanguageCardGrid() {
           const isActive = language === lang.code;
           const isPending = pending === lang.code;
           return (
-            <button
-              key={lang.code}
-              type="button"
-              disabled={pending !== null}
-              aria-busy={isPending || undefined}
-              data-testid={`language-card-${lang.code}`}
-              onFocus={() => prefetchWithIntent(lang.code)}
-              onBlur={cancelPrefetch}
-              onMouseEnter={() => prefetchWithIntent(lang.code)}
-              onMouseLeave={cancelPrefetch}
-              onPointerDown={() => prefetchNow(lang.code)}
-              onClick={() => choose(lang.code)}
-              className={`group relative overflow-hidden rounded-modal border transition-all ${
-                isActive || isPending ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-hair hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
-              } ${isPending ? 'opacity-60' : ''} ${pending && !isPending ? 'opacity-40' : ''}`}
-            >
+            <PressSurface key={lang.code} selected={isActive || isPending} disabled={pending !== null} aria-busy={isPending || undefined} data-testid={`language-card-${lang.code}`} onFocus={() => prefetchWithIntent(lang.code)} onBlur={cancelPrefetch} onMouseEnter={() => prefetchWithIntent(lang.code)} onMouseLeave={cancelPrefetch} onPointerDown={() => prefetchNow(lang.code)} onPress={() => choose(lang.code)} className={`group relative overflow-hidden rounded-modal border border-hair ${isPending ? 'opacity-60' : ''} ${pending && !isPending ? 'opacity-40' : ''}`}>
               <div className="relative aspect-[4/3] bg-surface-1 overflow-hidden">
                 <img src={langIllustration(lang.code)} alt="" width={240} height={180} loading="eager" decoding="async"
                   className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${isActive ? 'opacity-90 scale-100' : 'opacity-30 scale-105 group-hover:opacity-85 group-hover:scale-100'}`} />
@@ -111,7 +97,7 @@ export function LanguageCardGrid() {
                   )}
                 </div>
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

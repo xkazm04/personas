@@ -2,6 +2,7 @@ import { Check, Users } from "lucide-react";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { PersonaSummary } from "./ComposerEventPersonaList";
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 export interface EventTemplate {
@@ -76,11 +77,10 @@ export function ComposerEventTemplateList({
                   : "border-hair bg-surface-1 hover:border-primary/30"
               }`}
             >
-              <button
-                type="button"
-                onClick={() => onToggleSubscription(activePersona.id, activePersona.name, tpl.triggerId, tpl.label)}
-                aria-pressed={subscribed}
-                className="w-full flex items-start gap-3 p-3 text-left cursor-pointer rounded-card focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              <PressSurface
+                onPress={() => onToggleSubscription(activePersona.id, activePersona.name, tpl.triggerId, tpl.label)}
+                selected={subscribed}
+                className="w-full flex items-start gap-3 p-3 rounded-card"
               >
                 <span
                   className={`shrink-0 w-5 h-5 rounded-input border flex items-center justify-center transition-colors mt-0.5 ${
@@ -98,7 +98,7 @@ export function ComposerEventTemplateList({
                     {tpl.description}
                   </div>
                 </div>
-              </button>
+              </PressSurface>
               {subscribed && (
                 <div className="px-3 pb-3 pl-11">
                   <input

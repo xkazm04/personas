@@ -7,6 +7,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { statusIcon, classifyExecutionStatus, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
 import type { CloudExecution } from '@/api/system/cloud';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface CloudExecutionRowProps {
   exec: CloudExecution;
@@ -45,18 +46,18 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
   return (
     <div data-testid="cloud-execution-row" className="rounded-card bg-surface-1 border border-hair overflow-hidden">
       {/* Row */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-2 transition-colors cursor-pointer"
+      <PressSurface
+        onPress={onToggle}
+        aria-expanded={isExpanded}
+        className="w-full flex items-center gap-3 px-3 py-2"
       >
         {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-ink-1" /> : <ChevronRight className="w-3.5 h-3.5 text-ink-1" />}
         {statusIcon(exec.status)}
         <span className="typo-body text-ink-1 truncate flex-1">{personaName}</span>
-        <span className="typo-caption text-ink-2">{formatDuration(durationMs)}</span>
-        <span className="typo-caption text-ink-2">{formatCost(exec.costUsd)}</span>
+        <span className="typo-caption num text-ink-2">{formatDuration(durationMs)}</span>
+        <span className="typo-caption num text-ink-2">{formatCost(exec.costUsd)}</span>
         <span className="typo-caption text-ink-2">{timeAgo(exec.createdAt)}</span>
-      </button>
+      </PressSurface>
 
       {/* Expanded detail */}
       {isExpanded && (
@@ -70,7 +71,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             <div><span className="text-ink-1">{dt.label_completed}</span> <span className="text-ink-1"><AbsoluteTime timestamp={exec.completedAt} /></span></div>
           </div>
           {exec.errorMessage && (
-            <div className="p-2 rounded-card bg-status-error/5 border border-status-error/10 typo-caption text-status-error">
+            <div className="p-2 rounded-card bg-surface-1 border border-hair typo-caption text-status-error">
               {exec.errorMessage}
             </div>
           )}
@@ -106,7 +107,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             }
             if (output.error) {
               return (
-                <div className="p-2 rounded-card bg-status-error/5 border border-status-error/10 typo-caption text-status-error">
+                <div className="p-2 rounded-card bg-surface-1 border border-hair typo-caption text-status-error">
                   {output.error}
                 </div>
               );

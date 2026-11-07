@@ -14,6 +14,7 @@ import Button from "@/features/shared/components/buttons/Button";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { useQuestionKeys } from "./useQuestionKeys";
 import { COPY } from "./copy";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface QuestionLayerProps {
   question: BuildQuestion;
@@ -53,14 +54,13 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
           {options.map((opt, i) => {
             const on = draft === opt;
             return (
-              <button
+              <PressSurface
                 key={opt}
                 ref={i === 0 ? firstOpt : undefined}
-                type="button"
                 role="radio"
                 aria-checked={on}
-                onClick={() => onPick(opt)}
-                className="flex items-center gap-3 min-h-[42px] px-3 py-2 rounded-input border text-left typo-body text-ink-1 transition-colors"
+                onPress={() => onPick(opt)}
+                className="flex items-center gap-3 min-h-[42px] px-3 py-2 rounded-input border"
                 style={{ borderColor: on ? color : "var(--card-border, rgba(255,255,255,0.1))", background: on ? colorWithAlpha(color, 0.12) : undefined }}
               >
                 <span
@@ -70,7 +70,7 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
                   {i + 1}
                 </span>
                 <span>{opt}</span>
-              </button>
+              </PressSurface>
             );
           })}
         </div>

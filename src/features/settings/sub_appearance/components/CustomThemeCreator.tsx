@@ -201,7 +201,7 @@ export default function CustomThemeCreator() {
                   type="button"
                   key={mode}
                   onClick={() => setBaseMode(mode)}
-                  aria-pressed={active}
+                  pressed={active}
                   variant={active ? 'accent' : 'secondary'}
                   tone={active ? 'highlight' : undefined}
                   size="md"

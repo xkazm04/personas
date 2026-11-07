@@ -22,6 +22,7 @@ import { TourNarrationButton } from './TourNarrationButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 export default function GuidedTour() {
   // Precedence contract — see `src/features/onboarding/README.md`
   // ("Onboarding modal vs Guided Tour"): the modal owns the screen
@@ -326,19 +327,13 @@ export default function GuidedTour() {
                   {otherTours.map((td) => {
                     const done = completionMap[td.id];
                     return (
-                      <button
-                        key={td.id}
-                        type="button"
-                        onClick={() => handleFinishTour(td.id)}
-                        data-testid={`tour-complete-jump-${td.id}`}
-                        className="group flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-hair hover:bg-surface-1 transition-colors text-left"
-                      >
+                      <PressSurface key={td.id} onPress={() => handleFinishTour(td.id)} data-testid={`tour-complete-jump-${td.id}`} className="group flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-hair">
                         <span className={`flex items-center justify-center w-5 h-5 rounded-full border flex-shrink-0 ${done ? 'bg-status-success/15 border-status-success/30 text-status-success' : 'border-hair text-ink-1'}`}>
                           {done ? <Check className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
                         </span>
                         <span className="typo-body text-ink-1 truncate flex-1">{td.title}</span>
                         <ChevronRight className="w-3.5 h-3.5 text-ink-1 opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" />
-                      </button>
+                      </PressSurface>
                     );
                   })}
                 </div>
@@ -435,21 +430,12 @@ export default function GuidedTour() {
       total: visibleSteps.length,
     });
     return (
-      <Tooltip content={minimizedHint}><button
-        type="button"
-        // Just expand — don't re-run navigateToStep. Minimizing only collapses
-        // the panel (the user stays on the step's screen), so re-navigating on
-        // restore needlessly re-fired every step side effect (route changes,
-        // modal opens, appearance-baseline capture, etc.).
-        onClick={() => setIsMinimized(false)}
-        data-testid="tour-panel-minimized"
-        aria-label={minimizedHint}
-        className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background border border-l-0 ${colors.accent} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}>
+      <Tooltip content={minimizedHint}><PressSurface onPress={() => setIsMinimized(false)} data-testid="tour-panel-minimized" aria-label={minimizedHint} className="animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background border border-hair border-l-0 group">
         <span className={colors.text}>
           <TourProgressArc completed={completedCount} total={visibleSteps.length} />
         </span>
         <span className="typo-caption text-ink-2 [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
-      </button></Tooltip>
+      </PressSurface></Tooltip>
     );
   }
 

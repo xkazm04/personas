@@ -16,6 +16,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { ScanResult, ScanFinding } from '@/lib/templates/personaSafetyScanner';
 import { SEVERITY_CONFIG, CATEGORY_LABELS } from '@/lib/templates/personaSafetyScanner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 // -- Empathetic illustrations ----------------------------------------
 
@@ -121,10 +122,9 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
 
   return (
     <div className={`rounded-card border ${config.border} ${config.bg} overflow-hidden`}>
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-secondary/[0.02] transition-colors"
+      <PressSurface
+        onPress={() => setExpanded(!expanded)}
+        className="w-full flex items-start gap-2.5 px-3 py-2.5"
       >
         <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${config.dotColor}`} />
         <div className="flex-1 min-w-0">
@@ -143,7 +143,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
             expanded ? 'rotate-90' : ''
           }`}
         />
-      </button>
+      </PressSurface>
 
       {expanded && finding.context && (
         <div className="px-3 pb-2.5 pt-0">
@@ -179,16 +179,15 @@ function SeveritySection({
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 typo-body text-foreground hover:text-ink-2 transition-colors mb-1.5 w-full"
+      <PressSurface
+        onPress={() => setOpen(!open)}
+        className="flex items-center gap-2 typo-body text-ink-2 mb-1.5 w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         {icon}
         <span className="typo-eyebrow">{label}</span>
         <span className="text-foreground ml-auto">{findings.length}</span>
-      </button>
+      </PressSurface>
       {open && (
         <div className="space-y-1.5 ml-1">
           {findings.map((f) => (

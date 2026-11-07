@@ -76,7 +76,7 @@ function TypeChip({ label, active, onClick }: { label: string; active: boolean; 
     <Button
       type="button"
       onClick={onClick}
-      aria-pressed={active}
+      pressed={active}
       data-testid={`entity-type-chip-${label}`}
       variant={active ? 'accent' : 'secondary'}
       tone={active ? 'agent' : undefined}

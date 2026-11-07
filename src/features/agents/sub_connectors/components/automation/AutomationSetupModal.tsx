@@ -120,7 +120,7 @@ export function AutomationSetupModal({
             size="sm"
           >{t.agents.connectors.auto_start_over}</Button>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={handleClose} className="btn-md border border-hair text-ink-1 hover:bg-surface-2 transition-colors">{t.common.cancel}</button>
+            <Button variant="secondary" size="md" onClick={handleClose}>{t.common.cancel}</Button>
             <Tooltip
               content={
                 !s.name.trim()
@@ -132,18 +132,18 @@ export function AutomationSetupModal({
               placement="top"
               delay={200}
             >
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => void s.handleDeploy()}
                 // ONE rule for "may deploy": the hook's canDeploy also covers an
                 // out-of-range timeout and a deploy already in flight, which this
                 // inline test used to ignore.
                 disabled={!s.canDeploy || (!s.hasPlatformCredential && s.needsCredential)}
-                className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                icon={<Rocket className="w-3.5 h-3.5" />}
               >
-                <Rocket className="w-3.5 h-3.5" />
                 {t.agents.connectors.auto_deploy_save}
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>

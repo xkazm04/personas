@@ -15,6 +15,7 @@ import { getCategoryLabels } from '../libs/categoryLabels';
 import { computeStaleRecipeIds } from '../libs/recipeStaleness';
 import { RecipesTableResults } from './RecipesTableResults';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface RecipesBrowseListProps {
   recipes: Recipe[];
@@ -321,19 +322,16 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
             const isActive = value === opt.value;
             const isFocused = focusIndex === i;
             return (
-              <button
+              <OptionRow
                 key={opt.value}
-                type="button"
                 role="option"
-                aria-selected={isActive}
-                onClick={() => { onChange(opt.value); close(); }}
-                className={`flex items-center gap-2 w-full px-3 py-2 typo-caption transition-colors cursor-pointer text-left ${
-                  isFocused ? 'bg-surface-2' : 'hover:bg-surface-2'
-                } ${isActive ? 'text-primary' : 'text-foreground'}`}
+                onSelect={() => { onChange(opt.value); close(); }}
+                selected={isActive}
+                className={`gap-2 px-3 typo-caption ${isFocused ? 'bg-surface-2' : ''}`}
               >
                 <span className="flex-1">{opt.label}</span>
                 {isActive && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-              </button>
+              </OptionRow>
             );
           })}
         </div>

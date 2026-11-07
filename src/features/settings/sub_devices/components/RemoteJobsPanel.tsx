@@ -8,6 +8,7 @@
  * running on the other machine advances here without the operator touching
  * anything.
  */
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 import { useMemo } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Radio } from 'lucide-react';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -179,21 +180,9 @@ function RemoteJobDirectionFilter({
       className="inline-flex rounded-interactive border border-hair overflow-hidden"
     >
       {options.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          role="radio"
-          aria-checked={value === opt.id}
-          data-testid={`remote-jobs-direction-${opt.id}`}
-          onClick={() => onChange(opt.id)}
-          className={`px-2.5 py-1 typo-caption transition-colors focus-ring ${
-            value === opt.id
-              ? 'bg-primary/15 text-primary'
-              : 'text-foreground hover:bg-surface-2'
-          }`}
-        >
+        <OptionChip key={opt.id} role="radio" selected={value === opt.id} data-testid={`remote-jobs-direction-${opt.id}`} onSelect={() => onChange(opt.id)}>
           {opt.label}
-        </button>
+        </OptionChip>
       ))}
     </div>
   );

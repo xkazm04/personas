@@ -5,6 +5,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface RecommendedCarouselProps {
   recommendedTemplates: PersonaDesignReview[];
@@ -33,11 +34,10 @@ export function RecommendedCarousel({
         {recommendedTemplates.map((tmpl) => {
           const connectors: string[] = parseJsonOrDefault(tmpl.connectors_used, []);
           return (
-            <button
-              type="button"
+            <PressSurface
               key={tmpl.id}
-              onClick={() => onSelectTemplate(tmpl)}
-              className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-surface-1 border border-hair hover:border-hair-2 hover:bg-surface-2 hover:-translate-y-px transition-all text-left group/rec outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onPress={() => onSelectTemplate(tmpl)}
+              className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-surface-1 border border-hair group/rec"
             >
               <div className="typo-body text-foreground group-hover/rec:text-ink-1 truncate">
                 {tmpl.test_case_name}
@@ -67,7 +67,7 @@ export function RecommendedCarousel({
                   </span>
                 )}
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

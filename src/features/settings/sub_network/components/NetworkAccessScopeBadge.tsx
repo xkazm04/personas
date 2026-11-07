@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { WifiOff, Wifi, Globe, ChevronDown } from 'lucide-react';
 import type { NetworkAccessScope } from '@/api/network/bundle';
@@ -47,11 +48,7 @@ export function NetworkAccessScopeBadge({ scope }: { scope: NetworkAccessScope }
 
   return (
     <div className={`rounded-card border ${styles.borderClass} ${styles.bgClass}`}>
-      <button
-        type="button"
-        onClick={() => hasDetails && setExpanded((v) => !v)}
-        className={`flex w-full items-center gap-2 px-3 py-2 text-left ${hasDetails ? 'cursor-pointer' : 'cursor-default'}`}
-      >
+      <PressSurface onPress={() => hasDetails && setExpanded((v) => !v)} aria-expanded={hasDetails ? expanded : undefined} className="flex w-full items-center gap-2 px-3 py-2">
         <Icon className={`w-4 h-4 flex-shrink-0 ${styles.iconClass}`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -68,7 +65,7 @@ export function NetworkAccessScopeBadge({ scope }: { scope: NetworkAccessScope }
             className={`w-3.5 h-3.5 text-foreground transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`}
           />
         )}
-      </button>
+      </PressSurface>
 
       {expanded && hasDetails && (
         <div className="px-3 pb-2.5 space-y-1.5 border-t border-border/30 pt-2">

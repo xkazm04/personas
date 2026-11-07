@@ -64,8 +64,8 @@ export function QuestionnaireStackedOptions({
             transition={shouldAnimate ? { duration: 0.2, delay: i * 0.03 } : { duration: 0 }}
             className={`relative w-full text-left rounded-card px-4 py-3 border flex items-center gap-3 transition-all ${
               isSelected
-                ? 'bg-primary/10 border-primary/40 shadow-elevation-1'
-                : 'bg-background/80 border-border hover:bg-foreground/[0.04] hover:border-foreground/20 backdrop-blur-sm'
+                ? 'bg-sel border-hair-2'
+                : 'bg-surface-1 border-hair hover:bg-surface-2'
             }`}
           >
             <div className="flex-1 min-w-0">

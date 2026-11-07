@@ -4,6 +4,7 @@ import { MoreVertical, Eye, RefreshCw, Trash2, X } from 'lucide-react';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface RowActionMenuProps {
   reviewId: string;
@@ -64,45 +65,42 @@ export function RowActionMenu({
             </Button>
           </div>
           <div className="py-1.5">
-            <button
-              type="button"
-              onClick={(e) => {
+            <PressSurface
+              onPress={(e) => {
                 e.stopPropagation();
                 close();
                 onViewDetails();
               }}
               data-testid="menu-view-details"
-              className="w-full flex items-center gap-3 px-5 py-3 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-5 py-3 typo-body text-ink-1"
             >
               <Eye className="w-4 h-4" />
               {t.templates.row_actions.view_details}
-            </button>
+            </PressSurface>
             {import.meta.env.DEV && (
               <>
-                <button
-                  type="button"
-                  onClick={(e) => {
+                <PressSurface
+                  onPress={(e) => {
                     e.stopPropagation();
                     close();
                     onRebuild();
                   }}
-                  className="w-full flex items-center gap-3 px-5 py-3 typo-body text-status-info hover:bg-status-info/10 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-5 py-3 typo-body text-status-info"
                 >
                   <RefreshCw className="w-4 h-4" />
                   {t.templates.row_actions.rebuild}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
+                </PressSurface>
+                <PressSurface
+                  onPress={(e) => {
                     e.stopPropagation();
                     close();
                     onDelete(reviewId);
                   }}
-                  className={`w-full flex items-center gap-3 px-5 py-3 typo-body transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
+                  className={`w-full flex items-center gap-3 px-5 py-3 typo-body ${BUTTON_VARIANTS.delete.text}`}
                 >
                   <Trash2 className="w-4 h-4" />
                   {t.templates.row_actions.delete_template}
-                </button>
+                </PressSurface>
               </>
             )}
           </div>

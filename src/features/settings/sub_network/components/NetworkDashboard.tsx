@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import {
   Wifi, WifiOff, Radio, Users, AlertTriangle, Hash,
@@ -83,17 +84,13 @@ function MetricsSection({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-card border border-border bg-secondary/10">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-1 transition-colors rounded-card"
-      >
+      <PressSurface onPress={() => setOpen((v) => !v)} aria-expanded={open} className="flex w-full items-center gap-2 px-3 py-2 rounded-card">
         <Icon className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         <span className="typo-label text-foreground flex-1">{title}</span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-foreground transition-transform ${open ? 'rotate-180' : ''}`}
         />
-      </button>
+      </PressSurface>
       {open && (
           <div
             className="animate-fade-slide-in overflow-hidden"

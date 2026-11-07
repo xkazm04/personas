@@ -3,6 +3,7 @@ import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
 import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 /** Label map for legacy adoption wizard steps shown in draft resume banners. */
 const ADOPT_STEP_LABELS: Record<string, string> = {
   choose: 'Choose', connect: 'Connect', tune: 'Tune', build: 'Build', create: 'Create',
@@ -74,10 +75,9 @@ export function BackgroundBanners({
       {showDraftBanner && (
         <div className="mx-4 mt-3 mb-0">
           <div className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-status-warning/8 border border-status-warning/15">
-            <button
-              type="button"
-              onClick={() => onResumeDraft(adoptionDraft)}
-              className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
+            <PressSurface
+              onPress={() => onResumeDraft(adoptionDraft)}
+              className="flex-1 flex items-center gap-3 min-w-0"
             >
               <div className="w-7 h-7 rounded-card bg-status-warning/15 flex items-center justify-center flex-shrink-0">
                 <FileEdit className="w-4 h-4 text-status-warning" />
@@ -90,7 +90,7 @@ export function BackgroundBanners({
                   {t.templates.banners.step_click_resume.replace('{step}', ADOPT_STEP_LABELS[adoptionDraft.step] ?? adoptionDraft.step)}
                 </span>
               </div>
-            </button>
+            </PressSurface>
             <Button
               type="button"
               onClick={onDiscardDraft}
@@ -107,10 +107,9 @@ export function BackgroundBanners({
       {/* Background adoption banner */}
       {templateAdoptActive && !adoptModalOpen && (
         <div className="mx-4 mt-3 mb-0">
-          <button
-            type="button"
-            onClick={onResumeAdoption}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-role-agent/8 border border-role-agent/15 hover:bg-role-agent/12 transition-colors text-left"
+          <PressSurface
+            onPress={onResumeAdoption}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-surface-1 border border-hair"
           >
             <div className="w-7 h-7 rounded-card bg-role-agent/15 flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-4 h-4 text-role-agent" />
@@ -120,17 +119,16 @@ export function BackgroundBanners({
               <span className="typo-body text-foreground">{t.templates.banners.click_to_view_progress}</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-role-agent animate-pulse flex-shrink-0" />
-          </button>
+          </PressSurface>
         </div>
       )}
 
       {/* Background rebuild banner */}
       {rebuildIsActive && !rebuildModalOpen && (
         <div className="mx-4 mt-3 mb-0">
-          <button
-            type="button"
-            onClick={onResumeRebuild}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-status-info/8 border border-status-info/15 hover:bg-status-info/12 transition-colors text-left"
+          <PressSurface
+            onPress={onResumeRebuild}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-surface-1 border border-hair"
           >
             <div className="w-7 h-7 rounded-card bg-status-info/15 flex items-center justify-center flex-shrink-0">
               <RefreshCw className="w-4 h-4 text-status-info animate-spin" />
@@ -142,7 +140,7 @@ export function BackgroundBanners({
               <span className="typo-body text-foreground">{t.templates.banners.click_to_view_progress}</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-status-info animate-pulse flex-shrink-0" />
-          </button>
+          </PressSurface>
         </div>
       )}
 
@@ -228,10 +226,9 @@ export function BackgroundBanners({
         return (
           <div className="mx-4 mt-3 mb-0">
             <div className={`w-full flex items-center gap-3 px-4 py-3 rounded-modal border ${bgClass}`}>
-              <button
-                type="button"
-                onClick={onResumePreview}
-                className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
+              <PressSurface
+                onPress={onResumePreview}
+                className="flex-1 flex items-center gap-3 min-w-0"
               >
                 <div className={`w-7 h-7 rounded-card ${iconBgClass} flex items-center justify-center flex-shrink-0`}>
                   <Icon className={`w-4 h-4 ${iconColor} ${!isDone ? 'animate-pulse' : ''}`} />
@@ -243,7 +240,7 @@ export function BackgroundBanners({
                   <span className="typo-body text-foreground">{subtitleText}</span>
                 </div>
                 <div className={`w-2 h-2 rounded-full ${dotColor} ${!isDone ? 'animate-pulse' : ''} flex-shrink-0`} />
-              </button>
+              </PressSurface>
               {isDone && (
                 <Button
                   type="button"

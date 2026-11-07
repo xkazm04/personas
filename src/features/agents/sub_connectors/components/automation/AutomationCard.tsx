@@ -11,7 +11,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AutomationCardActions } from './AutomationCardActions';
 import { AutomationStatusBadge } from './AutomationStatusBadge';
-import { TOOLS_BTN_STANDARD, TOOLS_BTN_COMPACT, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
+import { TOOLS_BTN_COMPACT, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedPersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
@@ -58,7 +58,7 @@ export function AutomationCard({
             />
           )}
         </AnimatePresence>
-        <div className="w-8 h-8 rounded-card bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-card bg-surface-1 border border-hair flex items-center justify-center flex-shrink-0">
           <Zap className="w-3.5 h-3.5 text-accent/60" />
         </div>
         <div className="flex-1 min-w-0">
@@ -96,8 +96,7 @@ export function AutomationCard({
             </Button>
           )}
           {automation.deploymentStatus === 'draft' && (
-            <button type="button" onClick={() => onEdit(automation.id)}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-accent/25 text-ink-1 bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
+            <Button variant="secondary" size="sm" onClick={() => onEdit(automation.id)}>{t.common.configure}</Button>
           )}
           {sanitizeExternalUrl(automation.platformUrl) && (
             <Tooltip content={tx(t.agents.connectors.auto_open_in_platform, { platform: t.agents.connectors[platformConfig.labelKey] })}><a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"

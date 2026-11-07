@@ -230,11 +230,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 pt-1 border-t border-hair typo-body text-ink-1 hover:text-ink-3 transition-colors w-full"
-      >
+      <Button variant="ghost" size="xs" onClick={() => setOpen(v => !v)} className="w-full justify-start">
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Radio className="w-3 h-3" />
         {t.triggers.request_inspector}
@@ -244,7 +240,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
         {errorCount > 0 && (
           <span className="text-status-error typo-caption ml-1">{errorCount} errors</span>
         )}
-      </button>
+      </Button>
 
       {open && (
           <div

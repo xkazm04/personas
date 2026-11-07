@@ -9,6 +9,7 @@ import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEve
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const logger = createLogger('circuit-breaker-indicator');
 
@@ -183,11 +184,10 @@ export function CircuitBreakerIndicator() {
       `}</style>
 
       {/* Summary row */}
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
+      <PressSurface
+        onPress={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex items-center gap-2 w-full px-3 py-2 text-left"
+        className="flex items-center gap-2 w-full px-3 py-2"
       >
         {status.globalPaused ? (
           <ShieldAlert className="w-3.5 h-3.5 text-status-error" />
@@ -212,7 +212,7 @@ export function CircuitBreakerIndicator() {
         <span className="ml-auto text-ink-1">
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </span>
-      </button>
+      </PressSurface>
 
       {/* Expanded detail — three titled sections with 12px gap */}
       {expanded && (

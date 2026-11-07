@@ -80,7 +80,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <Button
                         type="button"
                         onClick={() => onUpdate(idx, { enabled: !rule.enabled })}
-                        aria-pressed={rule.enabled}
+                        pressed={rule.enabled}
                         aria-label={tx(rule.enabled ? t.common.disable_item : t.common.enable_item, { name: rule.name || s.rule_name_placeholder })}
                         variant="ghost"
                         size="sm"

@@ -1,5 +1,3 @@
-import { useId } from 'react';
-import { motion } from 'framer-motion';
 import { FileText, Settings, FlaskConical, Activity, Wand2, HeartPulse } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -11,7 +9,7 @@ import type { Tier } from '@/lib/constants/uiModes';
 import { TIERS } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useHealthCheck } from '@/features/agents/sub_health';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; minTier?: Tier };
 const tabDefs: TabDefBase[] = [
@@ -76,15 +74,18 @@ function HealthBadge() {
         ? `${labels[`design_health_${score.grade}` as const] ?? score.grade} · ${score.value}`
         : labels.design_health_never_checked;
   return (
-    <Tooltip content={labels.design_health_run}><button
-      type="button"
+    <Button
+      variant="secondary"
+      size="sm"
+      tooltip={labels.design_health_run}
       onClick={() => selectedPersona && health.runHealthCheck(selectedPersona)}
       disabled={running || !selectedPersona}
       data-testid="editor-health-badge"
-      className={`flex items-center gap-1.5 h-[var(--control-h)] px-2.5 rounded-interactive border border-hair typo-code transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap hover:bg-surface-2 ${badgeTone}`}>
-      <HeartPulse className="w-3.5 h-3.5" />
-      <span>{badgeLabel}</span>
-    </button></Tooltip>
+      className={`whitespace-nowrap ${badgeTone}`}
+      icon={<HeartPulse className="w-3.5 h-3.5" />}
+    >
+      <span className="num">{badgeLabel}</span>
+    </Button>
   );
 }
 
@@ -94,11 +95,6 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const tier = useTier();
   const editorLabels = t.agents.editor_ui;
-  // Per-instance so two editor tab bars (e.g. a future multi-draft editor)
-  // never share a framer-motion layoutId — a shared id makes the active-tab
-  // underline teleport/animate between the two bars (see PanelTabBar /
-  // SegmentedTabs for the same pattern).
-  const layoutIdInstance = useId();
   return (
     <div className="border-b border-hair bg-surface-1">
       <div className={`flex items-center ${IS_MOBILE ? 'px-1' : 'px-6'}`}>
@@ -109,19 +105,20 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
             const tabDirty = isTabDirty(tab.id, dirtyTabs);
             const label = (editorLabels as Record<string, string>)[tab.labelKey] ?? tab.labelKey;
             return (
-              <Tooltip key={tab.id} content={label}>
-              <button
-                type="button"
+              <Button
+                key={tab.id}
+                tooltip={label}
+                variant="ghost"
+                size="md"
+                pressed={isActive}
                 onClick={() => setEditorTab(tab.id)}
                 data-testid={`editor-tab-${tab.id}`}
                 // On mobile the visible label is hidden, and a title is not a
                 // reliable accessible name on touch devices.
                 aria-label={IS_MOBILE ? label : undefined}
-                className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
-                  isActive ? 'text-primary' : 'text-ink-1 hover:text-ink-1'
-                }`}
+                className="whitespace-nowrap"
+                icon={<Icon className="w-4 h-4" />}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
                 {!IS_MOBILE && label}
                 {failedTabs.includes(tab.id)
                   ? <TabBadge variant="error" srLabel={editorLabels.tab_save_failed_indicator} />
@@ -136,15 +133,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                     : tabDirty
                       ? <TabBadge variant="dirty" srLabel={editorLabels.unsaved_changes} />
                       : null}
-                {isActive && (
-                  <motion.div
-                    layoutId={`personaEditorTab-${layoutIdInstance}`}
-                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
-              </button>
-              </Tooltip>
+              </Button>
             );
           })}
         </div>

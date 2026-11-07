@@ -13,6 +13,7 @@ import { ACCENT, coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./cat
 import { ARCHETYPE_GLYPHS } from "./archetypeGlyphData";
 import type { Archetype } from "./types";
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const axisColorOf = (axisId: string) => TRAIT_AXES.find((a) => a.id === axisId)?.color ?? ACCENT;
 
@@ -57,15 +58,12 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
   const Icon = coreIcon(a.icon);
   const traits = (ARCHETYPE_TRAITS[a.id] ?? []).flatMap((id) => { const trait = traitById(id); return trait ? [trait] : []; });
   return (
-    <button
+    <PressSurface
       ref={cardRef}
-      type="button"
-      onClick={onSelect}
+      onPress={onSelect}
       data-testid={`core-snapshot-${a.id}`}
-      aria-pressed={active}
-      className={`group relative flex items-center gap-3.5 p-3 rounded-card border text-left transition-colors cursor-pointer ${
-        active ? "" : "border-card-border/60 hover:bg-surface-1 hover:border-card-border"
-      }`}
+      selected={active}
+      className="group relative flex items-center gap-3.5 p-3 rounded-card border border-hair"
       style={active ? { borderColor: colorWithAlpha(a.color, 0.55), background: colorWithAlpha(a.color, 0.1) } : undefined}
     >
       {/* Avatar — the signature AI-persona head glyph, drawing in on view */}
@@ -100,6 +98,6 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
           </span>
         )}
       </span>
-    </button>
+    </PressSurface>
   );
 }

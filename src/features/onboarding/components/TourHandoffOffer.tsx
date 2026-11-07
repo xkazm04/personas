@@ -40,13 +40,9 @@ export default function TourHandoffOffer() {
       className="animate-fade-slide-in fixed bottom-6 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2
         rounded-modal border border-role-agent/25 bg-background p-5 shadow-elevation-4"
     >
-      <Tooltip content={t.onboarding.tour_handoff_dismiss}><button
-        type="button"
-        onClick={dismissTourHandoff}
-        aria-label={t.onboarding.tour_handoff_dismiss}
-        className="absolute right-3 top-3 rounded-card p-1.5 text-ink-1 transition-colors hover:bg-surface-2 hover:text-ink-1">
+      <Tooltip content={t.onboarding.tour_handoff_dismiss}><Button variant="ghost" size="icon-sm" onClick={dismissTourHandoff} aria-label={t.onboarding.tour_handoff_dismiss} className="absolute right-3 top-3">
         <X className="h-4 w-4" />
-      </button></Tooltip>
+      </Button></Tooltip>
 
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-modal border border-role-agent/25 bg-role-agent/15">

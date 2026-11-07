@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, ChevronDown, ChevronRight, Globe, Settings, UserPlus, KeyRound,
@@ -58,7 +59,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
 }) {
   const { t } = useTranslation();
   return (
-    <button type="button" id={id} onClick={onSelect} aria-expanded={isActive} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+    <PressSurface id={id} onPress={onSelect} aria-expanded={isActive} className="w-full flex items-center gap-3 px-4 py-3">
       <div
         className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 typo-heading border ${
           isCompleted
@@ -92,7 +93,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
       {isActive
         ? <ChevronDown className="w-4 h-4 text-foreground shrink-0" />
         : <ChevronRight className="w-4 h-4 text-foreground shrink-0" />}
-    </button>
+    </PressSurface>
   );
 }
 export function CaptureFieldRow({ fieldKey, hint, stepIndex, capturedValue, onCaptureValue }: {

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { FolderOpen } from 'lucide-react';
 
 interface DevProject {
@@ -20,16 +21,7 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
   return (
     <div className="space-y-2 max-h-64 overflow-y-auto">
       {projects.map((project) => (
-        <button
-          key={project.id}
-          type="button"
-          onClick={() => onSelect(project.id)}
-          className={`w-full flex items-start gap-3 p-3 rounded-modal border text-left transition-colors ${
-            isSelected(project.id)
-              ? 'border-role-agent/30 bg-role-agent/8'
-              : 'border-hair hover:border-hair hover:bg-surface-1'
-          }`}
-        >
+        <PressSurface key={project.id} onPress={() => onSelect(project.id)} selected={isSelected(project.id)} className="w-full flex items-start gap-3 p-3 rounded-modal border border-hair">
           <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-role-agent' : 'text-foreground'}`} />
           <div className="min-w-0 flex-1">
             <p className="typo-body text-ink-1 truncate">{project.name}</p>
@@ -51,7 +43,7 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
               {isSelected(project.id) && <span className="text-foreground typo-label">&#10003;</span>}
             </div>
           )}
-        </button>
+        </PressSurface>
       ))}
     </div>
   );

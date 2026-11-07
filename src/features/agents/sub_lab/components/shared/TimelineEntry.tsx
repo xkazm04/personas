@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 interface TimelineEntryProps {
@@ -64,10 +65,10 @@ export function TimelineEntry({
 
       {/* Content card */}
       <div className="flex-1 pb-4 min-w-0">
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="w-full text-left group"
+        <PressSurface
+          onPress={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          className="w-full group"
         >
           <div className="flex items-start gap-2">
             {/* Version number */}
@@ -105,7 +106,7 @@ export function TimelineEntry({
               {formatRelative(version.created_at)}
             </span>
           </div>
-        </button>
+        </PressSurface>
 
         {/* Expanded content: diff + actions */}
         <Collapse open={expanded} unmountWhenClosed duration={200}>

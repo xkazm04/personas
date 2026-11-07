@@ -430,14 +430,14 @@ export function PersonaConfigPanel() {
             className="w-full pl-7 pr-7 py-1 typo-caption rounded-input bg-surface-1 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
           />
           {filter.length > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => setFilter('')}
               aria-label={s.clear_filter_aria}
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-interactive text-ink-1 hover:text-primary hover:bg-surface-2"
-            >
-              <X className="w-3 h-3" />
-            </button>
+              className="absolute right-1 top-1/2 -translate-y-1/2"
+              icon={<X className="w-3 h-3" />}
+            />
           )}
         </div>
         <Tooltip content={s.overrides_only_tooltip}><label

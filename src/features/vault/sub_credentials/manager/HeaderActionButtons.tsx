@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import Button from '@/features/shared/components/buttons/Button';
 import { RotateCw, CheckCircle2, Play, Square, CircleCheck, CircleX, CircleHelp } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -78,13 +79,7 @@ export function TestAllButton({
 
   return (
     <Tooltip content={bulk.isRunning ? t.vault.manager.cancel_healthcheck : t.vault.manager.test_all_credentials}>
-    <button
-      type="button"
-      onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
-      className={`flex items-center gap-0 rounded-card typo-caption border border-hair overflow-hidden transition-colors hover:bg-surface-2 ${
-        bulk.isRunning ? 'text-status-warning' : 'text-ink-1'
-      }`}
-    >
+    <PressSurface onPress={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)} className={`flex items-center gap-0 rounded-card typo-caption border border-hair overflow-hidden ${bulk.isRunning ? 'text-status-warning' : 'text-ink-1'}`}>
       {/* Play/Stop icon + label */}
       <span className="flex items-center gap-1.5 px-2 py-1.5">
         {bulk.isRunning ? (
@@ -138,7 +133,7 @@ export function TestAllButton({
           <span className="text-foreground">--</span>
         )}
       </span>
-    </button>
+    </PressSurface>
     </Tooltip>
   );
 }

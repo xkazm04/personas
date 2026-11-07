@@ -1,3 +1,4 @@
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useCallback } from 'react';
 import { X, Plug, Key, Plus, Pencil, Check } from 'lucide-react';
@@ -168,13 +169,9 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
               {showSuggestions && filteredSuggestions.length > 0 && (
                 <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-hair rounded-card shadow-elevation-3 py-1 min-w-[100px]">
                   {filteredSuggestions.map((s) => (
-                    <button
-                      key={s}
-                      onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                      className="w-full text-left px-2.5 py-1 typo-caption hover:bg-surface-2 transition-colors text-foreground"
-                    >
+                    <OptionRow key={s} onMouseDown={(e) => e.preventDefault()} onSelect={() => addTag(s)}>
                       {s}
-                    </button>
+                    </OptionRow>
                   ))}
                 </div>
               )}

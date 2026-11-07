@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import {
   CheckCircle2,
   Cloud,
@@ -66,21 +67,7 @@ export function ForagingResultCard({
   const disabled = credential.already_imported || isImported || isImporting;
 
   return (
-    <button
-      type="button"
-      onClick={disabled ? undefined : onToggle}
-      disabled={disabled}
-      aria-pressed={isSelected}
-      className={`animate-fade-slide-in w-full text-left rounded-modal border p-3 transition-all ${
-        isImported
-          ? "border-status-success/30 bg-status-success/5 opacity-70"
-          : credential.already_imported
-            ? "border-hair bg-surface-1 opacity-50 cursor-default"
-            : isSelected
-              ? "border-role-agent/40 bg-role-agent/8 ring-1 ring-role-agent/20"
-              : "border-hair bg-surface-1 hover:bg-surface-2 hover:border-primary/25"
-      }`}
-    >
+    <PressSurface onPress={onToggle} disabled={disabled} selected={isSelected} className={`w-full rounded-modal border p-3 ${isImported ? "border-status-success/30" : isSelected ? "border-hair-2" : "border-hair"}`}>
       <div className="flex items-start gap-3">
         {/* Checkbox area */}
         <div className="mt-0.5 flex-shrink-0">
@@ -150,6 +137,6 @@ export function ForagingResultCard({
           </div>
         </div>
       </div>
-    </button>
+    </PressSurface>
   );
 }

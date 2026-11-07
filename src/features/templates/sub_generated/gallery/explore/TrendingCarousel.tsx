@@ -6,6 +6,7 @@ import { getCachedDesignResult } from '../cards/reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface TrendingCarouselProps {
   trendingTemplates: PersonaDesignReview[];
@@ -36,10 +37,9 @@ export function TrendingCarousel({
           // card button (nested buttons are invalid HTML) while still sharing
           // one hover group.
           <div key={tmpl.id} className="relative flex-shrink-0 group/trend">
-            <button
-              type="button"
-              onClick={() => onSelectTemplate(tmpl)}
-              className="w-[200px] p-3 rounded-modal bg-surface-1 border border-hair hover:border-hair-2 group-hover/trend:bg-surface-2 transition-all text-left"
+            <PressSurface
+              onPress={() => onSelectTemplate(tmpl)}
+              className="w-[200px] p-3 rounded-modal bg-surface-1 border border-hair"
             >
               <div className="typo-body text-ink-1 truncate pr-7">
                 {tmpl.test_case_name}
@@ -51,7 +51,7 @@ export function TrendingCarousel({
                 </span>
                 <DimensionRadial designResult={getCachedDesignResult(tmpl)} size={20} />
               </div>
-            </button>
+            </PressSurface>
             {onAdoptTemplate && (
               <Tooltip content={t.templates.actions.adopt} placement="bottom">
                 <Button

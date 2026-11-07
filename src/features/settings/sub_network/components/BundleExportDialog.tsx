@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useRef, useState } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Package, Check, AlertTriangle, Lock, Shield, Clipboard, Link2 } from 'lucide-react';
@@ -529,17 +530,7 @@ function ResourceCheckItem({
   onToggle: () => void;
 }) {
   return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      onClick={onToggle}
-      className={`w-full rounded-card border p-2.5 flex items-center gap-2.5 text-left transition-colors ${
-        checked
-          ? 'border-primary/30 bg-primary/5'
-          : 'border-border bg-secondary/10 hover:bg-surface-1'
-      }`}
-    >
+    <PressSurface role="checkbox" aria-checked={checked} aria-pressed={undefined} selected={checked} onPress={onToggle} className="w-full rounded-card border border-hair p-2.5 flex items-center gap-2.5">
       <div className={`w-4 h-4 rounded-interactive border flex items-center justify-center flex-shrink-0 ${
         checked ? 'bg-primary border-primary' : 'border-border'
       }`}>
@@ -555,7 +546,7 @@ function ResourceCheckItem({
           <span>{resource.access_level}</span>
         </div>
       </div>
-    </button>
+    </PressSurface>
   );
 }
 

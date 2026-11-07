@@ -5,6 +5,7 @@ import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTemplatePerformance } from '@/hooks/design/template/useTemplatePerformance';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface OverviewTabProps {
   designResult: AgentIR | null;
@@ -137,11 +138,10 @@ export function OverviewTab({
           </h4>
           <div className="flex items-center gap-3 flex-wrap">
             {flows.map((flow) => (
-              <button
-                type="button"
+              <PressSurface
                 key={flow.id}
-                onClick={onViewFlows}
-                className="bg-role-agent/5 border border-role-agent/15 rounded-modal px-4 py-3 text-left hover:bg-role-agent/10 hover:border-role-agent/25 transition-all group min-w-[180px]"
+                onPress={onViewFlows}
+                className="bg-surface-1 border border-hair rounded-modal px-4 py-3 group min-w-[180px]"
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Workflow className="w-4 h-4 text-role-agent/70 group-hover:text-role-agent transition-colors" />
@@ -153,7 +153,7 @@ export function OverviewTab({
                   <span>{t.templates.overview_tab.nodes.replace('{count}', String(flow.nodes.length))}</span>
                   <span>{t.templates.overview_tab.edges.replace('{count}', String(flow.edges.length))}</span>
                 </div>
-              </button>
+              </PressSurface>
             ))}
           </div>
         </div>

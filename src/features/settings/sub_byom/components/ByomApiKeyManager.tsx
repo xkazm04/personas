@@ -564,7 +564,7 @@ function KeyEntryRow({
                 onToggleReveal();
               }}
               aria-label={entry.revealed ? s.hide_key : s.reveal_key}
-              aria-pressed={entry.revealed}
+              pressed={entry.revealed}
               variant="ghost"
               size="sm"
               tooltip={entry.revealed ? s.hide_key : s.reveal_key}

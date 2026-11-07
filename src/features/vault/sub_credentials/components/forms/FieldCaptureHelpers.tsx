@@ -134,7 +134,7 @@ export function FieldActionButtons({
           size="sm"
           data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
           aria-label={isVisible ? t.vault.schemas.kv_hide_value : t.vault.schemas.kv_show_value}
-          aria-pressed={isVisible}
+          pressed={isVisible}
         >
           {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         </Button>
@@ -142,14 +142,7 @@ export function FieldActionButtons({
       {allowCopy && (
         <div className="relative flex flex-col items-center">
           <Tooltip content={t.vault.credential_forms.copy_value}>
-          <button
-            type="button"
-            onClick={handleCopy}
-            disabled={!value}
-            className="p-0.5 text-foreground hover:text-ink-2 disabled:is-disabled transition-colors"
-            aria-label={t.vault.credential_forms.copy_value}
-            data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
-          >
+          <Button variant="ghost" size="icon-xs" onClick={handleCopy} disabled={!value} aria-label={t.vault.credential_forms.copy_value} data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}>
             {copied ? (
               <div className="animate-fade-scale-in">
                 <Check className="w-3.5 h-3.5 text-status-success" />
@@ -157,7 +150,7 @@ export function FieldActionButtons({
             ) : (
               <Copy className="w-3.5 h-3.5" />
             )}
-          </button>
+          </Button>
           </Tooltip>
           {isSecret && copied && (
             <span className="absolute top-full mt-0.5 typo-body text-foreground whitespace-nowrap">

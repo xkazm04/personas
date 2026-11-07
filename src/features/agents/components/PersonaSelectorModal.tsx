@@ -4,6 +4,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface PersonaSelectorModalProps {
   value: string;
@@ -126,36 +127,26 @@ export function PersonaSelectorModal({
         <div className="flex-1 overflow-y-auto p-3">
           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
             {showAll && (
-              <button
-                type="button"
-                onClick={() => handleSelect('')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-card text-left transition-colors ${
-                  !value
-                    ? 'bg-primary/8 text-primary'
-                    : 'text-ink-1 hover:bg-surface-2'
-                }`}
+              <OptionRow
+                selected={!value}
+                onSelect={() => handleSelect('')}
+                meta={!value ? <Check className="w-3.5 h-3.5 text-primary" /> : undefined}
               >
-                <span className="typo-body truncate">{t.shared.forms_extra.all_prefix}{personas.length})</span>
-                {!value && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
-              </button>
+                <span className="truncate block">{t.shared.forms_extra.all_prefix}{personas.length})</span>
+              </OptionRow>
             )}
 
             {filtered.map((p) => {
               const isActive = value === p.id;
               return (
-                <button
+                <OptionRow
                   key={p.id}
-                  type="button"
-                  onClick={() => handleSelect(p.id)}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-card text-left transition-colors ${
-                    isActive
-                      ? 'bg-primary/8 text-primary'
-                      : 'text-ink-1 hover:bg-surface-2'
-                  }`}
+                  selected={isActive}
+                  onSelect={() => handleSelect(p.id)}
+                  meta={isActive ? <Check className="w-3.5 h-3.5 text-primary" /> : undefined}
                 >
-                  <span className="typo-body truncate">{p.name}</span>
-                  {isActive && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
-                </button>
+                  <span className="truncate block">{p.name}</span>
+                </OptionRow>
               );
             })}
           </div>

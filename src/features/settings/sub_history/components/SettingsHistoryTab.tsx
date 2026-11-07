@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { History, RefreshCw, AlertTriangle, ChevronDown } from 'lucide-react';
@@ -206,14 +207,7 @@ export default function SettingsHistoryTab() {
                   markEntered={enter.markEntered}
                   className="rounded-card border border-border/30 bg-surface-1 overflow-hidden block"
                 >
-                  <button
-                    type="button"
-                    onClick={() => hasDetails && toggleExpanded(entry.id)}
-                    disabled={!hasDetails}
-                    className={`w-full flex items-center gap-3 px-3 py-2 ${
-                      hasDetails ? 'hover:bg-surface-2 cursor-pointer' : 'cursor-default'
-                    } transition-colors`}
-                  >
+                  <PressSurface onPress={() => hasDetails && toggleExpanded(entry.id)} aria-expanded={hasDetails ? isExpanded : undefined} className="w-full flex items-center gap-3 px-3 py-2">
                     <span
                       className={`typo-eyebrow px-1.5 py-0.5 rounded-interactive border ${actionClass}`}
                     >
@@ -241,7 +235,7 @@ export default function SettingsHistoryTab() {
                         className={`text-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                       />
                     )}
-                  </button>
+                  </PressSurface>
                   {isExpanded && hasDetails && (
                     <div className="border-t border-border/20 bg-secondary/10 px-3 py-2 space-y-2 typo-code">
                       {entry.beforeValue !== null && entry.beforeValue !== undefined && (
