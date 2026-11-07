@@ -75,3 +75,22 @@ describe('UseCaseRow power button', () => {
     expect(container.querySelectorAll('button').length).toBe(drawn - 1);
   });
 });
+
+describe('UseCaseRow keyboard', () => {
+  it('Enter on the row opens it', () => {
+    let opened = 0;
+    render(<UseCaseRow uc={uc()} isPendingToggle={false} onOpen={() => { opened += 1; }} onToggle={noop} />);
+    fireEvent.keyDown(screen.getByTestId('uc-row-uc-1'), { key: 'Enter' });
+    expect(opened).toBe(1);
+  });
+
+  it('regression: Enter on the power button does not also open the row', () => {
+    let opened = 0;
+    const { container } = render(
+      <UseCaseRow uc={uc()} isPendingToggle={false} onOpen={() => { opened += 1; }} onToggle={noop} />,
+    );
+    const buttons = container.querySelectorAll('button');
+    fireEvent.keyDown(buttons[buttons.length - 1]!, { key: 'Enter' });
+    expect(opened).toBe(0);
+  });
+});
