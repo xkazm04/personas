@@ -1,0 +1,128 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d3a818b6-7d9a-48af-b8f2-8bc507000522",
+ "subject": "agent-instruction-files",
+ "evaluatedAt": "2026-11-07T02:41:25.525051+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "agents-quick-answer",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:2 This context is the in-app triage item model and its adapters, not an instruction file a coding harness loads. A search of src/features/agents/quick-answer and src/features/agents/shared/quickConfig for CLAUDE.md, AGENTS.md, GEMINI.md, copilot-instructions and 'instruction file' found nothing, so none of the 18 techniques has a precondition to meet here.",
+   "techniques": [],
+   "absenceTerms": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+    "instruction file",
+    "copilot-instructions"
+   ]
+  },
+  {
+   "context": "overview-manual-review",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:2 This context is a paginated manual-review inbox fed over IPC and holds no instruction file for an agent harness. A search of src/features/overview/sub_manual-review and src/features/overview/sub_analytics/components for CLAUDE.md, AGENTS.md, GEMINI.md, copilot-instructions and 'instruction file' found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+    "instruction file",
+    "copilot-instructions"
+   ]
+  },
+  {
+   "context": "templates-generated-gallery-cards",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:107 The only instruction-like content here is a preview of a persona's app-assembled system prompt, built from a structured_prompt. That is prompt-assembly, which the golden path calls the inverse of this subject, not a file the repo writes for a coding harness. A search of src/features/templates/sub_generated/gallery for CLAUDE.md, AGENTS.md, GEMINI.md, copilot-instructions and 'instruction file' found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+    "instruction file",
+    "copilot-instructions"
+   ]
+  },
+  {
+   "context": "teams-teamworkspace",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/TeamWorkspacePane.tsx:141 Team 'shared_instructions' is a database column (persona_teams.shared_instructions) that the app saves and later assembles into member prompts. That makes it app-owned prompt content, which belongs to prompt-assembly, not a repo file a harness injects. A search of src/features/teams/sub_teamWorkspace and src/features/teams/components for CLAUDE.md, AGENTS.md, GEMINI.md, copilot-instructions and 'instruction file' found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+    "instruction file",
+    "copilot-instructions"
+   ],
+   "registryProposal": "The subject could state its boundary against app-owned 'shared instructions' fields in the same terms it uses against prompt-assembly. A reader could otherwise take a user-authored, always-delivered team instruction blob for an instruction file, even though line-earning, freshness and restraint balance arguably carry over to it."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-instruction-files",
+   "context": "teams-goals",
+   "reason": "evidence leans on goals/triage/triageModel.ts, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-07T02:41:25.525051+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "agents-quick-answer",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T02:41:25.525051+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "overview-manual-review",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T02:41:25.525051+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "templates-generated-gallery-cards",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T02:41:25.525051+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "teams-teamworkspace",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
