@@ -10,7 +10,7 @@
  * only when it changed. The rail + stage-component pattern grows by
  * appending a `PipelineStage` + an editor component.
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -96,10 +96,6 @@ export function ProjectModal({
   // Opt-in: auto-create a Codebase connector for the new project.
   const [createConnector, setCreateConnector] = useState(true);
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
-  // In-flight guard: a second click while create/update is pending would create the
-  // project (and its Codebase connector) twice.
-  const submittingRef = useRef(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const teams = usePipelineStore((s) => s.teams);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
@@ -198,20 +194,8 @@ export function ProjectModal({
   });
 
   const handleSubmit = async () => {
-    if (submittingRef.current) return;
     if (!stage0Complete) { setStepIndex(0); return; }
     if (!stage1Complete) { setStepIndex(1); return; }
-    submittingRef.current = true;
-    setSubmitting(true);
-    try {
-      await submitForm();
-    } finally {
-      submittingRef.current = false;
-      setSubmitting(false);
-    }
-  };
-
-  const submitForm = async () => {
     const data = buildFormData();
 
     if (isEdit && editProject) {
@@ -401,7 +385,6 @@ export function ProjectModal({
                     size="sm"
                     icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     disabled={!canSubmit}
-                    loading={submitting}
                     onClick={handleSubmit}
                   >
                     {isEdit ? t.common.save : dp.new_project}

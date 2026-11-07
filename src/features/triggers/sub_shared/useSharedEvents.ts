@@ -88,12 +88,18 @@ export function useSharedEvents() {
     await load();
   }, [load]);
 
+  const subscribingRef = useRef(new Set<string>());
   const subscribe = useCallback(async (entryId: string) => {
+    // A double-click must not fire two subscribeFeed calls for one entry.
+    if (subscribingRef.current.has(entryId)) return;
+    subscribingRef.current.add(entryId);
     try {
       const sub = await api.subscribeFeed(entryId);
       setSubscriptions((prev) => [sub, ...prev]);
     } catch (e) {
       toastCatch('features/triggers/sub_shared/useSharedEvents:subscribe')(e);
+    } finally {
+      subscribingRef.current.delete(entryId);
     }
   }, []);
 
