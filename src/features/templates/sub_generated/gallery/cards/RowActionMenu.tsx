@@ -38,6 +38,9 @@ export function RowActionMenu({
       >
         <MoreVertical className="w-4.5 h-4.5 text-foreground" />
       </Button>
+      {/* The modal is portalled but React events still bubble through the row, so a
+          backdrop click (outside the panel's own stopPropagation) toggled the row. */}
+      <span className="contents" onClick={(e) => e.stopPropagation()}>
       <BaseModal
         isOpen={open}
         onClose={close}
@@ -106,6 +109,7 @@ export function RowActionMenu({
           </div>
         </div>
       </BaseModal>
+      </span>
     </>
   );
 }
