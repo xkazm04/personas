@@ -77,6 +77,8 @@ export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<DraftCommand[]>([]);
   const [saving, setSaving] = useState(false);
+  // In-flight guard: Save / Reset to auto fired twice would append a duplicate practice version.
+  const savingRef = useRef(false);
   const [showProblems, setShowProblems] = useState(false);
   const [result, setResult] = useState<EditorResult | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -106,7 +108,8 @@ export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
   const cancel = () => { setEditing(false); setResult(null); };
 
   const persist = async (commands: LifecycleGateCommand[] | null) => {
-    if (!projectId) return;
+    if (!projectId || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       await setLifecycleStepParams(projectId, step.id, { ...step.params, commands });
@@ -116,6 +119,7 @@ export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
       silentCatch('lifecycle:setStepParams')(err);
       setResult({ tone: 'error', text: errorText(err) });
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
