@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Info, RotateCcw, Sparkles, Zap } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { listAllSubscriptions, listEvents, listKnownEventTypes, testEventFlow } from '@/api/overview/events';
-import type { PersonaEvent } from '@/lib/types/types';
+import type { PersonaEvent, PersonaTrigger } from '@/lib/types/types';
+import { listAllTriggers } from '@/api/pipeline/triggers';
 import type { EventVocabularyEntry } from '@/lib/bindings/EventVocabularyEntry';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,6 +22,7 @@ const CUSTOM_EVENT_VALUE = '__custom__';
 
 export function TestTab() {
   const { t, tx } = useTranslation();
+  const payloadId = useId();
   const personas = useAgentStore((s) => s.personas);
 
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>([]);
@@ -28,6 +30,8 @@ export function TestTab() {
   // Standing listeners, read only for the test-fire preview. Bounded: the
   // preview names who would receive a fire, it is not the subscription list.
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
+  const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
+  const [listenerReadFailed, setListenerReadFailed] = useState(false);
   const [vocabLoading, setVocabLoading] = useState(true);
 
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
@@ -59,7 +63,16 @@ export function TestTab() {
       .catch(silentCatch("features/triggers/sub_test/TestTab:listEvents"));
     listAllSubscriptions(500)
       .then((subs) => { if (!stale) setSubscriptions(subs); })
-      .catch(silentCatch("features/triggers/sub_test/TestTab:listAllSubscriptions"));
+      .catch((err) => {
+        silentCatch("features/triggers/sub_test/TestTab:listAllSubscriptions")(err);
+        if (!stale) setListenerReadFailed(true);
+      });
+    listAllTriggers(500)
+      .then((rows) => { if (!stale) setTriggers(rows); })
+      .catch((err) => {
+        silentCatch("features/triggers/sub_test/TestTab:listAllTriggers")(err);
+        if (!stale) setListenerReadFailed(true);
+      });
     return () => { stale = true; };
   }, []);
 
@@ -180,7 +193,7 @@ export function TestTab() {
   // half of the same data, and it is what makes a test fire diagnose routing
   // instead of only proving the bus accepted a payload.
   const listeners = useMemo(
-    () => listenersForEventType(subscriptions, activeEventType || null, (et) => !!findTemplateByEventType(et)),
+    () => listenersForEventType(subscriptions, activeEventType || null, (et) => !!findTemplateByEventType(et), triggers),
     [subscriptions, activeEventType],
   );
 
@@ -279,7 +292,7 @@ export function TestTab() {
           <section className="rounded-modal border border-primary/8 bg-surface-1 p-5 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="typo-caption text-ink-2">{t.triggers.payload_json_label}</label>
+                <label htmlFor={payloadId} className="typo-caption text-ink-2">{t.triggers.payload_json_label}</label>
                 {payloadSource === 'history' && historyEvent && (
                   <Button
                     type="button"
@@ -292,6 +305,9 @@ export function TestTab() {
                 )}
               </div>
               <textarea
+                id={payloadId}
+                aria-invalid={isInvalidJson || undefined}
+                aria-describedby={isInvalidJson ? `${payloadId}-error` : undefined}
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
                 rows={8}
@@ -311,7 +327,7 @@ export function TestTab() {
                 )}
               </div>
               {isInvalidJson && (
-                <p className="typo-caption text-status-warning mt-1">{t.triggers.test_payload_invalid_json}</p>
+                <p id={`${payloadId}-error`} className="typo-caption text-status-warning mt-1">{t.triggers.test_payload_invalid_json}</p>
               )}
             </div>
 
@@ -332,6 +348,7 @@ export function TestTab() {
           personaName={(id) => getPersona(id)?.name ?? id}
           targetPersonaId={testResult?.target_persona_id ?? null}
           sourceId={testResult?.source_id ?? null}
+          readFailed={listenerReadFailed}
           fired={!!testResult && testResult.event_type === activeEventType}
         />
 

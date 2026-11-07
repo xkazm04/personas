@@ -24,8 +24,21 @@ import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { openExecutionFromLink, openPersonaFromLink } from '@/lib/deepLinks/navigationLinks';
+import { useSystemStore } from '@/stores/systemStore';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
+
+/** The overlay covers the page a chip opens, so it steps aside once something opened. */
+const closeOverlay = () => useSystemStore.getState().setHeaderOverlay('none');
+const openRun = (executionId: string) => {
+  if (openExecutionFromLink(executionId)) closeOverlay();
+};
+const openAgent = (agentId: string) => {
+  void openPersonaFromLink(agentId)
+    .then((opened) => { if (opened) closeOverlay(); })
+    .catch(silentCatch('schedules:open-agent'));
+};
 
 /** Shallow field-equality for the flat generated CronAgent record. Used to
  *  reuse previous ScheduleEntry objects across poll refreshes so the calendar's
@@ -260,7 +273,7 @@ export default function SchedulesOverlay() {
           />
         ) : (
           <Suspense fallback={<CalendarGhost />}>
-            <ScheduleCalendar entries={entries} />
+            <ScheduleCalendar entries={entries} onOpenExecution={openRun} onOpenAgent={openAgent} />
           </Suspense>
         )}
       </ContentBody>

@@ -14,7 +14,7 @@ These documents describe the implemented product surface. They are written for u
 | Execution runtime | [execution/README.md](execution/README.md) | `src-tauri/src/commands/execution`, `src-tauri/src/engine` |
 | Connections / Vault | [connections/README.md](connections/README.md) | `src/features/vault`, `src-tauri/src/commands/credentials` |
 | Events and triggers | [events/README.md](events/README.md) | `src/features/triggers`, `src-tauri/src/commands/communication`, `src-tauri/src/engine` |
-| Schedules | [schedules.md](schedules.md) | `src/features/schedules`, `src-tauri/src/engine/scheduler.rs`, `src-tauri/src/engine/cron.rs` |
+| Schedules | [schedules.md](schedules.md) | `src/features/schedules`, `src-tauri/core/src/scheduler.rs`, `src-tauri/core/src/cron.rs` |
 | Pipeline (Teams Canvas) | [pipeline/README.md](pipeline/README.md) | `src/features/pipeline`, `src-tauri/src/commands/teams` |
 | Recipes | [recipes/README.md](recipes/README.md) | `src/features/recipes`, `src-tauri/src/commands/recipes` |
 | Deployment (Cloud + unified) | [deployment/README.md](deployment/README.md) | `src/features/deployment`, `src/api/system/cloud.ts`, `src-tauri/src/cloud` |

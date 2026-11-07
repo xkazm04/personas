@@ -319,12 +319,10 @@ The loading pipeline doesn't validate template structure against a
 schema — fields are accessed defensively with `?.` and array checks.
 If you add a new template and it doesn't render correctly:
 
-1. `node scripts/audit-adoption-questions.cjs` to see the question
-   breakdown for your template
-2. Open the browser console and look for
+1. Open the browser console and look for
    `template-catalog: Integrity mismatch...` warnings (usually means
    you forgot to run `generate-template-checksums.mjs`)
-3. `extractDimensionData` logs the raw matrix data — you can
+2. `extractDimensionData` logs the raw matrix data — you can
    `console.log` it from `MatrixAdoptionView` to see which dimensions
    ended up populated
 

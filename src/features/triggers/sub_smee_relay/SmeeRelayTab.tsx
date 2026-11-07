@@ -1,6 +1,6 @@
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, ExternalLink, Plug,
@@ -28,6 +28,7 @@ import { isValidSmeeChannelUrl, SMEE_CHANNEL_PREFIX } from './smeeChannelUrl';
 import { inlineErrorCopy } from '../lib/inlineErrorCopy';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 
 /** Minimum gap between per-relay stat refreshes while webhooks stream in. */
@@ -50,6 +51,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [addLabel, setAddLabel] = useState('');
   const [addUrl, setAddUrl] = useState('');
+  const formId = useId();
   const [addPersonaId, setAddPersonaId] = useState('');
   const [addFilter, setAddFilter] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -59,6 +61,9 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
   // Confirm delete
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // The list read's rejection: with no rows, "no relays" would be a false claim
+  // that invites adding a duplicate of a relay that may still be running.
+  const [loadError, setLoadError] = useState<{ raw: unknown } | null>(null);
   // Track items being animated out
   const [exitingIds, setExitingIds] = useState<Set<string>>(new Set());
 
@@ -66,7 +71,11 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     try {
       const list = await smeeRelayList();
       setRelays(list);
-    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch1")(err); } finally {
+      setLoadError(null);
+    } catch (err) {
+      silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch1")(err);
+      setLoadError({ raw: err });
+    } finally {
       setIsLoading(false);
     }
   }, []);
@@ -227,11 +236,14 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           <div className="rounded-modal border border-role-agent/20 bg-role-agent/5 p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block typo-caption text-ink-2 mb-1.5">
+                <label htmlFor={`${formId}-label`} className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.relay_label_field}
                 </label>
                 <div className="relative">
                   <input
+                    id={`${formId}-label`}
+                    aria-invalid={labelError ? true : undefined}
+                    aria-describedby={labelError ? `${formId}-label-error` : undefined}
                     type="text"
                     value={addLabel}
                     onChange={(e) => setAddLabel(e.target.value)}
@@ -250,18 +262,21 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                   )}
                 </div>
                 {labelError && (
-                  <p className="mt-1 typo-caption text-status-error flex items-center gap-1">
+                  <p id={`${formId}-label-error`} className="mt-1 typo-caption text-status-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3 flex-shrink-0" />
                     {labelError}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block typo-caption text-ink-2 mb-1.5">
+                <label htmlFor={`${formId}-url`} className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.relay_channel_url_field}
                 </label>
                 <div className="relative">
                   <input
+                    id={`${formId}-url`}
+                    aria-invalid={urlError ? true : undefined}
+                    aria-describedby={urlError ? `${formId}-url-error` : undefined}
                     type="text"
                     value={addUrl}
                     onChange={(e) => { setAddUrl(e.target.value); setCreateError(null); }}
@@ -280,17 +295,18 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                   )}
                 </div>
                 {urlError && (
-                  <p className="mt-1 typo-caption text-status-error flex items-center gap-1">
+                  <p id={`${formId}-url-error`} className="mt-1 typo-caption text-status-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3 flex-shrink-0" />
                     {urlError}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block typo-caption text-ink-2 mb-1.5">
+                <label htmlFor={`${formId}-agent`} className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.relay_route_to_agent} <span className="text-ink-1">{t.triggers.optional_suffix}</span>
                 </label>
                 <ThemedSelect
+                  id={`${formId}-agent`}
                   value={addPersonaId}
                   onChange={(e) => setAddPersonaId(e.target.value)}
                 >
@@ -301,10 +317,11 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 </ThemedSelect>
               </div>
               <div>
-                <label className="block typo-caption text-ink-2 mb-1.5">
+                <label htmlFor={`${formId}-filter`} className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.relay_event_filter_field} <span className="text-ink-1">{t.triggers.relay_event_filter_note}</span>
                 </label>
                 <input
+                  id={`${formId}-filter`}
                   type="text"
                   value={addFilter}
                   onChange={(e) => setAddFilter(e.target.value)}
@@ -346,8 +363,17 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
         )}
 
+        {/* A failed read with rows listed keeps them; only the claim of none is false. */}
+        {!isLoading && relays.length === 0 && loadError && (
+          <InlineErrorBanner
+            severity="error"
+            message={inlineErrorCopy(t, loadError.raw)}
+            onRetry={fetchRelays}
+          />
+        )}
+
         {/* Empty state */}
-        {!isLoading && relays.length === 0 && !showAdd && (
+        {!isLoading && relays.length === 0 && !loadError && !showAdd && (
           <EmptyState
             glyph={RELAY_GLYPH}
             title={t.triggers.no_smee_relays}
@@ -484,7 +510,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         )}
 
         {/* Setup guide (collapsed) */}
-        {relays.length === 0 && !showAdd && !isLoading && (
+        {relays.length === 0 && !loadError && !showAdd && !isLoading && (
           <SetupGuide />
         )}
       </div>

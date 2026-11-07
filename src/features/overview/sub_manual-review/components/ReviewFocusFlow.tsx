@@ -424,10 +424,10 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-hair bg-background/80 backdrop-blur-sm">
           <span className="typo-body text-foreground">Review {reviewIdx + 1} of {pending.length}</span>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm" onClick={goPrevReview} disabled={reviewIdx === 0}>
+            <Button variant="ghost" size="icon-sm" aria-label={t.templates.adopt_modal.previous} onClick={goPrevReview} disabled={reviewIdx === 0}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={goNextReview} disabled={reviewIdx >= pending.length - 1}>
+            <Button variant="ghost" size="icon-sm" aria-label={t.templates.adopt_modal.next} onClick={goNextReview} disabled={reviewIdx >= pending.length - 1}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -466,7 +466,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                           <span className="typo-label text-ink-2">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
-                          <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>
+                          <Button variant="ghost" size="icon-sm" aria-label={t.monitor.quick_prev_decision} onClick={goPrevDecision} disabled={decisionIdx === 0}>
                             <ChevronLeft className="w-3.5 h-3.5" />
                           </Button>
                           <div className="flex items-center gap-1">
@@ -485,7 +485,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                               );
                             })}
                           </div>
-                          <Button variant="ghost" size="icon-sm" onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1}>
+                          <Button variant="ghost" size="icon-sm" aria-label={t.monitor.quick_next_decision} onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1}>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </Button>
                           {(acceptCount > 0 || rejectCount > 0) && (

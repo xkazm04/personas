@@ -8,6 +8,8 @@ import type { PersonaTrigger } from '@/lib/types/types';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
+import { ConfirmDestructiveModal, useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { usePendingTriggerFires } from '@/features/triggers/hooks/usePendingTriggerFires';
 import { getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 import Button from '@/features/shared/components/buttons/Button';
@@ -20,7 +22,9 @@ interface PendingTriggerApprovalsProps {
 /**
  * Surfaces trigger fires HELD for approval (the `approval` unattended-mode of
  * the destructive-action gate, UAT P5). Approving republishes the held event so
- * the run proceeds; discarding drops it. Renders nothing when there are none.
+ * the run proceeds; discarding drops it for good, so it asks first (a held
+ * webhook cannot be asked for again) and both outcomes say what happened.
+ * Renders nothing when there are none.
  *
  * Each row names the agent, the firing trigger and the event that arrived, plus
  * how long it has been waiting — a held fire whose age is invisible is a
@@ -31,6 +35,9 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
   const p = t.triggers.pending_approval;
   const { pending, triggerFor, forget } = usePendingTriggerFires(personaId);
   const [busy, setBusy] = useState<string | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
+  // Above the early return: the hook count must not change with the queue.
+  const { modal, confirm } = useConfirmDestructive();
   const personas = useAgentStore((s) => s.personas);
   const nameFor = (pid: string) => personas.find((x) => x.id === pid)?.name ?? pid.slice(0, 8);
 
@@ -41,11 +48,21 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
     try {
       await resolvePendingTriggerFire(id, approved);
       forget(id);
+      addToast(approved ? p.approved : p.discarded, 'success');
     } catch (e) {
       toastCatch('PendingTriggerApprovals.resolve')(e);
     } finally {
       setBusy(null);
     }
+  };
+
+  const askDiscard = (id: string) => {
+    confirm({
+      title: p.discard,
+      message: t.common.confirm_destructive_cannot_undo,
+      confirmLabel: t.common.confirm_destructive_discard,
+      onConfirm: () => resolve(id, false),
+    });
   };
 
   return (
@@ -68,10 +85,12 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
             trigger={triggerFor(pf)}
             personaName={nameFor(pf.persona_id)}
             busy={busy === pf.id}
-            onResolve={resolve}
+            onApprove={(id) => resolve(id, true)}
+            onDiscard={askDiscard}
           />
         ))}
       </div>
+      <ConfirmDestructiveModal {...modal} />
     </div>
   );
 }
@@ -81,10 +100,11 @@ interface PendingFireRowProps {
   trigger: PersonaTrigger | undefined;
   personaName: string;
   busy: boolean;
-  onResolve: (id: string, approved: boolean) => void;
+  onApprove: (id: string) => void;
+  onDiscard: (id: string) => void;
 }
 
-function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: PendingFireRowProps) {
+function PendingFireRow({ fire, trigger, personaName, busy, onApprove, onDiscard }: PendingFireRowProps) {
   const { t } = useTranslation();
   const p = t.triggers.pending_approval;
 
@@ -110,14 +130,14 @@ function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: Pending
         size="sm"
         isLoading={busy}
         icon={<Play className="w-3.5 h-3.5" />}
-        onClick={() => onResolve(fire.id, true)}
+        onClick={() => onApprove(fire.id)}
       >
         {p.run_now}
       </AsyncButton>
       <Button
         type="button"
         disabled={busy}
-        onClick={() => onResolve(fire.id, false)}
+        onClick={() => onDiscard(fire.id)}
         tooltip={p.discard}
         aria-label={p.discard}
         variant="ghost"

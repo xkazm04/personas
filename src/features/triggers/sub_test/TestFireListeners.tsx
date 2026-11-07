@@ -32,6 +32,8 @@ interface TestFireListenersProps {
   fired: boolean;
   /** The fired event's source_id (null for a test fire), for source-filtered listeners. */
   sourceId?: string | null;
+  /** A listener read failed: an empty list here says nothing, so do not claim none. */
+  readFailed?: boolean;
 }
 
 export function TestFireListeners({
@@ -40,6 +42,7 @@ export function TestFireListeners({
   targetPersonaId,
   fired,
   sourceId = null,
+  readFailed = false,
 }: TestFireListenersProps) {
   const { t, tx } = useTranslation();
   const tr = t.triggers;
@@ -55,7 +58,7 @@ export function TestFireListeners({
       </h4>
 
       {listeners.length === 0 ? (
-        <p className="typo-caption text-ink-2">{tr.test_listeners_none}</p>
+        !readFailed && <p className="typo-caption text-ink-2">{tr.test_listeners_none}</p>
       ) : (
         <ul className="space-y-1">
           {listeners.map((row) => {

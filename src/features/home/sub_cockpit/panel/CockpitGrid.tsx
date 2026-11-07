@@ -27,7 +27,8 @@ export function CockpitGrid({ label, widgets }: { label: string; widgets: Compan
 }
 
 /** One widget at Athena's column span, with the Morning Director's enum-validated
- *  actions (re-parsed here: never trust a stored/composed spec's raw shape)
+ *  actions (re-parsed here, and gated by the widget's kind: never trust a
+ *  stored/composed spec's raw shape)
  *  handed to it as its Tile footer. An unknown kind is an error Tile, never a gap. */
 function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
   const { t, tx } = useTranslation();
@@ -35,7 +36,7 @@ function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
   // which is how an unstated span stops meaning "half, whatever the widget is".
   const span = Math.max(1, Math.min(12, widget.span ?? WIDGET_DEFAULT_SPAN[widget.kind] ?? 6));
   const Component = cockpitWidgetRegistry[widget.kind];
-  const actions = useMemo(() => parseWidgetActions(widget.actions), [widget.actions]);
+  const actions = useMemo(() => parseWidgetActions(widget.actions, widget.kind), [widget.actions, widget.kind]);
   if (!Component) {
     return <Tile span={span} error={{ title: tx(t.overview.cockpit.unknown_widget, { kind: widget.kind }) }} />;
   }

@@ -28,14 +28,16 @@ type LegendKind = 'projected' | 'past-success' | 'past-failure' | 'past-unknown'
 const ALL_KINDS: LegendKind[] = ['projected', 'past-success', 'past-failure', 'past-unknown', 'overlap'];
 interface ScheduleCalendarProps {
   entries: ScheduleEntry[];
-  onNavigateToExecution?: (agentId: string) => void;
-  onNavigateToTrigger?: (triggerId: string) => void;
+  /** A resolved past slot was clicked: open its run. */
+  onOpenExecution?: (executionId: string) => void;
+  /** A projected or unverified slot was clicked: it has no run, so open its agent. */
+  onOpenAgent?: (agentId: string) => void;
 }
 
 export default function ScheduleCalendar({
   entries,
-  onNavigateToExecution,
-  onNavigateToTrigger,
+  onOpenExecution,
+  onOpenAgent,
 }: ScheduleCalendarProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<CalendarView>('week');
@@ -106,13 +108,10 @@ export default function ScheduleCalendar({
 
   const handleEventClick = useCallback((ev: CalendarEvent) => {
     // Only matched past runs (success/failure) have an execution to open;
-    // projected and unverified slots have none, so route them to the trigger.
-    if (ev.kind === 'projected' || ev.kind === 'past-unknown') {
-      onNavigateToTrigger?.(ev.triggerId);
-    } else {
-      onNavigateToExecution?.(ev.agentId);
-    }
-  }, [onNavigateToExecution, onNavigateToTrigger]);
+    // projected and unverified slots have none, so they open the agent that owns them.
+    if (ev.executionId) onOpenExecution?.(ev.executionId);
+    else onOpenAgent?.(ev.agentId);
+  }, [onOpenExecution, onOpenAgent]);
 
 
   const headerLabel = view === 'week'

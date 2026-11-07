@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cronFireTimesInRange, listRecentScheduleRuns } from '@/api/pipeline/triggers';
-import { classifyRunOutcome, matchPastSlotsToRuns, type CalendarEvent, type RunPoint } from './calendarHelpers';
+import { bindPastSlotsToRuns, classifyRunOutcome, type CalendarEvent } from './calendarHelpers';
 import type { ScheduleEntry } from './scheduleHelpers';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
@@ -38,11 +38,56 @@ interface EntrySlots {
 
 const EMPTY_SLOTS: EntrySlots = { future: [], pastCron: [] };
 
-/** Cap projected slots to the visible window (one per hour, 24–80) instead of
- *  walking 500 fires per agent before the calendar can paint. */
+/** Size of the FIRST fire-times page (one per hour, 24–80), so a sparse
+ *  schedule costs one small IPC. It is a page size, not a cap: a schedule that
+ *  fills its page is paged on until the window ends (see `fetchCronFires`). */
 function slotCapForWindow(startMs: number, endMs: number): number {
   const hours = Math.max(1, Math.ceil((endMs - startMs) / 3_600_000));
   return Math.min(80, Math.max(24, hours));
+}
+
+/** `cron_fire_times_in_range` clamps `max` to 1000; later pages ask for that. */
+const FIRE_PAGE_MAX = 1000;
+
+/** Safety ceiling on fires drawn per schedule per window. A `* /5` (every five
+ *  minutes) schedule fills a 31-day month with 8,928 fires and stays under it;
+ *  only a near-every-minute schedule over a month reaches it. The cut happened
+ *  silently at 80 before (DW-126): an hourly schedule looked as if it stopped on
+ *  Wednesday. */
+const MAX_FIRES_PER_WINDOW = 10_000;
+
+/**
+ * Every fire of a cron schedule in `[start, end)`. The backend walks forward
+ * from `start` and keeps the EARLIEST `max` fires, so one capped call drops the
+ * end of the window — the part nearest to now. Page from the last fire returned
+ * until a page comes back short or the window ends.
+ */
+async function fetchCronFires(
+  agent: ScheduleEntry['agent'],
+  start: Date,
+  end: Date,
+  firstPage: number,
+): Promise<string[]> {
+  const cron = agent.cron_expression!;
+  const zone = agent.timezone ?? undefined;
+  const fires: string[] = [];
+  let from = start;
+  let page = firstPage;
+  while (fires.length < MAX_FIRES_PER_WINDOW) {
+    const want = Math.min(page, MAX_FIRES_PER_WINDOW - fires.length);
+    const isos = await cronFireTimesInRange(cron, zone, from, end, want, agent.trigger_id);
+    fires.push(...isos);
+    if (isos.length < want) break;
+    // The backend includes a fire exactly at `start`; one second past the
+    // last fire returned is strictly after it and before the next (cron fires
+    // fall on whole minutes).
+    const lastMs = Date.parse(isos[isos.length - 1]!);
+    if (Number.isNaN(lastMs)) break;
+    from = new Date(lastMs + 1000);
+    if (from.getTime() >= end.getTime()) break;
+    page = FIRE_PAGE_MAX;
+  }
+  return fires;
 }
 
 /**
@@ -120,14 +165,7 @@ export function useCalendarEvents(
       const { agent } = entry;
       if (agent.cron_expression) {
         try {
-          const isos = await cronFireTimesInRange(
-            agent.cron_expression,
-            agent.timezone ?? undefined,
-            startD,
-            endD,
-            maxSlots,
-            agent.trigger_id,
-          );
+          const isos = await fetchCronFires(agent, startD, endD, maxSlots);
           const future: Date[] = [];
           const pastCron: Date[] = [];
           for (const s of isos) {
@@ -148,7 +186,8 @@ export function useCalendarEvents(
           agent.next_trigger_at,
           startD,
           endD,
-          maxSlots,
+          // A local walk costs no IPC, so the first-page size does not apply.
+          MAX_FIRES_PER_WINDOW,
         );
         return { future: walk.filter((d) => d.getTime() >= nowMs), pastCron: [] };
       }
@@ -223,20 +262,27 @@ function assembleCalendarEvents(
     }
 
     if (agent.cron_expression && slots.pastCron.length > 0) {
-      const runPoints: RunPoint[] = (runsByTrigger.get(agent.trigger_id) ?? [])
-        .map((r) => ({ time: r.time, status: r.status }));
-      const outcomes = matchPastSlotsToRuns(slots.pastCron.map((d) => d.getTime()), runPoints);
+      const bound = bindPastSlotsToRuns(slots.pastCron.map((d) => d.getTime()), runsByTrigger.get(agent.trigger_id) ?? []);
       for (let j = 0; j < slots.pastCron.length; j++) {
         const time = slots.pastCron[j]!;
-        events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: outcomes[j]! });
+        const { outcome, run } = bound[j]!;
+        events.push({
+          ...base,
+          id: `${agent.trigger_id}-${time.getTime()}`,
+          time,
+          kind: outcome,
+          ...(run && outcome !== 'past-unknown' ? { executionId: run.executionId } : {}),
+        });
       }
     } else if (agent.interval_seconds) {
       for (const run of runsByTrigger.get(agent.trigger_id) ?? []) {
+        const kind = classifyRunOutcome(run.status);
         events.push({
           ...base,
           id: `${agent.trigger_id}-run-${run.executionId}`,
           time: new Date(run.time),
-          kind: classifyRunOutcome(run.status),
+          kind,
+          ...(kind !== 'past-unknown' ? { executionId: run.executionId } : {}),
         });
       }
     }

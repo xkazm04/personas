@@ -22,6 +22,8 @@ export interface CalendarEvent {
    *                  fabricated outcome — it means "we can't assert what happened".
    */
   kind: 'projected' | 'past-success' | 'past-failure' | 'past-unknown';
+  /** The run this slot is bound to; only on a resolved past slot (past-success, past-failure). */
+  executionId?: string;
 }
 
 export interface CalendarDay {
@@ -338,8 +340,17 @@ export function matchPastSlotsToRuns(
   runs: RunPoint[],
   baseToleranceMs = SLOT_RUN_TOLERANCE_MS,
 ): PastOutcome[] {
-  const outcomes: PastOutcome[] = new Array(slotTimes.length).fill('past-unknown');
-  if (slotTimes.length === 0 || runs.length === 0) return outcomes;
+  return bindPastSlotsToRuns(slotTimes, runs, baseToleranceMs).map((b) => b.outcome);
+}
+
+/** {@link matchPastSlotsToRuns}, also answering which run each slot bound, so a chip can open it. */
+export function bindPastSlotsToRuns<R extends RunPoint>(
+  slotTimes: number[],
+  runs: R[],
+  baseToleranceMs = SLOT_RUN_TOLERANCE_MS,
+): { outcome: PastOutcome; run: R | null }[] {
+  const bound: { outcome: PastOutcome; run: R | null }[] = slotTimes.map(() => ({ outcome: 'past-unknown', run: null }));
+  if (slotTimes.length === 0 || runs.length === 0) return bound;
   const consumed = new Array(runs.length).fill(false);
 
   for (let i = 0; i < slotTimes.length; i++) {
@@ -360,8 +371,8 @@ export function matchPastSlotsToRuns(
     }
     if (bestRun >= 0) {
       consumed[bestRun] = true;
-      outcomes[i] = classifyRunOutcome(runs[bestRun]!.status);
+      bound[i] = { outcome: classifyRunOutcome(runs[bestRun]!.status), run: runs[bestRun]! };
     }
   }
-  return outcomes;
+  return bound;
 }

@@ -97,7 +97,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
         tabIndex={0}
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setOpen((v) => !v); } }}
-        className="opacity-40 hover:opacity-80 transition-opacity focus:outline-none cursor-pointer"
+        className="opacity-40 hover:opacity-80 transition-opacity outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary/50 rounded-full cursor-pointer"
         aria-label={`Help for ${info.label}`}
       >
         <HelpCircle className="w-3 h-3" />

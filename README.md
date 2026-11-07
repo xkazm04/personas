@@ -288,7 +288,7 @@ source "$HOME/.cargo/env"
 
 ```bash
 npm install                  # 1. frontend dependencies
-npm run tauri:dev:lite       # 2. daily-driver dev mode (desktop features, no ML/P2P)
+npm run tauri:dev            # 2. daily-driver dev mode: the lite build (desktop features incl. P2P, no ML)
 ```
 
 On Windows, the helper script avoids the usual startup problems (clang missing from PATH, a stale app process, a stale Vite process):
@@ -300,7 +300,7 @@ On Windows, the helper script avoids the usual startup problems (clang missing f
 
 > The first run compiles all Rust dependencies, which takes several minutes. Later builds are incremental.
 
-**Lite or full?** Use `tauri:dev:lite` for almost everything: UI, IPC wiring, schema, triggers, recipes, observability. Switch to `npm run tauri:dev` (full) only when you are working on the vector knowledge base, embeddings, ONNX inference, or P2P, which are compiled only in the full build.
+**Lite or full?** Plain `npm run tauri:dev` is the lite build (`src-tauri/tauri.lite.conf.json`, `desktop` features; `tauri:dev:lite` is an alias). Use it for almost everything: UI, IPC wiring, schema, triggers, recipes, observability, and P2P, which `desktop` has included since 2026-10-13. Switch to `npm run tauri:dev:full` only when you are working on the vector knowledge base, embeddings or ONNX inference: the `ml` feature is compiled only in the full build. See [docs/development/build.md](docs/development/build.md) for the variant map.
 
 ### Build tiers
 
@@ -337,7 +337,8 @@ When `VITE_APP_TIER` is unset, the build includes every tier and users switch at
 | Command | What it does |
 |---------|-------------|
 | `npm run dev` | Vite dev server only (port 1420), frontend without Tauri |
-| `npm run tauri:dev` / `:lite` | Tauri dev mode, full or lite feature set |
+| `npm run tauri:dev` / `:lite` | Tauri dev mode, lite feature set (`desktop`, P2P included, no ML) |
+| `npm run tauri:dev:full` | Tauri dev mode, full feature set (`desktop-full`: adds ML) |
 | `npm run tauri:dev:test` | Lite dev mode plus the test-automation HTTP server (`:17320`) and DevInspector |
 | `npm run build` | TypeScript check + Vite production build |
 | `npm run tauri:build` | Full installer (all targets, `desktop-full`) |
@@ -358,7 +359,7 @@ Build internals (ARM64 vs x64 on Windows, the codegen pipeline, profiles, ONNX b
 A dev-only overlay for grabbing a component's `src/.../File.tsx:line` and pasting it into an AI coding CLI. Off by default and never present in production builds.
 
 ```bash
-npm run tauri:dev:test        # full app + test bridge, source mapping on
+npm run tauri:dev:test        # lite app + test bridge, source mapping on
 npm run dev:inspect           # frontend only, faster iteration
 ```
 
@@ -464,7 +465,7 @@ More in [docs/development/build.md](./docs/development/build.md) and [docs/devop
 - External traffic is HTTPS through rustls
 - The dev-tools bridge binds to loopback and requires a token
 
-Architecture details: [docs/architecture](./docs/architecture/README.md). Please do not file security issues publicly; contact the maintainers directly through the [repository](https://github.com/xkazm04/personas).
+Architecture details: [docs/architecture](./docs/architecture/README.md). Please do not file security issues publicly: report them privately as [SECURITY.md](./SECURITY.md) describes (GitHub private vulnerability reporting, with the response times we aim for).
 
 ---
 

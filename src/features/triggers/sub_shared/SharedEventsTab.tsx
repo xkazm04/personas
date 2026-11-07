@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Search, X } from 'lucide-react';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { inlineErrorCopy } from '../lib/inlineErrorCopy';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { FEEDS_GLYPH } from '@/features/shared/glyph/glyphs/feedsGlyph';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -28,7 +30,7 @@ import Button from '@/features/shared/components/buttons/Button';
 export function SharedEventsTab() {
   const { t } = useTranslation();
   const m = t.triggers.marketplace;
-  const { catalog, loading, refresh, subscribe, unsubscribe, subByEntryId, activityBySlug, categories } =
+  const { catalog, loading, loadError, reload, refresh, subscribe, unsubscribe, subByEntryId, activityBySlug, categories } =
     useSharedEvents();
 
   const [search, setSearch] = useState('');
@@ -191,7 +193,17 @@ export function SharedEventsTab() {
           icon={<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />}
         >{t.common.refresh}</Button>
       </div>
-      <div className="flex-1 min-h-0 px-4 pb-4">
+      {loadError != null && (
+        <div className="px-4 pb-3">
+          <InlineErrorBanner
+            severity="error"
+            message={inlineErrorCopy(t, loadError)}
+            onRetry={() => { void reload(); }}
+          />
+        </div>
+      )}
+      {/* With nothing to list, the table's empty state would claim there are no feeds. */}
+      {!(loadError != null && catalog.length === 0) && <div className="flex-1 min-h-0 px-4 pb-4">
         <UnifiedTable
           columns={columns}
           data={data}
@@ -210,7 +222,7 @@ export function SharedEventsTab() {
           rowAccent={(e) => (subByEntryId.has(e.id) ? 'border-l-status-success' : undefined)}
           rowReveal={{ resetKey: 'shared-events-marketplace' }}
         />
-      </div>
+      </div>}
       {historyEntry && (
         <EventHistoryModal entry={historyEntry} onClose={() => setHistoryEntry(null)} />
       )}

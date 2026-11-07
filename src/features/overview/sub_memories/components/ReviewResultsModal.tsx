@@ -31,7 +31,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               </p>
             )}
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={onClose}>
+          <Button variant="ghost" size="icon-sm" aria-label={t.common.close} onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>

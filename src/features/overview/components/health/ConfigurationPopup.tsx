@@ -1,12 +1,13 @@
 import { useState, useEffect, useId } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Key } from 'lucide-react';
-import { getAppSettingsBulk, setAppSetting } from "@/api/system/settings";
+import { deleteAppSetting, getAppSettingsBulk, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { silentCatch } from '@/lib/silentCatch';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 
 const logger = createLogger("configuration-popup");
 
@@ -59,6 +60,10 @@ export function ConfigurationPopup({
   );
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // The keys the read found a value for: a blank field only means "remove it" for
+  // one of these, so a failed read can never turn an unread key into a delete.
+  const [storedKeys, setStoredKeys] = useState<ReadonlySet<string>>(() => new Set());
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -72,6 +77,7 @@ export function ConfigurationPopup({
           if (v) updated[f.key] = v;
         });
         setValues((prev) => ({ ...prev, ...updated }));
+        setStoredKeys(new Set(Object.keys(updated)));
       })
       .catch((err) => {
         silentCatch('ConfigurationPopup:loadSettings')(err);
@@ -86,7 +92,8 @@ export function ConfigurationPopup({
       await Promise.all(
         fields.map((f) => {
           const v = values[f.key]?.trim();
-          return v ? setAppSetting(f.key, v) : Promise.resolve();
+          if (v) return setAppSetting(f.key, v);
+          return storedKeys.has(f.key) ? deleteAppSetting(f.key) : Promise.resolve();
         })
       );
       onSaved();
@@ -104,7 +111,10 @@ export function ConfigurationPopup({
   };
 
   const styles = ACCENT_STYLES[accent];
-  const hasAnyValue = fields.some((f) => values[f.key]?.trim());
+  // Something to write: a typed value, or a stored one the person has cleared.
+  const canSave = fields.some((f) => values[f.key]?.trim() || storedKeys.has(f.key));
+  // Saving deletes these, and a deleted key cannot be got back: Save asks first.
+  const clearsStoredKey = fields.some((f) => storedKeys.has(f.key) && !values[f.key]?.trim());
 
   return (
     <BaseModal
@@ -162,13 +172,26 @@ export function ConfigurationPopup({
             <Button
               variant="primary"
               size="sm"
-              onClick={handleSave}
-              disabled={!hasAnyValue || saving}
+              onClick={clearsStoredKey ? () => setConfirmingRemove(true) : handleSave}
+              disabled={!canSave || saving}
             >
               {saving ? t.common.saving : saveLabel}
             </Button>
           </div>
-          {!hasAnyValue && !saving && loaded && (
+          {confirmingRemove && (
+            <ConfirmDialog
+              danger
+              title={t.settings.byom.remove_key}
+              body={t.common.confirm_destructive_cannot_undo}
+              confirmLabel={t.settings.byom.remove_key}
+              onConfirm={async () => {
+                await handleSave();
+                setConfirmingRemove(false);
+              }}
+              onCancel={() => setConfirmingRemove(false)}
+            />
+          )}
+          {!canSave && !saving && loaded && (
             <p
               className="animate-fade-slide-in text-ink-2 typo-caption mt-1.5 text-right"
             >

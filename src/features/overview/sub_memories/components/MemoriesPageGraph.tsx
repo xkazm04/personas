@@ -528,7 +528,7 @@ function DetailPanel({
             <p className="typo-caption text-ink-2 mt-0.5">{personaName}</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon-sm" className="flex-shrink-0" onClick={onClose}>
+        <Button variant="ghost" size="icon-sm" className="flex-shrink-0" aria-label={t.common.close} onClick={onClose}>
           <X className="h-3.5 w-3.5" />
         </Button>
       </div>
