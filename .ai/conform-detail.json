@@ -8389,14 +8389,23 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:16:30.000Z",
-      "worker": "fa11a4fa-09d8-4f88-99c8-80905ddd1894",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T23:46:40.405Z",
+      "worker": "544efd99-3aa7-4d60-8f6b-fc55bb11172d",
       "techniques": [
         {
           "technique": "output-normalization",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/types.rs:800 ExecutionStatusEvent carries `error: Option<String>` only; the tool's own classification is flattened into text by parser::terminal_error_message (src-tauri/src/engine/runner/mod.rs:3624) before it reaches usePersonaExecution.ts:167 - 'the subtype must reach the caller as a value it can branch on, not be flattened into one opaque message' (verdict-survives-boundary). error_category reaches only the aggregate observability breakdown, never the live run"
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:158 Failure reaches the consumer as a bare string, not a typed outcome carrying the classification the runner already holds."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:157 the live execution surface receives only a prose error string (ExecutionStatusEvent.error, src-tauri/core/src/types.rs:800) - the runner reads the CLI result envelope's subtype and mints a typed error_category (src-tauri/src/engine/runner/mod.rs:3624, :3646) but neither travels on the status event, so this caller cannot branch on max-turns vs usage-limit vs startup-stall and renders all of them as one '[ERROR] <text>' line.",
+          "evaluatedAt": "2026-10-09T16:16:30.000Z",
+          "worker": "fa11a4fa-09d8-4f88-99c8-80905ddd1894",
+          "reason": "replaced by 544efd99-3aa7-4d60-8f6b-fc55bb11172d"
         }
       ]
     },
@@ -17284,19 +17293,33 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T00:00:00.000Z",
-      "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T23:46:40.405Z",
+      "worker": "544efd99-3aa7-4d60-8f6b-fc55bb11172d",
       "techniques": [
         {
           "technique": "fallback-ladder",
           "verdict": "deviation",
-          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:561 the honest-refusal rung and the one shared predicate are both absent: useCliReadiness (src/hooks/utility/data/useCliReadiness.ts:55) has no caller under src/features/agents, so absence is discovered by spawning after the draft persona exists; the :656 fallback is hardcoded English naming no missing capability"
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:563 The honest-refusal rung for a missing CLI is promised but cannot fire, and the shared readiness predicate is never consulted."
         },
         {
           "technique": "output-normalization",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/events.rs:375 BuildEvent::Error carries only message+retryable, so the buildError this surface passes on (src/features/agents/components/matrix/UnifiedBuildEntry.tsx:843) is prose; not-installed, unauthorized and spawn failure cannot be branched on (verdict-survives-boundary)"
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:658 A start failure is a prose string, not a typed outcome; spawn NotFound and other errors look the same."
+        },
+        {
+          "technique": "availability-probe",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:565 No installed or authorized check before a draft persona is created (grep for probe/readiness in matrix/ returned nothing)."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:561 the launcher promises to roll back the draft persona when the CLI is unavailable, but start_build_session returns the id before any spawn (src-tauri/src/commands/design/build_sessions.rs:128) and CLI absence arrives later as an untyped prose BuildEvent::Error (src-tauri/src/engine/build_session/runner.rs:680); no build surface consults the shared useCliReadiness predicate, so a machine without the CLI keeps a draft persona and shows an unclassified 'Failed to start build' the user cannot tell from a crash or a logout",
+          "evaluatedAt": "2026-10-10T00:00:00.000Z",
+          "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
+          "reason": "replaced by 544efd99-3aa7-4d60-8f6b-fc55bb11172d"
         }
       ]
     },
@@ -26988,21 +27011,37 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T13:00:00.000Z",
-      "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T23:46:40.405Z",
       "techniques": [
         {
           "technique": "availability-probe",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:12 presentational card, no probe"
+          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:12 presentational card, no probe",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "thread-custody-across-resume",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/GlyphRefineComposer.tsx:1 composer only emits text upward, holds no thread id"
+          "evidence": "src/features/agents/sub_glyph/GlyphRefineComposer.tsx:1 composer only emits text upward, holds no thread id",
+          "carriedFrom": "2026-10-14"
         }
-      ]
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:12 props take an already-parsed BuildQuestion and an onAnswer callback; no file in sub_glyph spawns, probes, resumes or approves for a CLI child, so the transport's precondition (a coding-agent CLI spawned as a model transport) is unmet",
+          "evaluatedAt": "2026-10-14T13:00:00.000Z",
+          "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+          "reason": "replaced by 544efd99-3aa7-4d60-8f6b-fc55bb11172d"
+        }
+      ],
+      "withdrawn": {
+        "worker": "544efd99-3aa7-4d60-8f6b-fc55bb11172d",
+        "state": "not-applicable",
+        "at": "2026-11-07T23:49:15.402471+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor GlyphAnswerCard.tsx:15 is only a props interface line and does not show that nothing here spawns or probes a CLI. The evidence leans on LogLayer, which lives in sub_glyph/contactSheet/cinema/ and is not one of this context's files."
+      }
     },
     "969f50a2-b70d-41e3-b573-284a75a67425/agent-cli-transport": {
       "context": "prompt-assembly-engine",
@@ -45889,6 +45928,51 @@
           "reason": "replaced by d5fd826c-7224-4efb-ae2d-d7489d83c886"
         }
       ]
+    },
+    "767b2bb5-4662-4be1-ad24-c881ac334016/agent-cli-transport": {
+      "context": "webhook-ingestion",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T23:46:40.405Z",
+      "techniques": [
+        {
+          "technique": "subscription-auth-selection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:365 Strip done at the call site instead of the single spawn door; the door itself (cli_process.rs:1127) is correct."
+        },
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:340 A generate-shaped one-shot is given full permissions and no current_dir (grep found none), so it inherits the host cwd and its ambient project instructions instead of a neutral, grant-nothing stance."
+        },
+        {
+          "technique": "availability-probe",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:108 The probe uses production's own flag set and the CliProcessDriver door, so it observes the process the real run launches."
+        },
+        {
+          "technique": "dated-capability-matrix",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:25 Capabilities are treated as per-session dated evidence; probed_at and served_from_cache are stamped (doc at :37-38)."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:45-49 force_subscription_auth (the one spawn door every path in this file calls) strips only ANTHROPIC_*; CLAUDECODE/CLAUDE_CODE session-marker stripping is duplicated instead of centralized (inline in prompt/cli_args.rs:204-205, a separate nesting_env_removals() in companion/session/launch.rs:458) — a new CliArgs-building call site must remember the strip itself, the forgettable-guard shape subscription-auth-selection's session-nesting clause warns against. (cli_capabilities.rs's probe() is a strong, independent realization of availability-probe/dated-capability-matrix in the same file set.)",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 544efd99-3aa7-4d60-8f6b-fc55bb11172d"
+        }
+      ],
+      "withdrawn": {
+        "worker": "544efd99-3aa7-4d60-8f6b-fc55bb11172d",
+        "state": "deviation",
+        "at": "2026-11-07T23:49:15.248009+00:00",
+        "reason": "reviewer (sonnet): The deviation is anchored in src-tauri/src/engine/memory_reflection.rs, which is not among the webhook-ingestion context files (webhook, relay, git_checkpoint and similar), so it is a verdict about a different context. The 'no current_dir' claim also rests only on a grep, and the cli_capabilities an"
+      }
     }
   }
 }

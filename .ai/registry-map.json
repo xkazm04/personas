@@ -16143,14 +16143,10 @@
           "revision": 10,
           "changedAt": "2026-10-27",
           "confidence": "probable",
+          "source": "retained",
           "state": "not-applicable",
           "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:12 props take an already-parsed BuildQuestion and an onAnswer callback; no file in sub_glyph spawns, probes, resumes or approves for a CLI child, so the transport's precondition (a coding-agent CLI spawned as a model transport) is unmet",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-14"
         },
         {
           "subject": "status-vocabulary",
@@ -17263,12 +17259,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:157 the live execution surface receives only a prose error string (ExecutionStatusEvent.error, src-tauri/core/src/types.rs:800) - the runner reads the CLI result envelope's subtype and mints a typed error_category (src-tauri/src/engine/runner/mod.rs:3624, :3646) but neither travels on the status event, so this caller cannot branch on max-turns vs usage-limit vs startup-stall and renders all of them as one '[ERROR] <text>' line.",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:158 The live execution surface still gets only the prose ExecutionStatusEvent.error (src-tauri/core/src/types.rs:800, a struct with no class field). The runner mints a typed error_category at src-tauri/src/engine/runner/mod.rs:3712 but it never travels on the status event, so this caller cannot tell a startup stall from a usage limit or a timeout and prints every failure as one [ERROR] line.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -27261,12 +27256,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:561 the launcher promises to roll back the draft persona when the CLI is unavailable, but start_build_session returns the id before any spawn (src-tauri/src/commands/design/build_sessions.rs:128) and CLI absence arrives later as an untyped prose BuildEvent::Error (src-tauri/src/engine/build_session/runner.rs:680); no build surface consults the shared useCliReadiness predicate, so a machine without the CLI keeps a draft persona and shows an unclassified 'Failed to start build' the user cannot tell from a crash or a logout",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:563 The rollback (deletePersona at :666) runs only when handleGenerate throws. start_build_session returns the id before any spawn (src-tauri/src/commands/design/build_sessions.rs:182), and CLI absence arrives later as an untyped emit_error \"Failed to start build: {e}\" (src-tauri/src/engine/build_session/runner.rs:706). No build surface checks the shared useCliReadiness predicate (src/hooks/utility/data/useCliReadiness.ts), so a machine without the CLI keeps the draft persona and shows an error nobody can classify.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -47029,16 +47023,12 @@
           "bundle": "software-engineering",
           "source": "conform",
           "confidence": "strong",
-          "state": "deviation",
-          "evidence": "src-tauri/engine/src/cli_process.rs:45-49 force_subscription_auth (the one spawn door every path in this file calls) strips only ANTHROPIC_*; CLAUDECODE/CLAUDE_CODE session-marker stripping is duplicated instead of centralized (inline in prompt/cli_args.rs:204-205, a separate nesting_env_removals() in companion/session/launch.rs:458) — a new CliArgs-building call site must remember the strip itself, the forgettable-guard shape subscription-auth-selection's session-nesting clause warns against. (cli_capabilities.rs's probe() is a strong, independent realization of availability-probe/dated-capability-matrix in the same file set.)",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
           "digest": "sha256-b2:75415727a875a42a",
           "revision": 10,
           "changedAt": "2026-10-27",
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:45-49 force_subscription_auth (the one spawn door every path in this file calls) strips only ANTHROPIC_*; CLAUDECODE/CLAUDE_CODE session-marker stripping is duplicated instead of centralized (inline in prompt/cli_args.rs:204-205, a separate nesting_env_removals() in companion/session/launch.rs:458) — a new CliArgs-building call site must remember the strip itself, the forgettable-guard shape subscription-auth-selection's session-nesting clause warns against. (cli_capabilities.rs's probe() is a strong, independent realization of availability-probe/dated-capability-matrix in the same file set.)",
+          "evaluatedAt": "2026-10-03"
         },
         {
           "subject": "rate-limiting",

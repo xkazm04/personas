@@ -1,0 +1,126 @@
+{
+  "schema": "conform-run/1",
+  "worker": "544efd99-3aa7-4d60-8f6b-fc55bb11172d",
+  "subject": "agent-cli-transport",
+  "evaluatedAt": "2026-11-07T23:46:40.405928+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "hooks-execution",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/execution/usePersonaExecution.ts:158 The live execution surface still gets only the prose ExecutionStatusEvent.error (src-tauri/core/src/types.rs:800, a struct with no class field). The runner mints a typed error_category at src-tauri/src/engine/runner/mod.rs:3712 but it never travels on the status event, so this caller cannot tell a startup stall from a usage limit or a timeout and prints every failure as one [ERROR] line.",
+      "techniques": [
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:158 Failure reaches the consumer as a bare string, not a typed outcome carrying the classification the runner already holds."
+        }
+      ]
+    },
+    {
+      "context": "persona-build-matrix",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:563 The rollback (deletePersona at :666) runs only when handleGenerate throws. start_build_session returns the id before any spawn (src-tauri/src/commands/design/build_sessions.rs:182), and CLI absence arrives later as an untyped emit_error \"Failed to start build: {e}\" (src-tauri/src/engine/build_session/runner.rs:706). No build surface checks the shared useCliReadiness predicate (src/hooks/utility/data/useCliReadiness.ts), so a machine without the CLI keeps the draft persona and shows an error nobody can classify.",
+      "techniques": [
+        {
+          "technique": "fallback-ladder",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:563 The honest-refusal rung for a missing CLI is promised but cannot fire, and the shared readiness predicate is never consulted."
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:658 A start failure is a prose string, not a typed outcome; spawn NotFound and other errors look the same."
+        },
+        {
+          "technique": "availability-probe",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:565 No installed or authorized check before a draft persona is created (grep for probe/readiness in matrix/ returned nothing)."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-cli-transport",
+      "context": "agents-deployment",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "webhook-ingestion",
+      "reason": "withdrawn after review: reviewer (sonnet): The deviation is anchored in src-tauri/src/engine/memory_reflection.rs, which is not among the webhook-ingestion context files (webhook, relay, git_checkpoint and similar), so it is a verdict about a different context. The 'no current_dir' claim also rests only on a grep, and the cli_capabilities an"
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "glyph-persona-card",
+      "reason": "withdrawn after review: reviewer (sonnet): The not-applicable anchor GlyphAnswerCard.tsx:15 is only a props interface line and does not show that nothing here spawns or probes a CLI. The evidence leans on LogLayer, which lives in sub_glyph/contactSheet/cinema/ and is not one of this context's files."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-07T23:46:40.405928+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-cli-transport"
+      ],
+      "techniques": [
+        "output-normalization"
+      ],
+      "deviations": 1,
+      "context": "hooks-execution",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T23:46:40.405928+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-cli-transport"
+      ],
+      "techniques": [
+        "availability-probe",
+        "fallback-ladder",
+        "output-normalization"
+      ],
+      "deviations": 1,
+      "context": "persona-build-matrix",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T23:46:40.405928+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-cli-transport"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "glyph-persona-card",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-07T23:46:40.405928+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-cli-transport"
+      ],
+      "techniques": [
+        "availability-probe",
+        "dated-capability-matrix",
+        "permission-stance-enforcement",
+        "subscription-auth-selection"
+      ],
+      "deviations": 1,
+      "context": "webhook-ingestion",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
