@@ -45262,6 +45262,26 @@
       "evaluatedTs": "2026-11-06T23:45:04.672Z",
       "worker": "817a77c4-34f4-439e-a7bf-9c07db091f3a",
       "techniques": []
+    },
+    "c5228746-931d-4733-9cf7-84519a2c9605/mcp-tools": {
+      "context": "hooks-design",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:44:31.832Z",
+      "worker": "17f0fa7a-c87b-465f-a91d-2218f205dbfd",
+      "techniques": []
+    },
+    "4cfcafbc-1964-4d65-994f-66c4cd1f8820/mcp-tools": {
+      "context": "dev-tools-shell",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T00:44:31.832Z",
+      "worker": "17f0fa7a-c87b-465f-a91d-2218f205dbfd",
+      "techniques": []
     }
   }
 }

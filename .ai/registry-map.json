@@ -12371,7 +12371,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/DevToolsPage.tsx:23 The shell only routes sub-pages by a system-store tab key and hosts constant catalogs. A case-insensitive recursive grep and rg of the whole src/features/plugins/dev-tools tree for mcp, inputSchema, tools/call and tools/list found zero hits, so no tool-protocol surface lives here.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:cb2b1c9f6fef5eb9",
+          "evaluatedRevision": 35
         },
         {
           "subject": "agent-memory",
@@ -17100,7 +17104,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/design/core/useTauriStream.ts:2 The design hooks stream backend output over Tauri events and invoke Tauri commands. A case-insensitive recursive grep and rg of src/hooks/design for mcp, inputSchema, tools/call and tools/list found zero hits, so no tool-protocol server or client lives in this context.",
+          "evaluatedAt": "2026-11-07",
+          "evaluatedAgainst": "sha256-b2:cb2b1c9f6fef5eb9",
+          "evaluatedRevision": 35
         },
         {
           "subject": "data-access",
