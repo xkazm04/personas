@@ -99,7 +99,7 @@ export function CrashLogsSection() {
         role="button"
         tabIndex={0}
         onClick={() => setExpanded(!expanded)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+        onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-surface-2 transition-colors cursor-pointer"
       >
         <div className="w-6 h-6 rounded-card flex items-center justify-center bg-status-error/10">
