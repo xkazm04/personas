@@ -116,6 +116,7 @@ export default function AdoptionWizardModal({
           <Button
             type="button"
             onClick={handleCloseAttempt}
+            aria-label={t.common.close}
             variant="ghost"
             size="icon-sm"
           >
