@@ -116,7 +116,12 @@ export function ExecutionStep({
     setStartedExecId(null);
     setExecutionError(null);
     setEndedStatus(null);
-    const execId = await executePersona(personaId);
+    let execId: Awaited<ReturnType<typeof executePersona>> | undefined;
+    try {
+      execId = await executePersona(personaId);
+    } catch (e) {
+      silentCatch('features/onboarding/ExecutionStep:run')(e);
+    }
     if (!execId) {
       setExecutionError(t.onboarding.execution_failed);
       setStarted(false);
