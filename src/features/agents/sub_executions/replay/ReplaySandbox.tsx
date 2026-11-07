@@ -95,9 +95,11 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
           else actions.scrubTo(currentMsRef.current + 500);
           break;
         case 'Home':
+          e.preventDefault();
           actions.jumpToStart();
           break;
         case 'End':
+          e.preventDefault();
           actions.jumpToEnd();
           break;
       }
