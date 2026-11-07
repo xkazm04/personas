@@ -109,7 +109,14 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
         const goal = await createGoal(projectId, title.trim(), description.trim() || undefined, undefined, targetIso);
         // createGoal defaults status to 'open' + no KPI; apply non-default picks.
         if (status !== 'open' || kpiLink) {
-          await updateGoal(goal.id, { status, kpiId: kpiLink });
+          // The goal EXISTS now. A failure here must not fall into the outer
+          // catch and leave the form open as if nothing was created: a retry
+          // would create a duplicate. Report it and close; the goal is on the board.
+          try {
+            await updateGoal(goal.id, { status, kpiId: kpiLink });
+          } catch (err) {
+            toastCatch('Failed to update goal')(err);
+          }
         }
       }
       onSaved?.();
