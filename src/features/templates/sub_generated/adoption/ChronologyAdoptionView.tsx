@@ -1449,7 +1449,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
   const handleViewAgent = useCallback(() => {
-    if (!personaId) return;
+    if (!personaId || fadeOut) return; // a second click during the fade must not fire onPersonaCreated twice
 
     setFadeOut(true);
     setTimeout(() => {
@@ -1473,7 +1473,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       // so they don't have to guess from created_at ordering.
       onPersonaCreated(personaId);
     }, 400);
-  }, [personaId, onPersonaCreated]);
+  }, [personaId, fadeOut, onPersonaCreated]);
 
   // Auto-redirect after promotion (matches UnifiedBuildEntry behavior)
   const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
