@@ -79,6 +79,11 @@ export function classifyKind(kind: TauriErrorKind): ErrorCategory {
 // Classification
 // ---------------------------------------------------------------------------
 
+/** Twin of Rust `has_status_token`: `code` as a standalone token, so `offset 14290` is not a 429. */
+function hasStatusToken(lower: string, code: string): boolean {
+  return new RegExp(`(?<![a-z0-9])${code}(?![a-z0-9])`).test(lower);
+}
+
 /**
  * Classify an error into an {@link ErrorCategory}.
  *
@@ -94,7 +99,7 @@ export function classifyError(error: string): ErrorCategory {
     lower.includes('too many requests') ||
     lower.includes('quota exceeded') ||
     lower.includes('usage limit') ||
-    lower.includes('429')
+    hasStatusToken(lower, '429')
   ) {
     return 'rate_limit';
   }
@@ -127,7 +132,7 @@ export function classifyError(error: string): ErrorCategory {
     lower.includes('enoent') ||
     lower.includes('is not recognized') ||
     lower.includes('not_found_error') ||
-    lower.includes('404') ||
+    hasStatusToken(lower, '404') ||
     lower.includes('model not found') ||
     lower.includes('unknown model') ||
     lower.includes('no such model')
@@ -143,8 +148,8 @@ export function classifyError(error: string): ErrorCategory {
     lower.includes('credential') ||
     lower.includes('api key') ||
     lower.includes('unauthorized') ||
-    lower.includes('401') ||
-    lower.includes('403') ||
+    hasStatusToken(lower, '401') ||
+    hasStatusToken(lower, '403') ||
     lower.includes('authentication_error') ||
     lower.includes('permission_error') ||
     lower.includes('forbidden') ||
@@ -187,10 +192,10 @@ export function classifyError(error: string): ErrorCategory {
   // API / server errors — 5xx and Anthropic's `overloaded_error` (529), the
   // dominant real failure when the provider is at capacity.
   if (
-    lower.includes('500') ||
-    lower.includes('502') ||
-    lower.includes('503') ||
-    lower.includes('529') ||
+    hasStatusToken(lower, '500') ||
+    hasStatusToken(lower, '502') ||
+    hasStatusToken(lower, '503') ||
+    hasStatusToken(lower, '529') ||
     lower.includes('overloaded') ||
     lower.includes('api error') ||
     lower.includes('server error') ||
@@ -213,7 +218,7 @@ export function classifyError(error: string): ErrorCategory {
     lower.includes('request_too_large') ||
     lower.includes('request too large') ||
     lower.includes('payload too large') ||
-    lower.includes('413')
+    hasStatusToken(lower, '413')
   ) {
     return 'validation';
   }

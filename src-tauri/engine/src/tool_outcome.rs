@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use personas_core::error::AppError;
+use personas_core::error_taxonomy::has_status_token;
 
 /// Maximum bytes of raw tool output the direct path injects to a caller / the
 /// audit trail. Chosen at 256 KiB: generous for any real API/script response a
@@ -272,17 +273,6 @@ fn classify_message(msg: &str) -> (ToolErrorKind, Option<u16>, bool) {
         return (ToolErrorKind::ToolError, None, false);
     }
     (ToolErrorKind::Unknown, None, false)
-}
-
-/// True when `code` appears in `lower` as a standalone token (not embedded in a
-/// longer run of alphanumerics).
-fn has_status_token(lower: &str, code: &str) -> bool {
-    lower.match_indices(code).any(|(i, _)| {
-        let before = lower[..i].chars().next_back();
-        let after = lower[i + code.len()..].chars().next();
-        !before.is_some_and(|c| c.is_ascii_alphanumeric())
-            && !after.is_some_and(|c| c.is_ascii_alphanumeric())
-    })
 }
 
 /// Best-effort extraction of a 3-digit HTTP status token from a lowercased
