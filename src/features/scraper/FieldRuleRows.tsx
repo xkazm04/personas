@@ -96,9 +96,10 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
                 />
                 <Tooltip content={"Capture group"}><input aria-label="Capture group"
                   type="number"
+                  min={0}
                   className={`${SMALL_INPUT} w-20`}
                   value={f.group}
-                  onChange={(e) => updateField(f.id, { group: Number(e.target.value) || 0 })} /></Tooltip>
+                  onChange={(e) => updateField(f.id, { group: Math.max(0, Math.trunc(Number(e.target.value)) || 0) })} /></Tooltip>
               </>
             )}
             {f.type === 'json' && (

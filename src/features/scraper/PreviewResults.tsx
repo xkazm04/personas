@@ -10,8 +10,8 @@ import type { PreviewRow } from '@/api/scraper';
 export function PreviewResults({ rows, fieldNames }: { rows: PreviewRow[]; fieldNames: string[] }) {
   return (
     <div className="flex flex-col gap-2">
-      {rows.map((row) => (
-        <div key={row.url} className="rounded-interactive border border-hair bg-background/40 p-3">
+      {rows.map((row, i) => (
+        <div key={`${row.url}#${i}`} className="rounded-interactive border border-hair bg-background/40 p-3">
           <div className="mb-2 flex items-center gap-1.5 typo-caption text-ink-3">
             <Globe className="size-3.5 shrink-0" />
             <span className="truncate">{row.url}</span>
@@ -54,8 +54,15 @@ export function PreviewResults({ rows, fieldNames }: { rows: PreviewRow[]; field
 
 export function formatPreviewValue(v: unknown): string {
   if (Array.isArray(v)) {
-    const shown = v.slice(0, 5).map((x) => String(x)).join(', ');
+    const shown = v.slice(0, 5).map((x) => scalarText(x)).join(', ');
     return v.length > 5 ? `[${shown}, +${v.length - 5} more]` : `[${shown}]`;
+  }
+  return scalarText(v);
+}
+
+function scalarText(v: unknown): string {
+  if (v !== null && typeof v === 'object') {
+    try { return JSON.stringify(v); } catch { return String(v); }
   }
   return String(v);
 }
