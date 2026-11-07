@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 111,
-        "matches": 154
+        "files": 110,
+        "matches": 153
       },
       "floor": 2500
     },
@@ -564,8 +564,8 @@
         "note": "RE-BASELINED 2026-09-24 by the style-unification Director on a git-archive HEAD export after c57032963: 731/1754 -> 12/15, every removed match traced to 937854f7d (dead-override codemod, 977 files). The remaining 15 are live overrides, most in src/features/fleet/monitor/grid/prototype/ (committed by another session in 96bbd8b20 while the codemod skipped it as dirty)."
       },
       "baseline": {
-        "files": 5,
-        "matches": 7
+        "files": 1,
+        "matches": 1
       },
       "floor": 2000
     },
@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 237,
-        "matches": 516
+        "files": 38,
+        "matches": 69
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 354,
-        "matches": 654
+        "files": 33,
+        "matches": 52
       },
       "floor": 2000
     },
@@ -1470,8 +1470,8 @@
         "description": "a polite live region (aria-live=, or role=\"status\", whose implicit politeness is polite) whose opening tag is reached DIRECTLY from a conditional operator - `{cond && <div aria-live=...>}` or `{cond ? (<span role=\"status\">…)}` - with only whitespace, parentheses and comments in between. PROXY FOR the stack-free condition: the live-region node and the text it exists to announce enter the accessibility tree in the SAME commit, so there is no change for the assistive technology to observe and the announcement the author wrote never fires. Grounded in the specification, not in taste: MDN's live-region guide states the attribute 'works as long as you add the attribute before the changes occur ... Start with an empty live region, then - in a separate step - change the content inside the region.' role=\"alert\" is DELIBERATELY EXCLUDED from the pattern (the negated run cannot cross role=\"alert\") because it is the documented exception - alert content 'is announced, even when the region ... is injected dynamically into the page' - so gating it would flag a correct construct; the 14 conditionally-mounted role=\"alert\" regions in this repo are therefore not counted. PRECONDITION (measured, must be re-derived per repo): this repo spells conditional rendering as JSX && / ternary inside braces. RECALL IS PARTIAL AND THE SHORTFALL IS STRUCTURAL: the identical defect also appears as a component that early-returns null above its region (9 further sites here - EstimatedProgressBar.tsx:96, CharBudget.tsx:56, BulkRerunStrip.tsx:24, LabProgress.tsx:38, NarrationThread.tsx:77, DataHealthBar.tsx:23, RemoteJobNoticeChip.tsx:81, AthenaOrbLayer.tsx:173, TourPanelBody.tsx:90, plus LoadingSpinner.tsx:15 whose return null sits AFTER the region). A whole-file regex cannot see a control-flow guard, so the gate ratchets the lexically-visible half and section 7 names the rest. Measured against a brace/quote-aware JSX opening-tag parser over all 2,104 .tsx files: recall 17/17 = 100% of the JSX-conditional sub-population, 17/26 = 65% of the full condition; precision 15/17 - the two false positives are Composer.tsx:359 and Listbox.tsx:185, where the outer condition is a STATIC CAPABILITY flag (dictation.supported, searchable) rather than the message's own presence, so the region really is mounted for the surface's lifetime and its text swaps inside it. Both were hand-verified rather than assumed. CONVERGENCE: this defect is reinvented in both sibling repos at a HIGHER rate than here - personas-web 20 of 28 regions, brainiac/console 6 of 7 - which makes it a hazard in the problem rather than carelessness in one team. LEGAL FIX: render the region unconditionally and put the condition on its TEXT (`<span className=\"sr-only\" aria-live=\"polite\">{busy ? label : ''}</span>`), or delete the local region and call useAnnounce()/announceImperative() from the app-wide AriaLiveProvider, which is persistent by construction."
       },
       "baseline": {
-        "files": 17,
-        "matches": 17
+        "files": 16,
+        "matches": 16
       },
       "floor": 2000
     },
@@ -2128,8 +2128,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 28,
-        "matches": 29
+        "files": 19,
+        "matches": 19
       },
       "floor": 2000
     },
@@ -2151,8 +2151,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 15,
-        "matches": 20
+        "files": 4,
+        "matches": 4
       },
       "floor": 4000
     },
@@ -5202,8 +5202,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 24,
-        "matches": 35
+        "files": 23,
+        "matches": 34
       },
       "floor": 4000
     },
@@ -5716,8 +5716,8 @@
         }
       ],
       "baseline": {
-        "files": 26,
-        "matches": 40
+        "files": 22,
+        "matches": 34
       },
       "floor": 5000
     },
@@ -5767,8 +5767,8 @@
         }
       ],
       "baseline": {
-        "files": 128,
-        "matches": 647
+        "files": 84,
+        "matches": 483
       },
       "floor": 5000
     },
@@ -5806,8 +5806,8 @@
         }
       ],
       "baseline": {
-        "files": 105,
-        "matches": 198
+        "files": 30,
+        "matches": 53
       },
       "floor": 5000
     },
@@ -5845,8 +5845,8 @@
         }
       ],
       "baseline": {
-        "files": 54,
-        "matches": 125
+        "files": 3,
+        "matches": 3
       },
       "floor": 5000
     },
@@ -5883,8 +5883,8 @@
         }
       ],
       "baseline": {
-        "files": 913,
-        "matches": 2027
+        "files": 488,
+        "matches": 694
       },
       "floor": 2200
     },
@@ -5917,8 +5917,8 @@
         }
       ],
       "baseline": {
-        "files": 10,
-        "matches": 275
+        "files": 4,
+        "matches": 48
       },
       "floor": 8
     },
@@ -5957,8 +5957,8 @@
         }
       ],
       "baseline": {
-        "files": 85,
-        "matches": 169
+        "files": 53,
+        "matches": 123
       },
       "floor": 5000
     },
