@@ -86,6 +86,7 @@ export function usePipelineNotifications(pipelines: GitLabPipeline[], projectId?
   const prevStatusesRef = useRef<Map<number, string>>(new Map());
   const permissionCheckedRef = useRef(false);
   const permissionGrantedRef = useRef(false);
+  const lastProjectIdRef = useRef(projectId);
   // Read through a ref at send time so a language switch never re-runs the status-diff effect.
   const { t } = useTranslation();
   const copyRef = useRef(t.gitlab);
@@ -108,6 +109,13 @@ export function usePipelineNotifications(pipelines: GitLabPipeline[], projectId?
   }, []);
 
   useEffect(() => {
+    // A different project's pipelines are a fresh baseline: diffing them against the
+    // previous project's snapshot would announce runs that finished while we were away.
+    if (lastProjectIdRef.current !== projectId) {
+      lastProjectIdRef.current = projectId;
+      prevStatusesRef.current = new Map();
+      return;
+    }
     if (pipelines.length === 0) return;
 
     const prev = prevStatusesRef.current;
