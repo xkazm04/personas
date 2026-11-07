@@ -227,7 +227,10 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
                 }
             }
             HealingAction::RetryAt { .. } => HealingStrategy::RuleBasedRetry { diagnosis },
-            _ => HealingStrategy::CreateIssue { diagnosis },
+            HealingAction::RetryWithBackoff { .. }
+            | HealingAction::RetryWithTimeout { .. }
+            | HealingAction::AiHealing
+            | HealingAction::CreateIssue => HealingStrategy::CreateIssue { diagnosis },
         };
     }
 
@@ -255,7 +258,10 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
                 }
             }
             HealingAction::RetryAt { .. } => HealingStrategy::RuleBasedRetry { diagnosis },
-            _ => HealingStrategy::CreateIssue { diagnosis },
+            HealingAction::RetryWithBackoff { .. }
+            | HealingAction::RetryWithTimeout { .. }
+            | HealingAction::AiHealing
+            | HealingAction::CreateIssue => HealingStrategy::CreateIssue { diagnosis },
         };
     }
 
