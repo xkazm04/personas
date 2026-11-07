@@ -19912,22 +19912,37 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:52:43.000Z",
-      "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+      "evaluatedAt": "2026-11-07",
+      "evaluatedTs": "2026-11-07T02:53:06.481Z",
       "techniques": [
         {
           "technique": "host-routed-approval-round-trip",
           "verdict": "not-applicable",
-          "evidence": "src/features/companions/athena/TurnSummaryChip.tsx:37 only scrolls to the ApprovalCard list; the approval surface and its deviation live in companion-chat-bubbles"
+          "evidence": "src/features/companions/athena/TurnSummaryChip.tsx:37 only scrolls to the ApprovalCard list; the approval surface and its deviation live in companion-chat-bubbles",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "thread-custody-across-resume",
           "verdict": "not-applicable",
-          "evidence": "src/features/companions/athena/NarrationThread.tsx:12 the trail is session-scoped display state, not a stored child thread id"
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:12 the trail is session-scoped display state, not a stored child thread id",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "Lexical match on thread/turn/chat; narration 'thread' is a display trail, not a CLI thread - a technique-shaped resonance, not governance."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:7 renders already-parsed beats and tool calls of Athena's turn and DevOpLedger.tsx:46 reads a persisted dev-op ledger; nothing here spawns, probes, resumes or approves for a CLI child - Athena's spawn stance and approval routing are judged on companion-chat-bubbles",
+          "evaluatedAt": "2026-10-12T11:52:43.000Z",
+          "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+          "reason": "replaced by bbb500cf-60c4-43c1-bc2b-0ea4b122e866"
+        }
+      ],
+      "withdrawn": {
+        "worker": "bbb500cf-60c4-43c1-bc2b-0ea4b122e866",
+        "state": "not-applicable",
+        "at": "2026-11-07T02:53:47.145428+00:00",
+        "reason": "reviewer (sonnet): The anchor NarrationThread.tsx:25 is only an `import type { NarrationEntry, StoredNarration }` line, so it doesn't show that nothing spawns or resumes a CLI child; the empty-search claim also covers a directory (athena) that mentions spawning CLI sessions in athenaStore.ts and attentionKinds.ts, and"
+      }
     },
     "0f1b56ac-cd96-4355-993e-dc445a20e63e/structured-output": {
       "context": "fleet-monitor-channels",

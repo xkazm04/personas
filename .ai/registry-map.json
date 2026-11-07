@@ -9912,14 +9912,10 @@
           "revision": 10,
           "changedAt": "2026-10-27",
           "confidence": "probable",
+          "source": "retained",
           "state": "not-applicable",
           "evidence": "src/features/companions/athena/NarrationThread.tsx:7 renders already-parsed beats and tool calls of Athena's turn and DevOpLedger.tsx:46 reads a persisted dev-op ledger; nothing here spawns, probes, resumes or approves for a CLI child - Athena's spawn stance and approval routing are judged on companion-chat-bubbles",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-12"
         },
         {
           "subject": "voice-io",
