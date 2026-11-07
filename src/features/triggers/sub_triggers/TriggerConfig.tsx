@@ -43,6 +43,13 @@ export function TriggerConfig() {
     fetchCredentialEvents();
   }, [fetchCredentialEvents]);
 
+  // Another agent is another list: an open add form or created-secret sheet
+  // belongs to the one that was selected when it opened.
+  useEffect(() => {
+    setShowAddForm(false);
+    setCreatedWebhook(null);
+  }, [personaId]);
+
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-ink-1">
