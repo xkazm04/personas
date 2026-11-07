@@ -39,6 +39,8 @@ export function useSendFlight(scope: RefObject<HTMLElement | null>) {
   const { shouldAnimate } = useMotion();
   const [flight, setFlight] = useState<Flight | null>(null);
   const raf = useRef<number | null>(null);
+  const flying = useRef<Flight | null>(null);
+  flying.current = flight;
 
   const launch = useCallback(
     (text: string, from: DOMRect) => {
@@ -46,6 +48,8 @@ export function useSendFlight(scope: RefObject<HTMLElement | null>) {
       // A key for the flying copy, not a guard: each send is its own flight.
       const id = performance.now();
       let frames = 0;
+      // One flight at a time: a send that follows closely retires the earlier search.
+      if (raf.current !== null) cancelAnimationFrame(raf.current);
       const look = () => {
         const root = scope.current;
         const ask = root ? findAsk(root, text) : null;
@@ -55,6 +59,8 @@ export function useSendFlight(scope: RefObject<HTMLElement | null>) {
         }
         const to = ask.getBoundingClientRect();
         if (to.bottom < 0 || to.top > window.innerHeight) return;
+        // A flight still in the air is replaced and never lands: show its ask again.
+        if (flying.current) flying.current.target.style.opacity = '';
         ask.style.opacity = '0';
         setFlight({
           id,
@@ -77,8 +83,6 @@ export function useSendFlight(scope: RefObject<HTMLElement | null>) {
     [],
   );
 
-  const flying = useRef<Flight | null>(null);
-  flying.current = flight;
   const land = useCallback(() => {
     const f = flying.current;
     if (f) f.target.style.opacity = '';
