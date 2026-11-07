@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 38,
-        "matches": 69
+        "files": 23,
+        "matches": 46
       },
       "floor": 4000
     },
@@ -965,8 +965,8 @@
         }
       ],
       "baseline": {
-        "files": 16,
-        "matches": 17
+        "files": 15,
+        "matches": 16
       },
       "floor": 4000
     },
@@ -2128,8 +2128,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 19,
-        "matches": 19
+        "files": 2,
+        "matches": 2
       },
       "floor": 2000
     },
@@ -2228,7 +2228,7 @@
       },
       "baseline": {
         "files": 4,
-        "matches": 7
+        "matches": 6
       },
       "floor": 2000
     },
@@ -5372,8 +5372,8 @@
         "description": "A <button> whose body opens another activator (<button>, <Button>, <a href>) before its own </button>. Invalid HTML: the inner control is not independently reachable by keyboard in several AT/browser combinations, and it survives only on an e.stopPropagation() no test covers. The opening tag is matched with strings and {…} attribute expressions treated as OPAQUE — a bare `>` inside className={cond ? 'a' : 'b'} or onClick={() => i > n} is arithmetic, never a tag close. Fix: make the row a <div> with the affordances as siblings, or hoist the inner control out."
       },
       "baseline": {
-        "files": 4,
-        "matches": 4
+        "files": 2,
+        "matches": 2
       },
       "floor": 1500
     },
@@ -5883,8 +5883,8 @@
         }
       ],
       "baseline": {
-        "files": 488,
-        "matches": 694
+        "files": 88,
+        "matches": 132
       },
       "floor": 2200
     },
@@ -5917,8 +5917,8 @@
         }
       ],
       "baseline": {
-        "files": 4,
-        "matches": 48
+        "files": 3,
+        "matches": 46
       },
       "floor": 8
     },
