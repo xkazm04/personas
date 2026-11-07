@@ -31,6 +31,14 @@ export default function StudioPickComposer({ preview }: { preview: StudioPreview
     const parent = boxRef.current?.parentElement;
     if (parent) setRoom({ w: parent.clientWidth, h: parent.clientHeight });
   }, [pick]);
+  // The 'queued' confirmation closes the box after a beat; that timer must not
+  // outlive the box or close a target picked in the meantime.
+  const closeTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+  useEffect(() => {
+    window.clearTimeout(closeTimer.current);
+    setStatus('idle');
+  }, [pick]);
   // A new target keeps the words; closing the box clears them.
   useEffect(() => {
     if (!pick) {
@@ -84,7 +92,7 @@ export default function StudioPickComposer({ preview }: { preview: StudioPreview
     }
     if (result === 'queued') {
       setStatus('queued');
-      window.setTimeout(clearPick, 1200);
+      closeTimer.current = window.setTimeout(clearPick, 1200);
       return;
     }
     clearPick();

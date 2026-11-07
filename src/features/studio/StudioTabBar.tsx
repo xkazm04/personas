@@ -258,11 +258,10 @@ export default function StudioTabBar({
                       {importable.map((p) => {
                         const blocked = nextReady[p.id] === false;
                         return (
-                          <Tooltip content={
+                          <Tooltip key={p.id} content={
                               blocked ? t.studio.not_next_js_hint : p.root_path
                             }>
                             <PressSurface
-                              key={p.id}
                               disabled={blocked}
                               // `blocked` is the ADVISORY hint from the probe
                               // above, and the probe can fail — in which case
