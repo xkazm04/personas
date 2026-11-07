@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sparkles, Wand2 } from 'lucide-react';
 
 import { generateScraperRules, type ScrapeRuleSet } from '@/api/scraper';
@@ -30,6 +30,13 @@ export function LlmRuleBuilder({ urls, hasFields, onRules, compact }: LlmRuleBui
   const [error, setError] = useState<unknown>(null);
   const [noFields, setNoFields] = useState(false);
   const [lastCount, setLastCount] = useState<number | null>(null);
+  // The form hook outlives the modal, so a generation that resolves after the
+  // editor closed would merge its fields into whatever scrape is opened next.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const generate = async () => {
     if (!description.trim()) return;
@@ -38,6 +45,7 @@ export function LlmRuleBuilder({ urls, hasFields, onRules, compact }: LlmRuleBui
     setLastCount(null);
     try {
       const rules = await generateScraperRules(description.trim(), urls[0]);
+      if (!mountedRef.current) return;
       const count = Object.keys(rules ?? {}).length;
       if (count === 0) {
         setNoFields(true);
@@ -46,6 +54,7 @@ export function LlmRuleBuilder({ urls, hasFields, onRules, compact }: LlmRuleBui
       onRules(rules, hasFields ? 'merge' : 'replace');
       setLastCount(count);
     } catch (e) {
+      if (!mountedRef.current) return;
       setError(e ?? new Error('generation failed'));
     }
   };
