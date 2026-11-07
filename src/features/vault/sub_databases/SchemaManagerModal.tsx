@@ -118,7 +118,12 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveName();
-                    if (e.key === 'Escape') { setIsEditingName(false); setEditName(credential.name); }
+                    if (e.key === 'Escape') {
+                      // Cancel the rename only: the modal's window-level Escape would otherwise also close it.
+                      e.stopPropagation();
+                      setIsEditingName(false);
+                      setEditName(credential.name);
+                    }
                   }}
                   onBlur={saveName}
                   autoFocus
