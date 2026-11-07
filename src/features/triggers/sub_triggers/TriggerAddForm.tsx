@@ -6,6 +6,7 @@ import {
 } from '@/lib/utils/platform/triggerConstants';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { IntervalConfig, CronConfig } from './TriggerScheduleConfig';
 import { getDetectedTimezone } from './TimezoneSelect';
@@ -80,15 +81,22 @@ export function TriggerAddForm({
   const [isCreating, setIsCreating] = useState(false);
   const cronDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Latest-wins: a slower preview of an older expression must not overwrite
+  // (or clear the spinner of) the preview of the expression now in the field.
+  const cronPreviewWins = useRef(createLatestWins()).current;
   const fetchCronPreview = useCallback(async (expr: string, tz?: string) => {
-    if (!expr.trim()) { setCronPreview(null); return; }
+    const seq = cronPreviewWins.next();
+    if (!expr.trim()) { setCronPreview(null); setCronLoading(false); return; }
     setCronLoading(true);
-    try { setCronPreview(await previewCronSchedule(expr.trim(), 5, tz)); }
-    catch (err) {
+    try {
+      const preview = await previewCronSchedule(expr.trim(), 5, tz);
+      if (cronPreviewWins.isCurrent(seq)) setCronPreview(preview);
+    } catch (err) {
       silentCatch('TriggerAddForm:previewCronSchedule')(err);
-      setCronPreview(null);
+      if (cronPreviewWins.isCurrent(seq)) setCronPreview(null);
+    } finally {
+      if (cronPreviewWins.isCurrent(seq)) setCronLoading(false);
     }
-    finally { setCronLoading(false); }
   }, []);
 
   useEffect(() => {
