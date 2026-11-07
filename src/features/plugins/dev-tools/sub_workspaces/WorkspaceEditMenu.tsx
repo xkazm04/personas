@@ -58,7 +58,7 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
         onChange={(e) => setName(e.target.value)}
         onBlur={commitName}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') { commitName(); onClose(); }
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing) { commitName(); onClose(); }
         }}
         placeholder={COPY.namePlaceholder}
         className="w-full px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-hair text-foreground outline-none focus:border-primary/40"
