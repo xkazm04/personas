@@ -127,7 +127,7 @@ export default function IdentitySettings() {
                     <input
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSaveName(); }}
                       className="flex-1 px-2 py-1 typo-body rounded-card border border-border bg-background focus-ring"
                       maxLength={64}
                       autoFocus

@@ -323,7 +323,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
                     type="text"
                     value={shareLinkInput}
                     onChange={(e) => setShareLinkInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleImportShareLink(); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleImportShareLink(); }}
                     placeholder={st.share_link_placeholder}
                     className="w-full pl-7 pr-2 py-1.5 typo-caption rounded-card border border-border bg-background focus-ring"
                   />
