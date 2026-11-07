@@ -124,7 +124,7 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
             <input
               value={reply}
               onChange={(e) => setReply(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) send(); }}
               placeholder={COPY.placeholder}
               className="flex-1 min-w-0 px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-hair text-ink-2 outline-none focus:border-primary/40"
               data-testid="passport-terminal-reply"
