@@ -48,11 +48,13 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
   }, [projectId, filterPersonaId, fetchHistory]);
 
   useEffect(() => {
+    // An armed Confirm belongs to the project/filter it was armed in.
+    setConfirmRollback(null);
     loadHistory();
   }, [loadHistory]);
 
   const handleRollback = async (record: GitLabDeploymentRecord) => {
-    if (!projectId) return;
+    if (!projectId || loading) return;
     if (confirmRollback !== record.id) {
       setConfirmRollback(record.id);
       return;
@@ -60,6 +62,9 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
     try {
       await rollbackFromHistory(projectId, record.id);
       setConfirmRollback(null);
+      // The store re-reads the UNFILTERED trail after a rollback; re-apply the
+      // persona filter the select still shows.
+      if (filterPersonaId) loadHistory();
     } catch (err) { silentCatch("features/plugins/gitlab/components/DeploymentHistoryTab:catch1")(err); }
   };
 
@@ -150,7 +155,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
               record={record}
               isLatest={currentIds.has(record.id)}
               isConfirming={confirmRollback === record.id}
-              rollingBack={rollingBack}
+              rollingBack={rollingBack || loading}
               onRollback={() => handleRollback(record)}
               onCancelRollback={() => setConfirmRollback(null)}
             />
@@ -292,6 +297,7 @@ function DeploymentRow({
                 <Button
                   type="button"
                   onClick={onRollback}
+                  disabled={rollingBack}
                   tooltip={t.gitlab.rollback_to_deployment}
                   variant="ghost"
                   size="sm"
