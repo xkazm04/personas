@@ -7926,12 +7926,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret via crate::SHARED_HTTP to a caller/discovery-supplied token URL (oauth.rs:1323 validates domain by string only); SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27) exists and is unused here - re-verified 2026-10-14, oauth.rs unchanged since 2026-09-16",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret/refresh material through the unguarded SHARED_HTTP client to a token URL that may come from an OIDC discovery response, and the only private-address guard (validate_issuer_url, oauth.rs:1205) checks IP literals in the string, so a hostname that resolves to loopback or private space passes; the repo's SSRF_SAFE_HTTP is used in the same context (openapi_autopilot.rs:70) but not here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "ci-execution-trust",

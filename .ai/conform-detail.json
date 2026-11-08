@@ -8456,16 +8456,37 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:51:38.000Z",
-      "worker": "e3892d60-d932-4e8e-9fe8-1cf2cc251907",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T00:57:18.990Z",
+      "worker": "342d0f4c-6cc6-4864-bd28-1a06d837dcca",
       "techniques": [
         {
           "technique": "outbound-fetch-destination-validation",
-          "verdict": "not realized: credential-bearing POST to data-borne address on the default client",
-          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 SHARED_HTTP; src-tauri/core/src/http_clients.rs:27 safe client unused"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 The discovered token_endpoint is checked only by host-string suffix (validate_endpoint_domain) and the issuer only for IP literals (oauth.rs:1205 `if let Ok(ip) = host.parse::<std::net::IpAddr>() {`). No resolved-address judgement or connection binding happens, and both discover_oidc (oauth.rs:1295) and the token POST use SHARED_HTTP. This is exactly the string-check failure the technique names."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:267 The OAuth state the browser echoes back is checked against both the per-session value and an instance HMAC (verify_oauth_state, oauth.rs:1466, nonce.timestamp.hmac). A forged state is refused and does not consume the flow."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/foraging.rs:725 The webview submits only a foraged id. The backend re-reads the raw values from the source, and the scan result shown to the UI carries only mask_value output (foraging.rs:169)."
+        },
+        {
+          "technique": "loopback-addressed-request-gate",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:639 The only listener in this context is a one-shot OAuth callback bound to loopback and gated by the HMAC'd state. It does not serve requests that spend the person's ambient login, so the Host/Origin gate's precondition does not hold. There is no Host check, for the record."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:86 The upstream status and body (secret-sanitized at oauth.rs:84) are relayed in the error message, but the only caller is the local operator over IPC, not an anonymous browser caller mapping topology. Under a multi-tenant broker this would be a deviation."
         }
       ],
+      "registryProposal": "The subject's techniques assume a web origin serving anonymous visitors. A desktop app whose 'browser' is its own webview (IPC instead of a same-origin route, a user-typed upstream instead of deployment config) needs a stated precondition for opaque-upstream-errors and loopback-addressed-request-gate. Right now a judge has to infer whether 'the caller is the operator' voids them.",
       "superseded": [
         {
           "state": "deviation",
@@ -8487,6 +8508,13 @@
           "evaluatedAt": "2026-10-10T11:25:36.000Z",
           "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
           "reason": "replaced by e3892d60-d932-4e8e-9fe8-1cf2cc251907"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret via crate::SHARED_HTTP to a caller/discovery-supplied token URL (oauth.rs:1323 validates domain by string only); SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27) exists and is unused here - re-verified 2026-10-14, oauth.rs unchanged since 2026-09-16",
+          "evaluatedAt": "2026-10-14T07:51:38.000Z",
+          "worker": "e3892d60-d932-4e8e-9fe8-1cf2cc251907",
+          "reason": "replaced by 342d0f4c-6cc6-4864-bd28-1a06d837dcca"
         }
       ]
     },
@@ -46031,6 +46059,47 @@
         "state": "deviation",
         "at": "2026-11-07T23:49:15.248009+00:00",
         "reason": "reviewer (sonnet): The deviation is anchored in src-tauri/src/engine/memory_reflection.rs, which is not among the webhook-ingestion context files (webhook, relay, git_checkpoint and similar), so it is a verdict about a different context. The 'no current_dir' claim also rests only on a grep, and the cli_capabilities an"
+      }
+    },
+    "937c9d47-b0ca-4e3b-90e3-25baefe04474/browser-credential-boundary": {
+      "context": "supabase-sync-pipeline",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T00:57:18.990Z",
+      "techniques": [
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/cloud/sync/rows.rs:11 Structural exclusion: the projections never read credential tables or per-device-encrypted columns (model_profile, notification_channels, payload_iv). The fleet-queue projection's field list is asserted exact in both directions."
+        },
+        {
+          "technique": "default-deny-plus-defaulted-owner",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/cloud/sync/rows.rs:1319 The owner column defaults from the authenticated identity and the client never sends it, which a test locks in (rows.rs:1433 rows_never_send_user_id). The RLS policy SQL itself is not in this repo (supabase/ holds only .temp), so the policies-on-every-table half was not verified."
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/cloud/sync/client.rs:5 The only compiled-in credential (option_env SUPABASE_ANON_KEY) is declared at its use site as a public role selector, not a secret."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/client.rs:73 The dependency is public by design (anon key + user JWT under RLS). No privileged upstream credential needs a broker."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/client.rs:21 The destination comes from build/deployment config (SUPABASE_URL), not from a response, so the technique's fixed-by-deployment exemption applies."
+        }
+      ],
+      "withdrawn": {
+        "worker": "342d0f4c-6cc6-4864-bd28-1a06d837dcca",
+        "state": "conformant",
+        "at": "2026-11-08T00:58:18.994726+00:00",
+        "reason": "reviewer (sonnet): rows.rs:505 selects `payload, payload_iv` and rows.rs:403-412 decrypts and scrubs them (project_event_payload), so the claims that the writer \"never selects encrypted columns\" and never reads payload_iv are contradicted by the code; the RLS half was also not verified, since supabase/ has no policies"
       }
     }
   }
