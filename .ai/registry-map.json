@@ -6139,12 +6139,11 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:42 Context and repository searches located landing-document constructs elsewhere but no README, shields.io, or badge.svg references in appearance settings, whose module composes application settings controls.",
-          "evaluatedAt": "2026-10-19",
-          "evaluatedAgainst": "sha256-b2:7f83bf34fe6f34be",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:43 The module puts together in-app settings sections (theme, density, locale, brightness) and makes or edits no repository front page. A grep of src/features/settings/sub_appearance/ for readme, shields.io, badge.svg and landing returned no hits, so this subject's precondition (a landing document, its badges, figures or host metadata) does not hold here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:21e7be3c68f38a9a",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 2
         },
         {
           "subject": "translation-quality-measurement",
@@ -27077,12 +27076,11 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/PassportActionsRow.tsx:153 The wall's 'Copy readiness report' action hands the user a markdown claim block (scores, '/100', 'meets the standard ✓') that the action catalog says is meant to be pasted into a README, but the block links to nothing that would go red when the claim stops holding, so the pasted claim freezes at the day it was copied.",
-          "evaluatedAt": "2026-10-29",
-          "evaluatedAgainst": "sha256-b2:6f6a6c4541bc949b",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/teams/sub_factory/passport/PassportActionsRow.tsx:153 The wall's copy action hands the user a markdown readiness claim (scores out of 100, 'meets the standard ✓'). The action catalog says it is ready to paste into a README, but the block links to no artifact that would go red, and no automated check exists anywhere, so once pasted the claim stays green after it stops being true.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:21e7be3c68f38a9a",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "job-coordination",

@@ -35261,44 +35261,59 @@
       "subject": "repository-landing-document",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-19",
-      "evaluatedTs": "2026-10-19T00:19:19.258Z",
-      "worker": "6765a31f-efad-4b0a-8664-7615a8fe7d84",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:11:12.929Z",
+      "worker": "e13c5568-65f3-4ea7-a435-c3e9d1b9b9a2",
       "techniques": [
+        {
+          "technique": "landing-document-as-router",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:43 An in-app settings scaffold, not a repository front page. Nothing here routes readers of a landing document."
+        },
         {
           "technique": "caption-carrying-figures",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/ThemePreview.tsx:82 The preview renders application UI rather than a repository-front-page figure."
+          "evidence": "src/features/settings/sub_appearance/components/ThemePreview.tsx:82 The preview renders application UI rather than a repository-front-page figure.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "evidence-linked-badges",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemeSwatch.tsx:33 The contrast badge is computed within the application; the standard excludes application-rendered claims."
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemeSwatch.tsx:33 The contrast badge is computed within the application; the standard excludes application-rendered claims.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "host-metadata-is-a-second-document",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemingSection.tsx:15 This context changes application theme state rather than repository-host metadata."
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemingSection.tsx:15 This context changes application theme state rather than repository-host metadata.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "input-channel-distinction",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/AppearanceToggleRow.tsx:19 Input uses an application toggle, outside the landing-document shell-versus-agent distinction."
-        },
-        {
-          "technique": "landing-document-as-router",
-          "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:23 The section catalog composes settings components, not documentation destinations."
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceToggleRow.tsx:19 Input uses an application toggle, outside the landing-document shell-versus-agent distinction.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "multi-surface-degradation",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:117 Saving applies a theme configuration; this path does not publish a landing document."
+          "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:117 Saving applies a theme configuration; this path does not publish a landing document.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "style-rule-ships-its-detector",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/ColorRow.tsx:69 This component implements a color picker, with no public-prose house-style artifact found in the context."
+          "evidence": "src/features/settings/sub_appearance/components/ColorRow.tsx:69 This component implements a color picker, with no public-prose house-style artifact found in the context.",
+          "carriedFrom": "2026-10-19"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:42 Context and repository searches located landing-document constructs elsewhere but no README, shields.io, or badge.svg references in appearance settings, whose module composes application settings controls.",
+          "evaluatedAt": "2026-10-19T00:19:19.258Z",
+          "worker": "6765a31f-efad-4b0a-8664-7615a8fe7d84",
+          "reason": "replaced by e13c5568-65f3-4ea7-a435-c3e9d1b9b9a2"
         }
       ]
     },
@@ -35307,14 +35322,14 @@
       "subject": "repository-landing-document",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-29",
-      "evaluatedTs": "2026-10-29T22:25:38.982Z",
-      "worker": "953b9638-92dd-4780-bd4d-bcb3fbf0aa9f",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:11:12.929Z",
+      "worker": "e13c5568-65f3-4ea7-a435-c3e9d1b9b9a2",
       "techniques": [
         {
           "technique": "evidence-linked-badges",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/passportExport.ts:30 The export (which its own header calls a 'report/badge' for the README, line 2) states a conformance verdict and statistics with only a date stamp (line 25) and no link to a check; header lines 3-5 admit the 'personas passport verify' CI check does not exist yet, which is 'badge before check'."
+          "evidence": "src/features/teams/sub_factory/passport/passportExport.ts:4 The exporter calls its output a 'report/badge' to drop into a README (line 2) and admits that the check able to fail does not exist yet. This is exactly the failure the technique names: a claim on the front page that no automated check backs. The date stamp on line 25 is a partial predicate, but it gives no link to an evidence target."
         },
         {
           "technique": "landing-document-as-router",
@@ -35323,7 +35338,16 @@
           "carriedFrom": "2026-10-19"
         }
       ],
-      "registryProposal": "The subject's techniques assume the landing document is hand-authored in the repo. They do not cover a tool that generates claim blocks for other repos' READMEs, like this readiness-passport export. evidence-linked-badges could say that a generated, pasteable claim snapshot needs a link back to its re-runnable source, or else an expiry the reader can see."
+      "registryProposal": "evidence-linked-badges could say explicitly that it also covers generated claim blocks: tools that emit pasteable markdown readiness or score reports meant for a README. Those blocks are badges in function, and the technique's precondition currently reads as limited to image badges.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/PassportActionsRow.tsx:153 The wall's 'Copy readiness report' action hands the user a markdown claim block (scores, '/100', 'meets the standard ✓') that the action catalog says is meant to be pasted into a README, but the block links to nothing that would go red when the claim stops holding, so the pasted claim freezes at the day it was copied.",
+          "evaluatedAt": "2026-10-29T22:25:38.982Z",
+          "worker": "953b9638-92dd-4780-bd4d-bcb3fbf0aa9f",
+          "reason": "replaced by e13c5568-65f3-4ea7-a435-c3e9d1b9b9a2"
+        }
+      ]
     },
     "1db5c86e-3237-4d2a-8e2f-1426d680757c/scale-investment-timing": {
       "context": "lib-execution",
