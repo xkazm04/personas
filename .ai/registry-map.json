@@ -5651,11 +5651,7 @@
           "confidence": "probable",
           "state": "not-applicable",
           "evidence": "src/api/pipeline/teams.ts:142 These files expose persona-team orchestration through Tauri IPC rather than CI delivery configuration, and searches found no pull_request, runs-on, or buildkite constructs in this context.",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:d02dba0bfbaf98f9",
-          "evaluatedRevision": 6,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-18"
         },
         {
           "subject": "voice-io",
@@ -31229,7 +31225,11 @@
           "revision": 7,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/gitlab/components/GitLabAgentList.tsx:129 Deploying with 'provision credentials' copies decrypted vault secrets into long-lived GitLab project CI/CD variables, but undeploying (this button, through gitlabSlice.gitlabUndeployAgent) never calls gitlab_revoke_credentials. That command has no caller outside the store slice, so the pipeline secrets outlive the deployment and are never cleaned up.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:47305180676ccbaa",
+          "evaluatedRevision": 7
         },
         {
           "subject": "test-harness",
