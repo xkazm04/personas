@@ -5191,8 +5191,12 @@
           "revision": 11,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "deviation",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:57 The in-context audit drawer fetches only the newest 200 rows of a trail the backend keeps up to 500 rows per key (trimmed on insert), and shows them with no 'newest 200' label and no retention note. Its empty state ('No requests recorded for this key yet.') can't tell 'nothing happened' from a write that failed and was swallowed, or from rows trimmed by the cap.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:b867761d55d912d1",
+          "evaluatedRevision": 11
         },
         {
           "subject": "terminal-multiplexing",
@@ -12461,8 +12465,12 @@
           "revision": 11,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/plugins/dev-tools/contest/ledger/ledgerPaging.ts:4 The 'ledger' here is a read-only render window over contest results read from arena folders, not an audit trail. A recursive grep of src/features/plugins/dev-tools for audit_log, auditLog, policy_event, tamper and append_only found nothing; 'audit' hits are only scan-agent names like 'security-auditor'.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:b867761d55d912d1",
+          "evaluatedRevision": 11
         },
         {
           "subject": "supply-chain",
@@ -19898,12 +19906,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 the only 'audit' here is WebView console logging 'for debugging and operational visibility' (createLogger, src/lib/log.ts:3); no business-record ledger exists in this context, so the subject's precondition fails and observability-telemetry governs instead",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:154304c5d9578971",
-          "evaluatedRevision": 10,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 The only 'audit' in this context is diagnostic console logging through createLogger ('for debugging and operational visibility'). A recursive grep of src/lib/execution for audit_log, policy_event, ledger, tamper and append_only found nothing, so no business-record ledger exists here and observability-telemetry governs instead.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:b867761d55d912d1",
+          "evaluatedRevision": 11,
+          "revisionsBehind": 1
         },
         {
           "subject": "module-design",
@@ -23178,8 +23185,12 @@
           "revision": 11,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "deviation",
+          "priorNotApplicable": 2,
+          "evidence": "src-tauri/core/src/models/audit_incident.rs:148 The incident inbox records a human's resolve/dismiss decision only as mutable state on the row (status, resolved_at, resolution_note). Reopen nulls these columns (audit_incidents.rs repo), and a grep found no incident act/history ledger, so who changed their mind and when is lost.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:b867761d55d912d1",
+          "evaluatedRevision": 11
         },
         {
           "subject": "llm-call-telemetry-model",

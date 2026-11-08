@@ -30946,27 +30946,38 @@
       "subject": "audit-logging",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:45:00.000Z",
-      "worker": "0a2aceb0-661f-4798-801d-d5d2d39dc48d",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:17:57.583Z",
+      "worker": "e56a1cd1-1678-44fc-9914-e7d1ce59b215",
       "techniques": [
         {
           "technique": "write-chokepoint",
           "verdict": "not-applicable",
-          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:14 the middleware writes to a console logger, not to a ledger insert door; execution records are persisted by the Rust backend outside this context"
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:14 the middleware writes to a console logger, not to a ledger insert door; execution records are persisted by the Rust backend outside this context",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "append-only-design",
           "verdict": "not-applicable",
-          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 console output has no store, so there is no mutation surface to judge"
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 console output has no store, so there is no mutation surface to judge",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "best-effort-with-accounting",
           "verdict": "not-applicable",
-          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 diagnostic lines; the boundary test (an engineer inconvenienced, no account of what happened missing) puts them outside the subject"
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 diagnostic lines; the boundary test (an engineer inconvenienced, no account of what happened missing) puts them outside the subject",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "Technique-shaped resonance, not a hole: the matcher paired this context on the tokens audit/logging/sink because a diagnostic middleware is NAMED auditMiddleware. The golden path's own boundary test rejects it. A use_when negative (\"a component named audit that only writes diagnostic logs\") or down-weighting the bare token 'audit' when it co-occurs with 'logger'/'console' would stop this pairing."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 the only 'audit' here is WebView console logging 'for debugging and operational visibility' (createLogger, src/lib/log.ts:3); no business-record ledger exists in this context, so the subject's precondition fails and observability-telemetry governs instead",
+          "evaluatedAt": "2026-10-16T17:45:00.000Z",
+          "worker": "0a2aceb0-661f-4798-801d-d5d2d39dc48d",
+          "reason": "replaced by e56a1cd1-1678-44fc-9914-e7d1ce59b215"
+        }
+      ]
     },
     "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/audit-logging": {
       "context": "api-overview",
@@ -46513,6 +46524,68 @@
           "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 Promotion sits behind a test run (glyphLayoutTypes testPassed/testOutputLines). Promoting past a failed test is a separate confirm modal, so the human decides against a named oracle."
         }
       ]
+    },
+    "621caefc-8ae0-42e7-89b6-8e879ad62814/audit-logging": {
+      "context": "api-key-management",
+      "subject": "audit-logging",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:17:57.583Z",
+      "worker": "e56a1cd1-1678-44fc-9914-e7d1ce59b215",
+      "techniques": [
+        {
+          "technique": "audit-querying",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:57 The in-context surface exists (good), but a capped listing doesn't say so, and the empty result (line 114, s.audit_empty) carries no gap or horizon provenance, against count-carries-predicate."
+        }
+      ]
+    },
+    "a7ece012-8300-4780-b286-b9cea81801fc/audit-logging": {
+      "context": "observability-audit-models",
+      "subject": "audit-logging",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:17:57.583Z",
+      "worker": "e56a1cd1-1678-44fc-9914-e7d1ce59b215",
+      "techniques": [
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/audit_incident.rs:148 The state is built but the append-only act is missing. Identity is fine, though: dedup_key is source_table:source_id (line 122), not wording."
+        },
+        {
+          "technique": "write-chokepoint",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:35 The actor can be absent ('None when origin cannot be determined'). The standard wants an unknown actor stored as an explicit value and the field required by the record type."
+        },
+        {
+          "technique": "audit-querying",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/audit_log.rs:11 The credential audit row stores the subject's durable id plus its name at write time, and action/actor/time as structured fields."
+        },
+        {
+          "technique": "two-clock-records",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/audit_log.rs:17 These ledgers record actions the system performed itself, so the two clocks are equal by construction (the technique's own exemption)."
+        },
+        {
+          "technique": "record-axis-predicate",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:36 Single-clock action log with no invalidation interval, so there is no as-of read to name."
+        }
+      ]
+    },
+    "4cfcafbc-1964-4d65-994f-66c4cd1f8820/audit-logging": {
+      "context": "dev-tools-shell",
+      "subject": "audit-logging",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:17:57.583Z",
+      "worker": "e56a1cd1-1678-44fc-9914-e7d1ce59b215",
+      "techniques": []
     }
   }
 }

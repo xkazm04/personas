@@ -1,0 +1,151 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e56a1cd1-1678-44fc-9914-e7d1ce59b215",
+ "subject": "audit-logging",
+ "evaluatedAt": "2026-11-08T04:17:57.583134+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "lib-execution",
+   "subject": "audit-logging",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 The only 'audit' in this context is diagnostic console logging through createLogger ('for debugging and operational visibility'). A recursive grep of src/lib/execution for audit_log, policy_event, ledger, tamper and append_only found nothing, so no business-record ledger exists here and observability-telemetry governs instead.",
+   "techniques": [],
+   "absenceTerms": [
+    "audit_log",
+    "policy_event",
+    "ledger",
+    "tamper"
+   ]
+  },
+  {
+   "context": "api-key-management",
+   "subject": "audit-logging",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:57 The in-context audit drawer fetches only the newest 200 rows of a trail the backend keeps up to 500 rows per key (trimmed on insert), and shows them with no 'newest 200' label and no retention note. Its empty state ('No requests recorded for this key yet.') can't tell 'nothing happened' from a write that failed and was swallowed, or from rows trimmed by the cap.",
+   "techniques": [
+    {
+     "technique": "audit-querying",
+     "verdict": "deviation",
+     "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:57 The in-context surface exists (good), but a capped listing doesn't say so, and the empty result (line 114, s.audit_empty) carries no gap or horizon provenance, against count-carries-predicate."
+    }
+   ]
+  },
+  {
+   "context": "observability-audit-models",
+   "subject": "audit-logging",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/audit_incident.rs:148 The incident inbox records a human's resolve/dismiss decision only as mutable state on the row (status, resolved_at, resolution_note). Reopen nulls these columns (audit_incidents.rs repo), and a grep found no incident act/history ledger, so who changed their mind and when is lost.",
+   "techniques": [
+    {
+     "technique": "decision-records",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/models/audit_incident.rs:148 The state is built but the append-only act is missing. Identity is fine, though: dedup_key is source_table:source_id (line 122), not wording."
+    },
+    {
+     "technique": "write-chokepoint",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/models/settings_audit_log.rs:35 The actor can be absent ('None when origin cannot be determined'). The standard wants an unknown actor stored as an explicit value and the field required by the record type."
+    },
+    {
+     "technique": "audit-querying",
+     "verdict": "conformant",
+     "evidence": "src-tauri/core/src/models/audit_log.rs:11 The credential audit row stores the subject's durable id plus its name at write time, and action/actor/time as structured fields."
+    },
+    {
+     "technique": "two-clock-records",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/audit_log.rs:17 These ledgers record actions the system performed itself, so the two clocks are equal by construction (the technique's own exemption)."
+    },
+    {
+     "technique": "record-axis-predicate",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/settings_audit_log.rs:36 Single-clock action log with no invalidation interval, so there is no as-of read to name."
+    }
+   ]
+  },
+  {
+   "context": "dev-tools-shell",
+   "subject": "audit-logging",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/contest/ledger/ledgerPaging.ts:4 The 'ledger' here is a read-only render window over contest results read from arena folders, not an audit trail. A recursive grep of src/features/plugins/dev-tools for audit_log, auditLog, policy_event, tamper and append_only found nothing; 'audit' hits are only scan-agent names like 'security-auditor'.",
+   "techniques": [],
+   "absenceTerms": [
+    "audit_log",
+    "auditLog",
+    "policy_event",
+    "tamper"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "audit-logging",
+   "context": "api-overview",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-08T04:17:57.583134+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "audit-logging"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "lib-execution",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T04:17:57.583134+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "audit-logging"
+   ],
+   "techniques": [
+    "audit-querying"
+   ],
+   "deviations": 1,
+   "context": "api-key-management",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T04:17:57.583134+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "audit-logging"
+   ],
+   "techniques": [
+    "audit-querying",
+    "decision-records",
+    "record-axis-predicate",
+    "two-clock-records",
+    "write-chokepoint"
+   ],
+   "deviations": 1,
+   "context": "observability-audit-models",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T04:17:57.583134+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "audit-logging"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "dev-tools-shell",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
