@@ -46889,6 +46889,36 @@
       "evaluatedTs": "2026-11-08T05:05:06.186Z",
       "worker": "3ccaa276-2a5d-41cf-ad4b-1f7cedcb8256",
       "techniques": []
+    },
+    "532bbf10-3fd3-4b57-a8ea-95a957645697/voice-io": {
+      "context": "stores-slices-overview",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:18:53.940Z",
+      "worker": "5b744e77-c88c-48c4-957b-7ee3b00c1aec",
+      "techniques": []
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/voice-io": {
+      "context": "vault-catalog-schemas",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:18:53.940Z",
+      "worker": "5b744e77-c88c-48c4-957b-7ee3b00c1aec",
+      "techniques": []
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/voice-io": {
+      "context": "teams-goals",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:18:53.940Z",
+      "worker": "5b744e77-c88c-48c4-957b-7ee3b00c1aec",
+      "techniques": []
     }
   }
 }

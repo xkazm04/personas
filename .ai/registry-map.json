@@ -36680,8 +36680,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/stores/slices/overview/eventSlice.ts:88 These Zustand slices hold events, alerts, process activity, network and pipeline state; a search of all of src/stores for speechSynthesis, getUserMedia, utterance, microphone, SpeechRecognition and AudioContext found zero hits, so neither the capture pipeline nor the synthesis pipeline exists here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "cost-metering",
@@ -39242,8 +39246,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/teams/sub_collab/collabRender.tsx:96 'Voice' in this context is a metaphor for message authorship in channels; a search of the goals, sub_collab and sub_deliberations directories for speechSynthesis, getUserMedia, utterance, microphone, SpeechRecognition and AudioContext found zero hits, so no speech capture or synthesis happens here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "demo-data-plane",
@@ -44590,8 +44598,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:30 Schema-driven credential forms and pickers; a search of the schemas, forms and autoCred helper directories and of src/features/vault/components for speechSynthesis, getUserMedia, utterance, microphone, SpeechRecognition and AudioContext found zero hits (the only 'Voice' is the ElevenLabs Voice Library connector name, which is catalog data, not voice I/O).",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "multi-provider-gateway-plane",
