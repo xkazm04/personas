@@ -8783,7 +8783,11 @@
           "revision": 10,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:106 Every headless claude fleet session is launched with the tool's full-bypass flag (codex and grok lanes likewise), so the unattended edit stance is the absence of enforcement, not auto-accept with the tool's dangerous-action refusals still in force — the exact failure permission-stance-enforcement names.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10
         },
         {
           "subject": "subprocess-lifecycle",

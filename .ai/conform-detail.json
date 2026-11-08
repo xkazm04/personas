@@ -46255,6 +46255,37 @@
         "at": "2026-11-08T01:44:38.654744+00:00",
         "reason": "reviewer (sonnet): The verdict rests on templates/chat-core.md, a prompt template loaded by prompt/chat_family.rs, not on any brain/*.rs file in companion-brain, so it describes a different context; chat-core.md:208 also refers to a visible 'table' in replies, which cuts against the 'no table' claim."
       }
+    },
+    "2de6333f-8375-404b-8fdc-fe0fb15d4f95/agent-cli-transport": {
+      "context": "commands-fleet",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T02:20:00.516Z",
+      "worker": "91baa024-3371-4e28-ab11-aef4d37d9eac",
+      "techniques": [
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:106 Edit stance must be auto-accept, never the full-bypass flag; the claude headless base argv hardcodes the bypass."
+        },
+        {
+          "technique": "derived-bash-allowlist",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:558 Unattended grok runs get bypassPermissions and --always-approve instead of shell grants derived from the project's gate commands and passed in a per-call settings file."
+        },
+        {
+          "technique": "subscription-auth-selection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:771 The spawn door strips ANTHROPIC_API_KEY/AUTH_TOKEN/BASE_URL from a named list. The door-mode env_clear plus child_env rebuild is filtered against the same list (door.rs:940). Caveats: the list is Anthropic-only even though codex is spawned through the same door, and pty.rs and external.rs each repeat the strip."
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:665 The grok lane puts the prompt on the argument vector, against the rule that prompts travel over stdin. The claude and codex lanes do seed over stdin, with stderr kept separate and the write failure mapped to a spawn error (headless.rs:818-820). naming.rs:168 prefers the result field over the noisy stream."
+        }
+      ]
     }
   }
 }

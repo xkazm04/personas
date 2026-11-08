@@ -1,0 +1,80 @@
+{
+ "schema": "conform-run/1",
+ "worker": "91baa024-3371-4e28-ab11-aef4d37d9eac",
+ "subject": "agent-cli-transport",
+ "evaluatedAt": "2026-11-08T02:20:00.516078+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "commands-fleet",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/fleet/headless.rs:106 Every headless claude fleet session is launched with the tool's full-bypass flag (codex and grok lanes likewise), so the unattended edit stance is the absence of enforcement, not auto-accept with the tool's dangerous-action refusals still in force \u2014 the exact failure permission-stance-enforcement names.",
+   "techniques": [
+    {
+     "technique": "permission-stance-enforcement",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/fleet/headless.rs:106 Edit stance must be auto-accept, never the full-bypass flag; the claude headless base argv hardcodes the bypass."
+    },
+    {
+     "technique": "derived-bash-allowlist",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/fleet/headless.rs:558 Unattended grok runs get bypassPermissions and --always-approve instead of shell grants derived from the project's gate commands and passed in a per-call settings file."
+    },
+    {
+     "technique": "subscription-auth-selection",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/fleet/headless.rs:771 The spawn door strips ANTHROPIC_API_KEY/AUTH_TOKEN/BASE_URL from a named list. The door-mode env_clear plus child_env rebuild is filtered against the same list (door.rs:940). Caveats: the list is Anthropic-only even though codex is spawned through the same door, and pty.rs and external.rs each repeat the strip."
+    },
+    {
+     "technique": "output-normalization",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/fleet/headless.rs:665 The grok lane puts the prompt on the argument vector, against the rule that prompts travel over stdin. The claude and codex lanes do seed over stdin, with stderr kept separate and the write failure mapped to a spawn error (headless.rs:818-820). naming.rs:168 prefers the result field over the noisy stream."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-cli-transport",
+   "context": "agents-deployment",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "db-repos",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "recipe-build-models",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "dev-tools-shell",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-08T02:20:00.516078+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [
+    "derived-bash-allowlist",
+    "output-normalization",
+    "permission-stance-enforcement",
+    "subscription-auth-selection"
+   ],
+   "deviations": 1,
+   "context": "commands-fleet",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
