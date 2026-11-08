@@ -7325,12 +7325,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 A browser_login failure reports a missing whitelist entry without a literal recovery command, and the approval lifecycle persists that error text for subsequent agent turns.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:0d439bfcafe8cabd",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 browser_login hand-writes a whitelist-miss error with no next command, bypassing the closed RefusalCode::OriginNotAllowed hint ('call browser_request_site ...'). approval_lifecycle.rs:192 then folds that text into Athena's persisted episode, so her next turn has nothing to act on.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:13f62133e12a86a7",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-runtime-assembly",
@@ -7906,12 +7905,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1466 Credential automation automatically kills every matching Playwright Chromium process instead of using recorded child identities, so completing one task can destroy another browser session.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:0d439bfcafe8cabd",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1472 After every auto-cred session (line 1137), the reaper force-kills every Playwright Chromium on the machine by command-line pattern rather than by recorded process identity. That also kills other sessions' browsers, including the operator's own Playwright MCP sessions.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:13f62133e12a86a7",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 2
         },
         {
           "subject": "browser-credential-boundary",
@@ -30771,12 +30769,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "scripts/connectors/builtin/local-drive.json:19 Context and repository searches found filesystem APIs, document processing, and UI geometry rather than an agent browser command surface, consistent with the Local Drive manifest's storage-only purpose.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:0d439bfcafe8cabd",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:144 A search of src/features/plugins/drive for playwright, webview, browser_, chromium and page_find found nothing. Drive's 'navigate' moves between filesystem paths, and the Local Drive manifest is storage-only, so there is no agent-driven browser here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:13f62133e12a86a7",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-runtime-assembly",

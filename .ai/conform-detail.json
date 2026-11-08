@@ -23632,19 +23632,33 @@
       "subject": "agent-browser-control",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T23:41:28.562Z",
-      "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T00:46:43.295Z",
+      "worker": "c8bc5570-cccd-4f15-aeae-f4af0672b7c1",
       "techniques": [
         {
           "technique": "agent-actionable-errors",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 This error bypasses the Refusal hint contract and supplies no next command; approval_lifecycle wraps and records the error without adding recovery."
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 Rewritten at the call site instead of the one door, and it names no next command. Its neighbours at 486-501 do carry one, which is the call-site decay the technique warns about. refusal_to_app_error (line 217) does preserve code and hint for refusals that come through the gate."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:538 Login replays refs the scan copied verbatim from an earlier snapshot and persisted in the DB (scan_prompt.rs:83). hands.js scopes every ref to one document and a random per-document map, so these refs cannot resolve on a later page load. The failure is loud (unknown_ref), not a wrong click, but the login is valid only by coincidence. The rule is to persist a role+name locator or snapshot at execution time."
         },
         {
           "technique": "effect-classed-commands",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:125 write_action maintains a private command-to-action match that explicitly mirrors mcp::action_for, rather than deriving dispatch from one canonical effect registry."
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:187 The gate decides from the registry's Action::effect(). BROWSER_WRITE_TOOLS (line 70) is a hand-drawn restricted-caller allowlist, but a test checks each member classifies as Effect::Write. The file admits write_action mirrors mcp::action_for, a second table it plans to retire."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 A browser_login failure reports a missing whitelist entry without a literal recovery command, and the approval lifecycle persists that error text for subsequent agent turns.",
+          "evaluatedAt": "2026-10-12T23:41:28.562Z",
+          "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+          "reason": "replaced by c8bc5570-cccd-4f15-aeae-f4af0672b7c1"
         }
       ]
     },
@@ -23653,19 +23667,34 @@
       "subject": "agent-browser-control",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T23:41:28.562Z",
-      "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T00:46:43.295Z",
+      "worker": "c8bc5570-cccd-4f15-aeae-f4af0672b7c1",
       "techniques": [
         {
           "technique": "persistent-browser-daemon",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1466 cleanup_orphaned_browsers is called automatically after collection and selects processes by command-line pattern, violating identity-scoped cleanup."
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1472 The technique requires liveness and reaping by recorded identity, never by process name. The Unix branch (line 1483, pkill -f chromium.*playwright) has the same defect."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:482 The agent is steered to read the accessibility snapshot and act on the refs @playwright/mcp mints, rather than composing selectors."
         },
         {
           "technique": "socket-scoped-surface",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1405 This browser automation path configures a local stdio server; searches found no browser tunnel or embedded-page reply socket in this flow."
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1405 This browser automation path configures a local stdio server; searches found no browser tunnel or embedded-page reply socket in this flow.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1466 Credential automation automatically kills every matching Playwright Chromium process instead of using recorded child identities, so completing one task can destroy another browser session.",
+          "evaluatedAt": "2026-10-12T23:41:28.562Z",
+          "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+          "reason": "replaced by c8bc5570-cccd-4f15-aeae-f4af0672b7c1"
         }
       ]
     },
@@ -23674,34 +23703,47 @@
       "subject": "agent-browser-control",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T23:41:28.562Z",
-      "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T00:46:43.295Z",
+      "worker": "c8bc5570-cccd-4f15-aeae-f4af0672b7c1",
       "techniques": [
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:144 Filesystem navigation only. No browser process exists in this context."
+        },
         {
           "technique": "agent-actionable-errors",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:708 This is operator feedback for a filesystem rename, not an agent browser-tool error."
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:708 This is operator feedback for a filesystem rename, not an agent browser-tool error.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "effect-classed-commands",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:705 The mutation is a local file operation; no browser command registry was found in this context."
-        },
-        {
-          "technique": "persistent-browser-daemon",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:326 Navigation loads directory entries; the context does not create or manage an agent browser session."
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:705 The mutation is a local file operation; no browser command registry was found in this context.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "references-over-selectors",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useScrollShadows.ts:22 DOM references serve the app's own scroll geometry, not agent targeting of arbitrary pages."
+          "evidence": "src/features/plugins/drive/hooks/useScrollShadows.ts:22 DOM references serve the app's own scroll geometry, not agent targeting of arbitrary pages.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "socket-scoped-surface",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/signing/useSigning.ts:116 The signing path operates on a local filesystem path; searches found no browser listener, tunnel, or page-reply channel."
+          "evidence": "src/features/plugins/drive/signing/useSigning.ts:116 The signing path operates on a local filesystem path; searches found no browser listener, tunnel, or page-reply channel.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "scripts/connectors/builtin/local-drive.json:19 Context and repository searches found filesystem APIs, document processing, and UI geometry rather than an agent browser command surface, consistent with the Local Drive manifest's storage-only purpose.",
+          "evaluatedAt": "2026-10-12T23:41:28.562Z",
+          "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+          "reason": "replaced by c8bc5570-cccd-4f15-aeae-f4af0672b7c1"
         }
       ]
     },
