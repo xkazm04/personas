@@ -1,0 +1,117 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0cf06a74-7bb9-4e96-aed0-573b843fd256",
+ "subject": "metrics-rollups",
+ "evaluatedAt": "2026-11-08T04:56:22.169665+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-activity-metrics",
+   "subject": "metrics-rollups",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:149 The ordinal split from the stale verdict is gone; the KPI trends now split on the calendar. But the split still ends on the newest day that has data (computeTrends.ts:59), not on the window end the summary tiles use (line 74), and a prior cost of zero renders as '+100% up' (computeTrends.ts:122). So the tiles and their deltas can describe different spans, and a 'new' period is shown as a growth figure.",
+   "techniques": [
+    {
+     "technique": "period-comparison",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:149 The calendar split ends on the newest day that has data, while the summary cut ends on now or the custom end day. A prior of 0 with current > 0 becomes +100% (computeTrends.ts:122). The success-rate delta is a percent change of a percentage, not a change in points."
+    },
+    {
+     "technique": "bucketing-strategy",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/libs/fetchWindow.ts:19 The custom-range fetch bounds are computed at local midnight, but daily_points are keyed and cut in UTC (executionMetricsHelpers.ts:10). This is the split-brain zone defect: the edge days come out short. The envelope also echoes no effective window."
+    },
+    {
+     "technique": "aggregate-honesty",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/libs/computeTrends.ts:150 The success-rate trend averages daily ratios (a mean of means), even though completed and failed counts are on the rows. Placeholder rows correctly leave successRate and latency without a value (useExecutionMetrics.ts:130-134)."
+    },
+    {
+     "technique": "bundle-endpoints",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/AthenaUsageSection.tsx:140 The Athena-vs-fleet share divides numbers from two independent reads. useAthenaUsage fetches only effectiveDays counting back from now, while fleetCost covers the custom window (buildFetchWindow), so under a custom range the ratio compares different windows."
+    },
+    {
+     "technique": "cardinality-and-cost",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:51 The trigger breakdown is cut to 8 rows with no remainder row and no disclosure that it was cut. By contrast, the persona cost stack keeps a top 8 plus an 'Other' remainder (useExecutionMetrics.ts:118)."
+    },
+    {
+     "technique": "capped-list-uncapped-total",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:327 rows are filtered client-side by model and time window over the loaded list (capped at 500, lines 179-187), but the 'of total' figure is the ledger-wide count, not a total of the same selection. GlobalExecutionList.tsx:82 pairs its list with feed.total in the same way."
+    }
+   ]
+  },
+  {
+   "context": "overview-usage-charts",
+   "subject": "metrics-rollups",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:22 The tool performance breakdown is cut to the top 8 by total_runs in SQL (tool_audit_log.rs ORDER BY total_runs DESC LIMIT), with no remainder row and nothing on the panel saying it was cut. Separately, a failed read becomes the empty state, and the comparison helper anchors its window on the newest day with data. The stale ordinal-split verdict itself is resolved.",
+   "techniques": [
+    {
+     "technique": "period-comparison",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:79 The prior value is looked up by calendar offset, not array position, and a quiet counterpart day emits no prev_* key. The ordinal fallback (line 65) is reached only by rows with no day key, and the one production caller supplies rawDate."
+    },
+    {
+     "technique": "bucketing-strategy",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:68 By default the window ends at the newest day with data, not the effective window end. Trailing quiet days are dropped and the period boundary moves back with them. The only caller (useExecutionMetrics.ts:135) passes no endDate."
+    },
+    {
+     "technique": "aggregate-honesty",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 A failed getToolPerformanceSummary read sets rows to [] and renders the EmptyState (line 208), so failure is shown as an empty success."
+    },
+    {
+     "technique": "cardinality-and-cost",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:22 The (tool_name, tool_type) group-by is limited to 8 rows with no overflow row and no 'top 8 of N' disclosure, so a reader summing runs gets an undercount."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-08T04:56:22.169665+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "metrics-rollups"
+   ],
+   "techniques": [
+    "aggregate-honesty",
+    "bucketing-strategy",
+    "bundle-endpoints",
+    "capped-list-uncapped-total",
+    "cardinality-and-cost",
+    "period-comparison"
+   ],
+   "deviations": 1,
+   "context": "overview-activity-metrics",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T04:56:22.169665+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "metrics-rollups"
+   ],
+   "techniques": [
+    "aggregate-honesty",
+    "bucketing-strategy",
+    "cardinality-and-cost",
+    "period-comparison"
+   ],
+   "deviations": 1,
+   "context": "overview-usage-charts",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

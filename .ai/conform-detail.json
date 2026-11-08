@@ -38368,29 +38368,50 @@
       "subject": "metrics-rollups",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T00:10:30.566Z",
-      "worker": "9e678a4c-2919-44a7-915e-bbe65e9d734d",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:56:22.169Z",
+      "worker": "0cf06a74-7bb9-4e96-aed0-573b843fd256",
       "techniques": [
         {
-          "technique": "bundle-endpoints",
+          "technique": "period-comparison",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:79 The prior value is looked up by calendar offset, not array position, and a quiet counterpart day emits no prev_* key. The ordinal fallback (line 65) is reached only by rows with no day key, and the one production caller supplies rawDate."
+        },
+        {
+          "technique": "bucketing-strategy",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 A failed aggregate request becomes an empty array and renders EmptyState, without a section error state distinguishing failure from no activity."
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:68 By default the window ends at the newest day with data, not the effective window end. Trailing quiet days are dropped and the period boundary moves back with them. The only caller (useExecutionMetrics.ts:135) passes no endDate."
+        },
+        {
+          "technique": "aggregate-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 A failed getToolPerformanceSummary read sets rows to [] and renders the EmptyState (line 208), so failure is shown as an empty success."
         },
         {
           "technique": "cardinality-and-cost",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/tool_audit_log.rs:157 The tool breakdown limits rows ranked by total_runs, but returns no overflow aggregate or truncation metadata."
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:22 The (tool_name, tool_type) group-by is limited to 8 rows with no overflow row and no 'top 8 of N' disclosure, so a reader summing runs gets an undercount."
         },
         {
-          "technique": "period-comparison",
+          "technique": "bundle-endpoints",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:36 Periods are paired by ordinal position without densification or timestamp alignment; the activity caller supplies only occupied daily buckets."
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 A failed aggregate request becomes an empty array and renders EmptyState, without a section error state distinguishing failure from no activity.",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "stored-rollups",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/db/src/repos/resources/tool_audit_log.rs:153 The inspected tool aggregation reads the raw audit log on demand; the comparison helper only transforms arrays in memory."
+          "evidence": "src-tauri/db/src/repos/resources/tool_audit_log.rs:153 The inspected tool aggregation reads the raw audit log on demand; the comparison helper only transforms arrays in memory.",
+          "carriedFrom": "2026-10-22"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 The comparison splits by point count despite receiving sparse daily series, so previous and current values can represent different calendar spans.",
+          "evaluatedAt": "2026-10-22T00:10:30.566Z",
+          "worker": "9e678a4c-2919-44a7-915e-bbe65e9d734d",
+          "reason": "replaced by 0cf06a74-7bb9-4e96-aed0-573b843fd256"
         }
       ]
     },
@@ -38399,39 +38420,54 @@
       "subject": "metrics-rollups",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T00:10:30.566Z",
-      "worker": "9e678a4c-2919-44a7-915e-bbe65e9d734d",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:56:22.169Z",
+      "worker": "0cf06a74-7bb9-4e96-aed0-573b843fd256",
       "techniques": [
         {
-          "technique": "aggregate-honesty",
+          "technique": "period-comparison",
           "verdict": "deviation",
-          "evidence": "src/lib/bindings/ExecutionDashboardData.ts:9 Neither this envelope nor its inspected daily-point type carries effective coverage, a snapshot moment, or partial-bucket marking, leaving live edge buckets indistinguishable from final ones."
+          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:149 The calendar split ends on the newest day that has data, while the summary cut ends on now or the custom end day. A prior of 0 with current > 0 becomes +100% (computeTrends.ts:122). The success-rate delta is a percent change of a percentage, not a change in points."
         },
         {
           "technique": "bucketing-strategy",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1545 Daily points are generated only from dates containing executions; covered days with no executions are not zero-filled."
+          "evidence": "src/features/overview/libs/fetchWindow.ts:19 The custom-range fetch bounds are computed at local midnight, but daily_points are keyed and cut in UTC (executionMetricsHelpers.ts:10). This is the split-brain zone defect: the edge days come out short. The envelope also echoes no effective window."
+        },
+        {
+          "technique": "aggregate-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/libs/computeTrends.ts:150 The success-rate trend averages daily ratios (a mean of means), even though completed and failed counts are on the rows. Placeholder rows correctly leave successRate and latency without a value (useExecutionMetrics.ts:130-134)."
         },
         {
           "technique": "bundle-endpoints",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/llm_spend.rs:307 The LLM spend envelope obtains totals, daily points, and breakdowns through separate SELECTs without a read transaction, repeatedly resolving datetime('now') rather than sharing one snapshot and window."
+          "evidence": "src/features/overview/sub_activity/components/AthenaUsageSection.tsx:140 The Athena-vs-fleet share divides numbers from two independent reads. useAthenaUsage fetches only effectiveDays counting back from now, while fleetCost covers the custom window (buildFetchWindow), so under a custom range the ratio compares different windows."
         },
         {
           "technique": "cardinality-and-cost",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:51 The trigger breakdown is truncated after the backend folds and returns every key, with neither an Other remainder nor truncation disclosure."
+          "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:51 The trigger breakdown is cut to 8 rows with no remainder row and no disclosure that it was cut. By contrast, the persona cost stack keeps a top 8 plus an 'Other' remainder (useExecutionMetrics.ts:118)."
         },
         {
-          "technique": "period-comparison",
+          "technique": "capped-list-uncapped-total",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:130 Although both periods are fetched together, this call sends undensified daily points to the helper that splits by array length instead of calendar boundary."
+          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:327 rows are filtered client-side by model and time window over the loaded list (capped at 500, lines 179-187), but the 'of total' figure is the ledger-wide count, not a total of the same selection. GlobalExecutionList.tsx:82 pairs its list with feed.total in the same way."
         },
         {
           "technique": "stored-rollups",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1397 The traced execution, value, LLM spend, and Athena paths aggregate raw records on demand rather than reading materialized aggregate buckets requiring rebuilds."
+          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1397 The traced execution, value, LLM spend, and Athena paths aggregate raw records on demand rather than reading materialized aggregate buckets requiring rebuilds.",
+          "carriedFrom": "2026-10-22"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:130 The activity charts pass sparse daily points into an ordinal period split, allowing comparisons to misassign days between periods.",
+          "evaluatedAt": "2026-10-22T00:10:30.566Z",
+          "worker": "9e678a4c-2919-44a7-915e-bbe65e9d734d",
+          "reason": "replaced by 0cf06a74-7bb9-4e96-aed0-573b843fd256"
         }
       ]
     },
