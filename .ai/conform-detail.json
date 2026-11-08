@@ -7906,24 +7906,34 @@
       "subject": "accessibility",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T00:23:47.491Z",
+      "worker": "df5f1600-c504-4d55-b6ca-7ed46f936561",
       "techniques": [
         {
-          "technique": "name-and-description-wiring",
+          "technique": "preference-respect",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/buttons/CopyButton.tsx:76 title as last-resort name"
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:9 Detects the preference ad hoc and skips the in-app override. FullScreenOverlay.tsx:24 imports the repo hook correctly."
+        },
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/layout/SegmentedTabs.tsx:144 Roving tabindex with arrow-key handling inside a role=tablist. PanelTabBar does the same."
         },
         {
           "technique": "primitive-level-a11y",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/buttons/Button.tsx:152 primitive does not require a name"
+          "evidence": "src/features/shared/components/buttons/Button.tsx:102 Button offers icon-only sizes (icon-xs to icon-lg, line 24), but nothing in the props requires an accessible name for them and there is no dev check, so nameless icon buttons compile."
+        },
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/buttons/CopyButton.tsx:79 The icon-only CopyButton is now named by aria-label, not by title alone. That part of the earlier verdict is fixed."
         },
         {
           "technique": "live-region-architecture",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/buttons/CopyButton.tsx:133 label swap unannounced"
+          "evidence": "src/features/shared/components/buttons/CopyButton.tsx:136 The 'copied' result only swaps the visible label. Nothing in the file calls the announcer, so the result may never be spoken."
         }
       ],
       "superseded": [
@@ -7933,6 +7943,13 @@
           "evaluatedAt": "2026-10-09T15:53:49.488Z",
           "worker": "4cf233c4-a788-4e7f-9780-653d49dacaf3",
           "reason": "replaced by f4ba92d2-93c6-437c-8945-c2b6be7a5fd4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/buttons/CopyButton.tsx:76 names its icon-only form by native title alone (no aria-label in the file) and :133 swaps the visible label to copiedLabel with no announcement; src/features/shared/components/buttons/Button.tsx:152 offers icon-only sizes while ButtonProps (:96) requires no accessible name, so nameless icon buttons compile",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+          "reason": "replaced by df5f1600-c504-4d55-b6ca-7ed46f936561"
         }
       ]
     },

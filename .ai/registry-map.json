@@ -35573,15 +35573,14 @@
           "source": "conform",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/components/buttons/CopyButton.tsx:76 names its icon-only form by native title alone (no aria-label in the file) and :133 swaps the visible label to copiedLabel with no announcement; src/features/shared/components/buttons/Button.tsx:152 offers icon-only sizes while ButtonProps (:96) requires no accessible name, so nameless icon buttons compile",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:9 AsyncButton detects reduced motion with framer-motion's hook instead of the repo's single signal (useMotion.ts, which also reads the in-app Appearance toggle), so a user who turns on reduced motion in the app still gets AsyncButton's swap animation.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:d839f62eac6007da",
+          "evaluatedRevision": 8,
           "digest": "sha256-b2:d839f62eac6007da",
           "revision": 8,
           "changedAt": "2026-10-25",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
