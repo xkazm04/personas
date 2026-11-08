@@ -8812,12 +8812,11 @@
           "digest": "sha256-b2:204503a49b5c115b",
           "revision": 16,
           "changedAt": "2026-10-27",
-          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 headless close/hibernate kills one pid via p.kill() (PTY lane likewise, src-tauri/src/commands/fleet/pty.rs:649 clone_killer, routed by src-tauri/src/commands/fleet/registry.rs:549 kill_child_of) with no polite rung and never the tree, though src-tauri/src/webbuild/devserver.rs:595 kill_tree exists - a closed claude session orphans its MCP servers and tool shells (re-verified at rev 14, unchanged)",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:c9b34849dd8fed39",
-          "evaluatedRevision": 14,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 Closing or hibernating a fleet session kills only the root pid, with no polite rung, no deadline and no tree kill, so a closed claude session can orphan its MCP servers and tool shells; the earlier verdict still holds, with only line numbers moved.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:73d266b807387855",
+          "evaluatedRevision": 18,
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
@@ -32722,7 +32721,11 @@
           "revision": 16,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/useOverviewData.ts:5 This context is a React overview page whose data hook only calls HTTP/API adapters (GitHub, GitLab, Sentry stats, credentials list); it spawns no child processes, and a grep of sub_overview for child_process, subprocess, spawn and heartbeat returned zero hits.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:73d266b807387855",
+          "evaluatedRevision": 18
         },
         {
           "subject": "multi-project",
@@ -42687,12 +42690,11 @@
           "digest": "sha256-b2:204503a49b5c115b",
           "revision": 16,
           "changedAt": "2026-10-27",
-          "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version though session_pool.rs:9 promises credential invalidation; src-tauri/src/commands/tools/tools.rs:73 assign_tool never invalidates - swapping one tool or credential resumes a session built in a different world (re-verified at rev 14, unchanged)",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:c9b34849dd8fed39",
-          "evaluatedRevision": 14,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/engine/src/session_pool.rs:145 The warm-session fingerprint hashes how many tools there are, not which tools, and leaves out credentials and the CLI version, even though the module header promises credential invalidation; swapping one tool or credential resumes a session built under a different configuration.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:73d266b807387855",
+          "evaluatedRevision": 18,
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"

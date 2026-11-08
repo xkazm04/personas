@@ -12594,19 +12594,34 @@
       "subject": "subprocess-lifecycle",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:35:18.000Z",
-      "worker": "9d3d8062-c5b7-42ad-b739-4810032d942c",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:41:05.667Z",
+      "worker": "808c0d38-02a4-449c-a966-365714b0f912",
       "techniques": [
         {
           "technique": "termination-and-reaping",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 single-pid kill, no graceful rung, no descendant kill"
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 PidKiller does a single-pid forcible kill through sysinfo. There is no graceful rung, no deadline, and no descendants are killed. No kill_tree, job object or taskkill /T appears anywhere in commands/fleet."
+        },
+        {
+          "technique": "termination-and-reaping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:554 kill_child_of is the one close/hibernate door and goes straight to the forcible kill. Its outcome vocabulary is Killed, Failed or NoChild and never records a rung."
         },
         {
           "technique": "decode-child-output-per-line",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/pty.rs:183 the only child is the claude CLI, which writes UTF-8 through an incremental UTF-8 decoder; the technique's when-not section excludes children that write in the host encoding"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:1308 The first non-UTF-8 line ends the whole stream-json event loop, as the code's own comment at line 1384 says. Later events are drained to sink and never parsed. The standard keeps valid lines and decodes each line on its own."
+        },
+        {
+          "technique": "spawn-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:771 Ordinary headless spawns inherit the whole host environment minus a denylist. Only door runs are env_clear()-built (line 786), so the minimal environment is not the default."
+        },
+        {
+          "technique": "liveness-and-heartbeats",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/stale.rs:79 Per-session silence degrades the session to stalled at 2 minutes, separately from the 6-minute stale cutoff, so stalled and slow are told apart."
         }
       ],
       "superseded": [
@@ -12630,6 +12645,13 @@
           "evaluatedAt": "2026-10-12T12:37:17.000Z",
           "worker": "233ec975-4841-4a10-af85-79e9aa2eede6",
           "reason": "replaced by 9d3d8062-c5b7-42ad-b739-4810032d942c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 headless close/hibernate kills one pid via p.kill() (PTY lane likewise, src-tauri/src/commands/fleet/pty.rs:649 clone_killer, routed by src-tauri/src/commands/fleet/registry.rs:549 kill_child_of) with no polite rung and never the tree, though src-tauri/src/webbuild/devserver.rs:595 kill_tree exists - a closed claude session orphans its MCP servers and tool shells (re-verified at rev 14, unchanged)",
+          "evaluatedAt": "2026-10-16T17:35:18.000Z",
+          "worker": "9d3d8062-c5b7-42ad-b739-4810032d942c",
+          "reason": "replaced by 808c0d38-02a4-449c-a966-365714b0f912"
         }
       ]
     },
@@ -12638,27 +12660,43 @@
       "subject": "subprocess-lifecycle",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:35:18.000Z",
-      "worker": "9d3d8062-c5b7-42ad-b739-4810032d942c",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:41:05.667Z",
+      "worker": "808c0d38-02a4-449c-a966-365714b0f912",
       "techniques": [
         {
           "technique": "session-reuse",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/session_pool.rs:145 tool_count.hash - a same-count tool swap keeps the fingerprint"
+          "evidence": "src-tauri/engine/src/session_pool.rs:145 The fingerprint is prompt, structured prompt, model, tool count and capabilities. It has no tool identity, credential or binary version, which contradicts the header at line 9."
+        },
+        {
+          "technique": "session-reuse",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/session_pool.rs:9 The documented invalidation trigger is not realized by compute_config_hash. The take site (executions.rs:596) passes tools.len()."
+        },
+        {
+          "technique": "host-resource-protection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/resource_governor.rs:29 Admission is pressure-aware with separate pause and resume watermarks (hysteresis) for both CPU and RAM."
+        },
+        {
+          "technique": "concurrency-and-slots",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/queue.rs:194 There are layered caps, global plus per-persona max_concurrent, and overflow is queued by priority."
         },
         {
           "technique": "decode-child-output-per-line",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/kpi_eval.rs:236 KPI command stdout goes through personas_core::utils::process::decode_output, the one per-line decode"
+          "evidence": "src-tauri/src/engine/kpi_eval.rs:236 KPI command stdout goes through personas_core::utils::process::decode_output, the one per-line decode",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "spawn-contract",
           "verdict": "realized",
-          "evidence": "src-tauri/engine/src/verification_command.rs:236 SetHandleInformation clears HANDLE_FLAG_INHERIT on own std handles before the detached dev-server spawn (the rev-14 amendment)"
+          "evidence": "src-tauri/engine/src/verification_command.rs:236 SetHandleInformation clears HANDLE_FLAG_INHERIT on own std handles before the detached dev-server spawn (the rev-14 amendment)",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "rev 14 added decode-child-output-per-line and the spawn-contract handle-inheritance amendment; both were forged from this context (kpi_eval.rs, verification_command.rs) and are realized here, but the pair stays a deviation on the unchanged session-reuse finding",
       "superseded": [
         {
           "state": "deviation",
@@ -12680,6 +12718,13 @@
           "evaluatedAt": "2026-10-12T12:37:17.000Z",
           "worker": "233ec975-4841-4a10-af85-79e9aa2eede6",
           "reason": "replaced by 9d3d8062-c5b7-42ad-b739-4810032d942c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version though session_pool.rs:9 promises credential invalidation; src-tauri/src/commands/tools/tools.rs:73 assign_tool never invalidates - swapping one tool or credential resumes a session built in a different world (re-verified at rev 14, unchanged)",
+          "evaluatedAt": "2026-10-16T17:35:18.000Z",
+          "worker": "9d3d8062-c5b7-42ad-b739-4810032d942c",
+          "reason": "replaced by 808c0d38-02a4-449c-a966-365714b0f912"
         }
       ]
     },
@@ -46695,6 +46740,16 @@
         }
       ],
       "registryProposal": "The matcher pairs runner-fleet with these contexts because they share the token 'fleet' (a fleet of agent sessions or personas), while the subject is about CI runner machines. The registry map should stop pairing on 'fleet' alone, or require CI vocabulary (runs-on, workflow) before it pairs."
+    },
+    "9967adb9-e895-4dcd-b296-ab49a19ab122/subprocess-lifecycle": {
+      "context": "project-overview",
+      "subject": "subprocess-lifecycle",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:41:05.667Z",
+      "worker": "808c0d38-02a4-449c-a966-365714b0f912",
+      "techniques": []
     }
   }
 }
