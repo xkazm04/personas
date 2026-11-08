@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { PersonaExecution } from '@/lib/types/types';
 import type { UnifiedSpan } from '@/lib/execution/pipeline';
@@ -60,6 +60,16 @@ function scrollTo(el: HTMLElement, top: number) {
 
 describe('TraceInspector waterfall keeps the focused row mounted', () => {
   beforeEach(() => mockedUseTraceData.mockReset());
+
+  // The virtualizer clears its "is scrolling" flag on a ~150 ms debounce. Let
+  // it fire while the tree is still mounted: on a loaded CI shard it otherwise
+  // fires after the environment is torn down and fails the file with
+  // "window is not defined" even though every test passed.
+  afterEach(async () => {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    });
+  });
 
   it('a toggle that has keyboard focus survives scrolling out of the window', async () => {
     arrange(5000);

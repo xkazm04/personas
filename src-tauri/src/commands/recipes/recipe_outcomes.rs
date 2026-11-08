@@ -35,7 +35,6 @@ const MAX_LIMIT: i64 = 500;
 /// the recipe?) and baking one in would hide it. `terminal` is the honest
 /// denominator — queued and running rows are not outcomes yet.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct RecipeOutcomeTally {
     pub recipe_id: String,

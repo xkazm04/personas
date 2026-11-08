@@ -10,7 +10,7 @@
  * dev-only Network tab. This page ships because linking your own two machines
  * is an operator task, not a debugging one.
  */
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { Laptop, Plus, WifiOff } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { KitHost, Surface } from '@/features/shared/components/kit';
@@ -24,7 +24,13 @@ import { useDeviceLink } from '../lib/useDeviceLink';
 import { ThisPcCard } from './ThisPcCard';
 import { DeviceCards } from './DeviceCards';
 import { DeviceDrawer } from './DeviceDrawer';
-import { AddPcDialog } from './wizard/AddPcDialog';
+import { lazyRetry } from '@/lib/lazyRetry';
+
+// The wizard is opened on demand, so its steps stay out of this page's chunk
+// until the operator asks for it (bundle budget: this chunk grew past tolerance).
+const AddPcDialog = lazyRetry(() =>
+  import('./wizard/AddPcDialog').then((m) => ({ default: m.AddPcDialog })),
+);
 
 export default function DeviceLinkPage() {
   const { t, tx } = useTranslation();
@@ -36,6 +42,9 @@ export default function DeviceLinkPage() {
   const link = useDeviceLink();
   const [addOpen, setAddOpen] = useState(false);
   const wizardOpen = addOpen || link.incoming.length > 0;
+  // Mount on first open and keep it mounted, so the close animation still plays.
+  const [wizardMounted, setWizardMounted] = useState(false);
+  if (wizardOpen && !wizardMounted) setWizardMounted(true);
   const [openPeerId, setOpenPeerId] = useState<string | null>(null);
   // Read through the live list, so a home change or a sync lands in the open drawer.
   const openDevice = link.ownedDevices.find((d) => d.peerId === openPeerId) ?? null;
@@ -127,7 +136,11 @@ export default function DeviceLinkPage() {
         </KitHost>
       </ContentBody>
 
-      <AddPcDialog open={wizardOpen} onClose={() => setAddOpen(false)} link={link} />
+      {wizardMounted && (
+        <Suspense fallback={null}>
+          <AddPcDialog open={wizardOpen} onClose={() => setAddOpen(false)} link={link} />
+        </Suspense>
+      )}
     </ContentBox>
   );
 }

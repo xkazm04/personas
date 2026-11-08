@@ -154,7 +154,8 @@ describe('deleting with the keyboard', () => {
     (await confirmButton()).focus();
     await user.keyboard('{Enter}');
 
-    await waitFor(() => expect(screen.queryByText(NAME)).not.toBeInTheDocument());
+    // Same assertion, a CI-sized window: the 1 s default failed on a loaded shard.
+    await waitFor(() => expect(screen.queryByText(NAME)).not.toBeInTheDocument(), { timeout: 5000 });
     expect(api.deleteN8nSession).toHaveBeenCalledTimes(1);
     expect(api.getN8nSession).not.toHaveBeenCalled();
   });
