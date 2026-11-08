@@ -7955,7 +7955,11 @@
           "revision": 7,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/foraging.rs:3 These commands acquire and store credentials for the desktop vault (OAuth, CLI capture, foraging). None of them defines or runs a delivery pipeline, and a search of src-tauri/src/commands found none of workflow_dispatch, pull_request_target, CI_JOB_TOKEN, gitlab-ci or GITHUB_ACTIONS. Where the credential is stored belongs to credential-vault, not this subject.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:47305180676ccbaa",
+          "evaluatedRevision": 7
         },
         {
           "subject": "agent-cli-transport",
@@ -17423,7 +17427,11 @@
           "revision": 7,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 These are React hooks that consume backend execution events for display. They run nothing and hold no credential, and a search of src/hooks found none of workflow_dispatch, pull_request_target, CI_JOB_TOKEN, gitlab-ci or GITHUB_ACTIONS.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:47305180676ccbaa",
+          "evaluatedRevision": 7
         },
         {
           "subject": "native-shell-integration",

@@ -46457,16 +46457,17 @@
       "context": "commands-credentials",
       "subject": "ci-execution-trust",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-11-08",
-      "evaluatedTs": "2026-11-08T01:24:43.861Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "e531a341-2602-4975-a2c1-9f5124a71276",
-        "state": "not-applicable",
-        "at": "2026-11-08T01:25:45.079798+00:00",
-        "reason": "reviewer (sonnet): Each not-applicable is anchored on an incidental line (the listAllTriggers wrapper, the start_google_credential_oauth signature, the list_executions command) that doesn't show a CI-delivery precondition is absent; the keyword searches (buildkite, workflow_dispatch and so on) don't establish that the"
-      }
+      "evaluatedTs": "2026-11-08T05:42:18.678Z",
+      "worker": "daf4bb75-d265-4be6-ac72-f4562c49f42c",
+      "techniques": [
+        {
+          "technique": "secret-materialization-discipline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/foraging.rs:81 GITHUB_TOKEN appears only as a local env var name to discover and import into the vault, not as a pipeline credential being materialized."
+        }
+      ]
     },
     "9e46b252-8eb1-4a15-a627-f7e342f1d85a/conversation-orchestration": {
       "context": "companion-brain",
@@ -46933,6 +46934,44 @@
           "technique": "additive-input-at-the-call-boundary",
           "verdict": "deviation",
           "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:63 sendOrQueue (athenaChatQueue.ts:36-43) sorts each mid-turn message. A 'redirect' calls interrupt() and then re-sends as a new turn, which is supersede. An 'additive' or ambiguous message is queued and sent only after the turn completes (lines 55-63), one per completion. No path injects at the call boundary."
+        }
+      ]
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/ci-execution-trust": {
+      "context": "engine-project-tracking",
+      "subject": "ci-execution-trust",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:42:18.678Z",
+      "techniques": [
+        {
+          "technique": "secret-materialization-discipline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/runner/env.rs:110 Credentials are injected into the env of a persona's agent subprocess, not of a pipeline job. That is the agent runtime, which this subject's boundary excludes."
+        }
+      ],
+      "registryProposal": "The technique's defect 2 (a secret in an environment inherited by every child process) applies just as much to agent runtimes that put vault credentials into a CLI's env, which then spawns tools. Here that is the job of a name denylist (env.rs). An agent-runtime subject (e.g. agent-runtime-assembly or credential-vault) should own that rule explicitly, because ci-execution-trust scopes itself to delivery systems.",
+      "withdrawn": {
+        "worker": "daf4bb75-d265-4be6-ac72-f4562c49f42c",
+        "state": "not-applicable",
+        "at": "2026-11-08T05:42:49.581514+00:00",
+        "reason": "reviewer (sonnet): The technique anchor src-tauri/src/engine/runner/env.rs:110 is the sanitize_env_name function, which does not show credential injection, and env.rs is not one of the context's files. The git.rs:1 header shows only a git-log watcher, and the context's own runner/credentials.rs was never opened as sup"
+      }
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/ci-execution-trust": {
+      "context": "hooks-execution",
+      "subject": "ci-execution-trust",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:42:18.678Z",
+      "worker": "daf4bb75-d265-4be6-ac72-f4562c49f42c",
+      "techniques": [
+        {
+          "technique": "control-plane-execution-boundary",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 A pure event subscriber, which is neither the decide side nor the perform side of any delivery system."
         }
       ]
     }
