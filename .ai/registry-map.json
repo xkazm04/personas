@@ -7510,8 +7510,12 @@
           "revision": 8,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src-tauri/src/commands/contest/arena.rs:9 The contest layer reads judge scoreboards and owner reviews of competing prompt variants; it does not judge translations. Searching the contest directory found no translation-quality vocabulary. The only locale-related hits are env.rs ('the UI translates' a problem code) and review.rs ('no locale formatting' of a percentage).",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8
         },
         {
           "subject": "mcp-tools",
@@ -13203,12 +13207,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:440 draft_test_subjects yields tools and connectors to test; the build gate measures no translated store, so the precondition (a machine-translated derived store) is unmet",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:440 The build-session quality gate tests a draft persona's tools and connectors, not translated text. A case-insensitive search of every directory in this context found no estimator, MQM typology, chrF, quality-estimation or back-translation code. The only 'translat' hits are intent strings in gates.rs test fixtures (e.g. 'translate documents from english to czech') and per-language naming examples in session_prompt.rs, so there is no machine-translated store here to measure.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 3
         },
         {
           "subject": "session-continuation",
@@ -18604,8 +18607,12 @@
           "revision": 8,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/i18n/generated/types.ts:2 This context's generated types come from the English source catalog only. Its tests pin the error-fallback chain, Rust/TS stop-reason parity, partial-core loading and section-load broadcast; none of them inspects translated values. The app ships English only: SHIPPED_UI_LOCALES = ['en'] at src/i18n/locales.manifest.ts:70. Searching src/i18n for mqm, chrf, quality_estimat and back_translat found nothing; 'glossary' appears only as UI keys such as glossary_webhook.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8
         },
         {
           "subject": "trust-base",
@@ -21804,8 +21811,12 @@
           "revision": 8,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:21 What is left of this context is a model price table for the arena's spend estimate (the header says the A/B compare panel was deleted) plus Ollama presets. Searching the sub_model_config directory for 'translat', 'locale', 'glossary', mqm, chrf and quality_estimat found nothing, so no machine-translated store is measured here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-memory",
@@ -36282,13 +36293,12 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/i18nStore.ts:13 holds only the selected language, font readiness and setLanguage; it stores and measures no translations",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
-          "evaluatedRevision": 5,
+          "evidence": "src/stores/i18nStore.ts:13 The only i18n store holds the selected language, font readiness and setLanguage (lines 14-16), and it lazy-loads fonts for non-Latin scripts. Searching src/stores, src/api and src/hooks for the subject's vocabulary found nothing. The single 'translat' hit is authStore.ts reading an English string through getActiveTranslations, so no translated store is scored or reviewed here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8,
           "source": "retained",
-          "revisionsBehind": 3,
-          "stale": true
+          "revisionsBehind": 3
         },
         {
           "subject": "embedded-db",

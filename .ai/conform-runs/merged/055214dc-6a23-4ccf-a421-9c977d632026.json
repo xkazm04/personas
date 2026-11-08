@@ -1,0 +1,143 @@
+{
+ "schema": "conform-run/1",
+ "worker": "055214dc-6a23-4ccf-a421-9c977d632026",
+ "subject": "translation-quality-measurement",
+ "evaluatedAt": "2026-11-08T02:40:43.390845+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "engine-build-session",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:440 The build-session quality gate tests a draft persona's tools and connectors, not translated text. A case-insensitive search of every directory in this context found no estimator, MQM typology, chrF, quality-estimation or back-translation code. The only 'translat' hits are intent strings in gates.rs test fixtures (e.g. 'translate documents from english to czech') and per-language naming examples in session_prompt.rs, so there is no machine-translated store here to measure.",
+   "techniques": [],
+   "absenceTerms": [
+    "mqm",
+    "chrf",
+    "quality_estimat",
+    "back_translat"
+   ]
+  },
+  {
+   "context": "stores",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/stores/i18nStore.ts:13 The only i18n store holds the selected language, font readiness and setLanguage (lines 14-16), and it lazy-loads fonts for non-Latin scripts. Searching src/stores, src/api and src/hooks for the subject's vocabulary found nothing. The single 'translat' hit is authStore.ts reading an English string through getActiveTranslations, so no translated store is scored or reviewed here.",
+   "techniques": [],
+   "absenceTerms": [
+    "mqm",
+    "chrf",
+    "quality_estimat",
+    "back_translat"
+   ]
+  },
+  {
+   "context": "i18n-generated",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/i18n/generated/types.ts:2 This context's generated types come from the English source catalog only. Its tests pin the error-fallback chain, Rust/TS stop-reason parity, partial-core loading and section-load broadcast; none of them inspects translated values. The app ships English only: SHIPPED_UI_LOCALES = ['en'] at src/i18n/locales.manifest.ts:70. Searching src/i18n for mqm, chrf, quality_estimat and back_translat found nothing; 'glossary' appears only as UI keys such as glossary_webhook.",
+   "techniques": [],
+   "absenceTerms": [
+    "mqm",
+    "chrf",
+    "quality_estimat",
+    "back_translat"
+   ]
+  },
+  {
+   "context": "commands-contest",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/contest/arena.rs:9 The contest layer reads judge scoreboards and owner reviews of competing prompt variants; it does not judge translations. Searching the contest directory found no translation-quality vocabulary. The only locale-related hits are env.rs ('the UI translates' a problem code) and review.rs ('no locale formatting' of a percentage).",
+   "techniques": [],
+   "absenceTerms": [
+    "mqm",
+    "chrf",
+    "quality_estimat",
+    "back_translat"
+   ]
+  },
+  {
+   "context": "model-config",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:21 What is left of this context is a model price table for the arena's spend estimate (the header says the A/B compare panel was deleted) plus Ollama presets. Searching the sub_model_config directory for 'translat', 'locale', 'glossary', mqm, chrf and quality_estimat found nothing, so no machine-translated store is measured here.",
+   "techniques": [],
+   "absenceTerms": [
+    "mqm",
+    "chrf",
+    "quality_estimat",
+    "back_translat"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-08T02:40:43.390845+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "engine-build-session",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T02:40:43.390845+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "stores",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T02:40:43.390845+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "i18n-generated",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T02:40:43.390845+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "commands-contest",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T02:40:43.390845+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "model-config",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
