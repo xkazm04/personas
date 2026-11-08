@@ -1,0 +1,27 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f1d0d102-80c5-4439-bb4e-d4801eced48f",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-11-08T00:02:54.413697+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "agents-deployment",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "i18n",
+   "reason": "The context is the English translation lazy-parse cache plus a grab-bag of lib, binding and test files. Nothing in it registers, dispatches, harvests or tracks agent sessions, so no technique has anything to act on. I did not claim not-applicable because src/i18n locale strings contain the subject's own words ('fleet' in 237 files, 'dispatch' in 226, 'hibernat' in 29, 'worktree' in 18), so an absence search over its directories would be refused."
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "overview-patterns",
+   "reason": "No files are listed for this context, and the description (a knowledge-practice review modal and ledger) names no path to open, so there is no code of its own to judge."
+  }
+ ],
+ "consults": []
+}
