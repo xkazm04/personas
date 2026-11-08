@@ -46999,6 +46999,26 @@
           "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 A pure event subscriber, which is neither the decide side nor the perform side of any delivery system."
         }
       ]
+    },
+    "a3cb83b5-7325-4d1c-b10d-b249ab1a186f/agent-memory": {
+      "context": "run-desk",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T23:32:41.118Z",
+      "worker": "ce95e3d1-b798-489e-b0cf-2ace38658cea",
+      "techniques": []
+    },
+    "e8fa2ff7-145d-4c58-af83-1239b87d2c24/agent-memory": {
+      "context": "overview-activity-metrics",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T23:32:41.118Z",
+      "worker": "ce95e3d1-b798-489e-b0cf-2ace38658cea",
+      "techniques": []
     }
   }
 }

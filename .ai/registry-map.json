@@ -23876,7 +23876,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:16 This context derives KPI and spend charts from execution history, and a case-insensitive search of src/features/overview/sub_activity for memory, recall, consolidat, episod and belief found zero files, so its rollup and usage vocabulary is analytics rather than agent memory.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "metrics-rollups",
@@ -33746,7 +33750,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:17 Run Desk is a paged queue of dev tasks keyed by execution status, and a case-insensitive search of src/features/plugins/dev-tools/sub_runner for memory, recall, consolidat, episod and belief found zero files, so it carries nothing forward as agent memory.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "test-harness",
