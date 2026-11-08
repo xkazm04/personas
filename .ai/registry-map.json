@@ -6933,7 +6933,11 @@
           "revision": 3,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:57 The suite checks that emitted kinds exist in the registry and that widgets survive malformed config, but no test or eval scores whether Athena chose the right form or view for an intent, including the 'nothing' negative.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:7c6aa8f4a4d53a56",
+          "evaluatedRevision": 3
         },
         {
           "subject": "accessibility",
@@ -14682,7 +14686,11 @@
           "revision": 3,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/fleet/monitor/channels/ConversationComposer.tsx:59 Here the model takes part only as a text participant in a team channel. The stream, grid and map are laid out by hand, and a search of fleet/monitor and overview/sub_timeline for compose_cockpit, widgetRegistry, explain_in_cockpit and cockpitWidget found zero hits, so no model composes views on this screen.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:7c6aa8f4a4d53a56",
+          "evaluatedRevision": 3
         },
         {
           "subject": "voice-io",
@@ -16324,7 +16332,11 @@
           "revision": 3,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/TimelineWidget.tsx:82 The timeline widget renders events (labels, details such as 'exit 1 after 42s', timestamps) that Athena wrote into compose_cockpit config, rather than data a module view fetched itself, so model-authored figures appear in the composed region with the authority of a report.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:7c6aa8f4a4d53a56",
+          "evaluatedRevision": 3
         },
         {
           "subject": "prompt-assembly",
@@ -39600,7 +39612,11 @@
           "revision": 3,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:35 The only model involvement is an LLM topology suggestion that is previewed and then applied as data (team, members, connections). The model never arranges views, and a search of sub_teamWorkspace and teams/components for compose_cockpit, widgetRegistry, explain_in_cockpit and cockpitWidget found zero hits.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:7c6aa8f4a4d53a56",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -47350,7 +47366,11 @@
           "revision": 3,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_workspaces/WorkspacesPage.tsx:22 The Workspaces page is a fixed, hand-built atlas, and the only Athena mention (workspaceStore.ts:71) is a settings mirror for her hiring doors. A search of sub_workspaces for compose_cockpit, widgetRegistry, explain_in_cockpit and cockpitWidget found zero hits, so no model composes this screen.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:7c6aa8f4a4d53a56",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",

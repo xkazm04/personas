@@ -1,0 +1,148 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3ccaa276-2a5d-41cf-ad4b-1f7cedcb8256",
+ "subject": "model-composed-workspace",
+ "evaluatedAt": "2026-11-08T05:05:06.186899+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "home-cockpit-widgets",
+   "subject": "model-composed-workspace",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_cockpit/widgets/TimelineWidget.tsx:82 The timeline widget renders events (labels, details such as 'exit 1 after 42s', timestamps) that Athena wrote into compose_cockpit config, rather than data a module view fetched itself, so model-authored figures appear in the composed region with the authority of a report.",
+   "techniques": [
+    {
+     "technique": "composition-region",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/TimelineWidget.tsx:82 Several kinds (timeline, comparison_cards, verdict, stat_grid) take their data from model config, and nothing in the widgets refuses figures in model text. Other kinds do own their numbers with real error states (RecentDecisionsWidget.tsx:85 `error={error ? {`, and LinkedMemories/TemplateSuggestions likewise), so this is mixed. The rule is still broken for the config-fed kinds."
+    }
+   ],
+   "registryProposal": "composition-region assumes every placed unit is a module view that fetches its own data. Personas also has explanation kinds (verdict, comparison_cards, timeline) whose whole content is the model's own reasoning. The standard could say whether such 'model-content cards' are allowed in the region at all, or must live in the transcript under a provenance label."
+  },
+  {
+   "context": "cockpit-widget-tests",
+   "subject": "model-composed-workspace",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:57 The suite checks that emitted kinds exist in the registry and that widgets survive malformed config, but no test or eval scores whether Athena chose the right form or view for an intent, including the 'nothing' negative.",
+   "techniques": [
+    {
+     "technique": "view-choice-evaluation",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/malformedConfig.test.tsx:31 Only render robustness and the validity layer (kind parity) are covered. There is no labelled intent-plus-data set, no negatives, no separate false/missed trigger rates and no session drift. A search of evals/ for cockpit, widget and compose_cockpit found nothing."
+    }
+   ]
+  },
+  {
+   "context": "fleet-monitor-channels",
+   "subject": "model-composed-workspace",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/fleet/monitor/channels/ConversationComposer.tsx:59 Here the model takes part only as a text participant in a team channel. The stream, grid and map are laid out by hand, and a search of fleet/monitor and overview/sub_timeline for compose_cockpit, widgetRegistry, explain_in_cockpit and cockpitWidget found zero hits, so no model composes views on this screen.",
+   "techniques": [],
+   "absenceTerms": [
+    "compose_cockpit",
+    "widgetRegistry",
+    "explain_in_cockpit",
+    "cockpitWidget"
+   ]
+  },
+  {
+   "context": "teams-teamworkspace",
+   "subject": "model-composed-workspace",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:35 The only model involvement is an LLM topology suggestion that is previewed and then applied as data (team, members, connections). The model never arranges views, and a search of sub_teamWorkspace and teams/components for compose_cockpit, widgetRegistry, explain_in_cockpit and cockpitWidget found zero hits.",
+   "techniques": [],
+   "absenceTerms": [
+    "compose_cockpit",
+    "widgetRegistry",
+    "explain_in_cockpit",
+    "cockpitWidget"
+   ]
+  },
+  {
+   "context": "workspace-knowledge",
+   "subject": "model-composed-workspace",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_workspaces/WorkspacesPage.tsx:22 The Workspaces page is a fixed, hand-built atlas, and the only Athena mention (workspaceStore.ts:71) is a settings mirror for her hiring doors. A search of sub_workspaces for compose_cockpit, widgetRegistry, explain_in_cockpit and cockpitWidget found zero hits, so no model composes this screen.",
+   "techniques": [],
+   "absenceTerms": [
+    "compose_cockpit",
+    "widgetRegistry",
+    "explain_in_cockpit",
+    "cockpitWidget"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-08T05:05:06.186899+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "model-composed-workspace"
+   ],
+   "techniques": [
+    "composition-region"
+   ],
+   "deviations": 1,
+   "context": "home-cockpit-widgets",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T05:05:06.186899+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "model-composed-workspace"
+   ],
+   "techniques": [
+    "view-choice-evaluation"
+   ],
+   "deviations": 1,
+   "context": "cockpit-widget-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T05:05:06.186899+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "model-composed-workspace"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "fleet-monitor-channels",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T05:05:06.186899+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "model-composed-workspace"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "teams-teamworkspace",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T05:05:06.186899+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "model-composed-workspace"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "workspace-knowledge",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

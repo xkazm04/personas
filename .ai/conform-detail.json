@@ -46802,6 +46802,69 @@
       "evaluatedTs": "2026-11-08T04:41:05.667Z",
       "worker": "808c0d38-02a4-449c-a966-365714b0f912",
       "techniques": []
+    },
+    "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/model-composed-workspace": {
+      "context": "home-cockpit-widgets",
+      "subject": "model-composed-workspace",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:05:06.186Z",
+      "worker": "3ccaa276-2a5d-41cf-ad4b-1f7cedcb8256",
+      "techniques": [
+        {
+          "technique": "composition-region",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/TimelineWidget.tsx:82 Several kinds (timeline, comparison_cards, verdict, stat_grid) take their data from model config, and nothing in the widgets refuses figures in model text. Other kinds do own their numbers with real error states (RecentDecisionsWidget.tsx:85 `error={error ? {`, and LinkedMemories/TemplateSuggestions likewise), so this is mixed. The rule is still broken for the config-fed kinds."
+        }
+      ],
+      "registryProposal": "composition-region assumes every placed unit is a module view that fetches its own data. Personas also has explanation kinds (verdict, comparison_cards, timeline) whose whole content is the model's own reasoning. The standard could say whether such 'model-content cards' are allowed in the region at all, or must live in the transcript under a provenance label."
+    },
+    "12d5948a-76a4-4db1-ac6a-ac554eb12020/model-composed-workspace": {
+      "context": "cockpit-widget-tests",
+      "subject": "model-composed-workspace",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:05:06.186Z",
+      "worker": "3ccaa276-2a5d-41cf-ad4b-1f7cedcb8256",
+      "techniques": [
+        {
+          "technique": "view-choice-evaluation",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/malformedConfig.test.tsx:31 Only render robustness and the validity layer (kind parity) are covered. There is no labelled intent-plus-data set, no negatives, no separate false/missed trigger rates and no session drift. A search of evals/ for cockpit, widget and compose_cockpit found nothing."
+        }
+      ]
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/model-composed-workspace": {
+      "context": "fleet-monitor-channels",
+      "subject": "model-composed-workspace",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:05:06.186Z",
+      "worker": "3ccaa276-2a5d-41cf-ad4b-1f7cedcb8256",
+      "techniques": []
+    },
+    "a576c14f-1edd-4da4-8d11-527161a3b5b3/model-composed-workspace": {
+      "context": "teams-teamworkspace",
+      "subject": "model-composed-workspace",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:05:06.186Z",
+      "worker": "3ccaa276-2a5d-41cf-ad4b-1f7cedcb8256",
+      "techniques": []
+    },
+    "db6357fe-000f-498d-8c02-4e8ad6d95574/model-composed-workspace": {
+      "context": "workspace-knowledge",
+      "subject": "model-composed-workspace",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:05:06.186Z",
+      "worker": "3ccaa276-2a5d-41cf-ad4b-1f7cedcb8256",
+      "techniques": []
     }
   }
 }
