@@ -8280,14 +8280,24 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:46:49.000Z",
-      "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T03:09:57.448Z",
+      "worker": "3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2",
       "techniques": [
         {
           "technique": "navigation-model",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/system/uiSlice.ts:570 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired id makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its boundary - same for cloudTab/homeTab (systemStore.ts:82,88); re-verified 2026-10-12, unfixed (anchor moved from uiSlice.ts:571; 0afa77a0a1 added inert/aria-hidden only)"
+          "evidence": "src/stores/slices/system/uiSlice.ts:542 Sub-location setter has no validation, and the persisted settingsTab has no guard on restore (re-checked at HEAD; earlier anchor uiSlice.ts:570 has moved to :542). The section-level setter is fine: one door that records history (uiSlice.ts:494)."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/uiSlice.ts:684 Back/forward skip destinations whose registry gates now fail (minTier/devOnly), using the same gate context for titlebar, keyboard and mouse."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/uiSlice.ts:622 Overlay posture is closed at the navigation doors (setSidebarSection and navigateBack) rather than by each entry's own handler, so a header overlay is dismissed by any route change."
         }
       ],
       "superseded": [
@@ -8304,6 +8314,13 @@
           "evaluatedAt": "2026-10-10T01:15:00.000Z",
           "worker": "18d0c8b8-f7a3-4f4e-bee5-1158af36953a",
           "reason": "replaced by ca8a5574-2dd0-43fb-9e4e-bb796e477ad3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/uiSlice.ts:570 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired id makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its boundary - same for cloudTab/homeTab (systemStore.ts:82,88); re-verified 2026-10-12, unfixed (anchor moved from uiSlice.ts:571; 0afa77a0a1 added inert/aria-hidden only)",
+          "evaluatedAt": "2026-10-12T11:46:49.000Z",
+          "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+          "reason": "replaced by 3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2"
         }
       ]
     },
@@ -46370,6 +46387,61 @@
       "evaluatedTs": "2026-11-08T02:40:43.390Z",
       "worker": "055214dc-6a23-4ccf-a421-9c977d632026",
       "techniques": []
+    },
+    "89eddf81-0c57-441d-a07d-de36bf022cb5/app-shell": {
+      "context": "display-data-formatters",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T03:09:57.448Z",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/display/RelativeTime.tsx:1-5 and Tooltip.tsx:1-10 are generic read-only display/overlay primitives reused across every feature, with no section vocabulary, nav badge, or shell-residency concept -- app-shell's techniques govern the persistent nav frame and its hosted services, which this context has none of.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2"
+        }
+      ],
+      "withdrawn": {
+        "worker": "3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2",
+        "state": "not-applicable",
+        "at": "2026-11-08T03:11:25.082861+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor RelativeTime.tsx:2 is an import line that sits in the context but does not itself show that the shell vocabulary is absent. The claim rests only on a grep over directories, and the cited line is incidental."
+      }
+    },
+    "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/app-shell": {
+      "context": "fleet-monitor-shell",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T03:09:57.448Z",
+      "worker": "3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/shell/monitorRouter.ts:11 Closed vocabulary. Deep links go through one viewForSignal mapping, and activeTab is derived (line 104). The deep-link effect calls setView directly (line 92) instead of goToView; this is harmless today, since goToView does nothing extra besides the press affordance."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:3 One flat level of peer destinations; the old nested channels pill was retired (lines 8-10). The comment says four views, but the union now has five."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/shell/MonitorBody.tsx:48 Views are lazyRetry chunks under ONE boundary, so the outgoing view stays painted through the transition. The fallback is RouteChunkSkeleton, which waits 150ms before showing. Hiding instead of unmounting keeps state and scroll on return. No ErrorBoundary is visible in MonitorBody or at the useTitleBarTray mount site, so whether a failed chunk gets a stated failure screen depends on an outer boundary I did not confirm."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/monitorVisibility.ts:38 The overlay stays mounted for the whole session, and its cost is paid down by one visibility signal that gates polls, ticks (useElapsedTick.ts:53) and the Escape registration (useMonitorEscape enabled: visible)."
+        }
+      ]
     }
   }
 }
