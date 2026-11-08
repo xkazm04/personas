@@ -1,0 +1,106 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d803e926-6ca7-4d4b-8850-3d96fbce14a3",
+  "subject": "proactive-nudges",
+  "evaluatedAt": "2026-11-08T04:28:03.483828+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "companion-proactive",
+      "subject": "proactive-nudges",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/proactive/mod.rs:554 deliver_now marks a row delivered and emits it with no budget claim and no quiet check, and execution_review, message_triage and rollup all deliver through it, so three nudge kinds skip the policy gate that release_pending enforces for everything else.",
+      "techniques": [
+        {
+          "technique": "trigger-evaluators",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 Every evaluator in collect_all (:75-78, :82) turns an error into an empty list, so a failed evaluator looks the same as one with nothing to say, and no per-tick record shows which evaluators ran or failed (failure-not-empty-success)."
+        },
+        {
+          "technique": "attention-budgets",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/budget.rs:269 The atomic global+per-kind claim in one transaction is conformant (:228-264), but the day resets at UTC midnight, not the user's local midnight. Also, a slot claimed and then lost to claim_delivered is not released (mod.rs:456-458 says it 'self-corrects at the UTC date rollover')."
+        },
+        {
+          "technique": "notice-delivery-decoupling",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/execution_review.rs:899 The main queue is conformant: the expiry sweep runs before dedup, queued rows are re-tried every tick and expire with a window. But execution_review, message_triage (:433, :458) and rollup (:58) deliver directly, which is the per-kind side channel the technique forbids ('one queue, all kinds')."
+        },
+        {
+          "technique": "quiet-windows",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:397 Boundaries are pinned by tests and checked on local time at delivery (quiet.rs:22-54, :113-119), but an error reading the quiet state counts as 'not quiet', so failure leans toward delivering (the standard says lean toward quiet). The deliver_now lanes also cross quiet hours with no closed bypass class and no count of how often they do."
+        },
+        {
+          "technique": "nudge-identity-dedup",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/execution_review.rs:892 Each digest kind (execution_review here, message_triage.rs:426 too) puts the hour in its identity, the tumbling-bucket pattern the technique names. Passes on either side of an hour boundary get two identities, and an ignored digest piles up one card per hour. The (kind, ref) dedup in enqueue_if_new is otherwise conformant."
+        },
+        {
+          "technique": "efficacy-feedback",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/budget.rs:135 Outcome capture is conformant: engaged, dismissed, and ignored counted as expired with a delivery stamp (:87-94), with a sample floor and a floor of 1. But no per-kind kill switch exists: searching companion Rust and frontend for kill switch, mute or opt-out per kind found none, so the user cannot stop one kind from the nudge itself."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "proactive-nudges",
+      "context": "triggers-triggers",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor (UnattendedModeSection.tsx:20) is a doc comment about unattended run mode and does not show that nudge policy is absent. The same directory has ActiveHoursSection.tsx, RateLimitControls.tsx (cooldown) and an unattended mode that suppresses outbound messages. Those are quiet-hours, rate an"
+    },
+    {
+      "subject": "proactive-nudges",
+      "context": "glyph-persona-card",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor (glyphLayoutTypes.ts:14) is an ordinary prop-interface line and does not itself show that machine-initiated contact is absent. The not-applicable rests only on a keyword grep, and the grep did not look for notification-channel terms. The sub_glyph tree contains notification-channel code ("
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-08T04:28:03.483828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "proactive-nudges"
+      ],
+      "techniques": [
+        "attention-budgets",
+        "efficacy-feedback",
+        "notice-delivery-decoupling",
+        "nudge-identity-dedup",
+        "quiet-windows",
+        "trigger-evaluators"
+      ],
+      "deviations": 1,
+      "context": "companion-proactive",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T04:28:03.483828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "proactive-nudges"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "triggers-triggers",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T04:28:03.483828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "proactive-nudges"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "glyph-persona-card",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

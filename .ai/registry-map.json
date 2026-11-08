@@ -10000,12 +10000,11 @@
           "changedAt": "2026-10-31",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 still runs every evaluator as `.unwrap_or_default()` (:75-78, :82). An erroring evaluator contributes an empty list, identical to having nothing to say, so a proactive system that has gone dark reads as a quiet week (trigger-evaluators, failure-not-empty-success). Re-judged at revision 6: the landing since (efficacy-feedback) does not govern this.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:b74b09e6bda5ece0",
-          "evaluatedRevision": 6,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:554 deliver_now marks a row delivered and emits it with no budget claim and no quiet check, and execution_review, message_triage and rollup all deliver through it, so three nudge kinds skip the policy gate that release_pending enforces for everything else.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:5ac900ae46e58393",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 2
         },
         {
           "subject": "companion-runtime",
@@ -43848,11 +43847,7 @@
           "confidence": "probable",
           "state": "not-applicable",
           "evidence": "src/features/triggers/sub_triggers/UnattendedModeSection.tsx:8 Every trigger in this context is a user-authored rule (schedule, polling, webhook, file_watcher, clipboard, app_focus, composite) whose output is a persona run, not machine-initiated contact with a human, so the nudge-policy layer has nothing here to govern. A search of src/features/triggers/sub_triggers for nudge, proactive, quiet_hours, efficacy and attention found nothing. 'cooldown' hits only RateLimitControls.tsx:98, which is execution rate-limiting and belongs to scheduling. 'notify' hits only comments about the Rust file-watch crate.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:d8e246ede358e289",
-          "evaluatedRevision": 7,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-24"
         },
         {
           "subject": "prompt-assembly",
