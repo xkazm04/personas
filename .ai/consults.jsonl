@@ -2388,3 +2388,6 @@
 {"ts":"2026-11-08T05:18:53.940056+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"stores-slices-overview","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-08T05:18:53.940056+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"vault-catalog-schemas","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-08T05:18:53.940056+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"teams-goals","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-08T05:31:51.217531+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["additive-input-at-the-call-boundary"],"deviations":1,"context":"companions-page","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-08T05:31:51.217531+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0,"context":"shared-chrome","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-08T05:31:51.217531+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0,"context":"agents-connectors","via":"curator-multi:claude","model":"claude-opus-5-5"}

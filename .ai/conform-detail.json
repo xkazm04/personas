@@ -45167,14 +45167,14 @@
       "subject": "agent-runtime-assembly",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-04",
-      "evaluatedTs": "2026-11-04T03:18:13.088Z",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:31:51.217Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "43b5dd11-d9f5-4317-9dda-b15721d301e6",
+        "worker": "f18abadb-6a58-411c-afc8-1d8bbbe0091f",
         "state": "not-applicable",
-        "at": "2026-11-04T03:18:36.804473+00:00",
-        "reason": "reviewer (sonnet): The anchor at BackgroundServices.tsx:8 is a doc-comment line, and the file it sits in mounts a credential remediation loop, an assignment-progress listener, a channel service and Athena reconciliation. That contradicts 'the chrome is navigation, a palette, banners and a refresh-hook host', and the a"
+        "at": "2026-11-08T05:33:03.903096+00:00",
+        "reason": "reviewer (sonnet): The anchor Sidebar.tsx:23 is only the component declaration line, so it doesn't show that no agent runtime is assembled. shared/chrome also holds BackgroundServices.tsx, which mounts global runtime hooks (assignment listeners, Athena reconciliation, channel service), so the 'navigation chrome only' "
       }
     },
     "fbfcd99a-a333-42da-b85e-2ec1f560b4be/agent-runtime-assembly": {
@@ -45182,14 +45182,14 @@
       "subject": "agent-runtime-assembly",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-04",
-      "evaluatedTs": "2026-11-04T03:18:13.088Z",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:31:51.217Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "43b5dd11-d9f5-4317-9dda-b15721d301e6",
+        "worker": "f18abadb-6a58-411c-afc8-1d8bbbe0091f",
         "state": "not-applicable",
-        "at": "2026-11-04T03:18:36.942217+00:00",
-        "reason": "reviewer (sonnet): PersonaConnectorsTab.tsx:24-25 says the hook mounts 'auto-test loops'. That contradicts the verdict's 'does not ... run a loop', and the cited line is the persona selector rather than evidence of absence."
+        "at": "2026-11-08T05:33:04.030430+00:00",
+        "reason": "reviewer (sonnet): The anchor PersonaConnectorsTab.tsx:19 is only a props interface line and says nothing about absent hook chains or conversation state. The claim rests on a keyword search with unrepresentative terms, and I did not trace the other context files."
       }
     },
     "4560e824-e952-45a9-8aef-fe88d721952e/agent-runtime-assembly": {
@@ -46919,6 +46919,22 @@
       "evaluatedTs": "2026-11-08T05:18:53.940Z",
       "worker": "5b744e77-c88c-48c4-957b-7ee3b00c1aec",
       "techniques": []
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/agent-runtime-assembly": {
+      "context": "companions-page",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T05:31:51.217Z",
+      "worker": "f18abadb-6a58-411c-afc8-1d8bbbe0091f",
+      "techniques": [
+        {
+          "technique": "additive-input-at-the-call-boundary",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:63 sendOrQueue (athenaChatQueue.ts:36-43) sorts each mid-turn message. A 'redirect' calls interrupt() and then re-sends as a new turn, which is supersede. An 'additive' or ambiguous message is queued and sent only after the turn completes (lines 55-63), one per completion. No path injects at the call boundary."
+        }
+      ]
     }
   }
 }

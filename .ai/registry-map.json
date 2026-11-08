@@ -10572,8 +10572,12 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 24
+          "state": "deviation",
+          "priorNotApplicable": 24,
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:4 A follow-up typed while Athena is working either interrupts the running turn (supersede-and-restart) or waits until the turn ends. It is never injected additively at a model-call boundary, which is the design the technique names as the one that loses.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:c29c78bbbf9eb4fe",
+          "evaluatedRevision": 29
         },
         {
           "subject": "quality-gates",
