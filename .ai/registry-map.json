@@ -13425,12 +13425,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:185 Context and repository searches for the listed terms found no matches, and the inspected hooks serve application side effects, outside the standard's embedded language-engine precondition.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:08d3fea13f40733a",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/engine/mod.rs:191 The only 'host hooks' here are a fn-pointer struct for tray/notification side effects of a process orchestrator, and a search of src-tauri for boa_engine, rquickjs, deno_core, ModuleLoader and mlua returned no hits (no such crate in either Cargo.toml), so no guest language engine is embedded and no job queue, module loader or engine clock exists to judge.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:dcbd96d1274205ef",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
@@ -13809,12 +13808,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:454 Context and repository searches for the listed terms found no matches, and the consolidator executes a CLI subprocess, outside the embedded language-engine precondition.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:08d3fea13f40733a",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:429 The consolidator executes a Claude CLI subprocess and pipes a prompt into it; no guest language engine is embedded (boa_engine, rquickjs, deno_core, ModuleLoader, mlua: 0 hits in src-tauri), so the engine-host contract has no seam to apply to.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:dcbd96d1274205ef",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
@@ -28294,8 +28292,12 @@
           "revision": 3,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:832 The pipeline executor walks a persona graph as async Rust and the scraper embeds pumper-core with wasmtime explicitly excluded; no guest language engine exists (boa_engine, rquickjs, deno_core, ModuleLoader, mlua: 0 hits), so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:dcbd96d1274205ef",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -42607,13 +42609,12 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/engine/src/eval.rs:623 Context and repository searches for the listed terms found no matches, and evaluation launches an external CLI process, so the embedded language-engine contract is not applicable.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:08d3fea13f40733a",
-          "evaluatedRevision": 2,
+          "evidence": "src-tauri/engine/src/eval.rs:622 Evaluation runs by spawning an external CLI process rather than evaluating guest source in an embedded engine, and the search for boa_engine, rquickjs, deno_core, ModuleLoader and mlua across src-tauri found nothing, so none of the engine-host seams exist here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:dcbd96d1274205ef",
+          "evaluatedRevision": 3,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "cost-metering",
