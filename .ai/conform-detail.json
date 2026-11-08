@@ -46206,6 +46206,42 @@
         "at": "2026-11-08T01:25:45.079798+00:00",
         "reason": "reviewer (sonnet): Each not-applicable is anchored on an incidental line (the listAllTriggers wrapper, the start_google_credential_oauth signature, the list_executions command) that doesn't show a CI-delivery precondition is absent; the keyword searches (buildkite, workflow_dispatch and so on) don't establish that the"
       }
+    },
+    "9e46b252-8eb1-4a15-a627-f7e342f1d85a/conversation-orchestration": {
+      "context": "companion-brain",
+      "subject": "conversation-orchestration",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T01:43:05.289Z",
+      "techniques": [
+        {
+          "technique": "structured-visual-replies",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/templates/chat-core.md:14 'Lead with the answer' (line 23) is realized. Tables exist only in canvas panels and dashboards (constitution.md:448), a different surface, and no chat block grammar, cap or drop count was found."
+        },
+        {
+          "technique": "progress-beat-grammar",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/templates/chat-core.md:200 Always-on addendum: short first-person beats before a slow step, budgeted at two to five per working turn. Minor risk: 'when something turns up' invites beats that assert findings."
+        },
+        {
+          "technique": "model-proposed-quick-replies",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/templates/chat-core.md:195 Bounds stated in the instruction: 2-4 chips in the user's voice, no padding (line 196), and never combined with OP:."
+        },
+        {
+          "technique": "show-dont-tell-walkthrough",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/templates/mod.rs:253 Walkthrough topics are authored and point_at uses allow-listed anchors. compose_walkthrough (line 257) builds stops at runtime from catalog anchors, which sits at the edge of 'steps are authored'."
+        }
+      ],
+      "withdrawn": {
+        "worker": "dc70cd6d-0c3c-47a3-96cc-f135c2517c2a",
+        "state": "deviation",
+        "at": "2026-11-08T01:44:38.654744+00:00",
+        "reason": "reviewer (sonnet): The verdict rests on templates/chat-core.md, a prompt template loaded by prompt/chat_family.rs, not on any brain/*.rs file in companion-brain, so it describes a different context; chat-core.md:208 also refers to a visible 'table' in replies, which cuts against the 'no table' claim."
+      }
     }
   }
 }
