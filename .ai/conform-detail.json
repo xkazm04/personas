@@ -34978,34 +34978,50 @@
       "subject": "declarative-object-graph-configs",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-18",
-      "evaluatedTs": "2026-10-18T23:10:19.934Z",
-      "worker": "61ba69d4-4b70-4b7d-bd75-7051c2316c0c",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:48:03.989Z",
+      "worker": "c2b067fc-c877-46fd-8a30-ae523190f0cb",
       "techniques": [
         {
           "technique": "directive-key-namespace",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/ExtraFieldRenderers.tsx:15 Known schema kinds select dedicated renderers; schema keys are not generic constructor arguments mixed with loader directives."
-        },
-        {
-          "technique": "escape-hatch-expressions",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:106 Computed healthcheck settings come from application-authored callbacks, not code expressions evaluated from configuration text."
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaFormTypes.ts:27 A closed, typed interface. It has no free-form node keys for loader directives to collide with."
         },
         {
           "technique": "merge-vs-override-marking",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:54 This initializes form state from defaults and supplied values; it does not implement composition between object-graph config files."
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:54 A one-level spread of form defaults with edit-flow values. These are not config layers composed across files."
+        },
+        {
+          "technique": "escape-hatch-expressions",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaFormTypes.ts:17 Computed values are ordinary compiled TS functions in source code, not expressions evaluated from a loaded config."
+        },
+        {
+          "technique": "sigil-grammar-over-schema",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:195 Field entries are literal data. No value points at another node."
         },
         {
           "technique": "reference-resolution-with-cycle-detection",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:80 Subtype selection looks up an existing schema entry without recursively constructing referenced nodes."
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:80 Subtype selection looks up an existing schema entry without recursively constructing referenced nodes.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "textual-macro-prepass",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/ExtraFieldRenderers.tsx:26 Textarea contents are stored directly as field values, with no file-fragment splicing or relative config-node addressing."
+          "evidence": "src/features/vault/sub_catalog/components/schemas/ExtraFieldRenderers.tsx:26 Textarea contents are stored directly as field values, with no file-fragment splicing or relative config-node addressing.",
+          "carriedFrom": "2026-10-18"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:140 The form serializes connector field definitions as schema data, and searches for sigil, instantiate, and _requires_ found no matches in the context directories or evidence of a named live-object graph loader.",
+          "evaluatedAt": "2026-10-18T23:10:19.934Z",
+          "worker": "61ba69d4-4b70-4b7d-bd75-7051c2316c0c",
+          "reason": "replaced by c2b067fc-c877-46fd-8a30-ae523190f0cb"
         }
       ]
     },

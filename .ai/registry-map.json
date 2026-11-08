@@ -44638,13 +44638,12 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:140 The form serializes connector field definitions as schema data, and searches for sigil, instantiate, and _requires_ found no matches in the context directories or evidence of a named live-object graph loader.",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:248352af1a4c3488",
-          "evaluatedRevision": 1,
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:143 The connector schemas are TypeScript literals: field definitions (key, label, type, required) that drive form rendering, plus typed callbacks. They are not a loaded file that denotes live objects by id, so this is schema-driven UI and settings, not an object-graph config. I searched schemas/, forms/, autoCred/helpers/ and vault/components/ for _requires_, _disabled_, instantiate, eval( and $ref and got no matches; `merged` at CredentialSchemaForm.tsx:54 is a plain spread of default extras with initial values.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:eb9279efa181d8c8",
+          "evaluatedRevision": 2,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "form",
