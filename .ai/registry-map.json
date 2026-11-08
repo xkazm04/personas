@@ -4528,13 +4528,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:18 This context sets up contains / not_contains output assertions that run against every production run of a single persona. It declares no target matrix, no frozen case set, no spend estimate and no scorecard, and a recursive search of src/features/agents/sub_settings found no hits for benchmark, scorecard, provider or budget.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
@@ -29808,12 +29807,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 projects x observability-connector wiring matrix; the newer pinpoint hooks (useLlmPinpoints.ts:64) read external tracing calls, so nothing here runs cases against model targets or produces a scorecard",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 Here the matrix is a wiring map of projects against observability connectors, and llmTracingAdapters.ts normalizes production traces from external tools into LlmPinpoint rows. Nothing runs cases against model targets or builds a benchmark scorecard: a recursive search of sub_llm_overview found no hits for benchmark, scorecard, dataset or eval. The only cost logic is an over-budget flag on production trace rows, which is not a benchmark spend ceiling.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
+          "revisionsBehind": 1
         },
         {
           "subject": "operator-surfaces-for-llm-spend",

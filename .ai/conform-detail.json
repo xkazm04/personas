@@ -12120,9 +12120,9 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:32.000Z",
-      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T01:52:14.537Z",
+      "worker": "5b35ad04-72a1-4cd8-b688-a5d6b073d942",
       "techniques": [
         {
           "technique": "target-matrix-runs",
@@ -12138,6 +12138,13 @@
           "evaluatedAt": "2026-10-09T17:25:35.000Z",
           "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
           "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 projects x observability-connector wiring matrix; the newer pinpoint hooks (useLlmPinpoints.ts:64) read external tracing calls, so nothing here runs cases against model targets or produces a scorecard",
+          "evaluatedAt": "2026-10-21T12:44:32.000Z",
+          "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+          "reason": "replaced by 5b35ad04-72a1-4cd8-b688-a5d6b073d942"
         }
       ]
     },
@@ -15702,9 +15709,9 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:40:51.000Z",
-      "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T01:52:14.537Z",
+      "worker": "5b35ad04-72a1-4cd8-b688-a5d6b073d942",
       "techniques": [
         {
           "technique": "target-matrix-runs",
@@ -15713,7 +15720,6 @@
           "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Map builder reports revisionsBehind: 1 on pairs whose evaluatedRevision (12) equals the registry index revision (12, digest sha256-b2:609da9e2f3c21869 at 11037a6c); the revision delta looks off by one in build-registry-map.mjs.",
       "superseded": [
         {
           "state": "not-applicable",
@@ -15721,6 +15727,13 @@
           "evaluatedAt": "2026-10-10T02:06:36.108Z",
           "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
           "reason": "replaced by 7afe9251-781d-42b9-8c30-19c0da4120c9"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
+          "evaluatedAt": "2026-10-16T17:40:51.000Z",
+          "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
+          "reason": "replaced by 5b35ad04-72a1-4cd8-b688-a5d6b073d942"
         }
       ]
     },
