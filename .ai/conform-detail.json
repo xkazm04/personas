@@ -19928,19 +19928,23 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:42:36.000Z",
-      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T23:07:59.453Z",
       "techniques": [
         {
           "technique": "memory-value-model",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 lexicographic column sort instead of the one value model recall uses"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 Second ordering beside decay_score; the janitor must import the read path's model."
         },
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/director_memory.rs:146 candidates feed the archive pass with no grace-period or low-confidence clause; reason not persisted at :65"
+          "evidence": "src-tauri/src/engine/director_memory.rs:65 The archive reason is parsed and discarded (parse_memory_archives pushes only the id, so it is not logged either), and archive_by_ids records only tier and updated_at; the candidate query also lacks the grace clause should_forget applies at memory_recall.rs:437."
+        },
+        {
+          "technique": "filter-at-the-id-door",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/director_memory.rs:86 Model-returned ids are intersected with the offered set before acting. Applied by analogy: the door here archives rather than loads."
         },
         {
           "technique": "memory-governance",
@@ -19963,8 +19967,21 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 Director archive candidates still ORDER BY importance/access_count/created_at, not the shared decay_score (src-tauri/db/src/memory_recall.rs:157), with no grace clause, and the archive reason is dropped (src-tauri/src/engine/director_memory.rs:65): the janitor ranks against recall and leaves no audit line",
+          "evaluatedAt": "2026-10-22T02:42:36.000Z",
+          "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+          "reason": "replaced by 8a0aea52-3f1c-40aa-abb9-f02337e865a8"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "8a0aea52-3f1c-40aa-abb9-f02337e865a8",
+        "state": "deviation",
+        "at": "2026-11-08T23:09:14.323630+00:00",
+        "reason": "reviewer (sonnet): The cleanup trigger is in src/features/companions/overseer/components/PersonaDetailModal.tsx, not in this context's sub_missionControl files, and none of those files call the Director memory cleanup or get_archivable_candidates (they only mention memory in comments or the memory-actions panel), so t"
+      }
     },
     "3c749d5b-3169-4ea8-8faa-98558f9b5df5/agent-memory": {
       "context": "shared-components-forms",
@@ -21707,11 +21724,17 @@
       "context": "companion-core-store",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:16.584Z",
-      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
-      "techniques": [],
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T23:07:59.453Z",
+      "worker": "8a0aea52-3f1c-40aa-abb9-f02337e865a8",
+      "techniques": [
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:505 Rule 'Empty is not broken, and the difference must be visible': the state holds no recall status, so failed and empty recall are one value; the budget-free floor count droppedFar exists but nothing marks failure."
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -21726,6 +21749,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/types.ts:5 UI-shape types that do not cross the IPC boundary; the memory pipeline lives in the Rust brain (companion-brain context)",
+          "evaluatedAt": "2026-10-22T19:48:16.584Z",
+          "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+          "reason": "replaced by 8a0aea52-3f1c-40aa-abb9-f02337e865a8"
         }
       ]
     },
@@ -45650,16 +45680,11 @@
       "context": "agents-components-allpersonas",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T03:40:21.487Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "ec636477-dd1e-420b-a510-cad4c2b3f0d6",
-        "state": "not-applicable",
-        "at": "2026-11-06T03:41:11.674772+00:00",
-        "reason": "reviewer (sonnet): The anchor (DirectorPanel.tsx:10) is a header comment that doesn't show memory is absent. It says the panel's `useDirector` hook reads portfolio, verdicts, brain and vault data, so the Director teaser touches a memory-like store. The absence search used narrow terms (recall, episode, memories, decay"
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T23:07:59.453Z",
+      "worker": "8a0aea52-3f1c-40aa-abb9-f02337e865a8",
+      "techniques": []
     },
     "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/test-harness": {
       "context": "plugins-dev-tools-lifecycle",

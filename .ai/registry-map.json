@@ -2672,7 +2672,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx:340 A case-insensitive search of allPersonas and create found no recall, episode, belief, decay or memories terms, and the only use of the word memory is this in-process config resolution, so the roster list has no agent-memory pipeline.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "table",
@@ -9657,13 +9661,12 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src/features/companions/athena/types.ts:5 UI-shape types that do not cross the IPC boundary; the memory pipeline lives in the Rust brain (companion-brain context)",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:505 The store's recall state has only a preview or null, and the preview type has no status field, so a retrieval error collapsed by .unwrap_or_default() in src-tauri/src/companion/prompt/recall.rs:27 arrives as an all-zero preview that RecallStrip.tsx:70 hides exactly like a genuinely empty recall, and the operator cannot tell amnesia from novelty.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53,
+          "revisionsBehind": 1
         },
         {
           "subject": "companion-runtime",
@@ -24422,11 +24425,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 Director archive candidates still ORDER BY importance/access_count/created_at, not the shared decay_score (src-tauri/db/src/memory_recall.rs:157), with no grace clause, and the archive reason is dropped (src-tauri/src/engine/director_memory.rs:65): the janitor ranks against recall and leaves no audit line",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-22"
         },
         {
           "subject": "quality-gates",
