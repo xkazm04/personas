@@ -154,7 +154,6 @@ pub async fn cancel_schema_proposal(
 /// `result.all_tables` / `result.missing`.
 #[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
 pub struct SchemaValidationResult {
     /// True when every expected table was found.
     pub valid: bool,
