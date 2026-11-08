@@ -46017,14 +46017,14 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-07",
-      "evaluatedTs": "2026-11-07T03:30:41.403Z",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T02:11:43.183Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "9a9f73df-3f58-4889-80fc-314cae8afb00",
+        "worker": "66a9455f-3812-435c-a9dc-28fbcec39e98",
         "state": "not-applicable",
-        "at": "2026-11-07T03:31:18.544351+00:00",
-        "reason": "reviewer (sonnet): The anchor index.ts:12 is only an export line, so it does not show that the context never reaches the native process. The context imports @/lib/connectors/connectorMeta, @/stores/themeStore and @/hooks/utility/interaction/useMotion, and I could not confirm those never reach the native process. It al"
+        "at": "2026-11-08T02:13:02.053981+00:00",
+        "reason": "reviewer (sonnet): The anchor index.ts:1 is only an export line, so it doesn't show the native capabilities are absent. The directory also holds files outside the listed ones (GlyphQuestionPanel, persona-layout, persona-sigil) that import VaultConnectorPicker and ActivityDiagramModal from other features, so 'pure rend"
       }
     },
     "d5c5e7fe-6353-41eb-800b-dc11adee0775/agent-cli-transport": {

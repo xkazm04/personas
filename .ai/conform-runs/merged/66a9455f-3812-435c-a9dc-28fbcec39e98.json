@@ -1,0 +1,50 @@
+{
+  "schema": "conform-run/1",
+  "worker": "66a9455f-3812-435c-a9dc-28fbcec39e98",
+  "subject": "native-shell-integration",
+  "evaluatedAt": "2026-11-08T02:11:43.183983+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "native-shell-integration",
+      "context": "teams-teamworkspace",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "native-shell-integration",
+      "context": "mastermind-popovers",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "native-shell-integration",
+      "context": "plugins-radio",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "native-shell-integration",
+      "context": "db",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "native-shell-integration",
+      "context": "shared-glyph",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor index.ts:1 is only an export line, so it doesn't show the native capabilities are absent. The directory also holds files outside the listed ones (GlyphQuestionPanel, persona-layout, persona-sigil) that import VaultConnectorPicker and ActivityDiagramModal from other features, so 'pure rend"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-08T02:11:43.183983+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "native-shell-integration"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "shared-glyph",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
