@@ -46461,6 +46461,58 @@
       "evaluatedTs": "2026-11-08T03:40:38.139Z",
       "worker": "900dce4b-0bd4-45a7-99ae-4e05519fb5e8",
       "techniques": []
+    },
+    "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/hitl-approval": {
+      "context": "api-overview",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:01:50.741Z",
+      "worker": "2f6fef47-4dda-4206-8690-41f767bd9494",
+      "techniques": [
+        {
+          "technique": "resume-after-decision",
+          "verdict": "deviation",
+          "evidence": "src/api/overview/reviews.ts:207 Approval resumes by re-deriving the action through a fresh LLM run (backend reviews.rs dispatch_review_action formats 'Carry out the chosen action now'), not by running a staged artifact byte for byte. The held-team-step and app-master branches are the exception."
+        },
+        {
+          "technique": "severity-sla-ladder",
+          "verdict": "deviation",
+          "evidence": "src/api/overview/reviews.ts:223 One deadline for every pending review. The same file buckets pending reviews by critical/warning/info (line 176), but the GC (manual_reviews.rs gc_stale_pending: WHERE status='pending' AND created_at < cutoff) ages critical items out on the same 7-day clock as info. There is no per-severity table and no hold rung."
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/api/overview/reviews.ts:197 The decision write takes an optional reason for every status, rejection included. The technique makes the reason mandatory on rejection. The call also carries no version or fingerprint of the reviewed content."
+        }
+      ]
+    },
+    "1d8a480b-eac4-4110-a60e-47a6ab281c97/hitl-approval": {
+      "context": "glyph-persona-card",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T04:01:50.741Z",
+      "worker": "2f6fef47-4dda-4206-8690-41f767bd9494",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/useComposeConfig.tsx:272 The user's explicit gate choice reaches the system only as a sentence for the LLM to interpret. The gated machine decides whether its own gate is armed."
+        },
+        {
+          "technique": "fail-closed-profile-for-headless",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/useComposeConfig.tsx:90 The default for a persona that will run on triggers with nobody watching is the open direction. Line 273 then tells the build 'Review: never — automatically publish without asking'. Closed-by-default is inverted."
+        },
+        {
+          "technique": "oracle-before-gate",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 Promotion sits behind a test run (glyphLayoutTypes testPassed/testOutputLines). Promoting past a failed test is a separate confirm modal, so the human decides against a named oracle."
+        }
+      ]
     }
   }
 }

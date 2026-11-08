@@ -5498,7 +5498,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/api/overview/reviews.ts:207 Choosing a review action records an approval and then re-runs the persona with a newly generated task to 'carry out' the choice (dispatch_review_action builds a prose task and calls execute_persona_inner), so what executes after approval was never staged or shown, which is the re-generation-after-approval defect.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:9adc955a19c6822e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "node-boot-and-declarative-bootstrap",
@@ -15969,7 +15973,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_glyph/useComposeConfig.tsx:272 The composer's Review toggle is never stored as a structured gate: it becomes a prose line appended to the build intent, and the build model's keyword heuristics decide whether a review gate exists (line 264). That is a prompt-level request, not a substrate gate.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:9adc955a19c6822e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "p2p-networking",
