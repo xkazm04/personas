@@ -14989,8 +14989,12 @@
           "revision": 3,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 This is a full-screen UI overlay that shows persona and agent activity (its header comment names the Activity, Blueprint, Conversations and Map views); it provisions and schedules no CI runners. I searched src/features/fleet/monitor for runs-on, self-hosted, autoscal, workflow_dispatch and actions/cache and found nothing. 'runner' does appear, but only as the dev_runner queue origin label in grid/board, which is agent work, not delivery runners.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:8119510164547576",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -15128,12 +15132,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:77 The grid manages Claude conversations and their terminal views; searches for runs-on, self-hosted and autoscaling returned no matches in its context directory, supporting absence of CI runner management here.",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:9f9c2122f589ed3d",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 The grid spawns, wakes and kills local Claude Code CLI sessions in a terminal UI; it is a fleet of agent sessions, not of CI runners. I searched src/features/plugins/fleet for runs-on, self-hosted, autoscal, workflow_dispatch, actions/cache and ephemeral and found nothing, so no runner-fleet technique has a construct to judge here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:8119510164547576",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "native-shell-integration",
@@ -31010,12 +31013,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:101 These tests exercise agent-session interfaces and terminal input; searches for runs-on, self-hosted and autoscaling returned no matches in the context directories, supporting absence of CI runner infrastructure here.",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:9f9c2122f589ed3d",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 These Vitest suites test the UI that manages local Claude Code sessions (where each tile sits in the grid, broadcast, harvest markdown), not CI runner machines; I searched src/features/plugins/fleet for runs-on, self-hosted, autoscal, workflow_dispatch, actions/cache and ephemeral and found nothing, so the runner-fleet precondition (machines that run delivery work) does not hold here.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:8119510164547576",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",

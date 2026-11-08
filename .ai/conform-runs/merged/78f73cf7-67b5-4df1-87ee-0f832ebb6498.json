@@ -1,0 +1,209 @@
+{
+ "schema": "conform-run/1",
+ "worker": "78f73cf7-67b5-4df1-87ee-0f832ebb6498",
+ "subject": "runner-fleet",
+ "evaluatedAt": "2026-11-08T04:33:31.693622+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "plugins-fleet-tests",
+   "subject": "runner-fleet",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 These Vitest suites test the UI that manages local Claude Code sessions (where each tile sits in the grid, broadcast, harvest markdown), not CI runner machines; I searched src/features/plugins/fleet for runs-on, self-hosted, autoscal, workflow_dispatch, actions/cache and ephemeral and found nothing, so the runner-fleet precondition (machines that run delivery work) does not hold here.",
+   "techniques": [
+    {
+     "technique": "capability-typed-queues",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 Tests cover the order of session tiles, not jobs matched to runner capabilities."
+    },
+    {
+     "technique": "ephemeral-versus-warm-runners",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 No runner is provisioned in this context."
+    },
+    {
+     "technique": "fleet-isolation-boundaries",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 No CI pools or repo-to-pool boundaries here."
+    },
+    {
+     "technique": "queue-depth-elasticity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 No runner scaling policy."
+    },
+    {
+     "technique": "shared-cache-integrity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 No build cache."
+    },
+    {
+     "technique": "shared-resource-serialization",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:3 No deploy or migration lanes."
+    }
+   ],
+   "absenceTerms": [
+    "runs-on",
+    "self-hosted",
+    "autoscal",
+    "workflow_dispatch",
+    "actions/cache"
+   ]
+  },
+  {
+   "context": "fleet-session-grid",
+   "subject": "runner-fleet",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 The grid spawns, wakes and kills local Claude Code CLI sessions in a terminal UI; it is a fleet of agent sessions, not of CI runners. I searched src/features/plugins/fleet for runs-on, self-hosted, autoscal, workflow_dispatch, actions/cache and ephemeral and found nothing, so no runner-fleet technique has a construct to judge here.",
+   "techniques": [
+    {
+     "technique": "capability-typed-queues",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 Admission here gates CLI session resumes, not delivery jobs on typed runners."
+    },
+    {
+     "technique": "ephemeral-versus-warm-runners",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 Hibernate/wake applies to agent sessions, not to the state of build machines."
+    },
+    {
+     "technique": "fleet-isolation-boundaries",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 No CI pools."
+    },
+    {
+     "technique": "queue-depth-elasticity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 No runner autoscaling."
+    },
+    {
+     "technique": "shared-cache-integrity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 No build cache."
+    },
+    {
+     "technique": "shared-resource-serialization",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:70 No deploy lock."
+    }
+   ],
+   "absenceTerms": [
+    "runs-on",
+    "self-hosted",
+    "autoscal",
+    "workflow_dispatch",
+    "actions/cache"
+   ]
+  },
+  {
+   "context": "fleet-monitor-shell",
+   "subject": "runner-fleet",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 This is a full-screen UI overlay that shows persona and agent activity (its header comment names the Activity, Blueprint, Conversations and Map views); it provisions and schedules no CI runners. I searched src/features/fleet/monitor for runs-on, self-hosted, autoscal, workflow_dispatch and actions/cache and found nothing. 'runner' does appear, but only as the dev_runner queue origin label in grid/board, which is agent work, not delivery runners.",
+   "techniques": [
+    {
+     "technique": "capability-typed-queues",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 A monitoring UI, with no job-to-runner matching."
+    },
+    {
+     "technique": "ephemeral-versus-warm-runners",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 No runner provisioning."
+    },
+    {
+     "technique": "fleet-isolation-boundaries",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 No CI pools."
+    },
+    {
+     "technique": "queue-depth-elasticity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 No runner scaling."
+    },
+    {
+     "technique": "shared-cache-integrity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 No build cache."
+    },
+    {
+     "technique": "shared-resource-serialization",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:1 No deploy serialization."
+    }
+   ],
+   "absenceTerms": [
+    "runs-on",
+    "self-hosted",
+    "autoscal",
+    "workflow_dispatch",
+    "actions/cache"
+   ],
+   "registryProposal": "The matcher pairs runner-fleet with these contexts because they share the token 'fleet' (a fleet of agent sessions or personas), while the subject is about CI runner machines. The registry map should stop pairing on 'fleet' alone, or require CI vocabulary (runs-on, workflow) before it pairs."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-08T04:33:31.693622+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "runner-fleet"
+   ],
+   "techniques": [
+    "capability-typed-queues",
+    "ephemeral-versus-warm-runners",
+    "fleet-isolation-boundaries",
+    "queue-depth-elasticity",
+    "shared-cache-integrity",
+    "shared-resource-serialization"
+   ],
+   "deviations": 0,
+   "context": "plugins-fleet-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T04:33:31.693622+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "runner-fleet"
+   ],
+   "techniques": [
+    "capability-typed-queues",
+    "ephemeral-versus-warm-runners",
+    "fleet-isolation-boundaries",
+    "queue-depth-elasticity",
+    "shared-cache-integrity",
+    "shared-resource-serialization"
+   ],
+   "deviations": 0,
+   "context": "fleet-session-grid",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T04:33:31.693622+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "runner-fleet"
+   ],
+   "techniques": [
+    "capability-typed-queues",
+    "ephemeral-versus-warm-runners",
+    "fleet-isolation-boundaries",
+    "queue-depth-elasticity",
+    "shared-cache-integrity",
+    "shared-resource-serialization"
+   ],
+   "deviations": 0,
+   "context": "fleet-monitor-shell",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
