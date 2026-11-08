@@ -8539,43 +8539,50 @@
       "context": "api-vault",
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:25:36.000Z",
-      "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T03:40:38.139Z",
+      "worker": "900dce4b-0bd4-45a7-99ae-4e05519fb5e8",
       "techniques": [
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:1205 validate_issuer_url judges only an IP literal in the string, never the resolved address. IPv6 private and unique-local ranges are not covered, the verdict is not bound to the connection, redirects are not re-judged, and the custom authorize_url/token_url branch (oauth.rs:2073) is not validated at all before the secret is sent."
+        },
         {
           "technique": "broker-proxy-attaches-secret",
           "verdict": "conformant",
-          "evidence": "src/api/vault/credentials.ts:84 preview healthcheck sends sessionEncryptedData; healthcheck/rotation/db queries pass credentialId and Rust attaches the secret; src/api/vault/oauthGatewayApi.ts:72 raw refresh_token IPC retired"
+          "evidence": "src/api/vault/rotation.ts:53 The UI-driven refresh sends only a credential id and the backend loads and attaches the token. The raw-refresh-token IPC door was retired (oauthGatewayApi.ts:65-72)."
         },
         {
           "technique": "omit-the-column-not-the-value",
           "verdict": "conformant",
-          "evidence": "src/api/vault/credentials.ts:21 list_credentials returns PersonaCredential, whose encrypted_data is serde-skipped (src-tauri/core/src/models/credential.rs:40); foraged values arrive masked (src-tauri/src/commands/credentials/foraging.rs:203)"
+          "evidence": "src/lib/bindings/OAuthStatusResult.ts:17 The poll contract has no token field at all, only booleans plus an opaque session ref, so no token value can reach the webview."
         },
         {
-          "technique": "outbound-fetch-destination-validation",
-          "verdict": "not-applicable",
-          "evidence": "src/api/vault/oauthGatewayApi.ts:61 forwards caller tokenUrl/oidcIssuer to Rust; the guard belongs at the Rust fetch door, where it is missing and recorded as the commands-credentials deviation (not double-counted here)"
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/crud.rs:69 The OAuth result the renderer brings back is an opaque id into a server-side session table and is redeemed server-side. This is the 'keep it server-side' arm of the technique."
         },
         {
           "technique": "public-vs-server-env-split",
           "verdict": "not-applicable",
-          "evidence": "src/api/vault/credentials.ts:1 every door is an IPC invoke; zero import.meta.env reads under src/api/vault"
+          "evidence": "src/api/vault/credentials.ts:1 every door is an IPC invoke; zero import.meta.env reads under src/api/vault",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "aggregate-view-not-base-table",
           "verdict": "not-applicable",
-          "evidence": "src/api/vault/credentials.ts:1 the webview reaches the store only through privileged IPC commands; no browser-held role key"
+          "evidence": "src/api/vault/credentials.ts:1 the webview reaches the store only through privileged IPC commands; no browser-held role key",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "default-deny-plus-defaulted-owner",
           "verdict": "not-applicable",
-          "evidence": "src/api/vault/credentials.ts:1 no row-policy store is browser-reachable"
+          "evidence": "src/api/vault/credentials.ts:1 no row-policy store is browser-reachable",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Upward lesson for an application (tauri--broker-proxy-attaches-secret): on a desktop shell the broker is the IPC command layer, and secrets typed into the webview cross it encrypted to a per-session public key (src-tauri/src/commands/credentials/crud.rs:31, src/features/vault/shared/hooks/health/useCredentialHealth.ts:216) - a stronger shape than the technique's same-origin route, worth teaching.",
       "superseded": [
         {
           "state": "conformant",
@@ -8590,6 +8597,13 @@
           "evaluatedAt": "2026-10-09T16:24:24.000Z",
           "worker": "0a06b266-72a8-44ea-9aac-b1d021f8a02c",
           "reason": "replaced by 24614e38-f160-48b2-ad89-8ffd559a3765"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/api/vault/credentials.ts:84 the only door carrying secret values sends them session-key encrypted (key minted at src-tauri/src/commands/credentials/crud.rs:31); every other door is id-only and the raw-token refresh door is retired (src/api/vault/oauthGatewayApi.ts:72)",
+          "evaluatedAt": "2026-10-10T11:25:36.000Z",
+          "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+          "reason": "replaced by 900dce4b-0bd4-45a7-99ae-4e05519fb5e8"
         }
       ]
     },
@@ -46196,42 +46210,37 @@
       "context": "supabase-sync-pipeline",
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "conformant",
       "evaluatedAt": "2026-11-08",
-      "evaluatedTs": "2026-11-08T00:57:18.990Z",
+      "evaluatedTs": "2026-11-08T03:40:38.139Z",
+      "worker": "900dce4b-0bd4-45a7-99ae-4e05519fb5e8",
       "techniques": [
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/cloud/sync/client.rs:5 Only SUPABASE_URL and SUPABASE_ANON_KEY are compiled in, and the code states they are public by design. No service-role key exists in app code; the service_role hits are user connector fields."
+        },
         {
           "technique": "omit-the-column-not-the-value",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/cloud/sync/rows.rs:11 Structural exclusion: the projections never read credential tables or per-device-encrypted columns (model_profile, notification_channels, payload_iv). The fleet-queue projection's field list is asserted exact in both directions."
+          "evidence": "src-tauri/src/cloud/sync/rows.rs:11 Vault tables, per-device ciphertext columns and payload_iv are excluded by shape. Residual: the persona_events payload is value-filtered by a denylist scrubber (key_is_secret plus token prefixes), not omitted."
         },
         {
           "technique": "default-deny-plus-defaulted-owner",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/cloud/sync/rows.rs:1319 The owner column defaults from the authenticated identity and the client never sends it, which a test locks in (rows.rs:1433 rows_never_send_user_id). The RLS policy SQL itself is not in this repo (supabase/ holds only .temp), so the policies-on-every-table half was not verified."
-        },
-        {
-          "technique": "public-vs-server-env-split",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/cloud/sync/client.rs:5 The only compiled-in credential (option_env SUPABASE_ANON_KEY) is declared at its use site as a public role selector, not a secret."
-        },
-        {
-          "technique": "broker-proxy-attaches-secret",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/client.rs:73 The dependency is public by design (anon key + user JWT under RLS). No privileged upstream credential needs a broker."
+          "evidence": "src-tauri/src/cloud/sync/rows.rs:14 The owner is defaulted from auth.uid() and deliberately omitted with a comment saying why, and a test enforces it (rows_never_send_user_id). The policy DDL lives in another repo, so the policy-coverage half was not verifiable here."
         },
         {
           "technique": "outbound-fetch-destination-validation",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/client.rs:21 The destination comes from build/deployment config (SUPABASE_URL), not from a response, so the technique's fixed-by-deployment exemption applies."
+          "evidence": "src-tauri/src/cloud/sync/client.rs:22 The destination is fixed by the deployment, which is the technique's own exclusion."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/client.rs:3 This is regime one by design: there is no privileged upstream to broker."
         }
-      ],
-      "withdrawn": {
-        "worker": "342d0f4c-6cc6-4864-bd28-1a06d837dcca",
-        "state": "conformant",
-        "at": "2026-11-08T00:58:18.994726+00:00",
-        "reason": "reviewer (sonnet): rows.rs:505 selects `payload, payload_iv` and rows.rs:403-412 decrypts and scrubs them (project_event_payload), so the claims that the writer \"never selects encrypted columns\" and never reads payload_iv are contradicted by the code; the RLS half was also not verified, since supabase/ has no policies"
-      }
+      ]
     },
     "2b61b648-d166-4255-b7b7-5d32ffdd6751/ci-execution-trust": {
       "context": "plugins-gitlab",
@@ -46442,6 +46451,16 @@
           "evidence": "src/features/fleet/monitor/monitorVisibility.ts:38 The overlay stays mounted for the whole session, and its cost is paid down by one visibility signal that gates polls, ticks (useElapsedTick.ts:53) and the Escape registration (useMonitorEscape enabled: visible)."
         }
       ]
+    },
+    "7f6d3238-7136-4361-af8f-bca556ae2042/browser-credential-boundary": {
+      "context": "mcp-server",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T03:40:38.139Z",
+      "worker": "900dce4b-0bd4-45a7-99ae-4e05519fb5e8",
+      "techniques": []
     }
   }
 }

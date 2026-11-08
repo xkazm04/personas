@@ -6006,14 +6006,13 @@
           "revision": 4,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/api/vault/credentials.ts:84 the only door carrying secret values sends them session-key encrypted (key minted at src-tauri/src/commands/credentials/crud.rs:31); every other door is id-only and the raw-token refresh door is retired (src/api/vault/oauthGatewayApi.ts:72)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:1295 The OAuth gateway behind oauthGatewayApi.ts takes an oidcIssuer from the webview and fetches its discovery document through SHARED_HTTP, which has no SSRF-safe resolver and follows redirects by default; the token_endpoint the discovery document returns gets only a string host-suffix check before the client_secret and auth code are POSTed to it through the same client, even though the repo already ships SSRF_SAFE_HTTP for exactly this case.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -21608,7 +21607,11 @@
           "revision": 4,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/mcp_bin.rs:102 personas-mcp is a stdio JSON-RPC sidecar with no browser client, no listening socket, no bundled public key and no web storage; a search of src-tauri/src/mcp_server for anon_key, VITE_, TcpListener and localStorage found none. Its vault reads go out as an outbound client to the app's loopback credential proxy (tools.rs bridge_proxy), so the boundary it touches is owned by the management API's context, not this one.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4
         },
         {
           "subject": "agent-memory",
@@ -37670,7 +37673,11 @@
           "revision": 4,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/cloud/sync/rows.rs:3 The sync writer is a deliberate regime-one client: it holds only the public anon key plus the user's JWT, its projections structurally never select vault or encrypted columns, and it omits user_id so the store defaults the owner from auth.uid().",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4
         },
         {
           "subject": "agent-memory",
