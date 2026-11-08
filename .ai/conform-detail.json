@@ -38028,42 +38028,50 @@
       "context": "companion-ui-controls",
       "subject": "trust-base",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-30",
-      "evaluatedTs": "2026-10-30T22:24:21.206Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T02:31:22.746Z",
+      "worker": "237802de-ecdd-42d8-a3e6-0c43cdbbe0b7",
       "techniques": [
         {
           "technique": "soundness-argument-names-its-dependencies",
           "verdict": "deviation",
-          "evidence": "tests/playwright/message-modal-features.spec.ts:61 This cast past a private member relies on companion-bridge.ts:135 and names neither that file nor that declaration. The same shape repeats at :225, :290 and :302, and none of those sites says why it is sound."
+          "evidence": "tests/playwright/message-modal-features.spec.ts:61 Reaches a private member through a double cast (four sites in this file). The private declaration at companion-bridge.ts:135 has no note saying specs depend on it."
         },
         {
           "technique": "census-counts-unmarked-members",
           "verdict": "deviation",
-          "evidence": "tests/playwright/template-marathon-fixtures.ts:218 JSON.parse returns the unchecked `any` type, and assigning it to an annotated variable asserts a shape without using an assertion keyword. A census that counts `as unknown as` does not see this member. Similar sites: discord-twin-1-setup.spec.ts:95, where untyped `parsed.error` is read, and preset-team-adoption.spec.ts:168."
+          "evidence": "tests/playwright/template-marathon-fixtures.ts:218 An unspelled member: JSON.parse returns `any`, which is assigned to a variable with a declared shape, with no `as` and no check. No type-aware lint in eslint.config.js counts this kind of flow."
         }
-      ],
-      "registryProposal": "The trust-base techniques are written for provers, `unsafe` code and marker implementations. In a TypeScript tree the closest equivalents are `as unknown as` and `any` returned from a decoder (JSON.parse). The census technique already covers the decoder case, but soundness-argument-names-its-dependencies could add an explicit TypeScript form: a cast that reaches past `private` depends on a declaration in another file.",
-      "withdrawn": {
-        "worker": "6714b487-b71d-402c-98e0-31be4431fb1f",
-        "state": "deviation",
-        "at": "2026-10-30T22:25:35.405505+00:00",
-        "reason": "reviewer (sonnet): The cited sites are real (the casts at message-modal-features.spec.ts:61, :225, :290 and :302, the private bridgeExec at companion-bridge.ts:135, and the JSON.parse at template-marathon-fixtures.ts:218), but the registry-map lists none of message-modal-features.spec.ts, companion-bridge.ts, template"
-      }
+      ]
     },
     "1ffb5765-de47-4f01-87ec-06732a63522c/trust-base": {
       "context": "i18n-generated",
       "subject": "trust-base",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T23:02:24.468Z",
-      "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T02:31:22.746Z",
+      "worker": "237802de-ecdd-42d8-a3e6-0c43cdbbe0b7",
       "techniques": [
         {
           "technique": "soundness-argument-names-its-dependencies",
           "verdict": "deviation",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:24 Safe fixture use depends on resolveErrorTranslated's restricted reads in src/i18n/useTranslatedError.ts:214; neither end identifies this dependency."
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:25 Double cast past the checker. It is safe only because of what useTranslatedError.ts:214 reads, and neither the cast site nor that line says so."
+        },
+        {
+          "technique": "trusted-leaf-gets-an-outside-test",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:31 Applied by analogy. reason_token is a raw String that no type checks (comment at :9). The test reads the real Rust source as an independent oracle and fails if the parse finds nothing. One gap: it compares whole sets with a single equality (:35) instead of asserting each direction separately."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:24 The partial fixture asserts the complete translation type without documenting its dependence on the resolver reading only error_registry.",
+          "evaluatedAt": "2026-10-21T23:02:24.468Z",
+          "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+          "reason": "replaced by 237802de-ecdd-42d8-a3e6-0c43cdbbe0b7"
         }
       ]
     },
@@ -38072,14 +38080,28 @@
       "subject": "trust-base",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T23:02:24.468Z",
-      "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T02:31:22.746Z",
+      "worker": "237802de-ecdd-42d8-a3e6-0c43cdbbe0b7",
       "techniques": [
         {
           "technique": "soundness-argument-names-its-dependencies",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 CrossProjectMetadataMap requires cross_project and total_projects; this fixture omits both and names no dependency on runPassportBuild reading only the supplied fields."
+          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The cast is safe only because of which fields usePassportData reads, and nothing says so. The stray top-level `relations` key suggests the fixture has already drifted from the type."
+        },
+        {
+          "technique": "census-counts-unmarked-members",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/passportHistory.ts:41 Fixes the problem by removing it: the JSON.parse result is decoded into `unknown` and then checked (also usePassportData.ts:64 with Array.isArray and a filter). The untyped decoder output never reaches typed code unchecked."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The fixture asserts a metadata type with required fields it omits, while leaving its dependence on the hook's narrower reads undocumented.",
+          "evaluatedAt": "2026-10-21T23:02:24.468Z",
+          "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+          "reason": "replaced by 237802de-ecdd-42d8-a3e6-0c43cdbbe0b7"
         }
       ]
     },
@@ -46284,6 +46306,22 @@
           "technique": "output-normalization",
           "verdict": "deviation",
           "evidence": "src-tauri/src/commands/fleet/headless.rs:665 The grok lane puts the prompt on the argument vector, against the rule that prompts travel over stdin. The claude and codex lanes do seed over stdin, with stderr kept separate and the write failure mapped to a spawn error (headless.rs:818-820). naming.rs:168 prefers the result field over the noisy stream."
+        }
+      ]
+    },
+    "a576c14f-1edd-4da4-8d11-527161a3b5b3/trust-base": {
+      "context": "teams-teamworkspace",
+      "subject": "trust-base",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-08",
+      "evaluatedTs": "2026-11-08T02:31:22.746Z",
+      "worker": "237802de-ecdd-42d8-a3e6-0c43cdbbe0b7",
+      "techniques": [
+        {
+          "technique": "soundness-argument-names-its-dependencies",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/useTeamStudioData.ts:90 A cast at a data boundary that depends on the shape design_context's writer produces. The site names no dependency, and the code does not turn it into a check: `title` and the other fields are never type-checked, and neither is the array."
         }
       ]
     }

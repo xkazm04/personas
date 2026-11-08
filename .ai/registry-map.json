@@ -10336,7 +10336,11 @@
           "revision": 6,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "tests/playwright/message-modal-features.spec.ts:61 The spec casts past the type checker to call `bridgeExec`, which is declared `private` at tests/playwright/companion-bridge.ts:135. The cast is safe only because of that distant declaration, and neither end records the dependency, so renaming the method or changing its signature in the bridge breaks this spec only at runtime.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:0fd52192b37a88e4",
+          "evaluatedRevision": 6
         },
         {
           "subject": "schema-driven-ui",
@@ -18618,12 +18622,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:24 The partial fixture asserts the complete translation type without documenting its dependence on the resolver reading only error_registry.",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:3ad9d5604e9627ce",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:25 The fixture claims a full `Translations` object but only fills `error_registry`. That is safe only because `resolveErrorTranslated` reads nothing but `t.error_registry` (src/i18n/useTranslatedError.ts:214). Neither the cast nor the resolver mentions this, so if the resolver starts reading another section, the cast still compiles and the test fails at runtime instead of type-checking.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:0fd52192b37a88e4",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 1
         },
         {
           "subject": "eval-harness",
@@ -26879,12 +26882,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The fixture asserts a metadata type with required fields it omits, while leaving its dependence on the hook's narrower reads undocumented.",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:3ad9d5604e9627ce",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The fixture claims to be a `CrossProjectMetadataMap` but leaves out the required `cross_project` and `total_projects` fields (src/api/devTools/devTools.ts:382) and adds a top-level `relations` key the type does not have. It works only because the hook reads just `projects` and `generated_at` (usePassportData.ts:174,180), and nothing records that dependence.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:0fd52192b37a88e4",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 1
         },
         {
           "subject": "cost-metering",
@@ -39709,7 +39711,11 @@
           "revision": 6,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/useTeamStudioData.ts:90 A DB column is cast to `DesignContextShape` with no stated invariant and no check. It is safe only if every writer of design_context stores an object with a `useCases` array. A JSON `null` passes the try block and then throws at `ctx.useCases` on line 94, which is outside the try.",
+          "evaluatedAt": "2026-11-08",
+          "evaluatedAgainst": "sha256-b2:0fd52192b37a88e4",
+          "evaluatedRevision": 6
         },
         {
           "subject": "plan-entitlements",
