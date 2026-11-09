@@ -44993,16 +44993,22 @@
       "context": "templates-n8n-steps",
       "subject": "hitl-approval",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-04",
-      "evaluatedTs": "2026-11-04T01:27:21.137Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "c118fd46-bf1c-4a0a-9c49-3616bbf1988b",
-        "state": "not-applicable",
-        "at": "2026-11-04T01:27:53.327418+00:00",
-        "reason": "reviewer (sonnet): The not-applicable rests on a grep that left out 'confirm', and the context still has human confirmation surfaces before the build handoff: the platform-confirmation banner (N8nParserResults, N8nImportTab) and the entity selection checkboxes. The cited SURFACED_STEPS line only shows that steps were "
-      }
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:26:47.290Z",
+      "worker": "de48188d-12d2-4de2-8d87-cb7ba6df542d",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_n8n/steps/N8nImportTab.tsx:56 The reducer records platformNeedsConfirmation (sessionReducer.ts:102), but the handoff guard reads only the parse. A guessed platform goes to the build as fact with the confirmation still pending. The stakes are low, since the handoff only seeds the build and is not irreversible."
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_n8n/steps/N8nImportTab.tsx:63 What continues is exactly the subset the user reviewed and left ticked, not the full parse, and n8nImportTabHandoff.test.tsx asserts it."
+        }
+      ]
     },
     "68e3a26f-d83a-447b-a2d0-ad875004506f/settings": {
       "context": "scraper",
@@ -48509,6 +48515,48 @@
       "evaluatedTs": "2026-11-09T22:58:42.979Z",
       "worker": "310510ab-1916-47da-899e-256febf80980",
       "techniques": []
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/hitl-approval": {
+      "context": "companions-page",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:26:47.290Z",
+      "worker": "de48188d-12d2-4de2-8d87-cb7ba6df542d",
+      "techniques": [
+        {
+          "technique": "review-queues",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/DecisionStage.tsx:164 Once every item is set aside, the queue shows 'Nothing waits on you.' while the rail still reports n waiting. The badge does not come from the same set the queue shows, and still-pending questions vanish from the decision surface without any write."
+        }
+      ]
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/hitl-approval": {
+      "context": "lib-credentials",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:26:47.290Z",
+      "worker": "de48188d-12d2-4de2-8d87-cb7ba6df542d",
+      "techniques": [
+        {
+          "technique": "unattended-mode",
+          "verdict": "deviation",
+          "evidence": "src/lib/credentials/remediationExecutor.ts:42 Auto-remediation goes around the gate, not through it. No enumerated, expiring grant authorizes rotation, and an action the standard counts as irreversible and externally visible runs on classifier output alone."
+        },
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/lib/credentials/remediationExecutor.ts:64 auto_disable switches off the user's own rotation policies directly. The event's 'pending' outcome is a bookkeeping field, not a gate, and only an OS notification follows."
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/lib/credentials/remediationBus.ts:63 This is the default arm of actionsForRemediation. A remediation value the client does not recognise (for example a new Rust variant arriving over IPC) gets no action and no notification, which looks the same as Healthy: the quietest bucket, with no marker."
+        }
+      ]
     }
   }
 }

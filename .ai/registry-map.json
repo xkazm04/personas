@@ -10605,7 +10605,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/DecisionStage.tsx:75 The decision stage keeps its own local list of items set aside with Space and hides them, while the rail badge (Rail.tsx:59, `const n = items.length;`) still counts every pending item, so the count and the queue disagree.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9adc955a19c6822e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "chat-transcript",
@@ -19836,7 +19840,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/credentials/remediationExecutor.ts:42 An anomaly-score classification rotates the credential at once, with no pending state, no human verdict and no scoped grant answering at a gate. The only record is an in-memory log capped at 100 entries (remediationBus.ts:146), lost on restart.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9adc955a19c6822e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "browser-credential-boundary",
@@ -42207,7 +42215,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_n8n/widgets/N8nWizardFooter.tsx:141 The Build Persona handoff appears as soon as a parse exists and never checks whether the low-confidence platform guess was confirmed, so the confirmation banner is a prompt, not a gate.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9adc955a19c6822e",
+          "evaluatedRevision": 23
         }
       ],
       "governance": "governed"
