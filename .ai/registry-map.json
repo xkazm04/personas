@@ -18952,7 +18952,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_lab/shared/index.ts:1 A case-insensitive search of src/features/agents/sub_lab/components/shared and src/features/agents/sub_lab/shared for memory, memories, recall, episode, episodic, belief and remember found no hits, and the barrel exports display primitives only, so this context holds no agent memory store or pipeline.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "eval-harness",
@@ -43908,7 +43912,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/triggerListTypes.ts:1 A case-insensitive search of sub_triggers, sub_cloud_webhooks, sub_dead_letter and sub_speed_limits for memory, memories, recall, episode, episodic, belief and remember found no hits, and the context's types describe trigger health and configuration, so it holds no agent memory store or pipeline.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "fleet-orchestration",

@@ -2418,3 +2418,5 @@
 {"ts":"2026-11-09T01:41:13.620546+00:00","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["episodic-capture","memory-governance"],"deviations":1,"context":"teams-goals","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-09T01:41:13.620546+00:00","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0,"context":"shared-components-layout","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-09T01:41:13.620546+00:00","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0,"context":"notepad-core","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-09T01:58:26.549106+00:00","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0,"context":"lab-shared-primitives","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-09T01:58:26.549106+00:00","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0,"context":"triggers-triggers","via":"curator-multi:claude","model":"claude-opus-5-5"}

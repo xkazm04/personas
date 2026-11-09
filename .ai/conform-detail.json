@@ -47386,6 +47386,26 @@
       "evaluatedTs": "2026-11-09T01:41:13.620Z",
       "worker": "c7d1af3c-7408-46f8-8c83-5f939c807524",
       "techniques": []
+    },
+    "ba0d4722-bfde-40aa-8e1d-52591719f834/agent-memory": {
+      "context": "lab-shared-primitives",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:58:26.549Z",
+      "worker": "856aad41-ff93-43b3-b07f-6180055db546",
+      "techniques": []
+    },
+    "0dabb588-48ce-4c35-b425-c344fd723ce7/agent-memory": {
+      "context": "triggers-triggers",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:58:26.549Z",
+      "worker": "856aad41-ff93-43b3-b07f-6180055db546",
+      "techniques": []
     }
   }
 }
