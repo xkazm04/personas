@@ -13271,7 +13271,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:332 The build prompt has the model resolve core_memories and the UI displays them, but no Rust code reads that field by name at promotion, so a memory reported as resolved never reaches the persona's store and nothing says so.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "test-harness",
@@ -33241,7 +33245,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:13 TeamMemory is injected into pipeline nodes, the idea scanner and Athena's reactions, yet a nullable run id is its only link to evidence, with no confidence, cited episodes, evidence author or superseded-by link, so these items are asserted as knowledge they cannot answer for.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "eval-harness",

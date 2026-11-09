@@ -47024,39 +47024,51 @@
       "context": "recipe-build-models",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "deviation",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T00:23:15.785Z",
+      "evaluatedTs": "2026-11-09T00:44:43.629Z",
+      "worker": "cf680eba-9560-4bb2-a3e2-c2a04c7ce7d7",
       "techniques": [
         {
           "technique": "consolidation",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/team_memory.rs:13 Optional run id is the only grounding; the struct and the team_memories schema have no episode provenance, no distiller confidence and no superseded-by, and several writers pass run_id None."
+          "evidence": "src-tauri/core/src/models/team_memory.rs:13 The model and the team_memories table have no provenance rows, confidence or supersedence; the repo's update overwrites title and content in place, and create is called directly from several writers."
         },
         {
           "technique": "memory-value-model",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/team_memory.rs:19 A writer-assigned integer is the whole value model: no trust axis, no per-kind half-life, no usage term. Recall and eviction do share this one axis, but ordering by a single property is the failure the technique names."
+          "evidence": "src-tauri/core/src/models/team_memory.rs:19 A single scalar is the whole value model: get_for_injection orders by importance then created_at, with no trust axis, age decay or usage term."
         },
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:481 Forgetting is a cap-triggered hard DELETE of the lowest static importance then oldest, with no last-use input, demotion tier or tombstone; only a log line records it."
+          "evidence": "src-tauri/core/src/models/team_memory.rs:44 One team-wide cap of 200, not per category; evict_excess hard-DELETEs by a column sort (importance, then created_at) with no demotion tier, value model or low-confidence clause. Manual rows are exempt, which is the one part realized."
+        },
+        {
+          "technique": "cross-context-promotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/recipe.rs:450 Lessons are 'promoted from charter memory by proposal' into a shared recipe, but a bare string cannot name the contexts that sighted it, and RecipeProvenance covers only recipes and templates. Judged on the shape; I found no Rust writer for this field."
+        },
+        {
+          "technique": "procedure-promotion",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/recipe.rs:397 Partial: minted id, status ladder, operator-gated first version and provenance are realized; invocation accounting and a retirement caller are not visible in this model."
         },
         {
           "technique": "memory-governance",
-          "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/team_memory.rs:20 Free-text tags are the only source stamp and writers use different shapes (useTeamPin.ts:28 JSON, useAutoTeam.ts:230 'seeded,...', manual_reviews.rs:657 'human-review,...'), so no uniform author-of-evidence field exists. The evolution gate below is the conformant half of this technique."
-        },
-        {
-          "technique": "pending-beliefs-live-apart",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/evolution.rs:96 A proposed persona change lives in its own proposal table and never on the live persona until approved."
+          "evidence": "src-tauri/core/src/models/evolution.rs:96 A change to the persona's standing prompt is human-gated, with no auto-promotion path; this covers the evolution lane only."
         },
         {
           "technique": "rejected-revision-leaves-its-evidence",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/evolution.rs:126 The proposal row and its evidence survive rejection, since the repo only updates status and decision_note and has no delete. Whether a later cycle reads rejected rows before re-proposing was not checked."
+          "evidence": "src-tauri/core/src/models/evolution.rs:124 Target, candidate genome and prompt, scores with threshold, and outcome persist; rejection is a status UPDATE, not a delete. I found no reader feeding rejections back to the proposer, so only the retention half is evidenced."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/evolution.rs:96 A proposed persona change lives in its own proposal table and never on the live persona until approved.",
+          "carriedFrom": "2026-11-09"
         },
         {
           "technique": "recall-injection",
@@ -47071,12 +47083,6 @@
           "carriedFrom": "2026-11-09"
         },
         {
-          "technique": "procedure-promotion",
-          "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/recipe.rs:396 A recipe earns a version only when the operator promotes it, and validation enforces both halves. These are catalog-authored procedures, so no observed-recurrence count applies to them.",
-          "carriedFrom": "2026-11-09"
-        },
-        {
           "technique": "episodic-capture",
           "verdict": "conformant",
           "evidence": "src-tauri/core/src/models/build_session.rs:346 The build result is written to the companion's episode log at a meaningful boundary, the terminal phase, not on a clock.",
@@ -47088,13 +47094,7 @@
           "evidence": "src-tauri/core/src/models/recipe_suggestion.rs:48 No run verdict is copied onto delivered items here. The accept rate counts only item-naming accept and dismiss events and leaves silent impressions out.",
           "carriedFrom": "2026-11-09"
         }
-      ],
-      "withdrawn": {
-        "worker": "c35ea5b3-30d0-4d49-9d50-919b5bb64b65",
-        "state": "deviation",
-        "at": "2026-11-09T00:23:48.362072+00:00",
-        "reason": "reviewer (sonnet): The verdict is about team_memory.rs, the team_memories repo and frontend writers, none of which are among this context's listed files (recipe.rs, build_session.rs and similar). I confirmed the struct fields and the cap-triggered DELETE, but not that this code belongs to the recipe-build-models conte"
-      }
+      ]
     },
     "9fff7e41-4fc5-4c31-846b-c04ca1c79757/agent-memory": {
       "context": "overview-incidents",
@@ -47152,6 +47152,75 @@
           "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/presets/gate/gateView.ts:105 This is a UI cache of sort and filter state per step, not an agent's operative state."
         }
       ]
+    },
+    "cd8712a3-9546-4c21-895b-9e64a4b161b1/agent-memory": {
+      "context": "engine-build-session",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T00:44:43.629Z",
+      "worker": "cf680eba-9560-4bb2-a3e2-c2a04c7ce7d7",
+      "techniques": [
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:332 Searched src-tauri for core_memories: only this prompt, the gate mapping in runner.rs, the UI cell in parser.rs and doc comments. The value survives only inside the opaque IR JSON. agent_ir.rs also marks memory_policy documentation-only at runtime."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:915 One episode at the terminal outcome, closed by a work boundary and stating success or failure. The body carries no pointer to the session's raw record."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:880 Covers only the automated-writer rule that a memory write never fails its caller; dedup and evidence-author handling were not established."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/cli_session_awareness/mod.rs:10 The CLI awareness block is a fresh ambient window over a live transcript, not recall from a memory store. It does collapse a read failure to an omitted block."
+        }
+      ],
+      "registryProposal": "loss-site-inventory walks paths from the store to the reader. A value a design step reports as resolved and that promotion never writes is the same silent loss one step earlier, and the technique could name that write-side site."
+    },
+    "895b4bb2-16fd-4e8e-aae8-11315fe6436b/agent-memory": {
+      "context": "api-agents",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T00:44:43.629Z",
+      "techniques": [
+        {
+          "technique": "working-memory",
+          "verdict": "deviation",
+          "evidence": "src/api/agents/chat.ts:53 The column exists and is preserved by COALESCE but is never populated. build_summary is a truncated tail of messages, which is accumulation, not a synthesized state of goal, constraints, decisions and open threads."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "conformant",
+          "evidence": "src/api/companion.ts:1614 Judged at the IPC contract: items are typed add, update or contradict and carry sources, confidence and a supersede link. The read-back of citations lives in the backend and was not judged."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/api/companion.ts:1548 A correction to an identity claim is itself recorded and takes effect through an approval, matching the human-gated lane; judged at the contract."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src/api/companion.ts:1617 Proposals live in companion_consolidation_item, apart from live facts, and get a fact id only once applied. Resolved rows stay with a status rather than leaving, and each carries a confidence number; the technique asks otherwise on both."
+        }
+      ],
+      "registryProposal": "pending-beliefs-live-apart says the pending row is deleted after the nod so its count cannot lie. A proposal table that keeps resolved rows as the audit ledger and counts pending by status keeps the failure direction the technique argues for, so the rule may be stricter than its reason.",
+      "withdrawn": {
+        "worker": "cf680eba-9560-4bb2-a3e2-c2a04c7ce7d7",
+        "state": "deviation",
+        "at": "2026-11-09T00:45:22.741950+00:00",
+        "reason": "reviewer (sonnet): The chat.ts working-memory finding holds (workingMemory is never populated, chat_turn.rs:472 and :663 write None), but three of the technique anchors (src/api/companion.ts:1548, :1614 and :1617) are in the companion IPC module. That module is outside the api-agents files, so those parts of the verdi"
+      }
     }
   }
 }

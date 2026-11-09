@@ -1,0 +1,157 @@
+{
+  "schema": "conform-run/1",
+  "worker": "cf680eba-9560-4bb2-a3e2-c2a04c7ce7d7",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-11-09T00:44:43.629962+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "recipe-build-models",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/team_memory.rs:13 TeamMemory is injected into pipeline nodes, the idea scanner and Athena's reactions, yet a nullable run id is its only link to evidence, with no confidence, cited episodes, evidence author or superseded-by link, so these items are asserted as knowledge they cannot answer for.",
+      "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:13 The model and the team_memories table have no provenance rows, confidence or supersedence; the repo's update overwrites title and content in place, and create is called directly from several writers."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:19 A single scalar is the whole value model: get_for_injection orders by importance then created_at, with no trust axis, age decay or usage term."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:44 One team-wide cap of 200, not per category; evict_excess hard-DELETEs by a column sort (importance, then created_at) with no demotion tier, value model or low-confidence clause. Manual rows are exempt, which is the one part realized."
+        },
+        {
+          "technique": "cross-context-promotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/recipe.rs:450 Lessons are 'promoted from charter memory by proposal' into a shared recipe, but a bare string cannot name the contexts that sighted it, and RecipeProvenance covers only recipes and templates. Judged on the shape; I found no Rust writer for this field."
+        },
+        {
+          "technique": "procedure-promotion",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/recipe.rs:397 Partial: minted id, status ladder, operator-gated first version and provenance are realized; invocation accounting and a retirement caller are not visible in this model."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/evolution.rs:96 A change to the persona's standing prompt is human-gated, with no auto-promotion path; this covers the evolution lane only."
+        },
+        {
+          "technique": "rejected-revision-leaves-its-evidence",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/evolution.rs:124 Target, candidate genome and prompt, scores with threshold, and outcome persist; rejection is a status UPDATE, not a delete. I found no reader feeding rejections back to the proposer, so only the retention half is evidenced."
+        }
+      ]
+    },
+    {
+      "context": "engine-build-session",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:332 The build prompt has the model resolve core_memories and the UI displays them, but no Rust code reads that field by name at promotion, so a memory reported as resolved never reaches the persona's store and nothing says so.",
+      "techniques": [
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:332 Searched src-tauri for core_memories: only this prompt, the gate mapping in runner.rs, the UI cell in parser.rs and doc comments. The value survives only inside the opaque IR JSON. agent_ir.rs also marks memory_policy documentation-only at runtime."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:915 One episode at the terminal outcome, closed by a work boundary and stating success or failure. The body carries no pointer to the session's raw record."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:880 Covers only the automated-writer rule that a memory write never fails its caller; dedup and evidence-author handling were not established."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/cli_session_awareness/mod.rs:10 The CLI awareness block is a fresh ambient window over a live transcript, not recall from a memory store. It does collapse a read failure to an omitted block."
+        }
+      ],
+      "registryProposal": "loss-site-inventory walks paths from the store to the reader. A value a design step reports as resolved and that promotion never writes is the same silent loss one step earlier, and the technique could name that write-side site."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "companions-page",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "teams-goals",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "api-agents",
+      "reason": "withdrawn after review: reviewer (sonnet): The chat.ts working-memory finding holds (workingMemory is never populated, chat_turn.rs:472 and :663 write None), but three of the technique anchors (src/api/companion.ts:1548, :1614 and :1617) are in the companion IPC module. That module is outside the api-agents files, so those parts of the verdi"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-09T00:44:43.629962+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "cross-context-promotion",
+        "decay-and-forgetting",
+        "memory-governance",
+        "memory-value-model",
+        "procedure-promotion",
+        "rejected-revision-leaves-its-evidence"
+      ],
+      "deviations": 1,
+      "context": "recipe-build-models",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T00:44:43.629962+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "episodic-capture",
+        "loss-site-inventory",
+        "memory-governance",
+        "recall-injection"
+      ],
+      "deviations": 1,
+      "context": "engine-build-session",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T00:44:43.629962+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "memory-governance",
+        "pending-beliefs-live-apart",
+        "working-memory"
+      ],
+      "deviations": 1,
+      "context": "api-agents",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
