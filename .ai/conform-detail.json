@@ -34505,24 +34505,33 @@
       "subject": "page-load-pipeline",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T22:50:22.837Z",
-      "worker": "9db249ab-0dc0-4525-b039-4ab65687fe88",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:48:21.379Z",
+      "worker": "2e5866ab-7396-426d-b342-f097b7675bae",
       "techniques": [
         {
           "technique": "layout-stability-by-reservation",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:272 The pending branch renders one checking row; the resolved branch renders statistics, an optional peer-ID footer and metrics panels without a matching reserved slot."
-        },
-        {
-          "technique": "navigation-reuse",
-          "verdict": "not-applicable",
-          "evidence": "src/features/settings/search/useSettingsSearchEntries.tsx:75 Settings navigation changes application state within the current document; the standard assigns this warm-return mechanism to the shell."
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:271 The not-yet placeholder is one row, but the loaded state at :293 is `grid grid-cols-2 sm:grid-cols-4` plus MetricsSections. This is the first section of the tab, so everything below it moves. By contrast, PeerList's PeerScanSkeleton (PeerList.tsx:254) is geometry-matched to PeerCard, which is the right shape."
         },
         {
           "technique": "script-cost-is-main-thread-time",
           "verdict": "conformant",
-          "evidence": "src/features/settings/components/SettingsPage.tsx:16 The network settings module is split from sibling settings tabs and requested when mounted; this establishes route splitting, without claiming measured long-task performance."
+          "evidence": "src/features/settings/components/SettingsPage.tsx:17 Every settings tab, including the network/bundle surface, is split out of the Settings first load and only mounted on first visit."
+        },
+        {
+          "technique": "navigation-reuse",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/components/SettingsPage.tsx:46 Tab switches never leave the document (packaged single-document shell). The technique excludes that case: within the document, warm return is the shell's concern, and here it is handled by the mounted-tab set plus the module cache."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:273 The initial checking row reserves no matching space for the subsequent statistics grid and metrics panels, so resolving the network snapshot changes the height above later settings sections.",
+          "evaluatedAt": "2026-10-17T22:50:22.837Z",
+          "worker": "9db249ab-0dc0-4525-b039-4ab65687fe88",
+          "reason": "replaced by 2e5866ab-7396-426d-b342-f097b7675bae"
         }
       ]
     },
@@ -41891,28 +41900,23 @@
       "context": "shared-components-layout",
       "subject": "page-load-pipeline",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T22:16:01.945Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:48:21.379Z",
+      "worker": "2e5866ab-7396-426d-b342-f097b7675bae",
       "techniques": [
         {
           "technique": "layout-stability-by-reservation",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:87 Late content gets no reserved space by default, and no caller overrides that. The route header skeleton does reserve true geometry (ContentHeaderSkeleton.tsx:14). The body variant at RouteChunkSkeleton.tsx:47 is a fixed 5x56 silhouette not taken from the loaded content, and its own docstring forbids that."
+          "evidence": "src/features/shared/components/layout/ContentHeaderSkeleton.tsx:47 This is the 'one placeholder per slot, derive its size from the same source' failure: the class lists are copied rather than shared (see the comment at :19-20). The two drifted, with --head-h on one side and py-4 plus two stacked lines on the other, so the reservation no longer matches the loaded geometry. RouteChunkSkeleton.tsx:16 still promises the swap 'moves nothing'."
         },
         {
           "technique": "script-cost-is-main-thread-time",
           "verdict": "conformant",
-          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:128 Heavy or below-fold trees, and lazy() chunks via `suspend`, stay out of the first commit and mount when the main thread is idle, with a timeout cap. This fits the packaged-shell emphasis on main-thread cost."
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:6 DeferUntilIdle moves heavy below-fold subtrees out of the first commit, using requestIdleCallback (500ms timeout) or next-frame, with an optional stagger. The work is deferred rather than time-budget chunked, but that is the 'move it out of the first load' half of the rule."
         }
       ],
-      "registryProposal": "The layout-stability technique could name the deferred-mount primitive with a null default fallback (render nothing until idle) as its own failure mode. It is the idle-deferral version of 'lazily mounted section taller than its placeholder', and it is easy to miss because the primitive's own docs claim it causes no shift.",
-      "withdrawn": {
-        "worker": "60f30672-a0fa-466c-b05a-650f5fd0e0da",
-        "state": "deviation",
-        "at": "2026-10-24T22:16:38.174732+00:00",
-        "reason": "reviewer (sonnet): The code supports the claim: DeferUntilIdle.tsx:87 defaults `fallback = null`, and all 9 call sites I found pass no fallback. But DeferUntilIdle.tsx is not among this context's 12 listed files, and the 9 call sites are in other features (companions, overview, home). The verdict is therefore about th"
-      }
+      "registryProposal": "For a packaged shell, the only techniques here that bite at component level are layout-stability-by-reservation and script-cost. Discovery, priority hints, font origin, field budgets and bfcache are all excluded by the golden path's own 'packaged shell' section. The subject could say plainly that in-shell lazy-chunk fallbacks are judged on reservation alone, so seats stop mapping web-document techniques onto React components."
     },
     "8a57c65c-06fd-45c9-9d32-d50c89c4c705/test-input-generation": {
       "context": "template-generation",

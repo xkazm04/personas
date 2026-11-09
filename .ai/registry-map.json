@@ -34746,13 +34746,12 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:273 The initial checking row reserves no matching space for the subsequent statistics grid and metrics panels, so resolving the network snapshot changes the height above later settings sections.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:f51109a4fa17ac48",
-          "evaluatedRevision": 3,
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:271 Until the first network snapshot arrives, NetworkDashboard shows a single p-4 'checking network' row. When the snapshot lands, that row is replaced by a 2/4-column stat grid plus metric sections that are much taller, so IdentitySettings and the Exposed Resources SectionCard, rendered below it in ExposureManager.tsx:328-334, get pushed down even though the reader asked for nothing.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:6eb078a45499ad8a",
+          "evaluatedRevision": 5,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         },
         {
           "subject": "quality-gates",
@@ -35617,7 +35616,11 @@
           "revision": 5,
           "changedAt": "2026-10-31",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/layout/ContentHeaderSkeleton.tsx:47 ContentHeaderSkeleton calls itself the 'skeleton twin' of ContentHeader and restates the header's geometry by hand: a py-4 padded, tinted two-line band (typo-caption over typo-heading-lg at :63-:70). The real header was restyled on 2026-11-06 into a single-row instrument bar with `minHeight: var(--head-h)`, `px-[var(--gutter-page)]` and no vertical padding (ContentLayout.tsx:152-153). The skeleton was last changed 2026-08-13, so every slow lazy route that shows the RouteChunkSkeleton header ghost changes height when the real header swaps in.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:6eb078a45499ad8a",
+          "evaluatedRevision": 5
         },
         {
           "subject": "long-form-reading-surface",
