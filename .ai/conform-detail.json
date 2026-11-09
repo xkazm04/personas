@@ -47427,6 +47427,63 @@
         "at": "2026-11-09T02:18:52.869657+00:00",
         "reason": "reviewer (sonnet): The anchor at agentStore.ts:50 is only a comment about narrow rehydration, so it does not show that agent memory is absent. The evidence also admits that storeTypes.ts, which is in this context, composes a MemorySlice from slices/overview/memorySlice. I did not open that slice, so I could not confir"
       }
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/test-harness": {
+      "context": "i18n",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T02:33:16.445Z",
+      "worker": "dfc03743-1a8d-40d2-8bf9-506492fabfce",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/i18n/__tests__/unloadedSectionFallback.test.ts:32 The name states the crash fix, but the read is on a plain data object and never goes through the t proxy, getResolvedSection or shapeFor. Those names appear in tests only in a comment at routeSectionCoverage.test.ts:70, and src/test/setup.ts seeds the shared section the crash came from."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:23 The needle needs a full const declaration with type and value, which the doc comments in the Rust block do not contain. The block regex tolerates CRLF, and the same file declares a floor of 13 at line 31."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/lib/__tests__/tauriInvoke.gitlabDeployTimeout.test.ts:32 The timeout claim is proved on fake timers by asserting the call is still pending past the budget, so machine load cannot change the result."
+        }
+      ]
+    },
+    "a8857307-216c-46e0-9571-e05e8cf06112/test-harness": {
+      "context": "agents-components-allpersonas",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T02:33:16.445Z",
+      "worker": "dfc03743-1a8d-40d2-8bf9-506492fabfce",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/__tests__/PersonaGroupDropRail.test.tsx:30 The describe claims agreement with the roster, but the roster is never rendered and counts are compared with hard-coded values. usePersonaListFilters.test.ts:28 injects its own isArchived, so the page's predicate at PersonaOverviewPage.tsx:128 is not covered either."
+        },
+        {
+          "technique": "proved-off-the-path",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/allPersonas/PersonaGroupDropRail.tsx:50 The rail production code calls the tested predicate, so the rail half is on the path. The list filter is the half that does not adopt it."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/allPersonas/__tests__/usePersonaActions.batchDelete.test.tsx:38 The guard is driven through the real hook and the real confirm modal; only the API edge and the blast-radius panel are mocked."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/create/__tests__/useTemplateIntentMatch.test.ts:40 Latest-wins is proved by resolving deferred promises in a chosen order, so the ordering does not depend on elapsed time."
+        }
+      ]
     }
   }
 }

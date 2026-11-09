@@ -1,0 +1,115 @@
+{
+ "schema": "conform-run/1",
+ "worker": "dfc03743-1a8d-40d2-8bf9-506492fabfce",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-09T02:33:16.445531+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "i18n",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/i18n/useTranslation.ts:393 This line is the production fix for the two-level crash on an unloaded section, but the test file written for that crash imports only the generated SECTION_SHAPES table, so reverting this line to the empty fallback leaves all five of its tests green (read, not run; incidental coverage from component tests on unseeded sections was not measured).",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/i18n/__tests__/unloadedSectionFallback.test.ts:32 The name states the crash fix, but the read is on a plain data object and never goes through the t proxy, getResolvedSection or shapeFor. Those names appear in tests only in a comment at routeSectionCoverage.test.ts:70, and src/test/setup.ts seeds the shared section the crash came from."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:23 The needle needs a full const declaration with type and value, which the doc comments in the Rust block do not contain. The block regex tolerates CRLF, and the same file declares a floor of 13 at line 31."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/lib/__tests__/tauriInvoke.gitlabDeployTimeout.test.ts:32 The timeout claim is proved on fake timers by asserting the call is still pending past the budget, so machine load cannot change the result."
+    }
+   ]
+  },
+  {
+   "context": "agents-components-allpersonas",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:152 The roster's list filter keeps its own archived check while rosterCount.ts says the pipeline shares inLifecyclePopulation, and no test compares the two, so the rail and header counts can drift from the listed rows with the suite green (read, not run).",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/components/allPersonas/__tests__/PersonaGroupDropRail.test.tsx:30 The describe claims agreement with the roster, but the roster is never rendered and counts are compared with hard-coded values. usePersonaListFilters.test.ts:28 injects its own isArchived, so the page's predicate at PersonaOverviewPage.tsx:128 is not covered either."
+    },
+    {
+     "technique": "proved-off-the-path",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/components/allPersonas/PersonaGroupDropRail.tsx:50 The rail production code calls the tested predicate, so the rail half is on the path. The list filter is the half that does not adopt it."
+    },
+    {
+     "technique": "a-test-helper-is-a-fork-of-the-driver",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/components/allPersonas/__tests__/usePersonaActions.batchDelete.test.tsx:38 The guard is driven through the real hook and the real confirm modal; only the API edge and the blast-radius panel are mocked."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/components/create/__tests__/useTemplateIntentMatch.test.ts:40 Latest-wins is proved by resolving deferred promises in a chosen order, so the ordering does not depend on elapsed time."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "commands-contest",
+   "reason": "evidence leans on fleet/stale.rs, which is not a tracked file"
+  },
+  {
+   "subject": "test-harness",
+   "context": "companions-page",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "agents-connectors",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-09T02:33:16.445531+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "i18n",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-09T02:33:16.445531+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "a-test-helper-is-a-fork-of-the-driver",
+    "assert-the-schedule-not-the-stopwatch",
+    "proved-off-the-path",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "agents-components-allpersonas",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

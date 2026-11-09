@@ -2713,7 +2713,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:152 The roster's list filter keeps its own archived check while rosterCount.ts says the pipeline shares inLifecyclePopulation, and no test compares the two, so the rail and header counts can drift from the listed rows with the suite green (read, not run).",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "agent-instruction-files",
@@ -18300,7 +18304,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/i18n/useTranslation.ts:393 This line is the production fix for the two-level crash on an unloaded section, but the test file written for that crash imports only the generated SECTION_SHAPES table, so reverting this line to the empty fallback leaves all five of its tests green (read, not run; incidental coverage from component tests on unseeded sections was not measured).",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "translation-pipeline-topology",
