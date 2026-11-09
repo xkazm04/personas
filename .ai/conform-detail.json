@@ -43699,22 +43699,22 @@
       "context": "home-learning",
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T05:01:40.646Z",
+      "evaluatedTs": "2026-11-09T05:19:33.703Z",
+      "worker": "a527b7b7-262a-46d2-8016-4b9b5f60a9a3",
       "techniques": [
         {
           "technique": "instruction-freshness",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_releases/LiveRoadmapStatusPill.tsx:4 Freshness here describes roadmap content shown to a person, not lines an agent trusts; the registry map's 'freshness' and 'bundled' tokens are word collisions."
+          "evidence": "src/features/home/sub_releases/LiveRoadmapStatusPill.tsx:4 Freshness describes a roadmap cache state for human readers, not dated claims inside a file an agent trusts over its own investigation."
+        },
+        {
+          "technique": "capability-coverage-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_learning/powerMoves/registry.ts:11 The power-move registry names product features for a person and routes them to a screen; no agent plans from it."
         }
-      ],
-      "withdrawn": {
-        "worker": "907bb448-14bf-4124-969a-2154320754bf",
-        "state": "not-applicable",
-        "at": "2026-11-09T05:02:02.919395+00:00",
-        "reason": "reviewer (sonnet): The anchor registry.ts:11 is a doc comment about PowerMoveNav routing types and doesn't show that no agent instruction file exists, so this not-applicable rests on an incidental line."
-      }
+      ]
     },
     "1db5c86e-3237-4d2a-8e2f-1426d680757c/voice-io": {
       "context": "lib-execution",
@@ -48210,6 +48210,64 @@
       "evaluatedTs": "2026-11-09T05:12:26.264Z",
       "worker": "1ec3112b-a083-40b9-b1c0-112f07da06f8",
       "techniques": []
+    },
+    "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/agent-instruction-files": {
+      "context": "fleet-monitor-shell",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:19:33.703Z",
+      "worker": "a527b7b7-262a-46d2-8016-4b9b5f60a9a3",
+      "techniques": [
+        {
+          "technique": "capability-coverage-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:1 The grid lists persona capabilities for a person to click; it is not a planning instruction whose named set must equal a runtime's tools."
+        },
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/useMonitorData.ts:1122 The hook dispatches a persona run but creates no directory here; 'worktree' has zero hits in this context's listed files, so no generated workspace inherits a brief from this code."
+        }
+      ]
+    },
+    "8a57c65c-06fd-45c9-9d32-d50c89c4c705/agent-instruction-files": {
+      "context": "template-generation",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:19:33.703Z",
+      "worker": "a527b7b7-262a-46d2-8016-4b9b5f60a9a3",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:18 This is a minimum-length form validation on a per-run brief; an admission test priced across every session has nothing to act on."
+        },
+        {
+          "technique": "machine-owned-regions",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:72 The parser reads a pasted markdown list into in-memory cases; it writes no generated block into a hand-written instruction file."
+        }
+      ]
+    },
+    "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/agent-instruction-files": {
+      "context": "vault-shared-playground",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:19:33.703Z",
+      "worker": "a527b7b7-262a-46d2-8016-4b9b5f60a9a3",
+      "techniques": [
+        {
+          "technique": "sibling-floor-ownership",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:107 Tool discovery is a button a person presses in the playground; these results take no share of a session's discovery budget in this code."
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,177 @@
+{
+ "schema": "conform-run/1",
+ "worker": "a527b7b7-262a-46d2-8016-4b9b5f60a9a3",
+ "subject": "agent-instruction-files",
+ "evaluatedAt": "2026-11-09T05:19:33.703005+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "fleet-monitor-shell",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:3 The word 'capabilities' here means persona charters shown as run buttons on an operator overlay, and the 34 listed files contain no instruction-file vocabulary; the CLAUDE.md, .claude/ and skill hits under the directory are all in monitor/grid and monitor/channels, outside this context's file list, so the shell has no instruction file to judge.",
+   "techniques": [
+    {
+     "technique": "capability-coverage-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:1 The grid lists persona capabilities for a person to click; it is not a planning instruction whose named set must equal a runtime's tools."
+    },
+    {
+     "technique": "workspace-ancestry-isolation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/useMonitorData.ts:1122 The hook dispatches a persona run but creates no directory here; 'worktree' has zero hits in this context's listed files, so no generated workspace inherits a brief from this code."
+    }
+   ],
+   "absenceTerms": [
+    "AGENTS.md",
+    "SKILL.md",
+    "GEMINI.md",
+    "copilot-instructions",
+    ".cursorrules"
+   ]
+  },
+  {
+   "context": "home-learning",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:7 'Freshness' here is the network status of a roadmap payload shown to a person, and neither the 19 listed files nor their directories contain any instruction-file vocabulary, so nothing in this context is delivered to a coding agent as a standing brief.",
+   "techniques": [
+    {
+     "technique": "instruction-freshness",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_releases/LiveRoadmapStatusPill.tsx:4 Freshness describes a roadmap cache state for human readers, not dated claims inside a file an agent trusts over its own investigation."
+    },
+    {
+     "technique": "capability-coverage-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_learning/powerMoves/registry.ts:11 The power-move registry names product features for a person and routes them to a screen; no agent plans from it."
+    }
+   ],
+   "absenceTerms": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "SKILL.md",
+    "GEMINI.md",
+    ".cursorrules"
+   ]
+  },
+  {
+   "context": "template-generation",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:86 'Instruction' here is a one-off design brief per test case rather than a repo-owned always-loaded file, and the 9 listed files and their directories contain no instruction-file vocabulary, so the subject's precondition does not hold; how such a brief is assembled would be a prompt-assembly question.",
+   "techniques": [
+    {
+     "technique": "line-earning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:18 This is a minimum-length form validation on a per-run brief; an admission test priced across every session has nothing to act on."
+    },
+    {
+     "technique": "machine-owned-regions",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:72 The parser reads a pasted markdown list into in-memory cases; it writes no generated block into a hand-written instruction file."
+    }
+   ],
+   "absenceTerms": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "SKILL.md",
+    "GEMINI.md",
+    ".cursorrules"
+   ]
+  },
+  {
+   "context": "vault-shared-playground",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:44 MCP tools are listed per credential inside a modal for a person testing a connector, not published into an agent's session listing, and the 37 listed files and their directories contain no instruction-file vocabulary, so this context has no always-loaded floor to judge.",
+   "techniques": [
+    {
+     "technique": "sibling-floor-ownership",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:107 Tool discovery is a button a person presses in the playground; these results take no share of a session's discovery budget in this code."
+    }
+   ],
+   "absenceTerms": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "SKILL.md",
+    "GEMINI.md",
+    ".cursorrules"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-instruction-files",
+   "context": "teams-goals",
+   "reason": "evidence leans on goals/triage/triageModel.ts, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-09T05:19:33.703005+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [
+    "capability-coverage-contract",
+    "workspace-ancestry-isolation"
+   ],
+   "deviations": 0,
+   "context": "fleet-monitor-shell",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-09T05:19:33.703005+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [
+    "capability-coverage-contract",
+    "instruction-freshness"
+   ],
+   "deviations": 0,
+   "context": "home-learning",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-09T05:19:33.703005+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [
+    "line-earning",
+    "machine-owned-regions"
+   ],
+   "deviations": 0,
+   "context": "template-generation",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-09T05:19:33.703005+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [
+    "sibling-floor-ownership"
+   ],
+   "deviations": 0,
+   "context": "vault-shared-playground",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

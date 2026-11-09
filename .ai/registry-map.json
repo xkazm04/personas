@@ -15004,8 +15004,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:3 The word 'capabilities' here means persona charters shown as run buttons on an operator overlay, and the 34 listed files contain no instruction-file vocabulary; the CLAUDE.md, .claude/ and skill hits under the directory are all in monitor/grid and monitor/channels, outside this context's file list, so the shell has no instruction file to judge.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "test-harness",
@@ -16686,7 +16690,11 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "priorNotApplicable": 18,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:7 'Freshness' here is the network status of a roadmap payload shown to a person, and neither the 19 listed files nor their directories contain any instruction-file vocabulary, so nothing in this context is delivered to a coding agent as a standing brief.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "retrieval",
@@ -41018,8 +41026,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:86 'Instruction' here is a one-off design brief per test case rather than a repo-owned always-loaded file, and the 9 listed files and their directories contain no instruction-file vocabulary, so the subject's precondition does not hold; how such a brief is assembled would be a prompt-assembly question.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "generated-workflow-candidates",
@@ -46459,8 +46471,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:44 MCP tools are listed per credential inside a modal for a person testing a connector, not published into an agent's session listing, and the 37 listed files and their directories contain no instruction-file vocabulary, so this context has no always-loaded floor to judge.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "structured-output",
