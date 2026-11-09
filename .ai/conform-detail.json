@@ -47638,6 +47638,120 @@
           "evidence": "src/features/companions/athena/__tests__/AthenaAssignmentCards.test.tsx:7 An in-memory factory with per-test overrides, the cheapest fixture tier that can witness these claims."
         }
       ]
+    },
+    "7741725e-8124-4899-b17e-8e39e7fcf1ed/test-harness": {
+      "context": "studio",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T03:58:03.392Z",
+      "worker": "78777593-33b9-4ee1-a63d-741a8211918b",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/__tests__/studioVersions.test.tsx:30 Line 37 excludes only 'confirm_destructive_cannot_undo'. Re-introducing that exact key goes red, but the broader claim in the name is not settled: no English copy can reach the dialog in this test. The decision rules say an overstating name is renamed as part of the fix."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/__tests__/studioVersions.test.tsx:14 The fake answers every section and key with a plausible string, which is a passing default, and this test makes a claim about copy that the fake cannot show. Scoped to this file: other Studio tests using the same proxy, such as dockFrameView, assert test ids and make no copy claim."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/__tests__/studioVersions.test.tsx:44 The needle carries an argument list and await, line 42 strips comments, and line 46 fails on no match. The behaviour is also executed by the Rust test in src-tauri/src/webbuild/versions.rs."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/__tests__/bootPoll.test.ts:59 The give-up cutoff is proved on a virtual clock derived from the poll constants, with the terminal phase asserted, not on wall time."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/__tests__/dockFrameView.test.tsx:36 The module-singleton store is reset after every test, so a test inherits nothing from the previous one."
+        }
+      ]
+    },
+    "8cfb82ac-ebd6-4826-921d-d1399dba7a60/test-harness": {
+      "context": "agents-quick-answer",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T03:58:03.392Z",
+      "worker": "78777593-33b9-4ee1-a63d-741a8211918b",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/triageRebuildCost.test.ts:165 Only 'identically' is asserted, at line 180. 'Without ICU' is not, and nothing else in the first describe measures the precomputation that the header says is pinned. The reach probe was reasoned, not run. Elsewhere the suite is strong: deferredQuestionRule asserts adoption of the shared predicate."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/triageCopyParity.test.ts:22 The needle is a field binding that a comment line cannot produce, and JavaScript's multiline $ also matches before a carriage return, so CRLF checkouts agree. The check is admitted because the pairing is otherwise only readable from the hook source."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/triageCopyParity.test.ts:31 The derived population has an exact floor, with a comment saying a regex that matched nothing would make the parity check vacuous."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/useUnifiedTriage.test.ts:81 The classifier and extractMessage stay real, and the rejected message matches the backend format in src-tauri/db/src/repos/dev/ideas.rs."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/triageRebuildCost.test.ts:131 The total-order test arranges genuine ties and varied input orders, not a repeated observation, which is the mechanism-pinning shape the technique asks of a regression test. No record of a run with the fix reverted was found."
+        },
+        {
+          "technique": "proved-off-the-path",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/useUnifiedTriage.ts:876 The test file does define legacyOrder, but only as a differential oracle. The function it checks is the one the production hook calls here."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/triageFixtures.ts:50 The fixture derives its vocabulary from the shipped list, so a new kind cannot drop out of the queue tests. Builders are cheap pure values with no environment to amortize."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/triageRebuildCost.test.ts:225 The session store and its module cache are cleared around each test in this describe, so nothing is inherited from the previous test."
+        }
+      ]
+    },
+    "63edaec0-367e-4553-a6ee-bfd4144be305/test-harness": {
+      "context": "workspace-governance",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T03:58:03.392Z",
+      "worker": "78777593-33b9-4ee1-a63d-741a8211918b",
+      "techniques": [
+        {
+          "technique": "isolation-lanes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/context_map_export.rs:468 A search of this file finds no remove_dir call, and no reaper is named for the scratch directory. context_generation.rs has the milder form: its removal at the end of the test is skipped when an assertion fails."
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/task_executor.rs:2511 The worktree claims are asserted by running real git against a real repository, because git is the program whose behaviour is the claim."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/task_executor.rs:2517 The fixture drives git through the same runner production uses, so the test and the product agree on what a git failure means."
+        }
+      ],
+      "registryProposal": "Tests such as task_executor.rs:2560 return Ok when git is unavailable or the fixture repository cannot be built, so they report a pass having asserted nothing. No technique cleanly owns this per-test silent skip in a test harness with no skip verb; platform-quirk-absorption stops at the runner boundary. A rule requiring such a skip to be counted or to name its reason would close the gap."
     }
   }
 }

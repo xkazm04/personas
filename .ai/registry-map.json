@@ -4353,7 +4353,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/__tests__/triageRebuildCost.test.ts:165 The test name claims the comparator avoids ICU, but it only compares result signs against localeCompare, so putting localeCompare back into compareOrder stays green and the cost this file says it pins is unguarded.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "chat-transcript",
@@ -37483,7 +37487,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/studio/__tests__/studioVersions.test.tsx:30 The test name claims the dialog does not call the restore permanent, but it runs under a translator that echoes key names and excludes one key literal, so a re-added warning under any other key or wording stays green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "voice-io",
@@ -47294,7 +47302,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/context_map_export.rs:468 This test creates a uniquely named git repository under the system temp directory and the file never removes it, so every run leaves one behind on the host, where sibling tests use self-reaping tempfile directories.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "agent-instruction-files",
