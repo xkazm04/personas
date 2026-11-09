@@ -45248,14 +45248,14 @@
       "subject": "agent-runtime-assembly",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-08",
-      "evaluatedTs": "2026-11-08T05:31:51.217Z",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:33:42.722Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "f18abadb-6a58-411c-afc8-1d8bbbe0091f",
+        "worker": "a0f83c0e-9adb-480e-b71b-681aefe1dae9",
         "state": "not-applicable",
-        "at": "2026-11-08T05:33:03.903096+00:00",
-        "reason": "reviewer (sonnet): The anchor Sidebar.tsx:23 is only the component declaration line, so it doesn't show that no agent runtime is assembled. shared/chrome also holds BackgroundServices.tsx, which mounts global runtime hooks (assignment listeners, Athena reconciliation, channel service), so the 'navigation chrome only' "
+        "at": "2026-11-09T23:34:11.534706+00:00",
+        "reason": "reviewer (sonnet): The anchor Sidebar.tsx:26 is a localStorage read of the collapse flag, which does not show that a hook chain, code loading or durable conversation state is absent. The grep for 'extension' etc. also only covered text, and BackgroundServices.tsx mounts many background hooks and was never traced."
       }
     },
     "fbfcd99a-a333-42da-b85e-2ec1f560b4be/agent-runtime-assembly": {
@@ -48557,6 +48557,36 @@
           "evidence": "src/lib/credentials/remediationBus.ts:63 This is the default arm of actionsForRemediation. A remediation value the client does not recognise (for example a new Rust variant arriving over IPC) gets no action and no notification, which looks the same as Healthy: the quietest bucket, with no marker."
         }
       ]
+    },
+    "cbb061cf-5c61-49d4-80d8-98b8f9b40600/agent-runtime-assembly": {
+      "context": "browser-webview-control",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:33:42.722Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "a0f83c0e-9adb-480e-b71b-681aefe1dae9",
+        "state": "not-applicable",
+        "at": "2026-11-09T23:34:11.674089+00:00",
+        "reason": "reviewer (sonnet): The anchor PendingApprovalBar.tsx:6 is a header comment saying the bar decides nothing, so it is incidental to whether hooks or checkpoints are assembled. types.ts in this context also defines a 'webview' | 'extension' | 'playwright' backend kind, and 'extension' was not among the terms searched."
+      }
+    },
+    "dc7c4f48-e819-47d0-80be-6afb942d28fd/agent-runtime-assembly": {
+      "context": "core-validation",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:33:42.722Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "a0f83c0e-9adb-480e-b71b-681aefe1dae9",
+        "state": "not-applicable",
+        "at": "2026-11-09T23:34:11.821436+00:00",
+        "reason": "reviewer (sonnet): The anchor validation/mod.rs:12 is the `use crate::error::AppError;` line, which shows nothing about absent hook chains or checkpoint stores. The claim rests on a grep alone, and validation/chat.rs and retrieval/mod.rs (743 lines) were not shown to be free of conversation or session handling."
+      }
     }
   }
 }

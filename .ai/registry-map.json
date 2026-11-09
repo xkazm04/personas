@@ -6328,8 +6328,8 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 24
+          "priorNotApplicable": 24,
+          "state": "unknown"
         },
         {
           "subject": "agent-memory",
@@ -11141,8 +11141,8 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 24
+          "priorNotApplicable": 24,
+          "state": "unknown"
         },
         {
           "subject": "mcp-tools",
