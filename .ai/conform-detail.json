@@ -47338,22 +47338,18 @@
       "context": "shared-components-layout",
       "subject": "quality-gates",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T04:54:53.131Z",
+      "evaluatedTs": "2026-11-09T05:12:26.264Z",
+      "worker": "1ec3112b-a083-40b9-b1c0-112f07da06f8",
       "techniques": [
         {
           "technique": "waiver-names-its-finding",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:163 The context's only contact with a gate is this one consumed lint waiver, with its reason on :162. It designs no escape hatch."
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:163 The context's only contact with a gate is this one consumed lint waiver, with its reason on :162. It designs no escape hatch.",
+          "carriedFrom": "2026-11-09"
         }
-      ],
-      "withdrawn": {
-        "worker": "2d928256-def9-410c-81ac-853815b0169d",
-        "state": "not-applicable",
-        "at": "2026-11-09T04:55:13.417720+00:00",
-        "reason": "reviewer (sonnet): The anchor (systemLoad.ts:18) is a CPU/memory gauge threshold and says nothing about whether a gate exists; the absence claim rests only on a grep, and the evidence also searched buttons/ and kanban/, which are outside this context's files."
-      }
+      ]
     },
     "1d8a480b-eac4-4110-a60e-47a6ab281c97/quality-gates": {
       "context": "glyph-persona-card",
@@ -48100,16 +48096,11 @@
       "context": "agents-components-allpersonas",
       "subject": "quality-gates",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T04:54:53.131Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "2d928256-def9-410c-81ac-853815b0169d",
-        "state": "not-applicable",
-        "at": "2026-11-09T04:55:13.509762+00:00",
-        "reason": "reviewer (sonnet): The anchor (PersonaOverviewColumns.tsx:171) is a comment on a spend column that only displays a gate enforced elsewhere, so it is incidental and does not show that no check lives in this context; the only support is a term search."
-      }
+      "evaluatedTs": "2026-11-09T05:12:26.264Z",
+      "worker": "1ec3112b-a083-40b9-b1c0-112f07da06f8",
+      "techniques": []
     },
     "3619ab0d-0367-43d0-b4eb-ec39c1302d65/agent-instruction-files": {
       "context": "vault-catalog-picker",
@@ -48147,6 +48138,78 @@
           "evidence": "src/api/pipeline/triggers.ts:80 A program does patch authored prompt text here, but it is a persona's stored JSON field rather than a block inside a hand-written instruction file, so the marker-fence contract has no file to apply to."
         }
       ]
+    },
+    "03960450-6979-4412-9de3-35c897fe56d2/quality-gates": {
+      "context": "agents-executions-components",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:12:26.264Z",
+      "worker": "1ec3112b-a083-40b9-b1c0-112f07da06f8",
+      "techniques": [
+        {
+          "technique": "unparseable-form-is-a-finding",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/__tests__/comparisonWorkerGraph.test.ts:39 The header claims the walk counts anything not an erased import type, but dynamic import() and require() are neither followed nor reported as forms the matcher cannot follow; simulated in memory with no specifier returned."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/libs/__tests__/comparisonWorkerGraph.test.ts:115 A standing known-bad input proves the walker can report the leak, alongside the walks-a-real-graph floor at line 85."
+        },
+        {
+          "technique": "match-the-resolved-artifact",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/libs/__tests__/comparisonWorkerGraph.test.ts:110 Comments are stripped before the import.meta.glob search so a warning that names the glob neither trips nor satisfies the check."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/libs/__tests__/executionStatus.test.ts:34 A hole in the instrument fails closed instead of evaluating an empty status set as all classified."
+        }
+      ]
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/quality-gates": {
+      "context": "plugins-fleet-tests",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:12:26.264Z",
+      "worker": "1ec3112b-a083-40b9-b1c0-112f07da06f8",
+      "techniques": [
+        {
+          "technique": "decidable-in-a-window",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetBootstrap.test.tsx:83 The rule concerns the enclosing JSX conditional while the check computes whether one line contains a string; App.tsx:499 already uses the multi-line guard form this cannot see."
+        },
+        {
+          "technique": "unparseable-form-is-a-finding",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_settings/__tests__/FleetTerminalBudgets.test.tsx:108 TerminalBudgets sits alone on its line, so the natural guard is multi-line; simulated in memory, that form leaves the found line free of DEV and the check green with no refusal of the unreadable form."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:60 The Rust parity check asserts its matcher found something before trusting the per-reason loop."
+        },
+        {
+          "technique": "match-the-resolved-artifact",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:52 The Rust source is normalised to code before matching, so a commented-out reason cannot satisfy the parity check."
+        }
+      ]
+    },
+    "fd092e44-fcec-4418-8337-ed2b7b2c8473/quality-gates": {
+      "context": "team-memory",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:12:26.264Z",
+      "worker": "1ec3112b-a083-40b9-b1c0-112f07da06f8",
+      "techniques": []
     }
   }
 }

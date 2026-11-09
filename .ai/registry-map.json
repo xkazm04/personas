@@ -2755,7 +2755,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "priorNotApplicable": 31,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewColumns.tsx:169 The only gate this context mentions is the runtime spend admission owned by the budget-enforcement slice outside it, which the roster merely displays; a recursive search of its directories found zero hits for lefthook, process.exit, max-warnings, run-census, pre-commit and readFileSync, so it holds no quality-gate machinery and usage-limit-governance is the closer subject for this column.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "data-access",
@@ -4067,8 +4071,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/agents/sub_executions/libs/__tests__/comparisonWorkerGraph.test.ts:39 The worker bundle-boundary gate walks only static import forms, and applying its matcher in memory to `await import('@/i18n/useTranslation')` returned no specifier, so the dynamic import that its own header blames for the 23 MB inlined chunk passes unseen and is not refused; the worker, comparisonDiffCore and parseJson contain no dynamic import today, so this is a blind spot rather than a live leak.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "eval-harness",
@@ -31223,8 +31231,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/plugins/fleet/__tests__/FleetBootstrap.test.tsx:83 The test exists to prove FleetBootstrap is not behind a DEV guard but inspects only the mount's own source line, and applying its assertions in memory to an App.tsx with the mount wrapped in a multi-line `{import.meta.env.DEV && (` block passed all of them, so the production-eliminating regression it was written for can return green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "voice-io",
@@ -35684,7 +35696,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "priorNotApplicable": 31,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:163 These are presentational primitives that implement no check: a recursive search of all the context's directories found zero hits for lefthook, process.exit, max-warnings, run-census, pre-commit and readFileSync, and its only contact with a gate is this rule-and-line-scoped lint suppression, which consumes the repo's lint gate rather than defining one.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "async-ui-states",
@@ -38272,8 +38288,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "not-applicable",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/teams/sub_teamMemory/__tests__/useTeamMemories.telemetry.test.ts:5 The context's one self-described gate is an ordinary behavioural unit test with mocked IPC, not gating machinery; a recursive search of its directories found zero hits for lefthook, process.exit, max-warnings, run-census, pre-commit and readFileSync, and nothing here decides what blocks a change.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "supply-chain",
