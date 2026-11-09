@@ -7530,13 +7530,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src-tauri/src/commands/contest/node.rs:542 drives the real contest instrument against a temp project and fails rather than skips under CI (:524, clone verified at .github/workflows/ci.yml:983); decisions are lifted into pure units (src-tauri/src/commands/contest/env.rs:30) and the one structural pin needles a full call (src-tauri/src/commands/contest/driver.rs:1413)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/contest/node.rs:559 The only test that drives the real contest.mjs hand-restates the init argv instead of sharing create()'s construction and omits the --vault-subdir that create.rs:161 sends, so the contract it reports is for an invocation production never makes.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29,
+          "revisionsBehind": 1
         },
         {
           "subject": "translation-quality-measurement",

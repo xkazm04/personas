@@ -36809,120 +36809,164 @@
       "context": "commands-contest",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:28:38.128Z",
-      "worker": "b92fa173-de5a-4bb3-9049-be43f3b68bb0",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T03:31:46.566Z",
+      "worker": "ae3dd559-257a-44e4-9cb5-d6f8174815e0",
       "techniques": [
         {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/contest/node.rs:559 Rule 1 says share the construction function. create.rs builds argv inline behind an AppHandle, so the test restates it and has already drifted: no --vault-subdir (create.rs:161, read at contest.mjs:158) and no --data. The id_args closure at node.rs:588 likewise restates Ctx::id_args. Nothing limits the claim to what the test kept."
+        },
+        {
           "technique": "assert-through-the-reader",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/contest/node.rs:542 init/plan/collect/status run through the real contest.mjs, not a stub of its output"
-        },
-        {
-          "technique": "unreached-decisions-pin-nothing",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/contest/env.rs:30 problems_of lifts the readiness decision out of the probe so env.rs:80 tests it without the machine"
-        },
-        {
-          "technique": "negative-control-tests",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/contest/arena.rs:877 the regression test names the defect it closes (scanner read winner only) and asserts each verdict shape that was invisible"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/node.rs:630 record.json written by the shipped build_record is judged by the program that reads it, the real status and collect steps."
         },
         {
           "technique": "pin-the-call-not-the-name",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/contest/driver.rs:1413 the ordering pin needles the full call with its argument list, not a bare identifier"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:1413 The needle carries the full path and argument list, the reason sits in the asserting test's doc comment, and the ticker loop cannot run in this lane."
         },
         {
-          "technique": "fixture-economics",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/contest/lineups.rs:62 uses the migrated init_test_db template, no hand-written schema"
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:1251 Retry behaviour is asserted by attempt count with a 1 ms backoff, not by elapsed time."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/env.rs:30 The readiness decision is lifted out of the machine-dependent probe into a pure unit, so the all-missing case is reachable on any host."
+        },
+        {
+          "technique": "proved-off-the-path",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:454 The unit the tests pin is called from the production launch path, not only from tests."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/node.rs:537 The failing arm of the skip guard is itself asserted. No mutation run is recorded in a comment, so this covers the guard only."
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/node.rs:527 A missing prerequisite is a named failure under CI. Caveat: on a dev machine eprintln is captured for passing tests, so the 'loud' skip reports plain ok."
         },
         {
           "technique": "isolation-lanes",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/contest/arena.rs:844 each filesystem test owns a tempdir; the instrument test builds its own temp project"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/node.rs:576 The real instrument's vault and arena point inside the temp project, so the run cannot write to the developer's vault."
         },
         {
-          "technique": "derived-selection-must-be-measured",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/contest/node.rs:524 a missing prerequisite is a loud skip locally and a failure under CI, so the only contract test cannot pass vacuously"
-        },
-        {
-          "technique": "suite-partitioning",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "history-driven-partitioning",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "live-app-harness",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "flake-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "long-lane-certification",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "gate-scope-is-not-report-scope",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "dynamic-verifier-classes",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/lineups.rs:62 The one DB test takes the shipped-schema fixture rather than a hand-built table."
         },
         {
           "technique": "out-of-graph-artifacts",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "context-starved-executor",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "far-side-oracle",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "verification-inherits-driver-reach",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "mutation-lane-with-a-triaged-baseline",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
-        },
-        {
-          "technique": "constraint-injection-for-unreachable-tiers",
-          "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/node.rs:580 contest.mjs lives outside the cargo graph, and the test loads and runs it rather than trusting a compile."
         },
         {
           "technique": "recorded-interaction-fixtures",
           "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+          "evidence": "src-tauri/src/commands/contest/node.rs:423 A captured local stderr from a sibling tool, not a recording of a remote service."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/node.rs:524 a missing prerequisite is a loud skip locally and a failure under CI, so the only contract test cannot pass vacuously",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context",
+          "carriedFrom": "2026-10-21"
+        }
+      ],
+      "registryProposal": "a-test-helper-is-a-fork-of-the-driver names four axes (loaded, injected, identity, mode). A contract test that restates the argv of a command it cannot call is a fifth, 'what is passed'. It arises when the shipped builder sits behind an app handle, and the remedy is lifting the argv builder into a pure function.",
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/contest/node.rs:542 drives the real contest instrument against a temp project and fails rather than skips under CI (:524, clone verified at .github/workflows/ci.yml:983); decisions are lifted into pure units (src-tauri/src/commands/contest/env.rs:30) and the one structural pin needles a full call (src-tauri/src/commands/contest/driver.rs:1413)",
+          "evaluatedAt": "2026-10-21T17:28:38.128Z",
+          "worker": "b92fa173-de5a-4bb3-9049-be43f3b68bb0",
+          "reason": "replaced by ae3dd559-257a-44e4-9cb5-d6f8174815e0"
         }
       ]
     },

@@ -1,0 +1,129 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ae3dd559-257a-44e4-9cb5-d6f8174815e0",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-09T03:31:46.566647+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "commands-contest",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/contest/node.rs:559 The only test that drives the real contest.mjs hand-restates the init argv instead of sharing create()'s construction and omits the --vault-subdir that create.rs:161 sends, so the contract it reports is for an invocation production never makes.",
+   "techniques": [
+    {
+     "technique": "a-test-helper-is-a-fork-of-the-driver",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/contest/node.rs:559 Rule 1 says share the construction function. create.rs builds argv inline behind an AppHandle, so the test restates it and has already drifted: no --vault-subdir (create.rs:161, read at contest.mjs:158) and no --data. The id_args closure at node.rs:588 likewise restates Ctx::id_args. Nothing limits the claim to what the test kept."
+    },
+    {
+     "technique": "assert-through-the-reader",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/node.rs:630 record.json written by the shipped build_record is judged by the program that reads it, the real status and collect steps."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/driver.rs:1413 The needle carries the full path and argument list, the reason sits in the asserting test's doc comment, and the ticker loop cannot run in this lane."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/driver.rs:1251 Retry behaviour is asserted by attempt count with a 1 ms backoff, not by elapsed time."
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/env.rs:30 The readiness decision is lifted out of the machine-dependent probe into a pure unit, so the all-missing case is reachable on any host."
+    },
+    {
+     "technique": "proved-off-the-path",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/driver.rs:454 The unit the tests pin is called from the production launch path, not only from tests."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/node.rs:537 The failing arm of the skip guard is itself asserted. No mutation run is recorded in a comment, so this covers the guard only."
+    },
+    {
+     "technique": "platform-quirk-absorption",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/node.rs:527 A missing prerequisite is a named failure under CI. Caveat: on a dev machine eprintln is captured for passing tests, so the 'loud' skip reports plain ok."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/node.rs:576 The real instrument's vault and arena point inside the temp project, so the run cannot write to the developer's vault."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/lineups.rs:62 The one DB test takes the shipped-schema fixture rather than a hand-built table."
+    },
+    {
+     "technique": "out-of-graph-artifacts",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/contest/node.rs:580 contest.mjs lives outside the cargo graph, and the test loads and runs it rather than trusting a compile."
+    },
+    {
+     "technique": "recorded-interaction-fixtures",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/contest/node.rs:423 A captured local stderr from a sibling tool, not a recording of a remote service."
+    }
+   ],
+   "registryProposal": "a-test-helper-is-a-fork-of-the-driver names four axes (loaded, injected, identity, mode). A contract test that restates the argv of a command it cannot call is a fifth, 'what is passed'. It arises when the shipped builder sits behind an app handle, and the remedy is lifting the argv builder into a pure function."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "studio",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "team-memory",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "fleet-monitor-channels",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "agents-quick-answer",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-09T03:31:46.566647+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "a-test-helper-is-a-fork-of-the-driver",
+    "assert-the-schedule-not-the-stopwatch",
+    "assert-through-the-reader",
+    "fixture-economics",
+    "isolation-lanes",
+    "negative-control-tests",
+    "out-of-graph-artifacts",
+    "pin-the-call-not-the-name",
+    "platform-quirk-absorption",
+    "proved-off-the-path",
+    "recorded-interaction-fixtures",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "commands-contest",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
