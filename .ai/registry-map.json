@@ -3045,7 +3045,11 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "priorNotApplicable": 18,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab.tsx:19 This context is the persona connectors and automations UI; I searched agents/sub_connectors for CLAUDE.md, AGENTS.md, instruction file, prompt and .claude/ and found no matches, so no harness-loaded instruction file is authored or consumed here.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "optional-dependency-degradation",
@@ -6975,8 +6979,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/DecisionLogWidget.test.tsx:5 This context is Vitest widget tests with no agent instruction file in it; I searched the __tests__ directory for AGENTS.md, CLAUDE.md, instruction file, .cursorrules and GEMINI.md and found nothing (the only prompt hits are a mocked setPendingPrompt store action).",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "model-composed-workspace",
@@ -40717,8 +40725,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:37 This context is the template-gallery modal layer; its prompt hits are persona system_prompt and structured_prompt previews (TemplatePreviewModal.tsx:17-36), which belong to prompt-assembly, not to repo-owned harness instruction files, and a search for AGENTS.md, instruction file, .cursorrules and GEMINI.md found nothing.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "generated-workflow-candidates",

@@ -48484,16 +48484,31 @@
       "context": "agents-connectors",
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T22:35:12.126Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "c07c49e8-e222-4762-805b-9d404a400f24",
-        "state": "not-applicable",
-        "at": "2026-11-09T22:35:37.111532+00:00",
-        "reason": "reviewer (sonnet): The anchor connectorTypes.ts:14 is the ConnectorTestResult interface. It sits in the context but does not show that no instruction file is authored, loaded or checked, so it is incidental."
-      }
+      "evaluatedTs": "2026-11-09T22:58:42.979Z",
+      "worker": "310510ab-1916-47da-899e-256febf80980",
+      "techniques": []
+    },
+    "12d5948a-76a4-4db1-ac6a-ac554eb12020/agent-instruction-files": {
+      "context": "cockpit-widget-tests",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T22:58:42.979Z",
+      "worker": "310510ab-1916-47da-899e-256febf80980",
+      "techniques": []
+    },
+    "d3346f2c-d747-4d85-b6e6-c1450da57ec9/agent-instruction-files": {
+      "context": "template-gallery-modals",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T22:58:42.979Z",
+      "worker": "310510ab-1916-47da-899e-256febf80980",
+      "techniques": []
     }
   }
 }
