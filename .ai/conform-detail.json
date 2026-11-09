@@ -48469,6 +48469,31 @@
         "at": "2026-11-09T22:22:36.474343+00:00",
         "reason": "reviewer (sonnet): The test does sleep 450 ms of real time (useQuickStats.test.ts:82), but the claimed failure does not follow: the 400 ms debounce timer is registered before the 450 ms sleep, so it expires and fires first even under load, and act() then flushes the refetch effect before line 86. Removing the persona "
       }
+    },
+    "56a0fd55-279d-428b-b2f6-7c89154abd6f/agent-instruction-files": {
+      "context": "schedules-components",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T22:35:12.126Z",
+      "worker": "c07c49e8-e222-4762-805b-9d404a400f24",
+      "techniques": []
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/agent-instruction-files": {
+      "context": "agents-connectors",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T22:35:12.126Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "c07c49e8-e222-4762-805b-9d404a400f24",
+        "state": "not-applicable",
+        "at": "2026-11-09T22:35:37.111532+00:00",
+        "reason": "reviewer (sonnet): The anchor connectorTypes.ts:14 is the ConnectorTestResult interface. It sits in the context but does not show that no instruction file is authored, loaded or checked, so it is incidental."
+      }
     }
   }
 }

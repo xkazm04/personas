@@ -3044,8 +3044,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "optional-dependency-degradation",
@@ -34281,8 +34281,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/schedules/index.ts:1 The module exports only a calendar overlay for cron fires and run matching, and a search of src/features/schedules for CLAUDE.md, AGENTS.md, SKILL.md and copilot-instructions returned nothing, so no instruction file is authored, loaded or checked here.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "test-harness",
