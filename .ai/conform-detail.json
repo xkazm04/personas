@@ -48443,6 +48443,32 @@
           "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:70 The absence assertion `uncovered` == [] at :74 carries a presence assertion on the needle population. The `#[cfg(test)]` tail cut was measured: every literal after the first cfg(test) in each file sits inside a test module today."
         }
       ]
+    },
+    "1ff7809a-171b-4baa-9c9b-12d888b017f0/test-harness": {
+      "context": "agents-editor",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T22:22:05.289Z",
+      "techniques": [
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/hooks/__tests__/useQuickStats.test.ts:82 Wall-clock wait copied from a 400 ms constant plus 50 ms of margin, followed by an absence assertion. Under load the test would pass without the behaviour, which is the technique's definition of a stopwatch. useEditorSaveUndo.test.tsx:38 shows the fake-timer form already used in this context."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/libs/__tests__/tabDirtyDependencies.test.ts:43 The needle is a call shape with an argument list, not a bare name, and a scanner self-check (line 52) acts as a floor. Comments aren't stripped, so a quoted call inside a comment could still match."
+        }
+      ],
+      "withdrawn": {
+        "worker": "179c60b6-f0fc-4672-b961-d2107899dc18",
+        "state": "deviation",
+        "at": "2026-11-09T22:22:36.474343+00:00",
+        "reason": "reviewer (sonnet): The test does sleep 450 ms of real time (useQuickStats.test.ts:82), but the claimed failure does not follow: the 400 ms debounce timer is registered before the 450 ms sleep, so it expires and fires first even under load, and act() then flushes the refetch effect before line 86. Removing the persona "
+      }
     }
   }
 }
