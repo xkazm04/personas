@@ -11573,8 +11573,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:230 Agent-facing text in this context is SQLite-held memory rendered into an app-assembled prompt, which agent-memory and prompt-assembly govern rather than this subject; no repo-owned instruction file is written here, and rg over its directories found zero hits for the absence terms, while the AGENTS.md hit (c03_fleet_and_workspaces.rs:331, outside the listed files) only describes a GitLab deploy target.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "mcp-tools",
@@ -33341,8 +33345,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src-tauri/core/src/models/agent_ir.rs:26 These are serde domain types whose instruction-like fields are persona prompt data stored and assembled by the app, not a repo-owned file a coding harness loads; the 38 listed files contain no instruction-file reference, rg over src-tauri/core/src/models found zero hits for the absence terms, and the CLAUDE.md and AGENTS.md hits there sit in lifecycle.rs and gitlab.rs, which are not listed files of this context.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "agent-cli-transport",
@@ -35114,8 +35122,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:153 The nearest this navigation chrome comes to the subject is a sidebar entry linking to the Skills page, and rg over src/features/shared/chrome found zero hits for all four absence terms, so it authors, delivers and audits no instruction file.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "render-mount-pipeline",
