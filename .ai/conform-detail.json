@@ -47406,6 +47406,27 @@
       "evaluatedTs": "2026-11-09T01:58:26.549Z",
       "worker": "856aad41-ff93-43b3-b07f-6180055db546",
       "techniques": []
+    },
+    "0aded02d-f5c5-4e24-8366-90783fb343b1/agent-memory": {
+      "context": "stores-util",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T02:18:36.388Z",
+      "techniques": [
+        {
+          "technique": "working-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/agentStore.ts:43 This persists a pointer to the chat session the UI had open, not an agent's operative state."
+        }
+      ],
+      "withdrawn": {
+        "worker": "24155248-80f6-4a8c-bff3-0686d644ec45",
+        "state": "not-applicable",
+        "at": "2026-11-09T02:18:52.869657+00:00",
+        "reason": "reviewer (sonnet): The anchor at agentStore.ts:50 is only a comment about narrow rehydration, so it does not show that agent memory is absent. The evidence also admits that storeTypes.ts, which is in this context, composes a MemorySlice from slices/overview/memorySlice. I did not open that slice, so I could not confir"
+      }
     }
   }
 }
