@@ -47815,6 +47815,125 @@
           "evidence": "src/features/shared/chrome/notifications/NotificationCenter.tsx:50 Hands a one-off user-level prompt to the in-app chat store; no instruction file copy is held or re-delivered."
         }
       ]
+    },
+    "fd092e44-fcec-4418-8337-ed2b7b2c8473/test-harness": {
+      "context": "team-memory",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:25:05.685Z",
+      "worker": "08cfdb84-ff0e-4558-bbff-6c7581022016",
+      "techniques": [
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/components/diff/__tests__/RunDiffView.error.test.tsx:34 Seeded-data honesty: the kind is not in the wire vocabulary and the timeout path really rejects with an Error. teamMemoryDraftKept.test.tsx:47 likewise uses 'Database' where the wire value is 'database'."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_teamMemory/__tests__/useTeamMemories.paging.test.ts:78 The fixture ids differ per producer, so the stale page and the newer refetch cannot answer with the same value."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_teamMemory/__tests__/useTeamMemories.paging.test.ts:48 Ordering is forced with deferred promises and no test asserts elapsed time. teamMemoryFilterTimers.test.tsx:54 does sleep a literal 450ms against the 300ms debounce at TeamMemoryPanel.tsx:74, so its negative would go vacuous if the debounce grew past 450ms."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_teamMemory/__tests__/teamMemoryDraftKept.test.tsx:43 The shared mock is reset per test, so nothing is inherited from the previous test."
+        },
+        {
+          "technique": "proved-off-the-path",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_teamMemory/__tests__/teamMemoryDraftKept.test.tsx:48 Drives the shipped pane and its real hook; only the IPC module is replaced."
+        }
+      ],
+      "registryProposal": "fixture-economics frames seeded-data honesty around stores; mocked rejection envelopes at the unit rung are the same defect (a state the product could never write) and could be named there."
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/test-harness": {
+      "context": "overview-manual-review",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:25:05.685Z",
+      "worker": "08cfdb84-ff0e-4558-bbff-6c7581022016",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/libs/__tests__/reviewHelpers.test.ts:5 The strings match the Rust today, but nothing reads the Rust source. The file names neither a lane covering the handover nor a reason there is none; artifactDeadlineParity.test.ts shows the repo's own pattern for this."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/__tests__/athenaVerdictCardErrors.test.tsx:67 'Timeout' is not a wire kind (error.rs:181-201). Line 4 repeats the 'never an Error' claim that InvokeTimeoutError contradicts."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/__tests__/bulkResolve.test.ts:26 The concurrency cap is proved by counting peak units in flight."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/__tests__/decisionDeckDoors.test.ts:67 The singleton store is reset after each test."
+        },
+        {
+          "technique": "proved-off-the-path",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/__tests__/decisionDeckDoors.test.ts:72 The oracle is the shipped roster adapter, not a restated id format."
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/__tests__/reviewHelpers.test.ts:1 Pure logic opts out of the jsdom default set at vitest.config.ts:11."
+        }
+      ]
+    },
+    "d146b88b-6223-41c7-8330-8b9d7a1b3ee0/test-harness": {
+      "context": "api-pipeline",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:25:05.685Z",
+      "worker": "08cfdb84-ff0e-4558-bbff-6c7581022016",
+      "techniques": [
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "deviation",
+          "evidence": "src/api/pipeline/__tests__/decomposeTimeoutParity.test.ts:34 A neutrally named copy of the driver's resolution that omits the per-command override step; topologyTimeoutParity.test.ts:36 repeats it."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/api/pipeline/__tests__/noHandCopiedBindings.test.ts:12 The walk claims 'src/api/pipeline wrappers' but hand-lists 8 of 12 files, omitting automationSuggestions, personaChannel, teamLearning and teamSlackBridges. Its floor at line 32 counts bindings, not walked declarations. No live copy exists in the omitted files today."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/api/pipeline/__tests__/backfillAllMissedRuns.appError.test.ts:20 Uses a real wire kind from error.rs:184."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/api/pipeline/__tests__/advanceGoalTimeoutParity.test.ts:32 Pins that the budget is actually used at the call, with a call-shaped needle over comment-stripped source."
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "conformant",
+          "evidence": "src/api/pipeline/__tests__/backfillAllMissedRuns.appError.test.ts:1 IPC wrapper logic avoids the jsdom per-file cost."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/api/pipeline/__tests__/backfillAllMissedRuns.partial.test.ts:42 The shared IPC fake is reset per test."
+        }
+      ]
     }
   }
 }

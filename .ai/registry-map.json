@@ -5601,7 +5601,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/api/pipeline/__tests__/decomposeTimeoutParity.test.ts:34 The parity oracle restates invokeWithTimeout's timeout resolution and drops the BLOCKING_MUTATION_TIMEOUTS layer (src/lib/tauriInvoke.ts:395), with the default copied by hand at line 13, so the frontend half of a test that claims the two sides cannot drift is a fork of the driver.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "background-jobs",
@@ -25584,7 +25588,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/libs/__tests__/reviewHelpers.test.ts:5 The file names a process-boundary crossing but pins it with hand-typed copies and no covering lane, so rewording the note at dispatch.rs:1161 or auto_triage.rs:441 leaves this suite green while detectAutoResolution stops recognising real rows.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "table",
@@ -38207,7 +38215,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/components/diff/__tests__/RunDiffView.error.test.tsx:34 The test seeds a rejection the product cannot produce: the AppError serializer (src-tauri/core/src/error.rs:181-201) has no 'Timeout' kind, and a client timeout rejects with InvokeTimeoutError, an Error subclass (src/lib/tauriInvoke.ts:134, :581), so the file's 'never an Error' claim is false on the very path it simulates.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "diff-comparison",
