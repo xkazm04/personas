@@ -41485,16 +41485,11 @@
       "context": "schedules-components",
       "subject": "quality-gates",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-31",
-      "evaluatedTs": "2026-10-31T22:15:17.201Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "26234dd8-51c6-412d-9171-722a8e604b97",
-        "state": "not-applicable",
-        "at": "2026-10-31T22:15:44.086775+00:00",
-        "reason": "reviewer (sonnet): The anchor src/features/schedules/index.ts:1 is only a barrel re-export and does not show that no gate exists; the context's scheduleCalendarCopy.test.tsx is itself a regression guard against untranslated literals, which the not-applicable claim glosses over."
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:41:17.980Z",
+      "worker": "ca9a388e-7db3-49f9-99a8-c109713ed1e6",
+      "techniques": []
     },
     "6229df3d-d54e-47bb-8091-abb479003c18/quality-gates": {
       "context": "vault-catalog-schemas",
@@ -48376,6 +48371,52 @@
           "evidence": "src/features/agents/sub_lab/components/shared/__tests__/LabEventStream.error.test.tsx:36 The claim is a call count holding still, not overlap, a cap or a cutoff. The fixed window would miss a loop slower than 100 ms."
         }
       ]
+    },
+    "8650ca36-36fe-4862-98f5-745e866a2687/quality-gates": {
+      "context": "agents-design",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:41:17.980Z",
+      "worker": "ca9a388e-7db3-49f9-99a8-c109713ed1e6",
+      "techniques": [
+        {
+          "technique": "match-the-resolved-artifact",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_tool_runner/libs/toolRunIpcTimeout.test.ts:26 Comments are stripped, which handles the prose-satisfies-matcher case, but by the pattern pass the technique says is not enough; the file's single test has no seeded pair proving a commented-out constant fails."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_tool_runner/libs/toolRunIpcTimeout.test.ts:28 A renamed or reworded constant goes red with a named message before any comparison, so a lost needle cannot pass as a clean result."
+        },
+        {
+          "technique": "blocking-by-input-determinism",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_tool_runner/libs/toolRunIpcTimeout.test.ts:5 The verdict depends only on a file in the tree under test, with no external feed that could refuse an unchanged commit."
+        }
+      ]
+    },
+    "ba0d4722-bfde-40aa-8e1d-52591719f834/quality-gates": {
+      "context": "lab-shared-primitives",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:41:17.980Z",
+      "worker": "ca9a388e-7db3-49f9-99a8-c109713ed1e6",
+      "techniques": []
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/quality-gates": {
+      "context": "vault-shared-vector",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:41:17.980Z",
+      "worker": "ca9a388e-7db3-49f9-99a8-c109713ed1e6",
+      "techniques": []
     }
   }
 }

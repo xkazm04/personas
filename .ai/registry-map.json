@@ -3509,8 +3509,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/agents/sub_tool_runner/libs/toolRunIpcTimeout.test.ts:26 The context's one source-reading guard normalises tool_runner.rs with a regex pass that does not track string state and has no seeded comment-versus-code pair; run against the real file it also deletes the tail of lines containing \"builtin://\", which leaves both needles intact today, so the gap is narrow and its likely failure is a false red rather than a false green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "prompt-assembly",
@@ -19096,8 +19100,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "not-applicable",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/agents/sub_lab/components/shared/LabQualityBadge.tsx:15 The nearest construct to a gate is this score-to-colour mapping, which returns a display variant and refuses nothing; searching both shared directories found no hook, pipeline or bypass vocabulary and no test that reads source files, and the 'baseline' hits are a version badge in TimelineEntry.tsx.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "model-routing",
@@ -34248,8 +34256,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "not-applicable",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:24 The context classifies calendar slots for display, including an honest past-unknown, and has no check that can refuse a change; searching src/features/schedules found no hook, pipeline or bypass vocabulary and no source-reading test, and its 'refus' and 'gate' hits describe scheduler errors and a UI loading comment.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "agent-instruction-files",
@@ -46749,8 +46761,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "not-applicable",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/vault/shared/vector/extract/SchemaEditor.tsx:12 The only 'gate' here is a person editing an inferred schema before extraction, which is an approval step rather than a mechanised check, and searching the directory found no hook, pipeline or bypass vocabulary and no source-reading test.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "agent-instruction-files",
