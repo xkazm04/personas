@@ -47334,19 +47334,19 @@
       "bundle": "software-engineering",
       "state": "unknown",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T01:04:12.260Z",
+      "evaluatedTs": "2026-11-09T04:54:53.131Z",
       "techniques": [
         {
           "technique": "waiver-names-its-finding",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:163 The context uses ESLint's existing escape hatch once, naming the rule and the next line; it designs no waiver grammar of its own."
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:163 The context's only contact with a gate is this one consumed lint waiver, with its reason on :162. It designs no escape hatch."
         }
       ],
       "withdrawn": {
-        "worker": "fd71f956-056e-4870-856d-a9fb528837ac",
+        "worker": "2d928256-def9-410c-81ac-853815b0169d",
         "state": "not-applicable",
-        "at": "2026-11-09T01:05:02.723636+00:00",
-        "reason": "reviewer (sonnet): The not-applicable anchor, DecisionRow.tsx:2, is a catalog docstring in the decisions directory (it isn't among the listed layout files) and does not show that nothing in the context can refuse a change. The second anchor, useSectionScrollSpy.ts:163, is an eslint-disable comment, which shows no abse"
+        "at": "2026-11-09T04:55:13.417720+00:00",
+        "reason": "reviewer (sonnet): The anchor (systemLoad.ts:18) is a CPU/memory gauge threshold and says nothing about whether a gate exists; the absence claim rests only on a grep, and the evidence also searched buttons/ and kanban/, which are outside this context's files."
       }
     },
     "1d8a480b-eac4-4110-a60e-47a6ab281c97/quality-gates": {
@@ -48063,6 +48063,47 @@
           "evidence": "src/features/vault/shared/playground/PlaygroundTabContent.tsx:87 The tab under test is mounted by the shipped playground."
         }
       ]
+    },
+    "647d6a54-3813-4149-bbf7-2d96a57a77c7/quality-gates": {
+      "context": "vault-databases-tabs",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:54:53.131Z",
+      "worker": "2d928256-def9-410c-81ac-853815b0169d",
+      "techniques": [
+        {
+          "technique": "match-the-resolved-artifact",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/__tests__/nlQueryTimeoutParity.test.ts:45 The needle is the signature, while the property is one escalated leg (escalate_to: None at src-tauri/engine/src/cli_process.rs:627). The text can stay put while the meaning moves. Line 46 hard-codes attempts and ChatTab.tsx:34 repeats it. Comment stripping at :17 is sound."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/__tests__/nlQueryTimeoutParity.test.ts:22 Lease and ceiling factor must each match exactly once, so a dead matcher fails rather than passing."
+        },
+        {
+          "technique": "waiver-names-its-finding",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/__tests__/ChatTabPollOverlap.test.tsx:3 The suppression names the rule and its site (next line) only, so it is not a blanket. It carries no written reason, which false-positive-economics would want; that technique was not scored here."
+        }
+      ]
+    },
+    "a8857307-216c-46e0-9571-e05e8cf06112/quality-gates": {
+      "context": "agents-components-allpersonas",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:54:53.131Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "2d928256-def9-410c-81ac-853815b0169d",
+        "state": "not-applicable",
+        "at": "2026-11-09T04:55:13.509762+00:00",
+        "reason": "reviewer (sonnet): The anchor (PersonaOverviewColumns.tsx:171) is a comment on a spend column that only displays a gate enforced elsewhere, so it is incidental and does not show that no check lives in this context; the only support is a term search."
+      }
     }
   }
 }

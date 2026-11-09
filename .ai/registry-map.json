@@ -2754,8 +2754,8 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "priorNotApplicable": 31,
+          "state": "unknown"
         },
         {
           "subject": "data-access",
@@ -45860,8 +45860,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/vault/sub_databases/tabs/__tests__/nlQueryTimeoutParity.test.ts:45 The parity test says the Rust figures are read from source, but the attempts factor is a hand-written 2 next to a check that only the function signature exists, so a third escalation leg would leave the watchdog too short with the test green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "retrieval",
