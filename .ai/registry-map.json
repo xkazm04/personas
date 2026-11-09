@@ -2879,7 +2879,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_connectors/libs/__tests__/fulfillDemands.test.ts:38 All six partitionDemands tests inject this stand-in, and the only test rendering AgentCredentialDemands checks aria state, so the real isCredentialVerified default and the fulfill action are never reached and the refusal the file says it defends is unpinned where it ships.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "agent-memory",
@@ -40007,7 +40011,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/__tests__/refineSend.test.ts:8 The hand-back-on-failure rule is tested only by calling the helper, and no test file references PersonaLayoutBuild or RefineComposer, so the composer could stop using sendRefine or drop the reopen callback with the suite still green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "eval-harness",

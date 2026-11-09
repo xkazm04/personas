@@ -47484,6 +47484,58 @@
           "evidence": "src/features/agents/components/create/__tests__/useTemplateIntentMatch.test.ts:40 Latest-wins is proved by resolving deferred promises in a chosen order, so the ordering does not depend on elapsed time."
         }
       ]
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/test-harness": {
+      "context": "agents-connectors",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T02:48:01.683Z",
+      "worker": "69569593-b201-46ae-bf3f-4b34f3bf255d",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_connectors/components/connectors/AgentCredentialDemands.tsx:32 This call takes the default verifier that no test exercises through partitionDemands. healthState.test pins isCredentialVerified and fulfillDemands.test pins the partition, so the handover between them is covered by neither. Established by reading; mutation not run (read-only seat)."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_connectors/libs/__tests__/useConnectorStatuses.hook.test.ts:302 The fan-out cap is asserted by counting probes in flight, and line 303 requires a peak above 1 so a serial version fails too."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_connectors/libs/__tests__/useConnectorStatuses.hook.test.ts:9 The hook suite runs against the real stores. The one injected verifier is declared as a stand-in at fulfillDemands.test.ts:37 and is counted under unreached-decisions."
+        }
+      ]
+    },
+    "b88ef121-d028-4999-bf34-6e44aed99959/test-harness": {
+      "context": "template-adoption-persona-layout",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T02:48:01.683Z",
+      "worker": "69569593-b201-46ae-bf3f-4b34f3bf255d",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:438 The only production call and the restore closure are unpinned, although the component can be rendered in this lane. The sibling resolveChannelCard.test.ts:18 does choose a fixture a default cannot answer, so the gap is specific to this wiring. Mutation not run (read-only seat)."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/__tests__/dimDisableFiltersPetalQuestions.test.tsx:63 Drives the real orchestration hook; only translation, one IPC call and the agent store selector are mocked."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/__tests__/dimDisableFiltersPetalQuestions.test.tsx:25 The seed is shaped from the real template population's awkward case rather than a tidy demo row, and says so."
+        }
+      ]
     }
   }
 }
