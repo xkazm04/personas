@@ -2733,8 +2733,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/agents/AGENTS.md:1 The only instruction file whose span contains this view scopes itself to the sub_* modules, which exclude components/allPersonas, and rg over allPersonas and create for the listed terms found no matches (exit 1), so this context neither authors, generates nor loads instruction content.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "quality-gates",
@@ -3459,8 +3463,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "deviation",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/agents/AGENTS.md:67 The nested instruction file tells agents this context's tool runner lives inside a chat turn, while its only production mount is the Design Connectors sub-tab (DesignSubtabPanels.tsx:121) and the module contains no mention of chat, so the trusted layer misplaces the surface.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "agent-runtime-assembly",

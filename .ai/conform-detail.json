@@ -47536,6 +47536,43 @@
           "evidence": "src/features/templates/sub_generated/adoption/persona-layout/__tests__/dimDisableFiltersPetalQuestions.test.tsx:25 The seed is shaped from the real template population's awkward case rather than a tidy demo row, and says so."
         }
       ]
+    },
+    "8650ca36-36fe-4862-98f5-745e866a2687/agent-instruction-files": {
+      "context": "agents-design",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T03:02:48.934Z",
+      "worker": "73db5af8-bdd6-44be-a624-edd56a54ef70",
+      "techniques": [
+        {
+          "technique": "instruction-freshness",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/AGENTS.md:67 Stale row: rg finds ToolRunnerPanel and ToolInvocationCard used outside the module only by DesignSubtabPanels and its test; rg -i chat in sub_tool_runner returns nothing. The row also disagrees with line 56, which puts the tool runner in the design tab. The boundary gate checks row names only, so it stays green."
+        },
+        {
+          "technique": "enforcement-demotion",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/AGENTS.md:14 The file names the gate instead of restating the rule, and the gate operates: the script exits 0 reporting 16 modules, 19 pairs and 26 imports, and agents-sub-boundaries.test.ts asserts compare() returns no problems."
+        },
+        {
+          "technique": "line-earning",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/AGENTS.md:69 Lines 69-74 keep a history of removed rows while line 70 says the check now catches a stale row; the technique says a rule whose failure mode a gate now catches is removed, not kept as residue."
+        }
+      ],
+      "registryProposal": "A row-presence gate over an ownership table can certify a table whose descriptions are stale. enforcement-demotion could name this proxy case explicitly: the gate fires and is real, yet it covers only the row key."
+    },
+    "a8857307-216c-46e0-9571-e05e8cf06112/agent-instruction-files": {
+      "context": "agents-components-allpersonas",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T03:02:48.934Z",
+      "worker": "73db5af8-bdd6-44be-a624-edd56a54ef70",
+      "techniques": []
     }
   }
 }
