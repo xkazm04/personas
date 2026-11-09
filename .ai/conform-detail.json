@@ -47221,6 +47221,90 @@
         "at": "2026-11-09T00:45:22.741950+00:00",
         "reason": "reviewer (sonnet): The chat.ts working-memory finding holds (workingMemory is never populated, chat_turn.rs:472 and :663 write None), but three of the technique anchors (src/api/companion.ts:1548, :1614 and :1617) are in the companion IPC module. That module is outside the api-agents files, so those parts of the verdi"
       }
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/quality-gates": {
+      "context": "companions-page",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:04:12.260Z",
+      "worker": "fd71f956-056e-4870-856d-a9fb528837ac",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/curator/council/verdict/verdictModel.ts:26 parseArray returns [] on a parse failure, and MustPreview.tsx:27 renders en.json must_none, 'The council asks for nothing before a decision.' Not fabricating items is right, but the unreadable state needs its own outcome. Elsewhere the context does this correctly: watchedModel.ts:34 reads stale or unmeasured as 'open', never green."
+        },
+        {
+          "technique": "advancement-evidence-fields",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/curator/council/queue/laneModel.ts:51 A rubric member with no record gets an explicit not_run state rather than a blank, and line 54 maps an unrecognised state to unmeasured, so each subject's row uses a closed vocabulary."
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/curator/council/verdict/MustPreview.tsx:51 The two-card cap at line 36 is display only: the full count renders at line 32 and the remainder is stated here, so the cap is not consumed as data."
+        }
+      ]
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/quality-gates": {
+      "context": "agents-connectors",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:04:12.260Z",
+      "worker": "fd71f956-056e-4870-856d-a9fb528837ac",
+      "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:96 executions.rs:265-292 refuses via persona_live_blockers, which reaches credential_is_usable (connector_readiness.rs:1022-1092) with three conditions. deriveReadiness (line 107) reads only credentialId and probe outcome, so a success older than a field edit still shows healthy, and field edits do not clear the ledger. isExecutionReady (line 135) returns true for unhealthy and has only test callers."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:122 A probe that never reached the service is displayed and counted as its own state, and summarizeTestAll (line 188) keeps it out of the regressed and failing counts. This judges the surface only; how the backend gate treats an unreachable probe was not traced."
+        }
+      ]
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/quality-gates": {
+      "context": "shared-components-layout",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:04:12.260Z",
+      "techniques": [
+        {
+          "technique": "waiver-names-its-finding",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:163 The context uses ESLint's existing escape hatch once, naming the rule and the next line; it designs no waiver grammar of its own."
+        }
+      ],
+      "withdrawn": {
+        "worker": "fd71f956-056e-4870-856d-a9fb528837ac",
+        "state": "not-applicable",
+        "at": "2026-11-09T01:05:02.723636+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor, DecisionRow.tsx:2, is a catalog docstring in the decisions directory (it isn't among the listed layout files) and does not show that nothing in the context can refuse a change. The second anchor, useSectionScrollSpy.ts:163, is an eslint-disable comment, which shows no abse"
+      }
+    },
+    "1d8a480b-eac4-4110-a60e-47a6ab281c97/quality-gates": {
+      "context": "glyph-persona-card",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:04:12.260Z",
+      "worker": "fd71f956-056e-4870-856d-a9fb528837ac",
+      "techniques": [
+        {
+          "technique": "advancement-evidence-fields",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 Force is a client-only bypass (useLifecycle.ts:310): build_sessions.rs has no force parameter and the promote path writes no override marker. personas.last_test_report keeps a report from the test step (build_sessions.rs:854-867), but that is not written by the advancing act and does not exist for a skipped test. Line 128 stamps premiere as issued whether or not the screening passed."
+        }
+      ]
     }
   }
 }

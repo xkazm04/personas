@@ -2911,8 +2911,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:96 The connector tab projects a weaker policy than the run gate enforces: it says an unhealthy connector will attempt execution and evaluates only link and probe outcome, while the gate refuses a non-simulation run for a last-failed, empty or edited-since-success credential unless a CLI fallback is authenticated.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "supply-chain",
@@ -10604,8 +10608,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/companions/curator/council/verdict/verdictModel.ts:26 An unparseable must_address blob becomes an empty list, and the verdict card then states that the council asks for nothing, so a hole in the instrument reads as a clean result.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "test-harness",
@@ -16069,8 +16077,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 The dial offers an override that advances an agent past a failed or skipped screening, but the advancing act records nothing about the override, so the agent's record cannot show that it went live over a failed obligation.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "eval-harness",
@@ -35584,8 +35596,8 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "priorNotApplicable": 31,
+          "state": "unknown"
         },
         {
           "subject": "async-ui-states",
