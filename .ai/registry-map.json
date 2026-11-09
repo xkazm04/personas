@@ -10649,7 +10649,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/DecisionStage.keys.test.tsx:21 DecisionStage finds its focus target by a string selector, the test's stub supplies that attribute itself, and nothing asserts that the real Question.tsx:92 carries it, so removing it there would break focus while this file stays green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "conversation-orchestration",

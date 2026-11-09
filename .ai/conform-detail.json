@@ -47573,6 +47573,27 @@
       "evaluatedTs": "2026-11-09T03:02:48.934Z",
       "worker": "73db5af8-bdd6-44be-a624-edd56a54ef70",
       "techniques": []
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/test-harness": {
+      "context": "companions-page",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T03:19:03.001Z",
+      "worker": "8a20cc0f-f0a3-498d-af3d-c7ab6ae36d8d",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/DecisionStage.keys.test.tsx:21 The header claims focus lands on the new item's question, but the stub answers the selector at DecisionStage.tsx:38. A repo-wide search for the attribute finds only the stage, this test and Question.tsx:92, and the file does not name the uncovered crossing."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/__tests__/AthenaAssignmentCards.test.tsx:7 An in-memory factory with per-test overrides, the cheapest fixture tier that can witness these claims."
+        }
+      ]
     }
   }
 }
