@@ -47934,6 +47934,58 @@
           "evidence": "src/api/pipeline/__tests__/backfillAllMissedRuns.partial.test.ts:42 The shared IPC fake is reset per test."
         }
       ]
+    },
+    "dc471d31-ae30-4ac9-b015-d51969df458d/test-harness": {
+      "context": "shared-chrome",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:35:00.245Z",
+      "worker": "5aae3979-c2de-4ca7-98e3-3361762ee575",
+      "techniques": [
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/__tests__/chromeCopyI18n.test.ts:51 The needle is a name prose can spell, in an unstripped haystack, for a site another test already executes; the technique says to execute a site that can be executed."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/__tests__/chromeColourTokens.test.ts:36 The walk declares no floor on files read and passes on zero offenders, so an empty population reads as clean; the second test in the file guards only the token values. pin-the-call-not-the-name assigns this floor discipline to this technique."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/__tests__/systemLoadPollOverlap.test.tsx:46 The no-stacking cap is asserted as a peak count of reads in flight, under fake timers."
+        }
+      ]
+    },
+    "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/test-harness": {
+      "context": "api-overview",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:35:00.245Z",
+      "worker": "5aae3979-c2de-4ca7-98e3-3361762ee575",
+      "techniques": [
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/api/devTools/__tests__/athenaTriageTimeoutParity.test.ts:42 The needle has a parenthesis but no first argument, and the haystack still holds prose, so it fails in both directions the technique names."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/api/devTools/__tests__/athenaTriageTimeoutParity.test.ts:19 The real wrapper runs and the test reads the arguments handed to the IPC boundary, the attempt's own record, then compares them with a budget read from the Rust source."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "conformant",
+          "evidence": "src/api/devTools/__tests__/findingVocabularyParity.test.ts:21 The parsed item count must equal the array length Rust declares, so a partial or empty parse fails."
+        }
+      ]
     }
   }
 }

@@ -5395,7 +5395,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/api/devTools/__tests__/athenaTriageTimeoutParity.test.ts:42 This pin counts a call name in backlog_triage.rs without the comment stripping applied to the other Rust file at line 29, so a comment spelling the name turns it red and a comment replacing the real call keeps it green while the test still claims the batch reaches that leg.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "eval-harness",
@@ -35061,7 +35065,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/chrome/__tests__/chromeCopyI18n.test.ts:51 This presence pin on raw source passes on a comment that merely names the key, and its stated licence (line 9 onward: an aria-label a render test cannot reach without the whole shell) does not hold, because SidebarFocusTransfer.test.tsx:20 renders Sidebar alone and Sidebar.tsx:210 sets that aria-label on the nav it renders.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "prompt-assembly",
