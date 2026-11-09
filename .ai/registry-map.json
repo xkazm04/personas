@@ -14828,7 +14828,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/map/mapModel.test.ts:121 The name claims both ends of a route are guarded, but every event in the file has a member source, so deleting the source check at mapModel.ts:178 leaves the suite green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "structured-output",
@@ -19056,7 +19060,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/shared/__tests__/UserRating.a11y.test.tsx:13 The test starts with nothing pressed and clicks one thumb, so a widget that never cleared the previous selection would pass a test named for moving it.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "prompt-assembly",
@@ -45258,7 +45266,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/forms/__tests__/CredentialEditForm.test.tsx:52 The name claims a surfaced error but the only assertion is that onSave was not called, so removing the error display behind setErrors at CredentialEditForm.tsx:130 leaves the test green.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "quality-gates",
