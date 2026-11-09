@@ -39282,15 +39282,14 @@
           "source": "conform",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 The passport improvement engine computes a single blended percentage across both automation and production readiness dimensions, creating a headline score that conceals the separate questions the two independent axes are meant to answer.",
+          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:134 scoreAgainstRubric blends automationReadiness dimensions (context, instructions, selfverify, evals, aiflow) and productionReadiness dimensions (ci, tests, security, observability, migrations) into one weighted goldenPct, the cross-axis headline the standard forbids, and that number is what the plan, export, history and atlas quote.",
           "digest": "sha256-b2:ae6d093363f5067e",
           "revision": 4,
           "changedAt": "2026-10-27",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:c63a7575b1e57d96",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:ae6d093363f5067e",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"

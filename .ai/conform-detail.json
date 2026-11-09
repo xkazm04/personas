@@ -34540,34 +34540,51 @@
       "subject": "readiness-passports",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-18",
-      "evaluatedTs": "2026-10-18T21:05:42.595Z",
-      "worker": "fdef2b3a-1d9e-4aae-bdf1-ecb8c04c2e3b",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:57:19.945Z",
+      "worker": "d0066858-2298-45a2-abe2-d8315f877c4d",
       "techniques": [
+        {
+          "technique": "two-axis-readiness",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:134 One weighted % over the RUBRIC, which mixes p.automationReadiness.* and p.productionReadiness.* dims, so the number crosses axes. A delegation improvement moves the same figure as a ship improvement. The earlier verdict cited line 131, which is the per-dim map; the blend is line 134."
+        },
         {
           "technique": "blocker-rollups",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:93 The improve plan flattens individual project gaps into an array instead of inverting into blocker rollups keyed by stable identifier and sorted by projects unlocked."
+          "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:98 The fleet view averages the blended % across projects (fleetGoldenAvg / projectedFleetGolden), and an empty fleet returns 0, not 'not assessed'. buildImprovePlan (improvePlan.ts:89) lists project-by-gap items ranked by estGoldenLift/tier. It never inverts to blockers with projects, incidence or sole-blocker counts."
         },
         {
           "technique": "declined-by-choice",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/improve/StandardsScan.tsx:94 Findings only offer automated remediation without an allow-listed decision-memory overlay to record accepted trade-offs with reason, author, and date."
+          "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:71 Every below-target dimension becomes a plan item on every derive. No decline/accept overlay or allow-list exists: grep for declin/dismiss/accepted/waive in improve/ and passport/ found no decline construct. An owner's decided trade-off resurfaces forever."
+        },
+        {
+          "technique": "audit-the-live-system-not-the-plan",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/improve/provenance.ts:12 Per-dimension reasons are built from the observed evidence (has_tests, has_codeql, bound credentials, doc rot counts). The code stays silent rather than repeat a fixed 'no ...' sentence the derive contradicts."
         },
         {
           "technique": "fingerprint-provenance",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/improve/provenance.ts:8 Provenance is limited to explanatory text for individual dimensions rather than stamping the passport with an immutable commit SHA and ladder versions."
+          "evidence": "src/features/teams/sub_factory/passport/improve/provenance.ts:8 Provenance is limited to explanatory text for individual dimensions rather than stamping the passport with an immutable commit SHA and ladder versions.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "named-vs-capability-metadata",
           "verdict": "conformant",
-          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:27 Concrete tooling and language names are retained for prompt grounding while all gating and applicability checks remain capability-shaped."
-        },
+          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:27 Concrete tooling and language names are retained for prompt grounding while all gating and applicability checks remain capability-shaped.",
+          "carriedFrom": "2026-10-18"
+        }
+      ],
+      "registryProposal": "two-axis-readiness allows a cardinal blend within one axis as a sort key. It could name the archetype-weighted 'golden standard' pattern explicitly: per-archetype targets across both axes are still a cross-axis headline, even when framed as 'fair, tier-scaled tracking'.",
+      "superseded": [
         {
-          "technique": "two-axis-readiness",
-          "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 Combines dimensions across both automation and production readiness into a single weighted golden percentage headline score."
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 The passport improvement engine computes a single blended percentage across both automation and production readiness dimensions, creating a headline score that conceals the separate questions the two independent axes are meant to answer.",
+          "evaluatedAt": "2026-10-18T21:05:42.595Z",
+          "worker": "fdef2b3a-1d9e-4aae-bdf1-ecb8c04c2e3b",
+          "reason": "replaced by d0066858-2298-45a2-abe2-d8315f877c4d"
         }
       ]
     },
@@ -48632,6 +48649,32 @@
       "evaluatedTs": "2026-11-09T23:41:52.214Z",
       "worker": "5e9b639b-7aca-4af1-8825-d290395a1d9d",
       "techniques": []
+    },
+    "c5f662f2-458b-4b5d-b03b-e4acf8f54049/readiness-passports": {
+      "context": "plugins-dev-tools-projects",
+      "subject": "readiness-passports",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:57:19.945Z",
+      "techniques": [
+        {
+          "technique": "two-axis-readiness",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/standardsConfig.ts:9 No readiness axis is computed in this context; the passport lives in teams/sub_factory/passport."
+        },
+        {
+          "technique": "named-vs-capability-metadata",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:389 There is a named tech-layer spread across projects, but it is descriptive catalog metadata, not a readiness fingerprint's descriptive skin. Line 382 also hides an empty distribution rather than rendering none/unknown, which would matter if this ever fed a passport."
+        }
+      ],
+      "withdrawn": {
+        "worker": "d0066858-2298-45a2-abe2-d8315f877c4d",
+        "state": "not-applicable",
+        "at": "2026-11-09T23:57:44.522427+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor, standardsConfig.ts:9, is incidental. It says the standards config is shared with the team passport, which points toward a readiness input and does not show that the context computes no readiness. The absence claim rests only on a grep, and the terms searched (readiness, ru"
+      }
     }
   }
 }
