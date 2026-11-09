@@ -43700,14 +43700,20 @@
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-02",
-      "evaluatedTs": "2026-11-02T22:11:02.511Z",
-      "techniques": [],
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:01:40.646Z",
+      "techniques": [
+        {
+          "technique": "instruction-freshness",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/LiveRoadmapStatusPill.tsx:4 Freshness here describes roadmap content shown to a person, not lines an agent trusts; the registry map's 'freshness' and 'bundled' tokens are word collisions."
+        }
+      ],
       "withdrawn": {
-        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
+        "worker": "907bb448-14bf-4124-969a-2154320754bf",
         "state": "not-applicable",
-        "at": "2026-11-02T22:11:48.479014+00:00",
-        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+        "at": "2026-11-09T05:02:02.919395+00:00",
+        "reason": "reviewer (sonnet): The anchor registry.ts:11 is a doc comment about PowerMoveNav routing types and doesn't show that no agent instruction file exists, so this not-applicable rests on an incidental line."
       }
     },
     "1db5c86e-3237-4d2a-8e2f-1426d680757c/voice-io": {
@@ -48104,6 +48110,43 @@
         "at": "2026-11-09T04:55:13.509762+00:00",
         "reason": "reviewer (sonnet): The anchor (PersonaOverviewColumns.tsx:171) is a comment on a spend column that only displays a gate enforced elsewhere, so it is incidental and does not show that no check lives in this context; the only support is a term search."
       }
+    },
+    "3619ab0d-0367-43d0-b4eb-ec39c1302d65/agent-instruction-files": {
+      "context": "vault-catalog-picker",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:01:40.646Z",
+      "worker": "907bb448-14bf-4124-969a-2154320754bf",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/design/setup/setupInstructionHelpers.tsx:4 The markdown is split into steps for human display, so there is no always-loaded floor whose lines must earn admission; the registry map's 'instruction' token is a word collision."
+        }
+      ]
+    },
+    "d146b88b-6223-41c7-8330-8b9d7a1b3ee0/agent-instruction-files": {
+      "context": "api-pipeline",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T05:01:40.646Z",
+      "worker": "907bb448-14bf-4124-969a-2154320754bf",
+      "techniques": [
+        {
+          "technique": "write-back-sink-class",
+          "verdict": "not-applicable",
+          "evidence": "src/api/pipeline/teamMemories.ts:29 Team memory is written as a database row over IPC, not appended to a destination named by an instruction file, so no sharing class applies."
+        },
+        {
+          "technique": "machine-owned-regions",
+          "verdict": "not-applicable",
+          "evidence": "src/api/pipeline/triggers.ts:80 A program does patch authored prompt text here, but it is a persona's stored JSON field rather than a block inside a hand-written instruction file, so the marker-fence contract has no file to apply to."
+        }
+      ]
     }
   }
 }

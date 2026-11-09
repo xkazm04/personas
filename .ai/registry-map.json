@@ -5667,8 +5667,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/api/pipeline/teams.ts:31 The only instruction-shaped thing in this IPC layer is a database field passed through to update_team, which is product data rather than a repo-owned file a harness injects: searching its directories for CLAUDE.md, AGENTS.md, copilot-instructions and 'instruction file' found nothing.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "agent-memory",
@@ -16673,8 +16677,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "retrieval",
@@ -44500,8 +44504,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/vault/sub_catalog/components/design/setup/SetupStepCard.tsx:38 The 'instructions' in this context are connector setup steps that a person ticks off, not a brief delivered to an agent: searching its directories for CLAUDE.md, AGENTS.md, copilot-instructions and 'instruction file' found nothing.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "copy-quality-gates",
