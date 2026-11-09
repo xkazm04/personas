@@ -47026,69 +47026,74 @@
       "bundle": "software-engineering",
       "state": "unknown",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T00:01:59.035Z",
+      "evaluatedTs": "2026-11-09T00:23:15.785Z",
       "techniques": [
         {
           "technique": "consolidation",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/team_memory.rs:13 The only grounding is a nullable run id. There is no confidence, no episode provenance, and no superseded-by or validity field, so a reversal can only coexist with the claim it reverses."
+          "evidence": "src-tauri/core/src/models/team_memory.rs:13 Optional run id is the only grounding; the struct and the team_memories schema have no episode provenance, no distiller confidence and no superseded-by, and several writers pass run_id None."
         },
         {
           "technique": "memory-value-model",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/team_memory.rs:19 One static property orders both recall and eviction. The struct has no trust, age-decay or usage axis, which is the single-property ordering the technique names as the bug."
-        },
-        {
-          "technique": "recall-injection",
-          "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:129 get_for_injection takes only team_id and limit, so recall is one merged ranked pool with no relevance tier and no separately budgeted recency tier. Callers pass limits of 20, 15, 12 and 5."
+          "evidence": "src-tauri/core/src/models/team_memory.rs:19 A writer-assigned integer is the whole value model: no trust axis, no per-kind half-life, no usage term. Recall and eviction do share this one axis, but ordering by a single property is the failure the technique names."
         },
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:478 evict_excess (called from pipeline_executor.rs:1144) hard-deletes run-generated rows by column sort with only a tracing line: no demotion tier, no tombstone and no last-use input."
-        },
-        {
-          "technique": "owner-and-counterpart-scope",
-          "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/team_memory.rs:12 The owner is a team and is NOT NULL on the row; persona_id and member_id are separate optional fields, so the writer is not conflated with the owner."
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:481 Forgetting is a cap-triggered hard DELETE of the lowest static importance then oldest, with no last-use input, demotion tier or tombstone; only a log line records it."
         },
         {
           "technique": "memory-governance",
-          "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/evolution.rs:99 A change to a persona's prompt and genome, its standing rules, takes effect only on human approval."
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:20 Free-text tags are the only source stamp and writers use different shapes (useTeamPin.ts:28 JSON, useAutoTeam.ts:230 'seeded,...', manual_reviews.rs:657 'human-review,...'), so no uniform author-of-evidence field exists. The evolution gate below is the conformant half of this technique."
         },
         {
           "technique": "pending-beliefs-live-apart",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/evolution.rs:95 The unconfirmed change sits in its own proposal row, not as a status on the live persona, so a forgotten filter cannot apply it."
+          "evidence": "src-tauri/core/src/models/evolution.rs:96 A proposed persona change lives in its own proposal table and never on the live persona until approved."
         },
         {
           "technique": "rejected-revision-leaves-its-evidence",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/evolution.rs:124 Scoped to this model: the row keeps the target, the candidate genome, both scores, the threshold, the evidence and the outcome after a rejection. The reader half is off-context; see notes."
+          "evidence": "src-tauri/core/src/models/evolution.rs:126 The proposal row and its evidence survive rejection, since the repo only updates status and decision_note and has no delete. Whether a later cycle reads rejected rows before re-proposing was not checked."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:129 get_for_injection takes only team_id and limit, so recall is one merged ranked pool with no relevance tier and no separately budgeted recency tier. Callers pass limits of 20, 15, 12 and 5.",
+          "carriedFrom": "2026-11-09"
+        },
+        {
+          "technique": "owner-and-counterpart-scope",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:12 The owner is a team and is NOT NULL on the row; persona_id and member_id are separate optional fields, so the writer is not conflated with the owner.",
+          "carriedFrom": "2026-11-09"
         },
         {
           "technique": "procedure-promotion",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/recipe.rs:396 A recipe earns a version only when the operator promotes it, and validation enforces both halves. These are catalog-authored procedures, so no observed-recurrence count applies to them."
+          "evidence": "src-tauri/core/src/models/recipe.rs:396 A recipe earns a version only when the operator promotes it, and validation enforces both halves. These are catalog-authored procedures, so no observed-recurrence count applies to them.",
+          "carriedFrom": "2026-11-09"
         },
         {
           "technique": "episodic-capture",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/build_session.rs:346 The build result is written to the companion's episode log at a meaningful boundary, the terminal phase, not on a clock."
+          "evidence": "src-tauri/core/src/models/build_session.rs:346 The build result is written to the companion's episode log at a meaningful boundary, the terminal phase, not on a clock.",
+          "carriedFrom": "2026-11-09"
         },
         {
           "technique": "exposure-is-not-credit",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/recipe_suggestion.rs:48 No run verdict is copied onto delivered items here. The accept rate counts only item-naming accept and dismiss events and leaves silent impressions out."
+          "evidence": "src-tauri/core/src/models/recipe_suggestion.rs:48 No run verdict is copied onto delivered items here. The accept rate counts only item-naming accept and dismiss events and leaves silent impressions out.",
+          "carriedFrom": "2026-11-09"
         }
       ],
       "withdrawn": {
-        "worker": "b7c103ab-b436-4ad9-a661-20160e119ea5",
+        "worker": "c35ea5b3-30d0-4d49-9d50-919b5bb64b65",
         "state": "deviation",
-        "at": "2026-11-09T00:02:23.204812+00:00",
-        "reason": "reviewer (sonnet): The anchor team_memory.rs is not among the context's listed files (recipe, build_session, persona, genome and the like), so the deviation describes a different context's code. The struct does lack confidence, supersedence and last-use fields, but that finding belongs to the context that owns team_me"
+        "at": "2026-11-09T00:23:48.362072+00:00",
+        "reason": "reviewer (sonnet): The verdict is about team_memory.rs, the team_memories repo and frontend writers, none of which are among this context's listed files (recipe.rs, build_session.rs and similar). I confirmed the struct fields and the cap-triggered DELETE, but not that this code belongs to the recipe-build-models conte"
       }
     },
     "9fff7e41-4fc5-4c31-846b-c04ca1c79757/agent-memory": {
@@ -47110,6 +47115,43 @@
       "evaluatedTs": "2026-11-09T00:01:59.035Z",
       "worker": "b7c103ab-b436-4ad9-a661-20160e119ea5",
       "techniques": []
+    },
+    "7741725e-8124-4899-b17e-8e39e7fcf1ed/agent-memory": {
+      "context": "studio",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T00:23:15.785Z",
+      "worker": "c35ea5b3-30d0-4d49-9d50-919b5bb64b65",
+      "techniques": [
+        {
+          "technique": "working-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioStore.ts:584 The send carries only the new text, so the persisted history is never re-injected; operative state belongs to the server-side build session."
+        }
+      ]
+    },
+    "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/agent-memory": {
+      "context": "plugins-dev-tools-lifecycle",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T00:23:15.785Z",
+      "worker": "c35ea5b3-30d0-4d49-9d50-919b5bb64b65",
+      "techniques": [
+        {
+          "technique": "recall-injection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/healthModel.ts:64 'recall' is a lifecycle step label, not a retrieval path into model context."
+        },
+        {
+          "technique": "working-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/presets/gate/gateView.ts:105 This is a UI cache of sort and filter state per step, not an agent's operative state."
+        }
+      ]
     }
   }
 }

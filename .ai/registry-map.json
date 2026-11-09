@@ -29690,7 +29690,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/healthModel.ts:64 Here 'recall' is only the id of a process step nothing can observe and 'memory' only names bounded UI module caches, and a search of the whole sub_lifecycle directory for episode, consolidat, belief and agent_memory found no file, so the context holds no agent memory.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "codebase-scanning",
@@ -37449,7 +37453,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/studio/studioHistory.ts:8 Studio persists only a capped display log for restoring the UI and sends the model just the new text, and a search of src/features/studio and src/features/triggers for recall, episode, belief and agent_memory found no file, so no agent memory store exists in this context.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "multi-project",
