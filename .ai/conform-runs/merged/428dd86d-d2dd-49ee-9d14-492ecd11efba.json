@@ -1,0 +1,74 @@
+{
+ "schema": "conform-run/1",
+ "worker": "428dd86d-d2dd-49ee-9d14-492ecd11efba",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-11-09T22:09:04.335173+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-health",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:45 The context's source-reading guard counts only literal `source_type: \"x\"` assignments and silently skips every other form, so `source_type: DRIVE_SOURCE_TYPE.to_string()` (src-tauri/src/commands/drive/mod.rs:138) and `source_type: tpl.source.to_string()` (src-tauri/src/commands/communication/events.rs:349) are invisible to it. Their tokens (local_drive, the mock_seed sources) are covered today only because someone registered them by hand, so this is a blind spot, not a live leak.",
+   "techniques": [
+    {
+     "technique": "unparseable-form-is-a-finding",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:45 The matcher has no rule that refuses a non-literal source_type assignment, so a constant, field or format! form passes as if it complied. The repo owns the scanned tree, so the precondition holds."
+    },
+    {
+     "technique": "gate-liveness",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:65 The walked population has a floor, so a moved crate or a broken walk goes red instead of reading as a clean registry."
+    },
+    {
+     "technique": "match-the-resolved-artifact",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:70 The absence assertion `uncovered` == [] at :74 carries a presence assertion on the needle population. The `#[cfg(test)]` tail cut was measured: every literal after the first cfg(test) in each file sits inside a test module today."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "quality-gates",
+   "context": "template-adoption-persona-layout",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "vault-credentials-components-features",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "run-desk",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "hooks-utility-data",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-09T22:09:04.335173+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "gate-liveness",
+    "match-the-resolved-artifact",
+    "unparseable-form-is-a-finding"
+   ],
+   "deviations": 1,
+   "context": "overview-health",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

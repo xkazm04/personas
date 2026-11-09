@@ -24999,8 +24999,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:45 The context's source-reading guard counts only literal `source_type: \"x\"` assignments and silently skips every other form, so `source_type: DRIVE_SOURCE_TYPE.to_string()` (src-tauri/src/commands/drive/mod.rs:138) and `source_type: tpl.source.to_string()` (src-tauri/src/commands/communication/events.rs:349) are invisible to it. Their tokens (local_drive, the mock_seed sources) are covered today only because someone registered them by hand, so this is a blind spot, not a live leak.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a5b34d39a4b8edd3",
+          "evaluatedRevision": 56
         },
         {
           "subject": "agent-instruction-files",

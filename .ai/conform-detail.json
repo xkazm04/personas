@@ -48417,6 +48417,32 @@
       "evaluatedTs": "2026-11-09T05:41:17.980Z",
       "worker": "ca9a388e-7db3-49f9-99a8-c109713ed1e6",
       "techniques": []
+    },
+    "90f639de-ffc7-4225-b67f-1566e5d66b8b/quality-gates": {
+      "context": "overview-health",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T22:09:04.335Z",
+      "worker": "428dd86d-d2dd-49ee-9d14-492ecd11efba",
+      "techniques": [
+        {
+          "technique": "unparseable-form-is-a-finding",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:45 The matcher has no rule that refuses a non-literal source_type assignment, so a constant, field or format! form passes as if it complied. The repo owns the scanned tree, so the precondition holds."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:65 The walked population has a floor, so a moved crate or a broken walk goes red instead of reading as a clean registry."
+        },
+        {
+          "technique": "match-the-resolved-artifact",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_events/libs/__tests__/eventSourceRegistry.test.ts:70 The absence assertion `uncovered` == [] at :74 carries a presence assertion on the needle population. The `#[cfg(test)]` tail cut was measured: every literal after the first cfg(test) in each file sits inside a test module today."
+        }
+      ]
     }
   }
 }
