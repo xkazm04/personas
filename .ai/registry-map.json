@@ -2891,7 +2891,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:8 The connector tab's persisted writes are credential bindings and automation setup, not anything an agent carries forward as memory; a case-insensitive search of the whole sub_connectors tree found zero hits for memory, episode, recall, belief and consolidation.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "quality-gates",
@@ -25081,7 +25085,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentActions.ts:7 The inbox reads and transitions audit incidents through this API only and holds no agent memory; a case-insensitive search of the whole directory found no episode, recall, belief or decay term, and its only two 'memory' hits are an in-memory bus note and the inbox's own saved filter view.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "table",

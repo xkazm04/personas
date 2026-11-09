@@ -47019,6 +47019,97 @@
       "evaluatedTs": "2026-11-08T23:32:41.118Z",
       "worker": "ce95e3d1-b798-489e-b0cf-2ace38658cea",
       "techniques": []
+    },
+    "ae80cd74-5beb-4d76-ae0a-16a4b581a2df/agent-memory": {
+      "context": "recipe-build-models",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T00:01:59.035Z",
+      "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:13 The only grounding is a nullable run id. There is no confidence, no episode provenance, and no superseded-by or validity field, so a reversal can only coexist with the claim it reverses."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:19 One static property orders both recall and eviction. The struct has no trust, age-decay or usage axis, which is the single-property ordering the technique names as the bug."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:129 get_for_injection takes only team_id and limit, so recall is one merged ranked pool with no relevance tier and no separately budgeted recency tier. Callers pass limits of 20, 15, 12 and 5."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:478 evict_excess (called from pipeline_executor.rs:1144) hard-deletes run-generated rows by column sort with only a tracing line: no demotion tier, no tombstone and no last-use input."
+        },
+        {
+          "technique": "owner-and-counterpart-scope",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/team_memory.rs:12 The owner is a team and is NOT NULL on the row; persona_id and member_id are separate optional fields, so the writer is not conflated with the owner."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/evolution.rs:99 A change to a persona's prompt and genome, its standing rules, takes effect only on human approval."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/evolution.rs:95 The unconfirmed change sits in its own proposal row, not as a status on the live persona, so a forgotten filter cannot apply it."
+        },
+        {
+          "technique": "rejected-revision-leaves-its-evidence",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/evolution.rs:124 Scoped to this model: the row keeps the target, the candidate genome, both scores, the threshold, the evidence and the outcome after a rejection. The reader half is off-context; see notes."
+        },
+        {
+          "technique": "procedure-promotion",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/recipe.rs:396 A recipe earns a version only when the operator promotes it, and validation enforces both halves. These are catalog-authored procedures, so no observed-recurrence count applies to them."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/build_session.rs:346 The build result is written to the companion's episode log at a meaningful boundary, the terminal phase, not on a clock."
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/recipe_suggestion.rs:48 No run verdict is copied onto delivered items here. The accept rate counts only item-naming accept and dismiss events and leaves silent impressions out."
+        }
+      ],
+      "withdrawn": {
+        "worker": "b7c103ab-b436-4ad9-a661-20160e119ea5",
+        "state": "deviation",
+        "at": "2026-11-09T00:02:23.204812+00:00",
+        "reason": "reviewer (sonnet): The anchor team_memory.rs is not among the context's listed files (recipe, build_session, persona, genome and the like), so the deviation describes a different context's code. The struct does lack confidence, supersedence and last-use fields, but that finding belongs to the context that owns team_me"
+      }
+    },
+    "9fff7e41-4fc5-4c31-846b-c04ca1c79757/agent-memory": {
+      "context": "overview-incidents",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T00:01:59.035Z",
+      "worker": "b7c103ab-b436-4ad9-a661-20160e119ea5",
+      "techniques": []
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/agent-memory": {
+      "context": "agents-connectors",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T00:01:59.035Z",
+      "worker": "b7c103ab-b436-4ad9-a661-20160e119ea5",
+      "techniques": []
     }
   }
 }
