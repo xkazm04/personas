@@ -47986,6 +47986,83 @@
           "evidence": "src/api/devTools/__tests__/findingVocabularyParity.test.ts:21 The parsed item count must equal the array length Rust declares, so a partial or empty parse fails."
         }
       ]
+    },
+    "c5228746-931d-4733-9cf7-84519a2c9605/test-harness": {
+      "context": "hooks-design",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:45:14.176Z",
+      "worker": "546d665d-4916-4e5a-9276-4642f901628c",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/hooks/design/core/__tests__/useAiArtifactTask.test.ts:119 No test advances to just under the deadline; the parity test checks artifactDeadlineMs in isolation, and grep found no other timer advance under src/hooks/design, so the crossing at useAiArtifactTask.ts:180 is unpinned."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/hooks/design/core/__tests__/artifactDeadlineParity.test.ts:98 Prose can spell this needle: line 100 admits the hook's own doc comment matches and carves that file out by path, so a usage example in a comment elsewhere would turn the inventory red."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "conformant",
+          "evidence": "src/hooks/design/core/__tests__/artifactDeadlineParity.test.ts:103 The walk is held to an exact inventory, so an empty match fails rather than passing."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/hooks/design/core/__tests__/useAiArtifactTask.test.ts:111 The watchdog runs on a fake clock, so load cannot change the result; the missing lower bound is recorded under unreached-decisions."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "conformant",
+          "evidence": "src/hooks/design/core/__tests__/useAiArtifactTask.test.ts:188 The fake start function rejects in the production envelope shape."
+        },
+        {
+          "technique": "proved-off-the-path",
+          "verdict": "conformant",
+          "evidence": "src/hooks/design/credential/useCredentialDesign.ts:43 The hook under test has shipped consumers."
+        }
+      ]
+    },
+    "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/test-harness": {
+      "context": "vault-shared-playground",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T04:45:14.176Z",
+      "worker": "546d665d-4916-4e5a-9276-4642f901628c",
+      "techniques": [
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/__tests__/HealthProbeBanner.test.tsx:26 The assertion looks for a class word the failure treatment no longer contains, so it cannot fail on the defect it names."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/__tests__/HealthProbeBanner.test.tsx:59 The name claims the treatment, but the body asserts only data-state, which comes from the state and not from the CHROME entry."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/playground/tabs/__tests__/mcpToolsTab.test.tsx:83 The superseded run is ordered by a held promise resolved after the switch."
+        },
+        {
+          "technique": "a-test-helper-is-a-fork-of-the-driver",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/playground/tabs/__tests__/apiExplorerErrors.test.tsx:5 The IPC fake rejects with the production envelope."
+        },
+        {
+          "technique": "proved-off-the-path",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/playground/PlaygroundTabContent.tsx:87 The tab under test is mounted by the shipped playground."
+        }
+      ]
     }
   }
 }

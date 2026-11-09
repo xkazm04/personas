@@ -17162,7 +17162,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/design/core/__tests__/useAiArtifactTask.test.ts:119 The watchdog test jumps 60 minutes past a 600s deadline, so if useAiArtifactTask.ts:180 stopped passing the derived deadline and the 5-minute default in useTauriStream applied, this test would stay green and the early timeout the parity file warns about would go unnoticed (reasoned from the code, not run, because this seat is read-only).",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "fleet-orchestration",
@@ -46339,7 +46343,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/__tests__/HealthProbeBanner.test.tsx:26 The failed treatment is status-error classes (HealthProbeBanner.tsx:50) with no 'red' substring, so painting an unverifiable probe as a failure would keep this assertion green and the regression the file exists to stop would pass (reasoned from the code, not run, because this seat is read-only).",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:a3c517733d58374b",
+          "evaluatedRevision": 29
         },
         {
           "subject": "markdown-vault",
