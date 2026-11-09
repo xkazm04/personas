@@ -47340,6 +47340,52 @@
       "evaluatedTs": "2026-11-09T01:24:08.142Z",
       "worker": "319abeb8-3aaa-4acc-ab20-13f4ad087c1a",
       "techniques": []
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/agent-memory": {
+      "context": "teams-goals",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:41:13.620Z",
+      "techniques": [
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:28 Stamps the write channel, not the evidence's author or source row; item.id and item.kind are available at this call and dropped."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:21 The pinned copy keeps no pointer to its raw source: run_id is hard-coded null although the channel item can carry an assignmentId."
+        }
+      ],
+      "withdrawn": {
+        "worker": "c7d1af3c-7408-46f8-8c83-5f939c807524",
+        "state": "deviation",
+        "at": "2026-11-09T01:41:31.772782+00:00",
+        "reason": "reviewer (sonnet): The anchor useTeamPin.ts is in fleet/monitor/channels, not among the teams-goals context files (all under projects/development/goals), so the verdict is about a different context's code, and its 'goals half has no memory construct' claim was never shown at any anchor."
+      }
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/agent-memory": {
+      "context": "shared-components-layout",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:41:13.620Z",
+      "worker": "c7d1af3c-7408-46f8-8c83-5f939c807524",
+      "techniques": []
+    },
+    "35c52f59-9612-47c4-8662-0ebb3c821771/agent-memory": {
+      "context": "notepad-core",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:41:13.620Z",
+      "worker": "c7d1af3c-7408-46f8-8c83-5f939c807524",
+      "techniques": []
     }
   }
 }

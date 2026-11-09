@@ -22201,7 +22201,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/notepadStore.ts:14 A recursive search of src/features/notepad found no recall, episode, belief, provenance or distill, and 'memory' here means the in-process editor tier of an operator-written scratchpad; Athena reads a note by pointer and proposes inline edits the operator accepts, so these files never write or recall a belief.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "mcp-tools",
@@ -35571,7 +35575,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/systemLoad.ts:3 A recursive search of the layout, kanban and buttons directories found no recall, episode, belief, provenance or memories, and the only 'memory' hits are host RAM percentages for the footer load gauge in systemLoad.ts and its test, so these presentation primitives hold no agent memory to judge.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "native-shell-integration",
