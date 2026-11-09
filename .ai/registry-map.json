@@ -6164,8 +6164,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:21 The appearance page has four sections (language, text size, brightness, theming), and a case-insensitive search of sub_appearance for voice/audio/microphone/speechSynthesis found nothing, so it has no voice setting and no voice setup flow.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "render-mount-pipeline",
@@ -10011,8 +10015,7 @@
           "source": "retained",
           "state": "not-applicable",
           "evidence": "src/features/companions/athena/NarrationThread.tsx:2 'narration' is the visible progress-beat timeline; re-checked against rev 20, none of the nine components reaches speech, tts, read-aloud or playback, so the tts-pipeline/voice-ux-integration preconditions do not hold",
-          "evaluatedAt": "2026-10-12",
-          "stale": true
+          "evaluatedAt": "2026-10-12"
         }
       ],
       "governance": "governed"
@@ -13806,8 +13809,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src-tauri/engine/src/project_tracking/mod.rs:1 This context absorbs git, ledger and Obsidian signals and builds an LLM pulse; a case-insensitive search of project_tracking (both crates), workspace_sync and both runner dirs for voice/tts/audio/microphone found nothing (the only 'speak' hits are team_context.rs prose about a text channel), so no capture or synthesis pipeline exists to judge.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "translation-quality-measurement",
@@ -22394,8 +22401,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/notepad/notepadActions.ts:52 Here 'speak' means sending a text turn to Athena tagged as a surface source, not audio; a case-insensitive search of src/features/notepad for voice/audio/microphone/dictat found nothing (the 'transcript' hits refer to the chat card transcript), so the pad has no dictation or read-aloud.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "fleet-orchestration",

@@ -13002,28 +13002,32 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T02:35:18.433Z",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:41:52.214Z",
       "techniques": [
         {
           "technique": "stt-pipeline",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/Composer.tsx:346 Denied and no-device share one message, shown in a title tooltip only, and the composer has no level meter. The partial/final contract does hold: the interim text is a display tail only (:284), and only finalText reaches the draft."
+          "evidence": "src/features/companions/athena/Composer.tsx:346 Denied and no-device share one message, shown in a title tooltip only, and the composer has no level meter. The partial/final contract does hold: the interim text is a display tail only (:284), and only finalText reaches the draft.",
+          "carriedFrom": "2026-10-24"
         },
         {
           "technique": "engine-abstraction",
           "verdict": "conformant",
-          "evidence": "src/features/companions/athena/Composer.tsx:77 The surface takes one engine-agnostic DictationState. The browser-vs-whisper choice lives behind useSpeechInput, so the composer code never branches on an engine name."
+          "evidence": "src/features/companions/athena/Composer.tsx:77 The surface takes one engine-agnostic DictationState. The browser-vs-whisper choice lives behind useSpeechInput, so the composer code never branches on an engine name.",
+          "carriedFrom": "2026-10-24"
         },
         {
           "technique": "voice-ux-integration",
           "verdict": "conformant",
-          "evidence": "src/features/companions/athena/Composer.tsx:324 The mic affordance appears only when an engine is supported (honest absence, not a dead button). Its toggle keeps start and stop in one unmoved control, with aria-pressed set."
+          "evidence": "src/features/companions/athena/Composer.tsx:324 The mic affordance appears only when an engine is supported (honest absence, not a dead button). Its toggle keeps start and stop in one unmoved control, with aria-pressed set.",
+          "carriedFrom": "2026-10-24"
         },
         {
           "technique": "spoken-intent-parsing",
           "verdict": "not-applicable",
-          "evidence": "src/features/companions/athena/Composer.tsx:193 The final transcript folds into an editable draft that the user sends. Nothing parses it into a command."
+          "evidence": "src/features/companions/athena/Composer.tsx:193 The final transcript folds into an editable draft that the user sends. Nothing parses it into a command.",
+          "carriedFrom": "2026-10-24"
         }
       ],
       "superseded": [
@@ -13040,13 +13044,20 @@
           "evaluatedAt": "2026-10-12T12:41:29.000Z",
           "worker": "20b83d7d-3128-42dd-a700-92e31c420fbd",
           "reason": "replaced by 31ddab91-c727-4d09-8dd5-3c73646ca13e"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:2 'narration' is the visible progress-beat timeline; re-checked against rev 20, none of the nine components reaches speech, tts, read-aloud or playback, so the tts-pipeline/voice-ux-integration preconditions do not hold",
+          "evaluatedAt": "2026-10-12",
+          "worker": null,
+          "reason": "replaced by 5e9b639b-7aca-4af1-8825-d290395a1d9d"
         }
       ],
       "withdrawn": {
-        "worker": "31ddab91-c727-4d09-8dd5-3c73646ca13e",
-        "state": "deviation",
-        "at": "2026-10-24T02:38:33.157440+00:00",
-        "reason": "reviewer (sonnet): The context map lists only src/features/plugins/companion/* files for companion-narration-ops, and Composer.tsx and useSpeechInput live in src/features/companions/athena, so the verdict is about code outside the context; I also did not confirm that every engine error collapses into one message."
+        "worker": "5e9b639b-7aca-4af1-8825-d290395a1d9d",
+        "state": "not-applicable",
+        "at": "2026-11-09T23:42:41.916388+00:00",
+        "reason": "reviewer (sonnet): The claim that no voice pipeline touches narration is contradicted: athenaStore.ts:192 says streamingBeat (the model's progress-beat narration) is \"spoken aloud when voice is on\", and chat/athenaChatVoice.ts calls store.setStreamingBeat and speaks PROGRESS: beats. The voice ack/heartbeat pipeline th"
       }
     },
     "92f6c0fc-8d5c-43a7-bab8-1851973d5198/quality-regression-gating": {
@@ -48587,6 +48598,36 @@
         "at": "2026-11-09T23:34:11.821436+00:00",
         "reason": "reviewer (sonnet): The anchor validation/mod.rs:12 is the `use crate::error::AppError;` line, which shows nothing about absent hook chains or checkpoint stores. The claim rests on a grep alone, and validation/chat.rs and retrieval/mod.rs (743 lines) were not shown to be free of conversation or session handling."
       }
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/voice-io": {
+      "context": "engine-project-tracking",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:41:52.214Z",
+      "worker": "5e9b639b-7aca-4af1-8825-d290395a1d9d",
+      "techniques": []
+    },
+    "14c7d145-2166-454b-aee5-d69d9d527d79/voice-io": {
+      "context": "appearance-settings",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:41:52.214Z",
+      "worker": "5e9b639b-7aca-4af1-8825-d290395a1d9d",
+      "techniques": []
+    },
+    "35c52f59-9612-47c4-8662-0ebb3c821771/voice-io": {
+      "context": "notepad-core",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T23:41:52.214Z",
+      "worker": "5e9b639b-7aca-4af1-8825-d290395a1d9d",
+      "techniques": []
     }
   }
 }

@@ -1,0 +1,114 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5e9b639b-7aca-4af1-8825-d290395a1d9d",
+  "subject": "voice-io",
+  "evaluatedAt": "2026-11-09T23:41:52.214218+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "engine-project-tracking",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/engine/src/project_tracking/mod.rs:1 This context absorbs git, ledger and Obsidian signals and builds an LLM pulse; a case-insensitive search of project_tracking (both crates), workspace_sync and both runner dirs for voice/tts/audio/microphone found nothing (the only 'speak' hits are team_context.rs prose about a text channel), so no capture or synthesis pipeline exists to judge.",
+      "techniques": [],
+      "absenceTerms": [
+        "voice",
+        "tts",
+        "audio",
+        "microphone"
+      ]
+    },
+    {
+      "context": "appearance-settings",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:21 The appearance page has four sections (language, text size, brightness, theming), and a case-insensitive search of sub_appearance for voice/audio/microphone/speechSynthesis found nothing, so it has no voice setting and no voice setup flow.",
+      "techniques": [],
+      "absenceTerms": [
+        "voice",
+        "audio",
+        "microphone",
+        "speechSynthesis"
+      ]
+    },
+    {
+      "context": "notepad-core",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/notepad/notepadActions.ts:52 Here 'speak' means sending a text turn to Athena tagged as a surface source, not audio; a case-insensitive search of src/features/notepad for voice/audio/microphone/dictat found nothing (the 'transcript' hits refer to the chat card transcript), so the pad has no dictation or read-aloud.",
+      "techniques": [],
+      "absenceTerms": [
+        "voice",
+        "audio",
+        "microphone",
+        "dictat"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "voice-io",
+      "context": "plugins-artist-media-studio-hooks",
+      "reason": "The context's code no longer exists. src/features/plugins/artist/sub_media_studio/hooks/* is absent from git ls-files, and commit 0697f13438 'chore(plugins): remove the Artist and Research Lab plugins, client and server' removed it. Only a retirement migration (src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs) and the media_studio i18n locale files remain, so there is no code to judge. The context map entry is stale."
+    },
+    {
+      "subject": "voice-io",
+      "context": "companion-narration-ops",
+      "reason": "withdrawn after review: reviewer (sonnet): The claim that no voice pipeline touches narration is contradicted: athenaStore.ts:192 says streamingBeat (the model's progress-beat narration) is \"spoken aloud when voice is on\", and chat/athenaChatVoice.ts calls store.setStreamingBeat and speaks PROGRESS: beats. The voice ack/heartbeat pipeline th"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-09T23:41:52.214218+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "companion-narration-ops",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T23:41:52.214218+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "engine-project-tracking",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T23:41:52.214218+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "appearance-settings",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T23:41:52.214218+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "notepad-core",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
