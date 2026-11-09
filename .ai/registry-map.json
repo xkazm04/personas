@@ -4669,7 +4669,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/api/obsidianBrain/index.ts:420 This IPC contract offers a model-driven memory pass that hard-deletes vault notes, with no demotion tier, tombstone or report-only stage, so a wrong judgment is unrecoverable; it is one of three deviations the context's wire contracts expose, and the companion brain's own doors are materially better.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "voice-io",
@@ -12908,7 +12912,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/display/CategoryChip.tsx:17 These are presentational table and badge primitives: a case-insensitive search of the display and icons directories for episode, recall, belief and supersede found nothing, and the only 'memory' hits are this chip's colour lookup and one comment in UnifiedTable.tsx:641, so no capture, consolidation, decay or recall exists here.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "test-harness",
@@ -34940,7 +34948,11 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:101 This is navigation and app chrome: a case-insensitive search of the chrome directories for episode, recall, belief and supersede found nothing, and the 'memory' hits are nav entries, comments and one hook mount (BackgroundServices.tsx:47) whose writer lives in the companions feature, so the context implements no memory pipeline stage.",
+          "evaluatedAt": "2026-11-09",
+          "evaluatedAgainst": "sha256-b2:2b62b4004acc600d",
+          "evaluatedRevision": 53
         },
         {
           "subject": "long-form-reading-surface",

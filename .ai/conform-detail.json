@@ -47189,38 +47189,53 @@
       "context": "api-agents",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "deviation",
       "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T00:44:43.629Z",
+      "evaluatedTs": "2026-11-09T01:24:08.142Z",
+      "worker": "319abeb8-3aaa-4acc-ab20-13f4ad087c1a",
       "techniques": [
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src/api/obsidianBrain/index.ts:420 pruneStale drives revitalize.rs:124-126, which tells a CLI model to DELETE notes and to prefer deleting the older note when two disagree. The panel defaults it on (RevitalizePanel.tsx:27). No archive, tombstone or report-only stage appeared in that file, and the 40-note bound is a prompt instruction. Vault lane only: companion fact deletion does write a forget tombstone (semantic.rs:500)."
+        },
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src/api/obsidianBrain/index.ts:422 revitalize.rs:131-132 has the model merge notes and then delete the absorbed ones. The pass applies its own result instead of returning proposals, and members are destroyed rather than kept linked and auditable."
+        },
         {
           "technique": "working-memory",
           "verdict": "deviation",
-          "evidence": "src/api/agents/chat.ts:53 The column exists and is preserved by COALESCE but is never populated. build_summary is a truncated tail of messages, which is accumulation, not a synthesized state of goal, constraints, decisions and open threads."
+          "evidence": "src/api/agents/chat.ts:53 The persona chat contract declares session working memory, but no caller passes it (chatSlice.ts:125 and :155 send only chatMode), chat_turn.rs:472 and :663 write None, and no reader of the column was found in src or src-tauri. Applies to persona chat only; Athena's operative memory is a separate path not judged here."
         },
         {
-          "technique": "consolidation",
-          "verdict": "conformant",
-          "evidence": "src/api/companion.ts:1614 Judged at the IPC contract: items are typed add, update or contradict and carry sources, confidence and a supersede link. The read-back of citations lives in the backend and was not judged."
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src/api/companion.ts:1616 Partial. Proposals do live apart from facts (factId is null until applied), and the proposer checks rejection on the exact proposal (consolidation.rs:356-364). But rejected and applied rows stay on the pending row as a status, which the technique names as a failure mode. The per-run itemsPending count is computed by status, so its stated count harm does not occur."
         },
         {
           "technique": "memory-governance",
           "verdict": "conformant",
-          "evidence": "src/api/companion.ts:1548 A correction to an identity claim is itself recorded and takes effect through an approval, matching the human-gated lane; judged at the contract."
+          "evidence": "src/api/companion.ts:1548 An identity correction is remembered as an episode and takes effect through approval, keeping the self-model human-gated. Companion brain lane only."
         },
         {
-          "technique": "pending-beliefs-live-apart",
+          "technique": "consolidation",
           "verdict": "conformant",
-          "evidence": "src/api/companion.ts:1617 Proposals live in companion_consolidation_item, apart from live facts, and get a fact id only once applied. Resolved rows stay with a status rather than leaving, and each carries a confidence number; the technique asks otherwise on both."
+          "evidence": "src/api/companion.ts:1614 The wire item carries typed kinds, scope, cited sources, confidence and a supersede link, and is reviewed before it writes a fact. Companion brain lane only; the vault pass does not follow this. Batch mechanics were not traced."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "conformant",
+          "evidence": "src/api/companion.ts:2364 Narrow: the per-turn preview names each entry's lane and reports hits dropped by the relevance floor, so considered differs from selected. No budget figure is on this wire, and injection into the prompt is backend code not judged here."
+        },
+        {
+          "technique": "lane-reconciliation",
+          "verdict": "conformant",
+          "evidence": "src/api/companion.ts:1683 Narrow: repair is a separate door that re-derives the vector lane from the record, and health.rs reports unembedded nodes. Lane membership is observed through an embedding stamp rather than declared as intent."
         }
       ],
-      "registryProposal": "pending-beliefs-live-apart says the pending row is deleted after the nod so its count cannot lie. A proposal table that keeps resolved rows as the audit ledger and counts pending by status keeps the failure direction the technique argues for, so the rule may be stricter than its reason.",
-      "withdrawn": {
-        "worker": "cf680eba-9560-4bb2-a3e2-c2a04c7ce7d7",
-        "state": "deviation",
-        "at": "2026-11-09T00:45:22.741950+00:00",
-        "reason": "reviewer (sonnet): The chat.ts working-memory finding holds (workingMemory is never populated, chat_turn.rs:472 and :663 write None), but three of the technique anchors (src/api/companion.ts:1548, :1614 and :1617) are in the companion IPC module. That module is outside the api-agents files, so those parts of the verdi"
-      }
+      "registryProposal": "pending-beliefs-live-apart excludes a scheduled sweep from its gate, yet its failure list reads as binding on any proposal queue. A batch consolidation whose items are each human-reviewed sits between the two; the technique should say whether the separate rejection table and row-leaves-after-the-nod rules bind there."
     },
     "2651f2ce-7fc1-4331-8b31-61e783e9746a/quality-gates": {
       "context": "companions-page",
@@ -47305,6 +47320,26 @@
           "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 Force is a client-only bypass (useLifecycle.ts:310): build_sessions.rs has no force parameter and the promote path writes no override marker. personas.last_test_report keeps a report from the test step (build_sessions.rs:854-867), but that is not written by the advancing act and does not exist for a skipped test. Line 128 stamps premiere as issued whether or not the screening passed."
         }
       ]
+    },
+    "739b6d67-2c36-41ee-9794-a74bc0b25cfd/agent-memory": {
+      "context": "display-table-primitives",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:24:08.142Z",
+      "worker": "319abeb8-3aaa-4acc-ab20-13f4ad087c1a",
+      "techniques": []
+    },
+    "dc471d31-ae30-4ac9-b015-d51969df458d/agent-memory": {
+      "context": "shared-chrome",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-09",
+      "evaluatedTs": "2026-11-09T01:24:08.142Z",
+      "worker": "319abeb8-3aaa-4acc-ab20-13f4ad087c1a",
+      "techniques": []
     }
   }
 }
