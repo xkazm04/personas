@@ -49368,6 +49368,48 @@
         "at": "2026-11-10T22:45:13.525807+00:00",
         "reason": "reviewer (sonnet): The verdict rests on src/api/liveRoadmap.ts, which nothing under src/stores imports (it is used only from features/home/sub_releases), so the anchor belongs to another context. The other anchor, systemStore.ts:67, is only the createNetworkSlice spread. liveRoadmap.ts:4 is a doc-comment line that doe"
       }
+    },
+    "7e214a7d-44c6-4e6c-8b54-b30f4483ce12/eval-harness": {
+      "context": "teams-factory-passport-improve",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:02:09.298Z",
+      "worker": "1518d76e-adc2-492f-9276-e69871103cf5",
+      "techniques": [
+        {
+          "technique": "unaided-baseline-screening",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:190 Green is required, but there is no deprived or failing run to prove that any case could go red, so a pass is not shown to be reachable evidence."
+        },
+        {
+          "technique": "candidate-write-access",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:189 The same agent writes the cases, the runner and the summary, and is then held to that suite's verdict. No holdout is declared and no write surface is enumerated."
+        }
+      ],
+      "registryProposal": "The standard has no technique for COMMISSIONING a harness: a prompt or spec that tells an agent to build an eval suite. That is a common scaffolder pattern, and 'make it green before finishing' is its typical failure, which combines unaided-baseline-screening with candidate-write-access. A short technique, or a use_when trigger on those two, would cover it."
+    },
+    "e62d5595-2bbd-480a-a757-2d3a126545a0/eval-harness": {
+      "context": "overview-memories",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:02:09.298Z",
+      "worker": "1518d76e-adc2-492f-9276-e69871103cf5",
+      "techniques": []
+    },
+    "e13cfc6c-f666-4959-81c0-2cfbc4815f04/eval-harness": {
+      "context": "templates-recipes",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:02:09.298Z",
+      "worker": "1518d76e-adc2-492f-9276-e69871103cf5",
+      "techniques": []
     }
   }
 }

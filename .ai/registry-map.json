@@ -25885,8 +25885,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/overview/sub_memories/libs/memoryConflicts.ts:56 Conflict detection is a deterministic Jaccard/bigram text similarity with no model under test and no scored scenarios. A case-insensitive search of src/features/overview/sub_memories for eval, benchmark and rubric found no hits, so this context has no eval harness to judge.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "client-fetch-cache",
@@ -39234,8 +39238,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "deviation",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:190 The context's one eval-harness construct is the deploy prompt that commissions a harness for a managed repo. It makes 'runs green' the completion criterion for an agent that writes both the cases and the runner, and never asks for any case to be shown capable of failing, so a harness of unfailable cases satisfies it.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "guest-language-introspection",
@@ -42492,8 +42500,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/templates/sub_recipes/eligibility.ts:36 Recipe logic is deterministic connector set-membership, adaptation and binding substitution; nothing runs a model against scenarios. A case-insensitive search of sub_recipes, templates/components and sub_diagrams for eval, benchmark and rubric found no hits.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "connector-catalog",
