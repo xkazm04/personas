@@ -1,0 +1,81 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0f02e589-06ff-465b-8e41-3a1791028a67",
+ "subject": "agent-browser-control",
+ "evaluatedAt": "2026-11-10T00:51:02.573396+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "workspace-governance",
+   "subject": "agent-browser-control",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/twin.rs:1154 Searched every file in this context for browser vocabulary: the only browser contact is this Twin drafting command, which takes an already-picked page context and returns text, plus an operator OAuth WebviewWindow in auth.rs:384. Neither gives an agent a browser to drive, so there is no command surface, ref table, daemon or remote listener to judge.",
+   "techniques": [],
+   "absenceTerms": [
+    "accessibility tree",
+    "cdp",
+    "page_find"
+   ]
+  },
+  {
+   "context": "commands-core",
+   "subject": "agent-browser-control",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/core/mandates.rs:48 A search of src-tauri/src/commands/core for playwright, chromium, selector, unknown_ref and browser_snapshot found nothing. The only browser contact is this event-routing rule that keeps charter events away from page webviews; persona CRUD, chat and memory commands give no agent a browser.",
+   "techniques": [],
+   "absenceTerms": [
+    "playwright",
+    "chromium",
+    "selector",
+    "unknown_ref",
+    "browser_snapshot"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-browser-control",
+   "context": "browser-webview-control",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-browser-control",
+   "context": "site-whitelist-management",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-browser-control",
+   "context": "api-vault",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-10T00:51:02.573396+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-browser-control"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "workspace-governance",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T00:51:02.573396+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-browser-control"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "commands-core",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

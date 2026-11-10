@@ -7912,8 +7912,12 @@
           "revision": 5,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/src/commands/core/mandates.rs:48 A search of src-tauri/src/commands/core for playwright, chromium, selector, unknown_ref and browser_snapshot found nothing. The only browser contact is this event-routing rule that keeps charter events away from page webviews; persona CRUD, chat and memory commands give no agent a browser.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:13f62133e12a86a7",
+          "evaluatedRevision": 6
         },
         {
           "subject": "review-iteration-loops",
@@ -47551,8 +47555,12 @@
           "revision": 5,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:1154 Searched every file in this context for browser vocabulary: the only browser contact is this Twin drafting command, which takes an already-picked page context and returns text, plus an operator OAuth WebviewWindow in auth.rs:384. Neither gives an agent a browser to drive, so there is no command surface, ref table, daemon or remote listener to judge.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:13f62133e12a86a7",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-memory",

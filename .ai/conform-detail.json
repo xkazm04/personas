@@ -48951,6 +48951,26 @@
           "evidence": "src/features/teams/sub_mastermind/lib/DemoNotice.tsx:2 Clause 2 broken by design (notice appears whenever the empty-data demo renders); clause 1 relies on a dismissable dialog with the persistent badge living outside this context; clauses 5/6 realized (inert div rows, 'Demo session' label, scan/add conversion action)."
         }
       ]
+    },
+    "63edaec0-367e-4553-a6ee-bfd4144be305/agent-browser-control": {
+      "context": "workspace-governance",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:51:02.573Z",
+      "worker": "0f02e589-06ff-465b-8e41-3a1791028a67",
+      "techniques": []
+    },
+    "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/agent-browser-control": {
+      "context": "commands-core",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:51:02.573Z",
+      "worker": "0f02e589-06ff-465b-8e41-3a1791028a67",
+      "techniques": []
     }
   }
 }
