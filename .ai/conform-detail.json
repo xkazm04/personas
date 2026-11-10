@@ -35039,39 +35039,48 @@
       "subject": "declarative-object-graph-configs",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-18",
-      "evaluatedTs": "2026-10-18T23:10:19.934Z",
-      "worker": "61ba69d4-4b70-4b7d-bd75-7051c2316c0c",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:14:27.906Z",
+      "worker": "e8f21d14-bb97-4b85-88b4-cb51a337d351",
       "techniques": [
         {
           "technique": "directive-key-namespace",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:46 Dedicated branches know each trigger's shape; there is no generic constructor receiving mixed arguments and loader directives."
-        },
-        {
-          "technique": "escape-hatch-expressions",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:50 Cron is stored as scheduling syntax, not evaluated host-language code for wiring config nodes."
-        },
-        {
-          "technique": "merge-vs-override-marking",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/configs/FileWatcherConfig.tsx:52 Adding a path edits the current form's array; it does not compose config-file layers."
-        },
-        {
-          "technique": "reference-resolution-with-cycle-detection",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:86 The selected credential-event identifier is stored as data, not resolved into a config-defined instance."
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:46 Each trigger type has its own branch and a fixed set of keys. The technique's 'when not to use' clause excludes this case, and no loader directives are mixed with constructor arguments."
         },
         {
           "technique": "sigil-grammar-over-schema",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:80 The endpoint remains a literal URL; the format does not interpret prefixes as object references."
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:80 Values are plain leaves (a URL string). No value can be read as a reference, so there is no sigil to define."
+        },
+        {
+          "technique": "reference-resolution-with-cycle-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:122 Composite conditions are literal event_type strings matched at runtime, not config ids that resolve to instances. There is no resolver and no graph that could contain a cycle."
+        },
+        {
+          "technique": "escape-hatch-expressions",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:89 Computed values come from TypeScript code in the form builder, not from expressions the config evaluates. No eval or new Function appears in the context."
+        },
+        {
+          "technique": "merge-vs-override-marking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:127 One form state produces one config. There is no base/override layering, so there are no repeated-key semantics to mark."
         },
         {
           "technique": "textual-macro-prepass",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:97 Paths configure filesystem watching; they do not splice configuration fragments or address relative config nodes."
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:39 The config is built in memory from form fields. There is no cross-file include and no relative id to expand."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:122 Fixed trigger branches produce a settings dictionary, and searches for sigil, instantiate, and _requires_ found no matches in the context directories or evidence of an object-graph loader.",
+          "evaluatedAt": "2026-10-18T23:10:19.934Z",
+          "worker": "61ba69d4-4b70-4b7d-bd75-7051c2316c0c",
+          "reason": "replaced by e8f21d14-bb97-4b85-88b4-cb51a337d351"
         }
       ]
     },

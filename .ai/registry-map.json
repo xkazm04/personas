@@ -43312,12 +43312,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:122 Fixed trigger branches produce a settings dictionary, and searches for sigil, instantiate, and _requires_ found no matches in the context directories or evidence of an object-graph loader.",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:248352af1a4c3488",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:43 buildTriggerConfig fills a flat settings dictionary of leaf values (cron, url, watch_paths, conditions), one fixed branch per trigger type, so the file never describes a graph of live objects. Searches of the context directories for _requires_, _disabled_, instantiate, new Function and eval( found nothing, so none of the four object-graph obligations apply.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:eb9279efa181d8c8",
+          "evaluatedRevision": 2,
+          "revisionsBehind": 1
         },
         {
           "subject": "convergence-loop-and-requeue",
