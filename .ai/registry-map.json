@@ -26824,7 +26824,11 @@
           "revision": 11,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 When getToolPerformanceSummary fails, the panel empties its rows and shows the same chart EmptyState as a window with no tool runs (line 210), so a failed fetch looks like a quiet period.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:2bbddc303856550d",
+          "evaluatedRevision": 12
         },
         {
           "subject": "table",
@@ -27100,7 +27104,11 @@
           "revision": 11,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 A failed evidence probe becomes null and is derived exactly like a repo with no tests, docs or CI. It is published as measured=true and added to the readiness history (line 340), so an ingestion failure shows up as a verdict and a false regression; repoUnreadable is only set when the probe answers scanned=false.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:2bbddc303856550d",
+          "evaluatedRevision": 12
         },
         {
           "subject": "guest-language-introspection",
@@ -29928,7 +29936,11 @@
           "revision": 11,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/delta.ts:11 Run-to-run changes in pass rate and median time are labelled good or bad at display precision (one point, one second), with no measured noise band, so the instrument's own normal variation is reported as a regression or a recovery; the other techniques read here (unmeasured state, sample floor, failed read) are handled honestly.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:2bbddc303856550d",
+          "evaluatedRevision": 12
         },
         {
           "subject": "voice-io",

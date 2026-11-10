@@ -49226,6 +49226,79 @@
       "evaluatedTs": "2026-11-10T01:20:44.080Z",
       "worker": "97eb42c9-7852-44a9-8ca0-c53f638f162c",
       "techniques": []
+    },
+    "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/measurement-honesty": {
+      "context": "plugins-dev-tools-lifecycle",
+      "subject": "measurement-honesty",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:40:50.962Z",
+      "worker": "51c8b663-19b9-4441-908e-772205b75789",
+      "techniques": [
+        {
+          "technique": "noise-band-and-hysteresis",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/delta.ts:11 The threshold is the display rounding, not a measured re-run spread, so a 1-second median-time move gets tone 'bad'."
+        },
+        {
+          "technique": "unmeasurable-vs-zero",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/delta.ts:57 When either side is unknown the result is null, not +0. Health also has distinct unmeasured, stale and instructed states, and ArcGauge draws unmeasured as a dashed empty track."
+        },
+        {
+          "technique": "minimum-sample-floors",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/next/nextModel.ts:169 Below rules.minSamples the step stays unmeasured and asks for more evidence, and MetricValue shows n beside every rate."
+        }
+      ]
+    },
+    "66bc7a14-bf15-41d7-8d9a-900aa670f47e/measurement-honesty": {
+      "context": "passport-wall-model",
+      "subject": "measurement-honesty",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:40:50.962Z",
+      "worker": "51c8b663-19b9-4441-908e-772205b75789",
+      "techniques": [
+        {
+          "technique": "incomplete-not-verdict",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 The probe error is swallowed into null and no completeness predicate gates the phase-2 publish or recordSnapshot. The provisional skeleton and repoUnreadable flag cover other cases, not this one."
+        },
+        {
+          "technique": "unmeasurable-vs-zero",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:239 With no evidence, tests come out 'none' and line 269 adds the blocker 'No automated test suite detected'. The detector was never run, yet this renders as a measured zero."
+        },
+        {
+          "technique": "renormalize-over-present",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:171 Missing probe fields default to 0 or false and are summed into autoScore and prodScore as zero contributions instead of being dropped from the denominator."
+        }
+      ]
+    },
+    "7901fd6c-0346-430b-aefe-fc4cd623b167/measurement-honesty": {
+      "context": "overview-usage-charts",
+      "subject": "measurement-honesty",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:40:50.962Z",
+      "worker": "51c8b663-19b9-4441-908e-772205b75789",
+      "techniques": [
+        {
+          "technique": "incomplete-not-verdict",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 The error goes only to silentCatch and the UI shows no failure state."
+        },
+        {
+          "technique": "minimum-sample-floors",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:171 An error rate from any denominator (1 error in 1 run = 100%) drives the red or amber text colour and row accent with no minimum-runs floor; only the raw count beside it softens this."
+        }
+      ]
     }
   }
 }

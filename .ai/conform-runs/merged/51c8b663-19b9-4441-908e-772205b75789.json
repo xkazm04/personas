@@ -1,0 +1,127 @@
+{
+ "schema": "conform-run/1",
+ "worker": "51c8b663-19b9-4441-908e-772205b75789",
+ "subject": "measurement-honesty",
+ "evaluatedAt": "2026-11-10T22:40:50.962309+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "plugins-dev-tools-lifecycle",
+   "subject": "measurement-honesty",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/delta.ts:11 Run-to-run changes in pass rate and median time are labelled good or bad at display precision (one point, one second), with no measured noise band, so the instrument's own normal variation is reported as a regression or a recovery; the other techniques read here (unmeasured state, sample floor, failed read) are handled honestly.",
+   "techniques": [
+    {
+     "technique": "noise-band-and-hysteresis",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/delta.ts:11 The threshold is the display rounding, not a measured re-run spread, so a 1-second median-time move gets tone 'bad'."
+    },
+    {
+     "technique": "unmeasurable-vs-zero",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/delta.ts:57 When either side is unknown the result is null, not +0. Health also has distinct unmeasured, stale and instructed states, and ArcGauge draws unmeasured as a dashed empty track."
+    },
+    {
+     "technique": "minimum-sample-floors",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/next/nextModel.ts:169 Below rules.minSamples the step stays unmeasured and asks for more evidence, and MetricValue shows n beside every rate."
+    }
+   ]
+  },
+  {
+   "context": "passport-wall-model",
+   "subject": "measurement-honesty",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 A failed evidence probe becomes null and is derived exactly like a repo with no tests, docs or CI. It is published as measured=true and added to the readiness history (line 340), so an ingestion failure shows up as a verdict and a false regression; repoUnreadable is only set when the probe answers scanned=false.",
+   "techniques": [
+    {
+     "technique": "incomplete-not-verdict",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 The probe error is swallowed into null and no completeness predicate gates the phase-2 publish or recordSnapshot. The provisional skeleton and repoUnreadable flag cover other cases, not this one."
+    },
+    {
+     "technique": "unmeasurable-vs-zero",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:239 With no evidence, tests come out 'none' and line 269 adds the blocker 'No automated test suite detected'. The detector was never run, yet this renders as a measured zero."
+    },
+    {
+     "technique": "renormalize-over-present",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:171 Missing probe fields default to 0 or false and are summed into autoScore and prodScore as zero contributions instead of being dropped from the denominator."
+    }
+   ]
+  },
+  {
+   "context": "overview-usage-charts",
+   "subject": "measurement-honesty",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 When getToolPerformanceSummary fails, the panel empties its rows and shows the same chart EmptyState as a window with no tool runs (line 210), so a failed fetch looks like a quiet period.",
+   "techniques": [
+    {
+     "technique": "incomplete-not-verdict",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 The error goes only to silentCatch and the UI shows no failure state."
+    },
+    {
+     "technique": "minimum-sample-floors",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:171 An error rate from any denominator (1 error in 1 run = 100%) drives the red or amber text colour and row accent with no minimum-runs floor; only the raw count beside it softens this."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T22:40:50.962309+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "measurement-honesty"
+   ],
+   "techniques": [
+    "minimum-sample-floors",
+    "noise-band-and-hysteresis",
+    "unmeasurable-vs-zero"
+   ],
+   "deviations": 1,
+   "context": "plugins-dev-tools-lifecycle",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T22:40:50.962309+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "measurement-honesty"
+   ],
+   "techniques": [
+    "incomplete-not-verdict",
+    "renormalize-over-present",
+    "unmeasurable-vs-zero"
+   ],
+   "deviations": 1,
+   "context": "passport-wall-model",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T22:40:50.962309+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "measurement-honesty"
+   ],
+   "techniques": [
+    "incomplete-not-verdict",
+    "minimum-sample-floors"
+   ],
+   "deviations": 1,
+   "context": "overview-usage-charts",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
