@@ -2530,3 +2530,6 @@
 {"ts":"2026-11-10T23:02:09.298139+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["candidate-write-access","unaided-baseline-screening"],"deviations":1,"context":"teams-factory-passport-improve","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-10T23:02:09.298139+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"overview-memories","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-10T23:02:09.298139+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"templates-recipes","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-10T23:05:54.638868+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"glyph-command-panel","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-10T23:05:54.638868+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"notepad-overview","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-10T23:05:54.638868+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"hooks-execution","via":"curator-multi:claude","model":"claude-opus-5-5"}

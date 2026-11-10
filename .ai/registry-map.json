@@ -15834,7 +15834,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "priorNotApplicable": 34,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/commandPanelHelpers.ts:2 The command panel is a text and picker composer (recipe requirements, connector, event, schedule and messaging pickers); a search of src/features/agents/sub_glyph/commandPanel for getUserMedia, SpeechSynthesis, SpeechRecognition, microphone, whisper, voice, tts and stt found nothing, so no capture or synthesis pipeline exists here to judge.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "agent-memory",
@@ -17507,8 +17511,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:49 In these hooks, 'transcript' means a persisted text log of an execution's output lines, not speech; a search of src/hooks/execution for getUserMedia, SpeechSynthesis, SpeechRecognition, microphone, whisper, voice, tts and stt found nothing, so the voice capture and synthesis pipelines do not apply.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "module-design",
@@ -22821,8 +22829,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/notepad/overview/NoteOverview.tsx:2 The notepad overview is a card and journal desk for typed notes; a search of src/features/notepad/overview for getUserMedia, SpeechSynthesis, SpeechRecognition, microphone, whisper, voice, tts and stt found nothing (the only 'speech' hit is a comment about a speech-bubble visual in NoteCardBubble.tsx, not audio), so no dictation or read-aloud surface exists here.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "chat-transcript",

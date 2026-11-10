@@ -49228,16 +49228,11 @@
       "context": "glyph-command-panel",
       "subject": "voice-io",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-11-10",
-      "evaluatedTs": "2026-11-10T01:20:44.080Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "97eb42c9-7852-44a9-8ca0-c53f638f162c",
-        "state": "not-applicable",
-        "at": "2026-11-10T01:21:03.363055+00:00",
-        "reason": "reviewer (sonnet): The anchor at commandPanelHelpers.ts:21 is a comment inside parseRecipeNameList (JSON parsing of tag lists), so it does not show the one-shot connector/event/schedule/messaging composer claim; the case-insensitive grep over commandPanel did find no voice terms, but the anchor is incidental."
-      }
+      "evaluatedTs": "2026-11-10T23:05:54.638Z",
+      "worker": "81837643-73c8-4afb-b0c4-d93c7ffefe2d",
+      "techniques": []
     },
     "7826a48f-5883-4f26-8476-c3c515bda745/voice-io": {
       "context": "lib-personas",
@@ -49409,6 +49404,26 @@
       "evaluatedAt": "2026-11-10",
       "evaluatedTs": "2026-11-10T23:02:09.298Z",
       "worker": "1518d76e-adc2-492f-9276-e69871103cf5",
+      "techniques": []
+    },
+    "4eb0030b-e8a2-4993-bfab-81aee6943054/voice-io": {
+      "context": "notepad-overview",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:05:54.638Z",
+      "worker": "81837643-73c8-4afb-b0c4-d93c7ffefe2d",
+      "techniques": []
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/voice-io": {
+      "context": "hooks-execution",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:05:54.638Z",
+      "worker": "81837643-73c8-4afb-b0c4-d93c7ffefe2d",
       "techniques": []
     }
   }
