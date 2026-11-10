@@ -35270,29 +35270,39 @@
       "subject": "llm-extracted-entity-graph",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-18",
-      "evaluatedTs": "2026-10-18T23:57:28.917Z",
-      "worker": "318bce08-51e3-4e83-ad95-7fc33b067fb9",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:31:47.089Z",
+      "worker": "2d596ac9-cbb6-4ca8-a9ea-1a14b4ca3a43",
       "techniques": [
+        {
+          "technique": "surface-form-identity-and-its-risk",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:309 Each extracted row gets a minted UUID. entity_key is only a display label, never a join key, so no surface-form identity decision is ever made."
+        },
         {
           "technique": "accumulate-then-threshold-merge",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/vector/DESIGN.md:70 The implementation inserts independent rows for each run; it does not accumulate descriptions on shared graph nodes."
+          "evidence": "src-tauri/src/engine/kb_extract.rs:292 Every mention is a plain INSERT of its own row per document and run. Nothing merges a second passage into an existing node, so there is no merge operator to judge."
         },
         {
           "technique": "recall-passes-with-a-declared-cap",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/kb_extract.rs:153 This is single-pass document-to-row extraction outside the subject's graph-building precondition; schema inference is not a recall pass."
+          "evidence": "src-tauri/src/engine/kb_extract.rs:153 One extraction call per document, with no further recall pass. The satisficing risk is real here, but the technique is scoped to graph building, so this is recorded as a proposal and not as a deviation."
         },
         {
           "technique": "recoverable-fan-out-write",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/kb_extract.rs:155 Extracted rows go to SQLite through store_entities; this path does not fan graph nodes out to an entity vector index."
-        },
+          "evidence": "src-tauri/src/engine/kb_extract.rs:155 Extracted rows land in one SQLite table only. No vector-index or graph-store fan-out exists for entities."
+        }
+      ],
+      "registryProposal": "The recall failure (one pass returns a plausible handful, and truncated documents get EXTRACT_DOC_CHAR_CAP with no skip record) applies just as much to flat, schema-driven LLM row extraction with no graph. recall-passes-with-a-declared-cap may deserve a home that is not gated on building an entity graph (e.g. structured-output or a document-extraction subject).",
+      "superseded": [
         {
-          "technique": "surface-form-identity-and-its-risk",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/kb_extract.rs:309 Each extracted row receives a fresh UUID; the model's entityKey is a label, not a normalized key joining mentions into one node."
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:292 Searches for graph and relation found no context hits; tracing its extraction command showed independent UUID-keyed SQL rows rather than a graph with relations and cross-passage entity merging.",
+          "evaluatedAt": "2026-10-18T23:57:28.917Z",
+          "worker": "318bce08-51e3-4e83-ad95-7fc33b067fb9",
+          "reason": "replaced by 2d596ac9-cbb6-4ca8-a9ea-1a14b4ca3a43"
         }
       ]
     },

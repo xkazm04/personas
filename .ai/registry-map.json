@@ -46776,12 +46776,11 @@
           "changedAt": "2026-10-22",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/kb_extract.rs:292 Searches for graph and relation found no context hits; tracing its extraction command showed independent UUID-keyed SQL rows rather than a graph with relations and cross-passage entity merging.",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:bd7032bc2fb05c3b",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/vault/shared/vector/tabs/ExtractTab.tsx:23 The Extract tab drives a per-document flat row extraction (kb_run_extraction -> kb_entities rows keyed by a fresh UUID, no relations, no cross-passage merge, entities not embedded into the vector index); searching the context for graph, relation and normaliz found no hits, so the graph-with-merged-nodes precondition does not hold.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:906ab379a7b1e8f5",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "retrieval",
