@@ -41895,16 +41895,11 @@
       "context": "plugins-dev-tools-lifecycle",
       "subject": "sidecar-provisioning",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T06:15:58.322Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "5d2a7160-281d-477d-b021-9df244e0aa7a",
-        "state": "not-applicable",
-        "at": "2026-10-24T06:16:25.936191+00:00",
-        "reason": "reviewer (sonnet): The anchor LifecyclePage.tsx:30 is only the component declaration, so it does not show the absence. I also did not confirm that 'Install into repo' (installLifecycle) is only a dev-task dispatch, because the backend wasn't traced."
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:14:42.497Z",
+      "worker": "b0b0068a-9cbe-434d-9140-22d2449baefa",
+      "techniques": []
     },
     "b0cf3902-0739-40a8-8c76-ae594f41421b/sidecar-provisioning": {
       "context": "plugins-dev-tools-context",
@@ -41920,16 +41915,11 @@
       "context": "plugins-gitlab",
       "subject": "sidecar-provisioning",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T06:15:58.322Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "5d2a7160-281d-477d-b021-9df244e0aa7a",
-        "state": "not-applicable",
-        "at": "2026-10-24T06:16:26.081073+00:00",
-        "reason": "reviewer (sonnet): The anchor GitLabPipelineViewer.tsx:23 is only the component declaration and does not itself show that no artifact is acquired. My own grep of the gitlab directory for sidecar/download/install/binary/npx/exec found nothing, but the cited line is incidental."
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:14:42.497Z",
+      "worker": "b0b0068a-9cbe-434d-9140-22d2449baefa",
+      "techniques": []
     },
     "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/connector-catalog": {
       "context": "lib-credentials",
@@ -49467,6 +49457,36 @@
       "evaluatedAt": "2026-11-10",
       "evaluatedTs": "2026-11-10T23:10:55.870Z",
       "worker": "ee638268-030d-4ac4-ac92-122782c7e45b",
+      "techniques": []
+    },
+    "4cfcafbc-1964-4d65-994f-66c4cd1f8820/sidecar-provisioning": {
+      "context": "dev-tools-shell",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:14:42.497Z",
+      "worker": "b0b0068a-9cbe-434d-9140-22d2449baefa",
+      "techniques": []
+    },
+    "2dcda6bf-9982-422b-b63f-1481c414cdab/sidecar-provisioning": {
+      "context": "plugins-dev-tools-llm-overview",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:14:42.497Z",
+      "worker": "b0b0068a-9cbe-434d-9140-22d2449baefa",
+      "techniques": []
+    },
+    "9967adb9-e895-4dcd-b296-ab49a19ab122/sidecar-provisioning": {
+      "context": "project-overview",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:14:42.497Z",
+      "worker": "b0b0068a-9cbe-434d-9140-22d2449baefa",
       "techniques": []
     }
   }

@@ -12539,8 +12539,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 6
+          "state": "not-applicable",
+          "priorNotApplicable": 6,
+          "evidence": "src/features/plugins/dev-tools/DevToolsPage.tsx:7 The shell is a React tab router that lazy-loads sub-pages and holds constant catalogs, with no external executables or model artifacts to provision. A search of the dev-tools tree for sha256, checksum, onnx, gguf and fastembed found nothing.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "test-harness",
@@ -29909,8 +29913,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 6
+          "state": "not-applicable",
+          "priorNotApplicable": 6,
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/blocks/InstallControl.tsx:2 The only install surface here dispatches a backend dev task that adds lifecycle bindings to the user's repository (installLifecycle -> dev_tools_lifecycle_install). It does not download, verify or resolve any sidecar binary or model file, and a search of sub_lifecycle and dev-tools for sha256, checksum, onnx, gguf and fastembed found nothing.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-memory",
@@ -30083,8 +30091,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 6
+          "state": "not-applicable",
+          "priorNotApplicable": 6,
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:2 This context normalizes remote observability-tool HTTP responses through the credential API proxy, with no local engines, binaries or model files to fetch, resolve or isolate. A search for sha256, checksum, onnx, gguf and fastembed found nothing.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "codebase-scanning",
@@ -31631,8 +31643,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 6
+          "state": "not-applicable",
+          "priorNotApplicable": 6,
+          "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:7 The GitLab plugin polls pipeline state over IPC/HTTP and sends notifications. Its only \"provision\" is credential provisioning in GitLabDeployModal, which is not artifact provisioning. A search of src/features/plugins/gitlab for sha256, checksum, onnx, gguf and fastembed found nothing.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "job-coordination",
@@ -33066,8 +33082,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 6
+          "state": "not-applicable",
+          "priorNotApplicable": 6,
+          "evidence": "src/features/plugins/dev-tools/sub_overview/adapters.ts:2 The overview page reads remote connector APIs through executeApiRequest and renders the stats, with no provisioned sidecar or model artifact. A search for sha256, checksum, onnx, gguf and fastembed found nothing.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "codebase-scanning",
