@@ -4478,13 +4478,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:149 Context searches found none of the listed scoring terms, and repository searches identified no connected answer-support scorer; this context routes human approvals and configuration answers rather than measuring answer groundedness.",
-          "evaluatedAt": "2026-10-18",
-          "evaluatedAgainst": "sha256-b2:9de247df0b7199eb",
-          "evaluatedRevision": 2,
+          "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:46 The context's only verdict is a human accept/reject/skip on queued items, and a search of quick-answer/ and shared/quickConfig/ for faithfulness, entailment, groundedness, unsupported and decompose found nothing; the 'claim' hits in triageAdapters.ts are a model-routing cost-saving claim (routing.claim.savingPct), not answer claims checked against evidence, so no answer-support scorer exists here.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:091141c8a6b3a7cb",
+          "evaluatedRevision": 3,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "eval-harness",
@@ -32598,7 +32597,11 @@
           "revision": 3,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:186 The twin's simulated answer is grounded in bio, facts and bound-KB chunks (backend twin_simulate_answer), but nothing scores it against that evidence: a human edits the draft before it is saved. A search of sub_training/ and sub_profiles/ for faithfulness, entailment, groundedness, unsupported and decompose found nothing, and the context's only scorer (topicCoverage.ts) counts memories per topic, not answer support.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:091141c8a6b3a7cb",
+          "evaluatedRevision": 3
         },
         {
           "subject": "docs-content-model",

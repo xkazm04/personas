@@ -1,0 +1,96 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e4d2c6d4-0fe0-4220-974d-f4c346bab230",
+ "subject": "grounded-answer-scoring",
+ "evaluatedAt": "2026-11-10T00:53:50.321838+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "agents-quick-answer",
+   "subject": "grounded-answer-scoring",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:46 The context's only verdict is a human accept/reject/skip on queued items, and a search of quick-answer/ and shared/quickConfig/ for faithfulness, entailment, groundedness, unsupported and decompose found nothing; the 'claim' hits in triageAdapters.ts are a model-routing cost-saving claim (routing.claim.savingPct), not answer claims checked against evidence, so no answer-support scorer exists here.",
+   "techniques": [
+    {
+     "technique": "decompose-then-verify",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:149 routeDecision only sends human verdicts to backend actions; it never scores whether an answer is supported by passages"
+    },
+    {
+     "technique": "bidirectional-claim-matching",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:992 the only 'claim' here is a routing savings claim shown on a card; there is no reference answer and no claim-set precision or recall"
+    }
+   ],
+   "absenceTerms": [
+    "faithfulness",
+    "entailment",
+    "groundedness",
+    "unsupported",
+    "decompose"
+   ]
+  },
+  {
+   "context": "plugins-twin-training",
+   "subject": "grounded-answer-scoring",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:186 The twin's simulated answer is grounded in bio, facts and bound-KB chunks (backend twin_simulate_answer), but nothing scores it against that evidence: a human edits the draft before it is saved. A search of sub_training/ and sub_profiles/ for faithfulness, entailment, groundedness, unsupported and decompose found nothing, and the context's only scorer (topicCoverage.ts) counts memories per topic, not answer support.",
+   "techniques": [
+    {
+     "technique": "decompose-then-verify",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:193 the grounded draft goes straight into the answer textarea for human review; no per-claim support check runs"
+    },
+    {
+     "technique": "question-blind-relevance",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:126 the only 'score' is a keyword/tag topic-coverage count over memories, not a measure of whether an answer addresses its question"
+    }
+   ],
+   "absenceTerms": [
+    "faithfulness",
+    "entailment",
+    "groundedness",
+    "unsupported",
+    "decompose"
+   ],
+   "registryProposal": "The standard defines when to score a grounded answer but not when a human-in-the-loop draft (generated from retrieved passages and edited before it is saved) is exempt. twin_simulate_answer pulls KB chunks into a grounding block and is never scored. A 'When not to use it' line covering human-reviewed drafts would make that boundary explicit, so seats stop disagreeing on n/a versus deviation."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T00:53:50.321838+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "grounded-answer-scoring"
+   ],
+   "techniques": [
+    "bidirectional-claim-matching",
+    "decompose-then-verify"
+   ],
+   "deviations": 0,
+   "context": "agents-quick-answer",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T00:53:50.321838+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "grounded-answer-scoring"
+   ],
+   "techniques": [
+    "decompose-then-verify",
+    "question-blind-relevance"
+   ],
+   "deviations": 0,
+   "context": "plugins-twin-training",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
