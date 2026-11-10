@@ -48675,6 +48675,36 @@
         "at": "2026-11-09T23:57:44.522427+00:00",
         "reason": "reviewer (sonnet): The not-applicable anchor, standardsConfig.ts:9, is incidental. It says the standards config is shared with the team passport, which points toward a readiness input and does not show that the context computes no readiness. The absence claim rests only on a grep, and the terms searched (readiness, ru"
       }
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/agent-instruction-files": {
+      "context": "vault-shared-vector",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:02:25.788Z",
+      "worker": "9772ca57-a745-4d50-8954-0163e464bef5",
+      "techniques": []
+    },
+    "4eb0030b-e8a2-4993-bfab-81aee6943054/agent-instruction-files": {
+      "context": "notepad-overview",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:02:25.788Z",
+      "worker": "9772ca57-a745-4d50-8954-0163e464bef5",
+      "techniques": []
+    },
+    "456eb952-9b93-4de4-bad5-79e6f101aeb1/agent-instruction-files": {
+      "context": "overview-components",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:02:25.788Z",
+      "worker": "9772ca57-a745-4d50-8954-0163e464bef5",
+      "techniques": []
     }
   }
 }

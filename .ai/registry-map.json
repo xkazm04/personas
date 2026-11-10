@@ -22715,8 +22715,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/notepad/overview/NoteOverview.tsx:14 The notepad desk is a UI re-export and card surface that neither authors nor loads agent instruction files. A case-insensitive regex search of src/features/notepad/overview for CLAUDE.md, AGENTS.md, .cursorrules, copilot-instructions, GEMINI.md and SKILL.md found zero hits.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "test-harness",
@@ -24357,8 +24361,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:90 The Overview routing shell and its dashboard and health widgets are UI code with no agent instruction file surface. A case-insensitive regex search of src/features/overview/components for CLAUDE.md, AGENTS.md, .cursorrules, copilot-instructions, GEMINI.md and SKILL.md found zero hits.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "test-harness",
@@ -46827,8 +46835,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:37 This context is a React modal for a vector knowledge base and has no repo-owned agent instruction file. A case-insensitive regex search of src/features/vault/shared/vector for CLAUDE.md, AGENTS.md, .cursorrules, copilot-instructions, GEMINI.md, SKILL.md and 'instruction file' found zero hits, so none of the subject's techniques can apply.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "settings",
