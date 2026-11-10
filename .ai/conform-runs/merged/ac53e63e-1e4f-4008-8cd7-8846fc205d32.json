@@ -1,0 +1,74 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ac53e63e-1e4f-4008-8cd7-8846fc205d32",
+  "subject": "remote-capability-probing",
+  "evaluatedAt": "2026-11-10T22:44:32.933322+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "settings-network",
+      "subject": "remote-capability-probing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_network/components/PeerDetailDrawer.tsx:69 The P2P surface reads a peer's whole resource manifest through one Tauri IPC command once the peer is connected, with no decision about how to address the peer (no fragment or range access, no fallback ladder and no capability report). A search of the context's directories (and of src/features/settings, src/stores, src/api and src/hooks) for accept-ranges, content-range, partial read, readahead and range request found nothing, so the subject's precondition (reading a store nobody on the team administers and deciding how to address it) does not hold here.",
+      "techniques": [
+        {
+          "technique": "the-probe-that-is-also-the-first-read",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/PeerDetailDrawer.tsx:69 Manifest fetch is the read itself, over IPC to the local Rust side. There is no separate capability probe or fragment read to merge with it."
+        },
+        {
+          "technique": "assertion-permission-and-bypass-are-three-switches",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/PeerDetailDrawer.tsx:76 Sync is a single operator action. No operator flag skips a probe or permits a costly fallback."
+        }
+      ],
+      "absenceTerms": [
+        "accept-ranges",
+        "content-range",
+        "partial read",
+        "readahead"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "remote-capability-probing",
+      "context": "stores",
+      "reason": "withdrawn after review: reviewer (sonnet): The verdict rests on src/api/liveRoadmap.ts, which nothing under src/stores imports (it is used only from features/home/sub_releases), so the anchor belongs to another context. The other anchor, systemStore.ts:67, is only the createNetworkSlice spread. liveRoadmap.ts:4 is a doc-comment line that doe"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-10T22:44:32.933322+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "remote-capability-probing"
+      ],
+      "techniques": [
+        "assertion-permission-and-bypass-are-three-switches",
+        "the-probe-that-is-also-the-first-read"
+      ],
+      "deviations": 0,
+      "context": "settings-network",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-10T22:44:32.933322+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "remote-capability-probing"
+      ],
+      "techniques": [
+        "advertised-support-is-not-evidence",
+        "the-probe-that-is-also-the-first-read"
+      ],
+      "deviations": 0,
+      "context": "stores",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

@@ -34660,7 +34660,11 @@
           "revision": 3,
           "changedAt": "2026-10-27",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/PeerDetailDrawer.tsx:69 The P2P surface reads a peer's whole resource manifest through one Tauri IPC command once the peer is connected, with no decision about how to address the peer (no fragment or range access, no fallback ladder and no capability report). A search of the context's directories (and of src/features/settings, src/stores, src/api and src/hooks) for accept-ranges, content-range, partial read, readahead and range request found nothing, so the subject's precondition (reading a store nobody on the team administers and deciding how to address it) does not hold here.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9bb6b3bf0d353d66",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-memory",

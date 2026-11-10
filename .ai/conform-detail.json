@@ -49299,6 +49299,53 @@
           "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:171 An error rate from any denominator (1 error in 1 run = 100%) drives the red or amber text colour and row accent with no minimum-runs floor; only the raw count beside it softens this."
         }
       ]
+    },
+    "7159d27d-86c2-43be-a83f-8b50c4c816be/remote-capability-probing": {
+      "context": "settings-network",
+      "subject": "remote-capability-probing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:44:32.933Z",
+      "worker": "ac53e63e-1e4f-4008-8cd7-8846fc205d32",
+      "techniques": [
+        {
+          "technique": "the-probe-that-is-also-the-first-read",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/PeerDetailDrawer.tsx:69 Manifest fetch is the read itself, over IPC to the local Rust side. There is no separate capability probe or fragment read to merge with it."
+        },
+        {
+          "technique": "assertion-permission-and-bypass-are-three-switches",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/PeerDetailDrawer.tsx:76 Sync is a single operator action. No operator flag skips a probe or permits a costly fallback."
+        }
+      ]
+    },
+    "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/remote-capability-probing": {
+      "context": "stores",
+      "subject": "remote-capability-probing",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:44:32.933Z",
+      "techniques": [
+        {
+          "technique": "advertised-support-is-not-evidence",
+          "verdict": "not-applicable",
+          "evidence": "src/api/liveRoadmap.ts:4 No peer capability header is read; the roadmap read path has nothing to branch on."
+        },
+        {
+          "technique": "the-probe-that-is-also-the-first-read",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:67 The composed slice's ensureP2pSupport probes the local build's compiled features, not a remote peer. The golden path assigns build-time presence elsewhere."
+        }
+      ],
+      "withdrawn": {
+        "worker": "ac53e63e-1e4f-4008-8cd7-8846fc205d32",
+        "state": "not-applicable",
+        "at": "2026-11-10T22:45:13.525807+00:00",
+        "reason": "reviewer (sonnet): The verdict rests on src/api/liveRoadmap.ts, which nothing under src/stores imports (it is used only from features/home/sub_releases), so the anchor belongs to another context. The other anchor, systemStore.ts:67, is only the createNetworkSlice spread. liveRoadmap.ts:4 is a doc-comment line that doe"
+      }
     }
   }
 }
