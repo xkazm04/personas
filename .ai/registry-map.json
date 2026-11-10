@@ -2617,8 +2617,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/agents/sub_health/useHealthCheck.ts:2 The context grades persona health from telemetry and authors no coding-agent instruction file; a grep of sub_health for AGENTS.md, CLAUDE.md, instruction file, copilot-instructions and .cursorrules found nothing.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "test-harness",
@@ -38538,8 +38542,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:605 The canvas starts a claude session in a registered project's own root with a typed task, so whatever instruction file loads belongs to that chosen repo and is not written by this context; a grep of sub_mastermind and sub_assignments for AGENTS.md, instruction file, copilot-instructions and .cursorrules found nothing.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "quality-gates",
@@ -41496,8 +41504,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "table",

@@ -1,0 +1,117 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e6d1f5fb-1e3a-415a-9fd0-3818fd713679",
+  "subject": "agent-instruction-files",
+  "evaluatedAt": "2026-11-10T00:08:50.881397+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "teams-canvas",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:605 The canvas starts a claude session in a registered project's own root with a typed task, so whatever instruction file loads belongs to that chosen repo and is not written by this context; a grep of sub_mastermind and sub_assignments for AGENTS.md, instruction file, copilot-instructions and .cursorrules found nothing.",
+      "techniques": [
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:603 Sessions start only in a project root someone registered, not in a directory a tool created, so this technique's precondition does not hold."
+        },
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:605 The instruction is a one-off task argument, not an always-loaded file."
+        }
+      ],
+      "absenceTerms": [
+        "AGENTS.md",
+        "instruction file",
+        "copilot-instructions",
+        ".cursorrules"
+      ]
+    },
+    {
+      "context": "agent-health",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_health/useHealthCheck.ts:2 The context grades persona health from telemetry and authors no coding-agent instruction file; a grep of sub_health for AGENTS.md, CLAUDE.md, instruction file, copilot-instructions and .cursorrules found nothing.",
+      "techniques": [
+        {
+          "technique": "instruction-freshness",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_health/useHealthCheck.ts:2 No instruction file here that could go stale."
+        }
+      ],
+      "absenceTerms": [
+        "AGENTS.md",
+        "instruction file",
+        "copilot-instructions",
+        ".cursorrules"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-instruction-files",
+      "context": "teams-goals",
+      "reason": "evidence leans on goals/triage/triageModel.ts, which is not a tracked file"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "overview-patterns",
+      "reason": "The context lists no files, so there is no code of its own to judge or anchor, and repo-wide facts may not stand in for it."
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "templates-draft-editor",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor, usePresetAdoption.ts:11, is an import line (`import type { PresetAdoptionSchema }`) and does not show that no instruction file is written. Only the grep supports the claim, and I found no instruction-file code in sub_presets or sub_explore."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-10T00:08:50.881397+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [
+        "line-earning",
+        "workspace-ancestry-isolation"
+      ],
+      "deviations": 0,
+      "context": "teams-canvas",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-10T00:08:50.881397+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [
+        "single-source-topology"
+      ],
+      "deviations": 0,
+      "context": "templates-draft-editor",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-10T00:08:50.881397+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [
+        "instruction-freshness"
+      ],
+      "deviations": 0,
+      "context": "agent-health",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
