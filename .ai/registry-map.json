@@ -26761,12 +26761,11 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Here a 'period' is an analytics display window (24h/7d/30d/90d, compared with the previous window as ghost lines). There are no recurring subscriptions, anchors, renewals or invoices to bound. A grep over src/features/overview/sub_usage/ for subscription, billing, invoice and renewal found nothing, so no technique's precondition holds.",
-          "evaluatedAt": "2026-10-30",
-          "evaluatedAgainst": "sha256-b2:3a0a03da985229a4",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Here a 'period' is an internal analytics window (24h/7d/30d/90d or custom range) compared against the preceding equal-length window as ghost lines, with no recurring subscription, renewal anchor, invoice or billing pass. A case-insensitive grep of src/features/overview/sub_usage/ for subscription, billing, invoice, renewal, anchor, proration and timezone returned no matches, so none of the four techniques has its precondition.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:ec7859c7a542ef72",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "usage-event-ingestion",

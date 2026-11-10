@@ -1,0 +1,66 @@
+{
+ "schema": "conform-run/1",
+ "worker": "15431986-e4d1-4dcd-a0c4-896eb447d1df",
+ "subject": "subscription-billing-periods",
+ "evaluatedAt": "2026-11-10T22:57:28.685536+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-usage-charts",
+   "subject": "subscription-billing-periods",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Here a 'period' is an internal analytics window (24h/7d/30d/90d or custom range) compared against the preceding equal-length window as ghost lines, with no recurring subscription, renewal anchor, invoice or billing pass. A case-insensitive grep of src/features/overview/sub_usage/ for subscription, billing, invoice, renewal, anchor, proration and timezone returned no matches, so none of the four techniques has its precondition.",
+   "techniques": [
+    {
+     "technique": "timezone-anchored-period-dates",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:12 The windows are internal-reporting or sub-day duration ranges, which the technique's 'When not to use it' section excludes. They are not a subscriber's period dates."
+    },
+    {
+     "technique": "anchor-re-derived-not-chained",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:44 The previous window is a fixed day offset from 'now' or the newest day. It is not a recurring boundary derived from a contract anchor, so nothing can be chained."
+    },
+    {
+     "technique": "hourly-pass-with-derived-idempotency",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:50 This is a pure render-time merge. No recurring pass advances periods or issues invoices."
+    },
+    {
+     "technique": "boundary-stitch-on-timezone-change",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:34 No persisted period records exist to tile and no per-subscriber zone can change. The alignment is display-only."
+    }
+   ],
+   "absenceTerms": [
+    "subscription",
+    "billing",
+    "invoice",
+    "renewal",
+    "proration"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T22:57:28.685536+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "subscription-billing-periods"
+   ],
+   "techniques": [
+    "anchor-re-derived-not-chained",
+    "boundary-stitch-on-timezone-change",
+    "hourly-pass-with-derived-idempotency",
+    "timezone-anchored-period-dates"
+   ],
+   "deviations": 0,
+   "context": "overview-usage-charts",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

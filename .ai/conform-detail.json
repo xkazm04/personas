@@ -43550,29 +43550,38 @@
       "subject": "subscription-billing-periods",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-30",
-      "evaluatedTs": "2026-10-30T22:16:42.669Z",
-      "worker": "1a38d710-76e3-4474-952d-b4534133c6a5",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:57:28.685Z",
+      "worker": "15431986-e4d1-4dcd-a0c4-896eb447d1df",
       "techniques": [
-        {
-          "technique": "anchor-re-derived-not-chained",
-          "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:75 The window is derived from an end day and a day count for one chart render. No subscription anchor or recurrence exists to chain."
-        },
         {
           "technique": "timezone-anchored-period-dates",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:10 These are user-picked lookback ranges, not per-subscriber billing boundaries."
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:12 The windows are internal-reporting or sub-day duration ranges, which the technique's 'When not to use it' section excludes. They are not a subscriber's period dates."
         },
         {
-          "technique": "boundary-stitch-on-timezone-change",
+          "technique": "anchor-re-derived-not-chained",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:79 The previous window is only a comparison lookup. No period record is persisted, so nothing needs to tile or stitch."
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:44 The previous window is a fixed day offset from 'now' or the newest day. It is not a recurring boundary derived from a contract anchor, so nothing can be chained."
         },
         {
           "technique": "hourly-pass-with-derived-idempotency",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:50 This is a pure render-time transform. No recurring pass advances periods or issues invoices."
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:50 This is a pure render-time merge. No recurring pass advances periods or issues invoices."
+        },
+        {
+          "technique": "boundary-stitch-on-timezone-change",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:34 No persisted period records exist to tile and no per-subscriber zone can change. The alignment is display-only."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Here a 'period' is an analytics display window (24h/7d/30d/90d, compared with the previous window as ghost lines). There are no recurring subscriptions, anchors, renewals or invoices to bound. A grep over src/features/overview/sub_usage/ for subscription, billing, invoice and renewal found nothing, so no technique's precondition holds.",
+          "evaluatedAt": "2026-10-30T22:16:42.669Z",
+          "worker": "1a38d710-76e3-4474-952d-b4534133c6a5",
+          "reason": "replaced by 15431986-e4d1-4dcd-a0c4-896eb447d1df"
         }
       ]
     },
