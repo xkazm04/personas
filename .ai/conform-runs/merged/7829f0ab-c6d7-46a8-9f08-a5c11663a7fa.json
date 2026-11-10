@@ -1,0 +1,44 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7829f0ab-c6d7-46a8-9f08-a5c11663a7fa",
+  "subject": "ci-execution-trust",
+  "evaluatedAt": "2026-11-10T01:29:20.796003+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "ci-execution-trust",
+      "context": "commands-execution",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "ci-execution-trust",
+      "context": "pipeline-and-automation",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "ci-execution-trust",
+      "context": "engine-project-tracking",
+      "reason": "withdrawn after review: reviewer (sonnet): The claims are accurate for the code they cite: team_context.rs:359 and :365 (automerge policy, shared PAT), mod.rs:660 (credential env injection), and a grep of the runner for 'workflows' finds nothing. But all three anchors are in engine/runner. None of the listed engine-project-tracking files (pr"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-10T01:29:20.796003+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "ci-execution-trust"
+      ],
+      "techniques": [
+        "measure-apply-split",
+        "per-call-write-token-handout",
+        "self-edited-ci-forfeits-evidence"
+      ],
+      "deviations": 1,
+      "context": "engine-project-tracking",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

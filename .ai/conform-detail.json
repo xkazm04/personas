@@ -47121,21 +47121,37 @@
       "subject": "ci-execution-trust",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-08",
-      "evaluatedTs": "2026-11-08T05:42:18.678Z",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T01:29:20.796Z",
       "techniques": [
+        {
+          "technique": "self-edited-ci-forfeits-evidence",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/team_context.rs:359 Merges happen with no person in the loop, and there is no configuration-surface walk. A searched grep of the runner for 'workflows' found nothing, so a PR that edits its own pipeline still earns auto-merge."
+        },
+        {
+          "technique": "measure-apply-split",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/team_context.rs:160 QA Guardian runs the PR head's code in a worktree and then merges with the same execution and the same write identity. Measurement and application are not split."
+        },
+        {
+          "technique": "per-call-write-token-handout",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:660 Every persona execution gets its decrypted credentials as process env. The injected policy at team_context.rs:365 says the whole team shares ONE GitHub PAT, so the automated author holds the same write token that merges. Nothing hands out one token per write call."
+        },
         {
           "technique": "secret-materialization-discipline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/runner/env.rs:110 Credentials are injected into the env of a persona's agent subprocess, not of a pipeline job. That is the agent runtime, which this subject's boundary excludes."
+          "evidence": "src-tauri/src/engine/runner/env.rs:110 Credentials are injected into the env of a persona's agent subprocess, not of a pipeline job. That is the agent runtime, which this subject's boundary excludes.",
+          "carriedFrom": "2026-11-08"
         }
       ],
-      "registryProposal": "The technique's defect 2 (a secret in an environment inherited by every child process) applies just as much to agent runtimes that put vault credentials into a CLI's env, which then spawns tools. Here that is the job of a name denylist (env.rs). An agent-runtime subject (e.g. agent-runtime-assembly or credential-vault) should own that rule explicitly, because ci-execution-trust scopes itself to delivery systems.",
+      "registryProposal": "The standard assumes the pipeline gate is platform config or code. Here the merge gate is natural-language policy injected into an LLM agent's prompt. The techniques could say whether a prompt-level rule counts as a gate at all; per gate-sees-target it probably does not.",
       "withdrawn": {
-        "worker": "daf4bb75-d265-4be6-ac72-f4562c49f42c",
-        "state": "not-applicable",
-        "at": "2026-11-08T05:42:49.581514+00:00",
-        "reason": "reviewer (sonnet): The technique anchor src-tauri/src/engine/runner/env.rs:110 is the sanitize_env_name function, which does not show credential injection, and env.rs is not one of the context's files. The git.rs:1 header shows only a git-log watcher, and the context's own runner/credentials.rs was never opened as sup"
+        "worker": "7829f0ab-c6d7-46a8-9f08-a5c11663a7fa",
+        "state": "deviation",
+        "at": "2026-11-10T01:29:38.882155+00:00",
+        "reason": "reviewer (sonnet): The claims are accurate for the code they cite: team_context.rs:359 and :365 (automerge policy, shared PAT), mod.rs:660 (credential env injection), and a grep of the runner for 'workflows' finds nothing. But all three anchors are in engine/runner. None of the listed engine-project-tracking files (pr"
       }
     },
     "a6843b83-43a1-4eab-ae40-26f23b949a0d/ci-execution-trust": {
