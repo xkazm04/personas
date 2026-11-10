@@ -25067,8 +25067,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "client-fetch-cache",
@@ -43344,8 +43344,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "quality-gates",

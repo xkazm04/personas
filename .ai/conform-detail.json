@@ -48805,6 +48805,36 @@
       "evaluatedTs": "2026-11-10T00:18:53.986Z",
       "worker": "392d54d4-c1fd-4ef9-9afe-9e70e4faec05",
       "techniques": []
+    },
+    "90f639de-ffc7-4225-b67f-1566e5d66b8b/agent-instruction-files": {
+      "context": "overview-health",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:22:07.473Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "e3e56d61-accb-49c8-9666-24c93e20799a",
+        "state": "not-applicable",
+        "at": "2026-11-10T00:22:30.651497+00:00",
+        "reason": "reviewer (sonnet): Both anchors are incidental. compositeHealthScore.ts:12 is a CompositeHealthEntry interface line, and buildTriggerConfig.ts:5 is a type import. Neither shows that the context authors no agent instruction file. The grep I ran over these directories for the instruction-file names and 'instruction'/'sy"
+      }
+    },
+    "f197653d-267c-4a91-bffc-b3be17434877/agent-instruction-files": {
+      "context": "trigger-config",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:22:07.473Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "e3e56d61-accb-49c8-9666-24c93e20799a",
+        "state": "not-applicable",
+        "at": "2026-11-10T00:22:30.651497+00:00",
+        "reason": "reviewer (sonnet): Both anchors are incidental. compositeHealthScore.ts:12 is a CompositeHealthEntry interface line, and buildTriggerConfig.ts:5 is a type import. Neither shows that the context authors no agent instruction file. The grep I ran over these directories for the instruction-file names and 'instruction'/'sy"
+      }
     }
   }
 }
