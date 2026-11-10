@@ -5740,8 +5740,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/api/pipeline/triggers.ts:23 The context is IPC wrappers for triggers, scheduler, workflows and teams; a case-insensitive grep of src/api/pipeline for speech, voice, transcri, microphone, getUserMedia, tts, dictat, speak, audio and AudioContext found nothing, so neither the capture nor the synthesis pipeline exists here.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "scheduling",
@@ -15830,8 +15834,8 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "priorNotApplicable": 34,
+          "state": "unknown"
         },
         {
           "subject": "agent-memory",
@@ -20566,8 +20570,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/lib/personas/parsers/workflowDetector.ts:6 This context parses n8n, Zapier, Make and GitHub Actions workflows and manages templates. The grep found 'voice' only as a persona's writing style in a test fixture, 'transcription' only in a comment about a formula, and 'audio' only in a template checksum filename (audio-briefing-host.json). None of these is speech capture or playback, so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "hitl-approval",

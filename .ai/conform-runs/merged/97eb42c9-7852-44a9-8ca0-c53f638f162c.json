@@ -1,0 +1,94 @@
+{
+  "schema": "conform-run/1",
+  "worker": "97eb42c9-7852-44a9-8ca0-c53f638f162c",
+  "subject": "voice-io",
+  "evaluatedAt": "2026-11-10T01:20:44.080898+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "api-pipeline",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/api/pipeline/triggers.ts:23 The context is IPC wrappers for triggers, scheduler, workflows and teams; a case-insensitive grep of src/api/pipeline for speech, voice, transcri, microphone, getUserMedia, tts, dictat, speak, audio and AudioContext found nothing, so neither the capture nor the synthesis pipeline exists here.",
+      "techniques": [],
+      "absenceTerms": [
+        "speechSynthesis",
+        "SpeechRecognition",
+        "getUserMedia",
+        "microphone",
+        "transcript"
+      ]
+    },
+    {
+      "context": "lib-personas",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/lib/personas/parsers/workflowDetector.ts:6 This context parses n8n, Zapier, Make and GitHub Actions workflows and manages templates. The grep found 'voice' only as a persona's writing style in a test fixture, 'transcription' only in a comment about a formula, and 'audio' only in a template checksum filename (audio-briefing-host.json). None of these is speech capture or playback, so the subject's precondition does not hold.",
+      "techniques": [],
+      "absenceTerms": [
+        "speechSynthesis",
+        "SpeechRecognition",
+        "getUserMedia",
+        "microphone"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "voice-io",
+      "context": "plugins-artist-media-studio-hooks",
+      "reason": "The context-map entry lists no file_paths, and its entry points (src/features/plugins/artist/sub_media_studio/hooks/*) are not in `git ls-files`. Commit 0697f13438 removed the Artist plugin, so there is no code to judge. The map entry is stale and should be removed or rescanned, not given a verdict."
+    },
+    {
+      "subject": "voice-io",
+      "context": "plugins-artist-media-studio",
+      "reason": "The context-map entry lists no file_paths, and its entry points (src/features/plugins/artist/sub_media_studio/TimelinePanel.tsx etc.) are not in `git ls-files`. Commit 0697f13438 removed the Artist plugin. Its audio lanes were also media production, which the golden path places outside this subject (plumbing vs producing)."
+    },
+    {
+      "subject": "voice-io",
+      "context": "glyph-command-panel",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor at commandPanelHelpers.ts:21 is a comment inside parseRecipeNameList (JSON parsing of tag lists), so it does not show the one-shot connector/event/schedule/messaging composer claim; the case-insensitive grep over commandPanel did find no voice terms, but the anchor is incidental."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-10T01:20:44.080898+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "api-pipeline",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-10T01:20:44.080898+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "glyph-command-panel",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-10T01:20:44.080898+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "lib-personas",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

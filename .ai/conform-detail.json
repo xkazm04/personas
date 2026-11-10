@@ -49138,6 +49138,41 @@
       "evaluatedTs": "2026-11-10T01:16:33.574Z",
       "worker": "f35d2ad4-7b9f-40fc-ae01-b4cf5f691332",
       "techniques": []
+    },
+    "d146b88b-6223-41c7-8330-8b9d7a1b3ee0/voice-io": {
+      "context": "api-pipeline",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T01:20:44.080Z",
+      "worker": "97eb42c9-7852-44a9-8ca0-c53f638f162c",
+      "techniques": []
+    },
+    "19f3a6a0-f733-47d1-94b4-a1256c8a92fc/voice-io": {
+      "context": "glyph-command-panel",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T01:20:44.080Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "97eb42c9-7852-44a9-8ca0-c53f638f162c",
+        "state": "not-applicable",
+        "at": "2026-11-10T01:21:03.363055+00:00",
+        "reason": "reviewer (sonnet): The anchor at commandPanelHelpers.ts:21 is a comment inside parseRecipeNameList (JSON parsing of tag lists), so it does not show the one-shot connector/event/schedule/messaging composer claim; the case-insensitive grep over commandPanel did find no voice terms, but the anchor is incidental."
+      }
+    },
+    "7826a48f-5883-4f26-8476-c3c515bda745/voice-io": {
+      "context": "lib-personas",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T01:20:44.080Z",
+      "worker": "97eb42c9-7852-44a9-8ca0-c53f638f162c",
+      "techniques": []
     }
   }
 }
