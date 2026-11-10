@@ -35583,39 +35583,52 @@
       "subject": "self-describing-model-packages",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-19",
-      "evaluatedTs": "2026-10-19T00:33:32.163Z",
-      "worker": "ca923631-3cab-490b-8313-f5e43948a08e",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T22:51:23.819Z",
+      "worker": "4b128a42-c9de-4ca7-8648-f2d6f3b3a00b",
       "techniques": [
         {
           "technique": "advisory-version-floors",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/retrieval/mod.rs:105 This compares embedding-model identities on stored hits, not framework versions recorded by a model package."
-        },
-        {
-          "technique": "config-frozen-artifact",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/validation/persona.rs:253 The serialized configuration being checked is a persona profile, not an exported network graph."
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:86 An exact-match model-name stamp on stored vectors guards corpus compatibility. It is not a package recording the framework and engine versions it was built on."
         },
         {
           "technique": "declared-vs-derived-outputs",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/retrieval/mod.rs:63 The retrieval transformation consumes scored identifiers, not network tensors described by package metadata."
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:96 This post-processes KNN hits (id, distance) produced by an external embedder. No model metadata output section is authored here."
+        },
+        {
+          "technique": "config-frozen-artifact",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/validation/persona.rs:253 The serialized configuration being checked is a persona profile, not an exported network graph.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "normative-layout-contract",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/validation/contract.rs:118 This assembles an application validation-rule catalog; no model-package filesystem layout was found."
+          "evidence": "src-tauri/core/src/validation/contract.rs:118 This assembles an application validation-rule catalog; no model-package filesystem layout was found.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "self-locating-validation-schema",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/validation/persona.rs:92 The validated object is a structured persona prompt, not metadata accompanying trained weights."
+          "evidence": "src-tauri/core/src/validation/persona.rs:92 The validated object is a structured persona prompt, not metadata accompanying trained weights.",
+          "carriedFrom": "2026-10-19"
         },
         {
           "technique": "symbolic-shape-constraints",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/validation/chat.rs:18 This limits chat-message bytes; it does not describe a network's family of accepted tensor shapes."
+          "evidence": "src-tauri/core/src/validation/chat.rs:18 This limits chat-message bytes; it does not describe a network's family of accepted tensor shapes.",
+          "carriedFrom": "2026-10-19"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:16 The inspected code validates application fields and processes retrieval hits; context-directory searches found no onnx, torchscript, weights_path, or safetensors occurrences establishing a trained-model package.",
+          "evaluatedAt": "2026-10-19T00:33:32.163Z",
+          "worker": "ca923631-3cab-490b-8313-f5e43948a08e",
+          "reason": "replaced by 4b128a42-c9de-4ca7-8648-f2d6f3b3a00b"
         }
       ]
     },

@@ -1,0 +1,54 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4b128a42-c9de-4ca7-8648-f2d6f3b3a00b",
+ "subject": "self-describing-model-packages",
+ "evaluatedAt": "2026-11-10T22:51:23.819973+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "core-validation",
+   "subject": "self-describing-model-packages",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/core/src/retrieval/mod.rs:78 The only model-related code in this context filters vector-search hits by an embedding-model name stamp; nothing here builds, exports, ships or loads a trained-model package. A search of src-tauri/core/src for onnx, safetensors, torchscript, opset and rdf.yaml returned zero hits, so the subject's precondition does not hold.",
+   "techniques": [
+    {
+     "technique": "advisory-version-floors",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/retrieval/mod.rs:86 An exact-match model-name stamp on stored vectors guards corpus compatibility. It is not a package recording the framework and engine versions it was built on."
+    },
+    {
+     "technique": "declared-vs-derived-outputs",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/retrieval/mod.rs:96 This post-processes KNN hits (id, distance) produced by an external embedder. No model metadata output section is authored here."
+    }
+   ],
+   "absenceTerms": [
+    "onnx",
+    "safetensors",
+    "torchscript",
+    "opset",
+    "rdf.yaml"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T22:51:23.819973+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "self-describing-model-packages"
+   ],
+   "techniques": [
+    "advisory-version-floors",
+    "declared-vs-derived-outputs"
+   ],
+   "deviations": 0,
+   "context": "core-validation",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

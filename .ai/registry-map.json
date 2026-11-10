@@ -11204,13 +11204,12 @@
           "changedAt": "2026-10-31",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/core/src/retrieval/mod.rs:16 The inspected code validates application fields and processes retrieval hits; context-directory searches found no onnx, torchscript, weights_path, or safetensors occurrences establishing a trained-model package.",
-          "evaluatedAt": "2026-10-19",
-          "evaluatedAgainst": "sha256-b2:d22f4172adbc5004",
-          "evaluatedRevision": 1,
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:78 The only model-related code in this context filters vector-search hits by an embedding-model name stamp; nothing here builds, exports, ships or loads a trained-model package. A search of src-tauri/core/src for onnx, safetensors, torchscript, opset and rdf.yaml returned zero hits, so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:bd272d2a3cc87197",
+          "evaluatedRevision": 2,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "retrieval",
