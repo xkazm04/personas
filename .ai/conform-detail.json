@@ -12455,24 +12455,29 @@
       "subject": "prompt-safety",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:34:14.000Z",
-      "worker": "4e7a7771-dd42-46b3-b00d-8235124e62fa",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:33:22.573Z",
+      "worker": "2210c1b1-8cd3-4b6e-a7be-f29a6e05cc7e",
       "techniques": [
         {
-          "technique": "untrusted-span-fencing",
+          "technique": "canary-tripwires",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1379 memory spans bypass wrap_runtime_xml_boundary (src-tauri/engine/src/prompt/runtime_safety.rs:26), which assemble_prompt applies to its own third-party spans"
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:55 The canary is a constant, not minted per run. Raw output is never checked for the canary or the fence nonce, there is no boundary-violation outcome, and no hostile fixture proves the tripwire fires."
         },
         {
-          "technique": "canary-tripwires",
-          "verdict": "partial",
-          "evidence": "src-tauri/engine/src/prompt/assemble.rs:926 canary pushed into the trusted frame, but it scopes only <untrusted_*> regions, so the unfenced memory appended after it is invisible to it"
+          "technique": "untrusted-span-fencing",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:44 One door, wrap_runtime_xml_boundary. It neutralizes forged untrusted_ tags, takes a CSPRNG nonce and re-mints it until the payload does not contain it (line 46), and labels each fence with its provenance. It is used for the input_data, description and time-filter spans."
         },
         {
           "technique": "input-caps-and-clamps",
-          "verdict": "partial",
-          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:90 announced truncation + neutralization at the substitution door; memory is bounded only by a whole-section budget pack (mod.rs:1430), with no per-entry ceiling or neutralization, and team memory (mod.rs:1604) only by a count of 15"
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:224 {{var}} values are capped at 2000 (line 4) and cut on a char boundary. The cut is announced with a marker that points to the complete fenced copy."
+        },
+        {
+          "technique": "session-capability-conjunction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:172 A persona with no declared roster gets no --allowedTools flag, and every run passes --dangerously-skip-permissions (line 107). The technique counts an undeclared roster as all three legs lit, yet no session-level gate sees third-party input plus credentials plus an outbound channel together."
         },
         {
           "technique": "promoted-span-framing (golden path)",
@@ -12481,7 +12486,6 @@
           "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "The memory-recall injection site lives in src-tauri/src/engine/runner/mod.rs, which is outside this context's paths (engine/src/prompt/*); the runner context should also carry a prompt-safety pair so the anchor sits in a governed context.",
       "superseded": [
         {
           "state": "deviation",
@@ -12510,6 +12514,13 @@
           "evaluatedAt": "2026-10-12T12:37:02.000Z",
           "worker": "1f48c08a-2585-4aa1-afd0-47ee558e6723",
           "reason": "replaced by 4e7a7771-dd42-46b3-b00d-8235124e62fa"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1379 recalled agent-memory title/content (core :1379, active :1439, team :1610) is still interpolated raw after assembly, outside every <untrusted_*> nonce fence and past the canary, while the fence door exists unused here (src-tauri/engine/src/prompt/assemble.rs:92, used only by knowledge_consult.rs:450); an agent-written memory carrying an injection reaches every later run unfenced, and team memory is framed as hard rules",
+          "evaluatedAt": "2026-10-16T17:34:14.000Z",
+          "worker": "4e7a7771-dd42-46b3-b00d-8235124e62fa",
+          "reason": "replaced by 2210c1b1-8cd3-4b6e-a7be-f29a6e05cc7e"
         }
       ]
     },
@@ -48835,6 +48846,32 @@
         "at": "2026-11-10T00:22:30.651497+00:00",
         "reason": "reviewer (sonnet): Both anchors are incidental. compositeHealthScore.ts:12 is a CompositeHealthEntry interface line, and buildTriggerConfig.ts:5 is a type import. Neither shows that the context authors no agent instruction file. The grep I ran over these directories for the instruction-file names and 'instruction'/'sy"
       }
+    },
+    "fb6e9de5-a01b-4434-8ed7-313c142947a1/prompt-safety": {
+      "context": "lib-utils-sanitizers",
+      "subject": "prompt-safety",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:33:22.573Z",
+      "worker": "2210c1b1-8cd3-4b6e-a7be-f29a6e05cc7e",
+      "techniques": [
+        {
+          "technique": "cross-language-rule-parity",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:120 Same rule in two runtimes, copied by hand. No single spec and no shared test vectors; grep for tool-output-attacks finds only the TS test."
+        },
+        {
+          "technique": "input-caps-and-clamps",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/sanitizers/workflowSanitizer.ts:58 Prose fields are cut silently with no truncation marker, and parameter keys (identifier slots) are clipped instead of rejected (line 68). The per-class ceilings in MAX_LENGTHS do exist."
+        },
+        {
+          "technique": "output-sanitization",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:69 Token shapes are masked in free text too, not only under secret-named keys. A golden test over recorded hostile connector output backs this up, and sanitizeUrl keeps external opens to an http/https allowlist (sanitizeUrl.ts:140)."
+        }
+      ]
     }
   }
 }

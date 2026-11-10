@@ -1,0 +1,105 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2210c1b1-8cd3-4b6e-a7be-f29a6e05cc7e",
+ "subject": "prompt-safety",
+ "evaluatedAt": "2026-11-10T00:33:22.573629+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "prompt-assembly-engine",
+   "subject": "prompt-safety",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:55 The canary is one fixed sentence shared by every run, and nothing screens model output for it: a repo-wide grep for the token finds only the prompt definitions and one test that checks the prompt contains it. So a tripped canary never stops, labels or quarantines a run.",
+   "techniques": [
+    {
+     "technique": "canary-tripwires",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:55 The canary is a constant, not minted per run. Raw output is never checked for the canary or the fence nonce, there is no boundary-violation outcome, and no hostile fixture proves the tripwire fires."
+    },
+    {
+     "technique": "untrusted-span-fencing",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:44 One door, wrap_runtime_xml_boundary. It neutralizes forged untrusted_ tags, takes a CSPRNG nonce and re-mints it until the payload does not contain it (line 46), and labels each fence with its provenance. It is used for the input_data, description and time-filter spans."
+    },
+    {
+     "technique": "input-caps-and-clamps",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:224 {{var}} values are capped at 2000 (line 4) and cut on a char boundary. The cut is announced with a marker that points to the complete fenced copy."
+    },
+    {
+     "technique": "session-capability-conjunction",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/prompt/cli_args.rs:172 A persona with no declared roster gets no --allowedTools flag, and every run passes --dangerously-skip-permissions (line 107). The technique counts an undeclared roster as all three legs lit, yet no session-level gate sees third-party input plus credentials plus an outbound channel together."
+    }
+   ]
+  },
+  {
+   "context": "lib-utils-sanitizers",
+   "subject": "prompt-safety",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:120 The TS secret-shape regex is a hand copy of the Rust redactor with no shared vectors: tool-output-attacks.json is read only by the TS golden test, and no Rust test reads it. The repo's own comment records 13 of 20 token shapes leaking through an earlier drifted copy, and nothing stops the next one-sided edit.",
+   "techniques": [
+    {
+     "technique": "cross-language-rule-parity",
+     "verdict": "deviation",
+     "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:120 Same rule in two runtimes, copied by hand. No single spec and no shared test vectors; grep for tool-output-attacks finds only the TS test."
+    },
+    {
+     "technique": "input-caps-and-clamps",
+     "verdict": "deviation",
+     "evidence": "src/lib/utils/sanitizers/workflowSanitizer.ts:58 Prose fields are cut silently with no truncation marker, and parameter keys (identifier slots) are clipped instead of rejected (line 68). The per-class ceilings in MAX_LENGTHS do exist."
+    },
+    {
+     "technique": "output-sanitization",
+     "verdict": "conformant",
+     "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:69 Token shapes are masked in free text too, not only under secret-named keys. A golden test over recorded hostile connector output backs this up, and sanitizeUrl keeps external opens to an http/https allowlist (sanitizeUrl.ts:140)."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "prompt-safety",
+   "context": "execution-detail-inspector",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-10T00:33:22.573629+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "prompt-safety"
+   ],
+   "techniques": [
+    "canary-tripwires",
+    "input-caps-and-clamps",
+    "session-capability-conjunction",
+    "untrusted-span-fencing"
+   ],
+   "deviations": 1,
+   "context": "prompt-assembly-engine",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T00:33:22.573629+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "prompt-safety"
+   ],
+   "techniques": [
+    "cross-language-rule-parity",
+    "input-caps-and-clamps",
+    "output-sanitization"
+   ],
+   "deviations": 1,
+   "context": "lib-utils-sanitizers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

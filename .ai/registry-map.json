@@ -21036,7 +21036,11 @@
           "revision": 8,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:120 The TS secret-shape regex is a hand copy of the Rust redactor with no shared vectors: tool-output-attacks.json is read only by the TS golden test, and no Rust test reads it. The repo's own comment records 13 of 20 token shapes leaking through an earlier drifted copy, and nothing stops the next one-sided edit.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:33b072141695f2eb",
+          "evaluatedRevision": 8
         },
         {
           "subject": "eval-harness",
@@ -33266,12 +33270,11 @@
           "revision": 8,
           "changedAt": "2026-10-27",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1379 recalled agent-memory title/content (core :1379, active :1439, team :1610) is still interpolated raw after assembly, outside every <untrusted_*> nonce fence and past the canary, while the fence door exists unused here (src-tauri/engine/src/prompt/assemble.rs:92, used only by knowledge_consult.rs:450); an agent-written memory carrying an injection reaches every later run unfenced, and team memory is framed as hard rules",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:51087132dbd1c9fb",
-          "evaluatedRevision": 7,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:55 The canary is one fixed sentence shared by every run, and nothing screens model output for it: a repo-wide grep for the token finds only the prompt definitions and one test that checks the prompt contains it. So a tripped canary never stops, labels or quarantines a run.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:33b072141695f2eb",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
