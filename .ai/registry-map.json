@@ -21089,8 +21089,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:15 The only eval-flavoured file here ('GOLDEN EVAL') runs recorded attack fixtures through the deterministic function maskSensitiveJson and says that the model is out of scope, so no non-deterministic system is scored and the subject's precondition does not hold (the deterministic suite falls under test-harness); a case-insensitive grep of src/lib/utils for judge, rubric, trials, holdout and pairwise found no hits.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "module-design",
@@ -24742,8 +24746,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx:110 The mission-control card only navigates to the agent Lab, which is outside this context and is where models would be compared, so no scenario, trial, judge or aggregation lives in these files; a case-insensitive grep of src/features/overview/sub_missionControl for rubric, trials, holdout, pairwise and temperature found no hits.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "mcp-tools",
@@ -26581,8 +26589,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/overview/libs/fleetOptimizer.ts:4 fleetOptimizer makes production recommendations (for example, downgrading a model) from live execution success rates and costs; it runs no declared scenarios against candidates and scores nothing repeatably, so it has no eval harness; a case-insensitive grep of src/features/overview/libs and src/features/overview/components/shared for judge, rubric, trials, holdout, pairwise and scenario found no hits.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "fleet-orchestration",

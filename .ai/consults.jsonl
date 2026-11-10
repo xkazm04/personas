@@ -2533,3 +2533,6 @@
 {"ts":"2026-11-10T23:05:54.638868+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"glyph-command-panel","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-10T23:05:54.638868+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"notepad-overview","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-10T23:05:54.638868+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"hooks-execution","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-10T23:10:55.870209+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["assertion-vs-judgment"],"deviations":0,"context":"lib-utils-sanitizers","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-10T23:10:55.870209+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["outcome-conditioned-cost"],"deviations":0,"context":"overview-shared-libs","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-10T23:10:55.870209+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"overview-director","via":"curator-multi:claude","model":"claude-opus-5-5"}

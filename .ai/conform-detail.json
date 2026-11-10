@@ -49425,6 +49425,49 @@
       "evaluatedTs": "2026-11-10T23:05:54.638Z",
       "worker": "81837643-73c8-4afb-b0c4-d93c7ffefe2d",
       "techniques": []
+    },
+    "fb6e9de5-a01b-4434-8ed7-313c142947a1/eval-harness": {
+      "context": "lib-utils-sanitizers",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:10:55.870Z",
+      "worker": "ee638268-030d-4ac4-ac92-122782c7e45b",
+      "techniques": [
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:94 Pure deterministic assertions on a non-model function; no judge is possible or needed, and no model output is scored."
+        }
+      ],
+      "registryProposal": "A fixture-driven deterministic test that calls itself a 'golden eval' sits on the boundary with test-harness. The golden path could say plainly that the subject begins only when the thing being scored is non-deterministic, so a self-label does not pull a deterministic suite in."
+    },
+    "5e531c95-b6d9-46f5-a33d-d07001fee61e/eval-harness": {
+      "context": "overview-shared-libs",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:10:55.870Z",
+      "worker": "ee638268-030d-4ac4-ac92-122782c7e45b",
+      "techniques": [
+        {
+          "technique": "outcome-conditioned-cost",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/libs/fleetOptimizer.ts:235 Compares cost against success on production telemetry for one persona, not between eval arms, so the precondition (arms that can fail) does not hold."
+        }
+      ]
+    },
+    "c413de7d-1182-4abc-8a08-9c8832254c62/eval-harness": {
+      "context": "overview-director",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T23:10:55.870Z",
+      "worker": "ee638268-030d-4ac4-ac92-122782c7e45b",
+      "techniques": []
     }
   }
 }
