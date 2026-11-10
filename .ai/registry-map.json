@@ -18960,7 +18960,11 @@
           "revision": 9,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:201 The arena labels the model with the highest mean composite 'Best' with a trophy, and its summary says the model 'outperforms' the worst model by the raw gap. No paired per-scenario test, no correction and no 'no significant difference' fallback exist, even though the matrix already holds per-scenario identity for every model.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9548319fbd9c4eae",
+          "evaluatedRevision": 9
         },
         {
           "subject": "agent-memory",
@@ -25443,14 +25447,13 @@
           "revision": 9,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:107 computeLeaderboard ranks personas from live PersonaHealthSignal telemetry (success rate, heartbeat, latency, cost, activity), not from eval runs over a shared case set - no run-vs-run verdict, gate or pairable cases exist here",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:2fa1e4fd027c9e92",
-          "evaluatedRevision": 8,
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:168 computeLeaderboard gives gold/silver/bronze by position in an argmax sort of a composite score built from noisy live telemetry rates; nothing tests whether rank 1 is actually separated from rank 2, so a one-point lead gets the winner medal (the 'argmax winner' failure mode).",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9548319fbd9c4eae",
+          "evaluatedRevision": 9,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "cross-provider-benchmark-operations",
