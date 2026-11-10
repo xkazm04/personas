@@ -16239,8 +16239,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "deviation",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/agents/AGENTS.md:26 sub_glyph sits inside the span of the nested src/features/agents/AGENTS.md (its row is line 59). That file still states 27 imports in 20 pairs, but the baseline was re-recorded on 2026-10-31 and the gate now measures 26 imports in 19 pairs (I ran it, exit 0), so the instruction file was not updated when the change that invalidated it landed.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "fleet-orchestration",
@@ -19601,8 +19605,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/lib/analytics/index.ts:2 This is a navigation-analytics sink layer with no agent instruction file. rg over src/lib/analytics for AGENTS.md, CLAUDE.md, GEMINI.md, copilot-instructions and cursorrules found zero hits.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "agent-runtime-assembly",
@@ -41505,7 +41513,11 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "priorNotApplicable": 18,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_explore/ExploreView.tsx:2 The listed files are the template Explore mosaic and the team-preset library, which hold product catalog data and no repo-owned instruction file for a coding harness. rg over sub_explore and sub_presets for AGENTS.md, CLAUDE.md, GEMINI.md, copilot-instructions and cursorrules found nothing (exit 1).",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:9b02cf004a7ce444",
+          "evaluatedRevision": 32
         },
         {
           "subject": "table",
