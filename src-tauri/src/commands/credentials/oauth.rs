@@ -1957,7 +1957,6 @@ pub(crate) fn stamp_account_identity(
 /// connector-design UI.
 #[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
 pub struct OAuthProvider {
     pub id: String,
     pub name: String,
@@ -1967,7 +1966,6 @@ pub struct OAuthProvider {
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
 pub struct OAuthProviderListResult {
     pub providers: Vec<OAuthProvider>,
 }

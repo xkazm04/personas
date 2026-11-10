@@ -92,7 +92,6 @@ struct TriageRunItem {
 // ── what the door hands back ────────────────────────────────────────────────
 
 #[derive(Debug, serde::Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct TriageVerdictsIngestSummary {
     pub run_dir: String,
