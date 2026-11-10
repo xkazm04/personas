@@ -49062,6 +49062,57 @@
           "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:62 No significance level exists, configurable or fixed. The only thresholds are hard-coded presentation colour bands."
         }
       ]
+    },
+    "ad601e35-b998-4029-97a5-77487f00d561/eval-harness": {
+      "context": "lib-types",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T01:14:08.313Z",
+      "worker": "2940554c-cd61-4c39-bb5a-a502e61124c6",
+      "techniques": [
+        {
+          "technique": "metric-role-contract",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:239 One averaged composite stands in for metrics with different roles. The type has no slot for an optimized metric versus threshold constraints."
+        },
+        {
+          "technique": "resolution-precondition",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:240 A winner is stored with no margin, N or resolution evidence. The producer (labFeedbackLoop.ts, outside this context) picks the highest average."
+        },
+        {
+          "technique": "reliability-aggregation",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:238 The contract has coverage and an average but no trials-per-cell and no declared aggregation rule (pass^k vs pass@k), so the score travels without its predicate."
+        },
+        {
+          "technique": "failure-signatures-beside-the-pass-rate",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:241 Weaknesses are scenario/metric/score triples only. Nothing records how a failure failed."
+        }
+      ]
+    },
+    "e8fa2ff7-145d-4c58-af83-1239b87d2c24/eval-harness": {
+      "context": "overview-activity-metrics",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T01:14:08.313Z",
+      "worker": "2940554c-cd61-4c39-bb5a-a502e61124c6",
+      "techniques": []
+    },
+    "1ffb5765-de47-4f01-87ec-06732a63522c/eval-harness": {
+      "context": "i18n-generated",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T01:14:08.313Z",
+      "worker": "2940554c-cd61-4c39-bb5a-a502e61124c6",
+      "techniques": []
     }
   }
 }

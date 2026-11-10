@@ -18819,8 +18819,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:7 This context is i18n parity and fallback tests plus generated translation-key types. It runs and scores no agent or model. The generated types.ts does contain the words judge, eval and scenario, but only as translation-key names for Lab UI labels; there is no harness machinery (no trial counts, judge models or holdouts).",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "data-access",
@@ -20651,8 +20655,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "deviation",
+          "priorNotApplicable": 30,
+          "evidence": "src/lib/types/frontendTypes.ts:239 The persisted shape of a Lab result (labTestMetadata) carries one averaged composite score of tool accuracy, output quality and protocol compliance, plus a single recommended model, with no trial count, aggregation rule, variance or metric roles. That makes a composite the quality verdict that is shown and fed back into persona building, which is exactly what metric-role-contract forbids.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "agent-instruction-files",
@@ -24109,8 +24117,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/overview/sub_activity/libs/useLlmSpend.ts:9 This context is a spend and execution activity dashboard. It reads rollups and runs no scenarios, trials or judges. Searching its directories for judge, benchmark, rubric, pass rate and trial found nothing; 'eval' and 'scenario' hit only 'revalidate', 'evaluators' in a cost comment, and the ScenarioEmptyState component.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "test-harness",
