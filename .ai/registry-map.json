@@ -4180,13 +4180,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx:11 The list, comparison and rerun surfaces neither run nor display a model-judge verdict (the Director score display was removed on 2026-10-19 and the remaining badge shows the agent's self-reported business_outcome). A case-insensitive search of src/features/agents/sub_executions for judge, rescore, sample_rate, settle_window and unscored found no hits; director_score appears only in test fixtures under trace/ and replay/.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:65f1d14beed83924",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx:18 The list, comparison, rerun and trace-bar surfaces neither run nor display a model-judge verdict: the list's 'verdict' column (useExecutionColumns.tsx:115-120) renders only the agent's self-reported business_outcome, and the Director star rating was removed on 2026-10-19 (ExecutionValueBadges.tsx:11-15). A case-insensitive search of src/features/agents/sub_executions for judge, rescor, unscored and sample_rate returned zero hits, so no scoring loop exists here to sample, settle or dedupe.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:95adbc351991715b",
+          "evaluatedRevision": 8,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "multi-provider-gateway-plane",

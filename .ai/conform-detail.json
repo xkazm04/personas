@@ -41919,19 +41919,29 @@
       "subject": "production-trace-scoring",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T21:59:55.475Z",
-      "worker": "a0bdf36e-0438-41d0-b26f-66438cffb55c",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:56:51.178Z",
+      "worker": "d61089aa-4d55-491c-b095-80bf8d09b7fc",
       "techniques": [
         {
           "technique": "stable-hash-sampling",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx:19 The only verdict-like value shown is business_outcome, which src-tauri/engine/src/parser.rs parses from the agent's own output. No judge selection or sampling happens here."
+          "evidence": "src/features/agents/sub_executions/components/list/useExecutionColumns.tsx:120 The verdict column shows business_outcome, not a sampled judge score. Nothing here chooses which traces get judged."
         },
         {
           "technique": "error-analysis-first-taxonomy",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_executions/components/AnnotationEditor.tsx:33 Human free-form tags and notes on executions exist, but nothing here derives a judge rubric from them. This is human annotation, not scoring setup."
+          "evidence": "src/features/agents/sub_executions/components/AnnotationEditor.tsx:33 Human free-form tags and notes on executions exist, but nothing here derives a judge rubric from them. This is human annotation, not scoring setup.",
+          "carriedFrom": "2026-10-24"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx:11 The list, comparison and rerun surfaces neither run nor display a model-judge verdict (the Director score display was removed on 2026-10-19 and the remaining badge shows the agent's self-reported business_outcome). A case-insensitive search of src/features/agents/sub_executions for judge, rescore, sample_rate, settle_window and unscored found no hits; director_score appears only in test fixtures under trace/ and replay/.",
+          "evaluatedAt": "2026-10-24T21:59:55.475Z",
+          "worker": "a0bdf36e-0438-41d0-b26f-66438cffb55c",
+          "reason": "replaced by d61089aa-4d55-491c-b095-80bf8d09b7fc"
         }
       ]
     },
