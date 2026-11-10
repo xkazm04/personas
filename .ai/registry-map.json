@@ -21206,7 +21206,11 @@
           "revision": 5,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/DemoNotice.tsx:2 The disclosure is designed around demo entry inferred from an empty workspace, and its main marker is a dialog the viewer dismisses ('Explore the sample'), though conversion CTAs, inert demo persona rows (PersonaListPopover.tsx:87) and the named 'Demo session' fleet body (FleetPreviewPanel.tsx:48) do realize clauses 5 and 6.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:8b6581bd5537bf1b",
+          "evaluatedRevision": 5
         },
         {
           "subject": "native-shell-integration",
@@ -21342,7 +21346,11 @@
           "revision": 5,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:152 When no projects are cross-scanned and nothing is loading, the scene silently becomes the six-island demo world, so the plane is inferred from an empty result rather than chosen by an explicit act, which is the auto-entry the contract forbids.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:8b6581bd5537bf1b",
+          "evaluatedRevision": 5
         },
         {
           "subject": "fleet-orchestration",
@@ -39529,7 +39537,11 @@
           "revision": 5,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:88 Searched goals/, teams/sub_collab and teams/sub_deliberations (incl. subdirs) for demo/fixture/fake and found no fabricated plane; the only empty-state aid, starter goals, is written as a real goal through the real createGoal write path on an explicit click, so no fabricated data is ever rendered here.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:8b6581bd5537bf1b",
+          "evaluatedRevision": 5
         },
         {
           "subject": "public-claim-provenance",

@@ -48872,6 +48872,85 @@
           "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:69 Token shapes are masked in free text too, not only under secret-named keys. A golden test over recorded hostile connector output backs this up, and sanitizeUrl keeps external opens to an http/https allowlist (sanitizeUrl.ts:140)."
         }
       ]
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/demo-data-plane": {
+      "context": "teams-goals",
+      "subject": "demo-data-plane",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:42:16.250Z",
+      "worker": "8396ab1e-e0f8-4e21-bff2-d50c0b817566",
+      "techniques": [
+        {
+          "technique": "fake-surface-honesty-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:75 Empty state offers templates the user commits as their own data; it does not fall back to fixtures, so no fabricated surface exists to disclose."
+        }
+      ]
+    },
+    "e0ea6f08-ebdf-4c9e-aab4-969eee32f573/demo-data-plane": {
+      "context": "mastermind-scene-store",
+      "subject": "demo-data-plane",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:42:16.250Z",
+      "worker": "8396ab1e-e0f8-4e21-bff2-d50c0b817566",
+      "techniques": [
+        {
+          "technique": "runtime-dispatch-not-build-flag",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:139 Plane selected from the shape of the result (passports empty vs not), the first forbidden derivation source; no explicit viewer act or session field."
+        },
+        {
+          "technique": "fake-surface-honesty-contract",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:152 Clause 2 (never auto-entered) broken: a fresh user's empty workspace is shown fabricated islands with KPI alerts, blocker counts and error stats."
+        },
+        {
+          "technique": "fixture-self-consistency",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/statsMock.ts:23 Side stats are hashed per slug independently of the island root: demo-desktop declares autoScore 84 / prod 88 / '81% cov' yet mockStats yields Auto 61 / Prod 40 / Tests 85% (computed), whereas live stats read the same passport score."
+        },
+        {
+          "technique": "seeded-determinism",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/statsMock.ts:7 Variation comes from a djb2 hash of slug:key, no time or Math.random, so the demo world is identical across renders and tabs."
+        },
+        {
+          "technique": "cross-plane-parity-test",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:164 Demo islands are hand-built Island objects that bypass toIsland/buildIslandStats, the live derivation; no test runs the live derivation over a demo-world upstream, which is how the stat contradictions above went unseen."
+        },
+        {
+          "technique": "replay-clock-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:181 Fixtures are handed straight to the canvas with static age strings; no recorded moment replayed through ingestion."
+        },
+        {
+          "technique": "mixed-plane-coexistence",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:149 Any real passport yields a wholly real scene; demo and real islands never share a scene."
+        }
+      ],
+      "registryProposal": "For a single-user local-first desktop app there is no session or unauthenticated visitor; the standard should say whether a first-run sample shown on an empty workspace (with a dismissable notice, persistent badge and scan/add CTAs) counts as auto-entry or as an acceptable onboarding door, since clause 2 currently reads as forbidding it outright."
+    },
+    "ca705961-f138-494a-b0fe-f882c674d25a/demo-data-plane": {
+      "context": "mastermind-popovers",
+      "subject": "demo-data-plane",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-10",
+      "evaluatedTs": "2026-11-10T00:42:16.250Z",
+      "worker": "8396ab1e-e0f8-4e21-bff2-d50c0b817566",
+      "techniques": [
+        {
+          "technique": "fake-surface-honesty-contract",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/DemoNotice.tsx:2 Clause 2 broken by design (notice appears whenever the empty-data demo renders); clause 1 relies on a dismissable dialog with the persistent badge living outside this context; clauses 5/6 realized (inert div rows, 'Demo session' label, scan/add conversion action)."
+        }
+      ]
     }
   }
 }
