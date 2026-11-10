@@ -11655,8 +11655,12 @@
           "revision": 3,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:24 fleet_sessions keeps only the harness's `claude_session_id` as a `--resume` key plus spawn metadata, and it deliberately leaves out output (lines 23-26). None of the context's repos or migrations copy, parse or retire harness transcripts. A grep of src-tauri/db/src/repos and migrations for capture_manifest, claude/projects, cleanupPeriodDays and session_archive found nothing, so no transcript archive exists here to judge.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:aa419c7f13dda67a",
+          "evaluatedRevision": 3
         },
         {
           "subject": "companion-runtime",
@@ -22593,12 +22597,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/notepad/notepadStore.ts:771 Context and repository searches traced this archive action to application-owned note status changes, with no jsonl or capture_manifest matches under notepad, so third-party transcript preservation does not apply.",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:3e3f46ad2c0269f1",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/notepad/NoteArchiveModal.tsx:35 In this context \"archive\" means a status change on a note the app owns (notepadStore.ts:771 `transition(id, 'archived', 'archive')`), not keeping transcripts a third-party harness writes and deletes. I grepped src/features/notepad for capture_manifest, claude/projects, cleanupPeriodDays and session_archive and got no hits. Its only uses of \"transcript\" refer to the app's own in-chat card transcript, so the subject's precondition (a third party deletes the source) does not hold.",
+          "evaluatedAt": "2026-11-10",
+          "evaluatedAgainst": "sha256-b2:aa419c7f13dda67a",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "voice-io",
