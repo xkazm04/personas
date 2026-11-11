@@ -49614,6 +49614,16 @@
       "evaluatedTs": "2026-11-11T22:39:22.533Z",
       "worker": "5d3d3717-e661-4d09-aaf1-1a089e463519",
       "techniques": []
+    },
+    "e0563a39-fb7e-485f-a698-f9c4dc1004a7/eval-harness": {
+      "context": "triggers-test",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:53:08.086Z",
+      "worker": "6da3932e-bf54-4251-a493-69bee39c9d60",
+      "techniques": []
     }
   }
 }

@@ -43985,8 +43985,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/triggers/sub_test/TestTab.tsx:217 The context's only 'test' is a manual, one-off fire of an event payload through the routing layer, which then shows who received it; it runs no agent or model against declared scenarios and scores nothing repeatedly. A grep of sub_test and sub_shared for judge, benchmark, rubric, trials and passRate returned zero files. The single 'scenario' hit is the ScenarioEmptyState UI component import, not an eval scenario.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:85554b740461b19e",
+          "evaluatedRevision": 39
         },
         {
           "subject": "prompt-assembly",
