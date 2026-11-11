@@ -43675,7 +43675,11 @@
           "revision": 8,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/hooks/useTriggerHistory.ts:140 The context's one execution path (trigger replay) awaits executePersona and only reports 'replay started' with the run id, never consuming or rendering incremental output; its dry-run is also a single awaited invoke (useRoutingState.ts:177), and a search of sub_studio and triggers/hooks for chunk, backpressure, onDelta, textDelta, listen( and stdout found zero hits, so no live output stream exists here for the subject's techniques to govern.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:f390cca5c416535b",
+          "evaluatedRevision": 8
         },
         {
           "subject": "convergence-loop-and-requeue",

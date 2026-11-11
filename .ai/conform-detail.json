@@ -33017,62 +33017,64 @@
       "context": "triggers-studio",
       "subject": "streaming-output",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T22:17:35.316Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:23:11.309Z",
+      "worker": "c65efae6-03db-4138-bb87-46038356b433",
       "techniques": [
         {
-          "technique": "buffering-and-backpressure",
+          "technique": "stream-parsing",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:99 Loads routing inventory; no live output buffer was found."
-        },
-        {
-          "technique": "cancellation-and-finalization",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:115 This operation commits trigger configuration rather than finalizing a streaming turn."
-        },
-        {
-          "technique": "emit-behind-the-revision-window",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:18 Routes gate completed executions, with no revising output producer here."
-        },
-        {
-          "technique": "mid-turn-steering",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:161 Form submission creates a route rather than injecting input into an active turn."
-        },
-        {
-          "technique": "phase-derivation",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioLabels.ts:14 These labels describe routing conditions, not phases derived from streaming events."
-        },
-        {
-          "technique": "render-throttling",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:107 Renders fetched subscription snapshots rather than a live output stream."
+          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:177 Single request/response invoke returning a whole DryRunResult; no framed event stream to parse."
         },
         {
           "technique": "run-attribution",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:24 The model describes route configuration; no stream application requiring run attribution was found."
+          "evidence": "src/features/triggers/hooks/useTriggerHistory.ts:140 Replay hands off to an execution and shows only its id; the live output surface is owned by another context."
+        },
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:99 Loads routing inventory; no live output buffer was found.",
+          "carriedFrom": "2026-10-16"
+        },
+        {
+          "technique": "cancellation-and-finalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:115 This operation commits trigger configuration rather than finalizing a streaming turn.",
+          "carriedFrom": "2026-10-16"
+        },
+        {
+          "technique": "emit-behind-the-revision-window",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:18 Routes gate completed executions, with no revising output producer here.",
+          "carriedFrom": "2026-10-16"
+        },
+        {
+          "technique": "mid-turn-steering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:161 Form submission creates a route rather than injecting input into an active turn.",
+          "carriedFrom": "2026-10-16"
+        },
+        {
+          "technique": "phase-derivation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioLabels.ts:14 These labels describe routing conditions, not phases derived from streaming events.",
+          "carriedFrom": "2026-10-16"
+        },
+        {
+          "technique": "render-throttling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:107 Renders fetched subscription snapshots rather than a live output stream.",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "sink-reversibility-decides-the-commit",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:131 Removes a committed configuration draft, with no partial output record being emitted."
-        },
-        {
-          "technique": "stream-parsing",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/routing/layouts/buildEventRows.ts:3 Derives routing rows from backend collections rather than framing producer bytes."
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:131 Removes a committed configuration draft, with no partial output record being emitted.",
+          "carriedFrom": "2026-10-16"
         }
-      ],
-      "withdrawn": {
-        "worker": "9b276dfd-4bc8-46d6-8b14-89bf34daae5a",
-        "state": "not-applicable",
-        "at": "2026-10-16T22:18:12.253998+00:00",
-        "reason": "reviewer (sonnet): The anchor studioCommit.ts:8 is a header comment that does not itself show streaming is absent. The claim of no streaming matches under the triggers directory is also doubtful: useRoutingState.ts:60 mentions 'LiveStream', and I did not confirm that nothing in the context consumes incremental output."
-      }
+      ]
     },
     "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/streaming-output": {
       "context": "output-stream-parser",
