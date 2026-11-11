@@ -1,0 +1,69 @@
+{
+  "schema": "conform-run/1",
+  "worker": "cecd0016-7a7d-44b9-bee8-12b7ff6e2bc4",
+  "subject": "guest-execution-bounding",
+  "evaluatedAt": "2026-11-11T22:02:13.714799+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "commands-curator",
+      "subject": "guest-execution-bounding",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/curator/process.rs:109 Curator's external work (registry node scripts, headless workers) runs as out-of-process subprocesses with a wall-clock timeout, not as an engine embedded in the host process. A search of src-tauri/src/commands/curator/ for interpreter, guest, quickjs, rhai, wasmtime and 'eval(' found nothing, so the subject's precondition does not hold.",
+      "techniques": [
+        {
+          "technique": "terminate-from-outside-when-you-cannot-count",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/process.rs:25 This is a deadline on a child node process, which the OS can kill without killing the host. That is the subprocess-lifecycle neighbour's ground, not an in-process engine termination handle."
+        }
+      ],
+      "absenceTerms": [
+        "interpreter",
+        "guest",
+        "quickjs",
+        "rhai",
+        "wasmtime"
+      ],
+      "registryProposal": "The golden path's scope section names untrusted-extension-host and the register-machine subject as neighbours but not subprocess-lifecycle. A one-line boundary would help: a host that runs guest work in a child process is bounded by that subject, because the OS can kill the child without killing the host. Without that line, a wall-clock timeout on a spawned node script could be mis-scored as terminate-from-outside here."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "guest-execution-bounding",
+      "context": "notepad-core",
+      "reason": "withdrawn after review: reviewer (sonnet): The evidence anchor notepadStore.ts:5 is a comment about the store's useSyncExternalStore design and does not show that no interpreter or guest code exists. The context's absence rests on a keyword search alone. The technique anchor cardMarkdown.ts:5 describes a markdown bridge but does not show tha"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-11T22:02:13.714799+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "guest-execution-bounding"
+      ],
+      "techniques": [
+        "back-edge-iteration-counter"
+      ],
+      "deviations": 0,
+      "context": "notepad-core",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-11T22:02:13.714799+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "guest-execution-bounding"
+      ],
+      "techniques": [
+        "terminate-from-outside-when-you-cannot-count"
+      ],
+      "deviations": 0,
+      "context": "commands-curator",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

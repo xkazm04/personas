@@ -8243,7 +8243,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/process.rs:109 Curator's external work (registry node scripts, headless workers) runs as out-of-process subprocesses with a wall-clock timeout, not as an engine embedded in the host process. A search of src-tauri/src/commands/curator/ for interpreter, guest, quickjs, rhai, wasmtime and 'eval(' found nothing, so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:a59e479b7cea486b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "prompt-assembly",

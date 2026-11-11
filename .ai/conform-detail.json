@@ -41821,14 +41821,20 @@
       "subject": "guest-execution-bounding",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T05:43:33.350Z",
-      "techniques": [],
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:02:13.714Z",
+      "techniques": [
+        {
+          "technique": "back-edge-iteration-counter",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/cardMarkdown.ts:5 Markdown is converted to and from a fixed formatting subset and never executed. There is no dispatch loop and no guest loop to count."
+        }
+      ],
       "withdrawn": {
-        "worker": "d2b591a2-05dc-435c-af9e-95084062badd",
+        "worker": "cecd0016-7a7d-44b9-bee8-12b7ff6e2bc4",
         "state": "not-applicable",
-        "at": "2026-10-24T05:43:54.981032+00:00",
-        "reason": "reviewer (sonnet): The claim that the notepad's timers are \"debounce and retry only\" is contradicted by notepadAskState.ts:27,88, where ASK_CEILING_MS (120 s) is a ceiling timer that clears a pending Athena ask, so the notepad does bound a dispatched guest run. The anchor notepadActions.ts:1 only says notes leave thro"
+        "at": "2026-11-11T22:03:03.865369+00:00",
+        "reason": "reviewer (sonnet): The evidence anchor notepadStore.ts:5 is a comment about the store's useSyncExternalStore design and does not show that no interpreter or guest code exists. The context's absence rests on a keyword search alone. The technique anchor cardMarkdown.ts:5 describes a markdown bridge but does not show tha"
       }
     },
     "fbfcd99a-a333-42da-b85e-2ec1f560b4be/machine-paced-delivery": {
@@ -49488,6 +49494,23 @@
       "evaluatedTs": "2026-11-10T23:14:42.497Z",
       "worker": "b0b0068a-9cbe-434d-9140-22d2449baefa",
       "techniques": []
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/guest-execution-bounding": {
+      "context": "commands-curator",
+      "subject": "guest-execution-bounding",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:02:13.714Z",
+      "worker": "cecd0016-7a7d-44b9-bee8-12b7ff6e2bc4",
+      "techniques": [
+        {
+          "technique": "terminate-from-outside-when-you-cannot-count",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/process.rs:25 This is a deadline on a child node process, which the OS can kill without killing the host. That is the subprocess-lifecycle neighbour's ground, not an in-process engine termination handle."
+        }
+      ],
+      "registryProposal": "The golden path's scope section names untrusted-extension-host and the register-machine subject as neighbours but not subprocess-lifecycle. A one-line boundary would help: a host that runs guest work in a child process is bounded by that subject, because the OS can kill the child without killing the host. Without that line, a wall-clock timeout on a spawned node script could be mis-scored as terminate-from-outside here."
     }
   }
 }
