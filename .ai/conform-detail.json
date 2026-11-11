@@ -48796,27 +48796,28 @@
       "context": "plugins-dev-tools-projects",
       "subject": "readiness-passports",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-09",
-      "evaluatedTs": "2026-11-09T23:57:19.945Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:14:15.594Z",
+      "worker": "ce95c20d-d0f5-4a77-b211-bcaf82190191",
       "techniques": [
         {
           "technique": "two-axis-readiness",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/standardsConfig.ts:9 No readiness axis is computed in this context; the passport lives in teams/sub_factory/passport."
+          "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectPipelineView.tsx:102 The surface shows declared policy, not an assessed readiness axis."
+        },
+        {
+          "technique": "fingerprint-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/standardsConfig.ts:4 The stored artifact is the project's own declared config, not an assessment fingerprint."
         },
         {
           "technique": "named-vs-capability-metadata",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:389 There is a named tech-layer spread across projects, but it is descriptive catalog metadata, not a readiness fingerprint's descriptive skin. Line 382 also hides an empty distribution rather than rendering none/unknown, which would matter if this ever fed a passport."
+          "evidence": "src/features/plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:389 There is a named tech-layer spread across projects, but it is descriptive catalog metadata, not a readiness fingerprint's descriptive skin. Line 382 also hides an empty distribution rather than rendering none/unknown, which would matter if this ever fed a passport.",
+          "carriedFrom": "2026-11-09"
         }
-      ],
-      "withdrawn": {
-        "worker": "d0066858-2298-45a2-abe2-d8315f877c4d",
-        "state": "not-applicable",
-        "at": "2026-11-09T23:57:44.522427+00:00",
-        "reason": "reviewer (sonnet): The not-applicable anchor, standardsConfig.ts:9, is incidental. It says the standards config is shared with the team passport, which points toward a readiness input and does not show that the context computes no readiness. The absence claim rests only on a grep, and the terms searched (readiness, ru"
-      }
+      ]
     },
     "876c0b4e-6472-4544-a21b-56e7529fb6b3/agent-instruction-files": {
       "context": "vault-shared-vector",
@@ -49538,6 +49539,32 @@
         }
       ],
       "registryProposal": "The provenance rule ('a fallback belongs to a value you chose, never to one the operator chose') is written for addresses and environment values. It also applies to user-chosen bindings stored as data, such as a link from a slot to a credential that falls back to an auto-match once the linked record is deleted. An example of a dangling explicit reference would help seats recognise this shape."
+    },
+    "959baa73-f18f-42c8-8569-466939b9050d/readiness-passports": {
+      "context": "notepad-plan",
+      "subject": "readiness-passports",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:14:15.594Z",
+      "worker": "ce95c20d-d0f5-4a77-b211-bcaf82190191",
+      "techniques": [
+        {
+          "technique": "fingerprint-provenance",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:181 The stamp has one document-level time and no binding to the observed state or the instrument. Kept entries inherit a fresh publishedAt. A version mismatch returns [] at line 156 and the next write replaces the store, so there is no migrate-on-read."
+        },
+        {
+          "technique": "audit-the-live-system-not-the-plan",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/useProjectPlan.ts:170 Context tone and the ship verdict come from live Sentry errors and KPI wiring, not from the plan or the operator's ratings. Unwired monitoring is null, not zero."
+        },
+        {
+          "technique": "blocker-rollups",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/plan/useProjectPlan.ts:97 The surface is scoped to one project. Its blocker lines (line 203) are per-feature, and there is no portfolio to roll up across."
+        }
+      ]
     }
   }
 }

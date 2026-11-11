@@ -23014,7 +23014,11 @@
           "revision": 4,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:181 The persisted ship-readiness snapshot that Athena reads in later sessions is stamped only with a schema version and a single write-time publishedAt. There is no immutable identifier of the state it observed and no version of the criteria derivation. Milestones from other projects, carried forward verbatim from the stored document (line 180), are re-stamped with the new time, so their age is misreported.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:ae6d093363f5067e",
+          "evaluatedRevision": 4
         },
         {
           "subject": "hitl-approval",
@@ -30502,7 +30506,11 @@
           "revision": 4,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/standardsConfig.ts:9 This context is project CRUD plus a self-declared standards and branching policy shown read-only. The passport consumer lives elsewhere (team passport, @/lib/standards). A case-insensitive search of sub_projects for readiness, fingerprint, blocker, declin and rung found nothing, so no assessment fingerprint is computed or shown here.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:ae6d093363f5067e",
+          "evaluatedRevision": 4
         }
       ],
       "governance": "governed"
