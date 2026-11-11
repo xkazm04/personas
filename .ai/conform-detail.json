@@ -49584,6 +49584,36 @@
         }
       ],
       "registryProposal": "Most of this subject's techniques assume a randomized or fuzz generator already exists. Small UI-component suites built only from hand-picked examples have no technique saying when a single example that stands in for a general property (e.g. 'no float drift' from one case) should become an enumerated or generated input set. Adding a use_when for example-only suites would let such contexts be judged instead of left unread."
+    },
+    "b4439e30-fcff-4095-97dd-d9d7da2247dd/voice-io": {
+      "context": "settings-portability",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:39:22.533Z",
+      "worker": "5d3d3717-e661-4d09-aaf1-1a089e463519",
+      "techniques": []
+    },
+    "738f591b-60e9-4701-b786-cf868db66c51/voice-io": {
+      "context": "notepad-editor",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:39:22.533Z",
+      "worker": "5d3d3717-e661-4d09-aaf1-1a089e463519",
+      "techniques": []
+    },
+    "c413de7d-1182-4abc-8a08-9c8832254c62/voice-io": {
+      "context": "overview-director",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:39:22.533Z",
+      "worker": "5d3d3717-e661-4d09-aaf1-1a089e463519",
+      "techniques": []
     }
   }
 }

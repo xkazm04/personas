@@ -22648,8 +22648,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/notepad/NoteBody.tsx:56 Note input arrives only as typed markdown through MarkdownMiniEditor; a search of src/features/notepad for speechSynthesis, getUserMedia, SpeechRecognition, microphone and voice found nothing (the only 'transcript'/'speech' hits are a chat-transcript card list and a 'speech bubble' visual comment, not audio), so no voice pipeline exists to judge.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "prompt-assembly",
@@ -24816,8 +24820,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/overview/sub_missionControl/index.ts:3 The listed files are the Mission Control monitoring tab (vitals, status, leaderboard, routines cards); a search of src/features/overview/sub_missionControl for speechSynthesis, getUserMedia, SpeechRecognition, microphone and voice returned zero hits, so the voice subject has no precondition here.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "hitl-approval",
@@ -35118,8 +35126,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/settings/sub_portability/libs/useDataPortability.ts:63 The context is a data export/import and storage surface whose hook drives export IPC calls only; a case-insensitive search of src/features/settings/sub_portability for speechSynthesis, getUserMedia, SpeechRecognition, microphone, tts and voice returned zero hits, so neither the capture nor the synthesis pipeline exists here.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:ad2538ae80ec48fd",
+          "evaluatedRevision": 24
         },
         {
           "subject": "client-fetch-cache",
