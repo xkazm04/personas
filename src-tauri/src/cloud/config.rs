@@ -51,18 +51,44 @@ pub fn load_cloud_config() -> Option<(String, String)> {
 const KEYS_CLEARED_ON_DISCONNECT: &[&str] = &[KEY_API];
 
 /// Clear the cloud API key from the OS keyring (the URL is kept).
+///
+/// A failed delete is an error: reporting success while the key is still in
+/// the keyring tells the user they disconnected when the secret is still
+/// there for the next reconnect. An entry that is already absent is success.
 #[cfg(feature = "desktop")]
-pub fn clear_cloud_config() {
-    for key in KEYS_CLEARED_ON_DISCONNECT {
-        if let Ok(entry) = Entry::new(SERVICE, key) {
-            let _ = entry.delete_credential();
-        }
-    }
+pub fn clear_cloud_config() -> Result<(), String> {
+    clear_keys_with(|key| match Entry::new(SERVICE, key) {
+        Ok(entry) => match entry.delete_credential() {
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+            Err(e) => Err(e.to_string()),
+        },
+        Err(e) => Err(format!("keyring entry error: {e}")),
+    })
 }
 
 /// Clear cloud config (no-op on mobile).
 #[cfg(not(feature = "desktop"))]
-pub fn clear_cloud_config() {}
+pub fn clear_cloud_config() -> Result<(), String> {
+    Ok(())
+}
+
+/// Delete every key in [`KEYS_CLEARED_ON_DISCONNECT`] through `delete`,
+/// attempting all of them and returning the failures joined.
+#[cfg_attr(not(feature = "desktop"), allow(dead_code))]
+fn clear_keys_with(mut delete: impl FnMut(&str) -> Result<(), String>) -> Result<(), String> {
+    let failures: Vec<String> = KEYS_CLEARED_ON_DISCONNECT
+        .iter()
+        .filter_map(|key| delete(key).err().map(|e| format!("{key}: {e}")))
+        .collect();
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Failed to delete cloud credentials from the OS keyring ({})",
+            failures.join("; ")
+        ))
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -72,5 +98,20 @@ mod tests {
     fn disconnect_clears_the_secret_and_keeps_the_url() {
         assert!(KEYS_CLEARED_ON_DISCONNECT.contains(&KEY_API));
         assert!(!KEYS_CLEARED_ON_DISCONNECT.contains(&KEY_URL));
+    }
+
+    #[test]
+    fn keyring_delete_failure_is_reported_not_swallowed() {
+        let err = clear_keys_with(|_| Err("access denied".into())).unwrap_err();
+        assert!(err.contains("access denied"), "{err}");
+        assert!(err.contains(KEY_API), "{err}");
+
+        let mut deleted = Vec::new();
+        clear_keys_with(|key| {
+            deleted.push(key.to_string());
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(deleted, vec![KEY_API.to_string()]);
     }
 }

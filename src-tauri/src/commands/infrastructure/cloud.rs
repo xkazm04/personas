@@ -258,8 +258,10 @@ pub async fn cloud_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), App
     }
     state.cloud_exec_ids.lock().await.clear();
 
-    cloud::config::clear_cloud_config();
+    // Drop the client first so a keyring failure still disconnects this
+    // session; then report the failure instead of claiming the key is gone.
     *state.cloud_client.lock().await = None;
+    cloud::config::clear_cloud_config().map_err(AppError::Cloud)?;
 
     tracing::info!(
         cancelled_executions = active_ids.len(),
