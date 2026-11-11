@@ -76,7 +76,10 @@ export function useBulkHealthcheck() {
 
     try {
       const result = await credApi.healthcheckAllCredentials();
-      if (cancelRef.current || !mountedRef.current) return;
+      // The server already saved these results, so leaving the page or
+      // cancelling mid-sweep must not throw them away: the module-level caches
+      // (per-card health, summary) and the vault store are refreshed either
+      // way. Only this component's own state is skipped once it is gone.
 
       // Mirror each outcome into the shared per-card health cache so
       // CredentialCard reflects the fresh result without waiting for a reload.
@@ -105,11 +108,13 @@ export function useBulkHealthcheck() {
       };
       bulkSummaryCache.set('latest', bulkSummary);
       bulkSummaryCache.notify();
-      setProgress({ done: result.total, total: result.total, failed: result.failed });
 
       // The sweep persisted fresh healthcheck metadata server-side; refresh the
       // store so the connections table reflects it.
       void useVaultStore.getState().fetchCredentials();
+
+      if (cancelRef.current || !mountedRef.current) return;
+      setProgress({ done: result.total, total: result.total, failed: result.failed });
     } catch (e) {
       if (cancelRef.current || !mountedRef.current) return;
       toastCatch('useBulkHealthcheck:healthcheckAllCredentials')(e);
@@ -119,8 +124,9 @@ export function useBulkHealthcheck() {
   }, []);
 
   const cancel = useCallback(() => {
-    // The server-side sweep can't be aborted mid-flight; flip the flag so we
-    // discard the result and reset the button when the call returns.
+    // The server-side sweep can't be aborted mid-flight; flip the flag so the
+    // button resets now. The result is still applied to the shared caches
+    // when the call returns, because the server saved it regardless.
     cancelRef.current = true;
     if (mountedRef.current) setIsRunning(false);
   }, []);
