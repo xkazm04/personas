@@ -240,8 +240,9 @@ pub async fn cloud_reconnect_from_keyring(
 }
 
 /// Disconnect from the cloud orchestrator.
-/// Cancels all active cloud polling loops, clears keyring credentials and
-/// drops the in-memory client.
+/// Cancels all active cloud polling loops, clears the keyring API key (the
+/// orchestrator URL is kept: it is not a secret, and deployments and cloud
+/// triggers keep running there) and drops the in-memory client.
 #[tauri::command]
 #[requires(cloud)]
 pub async fn cloud_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {

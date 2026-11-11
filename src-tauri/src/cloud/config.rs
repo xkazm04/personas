@@ -44,17 +44,33 @@ pub fn load_cloud_config() -> Option<(String, String)> {
     None
 }
 
-/// Clear cloud config from OS keyring.
+/// Keyring entries a disconnect removes. Only the secret: the orchestrator URL
+/// is not a credential, and keeping it is what lets the app still name the
+/// orchestrator where budgeted deployments and cloud triggers keep running
+/// (and billing) after the local client lets go.
+const KEYS_CLEARED_ON_DISCONNECT: &[&str] = &[KEY_API];
+
+/// Clear the cloud API key from the OS keyring (the URL is kept).
 #[cfg(feature = "desktop")]
 pub fn clear_cloud_config() {
-    if let Ok(entry) = Entry::new(SERVICE, KEY_URL) {
-        let _ = entry.delete_credential();
-    }
-    if let Ok(entry) = Entry::new(SERVICE, KEY_API) {
-        let _ = entry.delete_credential();
+    for key in KEYS_CLEARED_ON_DISCONNECT {
+        if let Ok(entry) = Entry::new(SERVICE, key) {
+            let _ = entry.delete_credential();
+        }
     }
 }
 
 /// Clear cloud config (no-op on mobile).
 #[cfg(not(feature = "desktop"))]
 pub fn clear_cloud_config() {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disconnect_clears_the_secret_and_keeps_the_url() {
+        assert!(KEYS_CLEARED_ON_DISCONNECT.contains(&KEY_API));
+        assert!(!KEYS_CLEARED_ON_DISCONNECT.contains(&KEY_URL));
+    }
+}
