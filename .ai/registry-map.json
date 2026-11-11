@@ -35640,7 +35640,11 @@
           "revision": 10,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/forms/NumberStepper.tsx:192 NumberStepper's typed-text parser has a rejection branch for non-numeric input (it reverts the draft to the last committed value), but its only test file feeds the parser just '999' (numeric, out of range) and '' (empty), so this branch is never exercised and the suite still passes.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:d5ab12a92aba67c4",
+          "evaluatedRevision": 10
         },
         {
           "subject": "concurrency-guards",

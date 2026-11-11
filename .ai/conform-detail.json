@@ -49567,6 +49567,23 @@
           "evidence": "src/features/notepad/plan/useProjectPlan.ts:97 The surface is scoped to one project. Its blocker lines (line 203) are per-feature, and there is no portfolio to roll up across."
         }
       ]
+    },
+    "3c749d5b-3169-4ea8-8faa-98558f9b5df5/test-input-generation": {
+      "context": "shared-components-forms",
+      "subject": "test-input-generation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:30:33.122Z",
+      "worker": "bd061630-8898-442c-9b35-81958d416f53",
+      "techniques": [
+        {
+          "technique": "negative-space-generation",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/NumberStepper.tsx:192 NumberStepper.test.tsx is the only test file that names NumberStepper. It tests the accept path and clamping ('999' at test line 93, '' at line 87), but never a non-numeric draft like 'abc', and never near-boundary inputs Number() accepts unexpectedly ('1e3', '0x10', 'Infinity'). The rejection surface is untested. The parseHex tests in ColorPicker.test.tsx do include near-boundary rejects ('fff', '#ggg'), so the colour parser does better here."
+        }
+      ],
+      "registryProposal": "Most of this subject's techniques assume a randomized or fuzz generator already exists. Small UI-component suites built only from hand-picked examples have no technique saying when a single example that stands in for a general property (e.g. 'no float drift' from one case) should become an enumerated or generated input set. Adding a use_when for example-only suites would let such contexts be judged instead of left unread."
     }
   }
 }
