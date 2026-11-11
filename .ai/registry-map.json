@@ -3069,7 +3069,11 @@
           "revision": 17,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:127 Suppose the operator explicitly links credential X to a slot and X is later deleted. The link then resolves to null and quietly falls back to the newest auto-matched credential (comment at lines 125-126), so the connector row names, auto-tests and reports readiness for a credential the operator never picked. The standard reserves fallbacks for defaulted values, never for ones the operator supplied.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:641cb6bf0b2c6916",
+          "evaluatedRevision": 17
         },
         {
           "subject": "credential-vault",

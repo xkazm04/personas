@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "194e0694-be09-45b1-9dbf-ee4ab726f163",
+ "subject": "optional-dependency-degradation",
+ "evaluatedAt": "2026-11-11T22:10:11.740989+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "agents-connectors",
+   "subject": "optional-dependency-degradation",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:127 Suppose the operator explicitly links credential X to a slot and X is later deleted. The link then resolves to null and quietly falls back to the newest auto-matched credential (comment at lines 125-126), so the connector row names, auto-tests and reports readiness for a credential the operator never picked. The standard reserves fallbacks for defaulted values, never for ones the operator supplied.",
+   "techniques": [
+    {
+     "technique": "absent-degrades-malformed-fails-fast",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:127 Breaks the rule 'fallbacks attach to defaults, not to configuration'. A dangling explicit link takes the same auto-match path as no link at all, and the row does not record whether its credential was supplied or defaulted. useUnfulfilledCredentials.ts:66 does list the slot as unfulfilled, so the banner and the row disagree."
+    },
+    {
+     "technique": "capability-honest-refusal",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:123 An outage (connect, DNS or timeout) gets its own readiness state instead of being folded into 'unhealthy'. 'unverifiable' (no probe exists) also stays separate from 'healthy'. Both tokens come from the generated HealthProbeState union (line 11), so the vocabulary has one authority."
+    },
+    {
+     "technique": "probe-the-grant-not-the-config",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:124 Only a probe that actually verified the credential reads as healthy. A linked credential with no probe result stays 'linked_untested' (line 109). One caveat: isExecutionReady (line 136) still gates on the link alone, by documented design."
+    }
+   ],
+   "registryProposal": "The provenance rule ('a fallback belongs to a value you chose, never to one the operator chose') is written for addresses and environment values. It also applies to user-chosen bindings stored as data, such as a link from a slot to a credential that falls back to an auto-match once the linked record is deleted. An example of a dangling explicit reference would help seats recognise this shape."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "optional-dependency-degradation",
+   "context": "agents-components-allpersonas",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-11T22:10:11.740989+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "optional-dependency-degradation"
+   ],
+   "techniques": [
+    "absent-degrades-malformed-fails-fast",
+    "capability-honest-refusal",
+    "probe-the-grant-not-the-config"
+   ],
+   "deviations": 1,
+   "context": "agents-connectors",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

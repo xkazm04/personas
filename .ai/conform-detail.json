@@ -49511,6 +49511,33 @@
         }
       ],
       "registryProposal": "The golden path's scope section names untrusted-extension-host and the register-machine subject as neighbours but not subprocess-lifecycle. A one-line boundary would help: a host that runs guest work in a child process is bounded by that subject, because the OS can kill the child without killing the host. Without that line, a wall-clock timeout on a spawned node script could be mis-scored as terminate-from-outside here."
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/optional-dependency-degradation": {
+      "context": "agents-connectors",
+      "subject": "optional-dependency-degradation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:10:11.740Z",
+      "worker": "194e0694-be09-45b1-9dbf-ee4ab726f163",
+      "techniques": [
+        {
+          "technique": "absent-degrades-malformed-fails-fast",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:127 Breaks the rule 'fallbacks attach to defaults, not to configuration'. A dangling explicit link takes the same auto-match path as no link at all, and the row does not record whether its credential was supplied or defaulted. useUnfulfilledCredentials.ts:66 does list the slot as unfulfilled, so the banner and the row disagree."
+        },
+        {
+          "technique": "capability-honest-refusal",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:123 An outage (connect, DNS or timeout) gets its own readiness state instead of being folded into 'unhealthy'. 'unverifiable' (no probe exists) also stays separate from 'healthy'. Both tokens come from the generated HealthProbeState union (line 11), so the vocabulary has one authority."
+        },
+        {
+          "technique": "probe-the-grant-not-the-config",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:124 Only a probe that actually verified the credential reads as healthy. A linked credential with no probe result stays 'linked_untested' (line 109). One caveat: isExecutionReady (line 136) still gates on the link alone, by documented design."
+        }
+      ],
+      "registryProposal": "The provenance rule ('a fallback belongs to a value you chose, never to one the operator chose') is written for addresses and environment values. It also applies to user-chosen bindings stored as data, such as a link from a slot to a credential that falls back to an auto-match once the linked record is deleted. An example of a dangling explicit reference would help seats recognise this shape."
     }
   }
 }
