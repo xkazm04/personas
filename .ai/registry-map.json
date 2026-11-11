@@ -22291,8 +22291,12 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:46 The n8n wizard hooks drive a single LLM transform of one imported workflow into a persona draft; there is no dataset statistics stage, no trained candidate set, no search trials and no score-based selection. A grep of sub_n8n/hooks for hyperparameter, ensemble, datastats, learning_rate and Auto3DSeg returned 0 files.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2
         },
         {
           "subject": "prompt-assembly",
@@ -40533,8 +40537,12 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/types.ts:17 This context is an interview UI that walks a user through adoption questions; nothing in it measures a dataset, trains anything or ranks scored candidates. A grep of adoption/ for hyperparameter, ensemble, datastats, learning_rate and Auto3DSeg returned 0 files.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2
         },
         {
           "subject": "wizard-flows",
@@ -40932,8 +40940,8 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "priorNotApplicable": 5,
+          "state": "unknown"
         },
         {
           "subject": "modal-stack",
@@ -41528,8 +41536,12 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/templates/sub_generated/shared/templateComplexity.ts:8 The shared primitives are UI widgets and helpers that score template difficulty and readiness, not a generator of trained model candidates. A grep of shared/ and sub_generated/ for hyperparameter, ensemble, datastats, learning_rate and Auto3DSeg returned 0 files, so the subject's precondition (a dataset turned into trained model candidates) does not hold.",
+          "evaluatedAt": "2026-11-11",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2
         },
         {
           "subject": "test-harness",

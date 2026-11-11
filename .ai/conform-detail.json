@@ -49624,6 +49624,51 @@
       "evaluatedTs": "2026-11-11T22:53:08.086Z",
       "worker": "6da3932e-bf54-4251-a493-69bee39c9d60",
       "techniques": []
+    },
+    "d3346f2c-d747-4d85-b6e6-c1450da57ec9/generated-workflow-candidates": {
+      "context": "template-gallery-modals",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:59:37.297Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "9659ad8a-bf78-46f3-8e6a-1ae0a83c0701",
+        "state": "not-applicable",
+        "at": "2026-11-11T23:00:18.220186+00:00",
+        "reason": "reviewer (sonnet): The anchor, useModalStack.ts:24, is a generic `useState` stack hook signature. It shows nothing about templates and doesn't show that a dataset-to-candidate pipeline is absent, so it is incidental. I did not open the other modal files named as context."
+      }
+    },
+    "b38217f2-397e-49a7-ac32-4cce440c7e74/generated-workflow-candidates": {
+      "context": "template-shared-primitives",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:59:37.297Z",
+      "worker": "9659ad8a-bf78-46f3-8e6a-1ae0a83c0701",
+      "techniques": []
+    },
+    "e76afaf6-ba3b-4341-b1ad-f444f08da8b8/generated-workflow-candidates": {
+      "context": "template-adoption-questionnaire",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:59:37.297Z",
+      "worker": "9659ad8a-bf78-46f3-8e6a-1ae0a83c0701",
+      "techniques": []
+    },
+    "2418ddaf-0e6e-446f-968f-28a4bf6e7120/generated-workflow-candidates": {
+      "context": "n8n-wizard-orchestration",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-11",
+      "evaluatedTs": "2026-11-11T22:59:37.297Z",
+      "worker": "9659ad8a-bf78-46f3-8e6a-1ae0a83c0701",
+      "techniques": []
     }
   }
 }
