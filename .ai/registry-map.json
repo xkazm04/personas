@@ -15803,7 +15803,11 @@
           "revision": 3,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal.tsx:36 The 'composer' here is a set of person-driven picker modals: the operator picks connectors, events, schedules and messaging channels and applies the selection through onApply. No model chooses or arranges views. A search of the context's files for llm, assistant, undo, region, workspace, streaming and conductor found no hits, so the subject's precondition (a model composing the screen) does not hold.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:7c6aa8f4a4d53a56",
+          "evaluatedRevision": 3
         },
         {
           "subject": "operator-surfaces-for-llm-spend",

@@ -49868,6 +49868,37 @@
           "evidence": "src/features/overview/libs/computeTrends.ts:56 This gate refuses a comparison when there is no prior period. It does not gate a forecast; no forecast exists here."
         }
       ]
+    },
+    "19f3a6a0-f733-47d1-94b4-a1256c8a92fc/model-composed-workspace": {
+      "context": "glyph-command-panel",
+      "subject": "model-composed-workspace",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:53:11.008Z",
+      "worker": "c531826b-f1b7-4067-b9fe-2d84eb3e32d0",
+      "techniques": [
+        {
+          "technique": "answer-form-routing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 The picker shell is opened by the user. No model decides between prose, card, pane or workspace."
+        },
+        {
+          "technique": "arrangement-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/useOnOpen.ts:10 The draft that is preserved is the operator's own picker selection, not a user arrangement protected against model recomposition."
+        },
+        {
+          "technique": "reversible-screen-ops",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal.tsx:53 Screen changes come from user clicks that seed and apply a local draft. The model issues no screen verbs that would need undo or stop-restore."
+        },
+        {
+          "technique": "composition-motion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:14 The motion is a modal fade/scale on user open. There is no model-placed or streamed composition to animate."
+        }
+      ]
     }
   }
 }
