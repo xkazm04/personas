@@ -42170,52 +42170,50 @@
       "context": "plugins-twin-shared",
       "subject": "outbound-notifications",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-28",
-      "evaluatedTs": "2026-10-28T22:03:07.526Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T23:05:42.092Z",
+      "worker": "62320cdd-5aaa-4886-a255-f8dd5c283e31",
       "techniques": [
         {
           "technique": "channel-adapter-traits",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/shared/channels.ts:85 Channel metadata here is for display and credential matching only, with no dispatch adapter behind it. Unknown ids get a lenient fallback, which is UI defensiveness, not a choice of delivery class."
+          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:174 Approve writes a DB row through recordTwinInteraction. There is no adapter trait and no send that returns an outcome."
         },
         {
           "technique": "channel-health-tracking",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_channels/useChannelActivity.ts:85 Staleness is worked out from the time of the last logged communication in either direction. No delivery attempts or outcomes exist to keep a per-sink ledger for."
-        },
-        {
-          "technique": "inbound-counterparts",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_channels/ContactThread.tsx:92 Inbound rows are logged history that the operator chooses by hand as the message being replied to. Nothing polls a room and nothing is mirrored back out, so no echo loop can form."
-        },
-        {
-          "technique": "compose-at-the-locale-layer",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:29 Draft steering text is composed in the UI where the locale is known, but nothing is sent out, so there is no outbound message to localize."
-        },
-        {
-          "technique": "per-channel-templating",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:23 Per-channel content is an LLM draft that a human edits, not a template rendered from an event payload, so no template-veto or render-gap rules apply."
-        },
-        {
-          "technique": "destination-guard-integrity",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:178 The contact handle is only stored as a label on the logged row. No request is ever made to an address the user supplied."
+          "evidence": "src/features/plugins/twin/sub_channels/useChannelActivity.ts:26 Staleness is worked out from logged activity timestamps, not from delivery-attempt outcomes. With no delivery attempts here, there is no per-sink ledger or breaker to judge."
         },
         {
           "technique": "subscription-patterns",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:173 Writes happen once, on an explicit operator approval. No event-matching subscriptions exist that could flood a channel with history."
+          "evidence": "src/features/plugins/twin/shared/channels.ts:57 This is a display and credential-matching palette for channel kinds. It has no event subscriptions or pattern matching."
+        },
+        {
+          "technique": "inbound-counterparts",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_channels/ContactThread.tsx:34 Inbound messages are pasted or picked by hand from logged rows to ground a draft. There is no poller, cursor or two-way bridge, so no echo loop is possible."
+        },
+        {
+          "technique": "compose-at-the-locale-layer",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:29 Draft steering text is composed in the UI where the locale is known, but nothing is sent out, so there is no outbound message to localize.",
+          "carriedFrom": "2026-10-28"
+        },
+        {
+          "technique": "per-channel-templating",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:23 Per-channel content is an LLM draft that a human edits, not a template rendered from an event payload, so no template-veto or render-gap rules apply.",
+          "carriedFrom": "2026-10-28"
+        },
+        {
+          "technique": "destination-guard-integrity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:178 The contact handle is only stored as a label on the logged row. No request is ever made to an address the user supplied.",
+          "carriedFrom": "2026-10-28"
         }
-      ],
-      "withdrawn": {
-        "worker": "a4453e0f-f3be-4570-b19c-05857a30ad2c",
-        "state": "not-applicable",
-        "at": "2026-10-28T22:05:33.532810+00:00",
-        "reason": "reviewer (sonnet): The claim that nothing is pushed to an external channel is contradicted by this context's own code: `src/api/twin/placement.ts` and `SentReplies.tsx`/`useChannelActivity.ts` handle drafts the Twin toolbar types into web-page boxes, and also treat approved outbox replies as 'real channel sends'. The "
-      }
+      ]
     },
     "dd45411d-8955-4579-906e-5a3b00ba16da/remote-capability-probing": {
       "context": "system-health",

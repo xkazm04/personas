@@ -32628,7 +32628,11 @@
           "revision": 3,
           "changedAt": "2026-08-31",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:26 This context only stages an operator-approved reply and records it as an outbound communication row (ReplyOutbox.tsx:174 recordInteraction); nothing pushes events to an external channel. A search of twin/shared, twin/sub_channels and twin/__tests__ for webhook, dispatch, deliver and breaker found no hits, so the subject's precondition (pushing internal events out to user-configured sinks) does not hold here.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:fa75c38baf3e6de1",
+          "evaluatedRevision": 3
         },
         {
           "subject": "structured-output",
