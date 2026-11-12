@@ -49799,6 +49799,38 @@
           "evidence": "src-tauri/src/commands/curator/tick.rs:769 A gate-minted dispatch id that could key attribution exists, but no tripwire consumes it, so there is no demotion to attribute. The real gap is the missing tripwire, already counted under asymmetric-promotion-and-demotion."
         }
       ]
+    },
+    "e0563a39-fb7e-485f-a698-f9c4dc1004a7/feed": {
+      "context": "triggers-test",
+      "subject": "feed",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:32:51.524Z",
+      "worker": "ea8856da-6555-4a24-8313-da6452c207a0",
+      "techniques": [
+        {
+          "technique": "feed-retention",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:66 A count cap is a horizon. The list ends silently with no 'showing last 100' statement, and changeCount from changeActivity is never used to detect truncation. The sibling call listImpactRuns(entry.id, 200) at :76 caps runs across ALL firings, so older firings can render with no impact runs when their runs actually fell past the cap: truncation spelled as absence. No reaper is declared for shared_event_firings either, but its rows are seeded from a code-generated ledger, so unbounded growth is not the live risk here."
+        },
+        {
+          "technique": "reverse-chronology-semantics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/communication/shared_events.rs:230 The history is ordered by an authority-minted per-slug seq, assigned under an Immediate transaction in insert_firing. The client renders it in server order with no re-sort (EventHistoryModal.tsx:133 `{changes.map((c) => {`), and time is shown as 'Detected <RelativeTime>' with an absolute-time tooltip. Caveats: no UNIQUE(slug, seq) constraint backs the total order, and there are no day dividers."
+        },
+        {
+          "technique": "live-prepend",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:91 The modal loads once per opened feed and refetches only on an explicit retry (reloadKey). Nothing arrives live, so there is no prepend, scroll anchoring or reconnect seam to manage."
+        },
+        {
+          "technique": "event-clustering",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/communication/shared_events.rs:165 Firings are curated API-change events baked from a ledger, roughly one per release, so no busy producer can drown the history. Clustering's precondition does not hold."
+        }
+      ],
+      "registryProposal": "The 'a length cap is a horizon' rule currently sits in live-prepend's session-scoped-wall section, but it applies equally to non-live, fetch-capped history views like this one. It could be stated in feed-retention's 'The horizon is visible' section so it is reachable when live-prepend does not apply."
     }
   }
 }

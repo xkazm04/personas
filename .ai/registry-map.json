@@ -44084,7 +44084,11 @@
           "revision": 4,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:66 The only feed-shaped surface in this context, the per-feed change-history modal, fetches a hard-capped window of 100 firings (and 200 impact runs for all of them) and renders the end of that window with no truncation marker, although the activity rollup already carries the true changeCount, so a capped history reads as the complete history of the feed.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:fdaa24ca3f5177d9",
+          "evaluatedRevision": 4
         },
         {
           "subject": "client-fetch-cache",
