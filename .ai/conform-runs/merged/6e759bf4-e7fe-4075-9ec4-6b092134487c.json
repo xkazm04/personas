@@ -1,0 +1,61 @@
+{
+ "schema": "conform-run/1",
+ "worker": "6e759bf4-e7fe-4075-9ec4-6b092134487c",
+ "subject": "machine-paced-delivery",
+ "evaluatedAt": "2026-11-12T22:46:49.585977+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "persona-build-matrix",
+   "subject": "machine-paced-delivery",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/matrix/useLifecycle.ts:2 Here \"build\" means putting together a persona's runtime config from a build session (draft, tool test, promote to a live persona). No repository change, CI run, merge gate or delivery credential passes through this context. A search of src/features/agents/components/matrix found zero hits for 'pull request', 'pipeline', 'lefthook', 'ci.yml' and 'workflow_run'. The only 'commit'/'merge'/'github' hits are a code comment, an object-merge comment and connector test fixtures.",
+   "techniques": [
+    {
+     "technique": "proposal-not-push",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/components/matrix/useLifecycle.ts:11 Promote writes a persona row through IPC. It is not a machine-authored repository change reaching a merge gate, so the proposal contract has nothing to govern."
+    },
+    {
+     "technique": "pre-authorship-verification",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/components/matrix/useLifecycle.ts:5 This tests a persona's tools against live APIs. It does not run the repo's declared checks before a commit."
+    },
+    {
+     "technique": "agent-readable-build-outcomes",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/components/matrix/useBuild.ts:2 Build state goes to a React UI. There is no checker output for an agent to diagnose."
+    }
+   ],
+   "absenceTerms": [
+    "pull request",
+    "pipeline",
+    "lefthook",
+    "ci.yml",
+    "workflow_run"
+   ],
+   "registryProposal": "This context has a delivery-shaped flow outside source control: an LLM writes a persona draft, a test gate runs (with the result held as 'unverified' when tools were skipped), and a human promotes it, with a force 'Approve Anyway' bypass (useLifecycle.ts:278-282). The rubber-stamp risk that human-gate-capacity describes applies to this kind of artifact promotion too. Consider noting in the golden path whether agent-authored non-code artifacts that move from draft to production fall in scope here or under hitl-approval."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-12T22:46:49.585977+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "machine-paced-delivery"
+   ],
+   "techniques": [
+    "agent-readable-build-outcomes",
+    "pre-authorship-verification",
+    "proposal-not-push"
+   ],
+   "deviations": 0,
+   "context": "persona-build-matrix",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

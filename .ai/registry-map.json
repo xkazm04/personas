@@ -27633,7 +27633,11 @@
           "revision": 9,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:2 Here \"build\" means putting together a persona's runtime config from a build session (draft, tool test, promote to a live persona). No repository change, CI run, merge gate or delivery credential passes through this context. A search of src/features/agents/components/matrix found zero hits for 'pull request', 'pipeline', 'lefthook', 'ci.yml' and 'workflow_run'. The only 'commit'/'merge'/'github' hits are a code comment, an object-merge comment and connector test fixtures.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:7c45f5d81cc35bf6",
+          "evaluatedRevision": 9
         },
         {
           "subject": "generator-uncertainty-scoring",

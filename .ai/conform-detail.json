@@ -34390,57 +34390,58 @@
       "context": "persona-build-matrix",
       "subject": "machine-paced-delivery",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T02:51:22.129Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:46:49.585Z",
+      "worker": "6e759bf4-e7fe-4075-9ec4-6b092134487c",
       "techniques": [
         {
-          "technique": "agent-readable-build-outcomes",
+          "technique": "proposal-not-push",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:185 The report covers persona tool checks rather than software compilation or CI failures."
-        },
-        {
-          "technique": "human-gate-capacity",
-          "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useBuild.ts:59 Pending answers belong to persona construction questions, not a merge-review queue."
-        },
-        {
-          "technique": "mutating-local-gates",
-          "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:234 Refinement sends feedback into a persona build session rather than invoking a working-tree fixer."
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:11 Promote writes a persona row through IPC. It is not a machine-authored repository change reaching a merge gate, so the proposal contract has nothing to govern."
         },
         {
           "technique": "pre-authorship-verification",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:137 Simulation previews a persona capability rather than verifying a pending repository commit."
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:5 This tests a persona's tools against live APIs. It does not run the repo's declared checks before a commit."
         },
         {
-          "technique": "proposal-not-push",
+          "technique": "agent-readable-build-outcomes",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:420 Promotion updates a persona record; it does not land source changes through a branch or merge."
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:2 Build state goes to a React UI. There is no checker output for an agent to diagnose."
+        },
+        {
+          "technique": "human-gate-capacity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:59 Pending answers belong to persona construction questions, not a merge-review queue.",
+          "carriedFrom": "2026-10-17"
+        },
+        {
+          "technique": "mutating-local-gates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:234 Refinement sends feedback into a persona build session rather than invoking a working-tree fixer.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "scoped-delivery-access-for-agents",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:611 This configuration path persists notification channels rather than issuing delivery-system grants."
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:611 This configuration path persists notification channels rather than issuing delivery-system grants.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "stake-before-merit",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildTemplateSuggestion.tsx:72 Template matching assists persona selection; it does not admit contributions to a review queue."
+          "evidence": "src/features/agents/components/matrix/BuildTemplateSuggestion.tsx:72 Template matching assists persona selection; it does not admit contributions to a review queue.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "verification-throughput-as-constraint",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useBuild.ts:73 The progress measure counts resolved persona dimensions rather than software verification wait or runner utilization."
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:73 The progress measure counts resolved persona dimensions rather than software verification wait or runner utilization.",
+          "carriedFrom": "2026-10-17"
         }
       ],
-      "withdrawn": {
-        "worker": "098f0899-ebe8-408d-98d3-98cda5402ab4",
-        "state": "not-applicable",
-        "at": "2026-10-17T02:51:35.079200+00:00",
-        "reason": "reviewer (sonnet): The anchor at UnifiedBuildEntry.tsx:581 only shows createPersona, so it is incidental and does not show that machine-paced delivery is absent. The code I opened in useLifecycle.ts:193-210 has an automated test-then-promote gate (the backend promote gate in oneshot.rs is cited in a comment there), wh"
-      }
+      "registryProposal": "This context has a delivery-shaped flow outside source control: an LLM writes a persona draft, a test gate runs (with the result held as 'unverified' when tools were skipped), and a human promotes it, with a force 'Approve Anyway' bypass (useLifecycle.ts:278-282). The rubber-stamp risk that human-gate-capacity describes applies to this kind of artifact promotion too. Consider noting in the golden path whether agent-authored non-code artifacts that move from draft to production fall in scope here or under hitl-approval."
     },
     "dd45411d-8955-4579-906e-5a3b00ba16da/observability-telemetry": {
       "context": "system-health",
