@@ -49732,6 +49732,42 @@
         }
       ],
       "registryProposal": "The context matcher seems to have paired this subject with the context because of the word 'dependencies' in its name (sub_dependencies, a credential relationship graph). That is a domain meaning of dependency (which agent uses which credential), not the software meaning (how a unit declares its requirements). Weighting the subject's own vocabulary (manifest, resolver, declaration, import) above the bare token 'dependency' would avoid this false match."
+    },
+    "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7/digest-bound-operator-writes": {
+      "context": "commands-contest",
+      "subject": "digest-bound-operator-writes",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:13:51.328Z",
+      "worker": "add1c983-813d-4daf-9667-f97b090dd169",
+      "techniques": [
+        {
+          "technique": "plan-twice-run-if-unchanged",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/node.rs:1 The server builds the instrument argv from the owner's intent (keys/note) and runs it locally in the project root. There is no remote state that can move between preview and click, and no preview of commands that a confirm must match."
+        },
+        {
+          "technique": "record-before-each-command",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/node.rs:139 The commands are local child-process runs of the contest instrument, not sends to an external system, so there is no external effect to record before it happens."
+        },
+        {
+          "technique": "preview-id-claim-and-recall",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/preview.rs:19 'Preview' here is a read-only loopback route for viewing variants, not a staged write with an id to claim. Concurrency uses an in-memory ChainClaim per contest dir, which is a different concern."
+        },
+        {
+          "technique": "unretried-write-unknown-outcome",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/decide.rs:10 Decide retries are local and guarded by reading back what is on disk (contest.json shortlist, child contest.json). No remote write can be sent and left unanswered."
+        },
+        {
+          "technique": "precondition-token-on-every-write",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/decide.rs:4 The only write outside the arena is the owner's local Obsidian vault, through the generic mirror sink, and it has no remote version token. That sink belongs to another context and is not judged here."
+        }
+      ]
     }
   }
 }

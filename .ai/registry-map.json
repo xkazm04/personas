@@ -7696,7 +7696,11 @@
           "revision": 2,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/mod.rs:3 Every contest write lands in the owner's own local files: arena folders under the project root, a local `node contest.mjs` instrument and the local Obsidian mirror. No remote system the tool does not own is written, and no command-plan preview is confirmed, so the subject's precondition does not hold; a grep of the context directory for digest, etag, if_match, preview_id and idempotency found nothing, and its only reqwest use is test code hitting its own loopback preview server.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:6da64121343a1af5",
+          "evaluatedRevision": 2
         },
         {
           "subject": "terminal-multiplexing",

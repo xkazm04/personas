@@ -1,0 +1,71 @@
+{
+ "schema": "conform-run/1",
+ "worker": "add1c983-813d-4daf-9667-f97b090dd169",
+ "subject": "digest-bound-operator-writes",
+ "evaluatedAt": "2026-11-12T22:13:51.328120+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "commands-contest",
+   "subject": "digest-bound-operator-writes",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/contest/mod.rs:3 Every contest write lands in the owner's own local files: arena folders under the project root, a local `node contest.mjs` instrument and the local Obsidian mirror. No remote system the tool does not own is written, and no command-plan preview is confirmed, so the subject's precondition does not hold; a grep of the context directory for digest, etag, if_match, preview_id and idempotency found nothing, and its only reqwest use is test code hitting its own loopback preview server.",
+   "techniques": [
+    {
+     "technique": "plan-twice-run-if-unchanged",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/contest/node.rs:1 The server builds the instrument argv from the owner's intent (keys/note) and runs it locally in the project root. There is no remote state that can move between preview and click, and no preview of commands that a confirm must match."
+    },
+    {
+     "technique": "record-before-each-command",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/contest/node.rs:139 The commands are local child-process runs of the contest instrument, not sends to an external system, so there is no external effect to record before it happens."
+    },
+    {
+     "technique": "preview-id-claim-and-recall",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/contest/preview.rs:19 'Preview' here is a read-only loopback route for viewing variants, not a staged write with an id to claim. Concurrency uses an in-memory ChainClaim per contest dir, which is a different concern."
+    },
+    {
+     "technique": "unretried-write-unknown-outcome",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/contest/decide.rs:10 Decide retries are local and guarded by reading back what is on disk (contest.json shortlist, child contest.json). No remote write can be sent and left unanswered."
+    },
+    {
+     "technique": "precondition-token-on-every-write",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/contest/decide.rs:4 The only write outside the arena is the owner's local Obsidian vault, through the generic mirror sink, and it has no remote version token. That sink belongs to another context and is not judged here."
+    }
+   ],
+   "absenceTerms": [
+    "digest",
+    "etag",
+    "if_match",
+    "idempotency"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-12T22:13:51.328120+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "digest-bound-operator-writes"
+   ],
+   "techniques": [
+    "plan-twice-run-if-unchanged",
+    "precondition-token-on-every-write",
+    "preview-id-claim-and-recall",
+    "record-before-each-command",
+    "unretried-write-unknown-outcome"
+   ],
+   "deviations": 0,
+   "context": "commands-contest",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
