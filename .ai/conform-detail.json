@@ -49842,6 +49842,32 @@
         }
       ],
       "registryProposal": "The 'a length cap is a horizon' rule currently sits in live-prepend's session-scoped-wall section, but it applies equally to non-live, fetch-capped history views like this one. It could be stated in feed-retention's 'The horizon is visible' section so it is reachable when live-prepend does not apply."
+    },
+    "5e531c95-b6d9-46f5-a33d-d07001fee61e/metric-forecasting": {
+      "context": "overview-shared-libs",
+      "subject": "metric-forecasting",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:49:46.509Z",
+      "worker": "fedd99c5-b05f-415d-8277-304b4c16671c",
+      "techniques": [
+        {
+          "technique": "horizon-caps-and-flat-bands",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/libs/computeTrends.ts:22 A 'stable' band exists, but it applies to an observed period-over-period % change, not to a fitted slope or a projection horizon."
+        },
+        {
+          "technique": "trend-fitting-and-anchoring",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/libs/computeTrends.ts:124 The 'trend' is a ratio of two observed sums or averages. There is no regression and no projected ray."
+        },
+        {
+          "technique": "projection-presentability-gates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/libs/computeTrends.ts:56 This gate refuses a comparison when there is no prior period. It does not gate a forecast; no forecast exists here."
+        }
+      ]
     }
   }
 }

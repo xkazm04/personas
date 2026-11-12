@@ -26675,7 +26675,11 @@
           "revision": 2,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/libs/computeTrends.ts:2 The only trend code in this context compares two observed periods (backward-looking period-over-period deltas), and a search of src/features/overview/libs and components/shared for forecast, slope, extrapolat, leastSquares and horizon found no hits, so nothing here fits a line, projects a ray, or estimates a crossing date.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:40bc666cc27ebc42",
+          "evaluatedRevision": 2
         }
       ],
       "governance": "governed"
