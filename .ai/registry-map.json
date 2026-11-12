@@ -8197,7 +8197,11 @@
           "revision": 2,
           "changedAt": "2026-11-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:98 The curator's per-class autonomy level (L0-L3 for research/forge/conform/sweep/method) is a lookup of an operator-set app_settings value. It is recorded on the dispatch row but gates nothing. A dated hardcoded standing authorization lets dispatched runs push to default branches unread, and nothing in the context (grep for demot/revert/reopen/quarantin/shadow/lease found nothing) lowers that standing on evidence or earns it from a record.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:099fcd1b5be5fcbf",
+          "evaluatedRevision": 2
         },
         {
           "subject": "quality-gates",

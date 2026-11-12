@@ -49763,6 +49763,42 @@
           "evidence": "src-tauri/src/commands/contest/decide.rs:4 The only write outside the arena is the owner's local Obsidian vault, through the generic mirror sink, and it has no remote version token. That sink belongs to another context and is not judged here."
         }
       ]
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/earned-autonomy-tiers": {
+      "context": "commands-curator",
+      "subject": "earned-autonomy-tiers",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:23:43.608Z",
+      "worker": "2c2857a8-84a7-4acd-89a9-188df241e73f",
+      "techniques": [
+        {
+          "technique": "effective-tier-is-the-lowest-bound",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:768 The effective level is one settings lookup with no minimum over record, class ceiling or lease. policy.rs falls back to L0 for an unparseable value, which is the bottom rung rather than a refusal, and the level is only recorded, not enforced as a gate."
+        },
+        {
+          "technique": "asymmetric-promotion-and-demotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:283 Hands-off push is granted by a constant dated authorization (AUTHORIZED_BY/AUTHORIZED_ON). No tripwire anywhere in curator commands or engine/curator demotes a class when its commit is reverted or a finding reopens."
+        },
+        {
+          "technique": "recomputable-promotion-trial",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:71 The standing rests on a person's dated grant with no record, window, minimum count or bound attached. Levels are raised by editing settings, not by clearing a recomputable bar. The 'When not to use it' carve-out (a one-off grant with an expiry) does not apply: there is no expiry and the work lands on shared branches."
+        },
+        {
+          "technique": "shadow-next-rung",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:785 The dispatch record stores only the level that authorised the run. No counterfactual one-rung-up decision is pre-registered or scored later."
+        },
+        {
+          "technique": "demotion-attribution-integrity",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:769 A gate-minted dispatch id that could key attribution exists, but no tripwire consumes it, so there is no demotion to attribute. The real gap is the missing tripwire, already counted under asymmetric-promotion-and-demotion."
+        }
+      ]
     }
   }
 }
