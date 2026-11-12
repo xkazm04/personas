@@ -26307,7 +26307,11 @@
           "revision": 6,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:74 This context is a UI over agent metrics, alerts and healing that writes self-records only through the shared silentCatch door with stable origin tags, sends the 60 s alert loop's recurring failure to the breadcrumb/aggregated tier instead of one remote event per tick, and its diagnostic viewers read the live in-memory stores directly; none of the techniques it touches is a deviation, and the crash, pre-boot and file-rotation machinery is owned outside it.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:5f1eca73a0e27036",
+          "evaluatedRevision": 6
         },
         {
           "subject": "self-healing",

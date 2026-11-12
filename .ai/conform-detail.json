@@ -49920,6 +49920,38 @@
           "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:49 The only serialization here is a model_profile JSON blob stored in a DB column, not a document file. JSON.stringify does not depend on locale anyway."
         }
       ]
+    },
+    "4810daf8-0549-4899-95d2-99c81cde6455/observability-telemetry": {
+      "context": "overview-observability",
+      "subject": "observability-telemetry",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:59:28.129Z",
+      "worker": "002b496e-d836-415c-9c2a-378985e6af35",
+      "techniques": [
+        {
+          "technique": "log-architecture",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_observability/components/AlertRulesPanel.tsx:56 Every failure record in the context goes through one door, tagged with a stable origin name ('<Component>:<op>'). The error and stack travel as structured fields (silentCatch logs { error, stack }). grep found 0 console.* calls across the context, so there are no private diaries."
+        },
+        {
+          "technique": "remote-telemetry-economics",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:74 The always-on 60 s loop (line 81) sends its failure to silentCatch, which records a breadcrumb plus recordSwallow (per-tag aggregation with sampled capture), not Sentry.captureException. A backend that stays down therefore does not become a metronome event, and the loop has a client-side limiter."
+        },
+        {
+          "technique": "diagnostic-access",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_observability/components/IpcPerformancePanel.tsx:20 The in-product viewer over the app's own IPC self-records reads the actual ring store (useSyncExternalStore on subscribeIpcMetrics), not a cached copy, which satisfies gate-sees-target. SystemTraceViewer likewise reads useSystemTraces and offers a clear action. The crash-log viewer and log-disk accounting live in a different context (overview/components/health)."
+        },
+        {
+          "technique": "rotation-and-retention",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_observability/components/IpcPerformancePanel.tsx:8 The context creates no log file or record store; it imports the in-memory stores it shows. Their bounds are owned in src/lib (ipcMetrics RING_SIZE = 500; systemTrace MAX_COMPLETED_TRACES = 100), not here."
+        }
+      ],
+      "registryProposal": "The subject's use_when terms ('observability', 'health', 'stream') pull in operator-facing domain-observability dashboards like this one, whose overlap with the recording-infrastructure subject is only their call sites and viewers. A technique-level note that separates 'viewer of self-records' (in scope for diagnostic-access) from 'dashboard over domain metrics' (alerting/metrics-rollups) would keep future verdicts on such contexts from being thin."
     }
   }
 }
