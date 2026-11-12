@@ -46439,7 +46439,11 @@
           "revision": 6,
           "changedAt": "2026-09-11",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:373 This context gets the credential-to-persona edges as a ready-made input (computed by the backend command credential_dependents_all from tool_connector bindings and audit-log rows in src-tauri/db/src/repos/resources/audit_log.rs) and only lays them out, analyses blast radius and simulates revocation. It neither designs nor runs a way for units to declare or resolve their own dependencies. A case-insensitive search of the context directory for manifest, lockfile, vendor, peerDependenc, importmap, package.json and resolver found nothing.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:4eb7088d6ed99926",
+          "evaluatedRevision": 6
         },
         {
           "subject": "test-harness",

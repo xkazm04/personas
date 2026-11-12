@@ -49705,6 +49705,33 @@
           "evidence": "src/features/triggers/hooks/useTriggerHistory.ts:130 Replaying a (failed) execution from the history redrives it as a brand-new execution with a random idempotency key. It never sets retry_of_execution_id, although PersonaExecution has that field, so the redrive loses its lineage to the original failure."
         }
       ]
+    },
+    "77b8c703-0803-42bc-808a-f255725cc293/dependency-declaration": {
+      "context": "vault-dependency-graph",
+      "subject": "dependency-declaration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:11:24.735Z",
+      "worker": "cf5c6685-388d-461d-a9bd-56a743b4236f",
+      "techniques": [
+        {
+          "technique": "progressive-resolution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_dependencies/CredentialRelationshipGraph.tsx:44 The whole edge set is fetched up front for display. It is a runtime view snapshot, not a stored or committed closure standing in for anyone's declarations, so the enumerate-or-traverse choice and the reaper/currency check it calls for have nothing to apply to here."
+        },
+        {
+          "technique": "logical-name-or-address",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:384 The only name lookup in the context picks a connector's display colour, with a fallback colour if none is found. It is not a reference-resolution layer that decides which artifact a dependency points to."
+        },
+        {
+          "technique": "declaration-invariants",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:440 Link types (tool_connector/event_trigger/audit_log) arrive already attached to each edge from the backend. Where the declaration lives, and who writes it, is decided in the persona config and db repo, not here."
+        }
+      ],
+      "registryProposal": "The context matcher seems to have paired this subject with the context because of the word 'dependencies' in its name (sub_dependencies, a credential relationship graph). That is a domain meaning of dependency (which agent uses which credential), not the software meaning (how a unit declares its requirements). Weighting the subject's own vocabulary (manifest, resolver, declaration, import) above the bare token 'dependency' would avoid this false match."
     }
   }
 }
