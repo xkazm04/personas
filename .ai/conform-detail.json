@@ -41822,22 +41822,32 @@
       "context": "notepad-core",
       "subject": "guest-execution-bounding",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-11",
-      "evaluatedTs": "2026-11-11T22:02:13.714Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:35:17.431Z",
+      "worker": "e351efc4-c693-4fee-9ffd-2d00810a6181",
       "techniques": [
+        {
+          "technique": "terminate-from-outside-when-you-cannot-count",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/notepadActions.ts:11 Agent work is handed out of process to the companion/fleet backend. No third-party engine is embedded here whose loop would need an external terminator."
+        },
+        {
+          "technique": "cost-budget-cooperative-yield",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/notepadStore.ts:336 The only work this context schedules on the host executor is a per-note 500 ms debounced save. There is no guest evaluation to charge a cost budget against or make yield."
+        },
+        {
+          "technique": "uncatchable-limit-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/notepadActions.ts:7 Errors here are IPC dispatch failures routed to toastCatch. No runtime limit breach exists that a guest handler could intercept."
+        },
         {
           "technique": "back-edge-iteration-counter",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/cardMarkdown.ts:5 Markdown is converted to and from a fixed formatting subset and never executed. There is no dispatch loop and no guest loop to count."
+          "evidence": "src/features/notepad/cardMarkdown.ts:21 Card markdown is a fixed regex subset translated to HTML, not a compiled guest language with loops to count."
         }
-      ],
-      "withdrawn": {
-        "worker": "cecd0016-7a7d-44b9-bee8-12b7ff6e2bc4",
-        "state": "not-applicable",
-        "at": "2026-11-11T22:03:03.865369+00:00",
-        "reason": "reviewer (sonnet): The evidence anchor notepadStore.ts:5 is a comment about the store's useSyncExternalStore design and does not show that no interpreter or guest code exists. The context's absence rests on a keyword search alone. The technique anchor cardMarkdown.ts:5 describes a markdown bridge but does not show tha"
-      }
+      ]
     },
     "fbfcd99a-a333-42da-b85e-2ec1f560b4be/machine-paced-delivery": {
       "context": "agents-connectors",

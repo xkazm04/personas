@@ -22548,7 +22548,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/notepadActions.ts:1 The notepad context is a UI scratchpad with a debounced persistence store and dispatch doors that send notes to Athena, Fleet and Goals through IPC. It embeds no interpreter and runs no guest code in-process. A case-insensitive search of src/features/notepad found zero hits for interpreter, quickjs, guest, sandbox and wasm, and the only 'new Function' hit was a code comment ('new function every render'), not a call. So the subject's precondition (a host evaluating guest code inside its own dispatch loop or an embedded engine) does not hold.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:a59e479b7cea486b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "quality-gates",

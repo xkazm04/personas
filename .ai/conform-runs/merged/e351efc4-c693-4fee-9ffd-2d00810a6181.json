@@ -1,0 +1,66 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e351efc4-c693-4fee-9ffd-2d00810a6181",
+ "subject": "guest-execution-bounding",
+ "evaluatedAt": "2026-11-12T22:35:17.431026+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "notepad-core",
+   "subject": "guest-execution-bounding",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/notepad/notepadActions.ts:1 The notepad context is a UI scratchpad with a debounced persistence store and dispatch doors that send notes to Athena, Fleet and Goals through IPC. It embeds no interpreter and runs no guest code in-process. A case-insensitive search of src/features/notepad found zero hits for interpreter, quickjs, guest, sandbox and wasm, and the only 'new Function' hit was a code comment ('new function every render'), not a call. So the subject's precondition (a host evaluating guest code inside its own dispatch loop or an embedded engine) does not hold.",
+   "techniques": [
+    {
+     "technique": "terminate-from-outside-when-you-cannot-count",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/notepadActions.ts:11 Agent work is handed out of process to the companion/fleet backend. No third-party engine is embedded here whose loop would need an external terminator."
+    },
+    {
+     "technique": "cost-budget-cooperative-yield",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/notepadStore.ts:336 The only work this context schedules on the host executor is a per-note 500 ms debounced save. There is no guest evaluation to charge a cost budget against or make yield."
+    },
+    {
+     "technique": "uncatchable-limit-errors",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/notepadActions.ts:7 Errors here are IPC dispatch failures routed to toastCatch. No runtime limit breach exists that a guest handler could intercept."
+    },
+    {
+     "technique": "back-edge-iteration-counter",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/cardMarkdown.ts:21 Card markdown is a fixed regex subset translated to HTML, not a compiled guest language with loops to count."
+    }
+   ],
+   "absenceTerms": [
+    "interpreter",
+    "quickjs",
+    "guest",
+    "sandbox",
+    "wasm"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-12T22:35:17.431026+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "guest-execution-bounding"
+   ],
+   "techniques": [
+    "back-edge-iteration-counter",
+    "cost-budget-cooperative-yield",
+    "terminate-from-outside-when-you-cannot-count",
+    "uncatchable-limit-errors"
+   ],
+   "deviations": 0,
+   "context": "notepad-core",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
