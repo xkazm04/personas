@@ -47005,16 +47005,22 @@
       "context": "glyph-persona-card",
       "subject": "proactive-nudges",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-08",
-      "evaluatedTs": "2026-11-08T04:28:03.483Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "d803e926-6ca7-4d4b-8850-3d96fbce14a3",
-        "state": "not-applicable",
-        "at": "2026-11-08T04:29:43.343038+00:00",
-        "reason": "reviewer (sonnet): The anchor (glyphLayoutTypes.ts:14) is an ordinary prop-interface line and does not itself show that machine-initiated contact is absent. The not-applicable rests only on a keyword grep, and the grep did not look for notification-channel terms. The sub_glyph tree contains notification-channel code ("
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T23:10:55.672Z",
+      "worker": "dee6f858-6f34-4b2b-8d7e-695ef8b48dc0",
+      "techniques": [
+        {
+          "technique": "trigger-evaluators",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/useRecipeStarters.ts:33 The matcher fires 300ms after the user stops typing (a keystroke debounce). It is not a background evaluator that watches state and decides to reach out."
+        },
+        {
+          "technique": "efficacy-feedback",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/contactSheet/cinema/useCinemaRecipes.ts:12 Impression, accept and dismiss telemetry exists, but it measures a suggestion the user asked for while composing, not a machine-initiated nudge. It is close in spirit, but the subject's precondition does not hold."
+        }
+      ]
     },
     "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/runner-fleet": {
       "context": "fleet-monitor-shell",

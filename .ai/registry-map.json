@@ -16272,7 +16272,11 @@
           "revision": 8,
           "changedAt": "2026-10-31",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/useRecipeStarters.ts:5 The only suggestion-shaped behaviour in the Glyph card is recipe matching against the intent the user is typing, so the user has already opened the channel; nothing here starts contact on its own. Searching src/features/agents/sub_glyph for nudge, proactive, quietHours/quiet_hours and attentionBudget/attention_budget found 0 files. Nudges in the repo live elsewhere (companion, fleet, whatsNew).",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:5ac900ae46e58393",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-instruction-files",
