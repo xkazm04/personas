@@ -3830,7 +3830,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:185 The editor saves by sending typed PersonaOperation ops through the agent store into the app's SQLite rows. It never writes a document file. A search of components/, hooks/ and libs/ found no writeFile, showSaveFilePicker, format_version/formatVersion or schemaVersion. The one portable artifact it touches (the .persona.json gallery bundle) is serialized behind a backend command, not in this context.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:1104f28404244275",
+          "evaluatedRevision": 3
         },
         {
           "subject": "sql-console",

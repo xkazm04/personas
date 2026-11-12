@@ -1,0 +1,54 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ff2b0dec-945d-4ee7-9a5f-c1a9782ae4dc",
+ "subject": "native-document-format",
+ "evaluatedAt": "2026-11-12T22:56:21.620547+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "agents-editor",
+   "subject": "native-document-format",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:185 The editor saves by sending typed PersonaOperation ops through the agent store into the app's SQLite rows. It never writes a document file. A search of components/, hooks/ and libs/ found no writeFile, showSaveFilePicker, format_version/formatVersion or schemaVersion. The one portable artifact it touches (the .persona.json gallery bundle) is serialized behind a backend command, not in this context.",
+   "techniques": [
+    {
+     "technique": "format-generations-are-declared",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_editor/components/ShareAgentButton.tsx:49 The only file that leaves the machine, the .persona.json bundle, is built by the Rust command gallery_publish_persona. This context only triggers it, so the bundle's generation stamp cannot be judged here."
+    },
+    {
+     "technique": "serialization-is-locale-free",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:49 The only serialization here is a model_profile JSON blob stored in a DB column, not a document file. JSON.stringify does not depend on locale anyway."
+    }
+   ],
+   "absenceTerms": [
+    "writeFile",
+    "showSaveFilePicker",
+    "format_version",
+    "formatVersion",
+    "schemaVersion"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-12T22:56:21.620547+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-document-format"
+   ],
+   "techniques": [
+    "format-generations-are-declared",
+    "serialization-is-locale-free"
+   ],
+   "deviations": 0,
+   "context": "agents-editor",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

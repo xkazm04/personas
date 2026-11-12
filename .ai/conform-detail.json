@@ -49899,6 +49899,27 @@
           "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:14 The motion is a modal fade/scale on user open. There is no model-placed or streamed composition to animate."
         }
       ]
+    },
+    "1ff7809a-171b-4baa-9c9b-12d888b017f0/native-document-format": {
+      "context": "agents-editor",
+      "subject": "native-document-format",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:56:21.620Z",
+      "worker": "ff2b0dec-945d-4ee7-9a5f-c1a9782ae4dc",
+      "techniques": [
+        {
+          "technique": "format-generations-are-declared",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/ShareAgentButton.tsx:49 The only file that leaves the machine, the .persona.json bundle, is built by the Rust command gallery_publish_persona. This context only triggers it, so the bundle's generation stamp cannot be judged here."
+        },
+        {
+          "technique": "serialization-is-locale-free",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:49 The only serialization here is a model_profile JSON blob stored in a DB column, not a document file. JSON.stringify does not depend on locale anyway."
+        }
+      ]
     }
   }
 }
