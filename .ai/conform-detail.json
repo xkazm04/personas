@@ -49669,6 +49669,42 @@
       "evaluatedTs": "2026-11-11T22:59:37.297Z",
       "worker": "9659ad8a-bf78-46f3-8e6a-1ae0a83c0701",
       "techniques": []
+    },
+    "0dabb588-48ce-4c35-b425-c344fd723ce7/delivery-guarantees": {
+      "context": "triggers-triggers",
+      "subject": "delivery-guarantees",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:02:32.589Z",
+      "worker": "a84c5cf6-1b5b-4524-a9f0-780276ac846a",
+      "techniques": [
+        {
+          "technique": "atomic-claiming",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/resources/triggers/fires.rs:134 Resolving a held fire is one conditional compare-and-swap that only one caller can win, and the command publishes only when it wins (won_cas). A double-click cannot fire the event twice."
+        },
+        {
+          "technique": "co-transactional-consume",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:204 The consume (the status CAS) and its only effect (event_repo::publish into the same SQLite pool, line 210) run as two separate commits. A transaction-taking publish_in exists at events.rs:201, so the two could be one commit."
+        },
+        {
+          "technique": "marker-certifies-what-was-done",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:210 The 'approved' marker is written before this effect and does not depend on it succeeding. A publish error leaves an approved fire with no event, and the status != 'pending' early-out blocks any retry."
+        },
+        {
+          "technique": "non-delivery-ledgers",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/resources/triggers/fires.rs:119 Discarding a held fire leaves the row in place, marked 'rejected' with resolved_at, and that is written at the decision site. Caveat: the UI forgets the row and only shows a toast, so the user never sees the skip again."
+        },
+        {
+          "technique": "dead-letter-design",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/hooks/useTriggerHistory.ts:130 Replaying a (failed) execution from the history redrives it as a brand-new execution with a random idempotency key. It never sets retry_of_execution_id, although PersonaExecution has that field, so the redrive loses its lineage to the original failure."
+        }
+      ]
     }
   }
 }

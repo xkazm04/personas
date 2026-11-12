@@ -44218,7 +44218,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx:49 The approval queue this component drives marks a held fire 'approved' with one write and publishes its event with a second, separate write. If the publish fails, the fire reads as approved forever, never ran, and can no longer be retried because it has left 'pending'.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:1023ff3ecf23d679",
+          "evaluatedRevision": 8
         },
         {
           "subject": "eval-harness",
