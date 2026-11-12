@@ -49986,6 +49986,42 @@
         "at": "2026-11-12T23:02:21.021318+00:00",
         "reason": "reviewer (sonnet): The claim that useTemplateIntentMatch.ts:52 is the only call past the persona store is false, so the anchor is incidental: the context also calls listPersonas, resolveEffectiveConfigBulk, listDirectorScoreTrends, exportPersona and duplicatePersona. PersonaConfigPanel.tsx also reads per-capability mo"
       }
+    },
+    "1d3f934a-fae4-4cc8-a55c-a098b77b0bee/pipeline-authoring": {
+      "context": "execution-replay",
+      "subject": "pipeline-authoring",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T23:08:06.902Z",
+      "worker": "5ca7d3fd-caa0-4434-b97f-77a4fa7c18bd",
+      "techniques": [
+        {
+          "technique": "runtime-pipeline-generation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 Its stages are fixed execution-trace spans that are only displayed. No plan is generated."
+        },
+        {
+          "technique": "change-scoped-work-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/replay/fetchReplayLines.ts:19 It replays one execution's stored log lines. No work is selected based on what a change touched."
+        },
+        {
+          "technique": "foreign-config-replay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/replay/fetchReplayLines.ts:22 This \"replay\" pages through stdout. It does not replay another tool's config matcher."
+        },
+        {
+          "technique": "human-checkpoints-in-a-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 It is a read-only review view with no approval or checkpoint nodes. The approval and checkpoint searches found no matches."
+        },
+        {
+          "technique": "pipeline-plan-auditability",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 It audits an agent run's trace, not a generated CI plan."
+        }
+      ]
     }
   }
 }

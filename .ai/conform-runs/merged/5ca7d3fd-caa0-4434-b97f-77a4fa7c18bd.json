@@ -1,0 +1,72 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5ca7d3fd-caa0-4434-b97f-77a4fa7c18bd",
+ "subject": "pipeline-authoring",
+ "evaluatedAt": "2026-11-12T23:08:06.902180+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "execution-replay",
+   "subject": "pipeline-authoring",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 Here \"pipeline\" means the fixed run stages of one agent execution (PIPELINE_STAGES in src/lib/execution/pipeline.ts: initiate, validate, create_record, spawn_engine, ...), which a read-only replay UI draws as a waterfall. Nothing in this context writes, generates, scopes or gates a CI delivery plan. A search of replay/ and libs/ for approval, checkpoint, workflow, generator and path filter found no matches.",
+   "techniques": [
+    {
+     "technique": "runtime-pipeline-generation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 Its stages are fixed execution-trace spans that are only displayed. No plan is generated."
+    },
+    {
+     "technique": "change-scoped-work-selection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_executions/replay/fetchReplayLines.ts:19 It replays one execution's stored log lines. No work is selected based on what a change touched."
+    },
+    {
+     "technique": "foreign-config-replay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_executions/replay/fetchReplayLines.ts:22 This \"replay\" pages through stdout. It does not replay another tool's config matcher."
+    },
+    {
+     "technique": "human-checkpoints-in-a-pipeline",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 It is a read-only review view with no approval or checkpoint nodes. The approval and checkpoint searches found no matches."
+    },
+    {
+     "technique": "pipeline-plan-auditability",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 It audits an agent run's trace, not a generated CI plan."
+    }
+   ],
+   "absenceTerms": [
+    "approval",
+    "checkpoint",
+    "workflow",
+    "generator",
+    "path filter"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-12T23:08:06.902180+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "pipeline-authoring"
+   ],
+   "techniques": [
+    "change-scoped-work-selection",
+    "foreign-config-replay",
+    "human-checkpoints-in-a-pipeline",
+    "pipeline-plan-auditability",
+    "runtime-pipeline-generation"
+   ],
+   "deviations": 0,
+   "context": "execution-replay",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

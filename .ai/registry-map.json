@@ -14400,7 +14400,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 Here \"pipeline\" means the fixed run stages of one agent execution (PIPELINE_STAGES in src/lib/execution/pipeline.ts: initiate, validate, create_record, spawn_engine, ...), which a read-only replay UI draws as a waterfall. Nothing in this context writes, generates, scopes or gates a CI delivery plan. A search of replay/ and libs/ for approval, checkpoint, workflow, generator and path filter found no matches.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:809d2a648d853f13",
+          "evaluatedRevision": 5
         }
       ],
       "governance": "governed"
