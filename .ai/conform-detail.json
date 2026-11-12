@@ -49952,6 +49952,42 @@
         }
       ],
       "registryProposal": "The subject's use_when terms ('observability', 'health', 'stream') pull in operator-facing domain-observability dashboards like this one, whose overlap with the recording-infrastructure subject is only their call sites and viewers. A technique-level note that separates 'viewer of self-records' (in scope for diagnostic-access) from 'dashboard over domain metrics' (alerting/metrics-rollups) would keep future verdicts on such contexts from being thin."
+    },
+    "a8857307-216c-46e0-9571-e05e8cf06112/optional-dependency-degradation": {
+      "context": "agents-components-allpersonas",
+      "subject": "optional-dependency-degradation",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T23:01:51.418Z",
+      "techniques": [
+        {
+          "technique": "absent-degrades-malformed-fails-fast",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/create/useTemplateIntentMatch.ts:6 Tunables here are compile-time constants. Nothing is read from the environment, so the absent-versus-malformed branch never comes up."
+        },
+        {
+          "technique": "guarded-singleton-accessor",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:22 Data arrives through the Zustand store over Tauri IPC. No module-scope client is built from configuration that might be missing."
+        },
+        {
+          "technique": "capability-honest-refusal",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/DirectorPanel.tsx:25 The one conditional surface hides itself when the Director persona has not been seeded. That is a data or tier condition, not a missing external dependency, so no route has to refuse."
+        },
+        {
+          "technique": "misconfiguration-never-reaches-a-fallback",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/create/useTemplateIntentMatch.ts:52 The matcher is a local DB query with no provider or roster configuration. When it fails, the hook falls back to an empty list (line 60), which is a failure-not-empty-success question rather than a configuration mask."
+        }
+      ],
+      "withdrawn": {
+        "worker": "1bd6a328-5b0d-4ace-bcd9-5363b25b999c",
+        "state": "not-applicable",
+        "at": "2026-11-12T23:02:21.021318+00:00",
+        "reason": "reviewer (sonnet): The claim that useTemplateIntentMatch.ts:52 is the only call past the persona store is false, so the anchor is incidental: the context also calls listPersonas, resolveEffectiveConfigBulk, listDirectorScoreTrends, exportPersona and duplicatePersona. PersonaConfigPanel.tsx also reads per-capability mo"
+      }
     }
   }
 }
