@@ -12773,7 +12773,11 @@
           "revision": 2,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/display/Numeric.tsx:6 This context holds read-only display primitives (times, numbers, tooltips, modals, overlays) that render values already in memory and read no document containers; a search of its directories for pdf, ocr, docx, tesseract and extractText found no hits, so the subject's precondition of turning uploaded documents into text does not hold.",
+          "evaluatedAt": "2026-11-12",
+          "evaluatedAgainst": "sha256-b2:ee97c74f3f5e0c28",
+          "evaluatedRevision": 2
         },
         {
           "subject": "test-harness",

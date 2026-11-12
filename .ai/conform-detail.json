@@ -42149,16 +42149,11 @@
       "context": "display-data-formatters",
       "subject": "document-text-extraction",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-26",
-      "evaluatedTs": "2026-10-26T22:19:37.883Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "6fbdfa61-6245-4de3-87e1-fd5426c9d974",
-        "state": "not-applicable",
-        "at": "2026-10-26T22:19:56.821829+00:00",
-        "reason": "reviewer (sonnet): The anchor (Numeric.tsx:6) is only the doc-comment opening for the number primitive, so it doesn't show that document ingestion is absent; the claim rests on an absence search, and my grep of display/ for pdf, ocr, docx and similar terms found nothing."
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-12",
+      "evaluatedTs": "2026-11-12T22:17:41.942Z",
+      "worker": "50c76694-9fe9-42c8-a131-df0011d174a3",
+      "techniques": []
     },
     "ebca0ef1-e509-4721-8472-1588ac2f93cc/outbound-notifications": {
       "context": "plugins-twin-shared",

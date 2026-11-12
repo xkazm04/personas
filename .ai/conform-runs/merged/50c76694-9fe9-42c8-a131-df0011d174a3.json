@@ -1,0 +1,40 @@
+{
+ "schema": "conform-run/1",
+ "worker": "50c76694-9fe9-42c8-a131-df0011d174a3",
+ "subject": "document-text-extraction",
+ "evaluatedAt": "2026-11-12T22:17:41.942132+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "display-data-formatters",
+   "subject": "document-text-extraction",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/Numeric.tsx:6 This context holds read-only display primitives (times, numbers, tooltips, modals, overlays) that render values already in memory and read no document containers; a search of its directories for pdf, ocr, docx, tesseract and extractText found no hits, so the subject's precondition of turning uploaded documents into text does not hold.",
+   "techniques": [],
+   "absenceTerms": [
+    "pdf",
+    "ocr",
+    "docx",
+    "tesseract",
+    "extractText"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-12T22:17:41.942132+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "document-text-extraction"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "display-data-formatters",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
