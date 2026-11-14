@@ -49362,27 +49362,38 @@
       "context": "stores",
       "subject": "remote-capability-probing",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-10",
-      "evaluatedTs": "2026-11-10T22:44:32.933Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T22:32:50.555Z",
+      "worker": "04945683-7551-46fe-924a-4901674ebf57",
       "techniques": [
         {
           "technique": "advertised-support-is-not-evidence",
           "verdict": "not-applicable",
-          "evidence": "src/api/liveRoadmap.ts:4 No peer capability header is read; the roadmap read path has nothing to branch on."
+          "evidence": "src/api/liveRoadmap.ts:153 Whole-object IPC call. It reads no capability header and makes no fragment-support decision."
+        },
+        {
+          "technique": "degraded-rung-refusal-ceiling",
+          "verdict": "not-applicable",
+          "evidence": "src/api/liveRoadmap.ts:9 The fallback is shipped bundled content, not a whole-object transfer standing in for a fragment read, so no size ceiling is called for."
+        },
+        {
+          "technique": "verdict-basis-tagging",
+          "verdict": "not-applicable",
+          "evidence": "src/api/liveRoadmap.ts:95 These are fetch-failure classes, not per-feature capability rows of a hosted-platform report."
+        },
+        {
+          "technique": "buffer-by-access-latency-class",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/i18nStore.ts:20 Fonts are loaded through a browser <link>. No file-shaped buffering layer spans stores at different distances."
         },
         {
           "technique": "the-probe-that-is-also-the-first-read",
           "verdict": "not-applicable",
-          "evidence": "src/stores/systemStore.ts:67 The composed slice's ensureP2pSupport probes the local build's compiled features, not a remote peer. The golden path assigns build-time presence elsewhere."
+          "evidence": "src/stores/systemStore.ts:67 The composed slice's ensureP2pSupport probes the local build's compiled features, not a remote peer. The golden path assigns build-time presence elsewhere.",
+          "carriedFrom": "2026-11-10"
         }
-      ],
-      "withdrawn": {
-        "worker": "ac53e63e-1e4f-4008-8cd7-8846fc205d32",
-        "state": "not-applicable",
-        "at": "2026-11-10T22:45:13.525807+00:00",
-        "reason": "reviewer (sonnet): The verdict rests on src/api/liveRoadmap.ts, which nothing under src/stores imports (it is used only from features/home/sub_releases), so the anchor belongs to another context. The other anchor, systemStore.ts:67, is only the createNetworkSlice spread. liveRoadmap.ts:4 is a doc-comment line that doe"
-      }
+      ]
     },
     "7e214a7d-44c6-4e6c-8b54-b30f4483ce12/eval-harness": {
       "context": "teams-factory-passport-improve",

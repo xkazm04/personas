@@ -36688,7 +36688,11 @@
           "revision": 3,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/liveRoadmap.ts:4 The only remote read in this context is a whole-document roadmap fetch that a Rust command performs and this file just types (the rest are Tauri IPC wrappers and Zustand state). Nothing here probes a peer it does not administer for fragment or partial-read support. A search of src/stores, src/api and src/hooks for accept-ranges, Content-Range, bytes=, partial content and readahead found 0 hits.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:9bb6b3bf0d353d66",
+          "evaluatedRevision": 3
         },
         {
           "subject": "docs-sync",
