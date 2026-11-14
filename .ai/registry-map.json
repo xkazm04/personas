@@ -14207,7 +14207,11 @@
           "revision": 8,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:122 This context only fetches and shows one execution's trace for a person to inspect; it never runs a model judge over live traffic. A case-insensitive rg over every file under src/features/agents/sub_executions/detail (tests included) found no 'judge', 'rubric', 'score' or 'sampl'. The 'settled' and 'verdict' hits are UI loading state and a span-collapse memo, not judging.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:95adbc351991715b",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-instruction-files",

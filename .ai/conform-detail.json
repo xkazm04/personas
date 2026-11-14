@@ -50028,6 +50028,22 @@
           "evidence": "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx:3 It audits an agent run's trace, not a generated CI plan."
         }
       ]
+    },
+    "208f50de-5d3b-4345-9fed-1c106a7a36e9/production-trace-scoring": {
+      "context": "execution-detail-inspector",
+      "subject": "production-trace-scoring",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T22:01:39.051Z",
+      "worker": "25e7ab20-056c-454a-bbce-280b28b4db5c",
+      "techniques": [
+        {
+          "technique": "error-analysis-first-taxonomy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx:46 The failure explanation comes from a fixed classifier (errorPipeline), not from a judge rubric, so there is no rubric here to derive from traces."
+        }
+      ]
     }
   }
 }
