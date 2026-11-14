@@ -17144,7 +17144,11 @@
           "revision": 7,
           "changedAt": "2026-10-10",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_welcome/lib/useVaultCredentials.ts:8 The Welcome surface is a single-owner React dashboard that reads one process-wide vault store and local UI state. A search of src/features/home/sub_welcome, src/features/home/components and src/features/home/lib for 'tenant', 'AsyncLocalStorage', 'task_local' and 'process.env' found nothing, so this context never has one long-lived agent process serving several isolated configurations, which is the subject's precondition.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:e25b75ee0d820e2b",
+          "evaluatedRevision": 7
         },
         {
           "subject": "credential-vault",

@@ -1,0 +1,52 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e2902a50-6ce7-452c-8679-a548526c8b55",
+ "subject": "tenant-scoped-agent-runtime",
+ "evaluatedAt": "2026-11-14T22:49:29.127550+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "home-welcome",
+   "subject": "tenant-scoped-agent-runtime",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_welcome/lib/useVaultCredentials.ts:8 The Welcome surface is a single-owner React dashboard that reads one process-wide vault store and local UI state. A search of src/features/home/sub_welcome, src/features/home/components and src/features/home/lib for 'tenant', 'AsyncLocalStorage', 'task_local' and 'process.env' found nothing, so this context never has one long-lived agent process serving several isolated configurations, which is the subject's precondition.",
+   "techniques": [
+    {
+     "technique": "task-local-tenant-scope",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_welcome/lib/useVaultCredentials.ts:26 Reads one global Zustand store for one desktop owner. There is no second configuration to scope per task."
+    },
+    {
+     "technique": "resolve-handles-at-call-time",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_welcome/useResumeContext.ts:24 The hook only derives values from existing client store state. It has no shared store object serving several tenants and binds no store handle."
+    }
+   ],
+   "absenceTerms": [
+    "tenant",
+    "AsyncLocalStorage",
+    "process.env"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-14T22:49:29.127550+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "tenant-scoped-agent-runtime"
+   ],
+   "techniques": [
+    "resolve-handles-at-call-time",
+    "task-local-tenant-scope"
+   ],
+   "deviations": 0,
+   "context": "home-welcome",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

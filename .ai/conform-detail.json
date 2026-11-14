@@ -50086,6 +50086,27 @@
           "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:31 This context assembles no prompt, so it has no prompt insertion slots to cap. Its caps are display budgets, and they are visibly signalled (comments at :28-29, the dropped-events banner at :195)."
         }
       ]
+    },
+    "4560e824-e952-45a9-8aef-fe88d721952e/tenant-scoped-agent-runtime": {
+      "context": "home-welcome",
+      "subject": "tenant-scoped-agent-runtime",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T22:49:29.127Z",
+      "worker": "e2902a50-6ce7-452c-8679-a548526c8b55",
+      "techniques": [
+        {
+          "technique": "task-local-tenant-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_welcome/lib/useVaultCredentials.ts:26 Reads one global Zustand store for one desktop owner. There is no second configuration to scope per task."
+        },
+        {
+          "technique": "resolve-handles-at-call-time",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_welcome/useResumeContext.ts:24 The hook only derives values from existing client store state. It has no shared store object serving several tenants and binds no store handle."
+        }
+      ]
     }
   }
 }
