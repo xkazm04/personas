@@ -35536,36 +35536,36 @@
       "context": "api-system",
       "subject": "scale-investment-timing",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T22:31:47.378Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T22:41:27.501Z",
+      "worker": "fcd263b2-d1c8-429f-8638-15b7ddcca771",
       "techniques": [
         {
           "technique": "ceiling-as-deadline-not-trigger",
           "verdict": "not-applicable",
-          "evidence": "src/api/templates/templateAdopt.ts:60 The only 'ceiling' in this context is a client timeout set above the backend's lease ceiling. It is not a capacity ceiling for an architecture."
-        },
-        {
-          "technique": "vertical-headroom-before-distribution",
-          "verdict": "not-applicable",
-          "evidence": "src/api/system/cloud.ts:30 The cloud wrapper only forwards connection credentials. Any decision to distribute execution to the cloud is made elsewhere."
-        },
-        {
-          "technique": "next-order-of-magnitude-only",
-          "verdict": "not-applicable",
-          "evidence": "src/api/system/systemMetrics.ts:11 This reads host CPU and memory for a gauge. Nothing here sizes anything against a growth axis."
+          "evidence": "src/api/templates/templateAdopt.ts:60 The only 'ceiling' in the context is a CLI-runner timeout bound mirrored into the IPC timeout, not a capacity ceiling for an architecture; no load ceiling is stated or owned here."
         },
         {
           "technique": "execution-model-concurrency-threshold",
           "verdict": "not-applicable",
-          "evidence": "src/api/platforms/platformDefinitions.ts:94 Awaiting IPC is boundary plumbing, which the technique explicitly excludes from execution-model investment.",
-          "carriedFrom": "2026-10-19"
+          "evidence": "src/api/system/systemMetrics.ts:12 Host CPU/memory are only read for a footer gauge; the wrappers pick no execution or flow-control model, which lives in the Rust runtime."
         },
         {
           "technique": "migration-reason-audit",
           "verdict": "not-applicable",
-          "evidence": "src/api/system/qwen.ts:19 This configures an optional provider; the associated split-engine documentation describes capability expansion, without proposing a growth-driven platform replacement.",
-          "carriedFrom": "2026-10-19"
+          "evidence": "src/api/templates/templateAdopt.ts:18 The only change history recorded here is the removal of dead wrappers, not a platform migration proposed on growth grounds."
+        },
+        {
+          "technique": "next-order-of-magnitude-only",
+          "verdict": "not-applicable",
+          "evidence": "src/api/templates/n8nTransform.ts:320 The numeric limits in the context are pagination defaults for list reads, not a design sized against a named load axis."
+        },
+        {
+          "technique": "vertical-headroom-before-distribution",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/cloud.ts:30 The cloud wrapper only forwards connection credentials. Any decision to distribute execution to the cloud is made elsewhere.",
+          "carriedFrom": "2026-10-24"
         },
         {
           "technique": "size-the-system-to-its-maintainers",
@@ -35573,13 +35573,7 @@
           "evidence": "src/api/templates/teamPresets.ts:26 These teams are persona configuration objects; no operational maintainer count or staffing-driven sizing decision was found.",
           "carriedFrom": "2026-10-19"
         }
-      ],
-      "withdrawn": {
-        "worker": "27f8a3e1-07f3-40d8-8d9b-b8f2c7bdefb3",
-        "state": "not-applicable",
-        "at": "2026-10-24T22:32:11.898282+00:00",
-        "reason": "reviewer (sonnet): The not-applicable anchor, tierUsage.ts:9, is just the import/export header of a thin invoke wrapper and does not show the precondition is absent. The context exposes tier/rate-bucket usage and cloud connection, which touch capacity and quota. The cited ceiling in templateAdopt.ts:60 is only a timeo"
-      }
+      ]
     },
     "dc7c4f48-e819-47d0-80be-6afb942d28fd/self-describing-model-packages": {
       "context": "core-validation",

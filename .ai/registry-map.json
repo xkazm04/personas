@@ -5942,7 +5942,11 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/system/tierUsage.ts:9 The context is a set of pass-through Tauri IPC wrappers (tier/rate-bucket usage, host metrics, cloud, design, templates) that read limits and load computed in the Rust backend and size nothing themselves; a search of the context's files and of all of src/api for shard, runway, horizontal, replica and vertical returned zero hits, and the only 'ceiling'/'limit'/'worker' hits are an IPC timeout bound, list pagination and a re-exported cloud binding type, so no capacity ceiling, sizing axis, distribution choice, execution-model adoption or growth-driven migration is decided here.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:43b2188e6c19354d",
+          "evaluatedRevision": 7
         },
         {
           "subject": "mcp-tools",
