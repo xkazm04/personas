@@ -35802,34 +35802,35 @@
       "context": "templates-generated-adoption-ucpicker",
       "subject": "ui-controls",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-02",
-      "evaluatedTs": "2026-11-02T22:17:15.373Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T23:02:22.718Z",
+      "worker": "1cdc02b4-2442-4f92-b824-015e0cf9a524",
       "techniques": [
+        {
+          "technique": "adoption-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:132 The Run Test Button hand-builds its own spinner branch (disabled + Loader2 swap) instead of using the Button's own loading prop. ucCardHeader.tsx:100 and ucRouteToggle.tsx:28 are also hand-rolled motion.button shadows of Button in the same context."
+        },
         {
           "technique": "micro-interaction-contracts",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:71 Native title used as the tooltip on an icon-only control; the technique names this a temptation signature, not a tooltip."
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucDeliverCard.tsx:59 The destination tile's name is carried by the native title attribute, which the technique names as a temptation signature: no delay, no keyboard access, invisible on touch. Button and CopyButton both offer a tooltip seam."
         },
         {
           "technique": "composition-contracts",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/chronology/TestReportModal.tsx:581 A local fork of the shared buttons/CopyButton, not a wrapper: it re-implements the copy control over useCopyToClipboard. A failed write shows nothing (the hook returns early on !ok), there is no announcement, and the colours are hand-picked (text-emerald-400)."
-        },
-        {
-          "technique": "adoption-enforcement",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:123 Hand-built busy button (disabled while running, Loader2 spin swap) instead of AsyncButton or Button loading. Predicate: grep '<button|<motion.button' over the context's .tsx files on 2026-11-02 found 24 raw buttons across 11 files, and 0 files import @/features/shared/components/buttons. Shadows 24 : adopters 0 in this context."
+          "evidence": "src/features/templates/sub_generated/adoption/chronology/TestReportModal.tsx:579 This is a fork, not a wrapper. It rebuilds the copy control from Button plus useCopyToClipboard instead of rendering the shared CopyButton, even though CopyButton already has the seams it needs (label and copiedLabel), so it misses CopyButton's naming and tooltip wiring."
         },
         {
           "technique": "variant-discipline",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:113 The same icon-button style string is copied across sites (also lines 75 and 98) instead of a Button variant or size, so the call sites hold copies of the vocabulary and a re-theme touches every file."
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:71 Every Button call site in the context picks from the enumerated variant/tone/size sets (accent/ghost, tone=highlight, size xs/md/icon-sm). Selected state is expressed through variant, not through ad hoc classes."
         },
         {
           "technique": "call-site-ownership",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucTimeControls.tsx:74 The only class passed to a shared control (NumberStepper) is a width constraint, i.e. placement; ThemedSelect in ucPowerRail.tsx gets no className at all."
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucRouteToggle.tsx:64 className passthroughs on shared Button/NumberStepper set placement only: position and visibility here, plus mt-1.5 at ucCardHeader.tsx:53, w-20 at ucTimeControls.tsx:73 and absolute positioning at ucCockpitView.tsx:54. No appearance restyles on the primitives."
         },
         {
           "technique": "control-inventory-and-discovery",
@@ -35837,13 +35838,7 @@
           "evidence": "src/features/templates/sub_generated/adoption/chronology/ChronologyCommandHub.tsx:218 Hand-rolls a custom spinner via Lucide Loader2 and animate-spin rather than routing to a catalogued loading primitive.",
           "carriedFrom": "2026-10-19"
         }
-      ],
-      "withdrawn": {
-        "worker": "49ab47df-83e0-4c84-a60a-a16fb5040ed7",
-        "state": "deviation",
-        "at": "2026-11-02T22:17:39.174092+00:00",
-        "reason": "reviewer (sonnet): The title-attribute claim at ucCardHeader.tsx:71 holds, but two technique anchors don't. The CopyButton fork in chronology/TestReportModal.tsx:581 is outside the ucPicker context. The '24 raw buttons across 11 files' predicate doesn't match ucPicker, where I counted about 17 raw buttons across 8 fil"
-      }
+      ]
     },
     "a7ece012-8300-4780-b286-b9cea81801fc/usage-pricing-models": {
       "context": "observability-audit-models",

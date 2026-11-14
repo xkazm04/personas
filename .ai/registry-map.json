@@ -42061,7 +42061,11 @@
           "revision": 4,
           "changedAt": "2026-09-24",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucRouteToggle.tsx:32 The routing toggle is a hand-styled raw motion.button with its own shape, ring and tone classes. It sits beside the shared Button that this same file imports, and the catalog says 'Never style a raw <button>', so this toggle gets none of Button's double-press guard, busy state or tooltip seam.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:a6af68867a07fdfa",
+          "evaluatedRevision": 4
         }
       ],
       "governance": "governed"

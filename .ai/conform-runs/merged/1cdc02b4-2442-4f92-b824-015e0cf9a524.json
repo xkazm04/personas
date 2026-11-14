@@ -1,0 +1,65 @@
+{
+ "schema": "conform-run/1",
+ "worker": "1cdc02b4-2442-4f92-b824-015e0cf9a524",
+ "subject": "ui-controls",
+ "evaluatedAt": "2026-11-14T23:02:22.718238+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "templates-generated-adoption-ucpicker",
+   "subject": "ui-controls",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucRouteToggle.tsx:32 The routing toggle is a hand-styled raw motion.button with its own shape, ring and tone classes. It sits beside the shared Button that this same file imports, and the catalog says 'Never style a raw <button>', so this toggle gets none of Button's double-press guard, busy state or tooltip seam.",
+   "techniques": [
+    {
+     "technique": "adoption-enforcement",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:132 The Run Test Button hand-builds its own spinner branch (disabled + Loader2 swap) instead of using the Button's own loading prop. ucCardHeader.tsx:100 and ucRouteToggle.tsx:28 are also hand-rolled motion.button shadows of Button in the same context."
+    },
+    {
+     "technique": "micro-interaction-contracts",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucDeliverCard.tsx:59 The destination tile's name is carried by the native title attribute, which the technique names as a temptation signature: no delay, no keyboard access, invisible on touch. Button and CopyButton both offer a tooltip seam."
+    },
+    {
+     "technique": "composition-contracts",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/chronology/TestReportModal.tsx:579 This is a fork, not a wrapper. It rebuilds the copy control from Button plus useCopyToClipboard instead of rendering the shared CopyButton, even though CopyButton already has the seams it needs (label and copiedLabel), so it misses CopyButton's naming and tooltip wiring."
+    },
+    {
+     "technique": "variant-discipline",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:71 Every Button call site in the context picks from the enumerated variant/tone/size sets (accent/ghost, tone=highlight, size xs/md/icon-sm). Selected state is expressed through variant, not through ad hoc classes."
+    },
+    {
+     "technique": "call-site-ownership",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucRouteToggle.tsx:64 className passthroughs on shared Button/NumberStepper set placement only: position and visibility here, plus mt-1.5 at ucCardHeader.tsx:53, w-20 at ucTimeControls.tsx:73 and absolute positioning at ucCockpitView.tsx:54. No appearance restyles on the primitives."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-14T23:02:22.718238+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "ui-controls"
+   ],
+   "techniques": [
+    "adoption-enforcement",
+    "call-site-ownership",
+    "composition-contracts",
+    "micro-interaction-contracts",
+    "variant-discipline"
+   ],
+   "deviations": 1,
+   "context": "templates-generated-adoption-ucpicker",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
