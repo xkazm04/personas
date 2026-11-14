@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ae0b793d-bc08-45fc-b5c8-a57d1a53eb10",
+ "subject": "streaming-output",
+ "evaluatedAt": "2026-11-14T22:46:47.616622+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "streaming-output",
+   "context": "recipes-playground",
+   "reason": "This context has no code left to judge. Its file_paths list is empty, and all three entry points no longer exist: src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx, libs/useRecipeTestRunner.ts and tabs/RecipeVersionsTab.tsx. `git ls-files src/features/recipes` returns 0 files. Commit 450f1c9e5c (2026-09-25, 'refactor(recipes): delete the never-mounted recipe manager tree') removed the whole src/features/recipes/ tree (29 files, 2,797 LOC), including RecipePlaygroundModal, its tab files and useRecipeTestRunner, after an import-graph walk found it unreachable. The only remaining mention in src/ is a doc comment at src/features/shared/components/forms/FormFieldGroup.tsx:16. I can't anchor any technique verdict to this context's own files. A not-applicable verdict would also be wrong: the context-map description says a streaming surface existed (CLI stream, run-id correlation), so the subject's precondition did hold. What changed is that the code was deleted."
+  }
+ ],
+ "consults": []
+}
