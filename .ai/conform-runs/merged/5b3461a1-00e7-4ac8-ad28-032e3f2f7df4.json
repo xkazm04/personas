@@ -1,0 +1,53 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5b3461a1-00e7-4ac8-ad28-032e3f2f7df4",
+ "subject": "prompt-safety",
+ "evaluatedAt": "2026-11-14T22:11:44.400679+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "execution-detail-inspector",
+   "subject": "prompt-safety",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:303 Errored-span cards render the trace's raw error text (written unmasked by Tracer::end_span in src-tauri/core/src/trace.rs:379 from engine/CLI error strings) with no masking pass, while the same class of run error is passed through sanitizeErrorForDisplay in ErrorExplanationCard, so this context masks error text at one egress and leaves it verbatim at its neighbour.",
+   "techniques": [
+    {
+     "technique": "output-sanitization",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:303 Violates 'mask at every egress, not at one': ErrorExplanationCard.tsx:45 masks the run error, but span errors render raw. Markup is handled well elsewhere in the context (hljs output goes through a DOMPurify span/class allowlist at HighlightedJsonBlock.tsx:30, memories go through stripHtml at ExecutionMemories.tsx:64/66), and the log viewer receives lines already scrubbed by sanitize_secrets in get_execution_log_lines."
+    },
+    {
+     "technique": "model-output-as-untrusted",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx:46 The explanation and its action come from a deterministic classifier, not a model, and the only action is a closed switch over three navigate targets. No model output drives an operation in this context."
+    },
+    {
+     "technique": "input-caps-and-clamps",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:31 This context assembles no prompt, so it has no prompt insertion slots to cap. Its caps are display budgets, and they are visibly signalled (comments at :28-29, the dropped-events banner at :195)."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-14T22:11:44.400679+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "prompt-safety"
+   ],
+   "techniques": [
+    "input-caps-and-clamps",
+    "model-output-as-untrusted",
+    "output-sanitization"
+   ],
+   "deviations": 1,
+   "context": "execution-detail-inspector",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

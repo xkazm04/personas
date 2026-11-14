@@ -50044,6 +50044,32 @@
           "evidence": "src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx:46 The failure explanation comes from a fixed classifier (errorPipeline), not from a judge rubric, so there is no rubric here to derive from traces."
         }
       ]
+    },
+    "208f50de-5d3b-4345-9fed-1c106a7a36e9/prompt-safety": {
+      "context": "execution-detail-inspector",
+      "subject": "prompt-safety",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T22:11:44.400Z",
+      "worker": "5b3461a1-00e7-4ac8-ad28-032e3f2f7df4",
+      "techniques": [
+        {
+          "technique": "output-sanitization",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:303 Violates 'mask at every egress, not at one': ErrorExplanationCard.tsx:45 masks the run error, but span errors render raw. Markup is handled well elsewhere in the context (hljs output goes through a DOMPurify span/class allowlist at HighlightedJsonBlock.tsx:30, memories go through stripHtml at ExecutionMemories.tsx:64/66), and the log viewer receives lines already scrubbed by sanitize_secrets in get_execution_log_lines."
+        },
+        {
+          "technique": "model-output-as-untrusted",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx:46 The explanation and its action come from a deterministic classifier, not a model, and the only action is a closed switch over three navigate targets. No model output drives an operation in this context."
+        },
+        {
+          "technique": "input-caps-and-clamps",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:31 This context assembles no prompt, so it has no prompt insertion slots to cap. Its caps are display budgets, and they are visibly signalled (comments at :28-29, the dropped-events banner at :195)."
+        }
+      ]
     }
   }
 }

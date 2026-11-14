@@ -14191,7 +14191,11 @@
           "revision": 8,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:303 Errored-span cards render the trace's raw error text (written unmasked by Tracer::end_span in src-tauri/core/src/trace.rs:379 from engine/CLI error strings) with no masking pass, while the same class of run error is passed through sanitizeErrorForDisplay in ErrorExplanationCard, so this context masks error text at one egress and leaves it verbatim at its neighbour.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:33b072141695f2eb",
+          "evaluatedRevision": 8
         },
         {
           "subject": "production-trace-scoring",
