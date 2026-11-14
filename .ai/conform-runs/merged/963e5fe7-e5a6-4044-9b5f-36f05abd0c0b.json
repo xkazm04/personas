@@ -1,0 +1,72 @@
+{
+ "schema": "conform-run/1",
+ "worker": "963e5fe7-e5a6-4044-9b5f-36f05abd0c0b",
+ "subject": "remediation-roadmaps",
+ "evaluatedAt": "2026-11-14T22:27:45.931482+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "notepad-plan",
+   "subject": "remediation-roadmaps",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:126 The plan rail's assessment is a fixed, unweighted, conjunctive exit-criteria checklist (met/total, go|warn|setup) where every criterion is always rendered with its derived evidence and a consent-first dispatch arm, so the parts of the subject that apply here (coverage, observational wording with a decline path, propose-then-commit) hold, while ranking, cheapest-path and gain projection have no composite score or bands to work on.",
+   "techniques": [
+    {
+     "technique": "coverage-guarantee",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:126 Every criterion renders, with no truncation, including the ones that get no dispatch arm (objective, sensors, scope-frozen are human decisions, lines 48-51). An unobservable criterion gets state 'setup' and is not shown as a failure."
+    },
+    {
+     "technique": "invitational-framing",
+     "verdict": "conformant",
+     "evidence": "src/i18n/locales/en.json:26922 Criterion titles are observations (\"Core contexts healthy\", \"Objective bound\", en.json:26842/26849) and evidence lines are measured readings. Run proposals are shown as suggestions, and declining is the default with no penalty (ShipMilestoneRun.tsx:28-32)."
+    },
+    {
+     "technique": "sandbox-to-tracker-commit",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/plan/shipAthena.ts:91 Generated goals go into an editable card first, with one explicit Create commit that binds existing titles instead of duplicating them, so the commit is idempotent. The card's code is in src/features/companions/athena/ship/AthenaShipGoalsCard.tsx, outside this context; this line is the in-context contract. The dispatch modal is also edit-then-one-commit, with an AsyncButton double-submit guard (ShipDispatch.tsx:162-168)."
+    },
+    {
+     "technique": "weighted-upside-ranking",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/plan/ShipCertifyModal.tsx:40 Shipping is gated on an unweighted met-count of a fixed criteria registry. There is no generated list of moves and no dimension weights, so upside ranking has nothing to order."
+    },
+    {
+     "technique": "cheapest-path-projection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/plan/ShipCertifyModal.tsx:54 The verdict is met-of-total gates, not a banded composite score. The technique's own 'when not to use it' covers this: no bands, no threshold to cross."
+    },
+    {
+     "technique": "projected-gain-modelling",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:65 Rows show only measured done/total counts. No move carries a claimed gain, so there is no projection to label or keep separate from realized values."
+    }
+   ],
+   "registryProposal": "The subject assumes a weighted, banded composite. A conjunctive gate checklist (all criteria must pass) with per-gap remediation arms is a common real shape that the golden path does not name. It could say which techniques survive that shape (coverage, framing, commit) and which fall away (ranking, cheapest-path, projection)."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-14T22:27:45.931482+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "remediation-roadmaps"
+   ],
+   "techniques": [
+    "cheapest-path-projection",
+    "coverage-guarantee",
+    "invitational-framing",
+    "projected-gain-modelling",
+    "sandbox-to-tracker-commit",
+    "weighted-upside-ranking"
+   ],
+   "deviations": 0,
+   "context": "notepad-plan",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

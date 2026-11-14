@@ -23145,7 +23145,11 @@
           "revision": 2,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:126 The plan rail's assessment is a fixed, unweighted, conjunctive exit-criteria checklist (met/total, go|warn|setup) where every criterion is always rendered with its derived evidence and a consent-first dispatch arm, so the parts of the subject that apply here (coverage, observational wording with a decline path, propose-then-commit) hold, while ranking, cheapest-path and gain projection have no composite score or bands to work on.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:7b3d5bbfe7560a46",
+          "evaluatedRevision": 2
         },
         {
           "subject": "plan-review",

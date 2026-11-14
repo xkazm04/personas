@@ -41289,32 +41289,43 @@
       "context": "notepad-plan",
       "subject": "remediation-roadmaps",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-23",
-      "evaluatedTs": "2026-10-23T21:35:48.053Z",
+      "state": "conformant",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T22:27:45.931Z",
+      "worker": "963e5fe7-e5a6-4044-9b5f-36f05abd0c0b",
       "techniques": [
         {
-          "technique": "sandbox-to-tracker-commit",
-          "verdict": "deviation",
-          "evidence": "src/features/notepad/plan/NotePlanLedger.tsx:171 Bucket assignments directly trigger database persistence via ship.setItem on click without a two-phase sandbox model."
-        },
-        {
-          "technique": "weighted-upside-ranking",
-          "verdict": "deviation",
-          "evidence": "src/features/notepad/plan/ShipGoalRail.tsx:67 Candidate goals are sorted alphabetically instead of computing priority from weight, headroom, and achievability."
+          "technique": "coverage-guarantee",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:126 Every criterion renders, with no truncation, including the ones that get no dispatch arm (objective, sensors, scope-frozen are human decisions, lines 48-51). An unobservable criterion gets state 'setup' and is not shown as a failure."
         },
         {
           "technique": "invitational-framing",
           "verdict": "conformant",
-          "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:69 Exit criteria present observational derived evidence prose rather than imperative commands, preserving operator agency."
+          "evidence": "src/i18n/locales/en.json:26922 Criterion titles are observations (\"Core contexts healthy\", \"Objective bound\", en.json:26842/26849) and evidence lines are measured readings. Run proposals are shown as suggestions, and declining is the default with no penalty (ShipMilestoneRun.tsx:28-32)."
+        },
+        {
+          "technique": "sandbox-to-tracker-commit",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/shipAthena.ts:91 Generated goals go into an editable card first, with one explicit Create commit that binds existing titles instead of duplicating them, so the commit is idempotent. The card's code is in src/features/companions/athena/ship/AthenaShipGoalsCard.tsx, outside this context; this line is the in-context contract. The dispatch modal is also edit-then-one-commit, with an AsyncButton double-submit guard (ShipDispatch.tsx:162-168)."
+        },
+        {
+          "technique": "weighted-upside-ranking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/plan/ShipCertifyModal.tsx:40 Shipping is gated on an unweighted met-count of a fixed criteria registry. There is no generated list of moves and no dimension weights, so upside ranking has nothing to order."
+        },
+        {
+          "technique": "cheapest-path-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/plan/ShipCertifyModal.tsx:54 The verdict is met-of-total gates, not a banded composite score. The technique's own 'when not to use it' covers this: no bands, no threshold to cross."
+        },
+        {
+          "technique": "projected-gain-modelling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:65 Rows show only measured done/total counts. No move carries a claimed gain, so there is no projection to label or keep separate from realized values."
         }
       ],
-      "withdrawn": {
-        "worker": "becd7a4f-2bd9-4ff0-bef7-da561ef2262b",
-        "state": "deviation",
-        "at": "2026-10-23T21:36:10.120951+00:00",
-        "reason": "reviewer (sonnet): The cited lines do persist each setItem call straight to the database, but the same context has a draft|scoped|cut milestone lifecycle (NotePlanPane.tsx:11) with an explicit commit step in ShipCertifyModal.tsx. The \"no sandbox phase before an explicit commit\" claim is therefore contradicted, and the"
-      }
+      "registryProposal": "The subject assumes a weighted, banded composite. A conjunctive gate checklist (all criteria must pass) with per-gap remediation arms is a common real shape that the golden path does not name. It could say which techniques survive that shape (coverage, framing, commit) and which fall away (ranking, cheapest-path, projection)."
     },
     "2de6333f-8375-404b-8fdc-fe0fb15d4f95/prompt-assembly": {
       "context": "commands-fleet",
