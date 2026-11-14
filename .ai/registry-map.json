@@ -35748,8 +35748,12 @@
           "revision": 16,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "deviation",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/shared/components/forms/DesignInput.tsx:76 handleDrop calls processFile for every dropped file, but files of type 'other' go into one scalar pendingFile slot, so a second such file overwrites the first before the user classifies it and the first is silently lost.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:27a9237dc933e4e4",
+          "evaluatedRevision": 18
         },
         {
           "subject": "accessibility",
@@ -44865,7 +44869,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "priorNotApplicable": 5,
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts:62 The auth-detection prefetch sets authPrefetchedRef before it starts and never resets it in this cleanup, so when design.phase moves from 'analyzing' to 'preview' the in-flight result is thrown away while the flag stays set, and the re-run effect returns early: the prefetch never runs again until resetAll, and the negotiator has to fall back to its own detect.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:27a9237dc933e4e4",
+          "evaluatedRevision": 18
         },
         {
           "subject": "agent-instruction-files",

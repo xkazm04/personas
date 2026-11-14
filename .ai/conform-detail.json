@@ -45261,37 +45261,37 @@
       "context": "vault-catalog-picker",
       "subject": "concurrency-guards",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-04",
-      "evaluatedTs": "2026-11-04T02:19:50.217Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T23:22:30.320Z",
+      "worker": "54bcf4c1-031e-4728-ab87-c4a6cfd5b20e",
       "techniques": [
         {
           "technique": "release-guarantees",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts:49 The guard is latched when the attempt begins, not when it completes. The cancel path (cleanup at the phase change) drops the result without releasing the latch, so no retry runs until reset(). The panel's own detect is a fallback, so this degrades rather than wedges."
+          "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts:49 Set on start and released only in resetAll (line 241), never on the effect's cancellation path. The cancelled work keeps the guard, which is the technique's \"operation sometimes never runs again\" failure."
         },
         {
           "technique": "attempt-attribution",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/negotiator/NegotiatorPanel.tsx:40 Each effect run gets its own cancelled flag, which is checked at the write site, so a superseded detect cannot overwrite newer state. Gap: CliConnectionPanel's runInstallCheck/runVerify write setState with no attempt check."
+          "evidence": "src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts:46 A per-effect cancellation flag is checked right before the state write, so a superseded fetch is dropped at the write site (NegotiatorPanel.tsx:41 does the same). CliConnectionPanel's runInstallCheck/runVerify have no such check, but the UI state appears to serialize them."
         },
         {
-          "technique": "cache-value-not-handle",
+          "technique": "guard-key-design",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts:44 The module cache stores the settled Map value with a TTL, not a shared in-flight promise, so an abandoned caller cannot wedge later mounts."
+          "evidence": "src/features/vault/sub_catalog/components/picker/CliConnectionPanel.tsx:83 The once-only defaulting is keyed by connector label, and the comment at line 79 names the equivalence class (\"once per connector\") and the reason a broader key failed."
         },
         {
           "technique": "single-flight-primitives",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/picker/CliConnectionPanel.tsx:271 The CLI credential save refuses a second caller through the saving flag and the disabled control. This is a per-site bespoke flag, not a shared keyed primitive."
+          "evidence": "src/features/vault/sub_catalog/components/picker/CliConnectionPanel.tsx:284 The second-caller policy for the CLI credential save is refuse (the control is disabled while saving), and the flag is released in finally at line 101. It is a per-instance scalar, not a shared registry."
+        },
+        {
+          "technique": "cache-value-not-handle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts:44 The module cache publishes the resolved value, not a promise. The precondition (a host that tears down continuations) does not hold in a browser JS runtime, so this is the technique's own \"when not\" case."
         }
-      ],
-      "withdrawn": {
-        "worker": "32dcab45-063f-4ab9-828e-9e8846f750d6",
-        "state": "deviation",
-        "at": "2026-11-04T02:20:23.238726+00:00",
-        "reason": "reviewer (sonnet): The claim is true in the code (the latch is set at useCredentialDesignOrchestrator.ts:49 and the cleanup cancels the in-flight result without releasing it). But that hook and NegotiatorPanel.tsx are not in the context's file list, and no picker file or the three design helper files import them. The "
-      }
+      ]
     },
     "3619ab0d-0367-43d0-b4eb-ec39c1302d65/mcp-tools": {
       "context": "vault-catalog-picker",
@@ -50126,6 +50126,27 @@
           "technique": "exhaustive-when-bounded",
           "verdict": "not-applicable",
           "evidence": "docs/features/recipes/README.md:242 No input space is sampled or enumerated in code that still exists."
+        }
+      ]
+    },
+    "3c749d5b-3169-4ea8-8faa-98558f9b5df5/concurrency-guards": {
+      "context": "shared-components-forms",
+      "subject": "concurrency-guards",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T23:22:30.320Z",
+      "worker": "54bcf4c1-031e-4728-ab87-c4a6cfd5b20e",
+      "techniques": [
+        {
+          "technique": "single-flight-primitives",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/DesignInput.tsx:76 A scalar slot trampled by a second key (two files in one drop), which is exactly the \"scalar flags do not scale past one key\" failure. The slot should be keyed or queued per file."
+        },
+        {
+          "technique": "release-guarantees",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/forms/DirectoryPickerInput.tsx:70 The browsing guard is released in finally, so success, a dismissed dialog and a thrown picker all release it, and the browse button refuses while it is held (line 114)."
         }
       ]
     }
