@@ -33857,7 +33857,11 @@
           "revision": 10,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 The code for this context was deleted in commit 450f1c9e5c on 2026-09-25: `git ls-files src/features/recipes` returns 0 files, and none of the entry points in the context map exist. A search of src and src-tauri finds no useRecipeTestRunner, no RecipeInputSection and no property-testing vocabulary (fast-check, fc.property), so no test-input generator exists to judge. The deleted playground's 'test runner' also only ran a recipe end to end with values the user typed in; it never generated inputs for a test.",
+          "evaluatedAt": "2026-11-14",
+          "evaluatedAgainst": "sha256-b2:d5ab12a92aba67c4",
+          "evaluatedRevision": 10
         },
         {
           "subject": "eval-harness",

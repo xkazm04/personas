@@ -1,0 +1,59 @@
+{
+ "schema": "conform-run/1",
+ "worker": "fc2fd755-86e0-437f-8f80-11e7609c48fc",
+ "subject": "test-input-generation",
+ "evaluatedAt": "2026-11-14T22:54:17.696061+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "recipes-playground",
+   "subject": "test-input-generation",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "docs/features/recipes/README.md:242 The code for this context was deleted in commit 450f1c9e5c on 2026-09-25: `git ls-files src/features/recipes` returns 0 files, and none of the entry points in the context map exist. A search of src and src-tauri finds no useRecipeTestRunner, no RecipeInputSection and no property-testing vocabulary (fast-check, fc.property), so no test-input generator exists to judge. The deleted playground's 'test runner' also only ran a recipe end to end with values the user typed in; it never generated inputs for a test.",
+   "techniques": [
+    {
+     "technique": "generator-bounds-the-space",
+     "verdict": "not-applicable",
+     "evidence": "docs/features/recipes/README.md:242 No generator is left in the context; the whole sub_playground tree was deleted 2026-09-25."
+    },
+    {
+     "technique": "model-based-oracle",
+     "verdict": "not-applicable",
+     "evidence": "docs/features/recipes/README.md:242 No randomized suite and no oracle; the only caller of the execution commands is gone."
+    },
+    {
+     "technique": "exhaustive-when-bounded",
+     "verdict": "not-applicable",
+     "evidence": "docs/features/recipes/README.md:242 No input space is sampled or enumerated in code that still exists."
+    }
+   ],
+   "absenceTerms": [
+    "useRecipeTestRunner",
+    "RecipeInputSection",
+    "fast-check",
+    "fc.property"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-14T22:54:17.696061+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-input-generation"
+   ],
+   "techniques": [
+    "exhaustive-when-bounded",
+    "generator-bounds-the-space",
+    "model-based-oracle"
+   ],
+   "deviations": 0,
+   "context": "recipes-playground",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

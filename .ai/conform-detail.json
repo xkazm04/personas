@@ -50107,6 +50107,32 @@
           "evidence": "src/features/home/sub_welcome/useResumeContext.ts:24 The hook only derives values from existing client store state. It has no shared store object serving several tenants and binds no store handle."
         }
       ]
+    },
+    "06ef5a64-1796-4637-a4d9-f860bbe67562/test-input-generation": {
+      "context": "recipes-playground",
+      "subject": "test-input-generation",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T22:54:17.696Z",
+      "worker": "fc2fd755-86e0-437f-8f80-11e7609c48fc",
+      "techniques": [
+        {
+          "technique": "generator-bounds-the-space",
+          "verdict": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 No generator is left in the context; the whole sub_playground tree was deleted 2026-09-25."
+        },
+        {
+          "technique": "model-based-oracle",
+          "verdict": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 No randomized suite and no oracle; the only caller of the execution commands is gone."
+        },
+        {
+          "technique": "exhaustive-when-bounded",
+          "verdict": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 No input space is sampled or enumerated in code that still exists."
+        }
+      ]
     }
   }
 }
