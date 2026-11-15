@@ -1,0 +1,87 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f7cfe888-897a-41fa-aefd-a255d5ccec9b",
+ "subject": "sidecar-provisioning",
+ "evaluatedAt": "2026-11-15T04:14:07.527146+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "plugins-twin-shared",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/twin/shared/channels.ts:2 This context is presentational channel/gender metadata, readiness hooks and channel-activity UI; a search for sidecar, onnx, sha256 and gguf across twin/shared, twin/__tests__ and twin/sub_channels found nothing, so the context provisions no external binary or model artifact and none of the subject's techniques can apply.",
+   "techniques": [
+    {
+     "technique": "source-pinning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/twin/shared/channels.ts:2 The only catalog here is static channel metadata in the source tree; no downloaded artifact exists to pin."
+    }
+   ],
+   "absenceTerms": [
+    "sidecar",
+    "onnx",
+    "sha256",
+    "gguf"
+   ]
+  },
+  {
+   "context": "workspace-knowledge",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:226 The only 'install' in this context copies preset skill files the app already ships (PRESET_SKILLS from ../constants/presetSkills) into a project through installSystemSkill; a search for sidecar, onnx, sha256 and gguf across sub_workspaces found nothing, so no unshipped binary or model is resolved, downloaded or verified here.",
+   "techniques": [
+    {
+     "technique": "source-pinning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:230 Skills come from a shipped constant, not from a remote fetch, so there is no download to pin or verify."
+    },
+    {
+     "technique": "atomic-downloads",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:235 The install writes app-owned text skills through a backend command; this context transfers no large artifact that would need staging and a rename."
+    }
+   ],
+   "absenceTerms": [
+    "sidecar",
+    "onnx",
+    "sha256",
+    "gguf"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-15T04:14:07.527146+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [
+    "source-pinning"
+   ],
+   "deviations": 0,
+   "context": "plugins-twin-shared",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-15T04:14:07.527146+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [
+    "atomic-downloads",
+    "source-pinning"
+   ],
+   "deviations": 0,
+   "context": "workspace-knowledge",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

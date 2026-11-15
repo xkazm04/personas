@@ -32697,8 +32697,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 6
+          "state": "not-applicable",
+          "priorNotApplicable": 6,
+          "evidence": "src/features/plugins/twin/shared/channels.ts:2 This context is presentational channel/gender metadata, readiness hooks and channel-activity UI; a search for sidecar, onnx, sha256 and gguf across twin/shared, twin/__tests__ and twin/sub_channels found nothing, so the context provisions no external binary or model artifact and none of the subject's techniques can apply.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         }
       ],
       "governance": "governed"
@@ -47994,8 +47998,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 6
+          "state": "not-applicable",
+          "priorNotApplicable": 6,
+          "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:226 The only 'install' in this context copies preset skill files the app already ships (PRESET_SKILLS from ../constants/presetSkills) into a project through installSystemSkill; a search for sidecar, onnx, sha256 and gguf across sub_workspaces found nothing, so no unshipped binary or model is resolved, downloaded or verified here.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         }
       ],
       "governance": "governed"

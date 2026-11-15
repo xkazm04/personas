@@ -50192,6 +50192,43 @@
         "at": "2026-11-15T01:53:50.703516+00:00",
         "reason": "reviewer (sonnet): The anchor, useDataPortability.ts:63, is only the `export function useDataPortability()` declaration, so it doesn't show that concurrent-VCS mechanics are absent. My own grep of sub_portability for git/worktree/checkout/branch/commit found only unrelated hits (FolderGit2 icons, a 'GitHub' credential"
       }
+    },
+    "ebca0ef1-e509-4721-8472-1588ac2f93cc/sidecar-provisioning": {
+      "context": "plugins-twin-shared",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T04:14:07.527Z",
+      "worker": "f7cfe888-897a-41fa-aefd-a255d5ccec9b",
+      "techniques": [
+        {
+          "technique": "source-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/shared/channels.ts:2 The only catalog here is static channel metadata in the source tree; no downloaded artifact exists to pin."
+        }
+      ]
+    },
+    "db6357fe-000f-498d-8c02-4e8ad6d95574/sidecar-provisioning": {
+      "context": "workspace-knowledge",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T04:14:07.527Z",
+      "worker": "f7cfe888-897a-41fa-aefd-a255d5ccec9b",
+      "techniques": [
+        {
+          "technique": "source-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:230 Skills come from a shipped constant, not from a remote fetch, so there is no download to pin or verify."
+        },
+        {
+          "technique": "atomic-downloads",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:235 The install writes app-owned text skills through a backend command; this context transfers no large artifact that would need staging and a rename."
+        }
+      ]
     }
   }
 }
