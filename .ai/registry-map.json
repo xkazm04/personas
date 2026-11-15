@@ -27238,8 +27238,12 @@
           "revision": 3,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:1 This context is a TypeScript domain model and IPC bridge for readiness scorecards, not a language engine, so it has no guest-language introspection surface to judge; a case-insensitive grep of src/features/teams/sub_factory/passport for bytecode, realm, interpreter, disassemble and quickjs found 0 files.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:d9a0bca3698f0a65",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
@@ -39058,8 +39062,12 @@
           "revision": 3,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/teams/sub_factory/FactoryPage.tsx:1 This context is a React KPI-management UI that does not implement or embed a language engine running guest programs, so the subject's precondition (an engine exposing internals to its guest language) does not hold; a case-insensitive grep of src/features/teams/sub_factory for bytecode, realm, interpreter, disassemble and quickjs found 0 files.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:d9a0bca3698f0a65",
+          "evaluatedRevision": 3
         },
         {
           "subject": "cross-provider-benchmark-operations",

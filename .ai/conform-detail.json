@@ -50229,6 +50229,78 @@
           "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:235 The install writes app-owned text skills through a backend command; this context transfers no large artifact that would need staging and a rename."
         }
       ]
+    },
+    "54236947-3775-4d0a-8e14-1a709dd4d8bc/guest-language-introspection": {
+      "context": "teams-factory",
+      "subject": "guest-language-introspection",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T05:06:29.016Z",
+      "worker": "9acd874b-efbd-448c-ba45-2b2b7d3d3c71",
+      "techniques": [
+        {
+          "technique": "flag-gated-debug-global",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/FactoryPage.tsx:1 No guest language, so there is no debug global to gate."
+        },
+        {
+          "technique": "guest-settable-limits-and-switches",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/FactoryPage.tsx:1 No engine limits or optimizer passes exist here."
+        },
+        {
+          "technique": "per-function-trace-flag",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/FactoryPage.tsx:1 No compiled guest functions to trace."
+        },
+        {
+          "technique": "realm-factory-for-cross-realm-tests",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/FactoryPage.tsx:1 No realms or intrinsics in this UI context."
+        },
+        {
+          "technique": "representation-probes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/FactoryPage.tsx:1 No engine representations to probe."
+        }
+      ]
+    },
+    "66bc7a14-bf15-41d7-8d9a-900aa670f47e/guest-language-introspection": {
+      "context": "passport-wall-model",
+      "subject": "guest-language-introspection",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T05:06:29.016Z",
+      "worker": "9acd874b-efbd-448c-ba45-2b2b7d3d3c71",
+      "techniques": [
+        {
+          "technique": "flag-gated-debug-global",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:1 No guest language, so there is no debug global."
+        },
+        {
+          "technique": "guest-settable-limits-and-switches",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:1 No engine limits or passes."
+        },
+        {
+          "technique": "per-function-trace-flag",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:1 No compiled guest code to trace."
+        },
+        {
+          "technique": "realm-factory-for-cross-realm-tests",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:1 No realms."
+        },
+        {
+          "technique": "representation-probes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:1 No engine-internal representations."
+        }
+      ]
     }
   }
 }
