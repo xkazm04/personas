@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "35943117-fa45-4df2-aa8e-3bdad742c217",
+ "subject": "generated-workflow-candidates",
+ "evaluatedAt": "2026-11-15T22:21:56.156013+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "template-gallery-modals",
+   "subject": "generated-workflow-candidates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:24 The only generation this modal layer starts is an LLM rebuild of a persona design, driven by a free-text direction and flagged design dimensions, with no dataset, no statistics stage, no training and no trained-candidate selection. The subject's precondition (a system that turns a dataset into trained model candidates) does not hold here. A case-insensitive search of every file in the context, tests included, found no hits for hyperparameter, ensemble, dataset, train or trial.",
+   "techniques": [
+    {
+     "technique": "two-tier-data-statistics",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:24 The rebuild reads a user direction, not dataset statistics. No analysis stage exists."
+    },
+    {
+     "technique": "stage-level-result-caching",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:7 This layer only renders an externally managed rebuild phase. There is no analyze-generate-train-select runner here."
+    },
+    {
+     "technique": "score-keyed-candidate-selection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/gallery/modals/OverviewTab.tsx:196 The scores here are display-only design and quality scores on one template. Nothing selects among trained candidates."
+    }
+   ],
+   "absenceTerms": [
+    "hyperparameter",
+    "ensemble",
+    "dataset",
+    "train",
+    "trial"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-15T22:21:56.156013+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "generated-workflow-candidates"
+   ],
+   "techniques": [
+    "score-keyed-candidate-selection",
+    "stage-level-result-caching",
+    "two-tier-data-statistics"
+   ],
+   "deviations": 0,
+   "context": "template-gallery-modals",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -49652,16 +49652,27 @@
       "context": "template-gallery-modals",
       "subject": "generated-workflow-candidates",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-11-11",
-      "evaluatedTs": "2026-11-11T22:59:37.297Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "9659ad8a-bf78-46f3-8e6a-1ae0a83c0701",
-        "state": "not-applicable",
-        "at": "2026-11-11T23:00:18.220186+00:00",
-        "reason": "reviewer (sonnet): The anchor, useModalStack.ts:24, is a generic `useState` stack hook signature. It shows nothing about templates and doesn't show that a dataset-to-candidate pipeline is absent, so it is incidental. I did not open the other modal files named as context."
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:21:56.156Z",
+      "worker": "35943117-fa45-4df2-aa8e-3bdad742c217",
+      "techniques": [
+        {
+          "technique": "two-tier-data-statistics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:24 The rebuild reads a user direction, not dataset statistics. No analysis stage exists."
+        },
+        {
+          "technique": "stage-level-result-caching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:7 This layer only renders an externally managed rebuild phase. There is no analyze-generate-train-select runner here."
+        },
+        {
+          "technique": "score-keyed-candidate-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/OverviewTab.tsx:196 The scores here are display-only design and quality scores on one template. Nothing selects among trained candidates."
+        }
+      ]
     },
     "b38217f2-397e-49a7-ac32-4cce440c7e74/generated-workflow-candidates": {
       "context": "template-shared-primitives",

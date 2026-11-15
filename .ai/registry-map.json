@@ -41041,7 +41041,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "priorNotApplicable": 5,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:24 The only generation this modal layer starts is an LLM rebuild of a persona design, driven by a free-text direction and flagged design dimensions, with no dataset, no statistics stage, no training and no trained-candidate selection. The subject's precondition (a system that turns a dataset into trained model candidates) does not hold here. A case-insensitive search of every file in the context, tests included, found no hits for hyperparameter, ensemble, dataset, train or trial.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2
         },
         {
           "subject": "modal-stack",
