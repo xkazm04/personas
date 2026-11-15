@@ -50316,6 +50316,27 @@
         "at": "2026-11-15T22:02:21.489288+00:00",
         "reason": "reviewer (sonnet): The anchor n8nTransform.ts:282 is only the `confirmN8nPersonaDraft` invoke wrapper, so it doesn't show that no third-party code runs on the host. The 'plugin' hit it cites, system.ts:51, is in a file outside the context's file list. The absence search also missed `plugin` and `extension` handling in"
       }
+    },
+    "d3346f2c-d747-4d85-b6e6-c1450da57ec9/codegen": {
+      "context": "template-gallery-modals",
+      "subject": "codegen",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:06:04.162Z",
+      "worker": "5516c97a-b066-4e71-8247-b3126aeec534",
+      "techniques": [
+        {
+          "technique": "task-registry-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/OverviewTab.tsx:6 Only consumes a binding. It registers no codegen task."
+        },
+        {
+          "technique": "trigger-wiring",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildDimensionTargets.tsx:16 Consumes i18n generated types. Regeneration is wired in predev/prebuild outside this context."
+        }
+      ]
     }
   }
 }

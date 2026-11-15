@@ -41124,8 +41124,12 @@
           "revision": 6,
           "changedAt": "2026-09-21",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/templates/sub_generated/gallery/modals/OverviewTab.tsx:6 This context has no generator, registry entry, trigger or generated output of its own; it only imports derived types (ts-rs bindings, i18n generated types). A grep of the context directory for codegen, run-codegen, prebuild, 'do not edit' and auto-generated found no hits, so the codegen pipeline's obligations belong to the contexts that own scripts/run-codegen.mjs and the generators.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:9a082bd05760516a",
+          "evaluatedRevision": 6
         },
         {
           "subject": "prompt-assembly",

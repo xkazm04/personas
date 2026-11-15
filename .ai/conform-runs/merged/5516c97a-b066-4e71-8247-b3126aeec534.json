@@ -1,0 +1,53 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5516c97a-b066-4e71-8247-b3126aeec534",
+ "subject": "codegen",
+ "evaluatedAt": "2026-11-15T22:06:04.162653+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "template-gallery-modals",
+   "subject": "codegen",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/gallery/modals/OverviewTab.tsx:6 This context has no generator, registry entry, trigger or generated output of its own; it only imports derived types (ts-rs bindings, i18n generated types). A grep of the context directory for codegen, run-codegen, prebuild, 'do not edit' and auto-generated found no hits, so the codegen pipeline's obligations belong to the contexts that own scripts/run-codegen.mjs and the generators.",
+   "techniques": [
+    {
+     "technique": "task-registry-design",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/gallery/modals/OverviewTab.tsx:6 Only consumes a binding. It registers no codegen task."
+    },
+    {
+     "technique": "trigger-wiring",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildDimensionTargets.tsx:16 Consumes i18n generated types. Regeneration is wired in predev/prebuild outside this context."
+    }
+   ],
+   "absenceTerms": [
+    "run-codegen",
+    "prebuild",
+    "do not edit",
+    "auto-generated"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-15T22:06:04.162653+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codegen"
+   ],
+   "techniques": [
+    "task-registry-design",
+    "trigger-wiring"
+   ],
+   "deviations": 0,
+   "context": "template-gallery-modals",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
