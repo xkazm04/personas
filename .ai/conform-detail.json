@@ -50499,6 +50499,42 @@
           "evidence": "src/api/__tests__/system.test.ts:1 Nothing installs APIs into a guest context. These are node-environment unit tests."
         }
       ]
+    },
+    "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f/talking-avatar": {
+      "context": "persona-shared-ui",
+      "subject": "talking-avatar",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:40:04.701Z",
+      "worker": "6c0db21f-9834-447b-89fc-6ee921e0b921",
+      "techniques": [
+        {
+          "technique": "motion-route-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/PersonaAvatar.tsx:28 The avatar is a static identity badge with no animation route to choose."
+        },
+        {
+          "technique": "rig-parameter-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/PersonaAvatar.tsx:17 The props are icon, name, color, size and fallback only. There is no per-frame motion vector."
+        },
+        {
+          "technique": "single-image-layer-decomposition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/PersonaAvatar.tsx:63 The portrait renders as one img element and is never split into drivable parts."
+        },
+        {
+          "technique": "viseme-drive",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/PersonaAvatar.tsx:101 The fallback is a letter initial. Nothing here consumes speech or a timeline."
+        },
+        {
+          "technique": "procedural-presence-motion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/PersonaAvatar.tsx:77 There is no idle, blink or saccade motion. The only 'blink' in the context is a text caret in ChatMessageContent.tsx."
+        }
+      ]
     }
   }
 }

@@ -28332,8 +28332,12 @@
           "revision": 4,
           "changedAt": "2026-10-22",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/agents/components/PersonaAvatar.tsx:61 PersonaAvatar draws a static image, emoji or initial and has no motion source, rig, speech timeline or audio clock. A search for viseme, lipsync, lip-sync, mouth, talking, speaking and faceSignal across src/features/agents/components found nothing, and viseme or lipsync appear nowhere in src/, so this context has no talking avatar for the standard to govern.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:72517c45ca8e4198",
+          "evaluatedRevision": 4
         }
       ],
       "governance": "governed"
