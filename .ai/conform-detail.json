@@ -50337,6 +50337,32 @@
           "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildDimensionTargets.tsx:16 Consumes i18n generated types. Regeneration is wired in predev/prebuild outside this context."
         }
       ]
+    },
+    "e0563a39-fb7e-485f-a698-f9c4dc1004a7/convergence-loop-and-requeue": {
+      "context": "triggers-test",
+      "subject": "convergence-loop-and-requeue",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:13:05.283Z",
+      "worker": "4edb1bc1-c454-4f75-b10c-18d28111f4b0",
+      "techniques": [
+        {
+          "technique": "told-that-not-why",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:29 A one-shot fetch on mount or refresh. No trigger stream is collapsed to a key for any convergence pass."
+        },
+        {
+          "technique": "own-writes-are-not-triggers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_test/TestTab.tsx:152 Looks a bit like the technique: a UI effect skips its own write. But it resets a form prefill, not a convergence loop, so it is not evidence either way."
+        },
+        {
+          "technique": "keyed-queue-with-earliest-wins",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:29 No queue. A load sequence counter only discards stale responses."
+        }
+      ]
     }
   }
 }

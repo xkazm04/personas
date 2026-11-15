@@ -1,0 +1,59 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4edb1bc1-c454-4f75-b10c-18d28111f4b0",
+ "subject": "convergence-loop-and-requeue",
+ "evaluatedAt": "2026-11-15T22:13:05.283330+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-test",
+   "subject": "convergence-loop-and-requeue",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_shared/useSubscribedFeeds.ts:9 This context is React UI that reads the feed catalog, subscriptions and activity once per mount or button press (useSharedEvents.load, useSubscribedFeeds), plus a manual test-fire form. Nothing here drives observed state toward a declared record, keeps a keyed queue, requeues or drains, so the subject's precondition does not hold. Searching src/features/triggers for requeue/converge/workqueue/work_queue/backoff found nothing. The only 'reconcile' hit (FeedRoutingPopover.tsx:89) filters a selection against the roster on save; it is not a loop.",
+   "techniques": [
+    {
+     "technique": "told-that-not-why",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:29 A one-shot fetch on mount or refresh. No trigger stream is collapsed to a key for any convergence pass."
+    },
+    {
+     "technique": "own-writes-are-not-triggers",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_test/TestTab.tsx:152 Looks a bit like the technique: a UI effect skips its own write. But it resets a form prefill, not a convergence loop, so it is not evidence either way."
+    },
+    {
+     "technique": "keyed-queue-with-earliest-wins",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:29 No queue. A load sequence counter only discards stale responses."
+    }
+   ],
+   "absenceTerms": [
+    "requeue",
+    "converge",
+    "workqueue",
+    "backoff"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-15T22:13:05.283330+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "convergence-loop-and-requeue"
+   ],
+   "techniques": [
+    "keyed-queue-with-earliest-wins",
+    "own-writes-are-not-triggers",
+    "told-that-not-why"
+   ],
+   "deviations": 0,
+   "context": "triggers-test",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -44155,8 +44155,12 @@
           "revision": 2,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/triggers/sub_shared/useSubscribedFeeds.ts:9 This context is React UI that reads the feed catalog, subscriptions and activity once per mount or button press (useSharedEvents.load, useSubscribedFeeds), plus a manual test-fire form. Nothing here drives observed state toward a declared record, keeps a keyed queue, requeues or drains, so the subject's precondition does not hold. Searching src/features/triggers for requeue/converge/workqueue/work_queue/backoff found nothing. The only 'reconcile' hit (FeedRoutingPopover.tsx:89) filters a selection against the roster on save; it is not a loop.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:fc5a1774272e601e",
+          "evaluatedRevision": 2
         },
         {
           "subject": "feed",
