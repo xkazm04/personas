@@ -50301,6 +50301,21 @@
           "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:1 No engine-internal representations."
         }
       ]
+    },
+    "b26fe932-b123-4b9e-8d1c-bbbf4e508265/untrusted-extension-host": {
+      "context": "api-system",
+      "subject": "untrusted-extension-host",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:02:06.688Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "5d7d1457-9924-4ecb-86e9-502fda3d9ccb",
+        "state": "not-applicable",
+        "at": "2026-11-15T22:02:21.489288+00:00",
+        "reason": "reviewer (sonnet): The anchor n8nTransform.ts:282 is only the `confirmN8nPersonaDraft` invoke wrapper, so it doesn't show that no third-party code runs on the host. The 'plugin' hit it cites, system.ts:51, is in a file outside the context's file list. The absence search also missed `plugin` and `extension` handling in"
+      }
     }
   }
 }

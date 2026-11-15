@@ -5888,8 +5888,8 @@
           "revision": 6,
           "changedAt": "2026-10-05",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "priorNotApplicable": 3,
+          "state": "unknown"
         },
         {
           "subject": "generated-workflow-candidates",
