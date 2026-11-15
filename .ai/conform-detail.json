@@ -50452,6 +50452,32 @@
           "evidence": "src/features/projects/development/goals/GoalsPage.tsx:60 Goals are read from SQLite, not from the vault, so there is no derived index over vault notes for a read to reconcile."
         }
       ]
+    },
+    "fd092e44-fcec-4418-8337-ed2b7b2c8473/render-mount-pipeline": {
+      "context": "team-memory",
+      "subject": "render-mount-pipeline",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:27:50.720Z",
+      "worker": "0d330589-21fb-4987-994a-4fa63fff2847",
+      "techniques": [
+        {
+          "technique": "blueprint-then-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx:102 A plain DOM scroll container with no layout pass or render-unit list of its own; the technique's own 'when not to use' rule says not to add a second blueprint when the platform lays out for you."
+        },
+        {
+          "technique": "edge-sorted-incremental-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:20 Nothing is windowed, at the row level or the leaf level. List size is bounded by user-driven paging, not by a visibility window, so there are no edge indices to keep."
+        },
+        {
+          "technique": "mount-references-across-features",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/components/timeline/MemoryTimeline.tsx:131 The timeline renders every entry it has. No visibility window ever unmounts an element, so no feature has to vote to keep one mounted."
+        }
+      ]
     }
   }
 }

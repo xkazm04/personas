@@ -38670,8 +38670,12 @@
           "revision": 1,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx:132 The memory list maps every loaded row straight into React DOM components inside a plain overflow-y-auto container, grown 30 at a time by an explicit load-more button (useTeamMemories.ts:20 PAGE_SIZE = 30). The platform's reconciliation decides which elements exist, so the subject's precondition (code, not the platform, decides which elements exist) does not hold. A search of src/features/teams/sub_teamMemory/ for virtual, overscan, recycl, IntersectionObserver, react-window, requestIdleCallback and blueprint found 0 files.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:df020f172eb32893",
+          "evaluatedRevision": 1
         },
         {
           "subject": "client-fetch-cache",

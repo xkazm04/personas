@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0d330589-21fb-4987-994a-4fa63fff2847",
+ "subject": "render-mount-pipeline",
+ "evaluatedAt": "2026-11-15T22:27:50.720878+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "team-memory",
+   "subject": "render-mount-pipeline",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx:132 The memory list maps every loaded row straight into React DOM components inside a plain overflow-y-auto container, grown 30 at a time by an explicit load-more button (useTeamMemories.ts:20 PAGE_SIZE = 30). The platform's reconciliation decides which elements exist, so the subject's precondition (code, not the platform, decides which elements exist) does not hold. A search of src/features/teams/sub_teamMemory/ for virtual, overscan, recycl, IntersectionObserver, react-window, requestIdleCallback and blueprint found 0 files.",
+   "techniques": [
+    {
+     "technique": "blueprint-then-mount",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx:102 A plain DOM scroll container with no layout pass or render-unit list of its own; the technique's own 'when not to use' rule says not to add a second blueprint when the platform lays out for you."
+    },
+    {
+     "technique": "edge-sorted-incremental-mount",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:20 Nothing is windowed, at the row level or the leaf level. List size is bounded by user-driven paging, not by a visibility window, so there are no edge indices to keep."
+    },
+    {
+     "technique": "mount-references-across-features",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamMemory/components/timeline/MemoryTimeline.tsx:131 The timeline renders every entry it has. No visibility window ever unmounts an element, so no feature has to vote to keep one mounted."
+    }
+   ],
+   "absenceTerms": [
+    "virtual",
+    "overscan",
+    "recycl",
+    "IntersectionObserver",
+    "react-window"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-15T22:27:50.720878+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "render-mount-pipeline"
+   ],
+   "techniques": [
+    "blueprint-then-mount",
+    "edge-sorted-incremental-mount",
+    "mount-references-across-features"
+   ],
+   "deviations": 0,
+   "context": "team-memory",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
