@@ -1,0 +1,37 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8352d760-85fd-4d1e-b247-078e83d58d58",
+  "subject": "docs-sync",
+  "evaluatedAt": "2026-11-15T03:34:34.508491+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "docs-sync",
+      "context": "plugins-dev-tools-skills",
+      "reason": "evidence leans on tools/dev-tools.md, which is not a tracked file"
+    },
+    {
+      "subject": "docs-sync",
+      "context": "stores",
+      "reason": "withdrawn after review: reviewer (sonnet): The map facts hold: no entry covers src/api/radio.ts, director.ts, liveRoadmap.ts or any src/stores/** file. But the anchor, src/api/radio.ts:4, is not one of this context's files, and the claim that the radio move stripped this context's files of their doc is wrong because the stores were never mov"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-15T03:34:34.508491+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "docs-sync"
+      ],
+      "techniques": [
+        "source-doc-mapping"
+      ],
+      "deviations": 1,
+      "context": "stores",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

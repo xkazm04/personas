@@ -45106,30 +45106,32 @@
       "subject": "docs-sync",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-04",
-      "evaluatedTs": "2026-11-04T01:10:34.260Z",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T03:34:34.508Z",
       "techniques": [
         {
           "technique": "source-doc-mapping",
           "verdict": "deviation",
-          "evidence": "scripts/docs/feature-doc-map.json:605 Renaming the file stripped its coverage: src/api/radio.ts (moved from plugins/radio/api) matches no sourceGlob. The overseer and live-roadmap entries map only the Rust half, not src/api/director.ts or src/api/liveRoadmap.ts."
+          "evidence": "scripts/docs/feature-doc-map.json:605 The radio entry still points at the pre-relocation feature dir and the backend, but not at src/api/radio.ts. The director entry (map lines 200-202) and live-roadmap entry (596-598) likewise cover only the Rust side, not src/api/director.ts or src/api/liveRoadmap.ts. Searching the map found 0 `src/stores/**`, `src/api/**` or `src/**` globs, so the top-level stores in this context are unmapped."
         },
         {
           "technique": "doc-rot-detection",
           "verdict": "deviation",
-          "evidence": "docs/features/radio.md:186 The coupled doc still links a file that does not exist (ls confirms it is gone; it now lives at src/api/radio.ts). This is the 'references a path that is gone' rot shape, and it survives in the tree, so nothing detected it."
+          "evidence": "docs/features/radio.md:186 The coupled doc still links a file that does not exist (ls confirms it is gone; it now lives at src/api/radio.ts). This is the 'references a path that is gone' rot shape, and it survives in the tree, so nothing detected it.",
+          "carriedFrom": "2026-11-04"
         },
         {
           "technique": "coupled-surface-inventory",
           "verdict": "deviation",
-          "evidence": "docs/features/live-roadmap/live-roadmap.md:163 The doc names this context's file as part of the surface it describes, but the doc's map entry (sourceGlobs sub_releases/** + live_roadmap.rs) does not list it, so the doc and the map disagree about what the surface includes."
+          "evidence": "docs/features/live-roadmap/live-roadmap.md:163 The doc names this context's file as part of the surface it describes, but the doc's map entry (sourceGlobs sub_releases/** + live_roadmap.rs) does not list it, so the doc and the map disagree about what the surface includes.",
+          "carriedFrom": "2026-11-04"
         }
       ],
       "withdrawn": {
-        "worker": "c5143240-0e3b-4c37-8d7e-ebb7eb6f2c16",
+        "worker": "8352d760-85fd-4d1e-b247-078e83d58d58",
         "state": "deviation",
-        "at": "2026-11-04T01:10:58.408304+00:00",
-        "reason": "reviewer (sonnet): The claims about the map and docs hold (radio.ts, director.ts and liveRoadmap.ts exist, no sourceGlob covers them, radio.md:186 links a path that is gone, and live-roadmap.md:163 names src/api/liveRoadmap.ts), but none of those files are in or called by the `stores` context. Nothing in src/stores re"
+        "at": "2026-11-15T03:38:40.451159+00:00",
+        "reason": "reviewer (sonnet): The map facts hold: no entry covers src/api/radio.ts, director.ts, liveRoadmap.ts or any src/stores/** file. But the anchor, src/api/radio.ts:4, is not one of this context's files, and the claim that the radio move stripped this context's files of their doc is wrong because the stores were never mov"
       }
     },
     "0f1b56ac-cd96-4355-993e-dc445a20e63e/hitl-approval": {
