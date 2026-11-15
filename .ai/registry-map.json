@@ -19313,8 +19313,12 @@
           "revision": 10,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "deviation",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/agents/sub_lab/components/shared/UserRating.tsx:100 A user-visible button label ships as a hardcoded English literal outside the catalog, while the next line uses t.agents.lab.saved_label. The standard puts 'literal escaping the catalog' in L1, which blocks, but here it reached the tree, so this context shows that class is not blocked.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:f00a2dbd4e8fdce1",
+          "evaluatedRevision": 10
         },
         {
           "subject": "diff-comparison",

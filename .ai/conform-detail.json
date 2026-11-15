@@ -50363,6 +50363,22 @@
           "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:29 No queue. A load sequence counter only discards stale responses."
         }
       ]
+    },
+    "ba0d4722-bfde-40aa-8e1d-52591719f834/copy-quality-gates": {
+      "context": "lab-shared-primitives",
+      "subject": "copy-quality-gates",
+      "bundle": "localization",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:16:39.417Z",
+      "worker": "1ec17675-4028-47ff-8b9b-7c21d7e32a46",
+      "techniques": [
+        {
+          "technique": "layered-mechanical-gate",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/shared/UserRating.tsx:100 L1 requires 'no literal user-visible string escaping the catalog' to block. This literal landed in shipped code. A second L1 class is also present: LabResultModal.tsx:41 builds a heading from fragments, '{modeLabel} {t.agents.lab.results_suffix}', and LabEventStream.tsx:122 joins event_stream_failed + ': ' + a message in code."
+        }
+      ]
     }
   }
 }
