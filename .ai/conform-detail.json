@@ -50478,6 +50478,27 @@
           "evidence": "src/features/teams/sub_teamMemory/components/timeline/MemoryTimeline.tsx:131 The timeline renders every entry it has. No visibility window ever unmounts an element, so no feature has to vote to keep one mounted."
         }
       ]
+    },
+    "cd7e7cc7-cc5b-44a1-9bff-76b34af21966/standards-layered-runtime": {
+      "context": "api-bridge-tests",
+      "subject": "standards-layered-runtime",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:38:14.586Z",
+      "worker": "05496498-7c6e-46d0-849a-8702eaac658d",
+      "techniques": [
+        {
+          "technique": "backend-parameterised-web-api",
+          "verdict": "not-applicable",
+          "evidence": "src/api/__tests__/system.test.ts:3 There is no standard web API with a host backend trait. The only seam here is a mocked Tauri invoke."
+        },
+        {
+          "technique": "baseline-plus-extension-tuple",
+          "verdict": "not-applicable",
+          "evidence": "src/api/__tests__/system.test.ts:1 Nothing installs APIs into a guest context. These are node-environment unit tests."
+        }
+      ]
     }
   }
 }

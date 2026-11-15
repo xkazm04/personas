@@ -5009,8 +5009,12 @@
           "revision": 3,
           "changedAt": "2026-10-31",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/api/__tests__/system.test.ts:3 These files are Vitest unit tests that mock Tauri `invoke` to check the IPC wrappers. They do not embed or package a guest-language runtime, so the subject's precondition (an embeddable engine split into standards packages, an extras layer and a CLI) does not hold. I searched src/api and src/api/__tests__ for WinterTC, boa_engine, boa_runtime, deno_core, quickjs, JsValue, register_extensions and 'guest language' and found 0 hits, and no Cargo.toml in the repo depends on boa_, deno_core, rquickjs or v8.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:72be2b66c8d50db7",
+          "evaluatedRevision": 3
         },
         {
           "subject": "settings",
