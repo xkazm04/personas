@@ -50175,6 +50175,21 @@
         "at": "2026-11-15T00:00:08.378059+00:00",
         "reason": "reviewer (sonnet): The evidence says nothing in this context runs a candidate, but TemplatePreviewModal.tsx:78-88 builds a draft and starts a sandboxed run (onStartPreview/onRetryPreview, 'Run preview' and 'Run again'), and OverviewTab.tsx:91-125 shows measured success rate and cost from past runs. The anchor at Overv"
       }
+    },
+    "b4439e30-fcff-4095-97dd-d9d7da2247dd/concurrent-vcs": {
+      "context": "settings-portability",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T01:51:37.939Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "a57f5cbd-fbd2-4789-be48-e9d180146fa4",
+        "state": "not-applicable",
+        "at": "2026-11-15T01:53:50.703516+00:00",
+        "reason": "reviewer (sonnet): The anchor, useDataPortability.ts:63, is only the `export function useDataPortability()` declaration, so it doesn't show that concurrent-VCS mechanics are absent. My own grep of sub_portability for git/worktree/checkout/branch/commit found only unrelated hits (FolderGit2 icons, a 'GitHub' credential"
+      }
     }
   }
 }

@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a57f5cbd-fbd2-4789-be48-e9d180146fa4",
+  "subject": "concurrent-vcs",
+  "evaluatedAt": "2026-11-15T01:51:37.939594+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "concurrent-vcs",
+      "context": "fleet-session-grid",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "concurrent-vcs",
+      "context": "settings-portability",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor, useDataPortability.ts:63, is only the `export function useDataPortability()` declaration, so it doesn't show that concurrent-VCS mechanics are absent. My own grep of sub_portability for git/worktree/checkout/branch/commit found only unrelated hits (FolderGit2 icons, a 'GitHub' credential"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-15T01:51:37.939594+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "concurrent-vcs"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "settings-portability",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
