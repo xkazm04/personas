@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "acdf0f99-fa48-436e-8f40-73596fdb25c2",
+ "subject": "deployment-contract",
+ "evaluatedAt": "2026-11-15T22:18:27.661149+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "stores-slices-system",
+   "subject": "deployment-contract",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/slices/system/cloudSlice.ts:139 In this context \"deploy\" means the product feature of placing a user's persona onto a cloud or GitLab agent runtime, driven through IPC from Zustand client state. Nothing here builds, uploads, caches or promotes this repository's own artifact to a hosting platform, and a search of src/stores for vercel, netlify, cache-control, dockerignore and max-age found no hits, so the subject's precondition (a repository delivering its build through a host) does not hold for these files.",
+   "techniques": [
+    {
+     "technique": "replace-before-retire",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/slices/system/cloudSlice.ts:131 Undeploy is about user persona deployments on a remote runtime, not about renaming or retiring this repo's hosted endpoint."
+    },
+    {
+     "technique": "environment-promotion",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/slices/system/gitlabSlice.ts:92 Redeploying a persona agent to GitLab is a feature action. There is no preview-to-production promotion of this repo's build."
+    },
+    {
+     "technique": "platform-build-parity",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/slices/system/deployTarget.ts:2 The abstraction only translates errors and connection state for the feature's targets. No hosted build or build inputs are involved."
+    }
+   ],
+   "absenceTerms": [
+    "vercel",
+    "netlify",
+    "cache-control",
+    "dockerignore",
+    "max-age"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-15T22:18:27.661149+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "deployment-contract"
+   ],
+   "techniques": [
+    "environment-promotion",
+    "platform-build-parity",
+    "replace-before-retire"
+   ],
+   "deviations": 0,
+   "context": "stores-slices-system",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

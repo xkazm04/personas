@@ -50379,6 +50379,32 @@
           "evidence": "src/features/agents/sub_lab/components/shared/UserRating.tsx:100 L1 requires 'no literal user-visible string escaping the catalog' to block. This literal landed in shipped code. A second L1 class is also present: LabResultModal.tsx:41 builds a heading from fragments, '{modeLabel} {t.agents.lab.results_suffix}', and LabEventStream.tsx:122 joins event_stream_failed + ': ' + a message in code."
         }
       ]
+    },
+    "c06088ef-d143-4aa4-b60a-9d6f7aff9aba/deployment-contract": {
+      "context": "stores-slices-system",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:18:27.661Z",
+      "worker": "acdf0f99-fa48-436e-8f40-73596fdb25c2",
+      "techniques": [
+        {
+          "technique": "replace-before-retire",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/cloudSlice.ts:131 Undeploy is about user persona deployments on a remote runtime, not about renaming or retiring this repo's hosted endpoint."
+        },
+        {
+          "technique": "environment-promotion",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/gitlabSlice.ts:92 Redeploying a persona agent to GitLab is a feature action. There is no preview-to-production promotion of this repo's build."
+        },
+        {
+          "technique": "platform-build-parity",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/deployTarget.ts:2 The abstraction only translates errors and connection state for the feature's targets. No hosted build or build inputs are involved."
+        }
+      ]
     }
   }
 }

@@ -37482,8 +37482,12 @@
           "revision": 5,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/stores/slices/system/cloudSlice.ts:139 In this context \"deploy\" means the product feature of placing a user's persona onto a cloud or GitLab agent runtime, driven through IPC from Zustand client state. Nothing here builds, uploads, caches or promotes this repository's own artifact to a hosting platform, and a search of src/stores for vercel, netlify, cache-control, dockerignore and max-age found no hits, so the subject's precondition (a repository delivering its build through a host) does not hold for these files.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5
         },
         {
           "subject": "retrieval",
