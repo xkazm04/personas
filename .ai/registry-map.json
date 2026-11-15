@@ -39670,8 +39670,12 @@
           "revision": 2,
           "changedAt": "2026-09-07",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "deviation",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:60 The goals surface's only contact with the vault is a one-way 'Sync to Obsidian' projection of goals into DevTools/Goals/*.md. Its backend writes a parent wikilink by goal id into notes named by title, and its skip check reads the ledger instead of the disk, so it overwrites human edits without saying so.",
+          "evaluatedAt": "2026-11-15",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "agent-instruction-files",

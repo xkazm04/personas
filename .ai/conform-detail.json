@@ -50416,6 +50416,42 @@
           "evidence": "src/stores/slices/system/deployTarget.ts:2 The abstraction only translates errors and connection state for the feature's targets. No hosted build or build inputs are involved."
         }
       ]
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/markdown-vault": {
+      "context": "teams-goals",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-15",
+      "evaluatedTs": "2026-11-15T22:25:27.787Z",
+      "worker": "cbcc7a3c-34c7-4fe0-8a2d-8d77c662771e",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:1712 The in-band parent link names the goal UUID, but files are named sanitize_filename(title) (mod.rs:1774), so every sub-goal note's parent link resolves to nothing. Renaming a goal also writes a new title-named file and leaves the old note in place; the frontmatter id (mod.rs:1690) is never used to find it."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:1782 The skip check compares the ledger's hash of the last generated content with newly generated content and never reads the file on disk. A note the human deleted stays missing until the goal itself changes, and an edited note is silently replaced when the goal changes. This is a one-way projection that never tells the user that edits are overwritten (the button just says 'Sync to Obsidian', GoalsPage.tsx:109)."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:70 The push writes through atomic_write: a .tmp sibling file renamed over the target, with no lock or long-lived handle, so Obsidian never sees a half-written note. Overwriting edits is judged under mirror-indexes."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:60 This context only pushes; neither its files nor the push command walk the vault (grep of context dirs: no readDir/frontmatter/backlink)."
+        },
+        {
+          "technique": "read-triggered-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:60 Goals are read from SQLite, not from the vault, so there is no derived index over vault notes for a read to reconcile."
+        }
+      ]
     }
   }
 }
