@@ -41079,8 +41079,8 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "priorNotApplicable": 30,
+          "state": "unknown"
         },
         {
           "subject": "test-harness",

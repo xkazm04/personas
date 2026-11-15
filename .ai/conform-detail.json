@@ -50149,6 +50149,32 @@
           "evidence": "src/features/shared/components/forms/DirectoryPickerInput.tsx:70 The browsing guard is released in finally, so success, a dismissed dialog and a thrown picker all release it, and the browse button refuses while it is held (line 114)."
         }
       ]
+    },
+    "d3346f2c-d747-4d85-b6e6-c1450da57ec9/eval-harness": {
+      "context": "template-gallery-modals",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-14",
+      "evaluatedTs": "2026-11-14T23:57:41.268Z",
+      "techniques": [
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildDimensionTargets.tsx:43 The only scoring here is a deterministic presence check per dimension, reused from DimensionRadial and mirroring reviews.rs::score_design_result. It feeds rebuild targeting, not an eval run, and the context owns no judge."
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/CompareModal.tsx:151 CompareModal is a table of catalog attributes (adoption counts and similar) shown side by side. It is not a pairwise or matrix comparison of model outputs."
+        }
+      ],
+      "withdrawn": {
+        "worker": "d17b9a46-f3c0-4055-b6c4-39e935bb2a77",
+        "state": "not-applicable",
+        "at": "2026-11-15T00:00:08.378059+00:00",
+        "reason": "reviewer (sonnet): The evidence says nothing in this context runs a candidate, but TemplatePreviewModal.tsx:78-88 builds a draft and starts a sandboxed run (onStartPreview/onRetryPreview, 'Run preview' and 'Run again'), and OverviewTab.tsx:91-125 shows measured success rate and cost from past runs. The anchor at Overv"
+      }
     }
   }
 }
