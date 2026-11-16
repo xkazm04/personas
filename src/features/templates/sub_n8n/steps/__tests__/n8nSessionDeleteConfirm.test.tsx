@@ -151,11 +151,18 @@ describe('deleting with the keyboard', () => {
     deleteButton().focus();
     await user.keyboard('{Enter}');
 
-    (await confirmButton()).focus();
+    // The modal moves focus to its first button (Cancel) in a requestAnimationFrame
+    // after it opens. Focusing Confirm before that frame lands lets the frame take
+    // the focus back, and Enter then presses Cancel: the dialog closes, nothing is
+    // deleted. That is what failed on a loaded shard, not a slow delete. Wait for
+    // the modal's own focus, then walk to Confirm the way a keyboard user does.
+    const cancel = await cancelButton();
+    await waitFor(() => expect(cancel).toHaveFocus());
+    await user.tab();
+    expect(await confirmButton()).toHaveFocus();
     await user.keyboard('{Enter}');
 
-    // Same assertion, a CI-sized window: the 1 s default failed on a loaded shard.
-    await waitFor(() => expect(screen.queryByText(NAME)).not.toBeInTheDocument(), { timeout: 5000 });
+    await waitFor(() => expect(screen.queryByText(NAME)).not.toBeInTheDocument());
     expect(api.deleteN8nSession).toHaveBeenCalledTimes(1);
     expect(api.getN8nSession).not.toHaveBeenCalled();
   });
