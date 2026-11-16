@@ -48,15 +48,6 @@
       ],
       "resolved": false
     },
-    "HealthDigestPanel.tsx": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["28"],
-      "contexts": [
-        "| 5 | **A named staleness component** | **MINORITY (2/6), and Personas is BEHIND — with the measurement inverted** | `personas-web/src/components/dashboard/StalenessIndicator.tsx` has **7 render site…"
-      ],
-      "resolved": false
-    },
     "MemoryActionsPanel.tsx": {
       "count": 1,
       "sections": [6],
@@ -224,6 +215,16 @@
       "resolvedFrom": "basename",
       "verbatim": "PersonaConfigPanel.tsx"
     },
+    "src/features/agents/sub_health/HealthDigestPanel.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["28"],
+      "contexts": [
+        "| 5 | **A named staleness component** | **MINORITY (2/6), and Personas is BEHIND — with the measurement inverted** | `personas-web/src/components/dashboard/StalenessIndicator.tsx` has **7 render site…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "HealthDigestPanel.tsx"
+    },
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx": {"count":3,"sections":[7,12],"lines":["34-36"],"contexts":["`useDrive.ts`, `LlmTrackingCell.tsx`, `LifecyclePage.tsx`,"],"resolvedFrom":"basename","verbatim":"LifecyclePage.tsx"},
     "src/features/plugins/dev-tools/sub_llm_overview/useLlmPinpoints.ts": {
       "count": 3,
@@ -351,14 +352,6 @@
       "isDir": true
     },
     "src/hooks/": {"count":1,"sections":[12],"contexts":["scan — and this leaf's own inventory never widened its search past `src/lib/` to the `src/hooks/`"],"resolved":false,"isDir":true},
-    "src/hooks/database/useSchemaProposal.ts": {
-      "count": 2,
-      "sections": [6,12],
-      "lines": ["207"],
-      "contexts": ["`useSchemaProposal.ts:207` invalidates after applying a schema change, which is the half almost"],
-      "resolvedFrom": "basename",
-      "verbatim": "useSchemaProposal.ts"
-    },
     "src/hooks/database/useTableIntrospection.ts": {
       "count": 5,
       "sections": [3,6,9,12],
@@ -562,6 +555,7 @@
       ],
       "resolved": false
     },
+    "useSchemaProposal.ts": {"count":2,"sections":[6,12],"lines":["207"],"contexts":["`useSchemaProposal.ts:207` invalidates after applying a schema change, which is the half almost"],"resolved":false},
     "vibeman/src/app/features/Context/sub_ContextGroups/lib/gradientUtils.ts": {
       "count": 1,
       "sections": [6],

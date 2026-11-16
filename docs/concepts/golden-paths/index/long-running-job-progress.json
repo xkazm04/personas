@@ -482,16 +482,6 @@
       "resolvedFrom": "basename",
       "verbatim": "useQueryDebug.ts"
     },
-    "src/hooks/database/useSchemaProposal.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["105"],
-      "contexts": [
-        "**C2 — 8 hand-rolled job polls.** `ContextMapPage.tsx:360` · `KpiProposalsPanel.tsx:69` · `FactoryOverviewTab.tsx:315` · `useUseCases.ts:85` · `ExtractionMenu.tsx:138` · `ExtractionMenu.tsx:213` · `u…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useSchemaProposal.ts"
-    },
     "src/hooks/design/core/useBackgroundPreview.ts": {
       "count": 1,
       "sections": [7],
@@ -592,6 +582,15 @@
       "lines": ["146"],
       "contexts": [
         "**C1 — 1 of 7 primitive-based job surfaces reconciles a snapshot with its stream.** Stream-only (5): `useN8nTest.ts:25`, `useQueryDebug.ts:13`, `useBackgroundPreview.ts:32`, `usePersonaExecution.ts:1…"
+      ],
+      "resolved": false
+    },
+    "useSchemaProposal.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["105"],
+      "contexts": [
+        "**C2 — 8 hand-rolled job polls.** `ContextMapPage.tsx:360` · `KpiProposalsPanel.tsx:69` · `FactoryOverviewTab.tsx:315` · `useUseCases.ts:85` · `ExtractionMenu.tsx:138` · `ExtractionMenu.tsx:213` · `u…"
       ],
       "resolved": false
     },

@@ -61,6 +61,7 @@
       "resolved": false
     },
     "PersonaCoreModal.tsx": {"count":1,"sections":[7],"lines":["35"],"contexts":["The 6: `PersonaCoreModal.tsx:35` and `:37` (`\"Loading mentalities…\"`),"],"resolved":false},
+    "QuickAnswerBody.tsx": {"count":1,"sections":[7],"lines":["58-68"],"contexts":["**The most instructive site in the whole document is `QuickAnswerBody.tsx:58-68`:**"],"resolved":false},
     "SignInPrompt.tsx": {"count":2,"sections":[5,7],"lines":["60-61"],"contexts":["`SignInPrompt.tsx:60-61` — two repos, one confusion."],"resolved":false},
     "Skeleton.tsx": {
       "count": 1,
@@ -117,6 +118,7 @@
       "resolved": false
     },
     "plugins/research-lab/shared/useIngestSource.ts": {"count":1,"sections":[7],"lines":["24"],"contexts":["| `plugins/research-lab/shared/useIngestSource.ts:24` | `'Indexing source…'` |"],"resolved":false},
+    "quickAnswerHonesty.test.tsx": {"count":1,"sections":[7],"lines":["73,82,105"],"contexts":["quoted in §6) and `quickAnswerHonesty.test.tsx:73,82,105`. Nothing covers"],"resolved":false},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["scratch rules file, never against `scripts/census/rules.json`."]},
     "scripts/report-hardcoded-ui-strings.mjs": {
       "count": 2,
@@ -147,15 +149,7 @@
       ],
       "resolved": false
     },
-    "src/features/agents/quick-answer/QuickAnswerBody.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["58-68"],
-      "contexts": ["**The most instructive site in the whole document is `QuickAnswerBody.tsx:58-68`:**"],
-      "resolvedFrom": "basename",
-      "verbatim": "QuickAnswerBody.tsx"
-    },
-    "src/features/agents/quick-answer/__tests__/quickAnswerHonesty.test.tsx": {"count":2,"sections":[6,7],"lines":["73,82,105"],"contexts":["- **`src/features/agents/quick-answer/__tests__/quickAnswerHonesty.test.tsx:73,82,105`** —"]},
+    "src/features/agents/quick-answer/__tests__/quickAnswerHonesty.test.tsx": {"count":1,"sections":[6],"lines":["73,82,105"],"contexts":["- **`src/features/agents/quick-answer/__tests__/quickAnswerHonesty.test.tsx:73,82,105`** —"],"resolved":false},
     "src/features/agents/quick-answer/triage/__tests__/deckDialog.test.tsx": {"count":1,"sections":[6],"lines":["214-235"],"contexts":["- **`src/features/agents/quick-answer/triage/__tests__/deckDialog.test.tsx:214-235`** —"],"resolved":false},
     "src/features/agents/sub_deployment/components/cloud/CloudConnectionForm.tsx": {
       "count": 2,

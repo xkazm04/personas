@@ -493,7 +493,7 @@
       "verbatim": "GoalTaskTable.tsx"
     },
     "src/features/teams/sub_goals/GoalsMissions.tsx": {"count":1,"sections":[],"contexts":["`src/features/teams/sub_goals/GoalsMissions.tsx`, the four `TeamAssignment*` ts-rs bindings)."],"resolved":false},
-    "src/lib/bindings/TeamAssignmentStatus.ts": {"count":1,"sections":[0],"contexts":["doc comment, and ships as `src/lib/bindings/TeamAssignmentStatus.ts`."]},
+    "src/lib/bindings/TeamAssignmentStatus.ts": {"count":1,"sections":[0],"contexts":["doc comment, and ships as `src/lib/bindings/TeamAssignmentStatus.ts`."],"resolved":false},
     "src/stores/slices/pipeline/assignmentSlice.ts": {"count":1,"sections":[],"contexts":["(`src/stores/slices/pipeline/assignmentSlice.ts`, `src/api/pipeline/assignments.ts`,"]},
     "store/dependencyStore.ts": {
       "count": 1,
