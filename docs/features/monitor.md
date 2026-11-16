@@ -186,6 +186,27 @@ panels, bp's full feature page, the expanded timeline with time travel (T), the 
 card and multi-select (Space, Shift+click) with batch moves. See
 `src/features/decision-center/blueprint/PARITY.md`.
 
+**Compare two dates, readiness, the trouble walk** (2026-11-05, bp-sync with bp 93f30b0). Travel back with
+the timeline (T) and the plan draws health **replayed by today's rules** over the readings taken by then (the
+strip says so); a feature whose lens cannot be replayed on that date shows no mark rather than a guess. Press
+**P** (or the strip's **PIN A**) to pin the travelled date as baseline A, then travel on: the plan marks what
+changed since A, rooms and wings say "N changed", the strip reads **SINCE A · N CHANGED** with **UNPIN A**, and
+a feature's page lists what changed between A and the shown date, each value with the day it was read, first
+observations labelled as such. P again unpins (A stays approve). **G** opens readiness for what is selected,
+else the open feature, else the room or wing in view, else the whole product: a callout with the summary
+(clear, unproven, steps covered or short, blocked), the steps to clear with their proposal coverage, blocked
+lenses, cross-lens conflicts and stale readings, each row opening its feature; G or Esc closes it. Each lens
+tab now says **What clears it**: every verified step from the lens's own rules, with a chip when a proposal
+covers it (clears, short by X, makes it worse, or what was measured after it was built). **N** / **Shift+N**
+walk the features in trouble under the current sheet, and Enter opens the stop. A feature that turns bad on a
+re-read is flagged without reopening the sheet, and the place the camera rests on is spoken to screen readers.
+Not brought from bp: the milestone readiness scope, the URL hash and bp's simulation.
+
+Developer note (keeping in sync with bp): every ported file is pinned in
+`src/features/decision-center/blueprint/bp-port.json` with the bp commit it follows, and its header names the
+same commit. `npm run bp:drift` lists the bp commits each port has not taken. A re-port is a port of intent;
+afterwards bump that file's `sha` and its header together (re-pin), and `synced_to` once every file is taken.
+
 **The drawing set stays live** (2026-10-17). While it is open it re-reads its product by itself: every 5 s
 while a lens-scan run is running or a build started from the sheet is still working, every minute otherwise,
 and at once when the window comes back into focus; never while the window is hidden. A read that finds

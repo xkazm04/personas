@@ -398,6 +398,12 @@
       ]
     },
     {
+      "doc": "docs/features/monitor.md",
+      "sourceGlobs": [
+        "src/features/decision-center/**"
+      ]
+    },
+    {
       "doc": "docs/features/companions/athena/README.md",
       "sourceGlobs": [
         "src/features/companions/athena/**",

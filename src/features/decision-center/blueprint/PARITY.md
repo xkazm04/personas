@@ -1,5 +1,12 @@
 # Blueprint drawing set: parity with bp, level by level
 
+**How to sync with bp.** Every file ported from bp is pinned in `bp-port.json` (file, bp path(s), the bp commit it
+follows) and its header names the same commit (`__tests__/portLedger.test.ts` holds the two together).
+`npm run bp:drift` lists, per port, the bp commits after its pin that touch its bp paths (a pure move is marked and
+does not count). Re-port the intent of those commits where it now lives (the engine is split into `controller/`,
+`state/`, `ui/`), then re-pin: bump the entry's `sha` and the header's `@ <sha>` together, and `synced_to` once
+every port has taken bp's head. Last full sync: bp `93f30b0` (2026-11-05, below).
+
 Spark one-control, Stage 2, WP4a. The drawing is bp's (`bp/src/engine`, `bp/src/lib/model/layout.ts`,
 `bp/src/lib/standard/load.ts`), ported through the r3-r2 prototype "The Queue Beside the Drafting Sheet". The
 reference is bp's own shots of two live products at L0 to L4, dark and light (`.contest/staging/one-control-r3-shots/`,
@@ -130,8 +137,8 @@ Reference shots: bp itself on :3010 (Kettle sample and live products), compared 
 | Lives in (surfaces, contexts) | present | |
 | Revisions table | present | from the events log |
 | Illustration of the feature | dropped | the live stores carry no art; a key plan stands in |
-| Blast radius (B) | present (2026-10-30) | the decision brief's blast line: the feature, its room, the features that depend on it (it opens their list) |
-| The decision brief on a waiting card (bp 51e193e, "one morning, with memory") | present | `model/brief.ts` is bp's `brief.ts`, held byte for byte by bp's golden (`standard/decision-brief.golden.json`, `__tests__/brief.golden.test.ts`); the card shows the advice chip and at most five fact lines, the declined line in amber, each fact opening its evidence. On a repeat (`withdraw`) Decline is the first answer, "You declined this before", Approve stays as "Approve anyway", and X opens the reason pre-filled with the note naming the decision it repeats (`repeatNote`), sent through `lens_scan_decide`. A like idea declined elsewhere (`ask`) keeps Approve first. bp's Enter-takes-the-recommended-option is not ported: Enter on an open feature says the enter hint, as before. No key is bound (Y stays triage accept) |
+| Blast radius (B) | adapted (2026-10-30) | bp's B mode (its plan overlay and callout) is out (operator: outside the brief; `ui/page/Links.tsx` says the same); the blast radius is read on the decision brief's blast line: the feature, its room, the features that depend on it (it opens their list) |
+| The decision brief on a waiting card (bp 51e193e, "one morning, with memory") | present | `model/brief.ts` is bp's `brief.ts`, held byte for byte by bp's golden (`standard/decision-brief.golden.json`, `__tests__/brief.golden.test.ts`); the card shows the advice chip and at most five fact lines, the declined line in amber, each fact opening its evidence. On a repeat (`withdraw`) Decline is the first answer, "You declined this before", Approve stays as "Approve anyway", and X opens the reason pre-filled with the note naming the decision it repeats (`repeatNote`), sent through `lens_scan_decide`. A like idea declined elsewhere (`ask`) keeps Approve first. Enter takes the recommended option since S6 (owner decision D14, below: Decline on a repeat, else Approve), and while a trouble walk is active Enter opens the stop (bp-sync WP2). No other key is bound (Y stays triage accept) |
 
 ## Follow bp's shared focus (spark roadmap S6, first half, 2026-10-30)
 
@@ -264,3 +271,34 @@ Module map (bp -> here): `ComparePanel.tsx` -> `ui/compare/ComparePanel.tsx` + `
 | `readyScope`, `readinessNow`, GA outline | `model/readyScope.ts`, `useSyncModels.readiness`, `syncMarks.drawScope` | **Milestone scope is out for v1** (Personas has no milestone scope kind). |
 | `stepTrouble`, route Enter | `controller/useTroubleWalk.ts`, `useSheetKeys` | Enter opens the stop whenever a walk is active; opening another feature ends the walk. |
 | `saySoon` / `placeSaid` | `controller/spokenPlan.ts`, `useSpokenPlan.ts` | Through the existing live region (`ui.say`); the same place is never said twice in a row. |
+
+## bp-sync (2026-11-05): round three, bp @ 93f30b0
+
+Spark bp-sync brought bp's last month (bp 93f30b0) across in four packages. WP0 re-synced the lens-scan contract
+(`src/lib/lensScan/wire.ts`) and pinned every port in one ledger (`bp-port.json`, `npm run bp:drift`). WP1 ported the
+pure models: replay (`model/timeview.ts` healthAsOf, `engine/replay.ts`), compare (`model/compare.ts`), readiness
+(`model/ready.ts`), what clears it (`standard/clear.ts`, `standard/cover.ts`), the trouble index and route
+(`engine/trouble.ts`, `engine/trouble-route.ts`) and the place words (`engine/place-words.ts`), each returning data
+the text hook words. WP2 wired them into the sheet and the canvas (the table above). WP3 put them on screen:
+
+| bp | Personas | Note |
+|---|---|---|
+| Strip: HEALTH REPLAYED BY TODAY'S RULES | `ui/TimelineStrip.tsx` | shown while any pair replays on the travelled date; kept visible at every width |
+| Strip: PIN A / SINCE A · N CHANGED · UNPIN A | `ui/timeline/SyncPos.tsx` | N = the comparison's feature count (bp cmpN). PIN A only off now (P at now says why). bp's expanded panel has no compare cell, so neither has ours |
+| Page: "Changed between A and B" (`page/Compare.tsx`) | `ui/page/Compare.tsx` in General | the words of `compareLines` through `controller/compareWords.ts`. A feature with no entry shows nothing (bp prints "Nothing recorded changed") |
+| What clears it + CoverChip (`sheet/LensPanel.tsx` ClearSteps) | `ui/page/ClearSteps.tsx` under a lens tab's health | at now only. An uncovered step carries no chip (bp: "no proposal"). Personas has no LensPanel drawer, so the lens tab is its one place |
+| Readiness callout (`Overlays.tsx`, #callout.ga) | `ui/overlays/ReadyCallout.tsx` | bp's rows: steps with coverage, blocked, conflicts, unproven (with the reading's age). Clear pairs are counted in the line, not listed, as in bp. Hidden over an open feature page |
+| Hover card place lines (`placeWords`, d9a045d) | `ui/overlays/hoverBodies.tsx` PlaceBody | under a lens view the parts are the lens's (verdict, bad, to watch) and the trouble line names the lens; under General the stage parts as before. The feature card is unchanged |
+| Kettle's scan simulation (dated readings) | `fixture/kettle.scan.json` | a synthetic history: the cost lens (monthly and model spend) on four features and performance (interaction p95) on two, on 2026-08-19, 09-09 and 09-30 |
+
+Deviations, decided:
+- **P, not A**, pins baseline A: A is approve here (WP2).
+- **Milestone scope out** for readiness (Personas has no milestone scope kind).
+- **The cost lens's place summary is worst-of**: Personas has no manifest place rollup like bp's LensChannel aggregate, so
+  `placeWords` reads the same verdict, bad and to-watch figures the canvas labels draw.
+- **No URL hash**: the sheet's place is not written to the address bar.
+- **Op values kept as bp's** (`'at most' | 'at least' | 'set to'`) in the models; only the sentences are the text hook's.
+- **Kettle's cost lens loses its SMS-bill rule.** That rule reads `projectSmsUsd`, bound to a KPI (`sms-spend`), and a
+  KPI has no history, so no pair of the lens could ever replay. In the trimmed sample it never matched (no feature has
+  `smsUsd`, `kpis[]` is empty), so health at now is the same; the field stays declared. Every other Kettle lens reads a
+  hand-judged enum, a boolean or a feature field and stays unreplayable, which is the honest answer for them.

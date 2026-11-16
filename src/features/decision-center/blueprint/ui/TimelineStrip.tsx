@@ -3,12 +3,14 @@ import { useSheet } from '../controller/SheetContext';
 import { Press } from './Press';
 import { fmtDay } from './timeline/dates';
 import { Hairline } from './timeline/Hairline';
+import { SyncPos } from './timeline/SyncPos';
 import { useTime } from './timeline/useSlider';
 
 /**
  * The collapsed timeline (bp timeline/Strip.tsx, timeline.css): one 28 px strip along the bottom that still tells the
  * essentials: "▴ TIMELINE [T]" (pressed, or T, opens the panel above it), where in time the plan is (NOW, or the
- * travelled date with BACK TO NOW), the scan's run status and age, and the hairline of the revision history, which is
+ * travelled date with BACK TO NOW, and "health replayed by today's rules" when it is), baseline A (PIN A, or SINCE A ·
+ * N CHANGED with UNPIN A: ui/timeline/SyncPos, spark bp-sync WP3), the scan's run status and age, and the hairline of the revision history, which is
  * a slider: drag it to travel. Travelled, the strip turns accent so "this is not now" cannot be missed.
  */
 export function TimelineStrip() {
@@ -28,9 +30,11 @@ export function TimelineStrip() {
         : (
           <span className="tl-pos">
             <b>{tx(B.tl_viewing, { date: fmtDay(language, t) })}</b><span className="tl-dim">{tx(B.tl_rev_of, { n: rev, total })}</span>
+            {s.sync.replayed && <span className="tl-rpl" data-testid="blueprint-replayed">{B.sync_replayed}</span>}
             <Press tone="tl-back" onClick={() => s.dispatch({ type: 'asOf', date: null })} data-testid="blueprint-back-to-now">{B.tl_back} {'▸'}</Press>
           </span>
         )}
+      <SyncPos now={now} />
       <span className="tl-clk">
         <span className="tl-k">{B.tl_scan}</span>
         <span className={`tl-st${running ? ' on' : ''}`}>{latest ? { running: B.tl_running, done: B.tl_done, failed: B.tl_failed, aborted: B.tl_aborted }[latest.status] : B.tl_none}</span>

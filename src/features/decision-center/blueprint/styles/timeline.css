@@ -110,3 +110,13 @@
 .tl-revs .handle.travel rect { stroke: var(--bp-accent); }
 .tl-revs .handle.travel text, .tl-revs .handle.travel path { fill: var(--bp-accent); }
 @container bp-plan (max-width: 70rem) { .bp-tlpanel .tl-kp { flex-basis: 134px; } .tl-clock { flex-basis: 180px; } .tl-clock .hm { font-size: var(--bp-fs-22); } }
+
+/* ---------- baseline A (bp Strip .tl-cmp, spark bp-sync WP3): SINCE A · N CHANGED with UNPIN A, or PIN A when travelled;
+   the comparison words stay visible at every width (the plain .tl-dim words fold away under 70rem) */
+.bp-tl .tl-cmp { padding-left: 14px; border-left: 1px solid var(--bp-ink-4); }
+.bp-tl .tl-cmpw { color: var(--bp-accent); letter-spacing: var(--bp-ls-3); }
+.bp-tl .tl-back kbd { margin-left: 6px; font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); padding: 0 3px; border: 1px solid currentColor; }
+.bp-tl .tl-rpl { color: var(--bp-ink-2); }
+/* travelled at a narrow plan, the strip keeps what the date means (viewing, replayed, baseline A) and lets the scan's
+   run status go: it describes now, not the date shown, and is one press away in the panel's clock */
+@container bp-plan (max-width: 70rem) { .bp-tl.travel .tl-clk, .bp-tl .tl-back kbd { display: none; } .bp-tl.travel .tl-line { min-width: 80px; } }

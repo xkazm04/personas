@@ -136,7 +136,22 @@ const STATES = {
   'brief-repeat-prompt': async (p) => { await briefCard(p, 'kf-010'); await p.click('article[data-item="kf-010"] [data-testid="blueprint-decline"]'); },
   'brief-ask-options': async (p) => { await briefCard(p, 'kf-001', 'end'); },
   'brief-ask': async (p) => { await briefCard(p, 'kf-001'); await p.click('article[data-item="kf-001"] [data-fact="declined"] button'); },
+  // spark bp-sync WP3 on Kettle's dated readings (fixture/kettle.scan.json): the cost sheet travelled past the history,
+  // replayed by today's rules; baseline A pinned before the history and the plan travelled on (what changed); the
+  // readiness callout over the whole product (G); a trouble-walk stop under the performance sheet (N)
+  'sync-replay': async (p) => { await k(p, '0'); await k(p, '9'); await travel(p, 4); await k(p, 'Escape'); },
+  'sync-pin': async (p) => { await k(p, '0'); await k(p, '9'); await travel(p, 9); await k(p, 'p'); await travel(p, -5); await k(p, 'Escape'); },
+  'sync-ready': async (p) => { await k(p, '0'); await k(p, 'g'); await p.waitForTimeout(400); },
+  'sync-walk': async (p) => { await k(p, '0'); await k(p, '8'); await k(p, 'n'); await p.waitForTimeout(1600); },
 };
+
+/** Open the timeline and move its handle `weeks` back (negative: forward) from where it is. */
+async function travel(p, weeks) {
+  if (!(await p.$('[data-testid="blueprint-revisions"]'))) await k(p, 't');
+  await p.focus('[data-testid="blueprint-revisions"]');
+  for (let i = 0; i < Math.abs(weeks); i++) await p.keyboard.press(weeks > 0 ? 'ArrowLeft' : 'ArrowRight');
+  await p.waitForTimeout(300);
+}
 
 /** Bring a waiting card's brief (or with `end`, its answers) into view on its feature's L4 sheet: scroll the sheet's
  *  own pane only (scrolling every ancestor, as scrollIntoView does, moves the page under the fixed sheet). */
@@ -207,7 +222,7 @@ const QUERY = { 'brief-repeat': 'brief=demo', 'brief-repeat-options': 'brief=dem
  */
 const REAL_CLOCK = new Set(['brief-repeat', 'brief-repeat-options', 'brief-repeat-prompt', 'brief-ask', 'brief-ask-options']);
 /** Frames taken at every size: the levels and the compare panel. */
-const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'live-started-running', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'live-changed', 'live-changed-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release']);
+const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'live-started-running', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'live-changed', 'live-changed-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release', 'sync-replay', 'sync-pin', 'sync-ready', 'sync-walk']);
 
 /** The title block, measured: what is clipped, what the lens sheets cover, whether the sheets leave the block. */
 const TITLE_CHECK = () => {
