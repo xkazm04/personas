@@ -31,8 +31,8 @@ function Row({ icon, label, note, warn, children }: { icon: React.ReactNode; lab
     <div className="flex items-center gap-3 py-2 border-b border-card-border last:border-b-0">
       {icon}
       <span className="flex flex-col min-w-0 flex-1">
-        <span className="typo-body text-foreground truncate">{label}</span>
-        {note && <span className={`typo-caption ${warn ? "text-status-warning" : "text-foreground"}`}>{note}</span>}
+        <span className="typo-body text-ink-1 truncate">{label}</span>
+        {note && <span className={`typo-caption ${warn ? "text-status-warning" : "text-ink-1"}`}>{note}</span>}
       </span>
       {children}
     </div>
@@ -54,7 +54,7 @@ export function MessagesQuick({ quick, onMore }: { quick: ComposeQuickSetup; onM
     <div className="flex flex-col gap-2">
       <div className="flex flex-col">
         <Row
-          icon={<span aria-hidden className="w-8 h-8 shrink-0 rounded-interactive flex items-center justify-center bg-secondary/40"><Inbox className="w-4 h-4" /></span>}
+          icon={<span aria-hidden className="w-8 h-8 shrink-0 rounded-interactive flex items-center justify-center bg-surface-2"><Inbox className="w-4 h-4" /></span>}
           label={t.agents.messaging_picker.builtin_label}
           note={QS.messages.alwaysOn}
         >
@@ -83,7 +83,7 @@ export function MessagesQuick({ quick, onMore }: { quick: ComposeQuickSetup; onM
           );
         })}
       </div>
-      {picks.length === 0 && <p className="typo-body text-foreground">{QS.messages.noChannels}</p>}
+      {picks.length === 0 && <p className="typo-body text-ink-1">{QS.messages.noChannels}</p>}
       <MoreButton label={QS.more} onClick={onMore} />
     </div>
   );

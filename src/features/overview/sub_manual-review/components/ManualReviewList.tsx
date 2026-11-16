@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, Plus, BookOpen, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -343,7 +344,7 @@ export default function ManualReviewList() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
+        icon={<ClipboardCheck className="w-5 h-5 text-status-warning" />}
         iconColor="amber"
         title={t.overview.review.title}
         subtitle={subtitle}
@@ -355,30 +356,19 @@ export default function ManualReviewList() {
                 startup. Hidden when there are zero reviews of any kind
                 — nothing to clear. */}
             {statusCounts.all > 0 && (
-              <button
-                onClick={() => void handleGcStale()}
-                disabled={isGcing}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-foreground/5 text-foreground border border-border/30 hover:bg-foreground/10 hover:text-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={t.overview.review.gc_tooltip}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                {isGcing ? t.overview.review.gc_clearing : t.overview.review.gc_clear_stale}
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => void handleGcStale()} disabled={isGcing} tooltip={t.overview.review.gc_tooltip} icon={<Trash2 className="w-3.5 h-3.5" />}>
+{isGcing ? t.overview.review.gc_clearing : t.overview.review.gc_clear_stale}
+</Button>
             )}
             {(reviewQueue.counts?.total ?? 0) > 0 && (
-              <button
-                onClick={() => setConfirmingDeleteAll(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-colors"
-                title={t.overview.review.delete_all}
-                aria-label={t.overview.review.delete_all}
-              >
+              <Button variant="danger" size="icon-sm" onClick={() => setConfirmingDeleteAll(true)} tooltip={t.overview.review.delete_all} aria-label={t.overview.review.delete_all}>
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             )}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.review.seed_tooltip}>
-                <Plus className="w-3.5 h-3.5" /> {t.overview.review.mock_review}
-              </button>
+              <Button variant="accent" tone="warning" size="sm" onClick={handleSeedReview} tooltip={t.overview.review.seed_tooltip} icon={<Plus className="w-3.5 h-3.5" />}>
+{t.overview.review.mock_review}
+</Button>
             )}
           </div>
         )}
@@ -553,7 +543,7 @@ export default function ManualReviewList() {
 // silhouette the old skeleton approximated.
 // ---------------------------------------------------------------------------
 
-const REVIEW_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const REVIEW_GHOST_BAR = 'rounded-interactive bg-surface-2';
 /** Deterministic width variation so ghosts read as review cards, not a barcode. */
 const REVIEW_GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-44', 'w-40'];
 
@@ -566,7 +556,7 @@ function ReviewGhostRows() {
         return (
           <div
             key={i}
-            className="flex items-center gap-3 px-4 border-b border-primary/[0.06] animate-fade-in"
+            className="flex items-center gap-3 px-4 border-b border-hair animate-fade-in"
             style={{ height: 84, animationDelay: delay }}
           >
             {/* persona icon */}
@@ -579,7 +569,7 @@ function ReviewGhostRows() {
               {/* severity chip */}
               <div className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-interactive bg-primary/[0.06]" />
-                <span className="h-2.5 w-14 rounded bg-primary/[0.06]" />
+                <span className="h-2.5 w-14 rounded-interactive bg-surface-2" />
               </div>
             </div>
             {/* action-strip bars (approve / reject) */}

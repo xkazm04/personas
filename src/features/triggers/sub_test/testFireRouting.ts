@@ -8,8 +8,11 @@
  * proved the bus accepted a JSON blob and nothing more.
  */
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
+import type { PersonaTrigger } from '@/lib/types/types';
+import { parseTriggerConfig } from '@/lib/utils/platform/triggerConstants';
 
 export interface ListenerRow {
+  /** The subscription's id, or the trigger's for an `event_listener` trigger. */
   subscriptionId: string;
   personaId: string;
   /** Subscriptions can be disabled; a disabled one would not have run. */
@@ -48,15 +51,21 @@ export function canonicalEventType(eventType: string): string {
  * a catalog event type is a connector-provided template, not a persona-to-
  * persona route, and TestTab already excludes those when it reads the same
  * subscription list from the emitter side.
+ *
+ * The bus dispatches `event_listener` triggers as well as subscriptions, and a
+ * listener built in Chain Studio has no subscription row at all, so `triggers`
+ * count too. The catalog filter is for subscriptions only: the bus's trigger
+ * eligibility has no catalog check, and a feed wired to a catalog type does run.
  */
 export function listenersForEventType(
   subscriptions: readonly PersonaEventSubscription[],
   eventType: string | null,
   isCatalogEventType: (eventType: string) => boolean,
+  triggers: readonly PersonaTrigger[] = [],
 ): ListenerRow[] {
   if (!eventType) return [];
   const wanted = canonicalEventType(eventType);
-  return subscriptions
+  const rows: ListenerRow[] = subscriptions
     .filter((s) => canonicalEventType(s.event_type) === wanted && !isCatalogEventType(s.event_type))
     .map((s) => ({
       subscriptionId: s.id,
@@ -64,6 +73,22 @@ export function listenersForEventType(
       enabled: s.enabled,
       sourceFilter: s.source_filter,
     }));
+  // A subscription-backed listener is dual-written: name that persona once.
+  const listed = new Set(rows.map((r) => r.personaId));
+  for (const trigger of triggers) {
+    if (trigger.trigger_type !== 'event_listener' || listed.has(trigger.persona_id)) continue;
+    const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
+    if (config.type !== 'event_listener' || !config.listen_event_type) continue;
+    if (canonicalEventType(config.listen_event_type) !== wanted) continue;
+    listed.add(trigger.persona_id);
+    rows.push({
+      subscriptionId: trigger.id,
+      personaId: trigger.persona_id,
+      enabled: trigger.enabled,
+      sourceFilter: config.source_filter ?? null,
+    });
+  }
+  return rows;
 }
 
 /**

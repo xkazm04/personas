@@ -4,6 +4,8 @@ import { MessageSquare, CheckCheck, RefreshCw, Plus, BookOpen, Eye, EyeOff } fro
 import { useTranslation } from '@/i18n/useTranslation';
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
@@ -19,6 +21,8 @@ import { seedMockMessage, deleteAllReports } from '@/api/overview/reports';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { Trash2 } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
@@ -75,12 +79,13 @@ export default function ReportList() {
     { value: 'unread', label: t.overview.reports_view.unread },
   ];
   const {
-    reports, reportsTotal,
+    reports, reportsTotal, reportsError,
     fetchReports, fetchUnreadReportCount,
     markReportAsRead, markAllReportsAsRead, deleteReport,
   } = useOverviewStore(useShallow((s) => ({
     reports: s.reports,
     reportsTotal: s.reportsTotal,
+    reportsError: s.reportsError,
     fetchReports: s.fetchReports,
     fetchUnreadReportCount: s.fetchUnreadReportCount,
     markReportAsRead: s.markReportAsRead,
@@ -222,16 +227,19 @@ export default function ReportList() {
   // Concrete (never-undefined) fallback that mirrors the quiet-solid Normal tier;
   // priorityConfig is a string-indexed record, so a literal is needed to satisfy
   // the non-optional PriorityChip prop under noUncheckedIndexedAccess.
-  const defaultPriority: PriorityStyle = { color: 'text-foreground/90', bgColor: 'bg-secondary/40', borderColor: 'border-primary/20', label: 'Normal' };
+  const defaultPriority: PriorityStyle = { color: 'text-ink-2', bgColor: 'bg-surface-1', borderColor: 'border-hair', label: 'Normal' };
 
   // Ghost rows only when the row region would otherwise be empty while a
   // fetch runs. Rows already on screen (pre-warmed store) are never hidden.
   const showGhost = isLoading && filteredMessages.length === 0;
+  // A failed read with nothing on screen is not "no reports": it gets the failure and a
+  // retry. Not gated on the filters as Events is: this list opens on Unread, so it would never fire.
+  const readFailed = !isLoading && reports.length === 0 && reportsError != null;
 
   // Column header — static chrome, rendered identically above ghost rows and
   // real rows so the ghost→content swap moves nothing.
   const columnHeaderRow = (
-    <div role="row" className="flex-shrink-0 bg-primary/5 border-b border-primary/10 grid" style={{ gridTemplateColumns: msgGridTemplate }}>
+    <div role="row" className="flex-shrink-0 bg-surface-1 border-b border-hair grid" style={{ gridTemplateColumns: msgGridTemplate }}>
       <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
         <PersonaColumnFilter
           value={selectedPersonaId}
@@ -244,7 +252,7 @@ export default function ReportList() {
           onReset={() => colWidths.clearColumn('persona')}
         />
       </div>
-      <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">
+      <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-eyebrow">
         {t.overview.reports_view.col_title}
         <ColumnResizeHandle
           label={t.shared.resize_column}
@@ -278,55 +286,56 @@ export default function ReportList() {
           onReset={() => colWidths.clearColumn('status')}
         />
       </div>
-      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.overview.reports_view.col_created}</div>
+      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-eyebrow">{t.overview.reports_view.col_created}</div>
     </div>
   );
 
   return (
     <ContentBox>
       <ContentHeader
-        icon={<MessageSquare className="w-5 h-5 text-indigo-400" />}
+        icon={<MessageSquare className="w-5 h-5 text-role-agent" />}
         iconColor="indigo"
         title={t.overview.reports_view.title}
         subtitle={tx(reportsTotal === 1 ? t.overview.reports_view.reports_subtitle_one : t.overview.reports_view.reports_subtitle, { count: reportsTotal })}
         actions={
           <>
             {reveal.isRevealing && (
-              <span aria-hidden="true" className="flex items-center gap-1 px-2 py-1 rounded-modal typo-caption text-foreground bg-secondary/20 border border-primary/10">
+              <span aria-hidden="true" className="flex items-center gap-1 typo-data text-ink-2">
                 <AnimatedCounter value={reveal.count} mode="roll" />
                 <span>/</span>
                 <Numeric>{activeRevealTotal}</Numeric>
               </span>
             )}
             {import.meta.env.DEV && (
-              <button type="button" onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.reports_view.seed_tooltip}>
-                <Plus className="w-3.5 h-3.5" /> {t.overview.reports_view.mock_report}
-              </button>
+              <Button variant="accent" tone="warning" size="sm" onClick={handleSeedMessage} tooltip={t.overview.reports_view.seed_tooltip} icon={<Plus className="w-3.5 h-3.5" />}>
+                {t.overview.reports_view.mock_report}
+              </Button>
             )}
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setReadFilter((prev) => (prev === 'unread' ? 'all' : 'unread'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-foreground hover:text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-all"
-              title={readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
+              tooltip={readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
+              icon={readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
             >
-              {readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               {readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
-            </button>
-            <button type="button" onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
+            </Button>
+            <Button variant="ghost" size="icon-sm" onClick={handleRefresh} disabled={isRefreshing} tooltip={t.common.refresh} aria-label={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <button type="button" onClick={() => markAllReportsAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
-              <CheckCheck className="w-3.5 h-3.5" /> {t.overview.reports_view.mark_all_read}
-            </button>
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => markAllReportsAsRead()} icon={<CheckCheck className="w-3.5 h-3.5" />}>
+              {t.overview.reports_view.mark_all_read}
+            </Button>
             {reports.length > 0 && (
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="icon-sm"
                 onClick={() => setConfirmingDeleteAll(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading text-red-400 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 transition-all"
-                title={t.overview.reports_view.delete_all}
+                tooltip={t.overview.reports_view.delete_all}
+                aria-label={t.overview.reports_view.delete_all}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             )}
           </>
         }
@@ -343,6 +352,13 @@ export default function ReportList() {
           <div className="flex-1 min-h-0 flex flex-col">
             {columnHeaderRow}
             <MessageGhostRows gridTemplate={msgGridTemplate} />
+          </div>
+        ) : readFailed ? (
+          <div className="p-4">
+            <InlineErrorBanner
+              message={resolveErrorTranslated(t, reportsError).message}
+              onRetry={() => void handleRefresh()}
+            />
           </div>
         ) : filteredMessages.length === 0 && !hasActiveFilters ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
@@ -382,21 +398,23 @@ export default function ReportList() {
                       <RevealItem key={message.id} revealId={message.id} order={virtualRow.index - reveal.newSince} hasEntered={msgEnter.hasEntered} markEntered={msgEnter.markEntered} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={(event) => handleRowClick(message, event.currentTarget)}
                         onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message, event.currentTarget); } }}
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
-                        className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                        className={`grid items-center border-l-2 ${rowAccent} hover:bg-sel cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-role-agent/40 ${virtualRow.index % 2 === 0 ? 'bg-surface-1' : ''}`}
                       >
                         <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} name={message.persona_name} display="framed" frameSize="lg" />
-                          <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.reports_view.unknown_persona}</span>
+                          <span className="typo-body text-ink-1 truncate">{message.persona_name || t.overview.reports_view.unknown_persona}</span>
                         </div>
-                        <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
+                        <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-ink-3' : 'text-ink-1'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                         <div role="gridcell" className="px-4"><PriorityChip priority={priority} label={priorityLabels[message.priority]} /></div>
-                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.reports_view.unread} aria-label={t.overview.reports_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.reports_view.read} aria-hidden="true" />}</div>
-                        <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-body text-foreground" /></div>
+                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read
+                          ? <Tooltip content={t.overview.reports_view.unread}><span className="inline-flex items-center gap-1" aria-label={t.overview.reports_view.unread}><span className="w-2 h-2 rounded-full bg-status-info" aria-hidden="true" /><span className="typo-eyebrow text-status-info">New</span></span></Tooltip>
+                          : <Tooltip content={t.overview.reports_view.read}><span className="block w-2 h-2 rounded-full bg-ink-4" aria-hidden="true" /></Tooltip>}</div>
+                        <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-data text-ink-3" /></div>
                       </RevealItem>
                     );
                   })}
                 </div>
-                {remaining > 0 && (<div className="p-4"><button type="button" onClick={() => fetchReports(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.reports_view.load_more, { count: remaining })}</button></div>)}
+                {remaining > 0 && (<div className="p-4"><Button variant="secondary" size="md" block onClick={() => fetchReports(false)}>{tx(t.overview.reports_view.load_more, { count: remaining })}</Button></div>)}
               </div>
             )}
           </div>
@@ -456,7 +474,7 @@ export default function ReportList() {
 // No `animate-pulse` — the entrance stagger is the only motion.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 /** Deterministic width variation so ghosts read as rows, not a barcode. */
 const GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 
@@ -469,7 +487,7 @@ function MessageGhostRows({ gridTemplate }: { gridTemplate: string }) {
         return (
           <div
             key={i}
-            className="grid items-center border-l-2 border-l-transparent border-b border-primary/[0.06] animate-fade-in"
+            className="grid items-center border-l-2 border-l-transparent border-b border-hair animate-fade-in"
             style={{ gridTemplateColumns: gridTemplate, height: MESSAGE_ROW_HEIGHT, animationDelay: delay }}
           >
             <div className="flex items-center gap-2 px-4 min-w-0">

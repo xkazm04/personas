@@ -16,7 +16,7 @@ export function HighlightedJson({ raw }: { raw: string }) {
 
   if (!tokens) {
     return (
-      <pre className="typo-code text-foreground whitespace-pre-wrap break-all">
+      <pre className="typo-code text-ink-1 whitespace-pre-wrap break-all">
         {raw}
       </pre>
     );
@@ -43,32 +43,32 @@ function tokenize(json: string): Token[] {
 
   while ((match = re.exec(json)) !== null) {
     if (match.index > lastIndex) {
-      tokens.push({ text: json.slice(lastIndex, match.index), className: 'text-foreground' });
+      tokens.push({ text: json.slice(lastIndex, match.index), className: 'text-ink-1' });
     }
     lastIndex = re.lastIndex;
 
     if (match[1] !== undefined) {
       const keyText = match[1];
       const colonAndSpace = match[0].slice(keyText.length);
-      tokens.push({ text: keyText, className: 'text-cyan-400' });
-      tokens.push({ text: colonAndSpace, className: 'text-foreground' });
+      tokens.push({ text: keyText, className: 'text-role-external' });
+      tokens.push({ text: colonAndSpace, className: 'text-ink-1' });
     } else if (match[2] !== undefined) {
-      tokens.push({ text: match[2], className: 'text-emerald-400' });
+      tokens.push({ text: match[2], className: 'text-status-success' });
     } else if (match[3] !== undefined) {
-      tokens.push({ text: match[3], className: 'text-amber-400' });
+      tokens.push({ text: match[3], className: 'text-status-warning' });
     } else if (match[4] !== undefined) {
-      tokens.push({ text: match[4], className: 'text-violet-400' });
+      tokens.push({ text: match[4], className: 'text-role-agent' });
     } else if (match[5] !== undefined) {
-      tokens.push({ text: match[5], className: 'text-red-400/70' });
+      tokens.push({ text: match[5], className: 'text-status-error' });
     } else if (match[6] !== undefined) {
-      tokens.push({ text: match[6], className: 'text-foreground' });
+      tokens.push({ text: match[6], className: 'text-ink-1' });
     } else if (match[7] !== undefined) {
       tokens.push({ text: match[7], className: '' });
     }
   }
 
   if (lastIndex < json.length) {
-    tokens.push({ text: json.slice(lastIndex), className: 'text-foreground' });
+    tokens.push({ text: json.slice(lastIndex), className: 'text-ink-1' });
   }
 
   return tokens;

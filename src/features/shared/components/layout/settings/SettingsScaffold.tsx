@@ -40,7 +40,7 @@ interface SettingsScaffoldProps {
 }
 
 /**
- * @catalog Two-column settings layout — a sticky quick-nav rail (scroll-spy + smooth-scroll + animated active pill) beside a stack of SectionCard sections. Use for any multi-section settings surface so panels share one nav + typography.
+ * @catalog Two-column settings layout — a sticky quick-nav rail (scroll-spy + smooth-scroll + animated selected row) beside a stack of SectionCard sections. Use for any multi-section settings surface so panels share one nav + typography.
  *
  * Centralizes the settings-panel shape that AccountSettings / companion
  * SetupPanel were each laying out by hand. Pass a `sections` array; the rail
@@ -94,14 +94,14 @@ export function SettingsScaffold({
                   type="button"
                   onClick={() => jumpTo(s.id)}
                   aria-current={active ? 'true' : undefined}
-                  className={`relative w-full flex items-center gap-2 rounded-card px-2.5 py-1.5 text-left transition-colors ${
-                    active ? 'text-primary' : 'text-foreground hover:bg-secondary/20'
+                  className={`relative w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors ${
+                    active ? 'text-ink-1' : 'text-ink-2 hover:bg-surface-1 hover:text-ink-1'
                   }`}
                 >
                   {active && (
                     <motion.span
                       layoutId={`settings-nav-${uid}`}
-                      className="absolute inset-0 rounded-card bg-primary/10 border border-primary/15"
+                      className="absolute inset-0 bg-sel shadow-[inset_2px_0_0_var(--primary)]"
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     />
                   )}
@@ -126,7 +126,6 @@ export function SettingsScaffold({
                 icon={s.icon}
                 action={s.action}
                 status={s.status}
-                titleClassName="text-primary"
               >
                 {s.content}
               </SectionCard>

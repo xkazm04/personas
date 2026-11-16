@@ -11,6 +11,7 @@ import { obsidianBrainGetConfig } from '@/api/obsidianBrain';
 import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function MemorySection({ projectId }: { projectId: string }) {
   const { t, tx } = useTranslation();
@@ -76,12 +77,12 @@ export function MemorySection({ projectId }: { projectId: string }) {
       )}
       {vault && (
         <div className="sd-acts">
-          <button type="button" className="sd-act" onClick={sync} disabled={busy} data-testid="mm-memory-sync-vault">
+          <Button variant="secondary" size="sm" onClick={sync} disabled={busy} data-testid="mm-memory-sync-vault">
             {t.mastermind.memory_sync_vault}
-          </button>
-          <button type="button" className="sd-act" onClick={importVault} disabled={busy} data-testid="mm-memory-import-vault">
+          </Button>
+          <Button variant="secondary" size="sm" onClick={importVault} disabled={busy} data-testid="mm-memory-import-vault">
             {t.mastermind.memory_import_vault}
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Info, RotateCcw, Sparkles, Zap } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { listAllSubscriptions, listEvents, listKnownEventTypes, testEventFlow } from '@/api/overview/events';
-import type { PersonaEvent } from '@/lib/types/types';
+import type { PersonaEvent, PersonaTrigger } from '@/lib/types/types';
+import { listAllTriggers } from '@/api/pipeline/triggers';
 import type { EventVocabularyEntry } from '@/lib/bindings/EventVocabularyEntry';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -14,12 +15,14 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { TestFireListeners } from './TestFireListeners';
 import { listenersForEventType } from './testFireRouting';
+import Button from '@/features/shared/components/buttons/Button';
 
 const FALLBACK_PAYLOAD = '{}';
 const CUSTOM_EVENT_VALUE = '__custom__';
 
 export function TestTab() {
   const { t, tx } = useTranslation();
+  const payloadId = useId();
   const personas = useAgentStore((s) => s.personas);
 
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>([]);
@@ -27,6 +30,8 @@ export function TestTab() {
   // Standing listeners, read only for the test-fire preview. Bounded: the
   // preview names who would receive a fire, it is not the subscription list.
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
+  const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
+  const [listenerReadFailed, setListenerReadFailed] = useState(false);
   const [vocabLoading, setVocabLoading] = useState(true);
 
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
@@ -38,6 +43,8 @@ export function TestTab() {
 
   const [testResult, setTestResult] = useState<PersonaEvent | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  // Synchronous guard: two clicks inside one frame both see isTesting=false.
+  const firingRef = useRef(false);
 
   // Id of the event most recently appended to `recentEvents` by our own test
   // fire. The prefill effect below reruns whenever `recentEvents` changes so
@@ -58,7 +65,16 @@ export function TestTab() {
       .catch(silentCatch("features/triggers/sub_test/TestTab:listEvents"));
     listAllSubscriptions(500)
       .then((subs) => { if (!stale) setSubscriptions(subs); })
-      .catch(silentCatch("features/triggers/sub_test/TestTab:listAllSubscriptions"));
+      .catch((err) => {
+        silentCatch("features/triggers/sub_test/TestTab:listAllSubscriptions")(err);
+        if (!stale) setListenerReadFailed(true);
+      });
+    listAllTriggers(500)
+      .then((rows) => { if (!stale) setTriggers(rows); })
+      .catch((err) => {
+        silentCatch("features/triggers/sub_test/TestTab:listAllTriggers")(err);
+        if (!stale) setListenerReadFailed(true);
+      });
     return () => { stale = true; };
   }, []);
 
@@ -179,8 +195,8 @@ export function TestTab() {
   // half of the same data, and it is what makes a test fire diagnose routing
   // instead of only proving the bus accepted a payload.
   const listeners = useMemo(
-    () => listenersForEventType(subscriptions, activeEventType || null, (et) => !!findTemplateByEventType(et)),
-    [subscriptions, activeEventType],
+    () => listenersForEventType(subscriptions, activeEventType || null, (et) => !!findTemplateByEventType(et), triggers),
+    [subscriptions, activeEventType, triggers],
   );
 
   const handleTestFire = async () => {
@@ -188,7 +204,8 @@ export function TestTab() {
     // Defense in depth: the disabled `canFire` check prevents this in practice,
     // but keyboard "Enter" inside the textarea or other corner cases could still
     // route here. Refuse to silently drop the payload.
-    if (isInvalidJson) return;
+    if (isInvalidJson || firingRef.current) return;
+    firingRef.current = true;
     setIsTesting(true);
     setTestResult(null);
     try {
@@ -206,6 +223,7 @@ export function TestTab() {
       // The user pressed Publish: a failure is owed to them, not to the console.
       toastCatch("features/triggers/sub_test/TestTab:testFire")(err);
     } finally {
+      firingRef.current = false;
       setIsTesting(false);
     }
   };
@@ -217,13 +235,13 @@ export function TestTab() {
   return (
     <ContentBody centered>
       <div className="mx-auto w-full max-w-6xl space-y-5">
-        <p className="typo-body text-foreground">{t.triggers.publish_test_desc}</p>
+        <p className="typo-body text-ink-1">{t.triggers.publish_test_desc}</p>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* Config card — who fires it, and which event */}
-          <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5 space-y-4">
+          <section className="rounded-modal border border-primary/8 bg-surface-1 p-5 space-y-4">
             <div>
-              <label className="block typo-caption text-foreground mb-1.5">
+              <label className="block typo-caption text-ink-2 mb-1.5">
                 {t.triggers.test_source_persona_label}
               </label>
               <PersonaSelector
@@ -234,11 +252,11 @@ export function TestTab() {
                 showDescription={false}
                 placeholder={t.triggers.test_select_persona_placeholder}
               />
-              <p className="typo-caption text-foreground">{t.triggers.test_source_persona_help}</p>
+              <p className="typo-caption text-ink-2">{t.triggers.test_source_persona_help}</p>
             </div>
 
             <div>
-              <label className="block typo-caption text-foreground mb-1.5">
+              <label className="block typo-caption text-ink-2 mb-1.5">
                 {t.triggers.test_output_event_label}
               </label>
               <ThemedSelect
@@ -249,9 +267,9 @@ export function TestTab() {
                 placeholder={t.triggers.test_select_event_placeholder}
                 wrapperClassName={`w-full ${hasPersona ? '' : 'opacity-50 pointer-events-none'}`}
               />
-              <p className="typo-caption text-foreground">{t.triggers.test_output_event_help}</p>
+              <p className="typo-caption text-ink-2">{t.triggers.test_output_event_help}</p>
               {hasPersona && !vocabLoading && !eventOptionsAvailable && (
-                <p className="typo-caption text-amber-400/90 mt-1.5 flex items-start gap-1.5">
+                <p className="typo-caption text-status-warning mt-1.5 flex items-start gap-1.5">
                   <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                   <span>{t.triggers.test_no_emitted_events}</span>
                 </p>
@@ -260,7 +278,7 @@ export function TestTab() {
 
             {isCustomPicked && (
               <div>
-                <label className="block typo-caption text-foreground mb-1.5">
+                <label className="block typo-caption text-ink-2 mb-1.5">
                   {t.triggers.test_custom_event_label}
                 </label>
                 <input
@@ -268,62 +286,64 @@ export function TestTab() {
                   value={customEventType}
                   onChange={(e) => setCustomEventType(e.target.value)}
                   placeholder={t.triggers.test_event_type_placeholder}
-                  className="w-full px-3 py-2 typo-body rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className="w-full px-3 py-2 typo-body rounded-card border border-hair bg-surface-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-primary/40"
                 />
               </div>
             )}
           </section>
 
           {/* Payload card — edit + fire */}
-          <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5 space-y-4">
+          <section className="rounded-modal border border-primary/8 bg-surface-1 p-5 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="typo-caption text-foreground">{t.triggers.payload_json_label}</label>
+                <label htmlFor={payloadId} className="typo-caption text-ink-2">{t.triggers.payload_json_label}</label>
                 {payloadSource === 'history' && historyEvent && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => refreshPrefill(selectedPersonaId, activeEventType)}
-                    className="flex items-center gap-1 typo-caption text-foreground transition-colors"
-                    title={t.triggers.test_payload_reset}
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    {t.triggers.test_payload_reset}
-                  </button>
+                    tooltip={t.triggers.test_payload_reset}
+                    variant="ghost"
+                    size="sm"
+                    icon={<RotateCcw className="w-3 h-3" />}
+                  >{t.triggers.test_payload_reset}</Button>
                 )}
               </div>
               <textarea
+                id={payloadId}
+                aria-invalid={isInvalidJson || undefined}
+                aria-describedby={isInvalidJson ? `${payloadId}-error` : undefined}
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
                 rows={8}
-                className="w-full px-3 py-2 typo-code rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y"
+                className="w-full px-3 py-2 typo-code rounded-card border border-hair bg-surface-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y"
               />
               <div className="mt-1.5 typo-caption flex items-start gap-1.5">
                 {payloadSource === 'history' && historyEvent ? (
-                  <span className="text-emerald-400/90 flex items-start gap-1.5">
+                  <span className="text-status-success flex items-start gap-1.5">
                     <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     {tx(t.triggers.test_payload_from_history, { ago: formatRelativeTime(historyEvent.created_at) })}
                   </span>
                 ) : (
-                  <span className="text-foreground flex items-start gap-1.5">
+                  <span className="text-ink-1 flex items-start gap-1.5">
                     <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     {t.triggers.test_payload_no_history}
                   </span>
                 )}
               </div>
               {isInvalidJson && (
-                <p className="typo-caption text-amber-400/90 mt-1">{t.triggers.test_payload_invalid_json}</p>
+                <p id={`${payloadId}-error`} className="typo-caption text-status-warning mt-1">{t.triggers.test_payload_invalid_json}</p>
               )}
             </div>
 
-            <button
+            <Button
               type="button"
               onClick={handleTestFire}
               disabled={!canFire}
-              className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />
-              {isTesting ? t.triggers.publishing_label : t.triggers.publish_event}
-            </button>
+              variant="accent"
+              tone="success"
+              size="md"
+              icon={<Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />}
+            >{isTesting ? t.triggers.publishing_label : t.triggers.publish_event}</Button>
           </section>
         </div>
 
@@ -332,13 +352,14 @@ export function TestTab() {
           personaName={(id) => getPersona(id)?.name ?? id}
           targetPersonaId={testResult?.target_persona_id ?? null}
           sourceId={testResult?.source_id ?? null}
+          readFailed={listenerReadFailed}
           fired={!!testResult && testResult.event_type === activeEventType}
         />
 
         {testResult && (
-          <section className="rounded-modal border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.05] to-transparent p-5 space-y-2">
-            <p className="typo-body text-emerald-400">{t.triggers.event_published}</p>
-            <div className="typo-code text-foreground space-y-1">
+          <section className="rounded-modal border border-status-success/20 bg-surface-1 p-5 space-y-2">
+            <p className="typo-body text-status-success">{t.triggers.event_published}</p>
+            <div className="typo-code text-ink-1 space-y-1">
               <p>{t.triggers.result_id_prefix} {testResult.id}</p>
               <p>{t.triggers.result_type_prefix} {testResult.event_type}</p>
               <p>{t.triggers.result_status_prefix} {testResult.status}</p>

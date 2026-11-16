@@ -140,9 +140,9 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
     : [];
 
   return (
-    <div className="mb-2 rounded-card border border-primary/10 bg-card/20">
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-primary/8">
-        <Stethoscope className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
+    <div className="mb-2 rounded-card border border-hair bg-surface-1">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-hair">
+        <Stethoscope className="w-3.5 h-3.5 text-ink-2 flex-shrink-0" />
         <span className="typo-card-label">{t.ctx_audit_title}</span>
         {report && (
           <StatusBadge
@@ -157,7 +157,7 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
           </StatusBadge>
         )}
         {report && (
-          <span className="typo-caption text-foreground tabular-nums">
+          <span className="typo-caption text-foreground num">
             {tx(t.ctx_audit_scope, {
               contexts: report.totals.contexts,
               groups: report.totals.groups,
@@ -177,7 +177,7 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
       </div>
 
       <div className="px-4 py-3 space-y-3">
-        {failed && <p className="typo-caption text-rose-300">{t.ctx_audit_failed}</p>}
+        {failed && <p className="typo-caption text-status-error">{t.ctx_audit_failed}</p>}
 
         {!report && !failed && <p className="typo-caption text-foreground">{t.ctx_audit_never_run}</p>}
 
@@ -185,14 +185,14 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
           <ul className="flex flex-wrap gap-x-5 gap-y-1">
             {totals.map(([kind, n]) => (
               <li key={kind} className="typo-caption text-foreground">
-                <span className="tabular-nums font-semibold">{n}</span> {kindLabel(t, kind)}
+                <span className="num font-semibold">{n}</span> {kindLabel(t, kind)}
               </li>
             ))}
           </ul>
         )}
 
         {report && report.findings.length > 0 && (
-          <ul className="divide-y divide-primary/5 max-h-56 overflow-y-auto rounded-input border border-primary/8">
+          <ul className="divide-y divide-hair max-h-56 overflow-y-auto rounded-input border border-hair">
             {report.findings.map((f, i) => (
               <li key={`${f.kind}-${f.target}-${i}`} className="flex items-center gap-2.5 px-3 py-1.5">
                 <StatusBadge variant={SEVERITY_VARIANT[f.severity] ?? 'neutral'} pill>
@@ -208,7 +208,7 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
         )}
 
         {report && report.totals.unresolved_cross_refs > 0 && (
-          <div className="rounded-input border border-primary/10 bg-background/30 p-3 space-y-2">
+          <div className="rounded-input border border-hair bg-background/30 p-3 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="typo-caption text-foreground flex-1 min-w-[12rem]">
                 {t.ctx_repair_intro}
@@ -226,14 +226,14 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
 
             {plan && (
               <div className="space-y-2">
-                <p className="typo-caption text-foreground tabular-nums">
+                <p className="typo-caption text-foreground num">
                   {tx(t.ctx_repair_summary, {
                     resolved: plan.rewritten,
                     total: plan.danglingBefore,
                     unresolved: plan.unresolved,
                   })}
                 </p>
-                <p className="typo-caption text-foreground tabular-nums">
+                <p className="typo-caption text-foreground num">
                   {tx(t.ctx_repair_detail, {
                     contexts: plan.contextsTouched,
                     self: plan.selfDropped,
@@ -264,8 +264,7 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
                 )}
                 {plan.contextsTouched > 0 ? (
                   <Button
-                    variant="accent"
-                    tone="warning"
+                    variant="secondary"
                     size="xs"
                     icon={busy === 'apply' ? <LoadingSpinner size="sm" /> : <Wrench className="w-3 h-3" />}
                     disabled={busy !== null}

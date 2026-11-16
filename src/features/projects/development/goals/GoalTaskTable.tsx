@@ -25,6 +25,8 @@ import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { Persona } from '@/lib/bindings/Persona';
 import { TeamReadinessChip } from '@/features/teams/components/TeamReadinessChip';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   steps: TeamAssignmentStep[];
@@ -61,11 +63,11 @@ function stepIsDone(status: string) {
 
 /** Status → icon + tint for a team-step row (the read-only "state" cell). */
 function stepVisual(status: string): { Icon: typeof Circle; tint: string; spin?: boolean } {
-  if (stepIsDone(status)) return { Icon: CheckCircle2, tint: 'text-emerald-400' };
-  if (status === 'awaiting_review') return { Icon: AlertCircle, tint: 'text-amber-400' };
-  if (status === 'failed') return { Icon: XCircle, tint: 'text-red-400' };
-  if (status === 'running') return { Icon: Loader2, tint: 'text-amber-400', spin: true };
-  return { Icon: Clock, tint: 'text-foreground/50' }; // pending / queued / matching
+  if (stepIsDone(status)) return { Icon: CheckCircle2, tint: 'text-status-success' };
+  if (status === 'awaiting_review') return { Icon: AlertCircle, tint: 'text-status-warning' };
+  if (status === 'failed') return { Icon: XCircle, tint: 'text-status-error' };
+  if (status === 'running') return { Icon: Loader2, tint: 'text-status-warning', spin: true };
+  return { Icon: Clock, tint: 'text-ink-3' }; // pending / queued / matching
 }
 
 export function GoalTaskTable({ steps, items, personaById, onToggleItem, onDeleteItem, onResolveStep }: Props) {
@@ -75,16 +77,16 @@ export function GoalTaskTable({ steps, items, personaById, onToggleItem, onDelet
   const { orderedSteps, adhoc } = useMemo(() => partitionGoalTasks(steps, items), [steps, items]);
 
   if (orderedSteps.length === 0 && adhoc.length === 0) {
-    return <p className="typo-caption text-foreground/60 italic px-1 py-2">{dl.goal_tasks_empty}</p>;
+    return <p className="typo-caption text-ink-2 italic px-1 py-2">{dl.goal_tasks_empty}</p>;
   }
 
   return (
-    <div className="rounded-card border border-primary/10 overflow-hidden">
+    <div className="rounded-card border border-hair overflow-hidden">
       {/* Column header */}
-      <div className={`${GRID} px-2.5 py-1.5 border-b border-primary/10 bg-primary/5`}>
+      <div className={`${GRID} px-2.5 py-1.5 border-b border-hair bg-surface-1`}>
         <span aria-hidden />
-        <span className="typo-caption uppercase tracking-wider text-foreground/60">{dl.goal_tasks_col_task}</span>
-        <span className="typo-caption uppercase tracking-wider text-foreground/60 justify-self-end">{dl.goal_tasks_col_owner}</span>
+        <span className="typo-eyebrow text-ink-3">{dl.goal_tasks_col_task}</span>
+        <span className="typo-eyebrow text-ink-3 justify-self-end">{dl.goal_tasks_col_owner}</span>
         <span aria-hidden className="w-12" />
       </div>
 
@@ -121,12 +123,11 @@ export function GoalTaskTable({ steps, items, personaById, onToggleItem, onDelet
 
 function OwnerCell({ persona, fallback }: { persona: Persona | null; fallback: string }) {
   if (!persona) {
-    return <span className="justify-self-end typo-caption text-foreground/40">{fallback}</span>;
+    return <span className="justify-self-end typo-caption text-ink-3">{fallback}</span>;
   }
   return (
-    <span
+    <Tooltip content={persona.name}><span
       className="justify-self-end inline-flex items-center gap-1 max-w-[160px] typo-caption text-foreground"
-      title={persona.name}
     >
       <span
         className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -135,7 +136,7 @@ function OwnerCell({ persona, fallback }: { persona: Persona | null; fallback: s
       />
       <span className="truncate">{persona.name}</span>
       <TeamReadinessChip setupStatus={persona.setup_status} />
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -156,20 +157,15 @@ function StepRow({
   const { Icon, tint, spin } = stepVisual(step.status);
 
   return (
-    <li className="border-b border-primary/5 last:border-b-0">
+    <li className="border-b border-hair last:border-b-0">
       <div className={`${GRID} px-2.5 py-2`}>
         <Icon className={`w-4 h-4 shrink-0 ${tint} ${spin ? 'animate-spin' : ''}`} aria-label={statusLabel} />
-        <button
-          type="button"
-          onClick={() => hasOutput && setOpen((v) => !v)}
-          className={`min-w-0 flex items-center gap-1.5 text-left typo-body text-foreground ${hasOutput ? '' : 'cursor-default'}`}
-          aria-expanded={hasOutput ? open : undefined}
-        >
+        <PressSurface onPress={() => hasOutput && setOpen((v) => !v)} aria-expanded={hasOutput ? open : undefined} className={`min-w-0 flex items-center gap-1.5 typo-body ${hasOutput ? '' : 'cursor-default'}`}>
           {hasOutput && (open
-            ? <ChevronDown className="w-3.5 h-3.5 shrink-0 text-foreground/60" />
-            : <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground/60" />)}
+            ? <ChevronDown className="w-3.5 h-3.5 shrink-0 text-ink-2" />
+            : <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-2" />)}
           <span className="truncate">{step.title}</span>
-        </button>
+        </PressSurface>
         <OwnerCell persona={persona} fallback="—" />
         {awaiting ? (
           <span className="flex items-center gap-0.5 shrink-0 w-12 justify-end">
@@ -177,17 +173,17 @@ function StepRow({
               <SkipForward className="w-3.5 h-3.5" />
             </Button>
             <Button variant="ghost" size="icon-sm" title={abortLabel} onClick={() => onResolve(step.id, 'abort')}>
-              <Ban className="w-3.5 h-3.5 text-red-400" />
+              <Ban className="w-3.5 h-3.5 text-status-error" />
             </Button>
           </span>
         ) : (
-          <span className="shrink-0 w-12 text-right typo-caption uppercase tracking-wide text-foreground/60 truncate" title={statusLabel}>
+          <Tooltip content={statusLabel}><span className="shrink-0 w-12 text-right typo-eyebrow text-ink-3 truncate">
             {statusLabel}
-          </span>
+          </span></Tooltip>
         )}
       </div>
       {open && hasOutput && (
-        <div className="border-t border-primary/10 bg-card/20 px-3 py-2 max-h-72 overflow-y-auto">
+        <div className="border-t border-hair bg-surface-1 px-3 py-2 max-h-72 overflow-y-auto">
           <MarkdownRenderer content={output} className="typo-caption" />
         </div>
       )}
@@ -207,31 +203,31 @@ function AdhocRow({
   onDelete: (id: string) => void;
 }) {
   return (
-    <li className="group border-b border-primary/5 last:border-b-0">
+    <li className="group border-b border-hair last:border-b-0">
       <div className={`${GRID} px-2.5 py-2`}>
-        <button
+        <Button variant="ghost" size="sm"
           type="button"
           onClick={() => onToggle(item)}
           className="shrink-0"
           aria-label={item.done ? markUndone : markDone}
         >
           {item.done
-            ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            : <Circle className="w-4 h-4 text-foreground/40 hover:text-foreground/70 transition-colors" />}
-        </button>
-        <span className={`min-w-0 truncate typo-body ${item.done ? 'text-foreground/40 line-through' : 'text-foreground'}`}>
+            ? <CheckCircle2 className="w-4 h-4 text-status-success" />
+            : <Circle className="w-4 h-4 text-ink-3 hover:text-ink-2 transition-colors" />}
+        </Button>
+        <span className={`min-w-0 truncate typo-body ${item.done ? 'text-ink-3 line-through' : 'text-foreground'}`}>
           {item.title}
         </span>
-        <span className="justify-self-end typo-caption text-foreground/40">{youLabel}</span>
+        <span className="justify-self-end typo-caption text-ink-3">{youLabel}</span>
         <span className="shrink-0 w-12 flex justify-end">
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => onDelete(item.id)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-foreground/60 hover:text-red-400"
+            className="group-hover:opacity-100"
             aria-label={deleteLabel}
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </span>
       </div>
     </li>

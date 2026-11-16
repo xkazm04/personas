@@ -61,8 +61,8 @@ export function ErrorExplanationCard({ errorMessage, showRaw, personaId }: Error
             <div className="flex items-start gap-2.5">
               <SeverityIcon className={`w-4 h-4 ${sevIcon.iconColor} mt-0.5 flex-shrink-0`} data-testid="error-severity-icon" />
               <div className="flex-1 min-w-0">
-                <p className="typo-heading text-foreground/90">{explanation.summary}</p>
-                <p className="typo-body text-foreground mt-1">{explanation.guidance}</p>
+                <p className="typo-heading text-ink-1">{explanation.summary}</p>
+                <p className="typo-body text-ink-2 mt-1">{explanation.guidance}</p>
                 {explanation.action && (() => {
                   const ActionIcon = explanation.action.icon;
                   return (
@@ -86,10 +86,10 @@ export function ErrorExplanationCard({ errorMessage, showRaw, personaId }: Error
       })()}
       <div className={`p-4 ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-modal`}>
         <div className="flex items-start gap-2.5">
-          <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 text-status-error mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="typo-code text-red-400 mb-1.5 uppercase tracking-wider">{t.agents.executions.error_label}</div>
-            <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">
+            <div className="typo-eyebrow text-status-error mb-1.5">{t.agents.executions.error_label}</div>
+            <pre className="typo-code text-status-error whitespace-pre-wrap break-words">
               {errorDisplay}
             </pre>
           </div>

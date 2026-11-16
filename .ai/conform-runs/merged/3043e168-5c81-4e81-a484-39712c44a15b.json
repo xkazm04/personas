@@ -1,0 +1,142 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3043e168-5c81-4e81-a484-39712c44a15b",
+ "subject": "quality-regression-gating",
+ "evaluatedAt": "2026-11-10T01:05:11.224126+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-leaderboard",
+   "subject": "quality-regression-gating",
+   "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:168 computeLeaderboard gives gold/silver/bronze by position in an argmax sort of a composite score built from noisy live telemetry rates; nothing tests whether rank 1 is actually separated from rank 2, so a one-point lead gets the winner medal (the 'argmax winner' failure mode).",
+   "techniques": [
+    {
+     "technique": "tested-superiority-claims",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:168 Medals are a winner label taken from sort position alone. There is no separation test, no interval per persona and no grouping of indistinguishable personas, which the technique requires once an ordering is presented as a conclusion."
+    },
+    {
+     "technique": "paired-per-case-testing",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:20 The input is per-persona aggregate health signals, with no case set and no per-case scores, so there is nothing to pair."
+    },
+    {
+     "technique": "baseline-carries-its-conditions",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/useLeaderboardData.ts:6 The 'benchmark' is a live fleet mean recomputed on every render, not a stored baseline, so there are no conditions that could go stale."
+    },
+    {
+     "technique": "fixed-alpha-discipline",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:68 The only threshold is a compile-time coverage floor on measured weight. It is not a significance level, and no confidence setting exists."
+    },
+    {
+     "technique": "partial-run-never-green",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:136 There are no halting eval runs here. Unmeasured dimensions are null, not zero (in the spirit of 'skipped is not zero'), but the technique's precondition, a run that can halt partway, does not hold."
+    },
+    {
+     "technique": "unverified-vs-regressed-exit-states",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:166 There is no pipeline or exit code. The closest analogue is that an unranked state stays separate from a rank."
+    },
+    {
+     "technique": "family-wise-correction",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardRanking.ts:49 rankBy re-medals across 6 orderings, which is a family of claims, but no statistical test exists to correct. The missing test is recorded under tested-superiority-claims, so it is not counted twice."
+    }
+   ],
+   "registryProposal": "tested-superiority-claims says it attaches whenever 'an ordering is presented as a conclusion', but its procedure assumes per-case eval data. It does not say what a leaderboard over operational telemetry (success rate, latency, cost, with no shared case set) should do. Its decision rule 'no comparable pairing -> say not comparable' would forbid medals entirely there. A sentence covering ranking over non-pairable telemetry (per-candidate intervals or clustering by sample count) would settle whether such surfaces are in scope."
+  },
+  {
+   "context": "lab-arena",
+   "subject": "quality-regression-gating",
+   "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:201 The arena labels the model with the highest mean composite 'Best' with a trophy, and its summary says the model 'outperforms' the worst model by the raw gap. No paired per-scenario test, no correction and no 'no significant difference' fallback exist, even though the matrix already holds per-scenario identity for every model.",
+   "techniques": [
+    {
+     "technique": "tested-superiority-claims",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:201 An untested 'Best' badge on the argmax model. The arenaWinnerScore.ts:36 argmax (`if (!best || comp > best.comp)`) feeds the history 'winner scores' column the same way."
+    },
+    {
+     "technique": "paired-per-case-testing",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:80 The comparison is a difference of per-model means, not per-scenario deltas, even though every model runs the same scenarios and the results are keyed by scenarioName (matrix[scenario][model]). Pairing by identity was possible and was not used."
+    },
+    {
+     "technique": "family-wise-correction",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:84 The summary picks the most extreme pair (best vs worst) after seeing the means and prints 'outperforming {worst} by {gap} points'. This is the selection-inference case: no family size is counted or disclosed and no corrected threshold exists."
+    },
+    {
+     "technique": "partial-run-never-green",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaHistory.tsx:71 The winner scores are computed for every history row whatever the run status, and ArenaResultsView's Props take no run status at all. A cancelled (cancelArena exists) or failed run still crowns a winner 'across {count} test scenarios', where count is the judged scenarios, not the planned ones, with no n-of-N disclosure."
+    },
+    {
+     "technique": "baseline-carries-its-conditions",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_lab/components/arena/arenaWinnerScore.ts:30 The comparison is inside one run, across contenders. The arena never compares against a stored baseline score."
+    },
+    {
+     "technique": "unverified-vs-regressed-exit-states",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaHistory.tsx:168 This is an interactive UI with no pipeline step or exit codes. Run status only gates the export and improve actions."
+    },
+    {
+     "technique": "fixed-alpha-discipline",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:62 No significance level exists, configurable or fixed. The only thresholds are hard-coded presentation colour bands."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T01:05:11.224126+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "quality-regression-gating"
+   ],
+   "techniques": [
+    "baseline-carries-its-conditions",
+    "family-wise-correction",
+    "fixed-alpha-discipline",
+    "paired-per-case-testing",
+    "partial-run-never-green",
+    "tested-superiority-claims",
+    "unverified-vs-regressed-exit-states"
+   ],
+   "deviations": 1,
+   "context": "overview-leaderboard",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T01:05:11.224126+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "quality-regression-gating"
+   ],
+   "techniques": [
+    "baseline-carries-its-conditions",
+    "family-wise-correction",
+    "fixed-alpha-discipline",
+    "paired-per-case-testing",
+    "partial-run-never-green",
+    "tested-superiority-claims",
+    "unverified-vs-regressed-exit-states"
+   ],
+   "deviations": 1,
+   "context": "lab-arena",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

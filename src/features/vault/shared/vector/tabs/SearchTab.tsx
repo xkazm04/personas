@@ -1,3 +1,4 @@
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, FileText, Clock, ArrowRight, ChevronDown } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
@@ -31,32 +32,27 @@ function CompactListbox<T extends string | number>({ ariaLabel, value, options, 
       onSelectFocused={(i) => { const o = options[i]; if (o) onChange(o.value); }}
       className={className}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
+        <Button
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           data-testid={testId}
-          className="flex max-w-48 items-center gap-1 truncate bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground typo-caption"
+          variant="secondary"
+          size="xs"
+          className="max-w-48"
+          iconRight={<ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />}
         >
           <span className="truncate">{current}</span>
-          <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
-        </button>
+        </Button>
       )}
     >
       {({ close }) => (
         <>
           {options.map((o) => (
-            <button
-              type="button"
-              key={String(o.value)}
-              role="option"
-              aria-selected={o.value === value}
-              onClick={() => { onChange(o.value); close(); }}
-              className={`flex w-full items-center px-3 py-1.5 text-left typo-caption transition-colors hover:bg-secondary/50 ${o.value === value ? 'text-primary' : 'text-foreground'}`}
-            >
+            <OptionRow key={String(o.value)} role="option" selected={o.value === value} onSelect={() => { onChange(o.value); close(); }}>
               {o.label}
-            </button>
+            </OptionRow>
           ))}
         </>
       )}
@@ -169,7 +165,7 @@ export function SearchTab({ kb }: SearchTabProps) {
   }, [topK, source]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       void handleSearch();
     }
@@ -178,7 +174,7 @@ export function SearchTab({ kb }: SearchTabProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Search input */}
-      <div className="px-6 py-4 border-b border-primary/10 shrink-0 space-y-3">
+      <div className="px-6 py-4 border-b border-hair shrink-0 space-y-3">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground" />
@@ -188,7 +184,7 @@ export function SearchTab({ kb }: SearchTabProps) {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={sh.search_placeholder}
-              className="w-full pl-10 pr-4 py-2.5 typo-body bg-secondary/30 border border-primary/15 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/40 focus-visible:ring-1 focus-visible:ring-role-agent/20 transition-colors"
               autoFocus
             />
           </div>

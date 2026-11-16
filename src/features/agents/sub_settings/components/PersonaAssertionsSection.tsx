@@ -88,11 +88,11 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
         <ShieldCheck className="w-4 h-4 text-primary/70" />
         {a.title}
       </h4>
-      <div className="bg-secondary/40 border border-primary/20 rounded-modal p-3 space-y-2.5">
-        <p className="typo-caption text-foreground">{a.subtitle}</p>
+      <div className="bg-surface-2 border border-hair rounded-modal p-3 space-y-2.5">
+        <p className="typo-caption text-ink-2">{a.subtitle}</p>
 
         {loadState === 'loaded' && assertions.length === 0 && !adding && (
-          <p className="typo-body text-foreground py-1">{a.empty}</p>
+          <p className="typo-body text-ink-1 py-1">{a.empty}</p>
         )}
 
         {loadState === 'failed' && (

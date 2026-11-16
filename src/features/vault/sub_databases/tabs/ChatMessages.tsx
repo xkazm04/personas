@@ -4,6 +4,7 @@ import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEm
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface ChatMessage {
   id: string;
@@ -58,10 +59,10 @@ export function ChatMessages({
       {messages.map((msg) => (
         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
           <div
-            className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+            className={`max-w-[85%] rounded-card px-4 py-3 ${
               msg.role === 'user'
-                ? 'bg-violet-500/10 border border-violet-500/15 text-foreground/85'
-                : 'bg-secondary/30 border border-primary/10 text-foreground'
+                ? 'bg-role-agent/10 border border-role-agent/15 text-ink-1'
+                : 'bg-surface-1 border border-hair text-foreground'
             }`}
           >
             {msg.role === 'user' && (
@@ -73,20 +74,22 @@ export function ChatMessages({
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{t.vault.databases.generating_query}</span>
                 <Tooltip content={t.common.cancel}>
-                  <button
+                  <Button
                     type="button"
                     onClick={onCancel}
-                    className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="ml-2"
                     aria-label={t.common.cancel}
                   >
                     <X className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </Tooltip>
               </div>
             )}
 
             {msg.role === 'assistant' && msg.status === 'failed' && (
-              <p className="typo-body text-red-400">{msg.content}</p>
+              <p className="typo-body text-status-error">{msg.content}</p>
             )}
 
             {/* An answer that carries no SQL (a clarifying question, a refusal,
@@ -136,14 +139,15 @@ function EmptyState({
       {suggestions.length > 0 && (
         <div className="flex flex-wrap gap-2 max-w-lg justify-center mt-2">
           {suggestions.map((s, i) => (
-            <button
+            <Button
               type="button"
               key={i}
               onClick={() => onSuggestionClick(s)}
-              className="px-3 py-1.5 rounded-modal typo-body text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
+              variant="secondary"
+              size="sm"
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
       )}

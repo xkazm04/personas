@@ -1,6 +1,7 @@
 import { Send, X, CornerDownLeft } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ChatInputProps {
   input: string;
@@ -27,7 +28,7 @@ export function ChatInput({
   const db = t.vault.databases;
 
   return (
-    <div className="shrink-0 border-t border-primary/10 px-4 py-3 bg-secondary/10">
+    <div className="shrink-0 border-t border-hair px-4 py-3 bg-secondary/10">
       <div className="flex items-end gap-2">
         <div className="flex-1 relative">
           <textarea
@@ -49,7 +50,7 @@ export function ChatInput({
             // sends once the answer lands. The button beside it already renders
             // Cancel rather than Send for the whole window.
             rows={1}
-            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 typo-body text-foreground/85 placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 transition-colors"
+            className="w-full resize-none rounded-modal border border-hair bg-background px-4 py-2.5 pr-10 typo-body text-ink-1 placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-role-agent/30 focus:border-role-agent/30 transition-colors"
             style={{ minHeight: '42px', maxHeight: '120px' }}
             onInput={(e) => {
               const ta = e.currentTarget;
@@ -62,19 +63,18 @@ export function ChatInput({
           </div>
         </div>
         <Tooltip content={generating ? t.common.cancel : t.common.send}>
-          <button
+          <Button
             type="button"
             onClick={generating ? onCancel : onSubmit}
             disabled={!generating && !input.trim()}
-            className={`shrink-0 p-2.5 rounded-modal border transition-colors ${
-              generating
-                ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
-                : 'bg-violet-500/10 border-violet-500/20 text-violet-400 hover:bg-violet-500/20 disabled:opacity-30 disabled:cursor-not-allowed'
-            }`}
+            variant={generating ? 'danger' : 'accent'}
+            tone={generating ? undefined : 'agent'}
+            size="sm"
+            className="shrink-0"
             aria-label={generating ? t.common.cancel : t.common.send}
           >
             {generating ? <X className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-          </button>
+          </Button>
         </Tooltip>
       </div>
     </div>

@@ -134,6 +134,7 @@
     "package.json": {"count":1,"sections":[],"lines":["36-66"],"contexts":["- **`personas-web` is the NEGATIVE CONTROL — re-verified.** `package.json:36-66` carries no"]},
     "packages/shared/src/prompt.ts": {"count":1,"sections":[],"lines":["268"],"contexts":["comments: `packages/shared/src/prompt.ts:268` *\"Prompt assembly (ported from engine/prompt.rs)\"*,"],"resolved":false},
     "parser.rs": {"count":2,"sections":[0,8],"lines":["340-341"],"contexts":["$2,036.26 of spend** ([`llm-spend-accounting`](./llm-spend-accounting.md) §7.A; `parser.rs:340-341`). So"],"resolved":false},
+    "planner.rs": {"count":1,"sections":[7],"lines":["86"],"contexts":["The seven: `briefing.rs:173`, `sleep_cycle.rs:726`, `planner.rs:86`, `unattended.rs:145` and `:171`,"],"resolved":false},
     "policy_tuning.rs": {"count":1,"sections":[7],"contexts":["(`model_routing.rs:136`), has a settings UI, has a self-tuning writer (`policy_tuning.rs`), and a"],"resolved":false},
     "prompt/capabilities.rs": {"count":1,"sections":[13],"lines":["24"],"contexts":["`auto_triage.rs:268`, `eval.rs:607`, `prompt/capabilities.rs:24`, `test_runner/lab.rs:21`,"],"resolved":false},
     "prompt/mod.rs": {"count":2,"sections":[4,7],"lines":["1849","1849-1852"],"contexts":["unit test that guards against exactly this (`prompt/mod.rs:1849`) runs *inside* the builder, one frame"],"resolved":false},
@@ -318,14 +319,6 @@
       "contexts": ["`db/src/model_routing.rs`, `src/companion/model_routing.rs`, `src/companion/brain/oneshot.rs`,"],
       "resolvedFrom": "suffix",
       "verbatim": "src/companion/model_routing.rs"
-    },
-    "src-tauri/src/companion/night_shift/planner.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["86"],
-      "contexts": ["The seven: `briefing.rs:173`, `sleep_cycle.rs:726`, `planner.rs:86`, `unattended.rs:145` and `:171`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "planner.rs"
     },
     "src-tauri/src/engine/build_session/fix_pass.rs": {
       "count": 2,

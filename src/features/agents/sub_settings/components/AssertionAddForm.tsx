@@ -58,13 +58,13 @@ export function AssertionAddForm({
   };
 
   return (
-    <div className="space-y-2 rounded-card border border-primary/15 bg-background/30 p-2.5">
+    <div className="space-y-2 rounded-card border border-hair bg-background/30 p-2.5">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder={a.name_placeholder}
         aria-label={a.name_placeholder}
-        className="w-full px-2 py-1 bg-background/50 border border-primary/15 rounded-card typo-body text-foreground placeholder:text-foreground focus-ring"
+        className="w-full px-2 py-1 bg-background/50 border border-hair rounded-card typo-body text-ink-1 placeholder:text-ink-3 focus-ring"
       />
       <div className="flex flex-wrap items-center gap-2">
         <ThemedSelect
@@ -92,7 +92,7 @@ export function AssertionAddForm({
         onChange={(e) => setPhrase(e.target.value)}
         placeholder={a.phrase_placeholder}
         aria-label={a.phrase_placeholder}
-        className="w-full px-2 py-1 bg-background/50 border border-primary/15 rounded-card typo-body text-foreground placeholder:text-foreground focus-ring"
+        className="w-full px-2 py-1 bg-background/50 border border-hair rounded-card typo-body text-ink-1 placeholder:text-ink-3 focus-ring"
       />
       <div className="flex items-center gap-2">
         <Button variant="primary" size="sm" onClick={handleCreate} disabled={saving || !canCreate}>

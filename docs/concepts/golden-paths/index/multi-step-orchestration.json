@@ -81,6 +81,7 @@
       ],
       "resolved": false
     },
+    "approval_exec_night.rs": {"count":2,"sections":[9,12],"lines":["49","17"],"contexts":["`approval_exec_night.rs:49`, `competitions.rs:399`, `kpi_compose.rs:299`, `task_executor.rs:569`,"],"resolved":false},
     "ascent/src/lib/db/org-watch.ts": {
       "count": 1,
       "sections": [6],
@@ -308,14 +309,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "cloud/sync/rows.rs"
     },
-    "src-tauri/src/commands/companion/approvals/approval_exec_night.rs": {
-      "count": 3,
-      "sections": [9,12],
-      "lines": ["49","17"],
-      "contexts": ["`src/commands/companion/approvals/approval_exec_night.rs`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/commands/companion/approvals/approval_exec_night.rs"
-    },
     "src-tauri/src/commands/core/memories.rs": {
       "count": 1,
       "sections": [5],
@@ -472,6 +465,7 @@
     "src/": {"count":2,"sections":[6],"contexts":["**Sweep.** All **963** `.rs` files under `src-tauri/` and all **4,828** `.ts`/`.tsx` under `src/`"],"resolved":false,"isDir":true},
     "src/api/pipeline/assignments.ts": {"count":1,"sections":[],"contexts":["(`src/stores/slices/pipeline/assignmentSlice.ts`, `src/api/pipeline/assignments.ts`,"]},
     "src/app/api/executions/[id]/stream/route.ts": {"count":1,"sections":[6],"lines":["16-22"],"contexts":["`model_used`, `cost_usd`, `duration_ms`), and `src/app/api/executions/[id]/stream/route.ts:16-22`"],"resolved":false},
+    "src/commands/companion/approvals/approval_exec_night.rs": {"count":1,"sections":[],"contexts":["`src/commands/companion/approvals/approval_exec_night.rs`,"],"resolved":false},
     "src/commands/core/memories.rs::apply_persona_memory_review_proposal": {"count":1,"sections":[],"contexts":["`src/commands/core/memories.rs::apply_persona_memory_review_proposal`,"],"resolved":false,"isDir":true},
     "src/commands/infrastructure/task_executor.rs::dev_tools_start_auto_run": {"count":1,"sections":[],"contexts":["`src/commands/infrastructure/task_executor.rs::dev_tools_start_auto_run`,"],"resolved":false,"isDir":true},
     "src/components/flow-composer/data.ts": {

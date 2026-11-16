@@ -32,7 +32,7 @@ describe('HealthProbeBanner', () => {
     );
     const banner = screen.getByTestId('health-probe-banner');
     expect(banner.getAttribute('data-state')).toBe('failed');
-    expect(banner.className).toContain('red');
+    expect(banner.className).toContain('status-error');
     expect(screen.getByText('401 invalid key')).toBeTruthy();
   });
 

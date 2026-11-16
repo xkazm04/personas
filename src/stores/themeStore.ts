@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 import { customThemeAttr, deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
 import { storeBus } from '@/lib/storeBus';
-import { DEFAULT_DENSITY, isDensity, type Density } from '@/lib/density';
+import { type Density } from '@/lib/density';
 import { createDedupedJSONStorage } from './util/dedupedStorage';
 
 export type { Density } from '@/lib/density';
@@ -218,12 +218,24 @@ function applyReduceMotion(reduceMotion: boolean) {
   }
 }
 
-/** Drive the app-wide density CSS variables (--density-pad/-gap/…) via the
- *  data-density attribute on <html>. See the [data-density=…] blocks in
- *  globals.css. `comfortable` is the :root default, so the attribute is still
- *  set for it (inspectable + future-proof) but matches no override block. */
-function applyDensity(density: Density) {
-  document.documentElement.setAttribute('data-density', density);
+/** Pin the app geometry. Since 2026-11-07 there is ONE density, "Normal" (the Console
+ *  geometry, the :root defaults in globals.css): the Console/Comfortable switch was removed
+ *  after review showed the difference did not register. The attribute is still written
+ *  (inspectable, and observers such as useFusedTheme watch it); the stored field stays so
+ *  persisted state and the appearance mirror keep parsing, but every value folds to 'compact'. */
+function applyDensity(_density: Density) {
+  document.documentElement.setAttribute('data-density', 'compact');
+}
+
+/** Every stored density folds onto the one app geometry ('compact' = Normal). */
+export function normalizeAppDensity(_density: unknown): Density {
+  return 'compact';
+}
+
+/** Persisted density migration. v2 made it two choices; v3 (2026-11-07) made it one, so
+ *  every stored value now becomes 'compact' (Normal). */
+export function migrateStoredDensity(_density: unknown): Density {
+  return 'compact';
 }
 
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {
@@ -325,7 +337,7 @@ export const useThemeStore = create<ThemeState>()(
       cvdSafe: false,
       highContrast: false,
       reduceMotion: false,
-      density: DEFAULT_DENSITY,
+      density: 'compact' as Density,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         const brightness = resolveBrightness(get().brightnessByMode, isLightTheme(id, get().customTheme));
@@ -387,7 +399,8 @@ export const useThemeStore = create<ThemeState>()(
         set({ reduceMotion: enabled });
         storeBus.emit('appearance:changed', { field: 'reduceMotion', value: enabled ? 'on' : 'off' });
       },
-      setDensity: (density: Density) => {
+      setDensity: (next: Density) => {
+        const density = normalizeAppDensity(next);
         applyDensity(density);
         set({ density });
         storeBus.emit('appearance:changed', { field: 'density', value: density });
@@ -396,7 +409,7 @@ export const useThemeStore = create<ThemeState>()(
     {
       name: 'persona-theme',
       storage: createDedupedJSONStorage(),
-      version: 1,
+      version: 3,
       // v0 kept one level for both modes, and a light theme read the shared default 'low' as Dimmer.
       // A saved dark level is kept as the dark pick; a saved light level cannot be told apart from
       // that default, so light restarts at Standard.
@@ -405,6 +418,10 @@ export const useThemeStore = create<ThemeState>()(
         if (from < 1) {
           const wasLight = p.themeId ? isLightTheme(p.themeId, p.customTheme) : false;
           p.brightnessByMode = !wasLight && p.brightness ? { dark: p.brightness } : {};
+        }
+        // v2 made density two choices, v3 made it one (Normal); see migrateStoredDensity.
+        if (from < 3 && p.density !== undefined) {
+          p.density = migrateStoredDensity(p.density);
         }
         return p as ThemeState;
       },
@@ -432,7 +449,7 @@ export const useThemeStore = create<ThemeState>()(
           applyCvdSafe(state.cvdSafe ?? false);
           applyHighContrast(state.highContrast ?? false);
           applyReduceMotion(state.reduceMotion ?? false);
-          applyDensity(isDensity(state.density) ? state.density : DEFAULT_DENSITY);
+          applyDensity('compact');
         }
       },
     }

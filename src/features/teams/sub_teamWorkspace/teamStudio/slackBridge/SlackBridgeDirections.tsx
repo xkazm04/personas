@@ -15,7 +15,7 @@ function ToggleRow({
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <div className="typo-body text-foreground">{label}</div>
-        {hint && <p className="typo-caption text-foreground">{hint}</p>}
+        {hint && <p className="typo-caption text-ink-2">{hint}</p>}
       </div>
       <AccessibleToggle
         checked={checked}
@@ -46,7 +46,7 @@ export function SlackBridgeDirections({
 
   return (
     <div className={`space-y-3 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-      <span className="typo-label text-foreground/85">
+      <span className="typo-label text-ink-2">
         {ts.slack_bridge_directions_heading}
       </span>
       <ToggleRow

@@ -59,7 +59,7 @@ export function CharterParametersCard({ charter, onPatch }: CharterParametersCar
   return (
     <SectionCard title={c.parameters_title}>
       <div className="space-y-3" data-testid="resp-params">
-        <p className="typo-caption text-foreground">{c.parameters_hint}</p>
+        <p className="typo-caption text-ink-2">{c.parameters_hint}</p>
         {fields.map((f) => (
           <CharterParameterField
             key={f.key}

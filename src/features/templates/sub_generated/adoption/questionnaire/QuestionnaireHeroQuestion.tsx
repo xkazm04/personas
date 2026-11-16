@@ -11,6 +11,7 @@ import { resolveBlockedCredentialCategory } from './questionnaireHelpers';
 import { QuestionnaireStackedOptions } from './QuestionnaireStackedOptions';
 import type { QuestionnaireNormalizedOption } from './types';
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface QuestionnaireHeroQuestionProps {
@@ -91,19 +92,18 @@ export function QuestionnaireHeroQuestion({
             </span>
           )}
           {hasTip && (
-            <button
+            <Button
               type="button"
               onClick={() => setTipOpen((v) => !v)}
               aria-expanded={tipOpen}
               aria-label={tipOpen ? t.templates.adopt_modal.hide_explanation : t.templates.adopt_modal.show_explanation}
-              className={`flex-shrink-0 mt-1 p-1.5 rounded-card transition-colors ${
-                tipOpen
-                  ? 'bg-primary/15 text-primary'
-                  : 'text-foreground hover:text-foreground hover:bg-foreground/[0.04]'
-              }`}
+              variant={tipOpen ? 'accent' : 'ghost'}
+              tone={tipOpen ? 'highlight' : undefined}
+              size="icon-sm"
+              className="mt-1"
             >
               <Info className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
 

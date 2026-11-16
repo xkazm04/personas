@@ -62,7 +62,7 @@ export function WorkspaceTabs({ scope }: { scope: WorkspaceScope }) {
         <>
           <span className="ae-note-swatch" style={{ background: w.color }} aria-hidden />
           <span className="max-w-[11rem] truncate">{w.name}</span>
-          {w.needsYou > 0 && <span className="ae-note-count tabular-nums"><Numeric value={w.needsYou} /></span>}
+          {w.needsYou > 0 && <span className="ae-note-count num"><Numeric value={w.needsYou} /></span>}
         </>,
         `entry-e-workspace-${w.id}`,
       ))}

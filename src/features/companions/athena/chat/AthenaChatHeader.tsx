@@ -21,7 +21,7 @@ import { setDevMode } from './athenaChatActions';
 
 const KEY = 'p-1.5 rounded-interactive';
 const PRIMARY_LOOK: HeaderKeyLook = {
-  button: `${KEY} text-foreground/70 hover:text-foreground hover:bg-foreground/5`,
+  button: `${KEY} text-ink-2 hover:text-foreground hover:bg-foreground/5`,
   active: 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary',
   icon: 'w-4 h-4',
 };
@@ -50,8 +50,8 @@ function IconKey({
   const cls =
     tone === 'amber'
       ? active
-        ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/20'
-        : 'text-foreground hover:text-amber-400 hover:bg-amber-500/10'
+        ? 'bg-status-warning/15 text-status-warning hover:bg-status-warning/20'
+        : 'text-foreground hover:text-status-warning hover:bg-status-warning/10'
       : 'text-foreground hover:bg-foreground/5';
   return (
     <Tooltip content={label}>

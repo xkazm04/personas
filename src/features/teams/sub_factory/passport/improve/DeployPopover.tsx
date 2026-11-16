@@ -9,6 +9,7 @@
 // runs the same operations through `useImproveActions` in its console, and
 // Database has no deploy action, ladder or connector spec keyed to its row.
 import { createPortal } from 'react-dom';
+import Button from '@/features/shared/components/buttons/Button';
 import { Rocket, X } from 'lucide-react';
 
 import { useImprove } from './ImproveContext';
@@ -39,14 +40,14 @@ export function DeployPopover({
       tabIndex={-1}
       aria-label={`Deploy upgrade for ${raw.project.name}`}
       style={popStyle(anchor)}
-      className="fixed z-[9995] outline-none rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed z-[9995] outline-none rounded-modal border border-hair bg-background shadow-elevation-4 overflow-hidden"
     >
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-surface-1">
         <Rocket className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground truncate">Upgrade {raw.project.name}</span>
-        <button type="button" onClick={onClose} aria-label="Close" className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
+        <span className="typo-caption text-ink-2 truncate">Upgrade {raw.project.name}</span>
+        <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={onClose} aria-label="Close">
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       <div className="p-2 max-h-[420px] overflow-y-auto">

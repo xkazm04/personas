@@ -62,7 +62,7 @@ function DaySeparator({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 my-1" data-testid="companion-day-separator">
       <div className="flex-1 h-px bg-foreground/10" aria-hidden />
-      <span className="rounded-full bg-foreground/[0.06] border border-foreground/10 px-2.5 py-0.5 typo-caption text-foreground">
+      <span className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-2.5 py-0.5 typo-caption text-foreground">
         {label}
       </span>
       <div className="flex-1 h-px bg-foreground/10" aria-hidden />

@@ -34,6 +34,6 @@ describe('ExecutionHeatmap — AppError rejection', () => {
     const card = screen.getByTestId('execution-heatmap');
     expect(card.textContent).not.toMatch(/object Object/);
     expect(card.textContent).not.toMatch(/\b0 executions?\b/i);
-    expect(card.querySelector('[class*="text-red-400"]')).not.toBeNull();
+    expect(card.querySelector('[class*="text-status-error"]')).not.toBeNull();
   });
 });

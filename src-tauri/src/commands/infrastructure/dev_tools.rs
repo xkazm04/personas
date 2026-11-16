@@ -313,13 +313,25 @@ pub fn dev_tools_backfill_qa_pr_review(
     }))
 }
 
+/// Delete a project. A deleted project also leaves the live standup draft
+/// (best-effort, after the delete succeeded), so an open Standup page drops
+/// its card without a reload.
 #[tauri::command]
-pub fn dev_tools_delete_project(
+pub async fn dev_tools_delete_project(
+    app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
-    repo::delete_project(&state.db, &id)
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let deleted = run_blocking("dev_tools_delete_project", move || {
+        repo::delete_project(&db, &id)
+    })
+    .await?;
+    if deleted {
+        crate::companion::standup::service::prune_deleted_projects(&app).await;
+    }
+    Ok(deleted)
 }
 
 // ============================================================================

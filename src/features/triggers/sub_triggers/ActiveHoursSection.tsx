@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Clock, ChevronDown, ChevronRight, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 const DAYS = [
   { key: 0, label: 'Sun', short: 'S' },
   { key: 1, label: 'Mon', short: 'M' },
@@ -117,20 +119,22 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 w-full typo-body text-foreground hover:text-muted-foreground transition-colors"
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        icon={expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
       >
-        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Clock className="w-3 h-3" />
         {t.triggers.active_hours}
         {aw.enabled && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-sky-500/15 text-sky-400">
-            {summaryLabel}
-          </span>
+        <span className="inline-flex items-center ml-1 typo-body text-status-info">
+        {summaryLabel}
+        </span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
           <div
@@ -145,7 +149,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                   onChange={(e) => update({ enabled: e.target.checked })}
                   className="accent-sky-500"
                 />
-                <span className="typo-body text-foreground">
+                <span className="typo-body text-ink-1">
                   {t.triggers.only_fire_during_active}
                 </span>
               </label>
@@ -156,44 +160,28 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1">
                       {DAYS.map((d) => (
-                        <button
-                          type="button"
-                          key={d.key}
-                          onClick={() => toggleDay(d.key)}
-                          title={d.label}
-                          className={`w-7 h-7 rounded-card typo-caption transition-colors ${
-                            aw.days.includes(d.key)
-                              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-                              : 'bg-secondary/30 text-foreground border border-primary/5 hover:border-primary/15'
-                          }`}
-                        >
-                          {d.short}
-                        </button>
+                        <Tooltip content={d.label}><Button
+  type="button"
+  key={d.key}
+  onClick={() => toggleDay(d.key)}
+  variant={aw.days.includes(d.key) ? 'secondary' : 'ghost'}
+  size="sm"
+>{d.short}</Button></Tooltip>
                       ))}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => applyPreset(WEEKDAY_PRESET)}
-                        className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
-                          isWeekdays
-                            ? 'bg-sky-500/15 text-sky-400'
-                            : 'text-foreground hover:text-muted-foreground/70 bg-secondary/20'
-                        }`}
-                      >
-                        Weekdays
-                      </button>
-                      <button
+                        variant={isWeekdays ? 'secondary' : 'ghost'}
+                        size="xs"
+                      >Weekdays</Button>
+                      <Button
                         type="button"
                         onClick={() => applyPreset(EVERYDAY_PRESET)}
-                        className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
-                          isEveryday
-                            ? 'bg-sky-500/15 text-sky-400'
-                            : 'text-foreground hover:text-muted-foreground/70 bg-secondary/20'
-                        }`}
-                      >
-                        {t.triggers.active_hours_every_day}
-                      </button>
+                        variant={isEveryday ? 'secondary' : 'ghost'}
+                        size="xs"
+                      >{t.triggers.active_hours_every_day}</Button>
                     </div>
                   </div>
 
@@ -208,9 +196,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           update({ start_hour: h, start_minute: m });
                         }
                       }}
-                      className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
+                      className="px-2 py-1 typo-body bg-background/50 border border-hair rounded-card text-ink-1 focus-ring"
                     />
-                    <span className="text-foreground typo-caption">to</span>
+                    <span className="text-ink-2 typo-caption">to</span>
                     <input
                       type="time"
                       value={timeToInput(aw.end_hour, aw.end_minute)}
@@ -220,13 +208,13 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           update({ end_hour: h, end_minute: m });
                         }
                       }}
-                      className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
+                      className="px-2 py-1 typo-body bg-background/50 border border-hair rounded-card text-ink-1 focus-ring"
                     />
                   </div>
 
                   {/* Timezone */}
                   <div className="flex items-center gap-2">
-                    <Globe className="w-3 h-3 text-foreground" />
+                    <Globe className="w-3 h-3 text-ink-1" />
                     <input
                       type="text"
                       value={aw.timezone ?? ''}
@@ -235,9 +223,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const val = e.target.value.trim();
                         update({ timezone: val || undefined });
                       }}
-                      className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring w-48"
+                      className="px-2 py-1 typo-body bg-background/50 border border-hair rounded-card text-ink-1 focus-ring w-48"
                     />
-                    <span className="text-foreground typo-caption">
+                    <span className="text-ink-2 typo-caption">
                       {aw.timezone ? aw.timezone : `System: ${resolvedTimezoneLabel()}`}
                     </span>
                   </div>

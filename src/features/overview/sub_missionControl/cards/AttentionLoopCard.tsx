@@ -121,11 +121,11 @@ export default function AttentionLoopCard() {
   const latest = status?.summary.latest ?? null;
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden" data-testid="attention-loop-card">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden" data-testid="attention-loop-card">
       <PaneHeader label={loop.title} subtitle={loop.subtitle}>
         {status && (
           <div className="flex items-center gap-2">
-            <span className={`typo-caption font-mono uppercase tracking-widest ${status.enabled ? 'text-emerald-400' : 'text-foreground'}`}>
+            <span className={`typo-eyebrow ${status.enabled ? 'text-status-success' : 'text-ink-2'}`}>
               {status.enabled ? loop.on : loop.off}
             </span>
             <AccessibleToggle
@@ -141,14 +141,14 @@ export default function AttentionLoopCard() {
       </PaneHeader>
       {status === null ? (
         failed ? (
-          <p className="typo-caption px-3 py-4 text-foreground">{loop.unavailable}</p>
+          <p className="typo-caption px-3 py-4 text-ink-2">{loop.unavailable}</p>
         ) : (
           <LoopGhost />
         )
       ) : (
         <div className="px-3 py-3 space-y-3">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="typo-caption font-mono uppercase tracking-widest text-foreground flex-shrink-0">
+            <span className="typo-eyebrow flex-shrink-0">
               {loop.last_activity}
             </span>
             {latest ? (
@@ -156,21 +156,21 @@ export default function AttentionLoopCard() {
                 <StatusBadge size="sm" accent={latest.kind === 'consolidation' ? 'violet' : 'cyan'}>
                   {kindLabels[latest.kind] ?? latest.kind}
                 </StatusBadge>
-                {latest.lane && <span className="typo-code text-foreground/85 truncate">{latest.lane}</span>}
+                {latest.lane && <span className="typo-code text-ink-2 truncate">{latest.lane}</span>}
                 <StatusBadge size="sm" variant={VERDICT_VARIANT[latest.verdict] ?? 'neutral'}>
                   {verdictLabels[latest.verdict] ?? latest.verdict}
                 </StatusBadge>
                 <RelativeTime timestamp={latest.startedAt} className="typo-caption ml-auto flex-shrink-0" />
               </>
             ) : (
-              <span className="typo-caption text-foreground">{loop.none_yet}</span>
+              <span className="typo-caption text-ink-2">{loop.none_yet}</span>
             )}
           </div>
-          <div className="flex items-center gap-4 pt-2 border-t border-primary/5">
-            <span className="typo-caption font-mono uppercase tracking-widest text-foreground">{loop.today_label}</span>
-            <TodayStat value={Number(status.summary.dispatchedToday)} label={loop.today_dispatched} tone="text-emerald-400" />
-            <TodayStat value={Number(status.summary.refusedToday)} label={loop.today_refused} tone="text-amber-400" />
-            <TodayStat value={Number(status.summary.consolidationsToday)} label={loop.today_consolidations} tone="text-violet-400" />
+          <div className="flex items-center gap-4 pt-2 border-t border-hair">
+            <span className="typo-eyebrow">{loop.today_label}</span>
+            <TodayStat value={Number(status.summary.dispatchedToday)} label={loop.today_dispatched} tone="text-status-success" />
+            <TodayStat value={Number(status.summary.refusedToday)} label={loop.today_refused} tone="text-status-warning" />
+            <TodayStat value={Number(status.summary.consolidationsToday)} label={loop.today_consolidations} tone="text-role-agent" />
           </div>
         </div>
       )}
@@ -181,8 +181,8 @@ export default function AttentionLoopCard() {
 function TodayStat({ value, label, tone }: { value: number; label: string; tone: string }) {
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className={`font-mono tabular-nums typo-body ${value > 0 ? tone : 'text-foreground'}`}>{value}</span>
-      <span className="typo-caption text-foreground">{label}</span>
+      <span className={`font-mono typo-data ${value > 0 ? tone : 'text-foreground'}`}>{value}</span>
+      <span className="typo-caption text-ink-2">{label}</span>
     </span>
   );
 }
@@ -195,7 +195,7 @@ function LoopGhost() {
       {[0, 1].map((i) => (
         <div
           key={i}
-          className="h-5 rounded bg-primary/[0.06] animate-fade-in"
+          className="h-5 rounded-interactive bg-surface-2 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         />
       ))}

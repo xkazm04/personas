@@ -1713,6 +1713,48 @@ CREATE TABLE IF NOT EXISTS companion_night_event (
 CREATE INDEX IF NOT EXISTS idx_companion_night_event_plan
     ON companion_night_event(plan_id, kind, created_at);
 
+-- Standup (spark app-standup, 2026-11-06): one row per plan REVISION. A
+-- re-open on an armed plan writes revision n+1 (parent_id = the armed row,
+-- items copied) and marks the parent superseded; its running sessions
+-- continue. plan_json / away_rules_json / report_json are the
+-- companion::standup::{StandupPlan, AwayRules, StandupReport} wire types.
+-- device_id is the Phase 2 multi-device hook (v1: this device). Times are
+-- epoch ms. Standup absorbs Night Shift (companion_night_plan above).
+CREATE TABLE IF NOT EXISTS companion_standup (
+    id              TEXT PRIMARY KEY NOT NULL,
+    revision        INTEGER NOT NULL,
+    parent_id       TEXT,
+    status          TEXT NOT NULL
+                    CHECK (status IN ('draft','armed','superseded','ended')),
+    device_id       TEXT NOT NULL,
+    opened_at       INTEGER NOT NULL,
+    armed_at        INTEGER,
+    ended_at        INTEGER,
+    plan_json       TEXT NOT NULL,
+    away_rules_json TEXT NOT NULL,
+    report_json     TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_standup_status
+    ON companion_standup(status);
+
+-- Standup: append-only ledger of every away act (sweep, drift note, delegated
+-- or parked ask, dispatch, backfill, agent create/retune, push, stop). The
+-- standup report is composed from it. at = epoch ms; detail_json is a JSON
+-- object (companion::standup::StandupEvent.detail).
+CREATE TABLE IF NOT EXISTS companion_standup_event (
+    id          TEXT PRIMARY KEY NOT NULL,
+    standup_id  TEXT NOT NULL,
+    at          INTEGER NOT NULL,
+    kind        TEXT NOT NULL
+                CHECK (kind IN ('sweep','drift','ask_delegated','ask_parked','dispatch',
+                                'backfill','agent_created','agent_retuned','push','stop')),
+    project_id  TEXT,
+    summary     TEXT NOT NULL,
+    detail_json TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_standup_event_at
+    ON companion_standup_event(standup_id, at);
+
 -- Per-turn sidecars: the rich side channels the frontend parses out of the
 -- CLI stream for one assistant episode (narration/tool trail, TodoWrite
 -- plan, dispatcher turn summary, recall preview). They used to live only in
@@ -2481,12 +2523,14 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
 
     // Prove the copy is usable before handing it to a test: a torn or truncated
     // copy would otherwise surface as a baffling failure in whichever assertion
-    // touched the database first.
+    // touched the database first. Then the journal `init_db` runs: the mode is
+    // database-wide and the template's is rollback.
     {
         let conn = pool.get()?;
         conn.query_row("SELECT COUNT(*) FROM sqlite_master", [], |r| {
             r.get::<_, i64>(0)
         })?;
+        conn.execute_batch("PRAGMA journal_mode = WAL;")?;
     }
     Ok(pool)
 }
@@ -2930,14 +2974,63 @@ mod boot_tests {
     }
 }
 
+/// The fixture against the boot path, on the one setting a locking question turns
+/// on. Boot runs WAL, so a test on any other journal cannot provoke
+/// `SQLITE_BUSY_SNAPSHOT`, the failure the `Immediate` transactions in this crate
+/// exist to avoid.
+#[cfg(test)]
+mod test_pool_journal_mode_tests {
+    use super::*;
+
+    fn journal_mode(pool: &DbPool) -> Result<String, AppError> {
+        Ok(pool
+            .get()?
+            .query_row("PRAGMA journal_mode", [], |r| r.get("journal_mode"))?)
+    }
+
+    #[test]
+    fn test_pool_opens_in_the_journal_mode_boot_uses() -> Result<(), AppError> {
+        let dir = std::env::temp_dir().join(format!(
+            "personas_journal_mode_test_{}",
+            uuid::Uuid::new_v4()
+        ));
+        let boot = init_db(&dir, None)?;
+        let test_pool = init_test_db()?;
+        assert_eq!(journal_mode(&test_pool)?, journal_mode(&boot)?);
+        drop(boot);
+        let _ = std::fs::remove_dir_all(&dir);
+        Ok(())
+    }
+
+    #[test]
+    fn a_deferred_read_then_write_is_refused_once_a_sibling_commits() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let (reader, writer) = (pool.get()?, pool.get()?);
+        reader
+            .execute_batch("CREATE TABLE seam(x INTEGER NOT NULL); INSERT INTO seam VALUES (1);")?;
+
+        reader.execute_batch("BEGIN DEFERRED")?;
+        let _: i64 = reader.query_row("SELECT x FROM seam", [], |r| r.get("x"))?;
+        writer.execute("UPDATE seam SET x = 2", [])?;
+
+        match reader.execute("UPDATE seam SET x = 3", []) {
+            Err(rusqlite::Error::SqliteFailure(e, _)) => {
+                assert_eq!(e.extended_code, rusqlite::ffi::SQLITE_BUSY_SNAPSHOT);
+            }
+            other => panic!("expected SQLITE_BUSY_SNAPSHOT, got {other:?}"),
+        }
+        reader.execute_batch("ROLLBACK")?;
+        Ok(())
+    }
+}
+
 /// [`ensure_executions_fts`] runs on every production boot and, until now, had
 /// no test anywhere in the crate — `init_test_db` never calls it, so the
 /// backfill it exists for had never actually been executed by a test.
 ///
 /// NOTE (out of scope, recorded so it is not lost): `init_test_db` also differs
-/// from `init_db` by never setting `journal_mode = WAL` and never registering
-/// the CDC/journal connection customizer. Those are separate fidelity gaps
-/// between the test fixture and the real boot path.
+/// from `init_db` by never registering the CDC/journal connection customizer.
+/// That is a separate fidelity gap between the test fixture and the real boot path.
 #[cfg(test)]
 mod executions_fts_tests {
     use super::*;

@@ -89,7 +89,7 @@ export function AdherenceFigure({ series, target, amber, stepKey }: { series: Ad
   return (
     <ChartFrame height={PLOT_PX + LABELS_PX} label={label}>
       <div className="flex h-full flex-col" data-testid="lc8-adherence" data-mode={series.mode} aria-hidden>
-        <div className="relative border-b border-primary/20" style={{ height: `${PLOT_PX}px` }}>
+        <div className="relative border-b border-hair" style={{ height: `${PLOT_PX}px` }}>
           <Line pct={amber} dashed />
           <Line pct={target} label={tx(dl.lcx8_target, { target: pct })} testId="lc8-target" />
           <div className={`absolute inset-y-0 left-0 ${MARGIN.inset} flex items-end gap-1.5`}>

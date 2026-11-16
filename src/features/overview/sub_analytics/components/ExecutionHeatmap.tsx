@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Activity, AlertCircle, Flame, Snowflake, TrendingDown, TrendingUp } from 'lucide-react';
@@ -231,16 +232,16 @@ export function ExecutionHeatmap({
 
   return (
     <div
-      className={`rounded-card border border-primary/10 bg-secondary/[0.03] p-4 ${className ?? ''}`}
+      className={`rounded-card border border-hair bg-surface-1 p-4 ${className ?? ''}`}
       data-testid="execution-heatmap"
     >
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <div className="min-w-0">
-          <div className="typo-label text-foreground/90 truncate">{title}</div>
+          <div className="typo-label text-ink-2 truncate">{title}</div>
           {/* A failed read has no total to report: without this guard the header
               read "0 executions" (or the previous persona's figure) above the error. */}
           {error == null && (
-            <div className="typo-caption text-foreground mt-0.5" title={subtitleTitle}>{subtitle}</div>
+            <Tooltip content={subtitleTitle}><div className="typo-caption text-ink-2 mt-0.5">{subtitle}</div></Tooltip>
           )}
         </div>
         {data?.insights && !isEmpty && !compact && (
@@ -251,7 +252,7 @@ export function ExecutionHeatmap({
       {loading ? (
         <HeatmapSkeleton />
       ) : error != null ? (
-        <div className="flex items-center gap-2 typo-caption text-red-400/80 py-6">
+        <div className="flex items-center gap-2 typo-caption text-status-error py-6">
           <AlertCircle className="w-4 h-4" />
           <span>{resolveErrorTranslated(t, extractMessage(error)).message}</span>
         </div>
@@ -297,7 +298,7 @@ export function ExecutionHeatmap({
 function Legend() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-2 typo-caption text-foreground shrink-0">
+    <div className="flex items-center gap-2 typo-caption text-ink-2 shrink-0">
       <span>{t.overview.heatmap.less}</span>
       {INTENSITY_FILL.map((fill, i) => (
         <span
@@ -319,7 +320,7 @@ function Legend() {
 function HeatmapSkeleton() {
   return (
     <div
-      className="animate-pulse rounded-input bg-secondary/[0.05]"
+      className="animate-pulse rounded-input bg-surface-1"
       style={{ height: WEEK_HEIGHT + 24 }}
     />
   );
@@ -465,7 +466,7 @@ function HeatmapTooltip({
   return (
     <div
       role="tooltip"
-      className="animate-fade-slide-in fixed z-[9999] pointer-events-none whitespace-nowrap glass-sm rounded-card px-2.5 py-1.5 typo-caption text-foreground shadow-elevation-3"
+      className="animate-fade-slide-in fixed z-[9999] pointer-events-none whitespace-nowrap glass-sm rounded-card px-2.5 py-1.5 typo-caption text-ink-2 shadow-elevation-3"
       style={{ top, left, transform }}
     >
       <HoverLine day={day} t={t} tx={tx} />
@@ -482,22 +483,22 @@ function InsightsRow({
   placement?: 'top' | 'bottom';
 }) {
   const containerCls = placement === 'top'
-    ? 'grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 pb-3 border-b border-primary/10'
-    : 'grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-primary/10';
+    ? 'grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 pb-3 border-b border-hair'
+    : 'grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-hair';
   return (
     <div className={containerCls}>
       <InsightCell
-        icon={<Flame className="w-3.5 h-3.5 text-amber-400/80" />}
+        icon={<Flame className="w-3.5 h-3.5 text-status-warning" />}
         label={t.overview.heatmap.insights_streak}
         value={tx(t.overview.heatmap.insights_streak_days, { days: insights.longest_streak_days })}
       />
       <InsightCell
-        icon={<Snowflake className="w-3.5 h-3.5 text-sky-400/80" />}
+        icon={<Snowflake className="w-3.5 h-3.5 text-role-external" />}
         label={t.overview.heatmap.insights_dormant}
         value={renderDormant(insights, t, tx)}
       />
       <InsightCell
-        icon={<Activity className="w-3.5 h-3.5 text-violet-400/80" />}
+        icon={<Activity className="w-3.5 h-3.5 text-role-agent" />}
         label={t.overview.heatmap.insights_peak}
         value={
           insights.peak_day_date
@@ -513,8 +514,8 @@ function InsightsRow({
           insights.week_over_week_pct == null
             ? <Activity className="w-3.5 h-3.5 text-foreground" />
             : insights.week_over_week_pct >= 0
-              ? <TrendingUp className="w-3.5 h-3.5 text-emerald-400/80" />
-              : <TrendingDown className="w-3.5 h-3.5 text-red-400/80" />
+              ? <TrendingUp className="w-3.5 h-3.5 text-status-success" />
+              : <TrendingDown className="w-3.5 h-3.5 text-status-error" />
         }
         label={t.overview.heatmap.insights_wow}
         value={renderWow(insights, t, tx)}
@@ -560,11 +561,11 @@ function InsightCell({
 }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-1.5 typo-caption text-foreground">
+      <div className="flex items-center gap-1.5 typo-caption text-ink-2">
         {icon}
         <span className="truncate">{label}</span>
       </div>
-      <div className="typo-body text-foreground/90 mt-0.5 truncate">{value}</div>
+      <div className="typo-body text-ink-2 mt-0.5 truncate">{value}</div>
     </div>
   );
 }

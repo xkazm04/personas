@@ -2,6 +2,8 @@ import { Folder, Wand2, X } from 'lucide-react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { FLEET_STATE_META } from '../fleetStateMeta';
 import type { QuickDispatchController } from './quickDispatchController';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Shared leaf pieces used by every Quick Dispatch variant — hoisted the moment
@@ -15,31 +17,31 @@ export function QuickDispatchChips({ c }: { c: QuickDispatchController }) {
   return (
     <>
       {c.projectChip && (
-        <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-caption rounded-full border bg-primary/10 border-primary/20 text-primary">
+        <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-caption rounded-interactive border bg-surface-1 border-hair text-primary">
           <Folder className="w-3 h-3" aria-hidden="true" />
           {c.projectChip.name}
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={c.removeProjectChip}
             aria-label={tx(quickT.chip_remove, { label: c.projectChip.name })}
-            className="ml-0.5 p-0.5 rounded-full hover:bg-foreground/10 transition-colors"
+            className="ml-0.5"
           >
             <X className="w-2.5 h-2.5" aria-hidden="true" />
-          </button>
+          </Button>
         </span>
       )}
       {c.skillChip && (
-        <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-caption rounded-full border bg-violet-500/10 border-violet-500/20 text-violet-300">
+        <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-caption rounded-interactive border bg-surface-1 border-hair text-role-agent">
           <Wand2 className="w-3 h-3" aria-hidden="true" />
           {`/${c.skillChip.name}`}
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={c.removeSkillChip}
             aria-label={tx(quickT.chip_remove, { label: c.skillChip.name })}
-            className="ml-0.5 p-0.5 rounded-full hover:bg-foreground/10 transition-colors"
+            className="ml-0.5"
           >
             <X className="w-2.5 h-2.5" aria-hidden="true" />
-          </button>
+          </Button>
         </span>
       )}
     </>
@@ -56,15 +58,14 @@ export function RecentDispatchRow({
 }) {
   const meta = FLEET_STATE_META.find((m) => m.id === session.state);
   return (
-    <button
-      type="button"
-      onClick={c.openFleetPage}
+    <PressSurface
+      onPress={c.openFleetPage}
       aria-label={c.quickT.recent_open_aria}
-      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-foreground/[0.04] transition-colors text-left"
       data-testid="quick-dispatch-recent-row"
+      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive"
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta?.dot ?? 'bg-zinc-500'}`}
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta?.dot ?? 'bg-surface-2'}`}
         aria-hidden="true"
       />
       <span className="typo-caption text-foreground truncate">
@@ -75,7 +76,7 @@ export function RecentDispatchRow({
         showTooltip={false}
         className="ml-auto shrink-0 typo-caption text-foreground"
       />
-    </button>
+    </PressSurface>
   );
 }
 
@@ -96,7 +97,7 @@ export function QuickDispatchMetaLine({ c }: { c: QuickDispatchController }) {
   return (
     <div className="min-h-5 flex items-center" aria-live="off">
       {error ? (
-        <p className="typo-caption text-red-400 truncate" role="alert" data-testid="quick-dispatch-error">
+        <p className="typo-caption text-status-error truncate" role="alert" data-testid="quick-dispatch-error">
           {error.message} {error.suggestion}
         </p>
       ) : c.headless ? (
@@ -105,7 +106,7 @@ export function QuickDispatchMetaLine({ c }: { c: QuickDispatchController }) {
         </p>
       ) : null}
       <p
-        className={c.justDispatched && !error ? 'typo-caption text-emerald-300 truncate' : 'sr-only'}
+        className={c.justDispatched && !error ? 'typo-caption text-status-success truncate' : 'sr-only'}
         role="status"
         data-testid="quick-dispatch-success"
       >

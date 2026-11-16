@@ -17,9 +17,9 @@ export function AttentionProvenance({ inputData }: { inputData: string | null | 
   return (
     <div className="flex items-center gap-2 flex-wrap px-3 py-2 rounded-card border border-accent/20 bg-accent/5 typo-caption">
       <Radar className="w-3.5 h-3.5 text-accent shrink-0" />
-      <span className="text-foreground">{e.attention_provenance}</span>
+      <span className="text-ink-1">{e.attention_provenance}</span>
       {meta.lane && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded-card bg-accent/10 text-accent border border-accent/20 typo-code">
+        <span className="inline-flex items-center text-accent typo-code">
           {e.attention_lane}: {meta.lane}
         </span>
       )}

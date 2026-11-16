@@ -87,8 +87,11 @@ export function useOverseerHandoff(projectId: string | null, watchedNow: boolean
       });
   };
 
+  const sendingRef = useRef(false);
   const send = async () => {
-    if (!projectId) return;
+    // In-flight guard: a second click on Send while the first is pending would hand the project over twice.
+    if (!projectId || sendingRef.current) return;
+    sendingRef.current = true;
     const forProject = projectId;
     setError(null);
     setResult(null);
@@ -103,6 +106,7 @@ export function useOverseerHandoff(projectId: string | null, watchedNow: boolean
       silentCatch('lifecycle:send_to_overseer')(err);
       if (mine(forProject)) setError(message(err));
     } finally {
+      sendingRef.current = false;
       if (mine(forProject)) setConfirming(false);
     }
   };

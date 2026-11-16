@@ -72,7 +72,7 @@ export function AthenaShipMilestoneCard({
   if (created !== null) {
     return (
       <div
-        className="rounded-card border border-emerald-500/30 bg-emerald-500/[0.06] p-3 typo-caption text-foreground"
+        className="rounded-card border border-status-success/30 bg-status-success/10/[0.06] p-3 typo-caption text-foreground"
         data-testid="athena-ship-card"
       >
         {created}
@@ -148,7 +148,7 @@ export function AthenaShipMilestoneCard({
         disabled={busy}
         aria-label={c.ship_milestone_name_label}
         placeholder={c.ship_milestone_name_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-title text-foreground disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-title text-foreground disabled:is-disabled"
         data-testid="athena-ship-name"
       />
       {/* An INPUT, capped — not the 2-row textarea this used to be. The control
@@ -165,7 +165,7 @@ export function AthenaShipMilestoneCard({
         maxLength={SHIP_OBJECTIVE_MAX}
         aria-label={c.ship_milestone_goal_label}
         placeholder={c.ship_milestone_goal_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground disabled:is-disabled"
         data-testid="athena-ship-goal"
       />
       <textarea
@@ -175,7 +175,7 @@ export function AthenaShipMilestoneCard({
         rows={3}
         aria-label={c.ship_milestone_prose_label}
         placeholder={c.ship_milestone_prose_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-y disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-y disabled:is-disabled"
         data-testid="athena-ship-prose"
       />
 
@@ -199,7 +199,7 @@ export function AthenaShipMilestoneCard({
       )}
 
       {error !== null && (
-        <p className="typo-caption text-rose-400 break-words" data-testid="athena-ship-error">
+        <p className="typo-caption text-status-error break-words" data-testid="athena-ship-error">
           {resolveErrorTranslated(t, error).message}
         </p>
       )}

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { StatusBadge, type StatusVariant } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface LabQualityBadgeProps {
   testMetadata?: {
@@ -12,9 +13,9 @@ interface LabQualityBadgeProps {
 }
 
 function scoreVariant(score: number): { variant: StatusVariant; dot: string } {
-  if (score >= 75) return { variant: 'success', dot: 'bg-emerald-400' };
-  if (score >= 50) return { variant: 'warning', dot: 'bg-amber-400' };
-  return { variant: 'error', dot: 'bg-red-400' };
+  if (score >= 75) return { variant: 'success', dot: 'bg-status-success' };
+  if (score >= 50) return { variant: 'warning', dot: 'bg-status-warning' };
+  return { variant: 'error', dot: 'bg-status-error' };
 }
 
 export function LabQualityBadge({ testMetadata, compact }: LabQualityBadgeProps) {
@@ -28,10 +29,8 @@ export function LabQualityBadge({ testMetadata, compact }: LabQualityBadgeProps)
 
   if (compact) {
     return (
-      <span
-        className={`inline-block w-2 h-2 rounded-full ${colors.dot} flex-shrink-0`}
-        title={tx(t.agents.lab.quality_score_title, { score: testMetadata.avgCompositeScore, coverage: testMetadata.testCoverage, date: new Date(testMetadata.lastTestedAt).toLocaleDateString() })}
-      />
+      <Tooltip content={tx(t.agents.lab.quality_score_title, { score: testMetadata.avgCompositeScore, coverage: testMetadata.testCoverage, date: new Date(testMetadata.lastTestedAt).toLocaleDateString() })}><span
+        className={`inline-block w-2 h-2 rounded-full ${colors.dot} flex-shrink-0`} /></Tooltip>
     );
   }
 

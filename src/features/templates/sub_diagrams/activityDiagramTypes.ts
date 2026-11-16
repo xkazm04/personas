@@ -39,7 +39,7 @@ export const NODE_TYPE_META: Record<string, NodeTypeMeta> = {
   action: {
     label: 'Action', color: '#64748b', Icon: Wrench,
     cardStyle: 'bg-secondary/60 border-primary/20',
-    textColor: 'text-foreground/90', iconColor: 'text-foreground',
+    textColor: 'text-ink-1', iconColor: 'text-foreground',
   },
   decision: {
     label: 'Decision', color: '#f59e0b', Icon: GitBranch,
@@ -49,7 +49,7 @@ export const NODE_TYPE_META: Record<string, NodeTypeMeta> = {
   connector: {
     label: 'Connector', color: '#8b5cf6', Icon: Plug,
     cardStyle: 'bg-secondary/60 border-2 border-violet-500/30 shadow-[0_0_16px_rgba(139,92,246,0.1)]',
-    textColor: 'text-foreground/90', iconColor: 'text-violet-400',
+    textColor: 'text-ink-1', iconColor: 'text-violet-400',
   },
   event: {
     label: 'Event', color: '#8b5cf6', Icon: Zap,
@@ -66,5 +66,5 @@ export const NODE_TYPE_META: Record<string, NodeTypeMeta> = {
 export const DEFAULT_NODE_META: NodeTypeMeta = {
   label: 'Action', color: '#64748b', Icon: Wrench,
   cardStyle: 'bg-secondary/60 border-primary/20',
-  textColor: 'text-foreground/90', iconColor: 'text-foreground',
+  textColor: 'text-ink-1', iconColor: 'text-foreground',
 };

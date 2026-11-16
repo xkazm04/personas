@@ -45,7 +45,7 @@ beforeEach(() => {
 
 function renderThread(r: ManualReviewItem) {
   render(<ConversationThread review={r} onAction={vi.fn().mockResolvedValue(undefined)} isProcessing={false} />);
-  return document.querySelector('button[title^="Execution"], button[title="View executions"]') as HTMLButtonElement;
+  return document.querySelector('[data-testid="review-execution-link"]') as HTMLButtonElement;
 }
 
 describe('ConversationThread execution link', () => {

@@ -87,7 +87,7 @@ export function DeckDispatchModal({
 
       <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-4 md:grid-cols-2">
         <section className="flex min-h-0 flex-col gap-2" aria-label={m.triage_dispatch_work_heading}>
-          <span className="typo-label text-foreground">{m.triage_dispatch_work_heading}</span>
+          <span className="typo-label text-ink-2">{m.triage_dispatch_work_heading}</span>
           <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
             {picked.map((row) => (
               <WorkRow
@@ -160,7 +160,7 @@ function WorkRow({
         e.dataTransfer.setData(DRAG_TYPE, row.id);
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="flex items-center gap-2 rounded-card border border-border bg-secondary/20 px-2 py-1.5"
+      className="flex items-center gap-2 rounded-card border border-border bg-surface-1 px-2 py-1.5"
     >
       <div className="min-w-0 flex-1">
         <p className="typo-body truncate text-foreground">{row.title}</p>

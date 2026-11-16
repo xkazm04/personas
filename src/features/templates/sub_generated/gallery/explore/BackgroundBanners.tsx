@@ -2,6 +2,8 @@ import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle, Ba
 import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
 import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 /** Label map for legacy adoption wizard steps shown in draft resume banners. */
 const ADOPT_STEP_LABELS: Record<string, string> = {
   choose: 'Choose', connect: 'Connect', tune: 'Tune', build: 'Build', create: 'Create',
@@ -72,32 +74,32 @@ export function BackgroundBanners({
       {/* Saved draft banner */}
       {showDraftBanner && (
         <div className="mx-4 mt-3 mb-0">
-          <div className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-amber-500/8 border border-amber-500/15">
-            <button
-              type="button"
-              onClick={() => onResumeDraft(adoptionDraft)}
-              className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
+          <div className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-status-warning/8 border border-status-warning/15">
+            <PressSurface
+              onPress={() => onResumeDraft(adoptionDraft)}
+              className="flex-1 flex items-center gap-3 min-w-0"
             >
-              <div className="w-7 h-7 rounded-card bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-                <FileEdit className="w-4 h-4 text-amber-400" />
+              <div className="w-7 h-7 rounded-card bg-status-warning/15 flex items-center justify-center flex-shrink-0">
+                <FileEdit className="w-4 h-4 text-status-warning" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="typo-body text-amber-300 block truncate">
+                <span className="typo-body text-status-warning block truncate">
                   {t.templates.banners.draft_prefix}{adoptionDraft.templateName}
                 </span>
                 <span className="typo-body text-foreground">
                   {t.templates.banners.step_click_resume.replace('{step}', ADOPT_STEP_LABELS[adoptionDraft.step] ?? adoptionDraft.step)}
                 </span>
               </div>
-            </button>
-            <button
+            </PressSurface>
+            <Button
               type="button"
               onClick={onDiscardDraft}
-              className="p-1 rounded-card hover:bg-amber-500/15 text-foreground hover:text-amber-400 transition-colors flex-shrink-0"
-              title={t.templates.banners.discard_draft}
+              variant="ghost"
+              size="icon-sm"
+              tooltip={t.templates.banners.discard_draft} aria-label={t.templates.banners.discard_draft}
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -105,42 +107,40 @@ export function BackgroundBanners({
       {/* Background adoption banner */}
       {templateAdoptActive && !adoptModalOpen && (
         <div className="mx-4 mt-3 mb-0">
-          <button
-            type="button"
-            onClick={onResumeAdoption}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-violet-500/8 border border-violet-500/15 hover:bg-violet-500/12 transition-colors text-left"
+          <PressSurface
+            onPress={onResumeAdoption}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-surface-1 border border-hair"
           >
-            <div className="w-7 h-7 rounded-card bg-violet-500/15 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-violet-400 animate-pulse" />
+            <div className="w-7 h-7 rounded-card bg-role-agent/15 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-4 h-4 text-role-agent" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="typo-body text-violet-300 block">{t.templates.banners.adoption_in_progress}</span>
+              <span className="typo-body text-role-agent block">{t.templates.banners.adoption_in_progress}</span>
               <span className="typo-body text-foreground">{t.templates.banners.click_to_view_progress}</span>
             </div>
-            <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
-          </button>
+            <div className="w-2 h-2 rounded-full bg-role-agent animate-pulse flex-shrink-0" />
+          </PressSurface>
         </div>
       )}
 
       {/* Background rebuild banner */}
       {rebuildIsActive && !rebuildModalOpen && (
         <div className="mx-4 mt-3 mb-0">
-          <button
-            type="button"
-            onClick={onResumeRebuild}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-blue-500/8 border border-blue-500/15 hover:bg-blue-500/12 transition-colors text-left"
+          <PressSurface
+            onPress={onResumeRebuild}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-surface-1 border border-hair"
           >
-            <div className="w-7 h-7 rounded-card bg-blue-500/15 flex items-center justify-center flex-shrink-0">
-              <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
+            <div className="w-7 h-7 rounded-card bg-status-info/15 flex items-center justify-center flex-shrink-0">
+              <RefreshCw className="w-4 h-4 text-status-info animate-spin" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="typo-body text-blue-300 block">
+              <span className="typo-body text-status-info block">
                 {t.templates.banners.rebuilding.replace('{name}', rebuildReviewName ?? 'template')}
               </span>
               <span className="typo-body text-foreground">{t.templates.banners.click_to_view_progress}</span>
             </div>
-            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
-          </button>
+            <div className="w-2 h-2 rounded-full bg-status-info animate-pulse flex-shrink-0" />
+          </PressSurface>
         </div>
       )}
 
@@ -164,27 +164,27 @@ export function BackgroundBanners({
                   : 'cyan';
 
         const bgClass = {
-          red: 'bg-red-500/8 border-red-500/15 hover:bg-red-500/12',
-          emerald: 'bg-emerald-500/8 border-emerald-500/15 hover:bg-emerald-500/12',
-          slate: 'bg-secondary/40 border-primary/10 hover:bg-secondary/60',
-          amber: 'bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/12',
-          cyan: 'bg-cyan-500/8 border-cyan-500/15 hover:bg-cyan-500/12',
+          red: 'bg-status-error/8 border-status-error/15 hover:bg-status-error/12',
+          emerald: 'bg-status-success/8 border-status-success/15 hover:bg-status-success/12',
+          slate: 'bg-surface-2 border-hair hover:bg-surface-2',
+          amber: 'bg-status-warning/8 border-status-warning/15 hover:bg-status-warning/12',
+          cyan: 'bg-role-highlight/8 border-role-highlight/15 hover:bg-role-highlight/12',
         }[tone];
 
         const iconBgClass = {
-          red: 'bg-red-500/15',
-          emerald: 'bg-emerald-500/15',
-          slate: 'bg-secondary/60',
-          amber: 'bg-amber-500/15',
-          cyan: 'bg-cyan-500/15',
+          red: 'bg-status-error/15',
+          emerald: 'bg-status-success/15',
+          slate: 'bg-surface-2',
+          amber: 'bg-status-warning/15',
+          cyan: 'bg-role-highlight/15',
         }[tone];
 
         const textClass = {
-          red: 'text-red-300',
-          emerald: 'text-emerald-300',
+          red: 'text-status-error',
+          emerald: 'text-status-success',
           slate: 'text-foreground',
-          amber: 'text-amber-300',
-          cyan: 'text-cyan-300',
+          amber: 'text-status-warning',
+          cyan: 'text-role-highlight',
         }[tone];
 
         const Icon = {
@@ -208,28 +208,27 @@ export function BackgroundBanners({
           : t.templates.banners.click_to_view_output;
 
         const iconColor = {
-          red: 'text-red-400',
-          emerald: 'text-emerald-400',
+          red: 'text-status-error',
+          emerald: 'text-status-success',
           slate: 'text-foreground',
-          amber: 'text-amber-400',
-          cyan: 'text-cyan-400',
+          amber: 'text-status-warning',
+          cyan: 'text-role-highlight',
         }[tone];
 
         const dotColor = {
-          red: 'bg-red-400',
-          emerald: 'bg-emerald-400',
+          red: 'bg-status-error',
+          emerald: 'bg-status-success',
           slate: 'bg-secondary',
-          amber: 'bg-amber-400',
-          cyan: 'bg-cyan-400',
+          amber: 'bg-status-warning',
+          cyan: 'bg-role-highlight',
         }[tone];
 
         return (
           <div className="mx-4 mt-3 mb-0">
             <div className={`w-full flex items-center gap-3 px-4 py-3 rounded-modal border ${bgClass}`}>
-              <button
-                type="button"
-                onClick={onResumePreview}
-                className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
+              <PressSurface
+                onPress={onResumePreview}
+                className="flex-1 flex items-center gap-3 min-w-0"
               >
                 <div className={`w-7 h-7 rounded-card ${iconBgClass} flex items-center justify-center flex-shrink-0`}>
                   <Icon className={`w-4 h-4 ${iconColor} ${!isDone ? 'animate-pulse' : ''}`} />
@@ -241,16 +240,17 @@ export function BackgroundBanners({
                   <span className="typo-body text-foreground">{subtitleText}</span>
                 </div>
                 <div className={`w-2 h-2 rounded-full ${dotColor} ${!isDone ? 'animate-pulse' : ''} flex-shrink-0`} />
-              </button>
+              </PressSurface>
               {isDone && (
-                <button
+                <Button
                   type="button"
                   onClick={onDismissPreview}
-                  className="p-1 rounded-card hover:bg-secondary/40 text-foreground hover:text-foreground/70 transition-colors flex-shrink-0"
-                  title="Dismiss"
+                  variant="ghost"
+                  size="icon-sm"
+                  tooltip="Dismiss" aria-label="Dismiss"
                 >
                   <X className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

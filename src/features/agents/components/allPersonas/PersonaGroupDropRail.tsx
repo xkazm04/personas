@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { Users, ChevronDown, Check } from 'lucide-react';
+import { Users, ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { inLifecyclePopulation } from './rosterCount';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 /** Sentinel filter id for "personas with no home team". */
 const NO_TEAM = '__ungrouped__';
@@ -100,9 +102,9 @@ export function PersonaGroupDropRail({
     <div
       role="region"
       aria-label={rail.aria_label}
-      className="flex items-center gap-2 px-3 py-2 border-b border-primary/5"
+      className="flex items-center gap-2 px-3 py-2 border-b border-hair"
     >
-      <span className="flex items-center gap-1.5 typo-label text-foreground flex-shrink-0">
+      <span className="flex items-center gap-1.5 typo-label text-ink-1 flex-shrink-0">
         <Users className="w-3 h-3" />
         {rail.heading}
       </span>
@@ -115,26 +117,28 @@ export function PersonaGroupDropRail({
           if (opt) onSelectFilter?.(opt.id);
         }}
         renderTrigger={({ isOpen, toggle }) => (
-          <button
+          <Button
             type="button"
             onClick={toggle}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
-            className="inline-flex items-center justify-between gap-2 w-full px-3 py-1.5 rounded-input border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
+            variant="secondary"
+            size="sm"
+            className="w-full"
           >
             <span className="inline-flex items-center gap-1.5 min-w-0">
-              {triggerColor && (
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: triggerColor }}
-                />
-              )}
-              <span className="truncate">{triggerLabel}</span>
+            {triggerColor && (
+            <span
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: triggerColor }}
+            />
+            )}
+            <span className="truncate">{triggerLabel}</span>
             </span>
             <ChevronDown
-              className={`w-3.5 h-3.5 flex-shrink-0 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-3.5 h-3.5 flex-shrink-0 text-ink-1 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             />
-          </button>
+          </Button>
         )}
       >
         {({ close, focusIndex }) => (
@@ -144,19 +148,17 @@ export function PersonaGroupDropRail({
               const isFocus = i === focusIndex;
               return (
                 <li key={opt.id ?? '__all__'}>
-                  <button
-                    type="button"
+                  <OptionRow
                     role="option"
-                    aria-selected={isSelected}
-                    onClick={() => {
+                    selected={isSelected}
+                    onSelect={() => {
                       onSelectFilter?.(opt.id);
                       close();
                     }}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 typo-body text-left transition-colors ${
-                      isFocus ? 'bg-secondary/60' : 'hover:bg-secondary/40'
-                    } ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}
+                    className={isFocus ? 'bg-surface-2' : ''}
+                    meta={opt.count}
                   >
-                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <span className="flex items-center gap-1.5 min-w-0">
                       {opt.color && (
                         <span
                           className="w-2 h-2 rounded-full flex-shrink-0"
@@ -165,11 +167,7 @@ export function PersonaGroupDropRail({
                       )}
                       <span className="truncate">{opt.label}</span>
                     </span>
-                    <span className="inline-flex items-center gap-1.5 flex-shrink-0">
-                      <span className="typo-label font-mono text-foreground">{opt.count}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
-                    </span>
-                  </button>
+                  </OptionRow>
                 </li>
               );
             })}

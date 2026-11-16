@@ -5,6 +5,7 @@
 // layer scan-proposed links on top of the same data_links column. Portalled +
 // anchored like the module's other popovers.
 import { useEffect, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { createPortal } from 'react-dom';
 import { GitFork, X } from 'lucide-react';
 
@@ -70,29 +71,29 @@ export function DataLinksPopover({ slug, anchor, onClose }: {
       tabIndex={-1}
       aria-label={tx(d.improve_links_aria, { name: raw.project.name })}
       style={popStyle(anchor)}
-      className="fixed z-[9995] outline-none rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed z-[9995] outline-none rounded-modal border border-hair bg-background shadow-elevation-4 overflow-hidden"
     >
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-surface-1">
         <GitFork className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground truncate">{tx(d.improve_links_title, { name: raw.project.name })}</span>
-        <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
+        <span className="typo-caption text-ink-2 truncate">{tx(d.improve_links_title, { name: raw.project.name })}</span>
+        <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={onClose} aria-label={t.common.close}>
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
-      <p className="px-3 pt-2 typo-caption text-foreground/55" style={{ fontWeight: 400 }}>
+      <p className="px-3 pt-2 typo-caption text-ink-3" style={{ fontWeight: 400 }}>
         {d.improve_links_hint}
       </p>
 
       {others === null ? (
-        <p className="px-3 py-4 typo-caption text-foreground/45 text-center">{d.improve_links_loading}</p>
+        <p className="px-3 py-4 typo-caption text-ink-3 text-center">{d.improve_links_loading}</p>
       ) : others.length === 0 ? (
-        <p className="px-3 py-4 typo-caption text-foreground/45 text-center">{d.improve_links_empty}</p>
+        <p className="px-3 py-4 typo-caption text-ink-3 text-center">{d.improve_links_empty}</p>
       ) : (
         <ul className="max-h-52 overflow-y-auto p-1.5">
           {others.map((r) => (
             <li key={r.id}>
-              <label className="flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/[0.04] cursor-pointer">
+              <label className="flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-surface-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={selected.has(r.id)}
@@ -100,22 +101,17 @@ export function DataLinksPopover({ slug, anchor, onClose }: {
                   className="w-3.5 h-3.5 flex-shrink-0 cursor-pointer"
                   style={{ accentColor: 'var(--primary)' }}
                 />
-                <span className="typo-caption text-foreground truncate">{r.name}</span>
+                <span className="typo-caption text-ink-2 truncate">{r.name}</span>
               </label>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="flex items-center justify-end gap-1.5 px-3 py-2 border-t border-primary/10 bg-secondary/10">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50"
-        >
+      <div className="flex items-center justify-end gap-1.5 px-3 py-2 border-t border-hair bg-surface-1">
+        <Button variant="secondary" size="sm" onClick={save} disabled={saving}>
           {saving ? t.common.saving : d.improve_links_save}
-        </button>
+        </Button>
       </div>
     </div>,
     document.body,

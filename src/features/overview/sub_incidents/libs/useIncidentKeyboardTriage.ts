@@ -71,7 +71,8 @@ export function useIncidentKeyboardTriage(args: TriageArgs): void {
           focusAt(curIdx < 0 ? list.length - 1 : Math.max(0, curIdx - 1));
           break;
         case 'Enter':
-          if (curIdx >= 0) {
+          // A focused button/link activates itself on Enter; do not also open the row.
+          if (curIdx >= 0 && !(tgt && tgt.closest('button, a[href]'))) {
             e.preventDefault();
             cur.onOpenDetail(list[curIdx]!);
           }

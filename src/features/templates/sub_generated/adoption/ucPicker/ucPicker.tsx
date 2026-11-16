@@ -29,6 +29,7 @@ import { MESSAGING_CATEGORY } from './ucPickerTypes';
 import { useUcPickerState } from './useUcPickerState';
 
 import { isCredentialVerified } from '@/lib/credentials/healthState';
+import Button from '@/features/shared/components/buttons/Button';
 export type { UseCaseOption } from '../useCasePickerShared';
 
 export function UseCasePickerStep(props: UseCasePickerVariantProps) {
@@ -66,14 +67,16 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
             {selectedCount} of {useCases.length} capabilit
             {useCases.length === 1 ? 'y' : 'ies'} enabled
           </span>
-          <button
+          <Button
             type="button"
             onClick={props.onContinue}
             disabled={!canContinue}
-            className="focus-ring inline-flex items-center gap-2 px-5 py-2 rounded-modal bg-btn-primary text-foreground hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+            variant="primary"
+            size="md"
+            icon={<CheckCircle2 className="w-4 h-4" />}
           >
-            <CheckCircle2 className="w-4 h-4" /> Continue
-          </button>
+             Continue
+          </Button>
         </div>
       </div>
 

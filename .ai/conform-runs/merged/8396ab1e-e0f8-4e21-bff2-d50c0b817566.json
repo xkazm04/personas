@@ -1,0 +1,145 @@
+{
+ "schema": "conform-run/1",
+ "worker": "8396ab1e-e0f8-4e21-bff2-d50c0b817566",
+ "subject": "demo-data-plane",
+ "evaluatedAt": "2026-11-10T00:42:16.250904+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "teams-goals",
+   "subject": "demo-data-plane",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/projects/development/goals/GoalsPage.tsx:88 Searched goals/, teams/sub_collab and teams/sub_deliberations (incl. subdirs) for demo/fixture/fake and found no fabricated plane; the only empty-state aid, starter goals, is written as a real goal through the real createGoal write path on an explicit click, so no fabricated data is ever rendered here.",
+   "techniques": [
+    {
+     "technique": "fake-surface-honesty-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/projects/development/goals/GoalsPage.tsx:75 Empty state offers templates the user commits as their own data; it does not fall back to fixtures, so no fabricated surface exists to disclose."
+    }
+   ],
+   "absenceTerms": [
+    "demo",
+    "fixture",
+    "fake"
+   ]
+  },
+  {
+   "context": "mastermind-scene-store",
+   "subject": "demo-data-plane",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:152 When no projects are cross-scanned and nothing is loading, the scene silently becomes the six-island demo world, so the plane is inferred from an empty result rather than chosen by an explicit act, which is the auto-entry the contract forbids.",
+   "techniques": [
+    {
+     "technique": "runtime-dispatch-not-build-flag",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:139 Plane selected from the shape of the result (passports empty vs not), the first forbidden derivation source; no explicit viewer act or session field."
+    },
+    {
+     "technique": "fake-surface-honesty-contract",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:152 Clause 2 (never auto-entered) broken: a fresh user's empty workspace is shown fabricated islands with KPI alerts, blocker counts and error stats."
+    },
+    {
+     "technique": "fixture-self-consistency",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/statsMock.ts:23 Side stats are hashed per slug independently of the island root: demo-desktop declares autoScore 84 / prod 88 / '81% cov' yet mockStats yields Auto 61 / Prod 40 / Tests 85% (computed), whereas live stats read the same passport score."
+    },
+    {
+     "technique": "seeded-determinism",
+     "verdict": "conformant",
+     "evidence": "src/features/teams/sub_mastermind/lib/statsMock.ts:7 Variation comes from a djb2 hash of slug:key, no time or Math.random, so the demo world is identical across renders and tabs."
+    },
+    {
+     "technique": "cross-plane-parity-test",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:164 Demo islands are hand-built Island objects that bypass toIsland/buildIslandStats, the live derivation; no test runs the live derivation over a demo-world upstream, which is how the stat contradictions above went unseen."
+    },
+    {
+     "technique": "replay-clock-pinning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:181 Fixtures are handed straight to the canvas with static age strings; no recorded moment replayed through ingestion."
+    },
+    {
+     "technique": "mixed-plane-coexistence",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:149 Any real passport yields a wholly real scene; demo and real islands never share a scene."
+    }
+   ],
+   "registryProposal": "For a single-user local-first desktop app there is no session or unauthenticated visitor; the standard should say whether a first-run sample shown on an empty workspace (with a dismissable notice, persistent badge and scan/add CTAs) counts as auto-entry or as an acceptable onboarding door, since clause 2 currently reads as forbidding it outright."
+  },
+  {
+   "context": "mastermind-popovers",
+   "subject": "demo-data-plane",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/lib/DemoNotice.tsx:2 The disclosure is designed around demo entry inferred from an empty workspace, and its main marker is a dialog the viewer dismisses ('Explore the sample'), though conversion CTAs, inert demo persona rows (PersonaListPopover.tsx:87) and the named 'Demo session' fleet body (FleetPreviewPanel.tsx:48) do realize clauses 5 and 6.",
+   "techniques": [
+    {
+     "technique": "fake-surface-honesty-contract",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/DemoNotice.tsx:2 Clause 2 broken by design (notice appears whenever the empty-data demo renders); clause 1 relies on a dismissable dialog with the persistent badge living outside this context; clauses 5/6 realized (inert div rows, 'Demo session' label, scan/add conversion action)."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "demo-data-plane",
+   "context": "stores-slices-overview",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-10T00:42:16.250904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "demo-data-plane"
+   ],
+   "techniques": [
+    "fake-surface-honesty-contract"
+   ],
+   "deviations": 0,
+   "context": "teams-goals",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T00:42:16.250904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "demo-data-plane"
+   ],
+   "techniques": [
+    "cross-plane-parity-test",
+    "fake-surface-honesty-contract",
+    "fixture-self-consistency",
+    "mixed-plane-coexistence",
+    "replay-clock-pinning",
+    "runtime-dispatch-not-build-flag",
+    "seeded-determinism"
+   ],
+   "deviations": 1,
+   "context": "mastermind-scene-store",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T00:42:16.250904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "demo-data-plane"
+   ],
+   "techniques": [
+    "fake-surface-honesty-contract"
+   ],
+   "deviations": 1,
+   "context": "mastermind-popovers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "schema": "conform-run/1",
+ "worker": "fcded239-0154-47ed-af0d-a9603d31c50b",
+ "subject": "p2p-networking",
+ "evaluatedAt": "2026-11-04T03:43:33.708768+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "glyph-persona-card",
+   "subject": "p2p-networking",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 The context is the React persona-card presentation layer (layout props, composer, contact-sheet dial drawings); a case-insensitive search of src/features/agents/sub_glyph for p2p, mdns, peer and quinn found zero files, so it never discovers, connects to or exposes data to peer devices and the subject's precondition does not hold.",
+   "techniques": [
+    {
+     "technique": "connection-lifecycle",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/contactSheet/dial/DialGrid.tsx:1 'dial' here is a visual drawing component, not a network dial; no connections are opened in this context."
+    },
+    {
+     "technique": "discovery-advertisement",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 Pure UI props; no mDNS or broadcast announcement anywhere in sub_glyph."
+    },
+    {
+     "technique": "exposure-controls",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No data is shared with paired peers from this surface."
+    },
+    {
+     "technique": "manifest-negotiation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No peer capability exchange happens here."
+    },
+    {
+     "technique": "peer-state-honesty",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No peer state is rendered; the card shows persona build state only."
+    },
+    {
+     "technique": "resilience-and-reconnection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No peer records or reconnect logic here."
+    }
+   ],
+   "absenceTerms": [
+    "p2p",
+    "mdns",
+    "peer",
+    "quinn"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T03:43:33.708768+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "p2p-networking"
+   ],
+   "techniques": [
+    "connection-lifecycle",
+    "discovery-advertisement",
+    "exposure-controls",
+    "manifest-negotiation",
+    "peer-state-honesty",
+    "resilience-and-reconnection"
+   ],
+   "deviations": 0,
+   "context": "glyph-persona-card",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

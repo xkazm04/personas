@@ -42,8 +42,8 @@ export interface ScoreTint {
 }
 
 export function scoreTint(v: number): ScoreTint {
-  if (v >= 80) return { bg: 'bg-emerald-500/15', text: 'text-emerald-400', hex: '#10B981' };
-  if (v >= 60) return { bg: 'bg-blue-500/15', text: 'text-blue-400', hex: '#3B82F6' };
-  if (v >= 40) return { bg: 'bg-amber-500/15', text: 'text-amber-400', hex: '#F59E0B' };
-  return { bg: 'bg-red-500/15', text: 'text-red-400', hex: '#EF4444' };
+  if (v >= 80) return { bg: 'bg-status-success/15', text: 'text-status-success', hex: '#10B981' };
+  if (v >= 60) return { bg: 'bg-status-info/15', text: 'text-status-info', hex: '#3B82F6' };
+  if (v >= 40) return { bg: 'bg-status-warning/15', text: 'text-status-warning', hex: '#F59E0B' };
+  return { bg: 'bg-status-error/15', text: 'text-status-error', hex: '#EF4444' };
 }

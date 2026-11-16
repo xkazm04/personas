@@ -16,6 +16,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { probeMcpServer, type McpServerLiveness } from '@/api/agents/mcpTools';
 import { DEFAULT_MCP_PORT, mcpBaseUrl } from '../libs/mcpServer';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** How often the panel re-probes the local server's live state. */
 const PROBE_INTERVAL_MS = 30_000;
@@ -97,21 +98,21 @@ export function McpServerInfoPanel() {
         : s.server_status_down;
   const statusClass =
     statusKey === 'running'
-      ? 'text-emerald-400 bg-emerald-400/10'
+      ? 'text-status-success bg-status-success/10'
       : statusKey === 'down'
-        ? 'text-red-400 bg-red-400/10'
-        : 'text-amber-400 bg-amber-400/10';
+        ? 'text-status-error bg-status-error/10'
+        : 'text-status-warning bg-status-warning/10';
 
   return (
     <SectionCard
       title={s.server_panel_title}
-      icon={<Server className="w-4 h-4 text-fuchsia-400" />}
-      titleClassName="text-primary"
+      icon={<Server className="w-4 h-4 text-role-agent" />}
+      titleClassName="text-ink-1"
       action={
         <span
           data-testid="mcp-server-status-chip"
           data-status={statusKey}
-          className={`typo-caption px-1.5 py-0.5 rounded ${statusClass}`}
+          className={`typo-caption px-1.5 py-0.5 rounded-interactive ${statusClass}`}
         >
           {statusLabel}
         </span>
@@ -124,14 +125,15 @@ export function McpServerInfoPanel() {
         <code className="flex-1 typo-code text-foreground bg-background/60 border border-border/30 rounded-input px-2.5 py-1.5 truncate">
           {baseUrl}
         </code>
-        <button
+        <Button
           type="button"
           onClick={copyUrl}
-          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/50 transition-colors"
+          variant="ghost"
+          size="sm"
         >
           {urlCopied ? (
             <>
-              <Check size={12} className="text-emerald-400" />
+              <Check size={12} className="text-status-success" />
               {s.copied}
             </>
           ) : (
@@ -140,7 +142,7 @@ export function McpServerInfoPanel() {
               {s.copy}
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       <details className="group">
@@ -152,18 +154,18 @@ export function McpServerInfoPanel() {
           {ENDPOINTS.map((ep) => (
             <div
               key={`${ep.method}-${ep.path}`}
-              className="flex items-center gap-2 typo-caption px-2 py-1 rounded hover:bg-secondary/30"
+              className="flex items-center gap-2 typo-caption px-2 py-1 rounded-interactive hover:bg-surface-1"
             >
               <span
-                className={`text-[10px] font-mono font-bold w-12 text-center px-1.5 py-0.5 rounded ${
+                className={`typo-label font-mono w-12 text-center px-1.5 py-0.5 rounded-interactive ${
                   ep.method === 'GET'
-                    ? 'text-sky-400 bg-sky-400/10'
-                    : 'text-emerald-400 bg-emerald-400/10'
+                    ? 'text-status-info bg-status-info/10'
+                    : 'text-status-success bg-status-success/10'
                 }`}
               >
                 {ep.method}
               </span>
-              <code className="typo-code text-foreground/90">{ep.path}</code>
+              <code className="typo-code text-ink-1">{ep.path}</code>
               <span className="text-foreground ml-auto truncate">
                 {s[ep.descriptionKey]}
               </span>
@@ -172,7 +174,7 @@ export function McpServerInfoPanel() {
         </div>
       </details>
 
-      <p className="typo-caption text-foreground bg-background/40 rounded p-2">
+      <p className="typo-caption text-foreground bg-background/40 rounded-interactive p-2">
         <span className="font-medium text-foreground">{s.server_auth_label}:</span>{' '}
         {s.server_auth_description}
       </p>

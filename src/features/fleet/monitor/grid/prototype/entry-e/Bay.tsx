@@ -118,16 +118,16 @@ export const Bay = memo(function Bay({
           <span className={`min-w-0 flex-1 truncate typo-heading ${scoped ? 'text-primary' : 'text-foreground'} ${off ? 'line-through decoration-foreground/40' : ''}`}>
             {remote ? tx(m.remote_on_device, { device: remote.displayName }) : name}
           </span>
-          {off && <PowerOff className="h-3.5 w-3.5 flex-shrink-0 text-status-warning" aria-label={t.plugins.dev_projects.project_state_off} />}
+          {off && <PowerOff className="h-3.5 w-3.5 flex-shrink-0 text-ink-2" aria-label={t.plugins.dev_projects.project_state_off} />}
           {scoped && <Filter className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />}
           <BayServerChip server={server} hint={serverHint} />
           {liveCount > 0 && (
-            <span className="ae-t-run inline-flex flex-shrink-0 items-center gap-1 typo-caption tabular-nums text-primary">
+            <span className="ae-t-run inline-flex flex-shrink-0 items-center gap-1 typo-caption num text-primary">
               <Lamp lamp={{ tone: 'run', lit: true }} />{liveCount}
             </span>
           )}
           {!remote && <MandateLamp projectId={project?.id ?? null} />}
-          <span className="flex-shrink-0 typo-data tabular-nums text-foreground">{column.cards.length}</span>
+          <span className="flex-shrink-0 typo-data num text-foreground">{column.cards.length}</span>
           {!remote && <Lamp lamp={lamp} />}
         </Button>
       </Tooltip>

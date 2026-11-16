@@ -4,6 +4,8 @@ import { useStudioStore } from './studioStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // B3 — global signal: when a Studio project is waiting on a decision and you are
 // NOT currently on Studio, a floating pill surfaces it; clicking jumps to Studio
 // and focuses the waiting project. The build keeps running in the background
@@ -38,19 +40,21 @@ export default function StudioAttention() {
       : tx(t.studio.athena_needs_you, { name: sig.name });
 
   return (
-    <button
+    <Button
       type="button"
       onClick={() => {
         setActive(targetId);
         setSidebarSection('studio');
       }}
-      className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-full border border-primary/40 bg-background/95 py-2 pl-3 pr-4 shadow-elevation-4 backdrop-blur transition-transform hover:scale-[1.03]"
+      variant="secondary"
+      size="sm"
+      className="fixed bottom-6 right-6 z-[60]"
     >
       <span className="relative flex h-6 w-6 items-center justify-center">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40" />
         <Bot className="relative h-4 w-4 text-primary" />
       </span>
       <span className="text-md text-foreground">{label}</span>
-    </button>
+    </Button>
   );
 }

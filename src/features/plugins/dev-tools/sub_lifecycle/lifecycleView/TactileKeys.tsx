@@ -63,7 +63,7 @@ export function KeyCap({ state, pressed = false, size = 'md', layoutId, children
   return (
     <motion.span
       className={`relative flex items-center justify-center border transition-[box-shadow,background-color,border-color] duration-150 ${lcShape('card')} ${KEY[size]} ${
-        pressed ? 'border-primary/40 bg-primary/10 shadow-inner' : 'border-primary/15 bg-background shadow-elevation-2'
+        pressed ? 'border-primary/40 bg-surface-1 shadow-inner' : 'border-hair bg-background shadow-elevation-2'
       }`}
       layoutId={layoutId}
       data-layout-id={layoutId}
@@ -79,7 +79,7 @@ export function KeyCap({ state, pressed = false, size = 'md', layoutId, children
 
 export function MiniKey({ state }: { state: LifecycleBindingState }) {
   return (
-    <span aria-hidden className={`relative block h-5 w-5 shrink-0 border border-primary/15 bg-background shadow-elevation-1 ${lcShape('chip')}`}>
+    <span aria-hidden className={`relative block h-5 w-5 shrink-0 border border-hair bg-background shadow-elevation-1 ${lcShape('chip')}`}>
       <span className={`absolute left-1 right-1 top-0.5 ${LED[state]}`} />
     </span>
   );

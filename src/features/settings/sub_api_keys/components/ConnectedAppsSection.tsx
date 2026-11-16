@@ -43,8 +43,8 @@ export function ConnectedAppsSection({ keys, actioningIds, onDisconnect, onAudit
     <div className="mt-6">
       <SectionCard
         title={s.connected_apps_title}
-        icon={<Globe className="w-4 h-4 text-sky-400" />}
-        titleClassName="text-primary"
+        icon={<Globe className="w-4 h-4 text-ink-2" />}
+        titleClassName="text-ink-1"
       >
         <div className="flex items-center gap-3 mb-2">
           <p className="typo-caption text-foreground flex-1">{s.connected_apps_desc}</p>
@@ -108,22 +108,22 @@ function PairingGroupRow({ group, actioning, onDisconnect, onAudit }: PairingGro
     <div
       data-testid="connected-app-row"
       className={`flex items-center gap-3 px-3 py-2.5 rounded-card border ${
-        current ? 'border-border/30 bg-secondary/20' : 'border-border/20 bg-secondary/10'
+        current ? 'border-border/30 bg-surface-1' : 'border-border/20 bg-secondary/10'
       }`}
     >
-      <Globe className="w-4 h-4 text-sky-400 shrink-0" />
+      <Globe className="w-4 h-4 text-status-info shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground truncate">{shown.name}</span>
           {current && expiry ? (
             <Tooltip content={formatTimestamp(current.expires_at)}>
-              <span className="typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 text-foreground bg-secondary/40">
+              <span className="typo-caption px-1.5 py-0.5 rounded-interactive inline-flex items-center gap-1 text-foreground bg-surface-2">
                 <CalendarClock size={10} />
                 {tx(s.expires_in, { days: expiry.days })}
               </span>
             </Tooltip>
           ) : !current ? (
-            <span className="typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 text-red-400 bg-red-400/10 border border-red-400/30">
+            <span className="typo-caption px-1.5 py-0.5 inline-flex items-center gap-1 text-status-error">
               <CalendarClock size={10} />
               {s.connected_apps_no_live}
             </span>
@@ -136,37 +136,37 @@ function PairingGroupRow({ group, actioning, onDisconnect, onAudit }: PairingGro
             {s.last_used}: {lastUsed}
           </span>
           {olderCount > 0 && (
-            <span className="typo-caption text-amber-400">{tx(s.connected_apps_older_count, { count: olderCount })}</span>
+            <span className="typo-caption text-status-warning">{tx(s.connected_apps_older_count, { count: olderCount })}</span>
           )}
           {expiredCount > 0 && (
-            <span className="typo-caption text-red-400">{tx(s.connected_apps_expired_count, { count: expiredCount })}</span>
+            <span className="typo-caption text-status-error">{tx(s.connected_apps_expired_count, { count: expiredCount })}</span>
           )}
         </div>
       </div>
       <div className="flex items-center gap-1">
         <Tooltip content={s.audit_tooltip}>
-          <button
+          <Button
             type="button"
             onClick={() => onAudit(shown)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            variant="ghost"
+            size="xs"
+            icon={<History size={12} />}
           >
-            <History size={12} />
             {s.audit}
-          </button>
+          </Button>
         </Tooltip>
         {current && (
           <Tooltip content={s.connected_apps_revoke_tooltip}>
-            <button
+            <Button
               type="button"
               onClick={triggerDisconnect}
               disabled={actioning}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:is-disabled ${
-                confirm ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20' : 'text-foreground hover:text-red-400 hover:bg-red-400/10'
-              }`}
+              variant={confirm ? 'danger' : 'ghost'}
+              size="xs"
+              icon={confirm ? <Check size={12} /> : <Unplug size={12} />}
             >
-              {confirm ? <Check size={12} /> : <Unplug size={12} />}
               {confirm ? s.confirm_delete : s.connected_apps_revoke}
-            </button>
+            </Button>
           </Tooltip>
         )}
       </div>

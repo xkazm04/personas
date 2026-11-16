@@ -25,11 +25,13 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useTrainingMomentum } from './useTrainingMomentum';
 import { scoreTopicCoverage, topicByCommunication, type CoverageTier, type TopicCoverage } from './topicCoverage';
 import { TRAINING_TOPIC_PRESETS, TRAINING_TOPIC_WINDOW } from './useTrainingSession';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
+// The tier rides on the count's ink (the aria-label names it in words).
 const TIER_TINT: Record<CoverageTier, string> = {
-  thin: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
-  some: 'border-cyan-500/25 bg-cyan-500/10 text-cyan-200',
-  covered: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-200',
+  thin: 'text-status-warning',
+  some: 'text-ink-3',
+  covered: 'text-status-success',
 };
 
 const TIER_LABEL_KEY: Record<CoverageTier, 'coverageThin' | 'coverageSome' | 'coverageCovered'> = {
@@ -96,7 +98,7 @@ export function TrainingMomentumBand({ twinId, topic, onPickTopic, refreshToken 
       data-testid="training-momentum-band"
     >
       <span className="flex items-center gap-2 flex-shrink-0">
-        <GraduationCap className="w-3.5 h-3.5 text-violet-300" aria-hidden />
+        <GraduationCap className="w-3.5 h-3.5 text-ink-2" aria-hidden />
         <span className="typo-card-label" data-testid="training-momentum-sessions">
           {momentum.sessions} {tt.momentumSessions}
         </span>
@@ -122,21 +124,16 @@ export function TrainingMomentumBand({ twinId, topic, onPickTopic, refreshToken 
           const prompt = tt[preset.promptKey];
           const selected = topic === prompt;
           return (
-            <button
+            <OptionChip
               key={preset.id}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onPickTopic(prompt, preset.id)}
+              onSelect={() => onPickTopic(prompt, preset.id)}
               data-testid={`training-coverage-${preset.id}`}
               data-tier={tier}
-              className={`px-2 py-1 rounded-interactive border typo-caption transition-colors flex items-center gap-1.5 ${TIER_TINT[tier]} ${
-                selected ? 'ring-1 ring-violet-400/60' : 'hover:shadow-elevation-1'
-              }`}
               aria-label={`${tt[preset.labelKey]}: ${tt[TIER_LABEL_KEY[tier]]}`}
-            >
+              selected={selected}
+            ><span className="inline-flex items-center gap-1.5">
               {tt[preset.labelKey]}
-              <span className="tabular-nums opacity-80">{scored?.count ?? 0}</span>
-            </button>
+              <span className={`num ${TIER_TINT[tier]}`}>{scored?.count ?? 0}</span></span></OptionChip>
           );
         })}
       </div>

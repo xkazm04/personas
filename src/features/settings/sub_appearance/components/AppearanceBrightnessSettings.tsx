@@ -41,7 +41,7 @@ export default function AppearanceBrightnessSettings() {
               key={level.id}
               active={isActive}
               onSelect={() => setBrightness(level.id as BrightnessLevel)}
-              icon={<Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />}
+              icon={<Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-status-warning' : 'text-foreground'}`} />}
               label={s[level.labelKey]}
               description={s[level.descriptionKey]}
             />

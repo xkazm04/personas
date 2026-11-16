@@ -2,9 +2,9 @@ import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { pctChange, fmtPct, deltaColor } from '../../libs/comparisonHelpers';
 
 function deltaIcon(pct: number) {
-  if (Math.abs(pct) < 5) return <Minus className="w-3 h-3 text-foreground" />;
-  if (pct < 0) return <TrendingDown className="w-3 h-3 text-emerald-400" />;
-  return <TrendingUp className="w-3 h-3 text-amber-400" />;
+  if (Math.abs(pct) < 5) return <Minus className="w-3 h-3 text-ink-1" />;
+  if (pct < 0) return <TrendingDown className="w-3 h-3 text-status-success" />;
+  return <TrendingUp className="w-3 h-3 text-status-warning" />;
 }
 
 /** An absence, not a measurement. */
@@ -36,15 +36,15 @@ export function MetricDeltaCard({
   const zeroBaseGrowth = measured && leftVal === 0 && rightVal !== 0;
   const pct = measured && !zeroBaseGrowth ? pctChange(leftVal, rightVal) : null;
   return (
-    <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2.5 space-y-1">
-      <div className="typo-code uppercase tracking-wider text-foreground">{label}</div>
+    <div className="bg-surface-1 border border-hair rounded-modal px-3 py-2.5 space-y-1">
+      <div className="typo-eyebrow text-ink-1">{label}</div>
       <div className="flex items-center gap-3">
-        <span className="typo-code text-foreground">{leftVal === null ? EM_DASH : format(leftVal)}</span>
-        <span className="text-foreground">{'→'}</span>
-        <span className="typo-code text-foreground">{rightVal === null ? EM_DASH : format(rightVal)}</span>
+        <span className="typo-code text-ink-1">{leftVal === null ? EM_DASH : format(leftVal)}</span>
+        <span className="text-ink-1">{'→'}</span>
+        <span className="typo-code text-ink-1">{rightVal === null ? EM_DASH : format(rightVal)}</span>
       </div>
       {pct === null ? (
-        <div className="flex items-center gap-1 typo-code text-foreground">{EM_DASH}</div>
+        <div className="flex items-center gap-1 typo-code text-ink-1">{EM_DASH}</div>
       ) : (
         <div className={`flex items-center gap-1 typo-code ${deltaColor(pct, lowerIsBetter)}`}>
           {deltaIcon(pct)}

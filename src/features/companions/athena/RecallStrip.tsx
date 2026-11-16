@@ -8,6 +8,8 @@ import type {
 } from '@/api/companion';
 import { RecallChip } from './RecallChip';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * Per-turn rollup of what Athena's brain pulled into the system prompt.
  * Renders as a single collapsed line above the assistant bubble; clicking
@@ -76,25 +78,25 @@ export function RecallStrip({
       className="rounded-card border border-foreground/10 bg-secondary/40 px-3 py-1.5 typo-caption text-foreground"
       data-testid="companion-recall-strip"
     >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 w-full text-left hover:text-foreground/85 transition-colors rounded-interactive"
+      <PressSurface
+        onPress={() => setOpen((v) => !v)}
         aria-expanded={open}
+        className="flex items-center gap-1.5 w-full hover:text-ink-2 rounded-interactive"
       >
         <Chevron className="w-3 h-3" />
         <Brain className="w-3 h-3" />
         <span className="flex-1">{summary}</span>
         {preview.synthesized && (
-          <span
-            className="inline-flex items-center gap-0.5 rounded-interactive bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-primary"
-            title={t.athena.recall_synthesized_tooltip}
-          >
-            <Sparkles className="w-3 h-3" />
-            {t.athena.recall_synthesized_badge}
-          </span>
+          <Tooltip content={t.athena.recall_synthesized_tooltip}>
+            <span
+              className="inline-flex items-center gap-0.5 rounded-interactive bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-primary"
+            >
+              <Sparkles className="w-3 h-3" />
+              {t.athena.recall_synthesized_badge}
+            </span>
+          </Tooltip>
         )}
-      </button>
+      </PressSurface>
       {open && totalMemories > 0 && (
         <div className="mt-2 space-y-1.5">
           <ChipGroup

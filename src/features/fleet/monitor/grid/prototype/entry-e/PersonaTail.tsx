@@ -86,10 +86,10 @@ export function TailFigure({ tail, card, more }: { tail: Tail; card: PersonaCard
     return (
       <span className={`inline-flex flex-shrink-0 items-center gap-1 ae-tone-text ${toneClass(tail.signal.need ?? tail.tone)}`}>
         <NeedGlyph card={card} size="md" />
-        {more > 0 && <span className="ae-pmore typo-label tabular-nums">+{more}</span>}
+        {more > 0 && <span className="ae-pmore typo-label num">+{more}</span>}
       </span>
     );
   }
-  if (f.kind === 'elapsed') return <span className="flex-shrink-0 typo-data tabular-nums ae-tone-text">{f.text}</span>;
+  if (f.kind === 'elapsed') return <span className="flex-shrink-0 typo-data num ae-tone-text">{f.text}</span>;
   return <PowerOff className="h-3.5 w-3.5 flex-shrink-0 text-foreground" aria-hidden />;
 }

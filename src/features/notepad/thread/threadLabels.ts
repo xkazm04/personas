@@ -79,7 +79,7 @@ export function threadAuthorTone(c: Pick<NoteComment, 'authorKind'>): string {
   if (c.authorKind === 'athena') return 'text-brand-purple';
   if (c.authorKind === 'agent') return 'text-status-info';
   if (c.authorKind === 'operator') return 'text-primary';
-  return 'text-foreground/85';
+  return 'text-ink-1';
 }
 
 /**

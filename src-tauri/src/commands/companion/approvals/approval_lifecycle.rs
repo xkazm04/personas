@@ -364,9 +364,13 @@ pub(crate) async fn execute_approval_action(
         "browser_request_site" => execute_browser_request_site(&state, params),
         // Team-channel orchestration (C2) — Athena posts into a team channel.
         "post_team_message" => execute_post_team_message(&state, params),
-        // Night Shift v1 — the ONLY dispatch path for a night plan (no plan
-        // runs unapproved; see approval_exec_night.rs).
-        "night_shift_execute_plan" => execute_night_shift_execute_plan(&state, &app, params),
+        // Night Shift's plan card, retired with its planning half (spark
+        // app-standup). A card filed before the update still resolves, with a
+        // message saying where the night is planned now; it starts nothing.
+        "night_shift_execute_plan" => Ok(ExecuteResult::message(
+            "Night Shift plans are retired, so this card starts nothing. Plan the night on the              Standup page (Companions > Athena > Standup): an armed standup queues night work              for tonight's start."
+                .to_string(),
+        )),
         // Skills op (approval_exec_knowledge.rs). `skill_sync` is pure file
         // ops between the workspace library and project copies; the read half
         // is the `describe_skill_fleet` READ_OP in the dispatcher.

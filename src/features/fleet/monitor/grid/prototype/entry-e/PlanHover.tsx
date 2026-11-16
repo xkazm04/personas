@@ -46,11 +46,11 @@ function WindowFacts({ w, now }: { w: WindowModel; now: number }) {
       <span className="flex items-baseline gap-3">
         <span className="typo-caption text-foreground">{windowTitle(t, w)}{model ? ` · ${model}` : ''}</span>
         <span className="flex-1" />
-        <span className={`typo-data tabular-nums ${INK[w.tone]}`} data-testid="entry-e-plan-hover-used">
+        <span className={`typo-data num ${INK[w.tone]}`} data-testid="entry-e-plan-hover-used">
           {formatPercent(w.usedPct, { precision: 0, language })}
         </span>
       </span>
-      <span className="typo-caption tabular-nums" data-testid="entry-e-plan-hover-reset">{reset}</span>
+      <span className="typo-caption num" data-testid="entry-e-plan-hover-reset">{reset}</span>
     </li>
   );
 }

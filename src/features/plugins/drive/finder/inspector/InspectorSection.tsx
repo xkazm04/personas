@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { Collapse } from "@/features/shared/components/display/Collapse";
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   title: string;
@@ -17,18 +18,17 @@ export function InspectorSection({ title, children, defaultOpen = true, trailing
   const [open, setOpen] = useState(defaultOpen);
   return (
     <section data-testid={testId} className="border-b border-card-border">
-      <button
-        type="button"
+      <PressSurface
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-secondary/30 transition-colors focus-ring"
+        onPress={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-4 py-2"
       >
         <ChevronDown
           className={`w-3.5 h-3.5 text-foreground transition-transform motion-reduce:transition-none ${open ? "" : "-rotate-90"}`}
         />
         <span className="typo-label text-foreground flex-1 truncate">{title}</span>
         {trailing}
-      </button>
+      </PressSurface>
       <Collapse open={open}>
         <div className="px-4 pb-3">{children}</div>
       </Collapse>

@@ -1,4 +1,5 @@
 import { Check, X, AlertTriangle } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -24,65 +25,42 @@ export function BulkActionBar({
     <>
       {activeSelectionCount > 0 && (
         <div
-          className="animate-fade-slide-in flex-shrink-0 border-t border-primary/15 bg-secondary/40 backdrop-blur-sm px-4 py-3"
+          className="animate-fade-slide-in flex-shrink-0 border-t border-hair bg-surface-1 backdrop-blur-sm px-4 py-3"
         >
           {confirmAction ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 typo-body">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                <AlertTriangle className="w-4 h-4 text-status-warning" />
                 <span className="text-foreground">
                   {confirmAction === 'approved' ? t.overview.review.approve : t.overview.review.reject}{' '}
                   {tx(activeSelectionCount === 1 ? t.overview.review.confirm_bulk_one : t.overview.review.confirm_bulk, { count: activeSelectionCount })}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onConfirmAction(null)}
-                  disabled={isBulkProcessing}
-                  className="px-3 py-1.5 rounded-modal typo-body border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
-                >
+                <Button variant="secondary" size="sm" onClick={() => onConfirmAction(null)} disabled={isBulkProcessing}>
                   {t.common.cancel}
-                </button>
-                <button
-                  onClick={() => onBulkAction(confirmAction)}
-                  disabled={isBulkProcessing}
-                  className={`px-3 py-1.5 rounded-modal typo-heading border transition-colors ${
-                    confirmAction === 'approved'
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
-                      : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
-                  }`}
-                >
+                </Button>
+                <Button variant="accent" tone={confirmAction === 'approved' ? 'success' : 'error'} size="sm" onClick={() => onBulkAction(confirmAction)} disabled={isBulkProcessing}>
                   {isBulkProcessing ? t.overview.review.processing : t.common.confirm}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <span className="typo-body text-foreground">
-                <span className="font-semibold text-foreground/90">{activeSelectionCount}</span>{' '}
+                <span className="font-semibold text-ink-2">{activeSelectionCount}</span>{' '}
                 {activeSelectionCount !== 1 ? t.overview.review.pending_selected : t.overview.review.pending_selected_one}
               </span>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={onDeselect}
-                  className="px-3 py-1.5 rounded-modal typo-body border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
-                >
+                <Button variant="secondary" size="sm" onClick={onDeselect}>
                   {t.overview.review.deselect}
-                </button>
-                <button
-                  onClick={() => onConfirmAction('approved')}
-                  className="px-3 py-1.5 rounded-modal typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  {t.overview.review.approve_all}
-                </button>
-                <button
-                  onClick={() => onConfirmAction('rejected')}
-                  className="px-3 py-1.5 rounded-modal typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  {t.overview.review.reject_all}
-                </button>
+                </Button>
+                <Button variant="accent" tone="success" size="sm" onClick={() => onConfirmAction('approved')} icon={<Check className="w-3.5 h-3.5" />}>
+{t.overview.review.approve_all}
+</Button>
+                <Button variant="danger" size="sm" onClick={() => onConfirmAction('rejected')} icon={<X className="w-3.5 h-3.5" />}>
+{t.overview.review.reject_all}
+</Button>
               </div>
             </div>
           )}

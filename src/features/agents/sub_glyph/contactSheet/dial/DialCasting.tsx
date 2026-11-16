@@ -92,8 +92,8 @@ export function DialIdentity({ cast, agentName, tight, kicker, onRename, footnot
           {role && <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="typo-caption font-mono uppercase tracking-[0.1em] truncate max-w-full" style={{ color: accent }}>{role}</motion.span>}
         </span>
       </div>
-      {mission && !tight && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="typo-body text-foreground line-clamp-2">{mission}</motion.p>}
-      {footnote && <span className="typo-caption text-foreground truncate max-w-full">{footnote}</span>}
+      {mission && !tight && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="typo-body text-ink-1 line-clamp-2">{mission}</motion.p>}
+      {footnote && <span className="typo-caption text-ink-2 truncate max-w-full">{footnote}</span>}
       {children}
     </div>
   );

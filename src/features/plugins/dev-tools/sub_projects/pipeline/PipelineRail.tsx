@@ -30,15 +30,15 @@ export function PipelineRail({ stages, activeIndex, onSelect, size = 'md' }: Pip
         const isActive = i === activeIndex;
         const isComplete = stage.status === 'complete';
         const nodeTone = isComplete
-          ? 'bg-emerald-500/20 border-emerald-500/45 text-emerald-300'
+          ? 'bg-surface-1 border-hair text-status-success'
           : isActive
-            ? 'bg-amber-500/20 border-amber-500/55 text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.18)]'
-            : 'bg-secondary/40 border-primary/15 text-foreground/45';
+            ? 'bg-sel border-primary text-primary'
+            : 'bg-surface-1 border-hair text-ink-3';
         const labelTone = isActive
           ? 'text-foreground font-medium'
           : isComplete
-            ? 'text-foreground/75'
-            : 'text-foreground/45';
+            ? 'text-ink-2'
+            : 'text-ink-3';
 
         return (
           <div key={stage.id} className="flex-1 flex flex-col items-center min-w-0">
@@ -46,7 +46,7 @@ export function PipelineRail({ stages, activeIndex, onSelect, size = 'md' }: Pip
               {/* left rail (hidden on first node) */}
               <span
                 className={`h-0.5 flex-1 rounded-full ${
-                  i === 0 ? 'opacity-0' : i <= activeIndex || isComplete ? 'bg-emerald-500/40' : 'bg-primary/12'
+                  i === 0 ? 'opacity-0' : i <= activeIndex || isComplete ? 'bg-status-success/40' : 'bg-primary/12'
                 }`}
               />
               <button
@@ -55,7 +55,7 @@ export function PipelineRail({ stages, activeIndex, onSelect, size = 'md' }: Pip
                 onClick={interactive ? () => onSelect?.(i) : undefined}
                 aria-current={isActive ? 'step' : undefined}
                 className={`relative flex items-center justify-center rounded-full border transition-all ${nodeSize} ${nodeTone} ${
-                  interactive ? 'cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40' : 'cursor-default'
+                  interactive ? 'cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40' : 'cursor-default'
                 }`}
                 data-testid={`pipeline-node-${i}`}
               >
@@ -66,7 +66,7 @@ export function PipelineRail({ stages, activeIndex, onSelect, size = 'md' }: Pip
                   a connected, completed pipeline. */}
               <span
                 className={`h-0.5 flex-1 rounded-full ${
-                  i === stages.length - 1 ? 'opacity-0' : i < activeIndex || isComplete ? 'bg-emerald-500/40' : 'bg-primary/12'
+                  i === stages.length - 1 ? 'opacity-0' : i < activeIndex || isComplete ? 'bg-status-success/40' : 'bg-primary/12'
                 }`}
               />
             </div>

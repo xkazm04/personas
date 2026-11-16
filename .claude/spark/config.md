@@ -61,6 +61,7 @@ by the 1.1.0 generic rewrite.
 - Director shell writes: any text containing backticks goes through the Write/Edit tool, never a double-quoted `node -e`/heredoc
   argument - an escaped backtick that fails to escape is command substitution, and on 2026-10-08 it launched a full
   `cargo test --workspace` beside a sibling's running app while writing THIS overlay.
+- builder: `npm run test:rust` / `test:rust:crates` / the `tauri:dev*` sidecar build wait FOREVER on ANY live `cargo.exe`, including another repo's long-lived `cargo run -p <app>` (it stays alive while that app runs). Before a Rust lane, list `cargo.exe` command lines; if one is a foreign `cargo run`, set `CARGO_GUARD=off` (tests) / `CARGO_FULL_SEND=1` (tauri dev) - never kill it. Promoted 2026-11-06 (app-standup: blocked tauri:dev:test 40 min and two builders' test runs; first sighting one-control 2026-10-16).
 - Never bare `cargo test` on Windows (the lib unit-test binary dies in the loader, exit 127);
   `npm run test:rust` embeds the comctl32-v6 manifest post-link.
 - WP0 that MOVES a cargo feature into a lane (e.g. `p2p` into `desktop`) runs, in WP0, that lane's

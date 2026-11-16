@@ -6,6 +6,7 @@ import { summarizeAnswer } from './questionnaireHelpers';
 import type { QuestionnaireThreadState } from './types';
 import { DebtText } from '@/i18n/DebtText';
 import { QuestionnaireCategoryRail, useCategoryBuckets } from './QuestionnaireCategoryRail';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 function statusIconFor(state: QuestionnaireThreadState) {
@@ -47,14 +48,11 @@ function ThreadItem({
   const StatusIcon = statusIconFor(effectiveState);
   const statusColor = statusColorFor(effectiveState);
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-current={state === 'current' ? 'step' : undefined}
-      className={`w-full text-left rounded-card px-3 py-2.5 transition-colors group relative ${
-        state === 'current'
-          ? 'bg-primary/10 border border-primary/25'
-          : 'hover:bg-foreground/[0.04] border border-transparent'
+      className={`w-full rounded-card px-3 py-2.5 group relative border ${
+        state === 'current' ? 'bg-sel border-hair-2' : 'border-transparent'
       }`}
     >
       {state === 'current' && (
@@ -73,18 +71,18 @@ function ThreadItem({
             <div className="typo-caption text-status-success/80 mt-1 truncate italic">
               {summarizeAnswer(answer, question.type, t)}
               {isAuto && (
-                <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand-purple/80 font-semibold not-italic">
+                <span className="ml-1.5 typo-eyebrow text-brand-purple/80 not-italic">
                   {t.templates.adopt_modal.auto_badge}
                 </span>
               )}
               {isAnsweredCurrent && (
-                <span className="ml-1.5 text-[10px] uppercase tracking-[0.18em] text-primary/80 font-semibold not-italic">
+                <span className="ml-1.5 typo-eyebrow text-primary/80 not-italic">
                   {t.templates.adopt_modal.thread_current}
                 </span>
               )}
             </div>
           ) : state === 'current' ? (
-            <div className="typo-label text-primary/80 mt-1">
+            <div className="typo-label text-ink-2 mt-1">
               {t.templates.adopt_modal.thread_current}
             </div>
           ) : state === 'blocked' ? (
@@ -94,7 +92,7 @@ function ThreadItem({
           ) : null}
         </div>
       </div>
-    </button>
+    </PressSurface>
   );
 }
 

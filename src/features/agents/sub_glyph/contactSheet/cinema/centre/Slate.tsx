@@ -50,11 +50,11 @@ export function Slate({ state, detail, tone, elapsed, running, partial, final = 
       <header className="flex flex-col gap-0.5 px-3 pt-2 pb-1.5" style={{ borderBottom: "1px solid var(--ink-faint)" }}>
         <div className="flex items-center gap-2.5 min-w-0">
           <span aria-hidden className="w-2 h-2 rotate-45 flex-shrink-0" style={{ background: DRAFT_TONE[tone] }} />
-          <span className="min-w-0 flex-1 typo-heading text-foreground truncate" role="status" aria-live="polite">{state}</span>
-          <span className="flex-shrink-0 typo-data text-foreground tabular-nums" aria-label={`${COPY.buildTime} ${time}`}>{time}</span>
+          <span className="min-w-0 flex-1 typo-heading text-ink-1 truncate" role="status" aria-live="polite">{state}</span>
+          <span className="flex-shrink-0 typo-data text-ink-1 tabular-nums" aria-label={`${COPY.buildTime} ${time}`}>{time}</span>
         </div>
         <div className="flex items-start gap-2.5 min-w-0 pl-[18px]">
-          <span className="min-w-0 flex-1 typo-caption text-foreground line-clamp-2">{detail ?? ""}</span>
+          <span className="min-w-0 flex-1 typo-caption text-ink-2 line-clamp-2">{detail ?? ""}</span>
           <span className="flex-shrink-0 typo-caption whitespace-nowrap" style={{ color: "var(--ink-dim)" }}>{clockWord}</span>
         </div>
       </header>
@@ -70,12 +70,12 @@ export function Slate({ state, detail, tone, elapsed, running, partial, final = 
       <div className="flex items-center gap-3 px-4 pt-3 pb-2.5">
         <span aria-hidden className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: TONE_DOT[tone] }} />
         <div className="min-w-0 flex-1 flex flex-col">
-          <span className="typo-title-lg text-foreground truncate" role="status" aria-live="polite">{state}</span>
-          {detail && <span className="typo-caption text-foreground truncate">{detail}</span>}
+          <span className="typo-title-lg text-ink-1 truncate" role="status" aria-live="polite">{state}</span>
+          {detail && <span className="typo-caption text-ink-2 truncate">{detail}</span>}
         </div>
         <div className="flex flex-col items-end flex-shrink-0">
-          <span className="typo-data-lg text-foreground tabular-nums" aria-label={`${COPY.buildTime} ${time}`}>{time}</span>
-          <span className="typo-caption text-foreground whitespace-nowrap">{clockWord}</span>
+          <span className="typo-data-lg text-ink-1 tabular-nums" aria-label={`${COPY.buildTime} ${time}`}>{time}</span>
+          <span className="typo-caption text-ink-2 whitespace-nowrap">{clockWord}</span>
         </div>
       </div>
     </header>

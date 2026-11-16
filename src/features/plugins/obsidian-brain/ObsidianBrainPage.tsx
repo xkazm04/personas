@@ -45,7 +45,7 @@ export default function ObsidianBrainPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<IconObsidianBrain active className="w-5 h-5 text-violet-400" />}
+        icon={<IconObsidianBrain active className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={t.plugins.obsidian_brain.title}
         subtitle={t.plugins.obsidian_brain.subtitle}

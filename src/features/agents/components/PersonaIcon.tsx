@@ -19,10 +19,10 @@ const FRAME_SIZE_CLASS: Record<FrameSize, string> = {
 // Font size for the initials fallback, tuned per frame tier (xs 20px → lg 44px)
 // so two uppercase letters fill the frame without clipping.
 const FRAME_INITIALS_CLASS: Record<FrameSize, string> = {
-  xs: 'text-[9px]',
-  sm: 'text-[11px]',
-  md: 'text-[15px]',
-  lg: 'text-[18px]',
+  xs: 'typo-caption',
+  sm: 'typo-caption',
+  md: 'typo-heading',
+  lg: 'typo-heading-lg',
 };
 
 interface PersonaIconProps {
@@ -81,7 +81,7 @@ interface PersonaIconProps {
  *
  * // With custom frame background:
  * <PersonaIcon icon={p.icon} color={p.color} display="pop"
- *   frameClass="border border-primary/15"
+ *   frameClass="border border-hair"
  *   frameStyle={{ backgroundColor: `${p.color}15` }} />
  * ```
  */

@@ -1,0 +1,179 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c8292b35-17bc-47bf-a5d6-350d683f6732",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T03:56:39.638826+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "api-bridge-tests",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/__tests__/lensScan.test.ts:21 The test is named for a camelCase-args guard, but listLensScanProducts (src/api/lensScan.ts:83) takes no arguments and the test only checks the command name. The args that startLensScan, getLensScanCommitDiff and getLensScanShot send are asserted nowhere. A grep for the guard stops at a name that guards nothing, and a snake_case key on those three wrappers would stay green.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/api/__tests__/lensScan.test.ts:21 The test name claims a stronger guard than its assertions make. The technique says to rename it and pin the args at the crossing. The earlier enums.test.ts deviation is resolved: :52 now reads VALID_CHANNELS from twin.rs."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/api/__tests__/desktopCapabilityRisk.test.ts:33 The parity pins strip comments, use call-shaped needles and fail loudly on an unmatched end needle instead of slicing to EOF. .gitattributes pins *.rs to eol=lf, so the \\n}\\n needles hold."
+    },
+    {
+     "technique": "derived-selection-must-be-measured",
+     "verdict": "conformant",
+     "evidence": "src/api/__tests__/localDayOffsetParity.test.ts:65 The CASES population is derived by walking the Rust commands, and the walk has a floor: zero commands found is a failure, not a pass."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/api/__tests__/webbuildTimeoutParity.test.ts:66 The claim that the wrapper outlives the backend cutoff is asserted from the declared budgets read out of the Rust source, never from wall time."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src/api/__tests__/credentials.test.ts:26 These are unit tests on the in-memory fixture tier: a name-routed invoke stub, reset before every test."
+    }
+   ]
+  },
+  {
+   "context": "home-cockpit-widgets",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 The test never asserts linked_decisions_empty. Tile renders its testid in the loading frame (src/features/shared/components/kit/Tiles.tsx:104; LinkedDecisionsWidget.tsx:105-106), so both waitFors and the :73 check pass before the mock resolves. An empty success rendered as an error, or as a blank, stays green.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 The loading frame answers with the same testid and no alert. The name claims the empty copy is shown, but nothing asserts it."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:50 The real empty copy is 'No human-review tasks for this execution.', so this regex can never match. Re-introducing the original defect (error collapsed into empty) would not fire this line; only :49 still pins that test."
+    }
+   ]
+  },
+  {
+   "context": "lib-analytics",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/analytics/index.ts:79 Tab tracking reads each dimension's store field by a string key cast through unknown. No test drives a tab dimension through a store: session.test.ts:29 stubs a state carrying only sidebarSection, and summary.test.ts checks only that keys are unique. A renamed store field would make readTab return undefined, and that tab would silently report as never visited. All 14 keys match real store fields today, so the gap is latent.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/lib/analytics/session.test.ts:29 The stub makes the tab-dimension decision unreachable and does not say so. The string-keyed crossing is untyped, so the technique's exemption for a typed crossing does not apply. The sink decision itself is reached (sink.test.ts:32 drives the real trackInteraction)."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/lib/analytics/sink.test.ts:12 The module-global sink is restored after every test, so test order cannot leak it."
+    },
+    {
+     "technique": "derived-selection-must-be-measured",
+     "verdict": "conformant",
+     "evidence": "src/lib/analytics/summary.test.ts:40 The denominator is derived from the catalog and has a floor, so an empty derivation fails."
+    }
+   ]
+  },
+  {
+   "context": "mcp-server",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24 The auth-gate tests hand-write the external_api_keys and api_key_audit schema instead of using the migrated template. The table now exists in four places (initial.rs:350 plus the c03 ALTERs, external_api_keys.rs:405, broker_edges.rs:219, here), so a migration change leaves these tests passing against yesterday's schema. Each test's temp DB also uses the prefix mcp_auth_test_, which neither the crate sweep (TEST_DB_PREFIXES) nor scripts/build/run-rust-tests.mjs:319-324 reclaims, so every run leaks the files.",
+   "techniques": [
+    {
+     "technique": "fixture-economics",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24 Two failures: the fixture names no rebuild trigger and drifts from the migrations (freshness), and the per-test copy has no named reaper (auth_tests.rs:19, prefix absent from both sweep lists)."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/mcp_server/obsidian_vault_tests.rs:12 Every test gets a private DB file and vault directory, so tests can run in parallel without sharing state."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "db-repos-execution",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T03:56:39.638826+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "derived-selection-must-be-measured",
+    "fixture-economics",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "api-bridge-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T03:56:39.638826+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "home-cockpit-widgets",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T03:56:39.638826+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "derived-selection-must-be-measured",
+    "isolation-lanes",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "lib-analytics",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T03:56:39.638826+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "fixture-economics",
+    "isolation-lanes"
+   ],
+   "deviations": 1,
+   "context": "mcp-server",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

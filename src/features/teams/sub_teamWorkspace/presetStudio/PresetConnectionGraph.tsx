@@ -192,7 +192,7 @@ export function PresetConnectionGraph({
           return (
             <foreignObject key={`lbl-${e.id}`} x={lx - LW / 2} y={ly - 26} width={LW} height={70} style={{ overflow: 'visible', pointerEvents: 'none' }}>
               <div className="flex justify-center">
-                <span className="inline-block rounded-input border border-primary/15 bg-background/95 px-2 py-1 typo-body-lg text-foreground text-center shadow-elevation-1">
+                <span className="inline-block rounded-input border border-hair bg-background/95 px-2 py-1 typo-body-lg text-foreground text-center shadow-elevation-1">
                   {e.label}
                 </span>
               </div>
@@ -211,10 +211,18 @@ export function PresetConnectionGraph({
                 role={clickable ? 'button' : undefined}
                 aria-pressed={clickable ? active : undefined}
                 onClick={clickable ? () => onToggleRole!(n.role) : undefined}
+                // The node is the selection surface: without a tab stop and Enter/Space it
+                // was pointer-only. Focus mirrors hover so the edge labels reveal too.
+                tabIndex={clickable ? 0 : undefined}
+                onKeyDown={clickable ? (ev) => {
+                  if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onToggleRole!(n.role); }
+                } : undefined}
+                onFocus={clickable ? () => setFocus(n.role) : undefined}
+                onBlur={clickable ? () => setFocus(null) : undefined}
                 onMouseEnter={() => setFocus(n.role)}
                 onMouseLeave={() => setFocus(null)}
                 data-testid={`preset-graph-node-${n.role}`}
-                className={`h-full w-full rounded-card border bg-background flex items-center gap-2 px-3 transition-shadow duration-200 ${clickable ? 'cursor-pointer' : ''}`}
+                className={`h-full w-full rounded-card border bg-background flex items-center gap-2 px-3 transition-shadow duration-200 ${clickable ? 'cursor-pointer focus-ring' : ''}`}
                 style={{
                   borderColor: colorWithAlpha(teamColor, active ? 0.85 : 0.45),
                   borderStyle: active ? 'solid' : 'dashed',
@@ -226,7 +234,7 @@ export function PresetConnectionGraph({
               >
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorWithAlpha(teamColor, active ? 1 : 0.5) }} />
                 <span
-                  className="typo-body-lg uppercase tracking-wider whitespace-nowrap"
+                  className="typo-eyebrow whitespace-nowrap"
                   style={{ color: active ? teamColor : undefined }}
                 >
                   {n.role}
@@ -239,13 +247,13 @@ export function PresetConnectionGraph({
 
       {!hideLegend && (
         <div className="flex items-center gap-4 mt-1 px-1">
-          <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
             <svg width="24" height="8" aria-hidden>
               <line x1="0" y1="4" x2="24" y2="4" stroke={colorWithAlpha(teamColor, 0.85)} strokeWidth="2" />
             </svg>
             {t.templates.presets.graph_legend_sequential}
           </span>
-          <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
             <svg width="24" height="8" aria-hidden>
               <line x1="0" y1="4" x2="24" y2="4" className="stroke-status-warning" strokeWidth="2" strokeDasharray="6 4" />
             </svg>

@@ -38,7 +38,7 @@ function SourceCard({ s }: { s: SourceSlice }) {
         <span className={`flex-1 ${LT.title}`}>{sourceKindLabel(dl, s.kind)}</span>
         <span className={LT.metaNum}>{s.total === 1 ? dl.lcx8_source_changes_one : tx(dl.lcx8_source_changes, { count: s.total })}</span>
       </div>
-      <div className="flex h-2.5 overflow-hidden rounded-pill bg-secondary/60" role="img" aria-label={parts.map((o) => `${outcomeLabel(dl, o)} ${s.counts[o]}`).join(', ')}>
+      <div className="flex h-2.5 overflow-hidden rounded-pill bg-surface-1" role="img" aria-label={parts.map((o) => `${outcomeLabel(dl, o)} ${s.counts[o]}`).join(', ')}>
         {parts.map((o) => (
           <span key={o} className="h-full" style={{ width: `${(s.counts[o] / s.total) * 100}%`, background: toneColor(OUTCOME_MARK[o].tone) }} />
         ))}

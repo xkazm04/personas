@@ -75,7 +75,7 @@ export function NoteQuickWrite({ note, onPatch, onOpen, autoFocus = false }: Not
         <DeferredMarkdown content={note.bodyMd} variant="card" />
       </div>
       {!locked && (
-        <span className="flex items-center gap-1.5 typo-caption text-foreground/60 group-hover/ex:text-foreground transition-colors">
+        <span className="flex items-center gap-1.5 typo-caption text-ink-2 group-hover/ex:text-foreground transition-colors">
           <Maximize2 className="w-3.5 h-3.5" aria-hidden />
           {t.notepad.overview_open_to_continue}
         </span>

@@ -1,7 +1,9 @@
 // Soundings L2 — the four columns of the project file. Each one is a label, a
 // list or key-value grid, and the doors that belong to it; none of them knows
 // where it sits.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 import { MemorySection } from '../../lib/MemorySection';
 import type { IslandEdge } from '../../lib/types';
@@ -23,33 +25,33 @@ export function FleetColumn({ station, h }: { station: Station; h: CardHandlers 
       <ul className="sd-d-list">
         {island.fleet.map((s) => (
           <li key={s.id}>
-            <button type="button" className="sd-sess" data-state={s.state} aria-label={tx(m.soundings_open_session, { name: s.label })} onClick={() => h.onSession(s.id)}>
+            <PressSurface className="sd-sess" data-state={s.state} aria-label={tx(m.soundings_open_session, { name: s.label })} onPress={() => h.onSession(s.id)}>
               <i />{s.label}
-            </button>
+            </PressSurface>
             <span className={s.state === 'awaiting_input' ? 'sd-late-t' : 'sd-muted'} style={s.state === 'awaiting_input' ? { color: 'var(--sd-lilac)' } : undefined}>{fleetWord(s.state)}</span>
           </li>
         ))}
         {island.personasRunning.length > 0 && (
           <li>
-            <button type="button" className="sd-sess" data-state="persona" aria-label={m.soundings_open_personas} onClick={(e) => h.onPersonas(anchorOf(e))}>
+            <PressSurface className="sd-sess" data-state="persona" aria-label={m.soundings_open_personas} onPress={(e) => h.onPersonas(anchorOf(e))}>
               <i />{island.personasRunning.join(', ')}
-            </button>
+            </PressSurface>
             <span className="sd-muted">{m.world_persona_running}</span>
           </li>
         )}
         {island.runners.length > 0 && (
           <li>
-            <button type="button" className="sd-sess" data-state="runner" aria-label={m.soundings_open_runners} onClick={(e) => h.onRunners(anchorOf(e))}>
+            <PressSurface className="sd-sess" data-state="runner" aria-label={m.soundings_open_runners} onPress={(e) => h.onRunners(anchorOf(e))}>
               <i />{tx(island.runners.length === 1 ? m.soundings_runners_one : m.soundings_runners_other, { count: island.runners.length })}
-            </button>
+            </PressSurface>
             <span className="sd-muted">{m.lane_runners}</span>
           </li>
         )}
         {island.fleet.length === 0 && island.personasRunning.length === 0 && island.runners.length === 0 && <li className="sd-muted">{m.far_idle}</li>}
       </ul>
       <div className="sd-acts">
-        <button type="button" className="sd-act" onClick={h.onDispatch}>{m.dispatch_fleet}</button>
-        {h.canTerminal && <button type="button" className="sd-act" onClick={h.onTerminal}>{m.open_terminal}</button>}
+        <Button variant="secondary" size="sm" onClick={h.onDispatch}>{m.dispatch_fleet}</Button>
+        {h.canTerminal && <Button variant="secondary" size="sm" onClick={h.onTerminal}>{m.open_terminal}</Button>}
       </div>
     </div>
   );
@@ -67,7 +69,7 @@ export function ShipColumn({ station, h }: { station: Station; h: CardHandlers }
       <span className="sd-c-lab typo-label">{m.world_next_ship}</span>
       {ship?.next ? (
         <>
-          <button type="button" className="sd-d-ship sd-d-ship-btn" onClick={h.onShip}>{ship.next}</button>
+          <PressSurface className="sd-d-ship sd-d-ship-btn" onPress={h.onShip}>{ship.next}</PressSurface>
           <div className="sd-d-tiderow"><Tide ship={ship} className="sd-d-tide" /></div>
           <dl className="sd-d-kv">
             <dt>{m.soundings_shipped}</dt>
@@ -106,7 +108,7 @@ export function ReadinessColumn({ station, h }: { station: Station; h: CardHandl
         <dd className={island.monitorErrors === null ? 'sd-muted' : 'typo-data'}>{island.monitorErrors === null ? m.soundings_not_bound : island.monitorErrors}</dd>
       </dl>
       <div className="sd-acts">
-        <button type="button" className="sd-act" onClick={h.onFactory}>{m.open_in_factory}</button>
+        <Button variant="secondary" size="sm" onClick={h.onFactory}>{m.open_in_factory}</Button>
       </div>
       {!island.slug.startsWith('demo-') && <MemorySection projectId={island.slug} />}
     </div>
@@ -136,19 +138,13 @@ export function RelationsColumn({ station, stations, edges, h }: {
         if (o === undefined) return null;
         const name = stations[o]!.island.name;
         return (
-          <button
-            key={`${e.from}-${e.to}-${e.kind}`}
-            type="button"
-            className="sd-d-rel"
-            aria-label={tx(m.soundings_follow_current, { name, label: e.label ?? '' })}
-            onClick={(ev) => { ev.stopPropagation(); h.onFollow(o, e); }}
-          >
+          <PressSurface className="sd-d-rel" key={`${e.from}-${e.to}-${e.kind}`} aria-label={tx(m.soundings_follow_current, { name, label: e.label ?? '' })} onPress={(ev) => { ev.stopPropagation(); h.onFollow(o, e); }}>
             <svg width="24" height="10" viewBox="0 0 24 10" aria-hidden>
               <path d="M1.5 9 C1.5 1.5 22.5 1.5 22.5 9" fill="none" stroke="var(--sd-ink3)" strokeWidth="1.4" strokeDasharray={e.kind === 'similarity' ? '3 3' : undefined} />
             </svg>
             <span>{name}</span>
             {e.label && <span className="sd-muted">{e.label}</span>}
-          </button>
+          </PressSurface>
         );
       })}
     </div>

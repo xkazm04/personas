@@ -47,7 +47,7 @@ export function RebuildDimensionTargets({
       <div className="typo-heading text-foreground mb-1.5">
         {t.templates.rebuild_modal.regen_title}
       </div>
-      <div className="rounded-modal border border-primary/10 bg-secondary/20 divide-y divide-primary/5">
+      <div className="rounded-modal border border-hair bg-surface-1 divide-y divide-primary/5">
         {DIMENSIONS.map((dim) => {
           const passed = scores[dim];
           const label = DIM_LABEL[dim](t);
@@ -61,13 +61,13 @@ export function RebuildDimensionTargets({
               <span className="flex-1 typo-body text-foreground truncate">{label}</span>
               {passed ? (
                 <CheckCircle2
-                  className="w-3.5 h-3.5 text-emerald-400 shrink-0"
+                  className="w-3.5 h-3.5 text-status-success shrink-0"
                   aria-label={t.templates.rebuild_modal.regen_passed}
                   data-testid={`rebuild-dim-${dim}-passed`}
                 />
               ) : (
                 <XCircle
-                  className="w-3.5 h-3.5 text-amber-400 shrink-0"
+                  className="w-3.5 h-3.5 text-status-warning shrink-0"
                   aria-label={t.templates.rebuild_modal.regen_failed}
                   data-testid={`rebuild-dim-${dim}-failed`}
                 />

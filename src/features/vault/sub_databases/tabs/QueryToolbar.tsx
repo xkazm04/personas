@@ -41,7 +41,7 @@ export function QueryToolbar({
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/8 bg-secondary/5 shrink-0">
       <span className="typo-heading text-foreground flex-1 truncate">{selectedTitle}</span>
-      <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8">
+      <span className="typo-eyebrow text-foreground px-2 py-0.5 rounded-card bg-surface-2 border border-primary/8">
         {language}
       </span>
       <ConnectorCapabilityNote serviceType={serviceType} />
@@ -105,24 +105,22 @@ export function QueryToolbar({
         loading={isAiRunning}
         loadingLabel={db.debugging}
         icon={<Wand2 className="w-3 h-3" />}
-        className="rounded-modal typo-body px-3.5 py-1.5 shadow-elevation-1 shadow-violet-500/5"
+        className="rounded-modal typo-body px-3.5 py-1.5 shadow-elevation-1"
       >
         {db.ai_run}
       </Button>
 
       <Tooltip content={safeMode ? db.safe_mode_on : db.safe_mode_off}>
-        <button
+        <Button
           type="button"
           onClick={onToggleSafeMode}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body border transition-all ${
-            safeMode
-              ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
-              : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
-          }`}
+          variant={safeMode ? 'accent' : 'accent'}
+          tone={safeMode ? 'success' : 'warning'}
+          size="sm"
+          icon={safeMode ? <Shield className="w-3 h-3" /> : <ShieldOff className="w-3 h-3" />}
         >
-          {safeMode ? <Shield className="w-3 h-3" /> : <ShieldOff className="w-3 h-3" />}
           {safeMode ? db.safe : db.write}
-        </button>
+        </Button>
       </Tooltip>
     </div>
   );

@@ -4,6 +4,7 @@
 // Claude" (the finding's recommendation becomes the task prompt). Portalled so
 // the matrix's overflow never clips it.
 import { useCallback, useEffect, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { createPortal } from 'react-dom';
 import { ShieldCheck, ScanSearch, X, Rocket } from 'lucide-react';
 
@@ -29,15 +30,9 @@ export function StandardsScan({ slug, projectName }: { slug: string; projectName
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   return (
     <>
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); setAnchor(e.currentTarget.getBoundingClientRect()); setOpen(true); }}
-        title={d.improve_std_tooltip}
-        className="inline-flex items-center flex-shrink-0 p-0.5 rounded-interactive text-foreground/45 hover:text-primary hover:bg-primary/[0.06] transition-colors"
-        aria-label={d.improve_std_aria}
-      >
+      <Button variant="ghost" size="icon-sm" className="flex-shrink-0" onClick={(e) => { e.stopPropagation(); setAnchor(e.currentTarget.getBoundingClientRect()); setOpen(true); }} tooltip={d.improve_std_tooltip} aria-label={d.improve_std_aria}>
         <ShieldCheck className="w-3.5 h-3.5" aria-hidden />
-      </button>
+      </Button>
       {open && <FindingsPopover slug={slug} projectName={projectName} anchor={anchor} onClose={() => setOpen(false)} />}
     </>
   );
@@ -99,53 +94,53 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
       tabIndex={-1}
       aria-label={tx(d.improve_std_panel_aria, { name: projectName })}
       style={popStyle(anchor)}
-      className="fixed z-[9995] outline-none rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed z-[9995] outline-none rounded-modal border border-hair bg-background shadow-elevation-4 overflow-hidden"
     >
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-surface-1">
         <ShieldCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground truncate">{tx(d.improve_std_title, { name: projectName })}</span>
-        {pct !== null && <span className="typo-caption text-foreground/55 tabular-nums ml-auto">{pct}%</span>}
-        <button type="button" onClick={onClose} aria-label={t.common.close} className={`p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors ${pct !== null ? '' : 'ml-auto'}`}>
+        <span className="typo-caption text-ink-2 truncate">{tx(d.improve_std_title, { name: projectName })}</span>
+        {pct !== null && <span className="typo-data text-ink-3 ml-auto">{pct}%</span>}
+        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}>
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {findings === null ? (
-        <p className="px-3 py-5 typo-caption text-foreground/55 text-center">{t.common.loading}</p>
+        <p className="px-3 py-5 typo-caption text-ink-3 text-center">{t.common.loading}</p>
       ) : open.length === 0 ? (
         <div className="px-3 py-5 text-center space-y-2">
-          <p className="typo-caption text-foreground/70">{scanning ? d.improve_std_scanning : findings.length === 0 ? d.improve_std_no_scan : d.improve_std_no_open}</p>
+          <p className="typo-caption text-ink-2">{scanning ? d.improve_std_scanning : findings.length === 0 ? d.improve_std_no_scan : d.improve_std_no_open}</p>
           {!scanning && (
-            <button type="button" onClick={scan} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors">
-              <ScanSearch className="w-3 h-3" /> {findings.length === 0 ? d.improve_std_run_scan : d.improve_std_rescan}
-            </button>
+            <Button variant="secondary" size="sm" onClick={scan} icon={<ScanSearch className="w-3 h-3" />}>
+{findings.length === 0 ? d.improve_std_run_scan : d.improve_std_rescan}
+</Button>
           )}
         </div>
       ) : (
         <>
           <ul className="max-h-72 overflow-y-auto p-1.5 space-y-1">
             {open.map((f) => (
-              <li key={f.id} className="rounded-interactive border border-primary/10 bg-secondary/15 px-2 py-1.5">
+              <li key={f.id} className="rounded-interactive border border-hair bg-secondary/15 px-2 py-1.5">
                 <div className="flex items-start gap-2">
                   <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SEV_COLOR[f.severity] ?? SEV_COLOR.info }} aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <span className="typo-caption text-foreground block">{f.title}</span>
-                    {f.recommendation && <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>{f.recommendation}</span>}
+                    <span className="typo-caption text-ink-2 block">{f.title}</span>
+                    {f.recommendation && <span className="typo-caption text-ink-3 block" style={{ fontWeight: 400 }}>{f.recommendation}</span>}
                   </div>
                 </div>
                 <div className="flex items-center justify-end mt-1.5">
-                  <button type="button" onClick={() => claudeFix(f)} disabled={busy === f.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50">
-                    <Rocket className="w-3 h-3" /> {busy === f.id ? '…' : d.improve_std_fix}
-                  </button>
+                  <Button variant="secondary" size="xs" onClick={() => claudeFix(f)} disabled={busy === f.id} icon={<Rocket className="w-3 h-3" />}>
+{busy === f.id ? '…' : d.improve_std_fix}
+</Button>
                 </div>
               </li>
             ))}
           </ul>
-          <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-primary/10 bg-secondary/10">
-            <span className="typo-caption text-foreground/55">{tx(d.improve_std_open_count, { count: open.length })}</span>
-            <button type="button" onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors disabled:opacity-50">
-              <ScanSearch className="w-3 h-3" /> {scanning ? d.improve_std_scanning_btn : d.improve_std_rescan}
-            </button>
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-hair bg-surface-1">
+            <span className="typo-caption text-ink-3">{tx(d.improve_std_open_count, { count: open.length })}</span>
+            <Button variant="secondary" size="xs" onClick={scan} disabled={scanning} icon={<ScanSearch className="w-3 h-3" />}>
+{scanning ? d.improve_std_scanning_btn : d.improve_std_rescan}
+</Button>
           </div>
         </>
       )}

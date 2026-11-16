@@ -30,10 +30,10 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       titleId="credential-design-title"
       embedded={embedded}
       size="lg"
-      panelClassName={embedded ? 'max-h-[80vh] overflow-y-auto bg-background border border-primary/15 rounded-2xl' : 'max-h-[min(90vh,960px)] overflow-y-auto bg-background border border-primary/15 rounded-2xl shadow-elevation-4'}
+      panelClassName={embedded ? 'max-h-[80vh] overflow-y-auto bg-background border border-hair rounded-card' : 'max-h-[min(90vh,960px)] overflow-y-auto bg-background border border-hair rounded-card shadow-elevation-4'}
     >
       {/* Header */}
-      <div data-testid="vault-design-container" className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-primary/10">
+      <div data-testid="vault-design-container" className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-hair">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-card bg-primary/10 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-primary" />
@@ -49,7 +49,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
           icon={<X className="w-4 h-4" />}
           onClick={modal.handleClose}
           data-testid="vault-design-cancel"
-          className="text-foreground hover:text-foreground hover:bg-secondary/60"
+          className="text-foreground hover:text-foreground hover:bg-surface-2"
         />
       </div>
 

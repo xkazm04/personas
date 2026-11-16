@@ -13,7 +13,7 @@ import { sparklinePoints, type SparkScale } from '@/features/overview/libs/spark
  *
  * Density modes:
  * - `console`: dense rounded-card row (font-mono caption + animated value).
- *   Color is passed as a Tailwind class (e.g. 'text-emerald-400') —
+ *   Color is passed as a Tailwind class (e.g. 'text-status-success') —
  *   suitable for tightly-themed dashboards that own their palette.
  * - `card`: standard rounded-modal tile with icon-left + label/value-right.
  *   Color is a SEMANTIC key from the unified palette — applied as a
@@ -58,7 +58,7 @@ export interface KpiTileProps {
   language?: string;
 
   /**
-   * For `console` density: a Tailwind class (e.g. 'text-emerald-400').
+   * For `console` density: a Tailwind class (e.g. 'text-status-success').
    * For `card` / `card-rich`: a semantic palette key (see KPI_PALETTE).
    */
   color: string;
@@ -84,6 +84,9 @@ export interface KpiTileProps {
  * Card density uses { bg, border, text }; card-rich density additionally
  * uses { gradient, iconBg } for its richer treatment.
  */
+// Literal class strings (Tailwind only emits what it can read). Every tile is a
+// surface-1 + hairline; the key only picks the figure's glyph ink.
+const TILE = { bg: 'bg-surface-1', border: 'border-hair', gradient: 'border-hair', iconBg: 'border-hair bg-surface-2' };
 const KPI_PALETTE: Record<string, {
   text: string;
   bg: string;
@@ -91,15 +94,15 @@ const KPI_PALETTE: Record<string, {
   gradient: string;
   iconBg: string;
 }> = {
-  blue:    { text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25',    gradient: 'from-blue-500/10 to-transparent border-blue-500/20',       iconBg: 'bg-blue-500/10 border-blue-500/20' },
-  emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25', gradient: 'from-emerald-500/10 to-transparent border-emerald-500/20', iconBg: 'bg-emerald-500/10 border-emerald-500/20' },
-  green:   { text: 'text-green-400',   bg: 'bg-green-500/15',   border: 'border-green-500/25',   gradient: 'from-green-500/10 to-transparent border-green-500/20',     iconBg: 'bg-green-500/10 border-green-500/20' },
-  violet:  { text: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25',  gradient: 'from-violet-500/10 to-transparent border-violet-500/20',   iconBg: 'bg-violet-500/10 border-violet-500/20' },
-  purple:  { text: 'text-purple-400',  bg: 'bg-purple-500/15',  border: 'border-purple-500/25',  gradient: 'from-purple-500/10 to-transparent border-purple-500/20',   iconBg: 'bg-purple-500/10 border-purple-500/20' },
-  red:     { text: 'text-red-400',     bg: 'bg-red-500/15',     border: 'border-red-500/25',     gradient: 'from-red-500/10 to-transparent border-red-500/20',         iconBg: 'bg-red-500/10 border-red-500/20' },
-  amber:   { text: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25',   gradient: 'from-amber-500/10 to-transparent border-amber-500/20',     iconBg: 'bg-amber-500/10 border-amber-500/20' },
-  cyan:    { text: 'text-cyan-400',    bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25',    gradient: 'from-cyan-500/10 to-transparent border-cyan-500/20',       iconBg: 'bg-cyan-500/10 border-cyan-500/20' },
-  primary: { text: 'text-primary',     bg: 'bg-primary/15',     border: 'border-primary/25',     gradient: 'from-primary/10 to-transparent border-primary/20',         iconBg: 'bg-primary/10 border-primary/20' },
+  blue:    { ...TILE, text: 'text-status-info' },
+  emerald: { ...TILE, text: 'text-status-success' },
+  green:   { ...TILE, text: 'text-status-success' },
+  violet:  { ...TILE, text: 'text-role-agent' },
+  purple:  { ...TILE, text: 'text-role-agent' },
+  red:     { ...TILE, text: 'text-status-error' },
+  amber:   { ...TILE, text: 'text-status-warning' },
+  cyan:    { ...TILE, text: 'text-role-highlight' },
+  primary: { ...TILE, text: 'text-primary' },
 };
 
 const SPARKLINE_HEX: Record<string, string> = {
@@ -177,7 +180,7 @@ export const KpiTile = memo(function KpiTile({
     const isUp = trend.pct > 0;
     const isGood = trend.invertColor ? !isUp : isUp;
     const TIcon = isUp ? TrendingUp : TrendingDown;
-    const trendColor = isGood ? 'text-emerald-400' : 'text-red-400';
+    const trendColor = isGood ? 'text-status-success' : 'text-status-error';
     const absPct = Math.abs(trend.pct);
     const text = absPct >= 1000 ? '999+%' : absPct < 0.1 ? '<0.1%' : `${absPct.toFixed(1)}%`;
     return { TIcon, trendColor, text };
@@ -185,16 +188,16 @@ export const KpiTile = memo(function KpiTile({
 
   if (density === 'console') {
     return (
-      <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-3 py-2.5 flex items-center gap-2.5">
+      <div className="rounded-card border border-hair bg-surface-1 px-3 py-2.5 flex items-center gap-2.5">
         <span className={color}>{renderIcon(icon)}</span>
         <div className="flex-1 min-w-0">
-          <div className="typo-caption uppercase tracking-widest text-foreground font-mono">{label}</div>
+          <div className="typo-eyebrow">{label}</div>
           <div className="flex items-baseline gap-1.5">
-            <span className={`font-mono text-xl tabular-nums ${color}`}>
+            <span className={`typo-data-lg ${color}`}>
               {renderValue(value, numericValue, format, density, compact, language)}
             </span>
             {trendDisplay && (
-              <span className={`flex items-center gap-0.5 typo-caption font-mono ${trendDisplay.trendColor}`}>
+              <span className={`flex items-center gap-0.5 typo-data ${trendDisplay.trendColor}`}>
                 <trendDisplay.TIcon className="w-3 h-3" />
                 {trendDisplay.text}
               </span>
@@ -212,8 +215,8 @@ export const KpiTile = memo(function KpiTile({
       <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${palette.border} ${palette.bg}`}>
         {renderIcon(icon, `w-4 h-4 ${palette.text}`)}
         <div className="min-w-0">
-          <p className="typo-body text-foreground truncate">{label}</p>
-          <p className={`typo-heading ${palette.text}`}>
+          <p className="typo-eyebrow truncate">{label}</p>
+          <p className="typo-data-lg">
             {renderValue(value, numericValue, format, density, compact, language)}
           </p>
         </div>
@@ -223,33 +226,32 @@ export const KpiTile = memo(function KpiTile({
 
   // density === 'card-rich'
   return (
-    <div className={`relative rounded-modal border bg-gradient-to-br ${palette.gradient} bg-secondary/20 p-4 shadow-elevation-1 overflow-hidden`}>
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
+    <div className={`relative rounded-card border ${palette.gradient} bg-surface-1 p-4 overflow-hidden`}>
       <div className="relative z-10 flex flex-col h-full">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`w-8 h-8 rounded-card border shadow-inner flex items-center justify-center ${palette.iconBg} ${palette.text}`}>
+            <div className={`w-8 h-8 rounded-card border flex items-center justify-center ${palette.iconBg} ${palette.text}`}>
               {renderIcon(icon, 'w-4 h-4')}
             </div>
-            <span className="typo-heading text-foreground truncate">{label}</span>
+            <span className="typo-eyebrow truncate">{label}</span>
           </div>
           {sparklineData && sparklineData.length >= 2 && (
             <Sparkline data={sparklineData} hex={SPARKLINE_HEX[color] ?? '#3b82f6'} scale={sparkScale} />
           )}
         </div>
         <div className="mt-auto">
-          <div className="typo-data-lg tracking-tight text-foreground/90">
+          <div className="typo-data-lg">
             {renderValue(value, numericValue, format, density, compact, language)}
           </div>
           <div className="flex items-center gap-2.5 mt-1.5 min-h-[18px]">
             {trendDisplay ? (
-              <div className={`flex items-center gap-1 typo-heading ${trendDisplay.trendColor}`}>
+              <div className={`flex items-center gap-1 typo-data ${trendDisplay.trendColor}`}>
                 <trendDisplay.TIcon className="w-3 h-3" />
                 <span>{trendDisplay.text}</span>
               </div>
-            ) : <span className="typo-body text-foreground">--</span>}
+            ) : <span className="typo-caption text-ink-3">--</span>}
             {subtitle && (
-              <p className={`typo-body truncate ${subtitleColor || 'text-foreground'}`}>{subtitle}</p>
+              <p className={`typo-caption truncate ${subtitleColor || 'text-ink-2'}`}>{subtitle}</p>
             )}
           </div>
         </div>

@@ -4,6 +4,7 @@ import { categoryLabel, getCategoryMeta, type RoleGroup } from '../search/filter
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 /** Illustration paths keyed by role */
 const ROLE_ILLUSTRATIONS: Record<string, { dark: string; light: string }> = {
@@ -31,7 +32,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
   const imgSrc = illustration ? (isDark ? illustration.dark : illustration.light) : undefined;
 
   return (
-    <div className="bg-secondary/20 border border-primary/10 rounded-2xl overflow-hidden hover:border-primary/20 transition-all">
+    <div className="bg-surface-1 border border-hair rounded-card overflow-hidden hover:border-hair transition-all">
       {/* Illustration header */}
       {imgSrc && (
         <div className="relative h-24 overflow-hidden">
@@ -44,18 +45,17 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             decoding="async"
             className="w-full h-full object-cover opacity-50"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         </div>
       )}
 
       <div className={`p-4 ${imgSrc ? '-mt-4 relative' : ''}`}>
         {/* Header */}
         <div className="flex items-center gap-2.5 mb-3">
-          <div className="p-2 rounded-modal bg-primary/10 border border-primary/15">
+          <div className="p-2 rounded-modal bg-primary/10 border border-hair">
             <GroupIcon className="w-4.5 h-4.5 text-primary/80" />
           </div>
           <div>
-            <h3 className="typo-heading text-foreground/85">{t.templates.search[group.labelKey]}</h3>
+            <h3 className="typo-heading text-ink-1">{t.templates.search[group.labelKey]}</h3>
             <p className="typo-caption text-foreground">{group.description}</p>
           </div>
         </div>
@@ -68,20 +68,19 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             const count = categoryCounts.get(catName) ?? 0;
 
             return (
-              <button
+              <PressSurface
                 key={catName}
-                type="button"
-                onClick={() => onSelectCategory(catName)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-primary/5 transition-colors group/cat"
+                onPress={() => onSelectCategory(catName)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card group/cat"
               >
                 <CatIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.color }} />
-                <span className="typo-body text-foreground flex-1 group-hover/cat:text-foreground/90 transition-colors">
+                <span className="typo-body text-foreground flex-1 group-hover/cat:text-ink-1 transition-colors">
                   {categoryLabel(t, catName)}
                 </span>
                 {count > 0 && (
                   <span className="typo-data text-foreground">{count}</span>
                 )}
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -91,20 +90,19 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
           <div className="border-t border-primary/8 pt-2.5">
             <SectionLabel as="div" className="mb-1.5 px-1">{t.templates.gallery.popular}</SectionLabel>
             {topTemplates.slice(0, 3).map((tmpl) => (
-              <button
+              <PressSurface
                 key={tmpl.id}
-                type="button"
-                onClick={() => onSelectTemplate?.(tmpl)}
-                className="w-full flex items-center gap-2 px-1 py-1 typo-body text-foreground rounded-input hover:bg-primary/5 hover:text-foreground/80 transition-colors text-left"
+                onPress={() => onSelectTemplate?.(tmpl)}
+                className="w-full flex items-center gap-2 px-1 py-1 typo-body text-foreground rounded-input"
               >
                 <span className="flex-1 truncate">{tmpl.test_case_name}</span>
                 {tmpl.adoption_count > 0 && (
-                  <span className="inline-flex items-center gap-0.5 typo-data text-emerald-400/50">
+                  <span className="inline-flex items-center gap-0.5 typo-data text-status-success/50">
                     <Download className="w-2.5 h-2.5" />
                     {tmpl.adoption_count}
                   </span>
                 )}
-              </button>
+              </PressSurface>
             ))}
           </div>
         )}

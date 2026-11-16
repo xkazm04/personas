@@ -20,6 +20,7 @@ import { PendingTriggerApprovals } from './sub_triggers/PendingTriggerApprovals'
 import { PendingApprovalsBadge } from './sub_triggers/PendingApprovalsBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const TriggerStudioCanvas = lazy(() => import('./sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
@@ -57,7 +58,7 @@ export function TriggersPage() {
       title: t.triggers.tab_live_stream,
       subtitle: t.triggers.tab_live_stream_subtitle,
       renderActions: () => (
-        <button
+        <Button
           type="button"
           onClick={() => {
             useSystemStore.getState().setSidebarSection('overview');
@@ -65,12 +66,11 @@ export function TriggersPage() {
               useOverviewStore.getState().setOverviewTab('events')
             );
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-          title={t.triggers.full_event_log}
-        >
-          <ExternalLink className="w-3 h-3" />
-          {t.triggers.full_event_log}
-        </button>
+          tooltip={t.triggers.full_event_log}
+          variant="ghost"
+          size="sm"
+          icon={<ExternalLink className="w-3 h-3" />}
+        >{t.triggers.full_event_log}</Button>
       ),
     },
     'rate-limits': { icon: Gauge, iconColor: 'amber', title: t.triggers.tab_rate_limits, subtitle: t.triggers.tab_rate_limits_subtitle },
@@ -162,12 +162,12 @@ export function TriggersPage() {
 }
 
 const ICON_TEXT_COLORS: Record<IconColor, string> = {
-  cyan: 'text-cyan-400',
-  violet: 'text-violet-400',
-  emerald: 'text-emerald-400',
-  amber: 'text-amber-400',
-  blue: 'text-blue-400',
-  indigo: 'text-indigo-400',
-  red: 'text-red-400',
+  cyan: 'text-role-external',
+  violet: 'text-role-agent',
+  emerald: 'text-status-success',
+  amber: 'text-status-warning',
+  blue: 'text-status-info',
+  indigo: 'text-role-agent',
+  red: 'text-status-error',
   primary: 'text-primary',
 };

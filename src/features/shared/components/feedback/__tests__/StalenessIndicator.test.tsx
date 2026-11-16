@@ -35,4 +35,10 @@ describe('StalenessIndicator', () => {
     const { container } = render(<StalenessIndicator fetchedAt={Date.now()} hasError={false} />);
     expect(container.innerHTML).toBe('');
   });
+
+  it('floors the age so it never rolls up to a unit it has not reached', () => {
+    // 59.9 minutes used to round to "60m ago" instead of staying in minutes.
+    render(<StalenessIndicator fetchedAt={Date.now() - (3_600_000 - 20_000)} hasError={false} />);
+    expect(screen.getByText('59m ago')).toBeTruthy();
+  });
 });

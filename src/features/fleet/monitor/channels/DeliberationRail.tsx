@@ -79,9 +79,9 @@ export function DeliberationRail({ teamId, deliberationId, keys = false }: { tea
         </span>
         <span className="typo-heading text-foreground">{detail.topic}</span>
         <span className="mt-1 flex items-center gap-3">
-          <span className="typo-data tabular-nums text-foreground">{tx(m.delib_round, { round: Number(detail.round) })}</span>
+          <span className="typo-data num text-foreground">{tx(m.delib_round, { round: Number(detail.round) })}</span>
           <span className={`ae-bar ${share > 0.8 ? 'ae-t-warn' : 'ae-t-agent'} min-w-0 flex-1`} aria-hidden><i style={{ width: `${share * 100}%` }} /></span>
-          <span className="typo-data tabular-nums text-foreground"><Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} /></span>
+          <span className="typo-data num text-foreground"><Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} /></span>
         </span>
       </div>
       {controls.length > 0 && (

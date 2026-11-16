@@ -3,6 +3,8 @@ import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta'
 import { categoryLabel, getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../../shared/architecturalCategories';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 export function FilterChips({
   selectedCategory,
@@ -47,17 +49,19 @@ export function FilterChips({
     <>
       {/* Active category chip */}
       {selectedCategory && activeCategoryMeta && ActiveCategoryIcon && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
+        <span className="inline-flex items-center gap-1.5 typo-body text-role-agent flex-shrink-0">
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
           {activeCategoryLabel}
-          <button
+          <Button
             type="button"
             onClick={() => onCategoryFilterChange([])}
             aria-label={removeLabel(activeCategoryLabel)}
-            className="ml-0.5 hover:text-white transition-colors"
+            variant="ghost"
+            size="icon-sm"
+            className="ml-0.5"
           >
             <X className="w-3 h-3" aria-hidden="true" />
-          </button>
+          </Button>
         </span>
       )}
 
@@ -70,18 +74,20 @@ export function FilterChips({
             return (
               <span
                 key={name}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 typo-body text-role-agent"
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
                 {meta.label}
-                <button
+                <Button
                   type="button"
                   onClick={() => onConnectorFilterChange(connectorFilter.filter((c) => c !== name))}
                   aria-label={removeLabel(meta.label)}
-                  className="ml-0.5 hover:text-white transition-colors"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="ml-0.5"
                 >
                   <X className="w-3 h-3" aria-hidden="true" />
-                </button>
+                </Button>
               </span>
             );
           })}
@@ -99,19 +105,21 @@ export function FilterChips({
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full border border-role-agent/20 text-role-agent"
                 style={{ backgroundColor: `${cat.color}15` }}
               >
                 <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
                 {cat.label}
-                <button
+                <Button
                   type="button"
                   onClick={() => onComponentFilterChange(componentFilter.filter((c) => c !== key))}
                   aria-label={removeLabel(cat.label)}
-                  className="ml-0.5 hover:text-white transition-colors"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="ml-0.5"
                 >
                   <X className="w-3 h-3" aria-hidden="true" />
-                </button>
+                </Button>
               </span>
             );
           })}
@@ -155,41 +163,25 @@ export function FilterChips({
               const target = e.currentTarget.querySelector<HTMLElement>(`[data-value="${nextValue}"]`);
               target?.focus();
             }}
-            className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0"
+            className="inline-flex items-center rounded-card border border-hair overflow-hidden flex-shrink-0"
           >
             {coverageOptions.map((opt) => {
               const isActive = (coverageFilter ?? 'all') === opt.value;
               const Icon = opt.icon;
               const count = coverageCounts?.[opt.countKey];
-              const activeClass =
-                opt.color === 'violet'
-                  ? 'bg-violet-500/20 text-violet-300'
-                  : opt.color === 'emerald'
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : opt.color === 'slate'
-                      ? 'bg-slate-500/25 text-slate-200'
-                      : 'bg-amber-500/20 text-amber-300';
               return (
-                <button
-                  type="button"
+                <OptionChip
                   key={opt.value}
                   role="radio"
-                  aria-checked={isActive}
+                  selected={isActive}
                   tabIndex={isActive ? 0 : -1}
                   data-value={opt.value}
-                  onClick={() => onCoverageFilterChange(opt.value)}
-                  className={`px-2.5 py-1.5 typo-body transition-colors flex items-center gap-1 ${
-                    isActive ? activeClass : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
-                  }`}
+                  onSelect={() => onCoverageFilterChange(opt.value)}
+                  icon={Icon ? <Icon className="w-3 h-3" /> : undefined}
+                  count={count !== undefined && count > 0 ? count : undefined}
                 >
-                  {Icon && <Icon className="w-3 h-3" />}
                   {opt.label}
-                  {count !== undefined && count > 0 && (
-                    <span className={`ml-0.5 typo-data ${isActive ? 'opacity-80' : 'opacity-50'}`}>
-                      {count}
-                    </span>
-                  )}
-                </button>
+                </OptionChip>
               );
             })}
           </div>

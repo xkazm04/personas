@@ -16,6 +16,8 @@ import { useCalendarEvents } from '../libs/useCronPreview';
 import { useTranslation } from '@/i18n/useTranslation';
 import { WeekView } from './WeekView';
 import { MonthView } from './MonthView';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // Calendar legend filters — each kind toggles independently. "Overlap" is a
 // fourth toggle that, when off, hides events that participate in a conflict
@@ -26,14 +28,16 @@ type LegendKind = 'projected' | 'past-success' | 'past-failure' | 'past-unknown'
 const ALL_KINDS: LegendKind[] = ['projected', 'past-success', 'past-failure', 'past-unknown', 'overlap'];
 interface ScheduleCalendarProps {
   entries: ScheduleEntry[];
-  onNavigateToExecution?: (agentId: string) => void;
-  onNavigateToTrigger?: (triggerId: string) => void;
+  /** A resolved past slot was clicked: open its run. */
+  onOpenExecution?: (executionId: string) => void;
+  /** A projected or unverified slot was clicked: it has no run, so open its agent. */
+  onOpenAgent?: (agentId: string) => void;
 }
 
 export default function ScheduleCalendar({
   entries,
-  onNavigateToExecution,
-  onNavigateToTrigger,
+  onOpenExecution,
+  onOpenAgent,
 }: ScheduleCalendarProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<CalendarView>('week');
@@ -104,13 +108,10 @@ export default function ScheduleCalendar({
 
   const handleEventClick = useCallback((ev: CalendarEvent) => {
     // Only matched past runs (success/failure) have an execution to open;
-    // projected and unverified slots have none, so route them to the trigger.
-    if (ev.kind === 'projected' || ev.kind === 'past-unknown') {
-      onNavigateToTrigger?.(ev.triggerId);
-    } else {
-      onNavigateToExecution?.(ev.agentId);
-    }
-  }, [onNavigateToExecution, onNavigateToTrigger]);
+    // projected and unverified slots have none, so they open the agent that owns them.
+    if (ev.executionId) onOpenExecution?.(ev.executionId);
+    else onOpenAgent?.(ev.agentId);
+  }, [onOpenExecution, onOpenAgent]);
 
 
   const headerLabel = view === 'week'
@@ -122,65 +123,57 @@ export default function ScheduleCalendar({
       {/* Calendar toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
+            variant="secondary"
+            size="icon-sm"
+            icon={<ChevronLeft className="w-4 h-4" />}
+          />
+          <Button
             type="button"
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={goToday}
-            className="px-2.5 py-1 typo-caption rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
-          >
-            {t.schedules.today}
-          </button>
-          <span className="typo-heading text-foreground ml-1">
+            variant="secondary"
+            size="icon-sm"
+            icon={<ChevronRight className="w-4 h-4" />}
+          />
+          <Button type="button" onClick={goToday} variant="secondary" size="sm">{t.schedules.today}</Button>
+          <span className="typo-heading text-ink-1 ml-1">
             {headerLabel}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
           {/* Legend (now: toggle filters) */}
-          <div
-            className="flex items-center gap-1 mr-3 text-[10px]"
-            title={t.schedules.filter_toggle_tooltip}
-          >
+          <Tooltip content={t.schedules.filter_toggle_tooltip}><div
+            className="flex items-center gap-1 mr-3 typo-caption">
             <LegendToggle
               active={activeKinds.has('projected')}
               onClick={() => toggleKind('projected')}
               ariaLabel={t.schedules.projected}
             >
-              <span className="w-2 h-2 rounded-full bg-blue-400/70" /> {t.schedules.projected}
+              <span className="w-2 h-2 rounded-full bg-status-info/70" /> {t.schedules.projected}
             </LegendToggle>
             <LegendToggle
               active={activeKinds.has('past-success')}
               onClick={() => toggleKind('past-success')}
               ariaLabel={t.schedules.success}
             >
-              <CheckCircle2 className="w-3 h-3 text-emerald-400/80" /> {t.schedules.success}
+              <CheckCircle2 className="w-3 h-3 text-status-success" /> {t.schedules.success}
             </LegendToggle>
             <LegendToggle
               active={activeKinds.has('past-failure')}
               onClick={() => toggleKind('past-failure')}
               ariaLabel={t.schedules.failed}
             >
-              <XCircle className="w-3 h-3 text-red-400/80" /> {t.schedules.failed}
+              <XCircle className="w-3 h-3 text-status-error" /> {t.schedules.failed}
             </LegendToggle>
             <LegendToggle
               active={activeKinds.has('past-unknown')}
               onClick={() => toggleKind('past-unknown')}
               ariaLabel={t.schedules.unverified}
             >
-              <HelpCircle className="w-3 h-3 text-foreground" /> {t.schedules.unverified}
+              <HelpCircle className="w-3 h-3 text-ink-1" /> {t.schedules.unverified}
             </LegendToggle>
             {totalConflicts > 0 && (
               <LegendToggle
@@ -188,48 +181,26 @@ export default function ScheduleCalendar({
                 onClick={() => toggleKind('overlap')}
                 ariaLabel={t.schedules.overlap}
               >
-                <AlertTriangle className="w-3 h-3 text-amber-400/80" /> {t.schedules.overlap}
+                <AlertTriangle className="w-3 h-3 text-status-warning" /> {t.schedules.overlap}
               </LegendToggle>
             )}
             {!allActive && (
-              <button
+              <Button
                 type="button"
                 onClick={resetFilters}
                 aria-label={t.schedules.filter_reset_aria}
-                className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/40 hover:border-primary/30 transition-colors"
-              >
-                <RotateCcw className="w-2.5 h-2.5" />
-                {t.schedules.filter_reset}
-              </button>
+                variant="secondary"
+                size="xs"
+                className="ml-1"
+                icon={<RotateCcw className="w-2.5 h-2.5" />}
+              >{t.schedules.filter_reset}</Button>
             )}
-          </div>
+          </div></Tooltip>
 
           {/* View toggle */}
-          <div className="flex rounded-card border border-primary/15 overflow-hidden">
-            <button
-              type="button"
-              aria-pressed={view === 'week'}
-              onClick={() => setView('week')}
-              className={`px-2.5 py-1 typo-caption transition-colors ${
-                view === 'week'
-                  ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground hover:text-foreground/70'
-              }`}
-            >
-              {t.schedules.week}
-            </button>
-            <button
-              type="button"
-              aria-pressed={view === 'month'}
-              onClick={() => setView('month')}
-              className={`px-2.5 py-1 typo-caption transition-colors ${
-                view === 'month'
-                  ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground hover:text-foreground/70'
-              }`}
-            >
-              {t.schedules.month}
-            </button>
+          <div className="flex rounded-card border border-hair overflow-hidden">
+            <Button pressed={view === 'week'} onClick={() => setView('week')} variant="ghost" size="sm">{t.schedules.week}</Button>
+            <Button pressed={view === 'month'} onClick={() => setView('month')} variant="ghost" size="sm">{t.schedules.month}</Button>
           </div>
         </div>
       </div>
@@ -273,19 +244,8 @@ function LegendToggle({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={active}
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card border transition-all ${
-        active
-          ? 'border-primary/15 bg-primary/5 text-foreground/85 hover:bg-primary/10'
-          : 'border-primary/5 bg-transparent text-foreground hover:text-foreground/60 hover:border-primary/15 line-through decoration-foreground/30'
-      }`}
-    >
+    <Button variant="ghost" size="xs" role="switch" aria-checked={active} aria-label={ariaLabel} onClick={onClick} className={active ? '' : 'line-through'}>
       {children}
-    </button>
+    </Button>
   );
 }

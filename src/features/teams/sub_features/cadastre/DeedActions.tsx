@@ -5,6 +5,7 @@
 // its numbers, a major feature at the gate leaves for the Council page. Every
 // write asks first, and the control that started it carries a real spinner
 // (AsyncButton) until the write settles.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { PromoteConfirm } from '@/features/plugins/dev-tools/sub_context/PromoteConfirm';
@@ -79,10 +80,10 @@ export function DeedActions({ r, ask, onAsk, busy, onMain, onConfirmPromote, onC
         {major ? t.cadastre_make_standard : t.cadastre_make_major}
         <kbd className="kbd">m</kbd>
       </AsyncButton>
-      <button type="button" className="btn ghost" onClick={onMap} data-testid="cad-action-map">
+      <PressSurface className="btn ghost" onPress={onMap} data-testid="cad-action-map">
         {t.cadastre_on_the_map}
         <kbd className="kbd">g</kbd>
-      </button>
+      </PressSurface>
       <p className="why">{why(r, t)}</p>
 
       {ask === 'promote' ? (

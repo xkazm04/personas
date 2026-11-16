@@ -35,6 +35,8 @@ import {
   type ContextKpiStatus,
 } from './contextKpiStatus';
 import type { ContextGroup, ContextItem } from './contextMapTypes';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** One active use case plus an O(1) membership set over its contexts. */
 export interface MemberSet {
@@ -114,19 +116,18 @@ function ScanContextButton({
 }) {
   return (
     <Tooltip content={t.context_scan_ideas_tooltip}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={() => {
           if (!scanBusy) onScanContext(ctxId);
         }}
         disabled={scanBusy}
         aria-label={t.context_scan_ideas_tooltip}
-        className={`shrink-0 grid place-items-center rounded-full border border-primary/15 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-          size === 'sm' ? 'ml-auto w-5 h-5' : 'w-6 h-6'
-        }`}
+        className={size === 'sm' ? 'ml-auto' : ''}
       >
         {scanning ? <LoadingSpinner size="xs" /> : <Sparkles className="w-3 h-3" />}
-      </button>
+      </Button>
     </Tooltip>
   );
 }
@@ -183,22 +184,21 @@ export const LedgerRow = memo(function LedgerRow({
   return (
     <div
       className={`grid items-center gap-0 px-3 py-1 transition-colors ${
-        selected ? 'bg-primary/10' : 'hover:bg-secondary/10'
+        selected ? 'bg-surface-1' : 'hover:bg-surface-1'
       }`}
       style={{ gridTemplateColumns: gridTemplate }}
     >
       {/* the context record */}
       <div className="flex items-center gap-2.5 min-w-0 pr-3">
         {ctx.pinned && (
-          <span className="w-1 h-3.5 rounded-full bg-amber-400/70 shrink-0" title={t.context_pinned} />
+          <Tooltip content={t.context_pinned}><span className="w-1 h-3.5 rounded-full bg-status-warning/70 shrink-0" /></Tooltip>
         )}
-        <button
-          type="button"
-          onClick={() => onSelectCtx(selected ? null : ctx.id)}
-          className="typo-body text-foreground truncate text-left hover:text-primary"
+        <PressSurface
+          onPress={() => onSelectCtx(selected ? null : ctx.id)}
+          className="min-w-0 truncate typo-body"
         >
           {ctx.name}
-        </button>
+        </PressSurface>
         <span className="ml-auto shrink-0">
           <ContextCoverage
             fileCount={ctx.filePaths.length}
@@ -235,7 +235,7 @@ export const LedgerRow = memo(function LedgerRow({
         return (
           <span
             key={uc.id}
-            className={`flex items-center justify-center h-full ${colSelected ? 'bg-primary/[0.07]' : ''}`}
+            className={`flex items-center justify-center h-full ${colSelected ? 'bg-surface-2' : ''}`}
           >
             {isMember ? (
               <span
@@ -273,8 +273,8 @@ function Indicator({
   return (
     <Tooltip content={`${n} ${label}`}>
       <span
-        className={`inline-flex items-center gap-0.5 typo-caption tabular-nums ${
-          n > 0 ? stem : 'text-foreground/25'
+        className={`inline-flex items-center gap-0.5 typo-caption num ${
+          n > 0 ? stem : 'text-ink-3'
         }`}
       >
         {icon}
@@ -336,34 +336,33 @@ export const RosterTile = memo(function RosterTile({
       } ${dimmed ? 'opacity-35' : ''}`}
     >
       {/* label */}
-      <button
-        type="button"
-        onClick={() => onSelectCtx(selected ? null : ctx.id)}
-        className="w-full flex items-center gap-1.5 px-2 py-1.5 text-left min-w-0"
+      <PressSurface
+        onPress={() => onSelectCtx(selected ? null : ctx.id)}
+        className="w-full flex items-center gap-1.5 px-2 py-1.5 min-w-0"
       >
         <Tooltip content={t[KPI_STATUS_LABEL_KEY[status]]}>
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${KPI_STATUS_DOT[status]}`} />
         </Tooltip>
         <span className="typo-body text-foreground truncate">{ctx.name}</span>
-      </button>
+      </PressSurface>
 
       {/* the divider, then the indicators */}
       <div className="border-t border-foreground/10 flex items-center gap-2.5 px-2 py-1">
         {contextUseCases && chip?.project && (contextUseCases.length > 0 || chip.featuresUnlinked) ? (
           <FeatureChip contextName={ctx.name} useCases={contextUseCases} chip={chip} t={t} />
         ) : (
-          <Indicator icon={<Layers className="w-3 h-3" />} n={featureCount} stem="text-sky-300" label={t.uc_title} />
+          <Indicator icon={<Layers className="w-3 h-3" />} n={featureCount} stem="text-status-info" label={t.uc_title} />
         )}
         <Indicator
           icon={<Target className="w-3 h-3" />}
           n={goalCount}
-          stem="text-violet-300"
+          stem="text-role-agent"
           label={t.context_detail_goals_heading}
         />
         <Indicator
           icon={<Gauge className="w-3 h-3" />}
           n={kpiCount}
-          stem="text-rose-300"
+          stem="text-status-error"
           label={t.ctx_indicator_kpis}
         />
         <ScanContextButton

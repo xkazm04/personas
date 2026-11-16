@@ -9,6 +9,8 @@ import type { SkillCoverageRow } from '@/api/devTools/devTools';
 import { useTranslation, type Translations } from '@/i18n/useTranslation';
 
 import { nextBinding, type MemoryBinding } from './skillsManagerData';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const BINDING_HUE: Record<MemoryBinding, string> = {
   project: 'var(--primary)',
@@ -38,15 +40,14 @@ export function MemoryBindingButton({ binding, onSwitch }: {
   const Icon = BINDING_ICON[current];
   const next = nextBinding(binding);
   return (
-    <button
+    <Button variant="ghost" size="icon-sm"
       type="button"
       onClick={(e) => { e.stopPropagation(); onSwitch(next); }}
-      title={tx(t.plugins.dev_tools.skills_memory_hint, { current: bindingLabel(t, current), next: bindingLabel(t, next) })}
-      className="p-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring flex-shrink-0"
+      tooltip={tx(t.plugins.dev_tools.skills_memory_hint, { current: bindingLabel(t, current), next: bindingLabel(t, next) })} aria-label={tx(t.plugins.dev_tools.skills_memory_hint, { current: bindingLabel(t, current), next: bindingLabel(t, next) })}
       data-testid="skills-manager-memory-switch"
     >
       <Icon className="w-3.5 h-3.5" style={{ color: BINDING_HUE[current] }} aria-hidden />
-    </button>
+    </Button>
   );
 }
 
@@ -54,7 +55,7 @@ export function MemoryBindingButton({ binding, onSwitch }: {
  *  30-day window is stated once in the panel footer. */
 export function UsageCount({ usage }: { usage: { invokes_30d: number } | undefined }) {
   return (
-    <span className="typo-label text-foreground/45 tabular-nums text-right">
+    <span className="typo-label text-ink-3 num text-right">
       {usage ? `${usage.invokes_30d}×` : '—'}
     </span>
   );
@@ -64,9 +65,9 @@ export function UsageCount({ usage }: { usage: { invokes_30d: number } | undefin
 export function LastUsed({ usage }: { usage: { last_invoked_at: string | null } | undefined }) {
   const { t } = useTranslation();
   if (!usage?.last_invoked_at) {
-    return <span className="typo-label text-foreground/30 text-right">{t.plugins.dev_tools.skills_never_used}</span>;
+    return <span className="typo-label text-ink-3 text-right">{t.plugins.dev_tools.skills_never_used}</span>;
   }
-  return <RelativeTime timestamp={usage.last_invoked_at} className="typo-label text-foreground/45 tabular-nums text-right" />;
+  return <RelativeTime timestamp={usage.last_invoked_at} className="typo-label text-ink-3 num text-right" />;
 }
 
 /** Context-coverage bar + percentage for a context-tracked skill. Fixed widths
@@ -78,11 +79,11 @@ export function CoverageBar({ row, total }: { row: SkillCoverageRow | undefined;
   const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
   const hue = pct >= 65 ? '#34D399' : pct >= 30 ? '#F59E0B' : 'rgba(148,163,184,.7)';
   return (
-    <span className="inline-flex items-center justify-end gap-1.5" title={tx(t.plugins.dev_tools.skills_coverage_hint, { covered, total })}>
+    <Tooltip content={tx(t.plugins.dev_tools.skills_coverage_hint, { covered, total })}><span className="inline-flex items-center justify-end gap-1.5">
       <span className="w-12 h-[4px] rounded-full bg-foreground/10 overflow-hidden flex-shrink-0">
         <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: hue }} />
       </span>
-      <span className="typo-label tabular-nums w-8 text-right flex-shrink-0" style={{ color: hue }}>{pct}%</span>
-    </span>
+      <span className="typo-label num w-8 text-right flex-shrink-0" style={{ color: hue }}>{pct}%</span>
+    </span></Tooltip>
   );
 }

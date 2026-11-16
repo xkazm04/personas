@@ -8,6 +8,7 @@
 // Always mounted and hidden while closed, so the row can grow into it through
 // a view transition. Without view transitions it cross-fades in on the
 // `gentle` motion rung, and under reduced motion it simply appears.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { forwardRef, useState, type ReactNode } from 'react';
 
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
@@ -83,16 +84,16 @@ export const DeedLayer = forwardRef<HTMLElement, DeedLayerProps>(function DeedLa
         <>
           <div className="ly-bar">
             <nav className="crumb" data-role="cad-crumb" aria-label={t.cadastre_crumb_label}>
-              <button type="button" onClick={p.onClose}>{t.cadastre_register_title}</button>
+              <PressSurface onPress={p.onClose}>{t.cadastre_register_title}</PressSurface>
               <span className="sep" aria-hidden="true">›</span>
-              <button type="button" onClick={p.onClose}>{moveLabel(r.row.move, t)}</button>
+              <PressSurface onPress={p.onClose}>{moveLabel(r.row.move, t)}</PressSurface>
               <span className="sep" aria-hidden="true">›</span>
               <span className="cur" data-testid="cad-crumb-current">{r.row.feature.name}</span>
             </nav>
             <span className="ly-pos" data-role="cad-layer-position">{p.position.index >= 0 ? tx(t.cadastre_position, { n: p.position.index + 1, count: p.position.count }) : ''}</span>
-            <button type="button" className="ctl" aria-label={t.cadastre_prev} onClick={() => p.onStep(-1)}><kbd className="kbd">[</kbd></button>
-            <button type="button" className="ctl" aria-label={t.cadastre_next} onClick={() => p.onStep(1)}><kbd className="kbd">]</kbd></button>
-            <button type="button" className="ctl" onClick={p.onClose} data-testid="cad-layer-close">{t.cadastre_close}<kbd className="kbd">Esc</kbd></button>
+            <PressSurface className="ctl" aria-label={t.cadastre_prev} onPress={() => p.onStep(-1)}><kbd className="kbd">[</kbd></PressSurface>
+            <PressSurface className="ctl" aria-label={t.cadastre_next} onPress={() => p.onStep(1)}><kbd className="kbd">]</kbd></PressSurface>
+            <PressSurface className="ctl" onPress={p.onClose} data-testid="cad-layer-close">{t.cadastre_close}<kbd className="kbd">Esc</kbd></PressSurface>
           </div>
           <div className="ly-body" style={{ ['--tone' as string]: `var(--c-${standingOf(r.row.move)})` }}>
             <div className="ly-left">

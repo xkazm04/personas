@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
@@ -12,7 +12,7 @@ vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({ t: en, tx: (s: string) => s }),
 }));
 vi.mock('@/api/devTools/kpis', () => ({
-  listKpiBindings: () => Promise.resolve([]),
+  listKpiBindings: (id: string) => Promise.resolve([{ id: `bind-${id}`, kpi_id: id }]),
 }));
 
 const row = (id: string, kpi_id: string): DevKpiMeasurement =>
@@ -57,5 +57,18 @@ describe('useKpiDetail.recordManual', () => {
 
     state.recordKpiMeasurement.mockImplementationOnce(() => Promise.resolve());
     await expect(result.current.recordManual(5)).resolves.toBe(true);
+  });
+});
+
+describe('useKpiDetail bindings', () => {
+  it("never shows another KPI's bindings after the open KPI changes", async () => {
+    const { result, rerender } = renderHook(
+      ({ id }) => useKpiDetail({ id, project_id: 'p' } as DevKpi),
+      { initialProps: { id: 'kpi-a' } },
+    );
+    await waitFor(() => expect(result.current.bindings.map((b) => b.id)).toEqual(['bind-kpi-a']));
+    rerender({ id: 'kpi-b' });
+    expect(result.current.bindings.every((b) => b.kpi_id === 'kpi-b')).toBe(true);
+    await waitFor(() => expect(result.current.bindings.map((b) => b.id)).toEqual(['bind-kpi-b']));
   });
 });

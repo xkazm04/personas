@@ -7,6 +7,7 @@
 // be 1,044 timers and 1,044 focus targets for a layer whose job is to be read
 // at a glance. The plot under the pointer is reported UP instead, and the rail
 // prints its name where there is room for a name.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { MouseEvent } from 'react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -75,20 +76,18 @@ export function MapTerritory({
       style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, opacity: dimmed ? DIMMED_OPACITY : 1 }}
     >
       <Tooltip content={`${summary} — ${nextMoveText(nextMoveOf(tally), t, tx)}`} delay={250}>
-        <button
-          type="button"
-          onClick={onOpen}
+        <PressSurface
+          onPress={onOpen}
           aria-label={summary}
           data-testid={`kpi-map-territory-${territory.key}`}
-          className="absolute inset-0 rounded-interactive border border-card-border bg-secondary/10 text-left hover:border-primary/50 focus-ring"
-          style={territory.color ? { borderLeftColor: territory.color, borderLeftWidth: 2 } : undefined}
-        />
+          className="absolute inset-0 rounded-interactive border border-card-border bg-surface-1 text-left hover:border-primary/50 focus-ring"
+          style={territory.color ? { borderLeftColor: territory.color, borderLeftWidth: 2 } : undefined}>{null}</PressSurface>
       </Tooltip>
 
       {labelled && (
         <div className="pointer-events-none absolute inset-x-1.5 top-0.5 flex items-baseline justify-between gap-1">
-          <span className="truncate typo-label text-foreground">{territory.label}</span>
-          <span className="shrink-0 typo-code text-foreground tabular-nums">
+          <span className="truncate typo-label text-ink-2">{territory.label}</span>
+          <span className="shrink-0 typo-data text-ink-2">
             {`${tally.measured}/${tally.total}`}
           </span>
         </div>
@@ -96,7 +95,7 @@ export function MapTerritory({
       {territory.rank != null && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full typo-code tabular-nums"
+          className="pointer-events-none absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full typo-data"
           style={{ background: 'var(--primary)', color: 'var(--background)' }}
         >
           {territory.rank}

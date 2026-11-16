@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   deleteScraperConfig,
@@ -14,6 +14,7 @@ import {
   type ScraperConfigInput,
 } from '@/api/scraper';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /**
  * Shared data + actions for the Scraper surface. All prototype variants consume
@@ -28,6 +29,8 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 // reload) sees the cold-load ghost.
 let cachedConfigs: ScraperConfig[] = [];
 let cachedDatasets: DatasetSummary[] = [];
+// A save/run/delete reload racing a manual one: only the newest read may land.
+const reloadLatestWins = createLatestWins();
 /** Props every prototype variant receives — shared data + edit affordances. */
 export interface ScraperVariantProps {
   data: ScraperData;
@@ -63,25 +66,30 @@ export function useScraperData(): ScraperData {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
+  const runningRef = useRef(new Set<string>());
 
   const reload = useCallback(async () => {
+    const token = reloadLatestWins.next();
     setLoading(true);
     try {
       const [cfgs, dsets] = await Promise.all([
         listScraperConfigs(),
         listScraperDatasets(),
       ]);
+      // An older read resolving after a newer one would roll the table back.
+      if (!reloadLatestWins.isCurrent(token)) return;
       setConfigs(cfgs);
       setDatasets(dsets);
       cachedConfigs = cfgs;
       cachedDatasets = dsets;
       setError(null);
     } catch (e) {
+      if (!reloadLatestWins.isCurrent(token)) return;
       // Kept raw: the Control Room resolves it at render (inlineErrorCopy).
       setError(e ?? new Error('load failed'));
       silentCatch('scraper: load configs/datasets')(e);
     } finally {
-      setLoading(false);
+      if (reloadLatestWins.isCurrent(token)) setLoading(false);
     }
   }, []);
 
@@ -105,6 +113,10 @@ export function useScraperData(): ScraperData {
 
   const run = useCallback(
     async (id: string) => {
+      // In-flight guard: a second click on Run (or the same scrape started from
+      // another variant) while one is running would start a duplicate extract.
+      if (runningRef.current.has(id)) return null;
+      runningRef.current.add(id);
       setRunningId(id);
       try {
         const summary = await runScraperConfig(id);
@@ -114,19 +126,27 @@ export function useScraperData(): ScraperData {
         toastCatch('scraper action')(e);
         return null;
       } finally {
+        runningRef.current.delete(id);
         setRunningId(null);
       }
     },
     [reload],
   );
 
+  const removingRef = useRef(new Set<string>());
   const remove = useCallback(
     async (id: string) => {
+      // A double click would send a second delete for a row already gone and
+      // toast a not-found error over a delete that worked.
+      if (removingRef.current.has(id)) return;
+      removingRef.current.add(id);
       try {
         await deleteScraperConfig(id);
         await reload();
       } catch (e) {
         toastCatch('scraper action')(e);
+      } finally {
+        removingRef.current.delete(id);
       }
     },
     [reload],

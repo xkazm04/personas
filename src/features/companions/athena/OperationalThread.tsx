@@ -14,9 +14,10 @@ import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TodoStep } from './operationalSteps';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 function StepIcon({ status }: { status: TodoStep['status'] }) {
   if (status === 'completed') {
-    return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+    return <CheckCircle2 className="w-3.5 h-3.5 text-status-success shrink-0" />;
   }
   if (status === 'in_progress') {
     return <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />;
@@ -59,9 +60,11 @@ export function OperationalThread({ steps }: { steps: TodoStep[] }) {
       <ul className="space-y-1">
         {steps.map((step, i) => (
           <li key={`${i}-${step.content}`} className="flex items-start gap-2">
-            <span className="mt-0.5" title={statusLabel(step.status)}>
-              <StepIcon status={step.status} />
-            </span>
+            <Tooltip content={statusLabel(step.status)}>
+              <span className="mt-0.5" >
+                <StepIcon status={step.status} />
+              </span>
+            </Tooltip>
             <span
               className={
                 step.status === 'completed'

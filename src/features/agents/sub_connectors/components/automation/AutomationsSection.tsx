@@ -5,11 +5,13 @@ import { useVaultStore } from "@/stores/vaultStore";
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import type { AutomationDeployStatus as AutomationDeploymentStatus } from '@/lib/bindings/AutomationDeployStatus';
 import { AutomationCard } from './AutomationCard';
-import { TOOLS_BTN_COMPACT, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
+import { TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { BlastRadiusPanel, useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
 import { getAutomationBlastRadius } from '@/api/agents/automations';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface AutomationsSectionProps {
   automations: PersonaAutomation[];
@@ -133,36 +135,36 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           Add control sits beside it rather than inside it, so no interactive
           element is nested in another. Mirrors ToolsSection's header. */}
       <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
+        <PressSurface
+          onPress={() => setExpanded(!expanded)}
           aria-expanded={expanded}
-          className="flex-1 min-w-0 flex items-center gap-2 px-1 text-left rounded-card focus-ring"
+          className="flex-1 min-w-0 flex items-center gap-2 px-1 rounded-card"
         >
-          <span className="flex items-center gap-1.5 text-primary shrink-0">
+          <span className="flex items-center gap-1.5 text-ink-3 shrink-0">
             {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             <Zap className="w-5 h-5" />
           </span>
           <span className="typo-submodule-header truncate">{sectionLabel}</span>
           {activeCount > 0 && (
-            <span className="typo-body text-brand-emerald/70 shrink-0">
+            <span className="typo-body text-status-success shrink-0">
               {tx(t.agents.connectors.auto_active, { count: activeCount })}
             </span>
           )}
           {!expanded && preview && (
-            <span className="typo-body text-foreground truncate max-w-48">
+            <span className="typo-body text-ink-2 truncate max-w-48">
               {preview}
             </span>
           )}
-        </button>
-        <button
-          type="button"
+        </PressSurface>
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onAdd}
-          className={`shrink-0 flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors focus-ring`}
+          className="shrink-0"
+          icon={<Plus className="w-3 h-3" />}
         >
-          <Plus className="w-3 h-3" />
           {t.common.add}
-        </button>
+        </Button>
       </div>
 
       {expanded && (
@@ -192,14 +194,13 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               ) : null}
 
               {automations.length === 0 && (
-                <button
-                  type="button"
-                  onClick={onAdd}
-                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-border typo-body text-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
+                <PressSurface
+                  onPress={onAdd}
+                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-hair"
                 >
-                  <Zap className="w-4 h-4" />
-                  <span>{t.agents.connectors.auto_add_from_platforms}</span>
-                </button>
+                  <Zap className="w-4 h-4 text-ink-3" />
+                  <span className="typo-body text-ink-2">{t.agents.connectors.auto_add_from_platforms}</span>
+                </PressSurface>
               )}
             </div>
           </div>
@@ -210,17 +211,17 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
         onClose={() => setDeleteTarget(null)}
         titleId="delete-automation-dialog"
         maxWidthClass="max-w-sm"
-        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+        panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
       >
         {deleteTarget && (
           <div className="p-4 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-modal bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-5 h-5 text-red-400" />
+              <div className="w-10 h-10 rounded-modal bg-status-error/15 border border-status-error/25 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-status-error" />
               </div>
               <div>
-                <h3 id="delete-automation-dialog" className="typo-heading text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
-                <p className="typo-body text-foreground mt-1">
+                <h3 id="delete-automation-dialog" className="typo-heading text-ink-1">{t.agents.connectors.auto_delete_title}</h3>
+                <p className="typo-body text-ink-2 mt-1">
                   {tx(t.agents.connectors.auto_delete_msg, { name: deleteTarget.name })}
                 </p>
               </div>
@@ -229,20 +230,8 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             <BlastRadiusPanel items={blastItems} loading={blastLoading} failed={blastFailed} />
 
             <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 typo-body text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors"
-              >
-                {t.common.cancel}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 typo-body rounded-modal bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
-              >
-                {t.common.delete}
-              </button>
+              <Button type="button" onClick={() => setDeleteTarget(null)} variant="ghost" size="md">{t.common.cancel}</Button>
+              <Button type="button" onClick={handleConfirmDelete} variant="danger" size="md">{t.common.delete}</Button>
             </div>
           </div>
         )}

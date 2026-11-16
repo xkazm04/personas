@@ -31,6 +31,7 @@ pub mod auth;
 pub mod fleet_door;
 #[cfg(feature = "p2p")]
 pub mod mesh;
+pub mod standup;
 
 /// Where the server starts scanning for a free port. Picked to be visibly
 /// distinct from common dev ports and from the test-automation port (17320).

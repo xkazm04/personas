@@ -36,7 +36,7 @@ export function Tasks() {
           onChange={(e) => setNewItem(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void addItem(); }}
           placeholder={dl.goal_item_add_placeholder}
-          className="flex-1 px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+          className="flex-1 px-2.5 py-1.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-foreground focus-ring"
         />
         <Button variant="ghost" size="icon-sm" disabled={!newItem.trim()} onClick={addItem} aria-label={dl.goal_item_add}>
           <Plus className="w-4 h-4" />
@@ -67,8 +67,7 @@ export function UatGate() {
             </span>
             {!verifyItem.done && (
               <Button
-                variant="accent"
-                tone="info"
+                variant="secondary"
                 size="sm"
                 icon={<Play className="w-3.5 h-3.5" />}
                 disabled={uat.running || !todosComplete}
@@ -95,23 +94,23 @@ export function UatGate() {
           )}
         </div>
       ) : uat.showForm ? (
-        <div className="rounded-card border border-primary/10 bg-card/30 px-3 py-2.5 space-y-2">
+        <div className="rounded-card border border-hair bg-surface-1 px-3 py-2.5 space-y-2">
           <label className="block typo-caption text-foreground">{dl.uat_scenario_label}</label>
           <textarea
             value={uat.scenario}
             onChange={(e) => uat.setScenario(e.target.value)}
             placeholder={dl.uat_scenario_placeholder}
             rows={2}
-            className="w-full px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-2.5 py-1.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-foreground focus-ring"
           />
           <input
             value={uat.url}
             onChange={(e) => uat.setUrl(e.target.value)}
             placeholder={dl.uat_url_label}
-            className="w-full px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-2.5 py-1.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-foreground focus-ring"
           />
           <div className="flex items-center gap-2">
-            <Button variant="accent" tone="info" size="sm" disabled={!uat.scenario.trim()} onClick={uat.save}>
+            <Button variant="secondary" size="sm" disabled={!uat.scenario.trim()} onClick={uat.save}>
               {dl.uat_save}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => uat.setShowForm(false)}>{t.common.cancel}</Button>
@@ -138,7 +137,7 @@ export function Subgoals() {
               ? <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
               : <Circle className="w-4 h-4 text-foreground shrink-0" />}
             <span className="flex-1 text-foreground truncate">{sg.title}</span>
-            <span className="typo-caption text-foreground tabular-nums">{sg.progress}%</span>
+            <span className="typo-caption text-foreground num">{sg.progress}%</span>
           </li>
         ))}
       </ul>

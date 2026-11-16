@@ -81,15 +81,15 @@ export const GOAL_STATUS_META: Record<GoalStatus, GoalStatusMeta> = {
   open: {
     icon: Circle,
     lane: 'your_turn',
-    chipClass: 'text-blue-400 border-blue-500/25 bg-blue-500/10',
-    tint: 'text-blue-400',
+    chipClass: 'text-status-info border-status-info/25 bg-status-info/10',
+    tint: 'text-status-info',
     map: { fill: '#3B82F6', stroke: '#60A5FA', glow: 'rgba(59, 130, 246, 0.35)' },
   },
   'in-progress': {
     icon: Clock,
     lane: 'agent_turn',
-    chipClass: 'text-amber-400 border-amber-500/25 bg-amber-500/10',
-    tint: 'text-amber-400',
+    chipClass: 'text-status-warning border-status-warning/25 bg-status-warning/10',
+    tint: 'text-status-warning',
     map: { fill: '#F59E0B', stroke: '#FBBF24', glow: 'rgba(245, 158, 11, 0.4)' },
   },
   // Agent finished; the user's turn to accept/reject. Distinct teal so it reads
@@ -97,22 +97,22 @@ export const GOAL_STATUS_META: Record<GoalStatus, GoalStatusMeta> = {
   awaiting_acceptance: {
     icon: BadgeCheck,
     lane: 'your_turn',
-    chipClass: 'text-teal-300 border-teal-500/25 bg-teal-500/10',
-    tint: 'text-teal-300',
+    chipClass: 'text-role-external border-role-external/25 bg-role-external/10',
+    tint: 'text-role-external',
     map: { fill: '#2DD4BF', stroke: '#5EEAD4', glow: 'rgba(45, 212, 191, 0.4)' },
   },
   blocked: {
     icon: AlertCircle,
     lane: 'your_turn',
-    chipClass: 'text-red-400 border-red-500/25 bg-red-500/10',
-    tint: 'text-red-400',
+    chipClass: 'text-status-error border-status-error/25 bg-status-error/10',
+    tint: 'text-status-error',
     map: { fill: '#EF4444', stroke: '#F87171', glow: 'rgba(239, 68, 68, 0.4)' },
   },
   done: {
     icon: CheckCircle2,
     lane: 'done',
-    chipClass: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10',
-    tint: 'text-emerald-400',
+    chipClass: 'text-status-success border-status-success/25 bg-status-success/10',
+    tint: 'text-status-success',
     map: { fill: '#10B981', stroke: '#34D399', glow: 'rgba(16, 185, 129, 0.35)' },
   },
 };

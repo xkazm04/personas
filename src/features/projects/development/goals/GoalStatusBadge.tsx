@@ -16,10 +16,10 @@ interface Props {
 export function GoalStatusBadge({ status, size = 'xs', className = '' }: Props) {
   const { t } = useTranslation();
   const meta = goalStatusMeta(status);
-  const text = size === 'xs' ? 'text-[10px]' : 'typo-caption';
+  const text = size === 'xs' ? '' : 'typo-caption';
   return (
     <span
-      className={`${text} font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap ${meta.chipClass} ${className}`}
+      className={`${text} font-medium px-1.5 py-0.5 rounded-interactive border whitespace-nowrap ${meta.chipClass} ${className}`}
     >
       {goalStatusLabel(t.plugins.dev_lifecycle, status)}
     </span>

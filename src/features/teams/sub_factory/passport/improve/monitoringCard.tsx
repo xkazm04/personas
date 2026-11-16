@@ -17,9 +17,11 @@
 // Design.md to badges and dividers; it is used for NOTHING descriptive here.
 // Sentence-case `typo-caption` held back by opacity does that job:
 //    title  typo-body font-semibold text-foreground
-//    label  typo-caption text-foreground/45
+//    label  typo-caption text-ink-3
 //    value  typo-caption text-foreground  + fontWeight 400
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { LucideIcon } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Check, Code2, Plug, Rocket, Unplug, X } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -58,7 +60,7 @@ export function CapabilityCard({ icon: Icon, children, testId }: {
 }) {
   return (
     <section
-      className="group relative overflow-hidden flex flex-col rounded-card border border-primary/12 bg-secondary/[0.15] hover:border-primary/25 transition-colors"
+      className="group relative overflow-hidden flex flex-col rounded-card border border-hair bg-surface-1 hover:border-hair transition-colors"
       data-testid={testId}
     >
       <Icon
@@ -132,7 +134,7 @@ export function ToolMark({ label, serviceType, size = 64 }: {
   }
   return (
     <span
-      className="inline-flex items-center justify-center rounded-interactive bg-primary/10 border border-primary/20 text-primary shrink-0"
+      className="inline-flex items-center justify-center rounded-interactive bg-primary/10 border border-hair text-primary shrink-0"
       style={{ width: size, height: size, fontSize: size * 0.42 }}
       aria-label={label}
       role="img"
@@ -147,7 +149,7 @@ export function ToolMark({ label, serviceType, size = 64 }: {
 function EmptyMark({ icon: Icon, size = 64 }: { icon: LucideIcon; size?: number }) {
   return (
     <span
-      className="inline-flex items-center justify-center rounded-interactive border border-dashed border-primary/20 text-foreground/25 shrink-0"
+      className="inline-flex items-center justify-center rounded-interactive border border-dashed border-hair text-ink-3 shrink-0"
       style={{ width: size, height: size }}
       aria-hidden
     >
@@ -174,15 +176,15 @@ export function SideHalf({ side, toolLabel, serviceType, children }: {
   return (
     <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-2 px-2 py-2.5 text-center">
       <Tooltip content={sideName} placement="top">
-        <span className="inline-flex items-center text-foreground/35" aria-label={sideName}>
+        <span className="inline-flex items-center text-ink-3" aria-label={sideName}>
           <SideIcon className="w-3.5 h-3.5" />
         </span>
       </Tooltip>
       {toolLabel
         ? <ToolMark label={toolLabel} serviceType={serviceType} />
         : <EmptyMark icon={side === 'code' ? Code2 : Unplug} />}
-      <span className="typo-caption text-foreground truncate max-w-full" style={{ fontWeight: 400 }}>
-        {toolLabel ?? <span className="text-foreground/35">{d.monitoring_none_dash}</span>}
+      <span className="typo-caption text-ink-2 truncate max-w-full" style={{ fontWeight: 400 }}>
+        {toolLabel ?? <span className="text-ink-3">{d.monitoring_none_dash}</span>}
       </span>
       {children}
     </div>
@@ -201,7 +203,7 @@ export function MergedTool({ label, serviceType, children }: {
   return (
     <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-2 px-3 py-3 text-center">
       <Tooltip content={d.monitoring_merged_hint} placement="top">
-        <span className="inline-flex items-center gap-1 text-foreground/35" aria-label={d.monitoring_merged_hint}>
+        <span className="inline-flex items-center gap-1 text-ink-3" aria-label={d.monitoring_merged_hint}>
           <Code2 className="w-3 h-3" />
           <Check className="w-3 h-3" style={{ color: STATE_INK.ok }} />
           <Plug className="w-3 h-3" />
@@ -222,15 +224,9 @@ export function UnbindButton({ busy, onClick }: { busy: boolean; onClick: () => 
   const d = t.plugins.dev_tools;
   return (
     <Tooltip content={d.envslot_unassign} placement="top">
-      <button
-        type="button"
-        disabled={busy}
-        onClick={onClick}
-        aria-label={d.envslot_unassign}
-        className="p-0.5 rounded-interactive text-foreground/30 hover:text-[var(--status-error)] hover:bg-[var(--status-error)]/10 transition-colors disabled:opacity-40"
-      >
+      <Button variant="ghost" size="icon-sm" disabled={busy} onClick={onClick} aria-label={d.envslot_unassign}>
         <X className="w-3 h-3" />
-      </button>
+      </Button>
     </Tooltip>
   );
 }
@@ -248,16 +244,11 @@ export function CardAction({ row, busy, deploying, onPick, onDeploy }: {
   const d = t.plugins.dev_tools;
   const isDeploy = row.state === 'not_implemented';
   return (
-    <button
-      type="button"
-      disabled={isDeploy ? deploying : busy}
-      onClick={isDeploy ? onDeploy : onPick}
-      className="relative w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors disabled:opacity-40"
-    >
+    <Button variant="secondary" size="sm" className="relative w-full" disabled={isDeploy ? deploying : busy} onClick={isDeploy ? onDeploy : onPick}>
       {isDeploy
         ? <><Rocket className="w-3 h-3" aria-hidden />{deploying ? d.monitoring_deploying : d.monitoring_deploy}</>
         : <><Plug className="w-3 h-3" aria-hidden />{row.bound ? d.envslot_reassign : d.envslot_assign}</>}
-    </button>
+    </Button>
   );
 }
 
@@ -273,22 +264,20 @@ export function CandidateRow({ credential, healthy, selected, busy, onClick }: {
   const d = t.plugins.dev_tools;
   const label = healthy === false ? d.envslot_unhealthy : healthy === true ? d.monitoring_health_ok : d.monitoring_health_unknown;
   return (
-    <button
-      type="button"
+    <PressSurface
       disabled={busy}
-      onClick={onClick}
-      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring disabled:opacity-40"
+      onPress={onClick}
+      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive"
     >
       <ToolMark label={credential.name} serviceType={credential.serviceType} size={18} />
-      <span className="typo-caption text-foreground truncate flex-1 min-w-0 text-left" style={{ fontWeight: 400 }}>{credential.name}</span>
-      <span
+      <span className="typo-caption text-ink-2 truncate flex-1 min-w-0 text-left" style={{ fontWeight: 400 }}>{credential.name}</span>
+      <Tooltip content={label}><span
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ background: healthy === true ? 'var(--status-success)' : healthy === false ? 'var(--status-error)' : 'var(--status-neutral)' }}
-        title={label}
         aria-label={label}
-      />
+      /></Tooltip>
       {selected && <Check className="w-3 h-3 text-primary shrink-0" aria-hidden />}
-    </button>
+    </PressSurface>
   );
 }
 
@@ -305,7 +294,7 @@ export function CandidateList({ row, busy, onAssign, onCancel }: {
     <div className="relative flex-1 min-h-0 flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-1 space-y-0.5">
         {row.candidates.length === 0 && (
-          <p className="typo-caption text-foreground/45 px-1 py-1" style={{ fontWeight: 400 }}>{d.envslot_no_candidates}</p>
+          <p className="typo-caption text-ink-3 px-1 py-1" style={{ fontWeight: 400 }}>{d.envslot_no_candidates}</p>
         )}
         {row.candidates.map((c) => (
           <CandidateRow
@@ -318,14 +307,13 @@ export function CandidateList({ row, busy, onAssign, onCancel }: {
           />
         ))}
       </div>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="px-3 py-1.5 border-t border-primary/10 typo-caption text-foreground/45 hover:text-foreground transition-colors text-left"
+      <PressSurface
+        onPress={onCancel}
+        className="px-3 py-1.5 border-t border-hair typo-caption text-ink-3 hover:text-foreground"
         style={{ fontWeight: 400 }}
       >
         {t.common.cancel}
-      </button>
+      </PressSurface>
     </div>
   );
 }
@@ -334,7 +322,7 @@ export function CandidateList({ row, busy, onAssign, onCancel }: {
 export function DeployNote() {
   const { t } = useTranslation();
   return (
-    <p className="typo-caption text-foreground/60" style={{ fontWeight: 400 }}>
+    <p className="typo-caption text-ink-3" style={{ fontWeight: 400 }}>
       {t.plugins.dev_tools.monitoring_deploy_blurb}
     </p>
   );

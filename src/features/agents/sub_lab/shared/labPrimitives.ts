@@ -4,9 +4,9 @@ import { getSectionSummary } from '@/lib/personas/promptMigration';
 // -- Tag colors --
 
 export const TAG_STYLES: Record<string, { bg: string; text: string; icon: typeof Shield }> = {
-  production: { bg: 'bg-emerald-500/15 border-emerald-500/20', text: 'text-emerald-400', icon: Shield },
-  experimental: { bg: 'bg-amber-500/15 border-amber-500/20', text: 'text-amber-400', icon: Beaker },
-  archived: { bg: 'bg-zinc-500/15 border-zinc-500/20', text: 'text-zinc-400', icon: Archive },
+  production: { bg: 'bg-status-success/15 border-status-success/20', text: 'text-status-success', icon: Shield },
+  experimental: { bg: 'bg-status-warning/15 border-status-warning/20', text: 'text-status-warning', icon: Beaker },
+  archived: { bg: 'bg-surface-2 border-hair', text: 'text-ink-3', icon: Archive },
 };
 
 // -- Helpers --

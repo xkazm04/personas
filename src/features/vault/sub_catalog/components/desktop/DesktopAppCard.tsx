@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { CheckCircle2, ChevronRight, CircleDot } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import type { DiscoveredApp } from '@/api/system/desktop';
@@ -17,18 +18,7 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
   const meta = getConnectorMeta(app.connector_name);
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      className={`w-full text-left p-3 rounded-modal border transition-all ${
-        disabled
-          ? 'opacity-40 cursor-not-allowed border-primary/5 bg-secondary/10'
-          : selected
-            ? 'border-orange-500/30 bg-orange-500/5'
-            : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20'
-      }`}
-    >
+    <PressSurface onPress={() => onSelect?.()} disabled={disabled} selected={selected && !disabled} className="w-full p-3 rounded-modal border border-hair">
       <div className="flex items-center gap-3">
         <div
           className="w-8 h-8 rounded-card flex items-center justify-center border"
@@ -43,13 +33,13 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
           <div className="flex items-center gap-2">
             <span className="typo-body text-foreground">{app.label}</span>
             {app.installed && (
-              <span className="flex items-center gap-1 typo-caption text-emerald-400">
+              <span className="flex items-center gap-1 typo-caption text-status-success">
                 <CheckCircle2 className="w-3 h-3" />
                 {dd.app_installed}
               </span>
             )}
             {app.running && (
-              <span className="flex items-center gap-1 typo-caption text-cyan-400">
+              <span className="flex items-center gap-1 typo-caption text-role-highlight">
                 <CircleDot className="w-3 h-3" />
                 {dd.app_running}
               </span>
@@ -61,6 +51,6 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
         </div>
         {!disabled && <ChevronRight className="w-4 h-4 text-foreground" />}
       </div>
-    </button>
+    </PressSurface>
   );
 }

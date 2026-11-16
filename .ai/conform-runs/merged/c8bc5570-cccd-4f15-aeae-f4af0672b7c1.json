@@ -1,0 +1,133 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c8bc5570-cccd-4f15-aeae-f4af0672b7c1",
+ "subject": "agent-browser-control",
+ "evaluatedAt": "2026-11-08T00:46:43.295394+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "commands-companion",
+   "subject": "agent-browser-control",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 browser_login hand-writes a whitelist-miss error with no next command, bypassing the closed RefusalCode::OriginNotAllowed hint ('call browser_request_site ...'). approval_lifecycle.rs:192 then folds that text into Athena's persisted episode, so her next turn has nothing to act on.",
+   "techniques": [
+    {
+     "technique": "agent-actionable-errors",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 Rewritten at the call site instead of the one door, and it names no next command. Its neighbours at 486-501 do carry one, which is the call-site decay the technique warns about. refusal_to_app_error (line 217) does preserve code and hint for refusals that come through the gate."
+    },
+    {
+     "technique": "references-over-selectors",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:538 Login replays refs the scan copied verbatim from an earlier snapshot and persisted in the DB (scan_prompt.rs:83). hands.js scopes every ref to one document and a random per-document map, so these refs cannot resolve on a later page load. The failure is loud (unknown_ref), not a wrong click, but the login is valid only by coincidence. The rule is to persist a role+name locator or snapshot at execution time."
+    },
+    {
+     "technique": "effect-classed-commands",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:187 The gate decides from the registry's Action::effect(). BROWSER_WRITE_TOOLS (line 70) is a hand-drawn restricted-caller allowlist, but a test checks each member classifies as Effect::Write. The file admits write_action mirrors mcp::action_for, a second table it plans to retire."
+    }
+   ]
+  },
+  {
+   "context": "commands-credentials",
+   "subject": "agent-browser-control",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1472 After every auto-cred session (line 1137), the reaper force-kills every Playwright Chromium on the machine by command-line pattern rather than by recorded process identity. That also kills other sessions' browsers, including the operator's own Playwright MCP sessions.",
+   "techniques": [
+    {
+     "technique": "persistent-browser-daemon",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1472 The technique requires liveness and reaping by recorded identity, never by process name. The Unix branch (line 1483, pkill -f chromium.*playwright) has the same defect."
+    },
+    {
+     "technique": "references-over-selectors",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:482 The agent is steered to read the accessibility snapshot and act on the refs @playwright/mcp mints, rather than composing selectors."
+    }
+   ]
+  },
+  {
+   "context": "plugins-drive",
+   "subject": "agent-browser-control",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/drive/hooks/useDrive.ts:144 A search of src/features/plugins/drive for playwright, webview, browser_, chromium and page_find found nothing. Drive's 'navigate' moves between filesystem paths, and the Local Drive manifest is storage-only, so there is no agent-driven browser here.",
+   "techniques": [
+    {
+     "technique": "persistent-browser-daemon",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/drive/hooks/useDrive.ts:144 Filesystem navigation only. No browser process exists in this context."
+    }
+   ],
+   "absenceTerms": [
+    "playwright",
+    "webview",
+    "browser_",
+    "chromium",
+    "page_find"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-browser-control",
+   "context": "browser-webview-control",
+   "reason": "evidence leans on browser_bridge/backend.rs, which is not a tracked file"
+  },
+  {
+   "subject": "agent-browser-control",
+   "context": "site-whitelist-management",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-08T00:46:43.295394+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-browser-control"
+   ],
+   "techniques": [
+    "agent-actionable-errors",
+    "effect-classed-commands",
+    "references-over-selectors"
+   ],
+   "deviations": 1,
+   "context": "commands-companion",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T00:46:43.295394+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-browser-control"
+   ],
+   "techniques": [
+    "persistent-browser-daemon",
+    "references-over-selectors"
+   ],
+   "deviations": 1,
+   "context": "commands-credentials",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T00:46:43.295394+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-browser-control"
+   ],
+   "techniques": [
+    "persistent-browser-daemon"
+   ],
+   "deviations": 0,
+   "context": "plugins-drive",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

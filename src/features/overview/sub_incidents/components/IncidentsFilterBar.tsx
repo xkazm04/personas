@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
@@ -75,7 +76,7 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
     !!filters.persona_id;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 border-b border-primary/10 bg-secondary/10">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 border-b border-hair bg-surface-1">
       <ColumnDropdownFilter
         label={t.overview.incidents.filter_severity_label}
         value={severityValue}
@@ -96,14 +97,9 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
       />
 
       {isNarrowed && (
-        <button
-          type="button"
-          onClick={() => onChange(OPEN_ONLY_FILTERS)}
-          className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
-        >
-          <X className="h-3 w-3" aria-hidden="true" />
-          {t.overview.incidents.filters_clear_all}
-        </button>
+        <Button variant="secondary" size="xs" className="ml-auto" onClick={() => onChange(OPEN_ONLY_FILTERS)} icon={<X className="h-3 w-3" aria-hidden="true" />}>
+{t.overview.incidents.filters_clear_all}
+</Button>
       )}
     </div>
   );

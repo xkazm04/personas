@@ -572,6 +572,10 @@ function parseTypeTokens(cssText) {
   return [...tokens.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// Light themes retune ink-3 (globals.css, `[data-theme^="light"]`): 56% is 3.9:1 on their canvas.
+const INK_PCT_LIGHT = { 'ink-3': 0.66 };
+const INK_PCT = { 'ink-1': 1, 'ink-2': 0.74, 'ink-3': 0.56 };
+
 /** One colour term: a var(), a hex, or a keyword the type scale actually uses. */
 function termColour(term, effective) {
   const t = term.trim();
@@ -579,6 +583,17 @@ function termColour(term, effective) {
   if (/^white$/i.test(t)) return '#ffffff';
   if (/^black$/i.test(t)) return '#000000';
   let m = t.match(/^var\(\s*--([a-z0-9-]+)\s*\)$/i);
+  // Console ink ladder (2026-11-06): globals.css derives --ink-N by oklab mix of
+  // --foreground over --background; graded here by the sRGB blend of the same
+  // fractions (within ~1 contrast step of the oklab result). ink-2 (captions,
+  // labels) and ink-3 (the mono label tier) are TEXT and graded; ink-4 is never
+  // text and is deliberately not given a colour here.
+  if (m && INK_PCT[m[1]] !== undefined && effective.foreground && effective.background) {
+    const bgHex = effective.background.replace('#', '');
+    const isLight = [0, 2, 4].reduce((a, i) => a + parseInt(bgHex.slice(i, i + 2), 16), 0) > 384;
+    const pct = isLight && INK_PCT_LIGHT[m[1]] !== undefined ? INK_PCT_LIGHT[m[1]] : INK_PCT[m[1]];
+    return pct === 1 ? effective.foreground : blendOver(effective.foreground, effective.background, pct);
+  }
   if (m) return effective[m[1]] ?? null;
   m = t.match(/^#([0-9a-f]{3,8})$/i);
   if (!m) return null;

@@ -665,8 +665,15 @@ fn ingest_pass(claude_session_id: &str, path: &Path, budget: u64) -> bool {
         });
     // Touch even on a no-growth call: the id is demonstrably still of interest.
     st.last_touch = now;
+    if size < st.offset {
+        // Truncated or rotated: the bytes the rollup folded are gone, so its
+        // counts describe a file that no longer exists. Start over from the
+        // top instead of keeping the stale rollup until the file regrows.
+        st.offset = 0;
+        st.acc = RollupAcc::default();
+    }
     if size <= st.offset {
-        return false; // no growth (or truncated/rotated — leave the rollup as-is)
+        return false; // no growth
     }
     let Ok(mut f) = std::fs::File::open(path) else {
         return false;
@@ -1606,6 +1613,32 @@ mod tests {
             metadata_for(id, "/x").expect("rollup").total_lines,
             whole.total_lines
         );
+        evict_ingest(id);
+    }
+
+    #[test]
+    fn a_truncated_transcript_resets_its_rollup() {
+        let id = "lotd-truncated-resets";
+        let (_dir, path) = write_fixture("t.jsonl", FIXTURE_MULTIPASS);
+        ingest_catch_up(id, &path);
+        let all = fixture(FIXTURE_MULTIPASS);
+        assert_eq!(
+            metadata_for(id, "/x").expect("rollup").total_lines,
+            summarize_lines(id, "/x", &all).total_lines
+        );
+
+        // The file is cut back to its first record (truncated / rotated).
+        let first = format!(
+            "{}
+",
+            all[0]
+        );
+        std::fs::write(&path, &first).expect("truncate");
+        ingest_catch_up(id, &path);
+        let after = metadata_for(id, "/x").expect("rollup");
+        let expected = summarize_lines(id, "/x", &all[..1]);
+        assert_eq!(after.total_lines, expected.total_lines);
+        assert_eq!(after.tokens.input, expected.tokens.input);
         evict_ingest(id);
     }
 

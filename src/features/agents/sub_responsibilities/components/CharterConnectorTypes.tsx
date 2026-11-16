@@ -90,7 +90,7 @@ export function CharterConnectorTypes({ types, bindings, connectors }: CharterCo
 
   return (
     <section className="flex flex-col gap-2">
-      <span className="typo-label text-foreground">{c.recipe_connectors_label}</span>
+      <span className="typo-label text-ink-1">{c.recipe_connectors_label}</span>
       <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
         {rows.map(({ role, type, bound, state, named }) => (
           <li
@@ -100,7 +100,7 @@ export function CharterConnectorTypes({ types, bindings, connectors }: CharterCo
             data-role={role}
             data-state={state}
           >
-            {named && <span className="typo-caption text-foreground">{role}</span>}
+            {named && <span className="typo-caption text-ink-2">{role}</span>}
             <StatusBadge size="sm" accent="slate" className="font-mono">{type}</StatusBadge>
             {state === 'bound' && (
               <span className="inline-flex items-center gap-1.5 flex-wrap">
@@ -113,7 +113,7 @@ export function CharterConnectorTypes({ types, bindings, connectors }: CharterCo
             {state === 'unbound' && (
               <span className="inline-flex items-center gap-1.5">
                 <Link2Off aria-hidden className="w-3 h-3 text-status-neutral shrink-0" />
-                <span className="typo-caption text-foreground">{c.recipe_connector_unbound}</span>
+                <span className="typo-caption text-ink-2">{c.recipe_connector_unbound}</span>
               </span>
             )}
             {state === 'uncovered' && (
@@ -126,13 +126,13 @@ export function CharterConnectorTypes({ types, bindings, connectors }: CharterCo
         ))}
       </ul>
       {rows.some((r) => r.state === 'unbound') && (
-        <p className="typo-caption text-foreground">{c.recipe_connector_unbound_hint}</p>
+        <p className="typo-caption text-ink-2">{c.recipe_connector_unbound_hint}</p>
       )}
       {rows.some((r) => r.state === 'uncovered') && (
-        <p className="typo-caption text-foreground">{c.recipe_connector_uncovered_hint}</p>
+        <p className="typo-caption text-ink-2">{c.recipe_connector_uncovered_hint}</p>
       )}
       {rows.some((r) => r.state === 'bound') && (
-        <p className="typo-caption text-foreground">{c.recipe_connector_capability_unverified}</p>
+        <p className="typo-caption text-ink-2">{c.recipe_connector_capability_unverified}</p>
       )}
     </section>
   );

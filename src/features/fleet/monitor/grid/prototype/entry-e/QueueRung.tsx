@@ -79,7 +79,7 @@ export const QueueRung = memo(function QueueRung({
       </Tooltip>
       {!peer && <MoveToMenu sessionId={item.sessionId} label={f.label} />}
       <Tooltip content={m.queue_start_now}>
-        <Button variant="accent" tone="info" size="icon-sm" onClick={() => onStart(item)} aria-label={m.queue_start_now} data-testid="fleet-queue-start-now" icon={<Zap className="h-3.5 w-3.5" />} />
+        <Button variant="secondary" size="icon-sm" onClick={() => onStart(item)} aria-label={m.queue_start_now} data-testid="fleet-queue-start-now" icon={<Zap className="h-3.5 w-3.5" />} />
       </Tooltip>
       <Tooltip content={m.queue_cancel}>
         <Button variant="ghost" size="icon-sm" onClick={() => onCancel(item)} aria-label={m.queue_cancel} data-testid="fleet-queue-cancel" icon={<X className="h-4 w-4" />} />
@@ -116,7 +116,7 @@ export const QueueRung = memo(function QueueRung({
         >
           <span className="flex w-full min-w-0 items-center gap-1.5 pl-1 pr-2.5" style={{ height: SESSION_LINE_H }}>
             {grip}
-            <span className="w-4 flex-shrink-0 text-center typo-data tabular-nums text-foreground" aria-hidden>{rank}</span>
+            <span className="w-4 flex-shrink-0 text-center typo-data num text-foreground" aria-hidden>{rank}</span>
             <GlyphFace Icon={Origin} />
             <LineHead
               name={f.label}
@@ -143,13 +143,13 @@ export const QueueRung = memo(function QueueRung({
       className={`ae-win ae-row ae-focus flex min-w-0 items-stretch gap-2 rounded-input py-2 pl-1 pr-2 ${flash ? 'is-flash' : ''} ${lifted ? 'ae-dragging' : ''}`}
     >
       {grip && <span className="flex items-center">{grip}</span>}
-      <span className="flex w-9 flex-shrink-0 items-start justify-center typo-data-lg tabular-nums text-foreground" aria-hidden>{rank}</span>
+      <span className="flex w-9 flex-shrink-0 items-start justify-center typo-data-lg num text-foreground" aria-hidden>{rank}</span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="truncate typo-body text-foreground">{f.label}</span>
         <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 typo-caption">
           <span className="inline-flex items-center gap-1"><Origin className="h-3.5 w-3.5" aria-hidden />{f.originLabel}</span>
           {f.project && <span className="truncate">{f.project}</span>}
-          <span className="tabular-nums text-foreground">{eta}</span>
+          <span className="num text-foreground">{eta}</span>
           {gateTag}
         </span>
         {moveLine}

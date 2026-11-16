@@ -127,13 +127,6 @@
       "verbatim": "MetricHelpPopover.tsx"
     },
     "src/features/plugins/twin/sub_profiles/TwinHero.tsx": {"count":1,"sections":[7],"lines":["22"],"contexts":["`BrainAtelier.tsx:320`, `TwinHero.tsx:22`, …) — same mechanism, same outcome. Note that"],"resolvedFrom":"basename","verbatim":"TwinHero.tsx"},
-    "src/features/settings/sub_appearance/components/AppearanceDensitySettings.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["(`sub_appearance/components/AppearanceDensitySettings.tsx`) that also has its own"],
-      "resolvedFrom": "suffix",
-      "verbatim": "sub_appearance/components/AppearanceDensitySettings.tsx"
-    },
     "src/features/shared/components/": {"count":2,"sections":[2,4],"contexts":["rules exempt `src/features/shared/components/` and/or `src/lib/`, so the primitive layer is"],"resolved":false,"isDir":true},
     "src/features/shared/components/buttons/Button.test.tsx": {"count":2,"sections":[7,8],"contexts":["files themselves** (`designTokens.ts` ×2, `Button.tsx` ×2, `Button.test.tsx` ×1)."],"resolvedFrom":"basename","verbatim":"Button.test.tsx"},
     "src/features/shared/components/buttons/Button.tsx": {
@@ -248,6 +241,7 @@
         "| **`src/styles/typography.css:105-358`** — 15 `typo-*` tiers | Size + weight + line-height + font-features as one decision, re-mapped under `[data-text-scale]` and per-`[data-lang]` script. **10,230…"
       ]
     },
+    "sub_appearance/components/AppearanceDensitySettings.tsx": {"count":1,"sections":[7],"contexts":["(`sub_appearance/components/AppearanceDensitySettings.tsx`) that also has its own"],"resolved":false},
     "typography.css": {"count":8,"sections":[2,5,7,9],"lines":["120-191","161-162"],"contexts":["twelve token axes; plus full reads of `globals.css`, `typography.css`, `designTokens.ts`,"],"resolved":false}
   }
 }

@@ -1,4 +1,6 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 
@@ -39,39 +41,33 @@ function RunPicker({ roleLabel, runs, value, excluded, onChange }: RunPickerProp
         if (picked) onChange(picked[0]);
       }}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
-          onClick={toggle}
-          className="w-full inline-flex items-center justify-between gap-1 typo-caption bg-primary/5 border border-primary/10 rounded-card px-1.5 py-1 text-foreground hover:border-primary/20 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
-        >
-          <span className="truncate">
+        <Button variant="secondary" size="xs" className="w-full" onClick={toggle} iconRight={<ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}>
+<span className="truncate">
             <span className="text-foreground">{roleLabel}</span>{' '}
             {selected ? `${shortId(selected[0])} (${selected[1]})` : '—'}
           </span>
-          <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+</Button>
       )}
     >
       {({ close, focusIndex }) => (
         <div className="py-1 bg-secondary/95">
           {selectable.map(([id, count], i) => (
-            <button
+            <PressSurface
               key={id}
-              type="button"
               role="option"
               aria-selected={id === value}
-              onClick={() => {
+              onPress={() => {
                 onChange(id);
                 close();
               }}
-              className={`w-full text-left px-2 py-1 typo-caption transition-colors ${
+              className={`w-full  px-2 py-1 typo-caption  ${
                 i === focusIndex || id === value
                   ? 'bg-primary/10 text-foreground'
-                  : 'text-foreground/80 hover:bg-primary/5'
+                  : 'text-ink-2 hover:bg-surface-2'
               }`}
             >
               {shortId(id)} ({count})
-            </button>
+            </PressSurface>
           ))}
         </div>
       )}

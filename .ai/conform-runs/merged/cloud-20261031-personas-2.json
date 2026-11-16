@@ -1,0 +1,159 @@
+{
+  "worker": "cloud-20261031-personas-2",
+  "evaluatedAt": "2026-10-31",
+  "pairs": [
+    {
+      "context": "cd7e7cc7-cc5b-44a1-9bff-76b34af21966",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust sets are literal copies (:30) and the file reads no Rust source, so a change to VALID_CHANNELS in src-tauri/src/commands/infrastructure/twin.rs leaves it green: the named decision is unreached and the claim overstates the guard.",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:15 the file's claim about what it pins (both sides) is never settled; mutating the Rust side, the decision it names, cannot turn it red because :30 hardcodes the Rust set."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "src/api/__tests__/scraperTimeoutParity.test.ts:28 strips block and line comments from the Rust source before matching, so prose cannot satisfy the pin, and :37 uses a needle carrying the argument list of spawn_claude_and_collect."
+        }
+      ]
+    },
+    {
+      "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:65 now asserts the four metric kinds yield four distinct labels, which retires the prior deviation; no new deviation was found, but only 3 of 25 techniques are anchored, which is below the conformant floor.",
+      "techniques": [
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:48 records in the test the absorbed mutation (every kind collapsed onto `custom`) that the old assertion passed under; malformedConfig.test.tsx:46 scopes the console.error silencing to one test body and restores it at :53 rather than muting a global channel."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:65 asserts the producer of each label is distinct (Set size equals kinds), so the custom fallback can no longer answer for all four kinds."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:23 drops line comments so a kind named only in prose never counts, and :61 is the walk's floor: every source list must yield at least one kind."
+        }
+      ]
+    },
+    {
+      "context": "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "src-tauri/src/commands/contest/node.rs:630 still drives the real contest.mjs instrument (status) against a temp project, and :524 still fails rather than skips under CI with the registry cloned for it (.github/workflows/ci.yml:1038). No deviation found, but only 2 of 25 techniques are anchored under the current revision, so the prior conformant verdict cannot be carried forward.",
+      "techniques": [
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/node.rs:630 runs the foreign instrument's own `status` verb over the record.json this crate wrote, rather than asserting the bytes alone."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/node.rs:552 gives the instrument test a private tempdir project, so it inherits no developer state."
+        }
+      ],
+      "registryProposal": "test-harness now has 25 techniques. Most of them are suite or lane scoped (history-driven-partitioning, flake-lifecycle, long-lane-certification, mutation-lane, out-of-graph-artifacts, configuration-axes), so for a single test context the half-of-techniques floor means about 13 anchors, mostly not-applicable ones. That makes conformant effectively unreachable per context: two prior conformant verdicts in this run (commands-contest, db-repos) fell to unknown with no defect found. Proposal: tag each technique with a scope (context or lane), or count the floor over context-scoped techniques only."
+    },
+    {
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 flips the seeded persona_executions row to 'completed' with a raw UPDATE after creating it through the repo door (:99), bypassing the executions status transitions and asserting no invariant afterwards, so the fixture can hold states the product's write path never produces.",
+      "techniques": [
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 is a raw status write in a test fixture with no follow-up invariant assertion, which is the seeded-data honesty failure the technique names."
+        }
+      ]
+    },
+    {
+      "context": "6da794b4-7a5f-4087-a4d4-fb8a416456e5",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged loops and passes without asserting anything. detail_loads_and_resolves_verdict likewise returns green at :814 when no scorecard run exists. The judge contract is unreached and the failure looks the same as a pass.",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:828 the test's own comment says the decision it names (a judged run's panel) is never present, so the assertion never runs and no engagement is reported."
+        }
+      ]
+    },
+    {
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "tests/playwright/athena-conversation.spec.ts:110 handles a tab-memory testid missing past the polling deadline by adding a warn annotation and returning green (the same at :257). The technique says a deadline expiring with nothing found must be reported as a failure, but here it is reported as a pass.",
+      "techniques": [
+        {
+          "technique": "live-app-harness",
+          "verdict": "deviation",
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 an absent element after the deadline becomes an annotation plus return, so the live lane reports success for a check it never ran. The test-identifier contract half is realized: tests/playwright/__tests__/selector-contract.test.ts:7 requires every spec testid to be emitted by src/, with a two-sided KNOWN list (:23)."
+        }
+      ]
+    },
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "src-tauri/db/src/lib.rs:2471 init_test_db still copies a template migrated once per process, drops the builder handle before copying (:2343) and probes each copy (:2487). No deviation found, but only 2 of 25 techniques are anchored, which is below the conformant floor under the current revision.",
+      "techniques": [
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/lib.rs:2471 copies the once-built template. :2333 removes a stale template left by a crashed run, :2343 releases the builder handle before the first copy, :2487 probes the copy before handing it over, and src-tauri/db/src/repos/test_fixtures.rs:10 seeds personas through the product's personas::create door."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/lib.rs:2472 gives every test its own uuid-named database file, so parallel tests share no store."
+        }
+      ]
+    },
+    {
+      "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active, like upsert and purge_expired, has no test (0 #[test] in the file). Its only caller, the restart-restore path at src-tauri/engine/src/failover.rs:206, is never built with a pool by any failover test, so a broken TTL filter or is_open decode would ship green.",
+      "techniques": [
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 the circuit-state recovery path is a restore path the suite never executes, so no test exists that could be shown to fail."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2785 the execution repo tests take the shared copied template via init_test_db() instead of migrating per test."
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-31T00:00:00Z",
+      "bundle": "software-engineering",
+      "subjects": ["test-harness"],
+      "techniques": ["unreached-decisions-pin-nothing", "pin-the-call-not-the-name", "negative-control-tests", "fixture-economics", "isolation-lanes", "live-app-harness", "assert-through-the-reader"],
+      "deviations": 5
+    }
+  ]
+}

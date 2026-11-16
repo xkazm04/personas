@@ -6,6 +6,7 @@
 import { useCallback } from 'react';
 import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Kbd } from '@/features/shared/components/display/Kbd';
 import { Crumbs, ListRow, Section } from '@/features/shared/components/kit';
 import { VERDICT_TONE } from '../shared/readings';
 import { DIM_ORDER, type DimId, type DimState } from '../shared/dimensions';
@@ -46,7 +47,7 @@ export function WallDetail({ open, dims, readings, onOpen, onBack }: {
                 name={d.label}
                 meta={d.stateLabel}
                 mark={{ tone: VERDICT_TONE[d.verdict], glyph: d.verdict === 'pending' ? 'hollow' : 'solid', label: d.stateLabel }}
-                figures={<span className="aw-rail__fig typo-data">{d.value ?? '-'}<kbd className="aw-key typo-code">{i + 1}</kbd></span>}
+                figures={<span className="aw-rail__fig typo-data">{d.value ?? '-'}<Kbd>{i + 1}</Kbd></span>}
                 state={id === open ? 'selected' : undefined}
                 onPress={() => onOpen(id)}
                 testId={`mc-rail-${id}`}

@@ -54,7 +54,7 @@ export function PortfolioStrip() {
       data-testid="dev-tools-portfolio-strip"
     >
       <Tile
-        icon={<Activity className="w-3.5 h-3.5 text-emerald-400" />}
+        icon={<Activity className="w-3.5 h-3.5 text-status-success" />}
         label={dt.portfolio_health_label}
         testId="portfolio-tile-health"
         tooltip={
@@ -69,7 +69,7 @@ export function PortfolioStrip() {
         }
       />
       <Tile
-        icon={<Radar className="w-3.5 h-3.5 text-sky-400" />}
+        icon={<Radar className="w-3.5 h-3.5 text-status-info" />}
         label={dt.portfolio_radar_label}
         testId="portfolio-tile-radar"
         tooltip={
@@ -80,7 +80,7 @@ export function PortfolioStrip() {
         value={<Numeric value={model.radarAssess.length} />}
       />
       <Tile
-        icon={<ShieldAlert className="w-3.5 h-3.5 text-amber-400" />}
+        icon={<ShieldAlert className="w-3.5 h-3.5 text-ink-2" />}
         label={dt.portfolio_risk_label}
         testId="portfolio-tile-risk"
         tooltip={
@@ -110,12 +110,12 @@ function Tile({
   return (
     <Tooltip content={tooltip} placement="bottom">
       <div
-        className="flex items-center gap-2 rounded-card border border-primary/10 bg-secondary/25 px-3 py-1.5"
+        className="flex items-center gap-2 rounded-card border border-hair bg-surface-1 px-3 py-1.5"
         data-testid={testId}
       >
         {icon}
         <span className="typo-caption text-foreground">{label}</span>
-        <span className="typo-body tabular-nums text-foreground">{value}</span>
+        <span className="typo-body num text-foreground">{value}</span>
       </div>
     </Tooltip>
   );

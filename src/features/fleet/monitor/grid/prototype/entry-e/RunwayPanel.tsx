@@ -73,11 +73,11 @@ export function RunwayPanel({
       <section className="ae-plate flex flex-col gap-2.5 rounded-card p-3">
         <header className="flex items-baseline gap-3 px-1">
           <Engraved>{m.queue_band_running}</Engraved>
-          <span className="typo-data-lg tabular-nums text-foreground">
+          <span className="typo-data-lg num text-foreground">
             <Numeric value={holders.length} /><span className="typo-data text-foreground"> / <Numeric value={cap} /></span>
           </span>
           {holders.length > cap && cap > 0 && (
-            <span className="rounded-pill border border-status-warning/40 bg-status-warning/10 px-2 typo-caption text-status-warning">
+            <span className="rounded-pill border border-hair bg-surface-2 px-2 typo-caption text-status-warning">
               {m.queue_over_admitted} · {holders.length - cap}
             </span>
           )}
@@ -106,7 +106,7 @@ export function RunwayPanel({
       <section className="ae-plate flex flex-col gap-2.5 rounded-card p-3">
         <header className="flex items-baseline gap-3 px-1">
           <Engraved>{m.queue_band_queued}</Engraved>
-          <span className="typo-data-lg tabular-nums text-foreground"><Numeric value={queued.length} /></span>
+          <span className="typo-data-lg num text-foreground"><Numeric value={queued.length} /></span>
           {filter.active && order.items.length > 0 && <span className="ml-auto typo-caption">Clear the filter to reorder</span>}
         </header>
         {queued.length > 0 ? (

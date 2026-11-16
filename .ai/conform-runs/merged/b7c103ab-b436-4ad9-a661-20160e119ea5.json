@@ -1,0 +1,105 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b7c103ab-b436-4ad9-a661-20160e119ea5",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-11-09T00:01:59.035211+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "overview-incidents",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_incidents/libs/useIncidentActions.ts:7 The inbox reads and transitions audit incidents through this API only and holds no agent memory; a case-insensitive search of the whole directory found no episode, recall, belief or decay term, and its only two 'memory' hits are an in-memory bus note and the inbox's own saved filter view.",
+      "techniques": [],
+      "absenceTerms": [
+        "episode",
+        "recall",
+        "belief",
+        "decay"
+      ]
+    },
+    {
+      "context": "agents-connectors",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:8 The connector tab's persisted writes are credential bindings and automation setup, not anything an agent carries forward as memory; a case-insensitive search of the whole sub_connectors tree found zero hits for memory, episode, recall, belief and consolidation.",
+      "techniques": [],
+      "absenceTerms": [
+        "memory",
+        "episode",
+        "recall",
+        "belief"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "companions-page",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "teams-goals",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "recipe-build-models",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor team_memory.rs is not among the context's listed files (recipe, build_session, persona, genome and the like), so the deviation describes a different context's code. The struct does lack confidence, supersedence and last-use fields, but that finding belongs to the context that owns team_me"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-09T00:01:59.035211+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "decay-and-forgetting",
+        "episodic-capture",
+        "exposure-is-not-credit",
+        "memory-governance",
+        "memory-value-model",
+        "owner-and-counterpart-scope",
+        "pending-beliefs-live-apart",
+        "procedure-promotion",
+        "recall-injection",
+        "rejected-revision-leaves-its-evidence"
+      ],
+      "deviations": 1,
+      "context": "recipe-build-models",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T00:01:59.035211+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "overview-incidents",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T00:01:59.035211+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "agents-connectors",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

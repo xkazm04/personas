@@ -5,7 +5,9 @@
  * Action-carrying widgets composed by an LLM are a safety surface, so
  * actions follow the shared grammar: an explicit enum (never free-form,
  * see `./actionTypes`), validated on the Rust side against the
- * session-delta document AND re-validated on render, one click per
+ * session-delta document for a morning briefing (a board saved through
+ * `compose_cockpit` is stored unvalidated) AND re-validated on render,
+ * kind-gated by `actionAllowedOn`, one click per
  * action, confirm when spendy/destructive (handled by
  * `WidgetActionBar`), and every execution recorded to the
  * `companion_decisions` audit ledger.

@@ -11,9 +11,9 @@ function Band({ tone, testId, head, children }: {
   children?: ReactNode;
 }) {
   const frame = {
-    success: 'border-status-success/25 bg-status-success/5',
-    warning: 'border-status-warning/25 bg-status-warning/5',
-    neutral: 'border-primary/15 bg-primary/5',
+    success: 'border-hair bg-surface-1',
+    warning: 'border-hair bg-surface-2',
+    neutral: 'border-hair bg-surface-1',
   }[tone];
   return (
     <div className={`border rounded-modal px-4 py-3 ${frame}`} data-testid={testId}>

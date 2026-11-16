@@ -561,6 +561,9 @@ pub(super) const AUTO_FIRE_ACTIONS: &[&str] = &[
     "show_ship_goals",
     "show_note_suggestions",
     "comment_on_note",
+    // The Standup (app-standup): one card's decision onto his own DRAFT, the
+    // in-app twin of the terminal standup client's item write. Never arms.
+    "standup_decide",
     "show_lifecycle_proposal",
     "show_persona_overview",
     "show_connected_services",
@@ -735,7 +738,7 @@ const OP_SECTIONS: &[OpSection] = &[
         ],
     },
     OpSection {
-        title: "Mastermind canvas, Ship milestones, the Notepad, lifecycles",
+        title: "Mastermind canvas, Ship milestones, the Notepad, lifecycles, the Standup",
         gate: Some(OpGate::Approval),
         note: "Approval unless marked. `slug` is a canvas slug exactly as printed in your Mastermind block; every `item_id` / `milestone_id` / `note_id` is a REAL id you READ (`describe_*` first), never a guess. A milestone `goal` is a TITLE under 72 chars.",
         compact: true,
@@ -753,6 +756,7 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("comment_on_note", Auto, "", r#"{note_id,body_md} (reply on its thread)"#),
             op!("describe_lifecycle", Read, "", r#"{project}"#),
             op!("show_lifecycle_proposal", Card, "", r#"{project,change_note,preset?,steps:[{id,phase?,label?,rule?,bindings?,params?}]} (FULL list; omit = keep)"#),
+            op!("standup_decide", Auto, "", r#"{standup_id?,item_id,chosen?,state?:accepted|edited|skipped|proposed,window?:day|night|any,priority?,not_before_ms?} (one DRAFT card; never arms)"#),
         ],
     },
     OpSection {
@@ -819,7 +823,10 @@ fn op_docs() -> impl Iterator<Item = &'static OpDoc> {
 // 12,895 -> 12,988 (2026-10-13, device mesh): exactly the 93 characters the
 // two compact rows `mesh_set_agent_enabled` and `mesh_queue_move` add to the
 // fleet section; the headroom is unchanged.
-pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_988;
+// 12,988 -> 13,174 (2026-11-07, app-standup): exactly the 186 characters the
+// compact `standup_decide` row (173) and the section title's ", the Standup"
+// (13) add; the headroom is unchanged.
+pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 13_174;
 
 /// The compact markdown op reference the chat-class prompt family carries in
 /// place of the constitution's per-op prose. One line per op: name, gate,

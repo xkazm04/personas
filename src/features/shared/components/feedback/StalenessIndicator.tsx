@@ -64,9 +64,9 @@ export function StalenessIndicator({ fetchedAt, hasError, label }: StalenessIndi
 
   const formatAge = (ms: number): string => {
     if (ms < 60_000) return t.common.staleness_just_now;
-    if (ms < 3_600_000) return tx(t.common.staleness_minutes_ago, { minutes: Math.round(ms / 60_000) });
-    if (ms < 86_400_000) return tx(t.common.staleness_hours_ago, { hours: Math.round(ms / 3_600_000) });
-    return tx(t.common.staleness_days_ago, { days: Math.round(ms / 86_400_000) });
+    if (ms < 3_600_000) return tx(t.common.staleness_minutes_ago, { minutes: Math.floor(ms / 60_000) });
+    if (ms < 86_400_000) return tx(t.common.staleness_hours_ago, { hours: Math.floor(ms / 3_600_000) });
+    return tx(t.common.staleness_days_ago, { days: Math.floor(ms / 86_400_000) });
   };
 
   const ageText = formatAge(age);

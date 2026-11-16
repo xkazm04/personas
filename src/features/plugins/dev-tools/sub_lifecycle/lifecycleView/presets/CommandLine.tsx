@@ -140,7 +140,7 @@ export function CommandLine({ row, measureId, slots, budget, onOpen }: CommandLi
       />
       {row.firstError && (
         <Collapse open={open} unmountWhenClosed>
-          <div className={`mx-4 mb-3 mt-1 flex items-start gap-3 ${lcSurface('plate', 'border border-status-error/30 bg-status-error/5')}`}>
+          <div className={`mx-4 mb-3 mt-1 flex items-start gap-3 ${lcSurface('plate', 'border border-hair bg-surface-1')}`}>
             <pre className={`min-w-0 flex-1 overflow-x-auto whitespace-pre-wrap ${LT.code}`} data-testid={`lc2-error-${row.commandId}`}>
               {row.firstError}
             </pre>

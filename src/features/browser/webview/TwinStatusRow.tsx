@@ -43,7 +43,7 @@ interface TwinStatusRowProps extends TwinLearnRowActions {
   onDismissSubmit: () => void;
 }
 
-const BAR = 'flex items-center gap-2 px-3 py-1.5 rounded-card border border-primary/15 bg-secondary/30 min-w-0';
+const BAR = 'flex items-center gap-2 px-3 py-1.5 rounded-card border border-hair bg-surface-1 min-w-0';
 
 export default function TwinStatusRow({ lane, onConfirmSubmit, onDismissSubmit, ...learnProps }: TwinStatusRowProps) {
   const { t, tx } = useTranslation();
@@ -57,7 +57,7 @@ export default function TwinStatusRow({ lane, onConfirmSubmit, onDismissSubmit, 
   if (lane.confirmingSubmit) {
     return (
       <div role="status" data-testid="webview-twin-status" className={BAR}>
-        <span className="typo-caption text-foreground truncate">{v.confirm_submit}</span>
+        <span className="typo-caption text-ink-2 truncate">{v.confirm_submit}</span>
         <AsyncButton size="xs" variant="primary" onClick={onConfirmSubmit} data-testid="webview-twin-submit-confirm">
           {v.submit}
         </AsyncButton>
@@ -70,7 +70,7 @@ export default function TwinStatusRow({ lane, onConfirmSubmit, onDismissSubmit, 
 
   const failed = lane.phase === 'failed';
   const Icon = failed ? AlertCircle : lane.phase === 'inserted' ? Check : MousePointerClick;
-  const tone = failed ? 'text-status-warning' : lane.phase === 'inserted' ? 'text-status-success' : 'text-foreground/70';
+  const tone = failed ? 'text-status-warning' : lane.phase === 'inserted' ? 'text-status-success' : 'text-ink-2';
   const text =
     lane.phase === 'armed'
       ? v.armed_hint
@@ -108,7 +108,7 @@ function LearnRow({ learn, activeTwinName, onTeach, onNewTwin, onDismissLearn, o
     return (
       <div role="status" data-testid="webview-twin-status" data-learn-phase="choosing" className={BAR}>
         <Highlighter className="w-3.5 h-3.5 shrink-0 text-foreground" aria-hidden="true" />
-        <span className="typo-caption text-foreground truncate" data-testid="webview-twin-learn-what">{what}</span>
+        <span className="typo-caption text-ink-2 truncate" data-testid="webview-twin-learn-what">{what}</span>
         {activeTwinName !== null && (
           <AsyncButton size="xs" variant="primary" onClick={onTeach} data-testid="webview-twin-learn-teach">
             {tx(v.teach, { name: activeTwinName })}

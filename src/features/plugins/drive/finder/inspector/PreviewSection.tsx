@@ -7,6 +7,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { visualForEntry } from "../../designTokens";
 import { useEntryMedia } from "../quicklook/useEntryMedia";
 import { InspectorSection } from "./InspectorSection";
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const INSPECTOR_TEXT_CHARS = 4000;
 
@@ -19,7 +20,7 @@ function PreviewGhost() {
       {["w-full", "w-5/6", "w-2/3", "w-4/6"].map((w, i) => (
         <span
           key={w}
-          className={`block h-3 ${w} rounded-pill bg-primary/[0.06] animate-fade-in`}
+          className={`block h-3 ${w} rounded-pill bg-surface-2 animate-fade-in`}
           style={{ animationDelay: `${120 + i * 35}ms` }}
         />
       ))}
@@ -53,7 +54,7 @@ export function PreviewSection({
     const Icon = visual.Icon;
     body = (
       <div className="flex flex-col items-center gap-3 py-3">
-        <div className={`w-16 h-16 rounded-card border border-card-border flex items-center justify-center bg-gradient-to-br ${visual.gradient}`}>
+        <div className={`w-16 h-16 rounded-card border border-card-border flex items-center justify-center bg-surface-1 ${visual.gradient}`}>
           <Icon className={`w-8 h-8 ${visual.text}`} />
         </div>
         <Button variant="secondary" size="sm" icon={<Eye className="w-3.5 h-3.5" />} onClick={() => onQuickLook(entry)}>
@@ -70,14 +71,13 @@ export function PreviewSection({
   } else if (media.kind === "image" && media.url) {
     body = (
       <Tooltip content={f.insp_preview_open}>
-        <button
-          type="button"
-          onClick={() => onQuickLook(entry)}
+        <PressSurface
+          onPress={() => onQuickLook(entry)}
           aria-label={f.insp_preview_open}
-          className="block w-full rounded-card border border-card-border bg-card-bg p-1 overflow-hidden hover:border-primary/40 transition-colors cursor-zoom-in focus-ring"
+          className="block w-full rounded-card border border-card-border bg-card-bg p-1 overflow-hidden hover:border-primary/40 cursor-zoom-in"
         >
           <img src={media.url} alt={entry.name} className="rounded-input max-w-full max-h-56 object-contain mx-auto" />
-        </button>
+        </PressSurface>
       </Tooltip>
     );
   } else {

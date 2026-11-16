@@ -21,22 +21,22 @@ export function SettingsStatusBar({
 }: SettingsStatusBarProps) {
   const { t, tx } = useTranslation();
   return (
-    <div className="flex items-center justify-between pt-2 border-t border-primary/10">
+    <div className="flex items-center justify-between pt-2 border-t border-hair">
       {/* Autosave is the only save path here, so this line is the only confirmation. */}
-      <div role="status" aria-live="polite" className="flex items-center gap-2 typo-body text-foreground">
+      <div role="status" aria-live="polite" className="flex items-center gap-2 typo-body text-ink-1">
         {isSaving ? (
           <>
             <span>{tx(t.agents.settings_status.saving, { sections: changedSections.join(' + ').toLowerCase() })}</span>
           </>
         ) : isDirty ? (
           <>
-            <span className="w-1.5 h-1.5 rounded-full bg-status-warning animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-status-warning" />
             <span>{tx(t.agents.settings_status.changed, { sections: changedSections.join(' + ') })}</span>
           </>
         ) : (
           <>
             <Check className="w-3.5 h-3.5 text-status-success" aria-hidden="true" />
-            <span className="text-foreground">{t.agents.settings_status.all_saved}</span>
+            <span className="text-ink-1">{t.agents.settings_status.all_saved}</span>
           </>
         )}
       </div>

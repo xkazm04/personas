@@ -5,6 +5,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { TwinChannelKind } from '@/api/enums';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /* ------------------------------------------------------------------ *
  *  ContactThread — recent logged messages with the selected contact.
  *
@@ -55,8 +57,8 @@ export function ContactThread({
   return (
     <div className="mt-3 rounded-card border border-primary/10 bg-card/30 overflow-hidden">
       <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-primary/10">
-        <MessagesSquare className="w-3.5 h-3.5 text-violet-300" />
-        <span className="text-[10px] uppercase tracking-[0.16em] font-medium text-foreground">
+        <MessagesSquare className="w-3.5 h-3.5 text-ink-2" />
+        <span className="typo-eyebrow text-foreground">
           {tx(t.threadTitle, { handle: contactHandle.trim() })}
         </span>
       </div>
@@ -68,34 +70,35 @@ export function ContactThread({
           const replyable = !outbound && !!onReplyTo;
           const row = (
             <>
-              <span
-                className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full inline-flex items-center justify-center ${
-                  outbound ? 'bg-emerald-500/10 text-emerald-300' : 'bg-violet-500/10 text-violet-300'
-                }`}
-                title={dirLabel}
-                aria-label={dirLabel}
-              >
-                <Icon className="w-3 h-3" />
-              </span>
+              <Tooltip content={dirLabel}>
+                <span
+                  className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full inline-flex items-center justify-center ${
+                    outbound ? 'bg-status-success/10 text-status-success' : 'bg-surface-2 text-ink-2'
+                  }`}
+                  aria-label={dirLabel}
+                >
+                  <Icon className="w-3 h-3" />
+                </span>
+              </Tooltip>
               <span className="flex-1 min-w-0 typo-caption text-foreground line-clamp-2">{c.content}</span>
-              <RelativeTime timestamp={c.occurred_at} className="flex-shrink-0 text-[10px] text-foreground tabular-nums" />
+              <RelativeTime timestamp={c.occurred_at} className="flex-shrink-0 typo-caption text-foreground tabular-nums" />
               {replyable && (
-                <Reply className="flex-shrink-0 mt-0.5 w-3 h-3 text-violet-300 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
+                <Reply className="flex-shrink-0 mt-0.5 w-3 h-3 text-ink-2 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
               )}
             </>
           );
           return (
             <li key={c.id}>
               {replyable ? (
-                <button
-                  type="button"
-                  onClick={() => onReplyTo(c.content)}
-                  title={t.threadReplyTo}
-                  aria-label={t.threadReplyTo}
-                  className="group w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-violet-500/8 transition-colors focus-ring"
-                >
-                  {row}
-                </button>
+                <Tooltip content={t.threadReplyTo}>
+                  <PressSurface
+                    onPress={() => onReplyTo(c.content)}
+                    aria-label={t.threadReplyTo}
+                    className="group w-full flex items-start gap-2 px-3 py-2"
+                  >
+                    {row}
+                  </PressSurface>
+                </Tooltip>
               ) : (
                 <span className="flex items-start gap-2 px-3 py-2">{row}</span>
               )}

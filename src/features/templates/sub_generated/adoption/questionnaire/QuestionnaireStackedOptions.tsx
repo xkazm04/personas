@@ -64,8 +64,8 @@ export function QuestionnaireStackedOptions({
             transition={shouldAnimate ? { duration: 0.2, delay: i * 0.03 } : { duration: 0 }}
             className={`relative w-full text-left rounded-card px-4 py-3 border flex items-center gap-3 transition-all ${
               isSelected
-                ? 'bg-primary/10 border-primary/40 shadow-elevation-1'
-                : 'bg-background/80 border-border hover:bg-foreground/[0.04] hover:border-foreground/20 backdrop-blur-sm'
+                ? 'bg-sel border-hair-2'
+                : 'bg-surface-1 border-hair hover:bg-surface-2'
             }`}
           >
             <div className="flex-1 min-w-0">
@@ -90,7 +90,7 @@ export function QuestionnaireStackedOptions({
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={fadeTransition}
                     aria-hidden="true"
-                    className={`hide-on-touch absolute top-2 right-2 px-1.5 min-w-[1.25rem] h-5 rounded-input flex items-center justify-center font-mono text-[11px] font-semibold border pointer-events-none ${
+                    className={`hide-on-touch absolute top-2 right-2 px-1.5 min-w-[1.25rem] h-5 rounded-input flex items-center justify-center font-mono typo-label border pointer-events-none ${
                       isSelected
                         ? 'bg-primary/15 text-primary/85 border-primary/30'
                         : 'bg-foreground/[0.04] text-foreground border-border/60'

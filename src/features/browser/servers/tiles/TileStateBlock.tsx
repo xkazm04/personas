@@ -56,7 +56,7 @@ export function TileStateBlock({ server, control, uptime, onToggle }: Props) {
             </span>
           </Tooltip>
         ) : (
-          detail && <span className="lt-state__detail typo-caption text-foreground">{detail}</span>
+          detail && <span className="lt-state__detail typo-caption text-ink-2">{detail}</span>
         )}
       </div>
       <Button

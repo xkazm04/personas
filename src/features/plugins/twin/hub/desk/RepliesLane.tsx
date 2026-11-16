@@ -19,6 +19,7 @@ import { Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ReplyLane } from '../ReplyLane';
 import type { HubDeskProps } from '../hubContract';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 export function RepliesLane({ feed }: HubDeskProps) {
   const t = useTranslation().t.twin.hub.reply;
@@ -53,17 +54,8 @@ export function RepliesLane({ feed }: HubDeskProps) {
 
 function Chip({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`max-w-[12rem] truncate px-2 py-0.5 rounded-full border typo-caption transition-colors focus-ring ${
-        active
-          ? 'border-primary/40 bg-primary/15 text-primary'
-          : 'border-border text-foreground hover:bg-secondary/50'
-      }`}
-    >
+    <OptionChip onSelect={onClick} className="max-w-[12rem] truncate" selected={active}>
       {label}
-    </button>
+    </OptionChip>
   );
 }

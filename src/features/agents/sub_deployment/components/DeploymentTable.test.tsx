@@ -68,7 +68,7 @@ describe('summary card connection state is not colour alone', () => {
 });
 
 describe('table test-result summary uses the shared formatters', () => {
-  it('formats duration and cost exactly as the card does', () => {
+  it('formats duration and cost exactly as the card does', async () => {
     render(<DeploymentTable
       displayRows={[row]} busyId={null} sortKey="name" sortDir="asc" toggleSort={vi.fn()}
       handleAction={vi.fn()} cloudPauseDeploy={vi.fn()} cloudResumeDeploy={vi.fn()}
@@ -77,8 +77,10 @@ describe('table test-result summary uses the shared formatters', () => {
       testStates={{ [row.id]: { running: false, result: { status: 'pass', durationMs: 1500, costUsd: 0.0123 } } }}
     />);
     const chip = screen.getByText('PASS').closest('span')!;
-    expect(chip.getAttribute('title'))
+    fireEvent.mouseEnter(chip);
+    const tip = (await screen.findByRole('tooltip')).textContent;
+    expect(tip)
       .toBe(`Passed - ${formatNumeric(1500, 'ms', { language: 'en' })} - ${formatNumeric(0.0123, 'usd', { language: 'en' })}`);
-    expect(chip.getAttribute('title')).not.toContain('1500ms');
+    expect(tip).not.toContain('1500ms');
   });
 });

@@ -58,8 +58,8 @@ export function CharterRecipeBlocks({ charter }: CharterRecipeBlocksProps) {
       <div className="flex flex-col gap-4" data-testid="resp-recipe-blocks">
         {v3.activities && (
           <section className="flex flex-col gap-2">
-            <span className="typo-label text-foreground">{c.recipe_shape_label}</span>
-            <p className="typo-caption text-foreground">{c.recipe_shape_hint}</p>
+            <span className="typo-label text-ink-1">{c.recipe_shape_label}</span>
+            <p className="typo-caption text-ink-2">{c.recipe_shape_hint}</p>
             <ActivitySequence activities={v3.activities} kindLabels={kindLabels} />
           </section>
         )}
@@ -72,7 +72,7 @@ export function CharterRecipeBlocks({ charter }: CharterRecipeBlocksProps) {
 
         {v3.dependencies && (
           <section className="flex flex-col gap-2">
-            <span className="typo-label text-foreground">{c.recipe_dependencies_label}</span>
+            <span className="typo-label text-ink-1">{c.recipe_dependencies_label}</span>
             <div className="flex items-center gap-1.5 flex-wrap" data-testid="resp-recipe-dependencies">
               {v3.dependencies.map((dep) => (
                 <StatusBadge key={dep} size="sm" accent="slate" className="font-mono">{dep}</StatusBadge>

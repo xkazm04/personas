@@ -13,16 +13,7 @@
  * depth-without-clutter layer. Violet (the Goals accent) at ~6% so it registers
  * subconsciously. Decorative + inert.
  */
-export function GoalAtmosphere({ className = '' }: { className?: string }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 -z-10 ${className}`}
-      style={{
-        background:
-          'radial-gradient(120% 70% at 50% -10%, rgba(139,92,246,0.07), transparent 55%)',
-      }}
-    />
-  );
+export function GoalAtmosphere(_props: { className?: string }) {
+  // Console law: no atmosphere pool behind a surface. Kept as a no-op so call sites stay put.
+  return null;
 }
-

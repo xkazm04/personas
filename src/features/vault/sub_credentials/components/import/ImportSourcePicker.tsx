@@ -1,7 +1,9 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react';
 import { IMPORT_SOURCES, importSourceLabel, importSourceDescription, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import Button from '@/features/shared/components/buttons/Button';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
   'file-text': FileText,
@@ -24,13 +26,14 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
       className="animate-fade-slide-in space-y-4"
     >
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          size="icon-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <div>
           <h3 className="typo-body text-foreground">{t.vault.credential_import.import_from_vault}</h3>
           <p className="typo-body text-foreground">{t.vault.credential_import.import_subtitle}</p>
@@ -41,12 +44,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
         {IMPORT_SOURCES.map((source) => {
           const Icon = ICON_MAP[source.icon] ?? FileText;
           return (
-            <button
-              key={source.id}
-              type="button"
-              onClick={() => onSelect(source.id)}
-              className="flex items-start gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-all text-left group"
-            >
+            <PressSurface key={source.id} onPress={() => onSelect(source.id)} className="flex items-start gap-3 p-3 rounded-modal border border-hair group">
               <div
                 className="w-9 h-9 rounded-card border flex items-center justify-center flex-shrink-0 mt-0.5"
                 style={{ backgroundColor: `${source.color}12`, borderColor: `${source.color}30` }}
@@ -64,7 +62,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
                   </StatusBadge>
                 )}
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

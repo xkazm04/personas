@@ -5,6 +5,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface TrendingCarouselProps {
   trendingTemplates: PersonaDesignReview[];
@@ -22,9 +24,9 @@ export function TrendingCarousel({
   if (trendingTemplates.length === 0) return null;
 
   return (
-    <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0">
+    <div className="px-4 py-3 border-b border-hair flex-shrink-0">
       <div className="flex items-center gap-2 mb-2.5">
-        <TrendingUp className="w-4 h-4 text-emerald-400/70" />
+        <TrendingUp className="w-4 h-4 text-ink-3" />
         <SectionLabel as="span" className="mb-0">
           {t.templates.trending.title}
         </SectionLabel>
@@ -35,33 +37,35 @@ export function TrendingCarousel({
           // card button (nested buttons are invalid HTML) while still sharing
           // one hover group.
           <div key={tmpl.id} className="relative flex-shrink-0 group/trend">
-            <button
-              type="button"
-              onClick={() => onSelectTemplate(tmpl)}
-              className="w-[200px] p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/12 hover:border-emerald-500/25 group-hover/trend:bg-emerald-500/10 transition-all text-left"
+            <PressSurface
+              onPress={() => onSelectTemplate(tmpl)}
+              className="w-[200px] p-3 rounded-modal bg-surface-1 border border-hair"
             >
-              <div className="typo-body text-foreground group-hover/trend:text-emerald-300 truncate pr-7">
+              <div className="typo-body text-ink-1 truncate pr-7">
                 {tmpl.test_case_name}
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="inline-flex items-center gap-1 typo-code text-emerald-400/70">
+                <span className="inline-flex items-center gap-1 typo-data text-ink-2">
                   <Download className="w-2.5 h-2.5" />
                   {tmpl.adoption_count}
                 </span>
                 <DimensionRadial designResult={getCachedDesignResult(tmpl)} size={20} />
               </div>
-            </button>
+            </PressSurface>
             {onAdoptTemplate && (
               <Tooltip content={t.templates.actions.adopt} placement="bottom">
-                <button
+                <Button
                   type="button"
                   onClick={() => onAdoptTemplate(tmpl)}
                   aria-label={t.templates.actions.adopt}
                   data-testid={`trending-adopt-${tmpl.id}`}
-                  className="absolute top-2 right-2 p-1.5 rounded-interactive bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 opacity-0 group-hover/trend:opacity-100 focus-visible:opacity-100 hover:bg-emerald-500/25 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)]"
+                  variant="accent"
+                  tone="success"
+                  size="icon-sm"
+                  className="absolute top-2 right-2 opacity-0 group-hover/trend:opacity-100 focus-visible:opacity-100"
                 >
                   <Download className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </Tooltip>
             )}
           </div>

@@ -9,6 +9,7 @@
  * the chart logs it, so a miss is visible instead of looking like a dead
  * keypress.
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 
@@ -63,11 +64,11 @@ export function IslandJumpPalette({
 
   return (
     <div
-      className="absolute left-1/2 top-16 -translate-x-1/2 z-20 w-80 rounded-modal border border-primary/20 bg-background/95 shadow-elevation-3 overflow-hidden"
+      className="absolute left-1/2 top-16 -translate-x-1/2 z-20 w-80 rounded-modal border border-hair bg-background/95 shadow-elevation-3 overflow-hidden"
       data-testid="mm-jump-palette"
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-        <Search className="w-3.5 h-3.5 text-foreground opacity-70" aria-hidden />
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
+        <Search className="w-3.5 h-3.5 text-ink-2" aria-hidden />
         <input
           ref={inputRef}
           type="text"
@@ -77,31 +78,32 @@ export function IslandJumpPalette({
           placeholder={t.mastermind.jump_placeholder}
           aria-label={t.mastermind.jump_label}
           data-testid="mm-jump-input"
-          className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground/50 focus:outline-none"
+          className="flex-1 bg-transparent typo-body text-foreground placeholder:text-ink-3 focus:outline-none"
         />
       </div>
 
       {results.length === 0 ? (
-        <p className="px-3 py-2 typo-caption text-foreground opacity-70" data-testid="mm-jump-empty">
+        <p className="px-3 py-2 typo-caption text-ink-2" data-testid="mm-jump-empty">
           {t.mastermind.jump_no_match}
         </p>
       ) : (
         <ul role="listbox" aria-label={t.mastermind.jump_label} className="max-h-64 overflow-y-auto">
           {results.map((island, i) => (
             <li key={island.slug}>
-              <button
-                type="button"
+              <PressSurface
                 role="option"
                 aria-selected={i === cursor}
+                // The jump fires on mousedown (keeps the input focused); the click has nothing left to do.
+                onPress={() => undefined}
                 onMouseDown={(e) => { e.preventDefault(); onJump(island.slug); onClose(); }}
                 onMouseEnter={() => setCursor(i)}
                 data-testid={`mm-jump-option-${island.slug}`}
-                className={`w-full text-left px-3 py-1.5 typo-body truncate transition-colors ${
-                  i === cursor ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
+                className={`w-full  px-3 py-1.5 typo-body truncate  ${
+                  i === cursor ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-surface-2'
                 }`}
               >
                 {island.name}
-              </button>
+              </PressSurface>
             </li>
           ))}
         </ul>

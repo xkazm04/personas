@@ -11,6 +11,8 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { TestResult } from '../../hooks/useDeploymentTest';
 import { ApiPlayground } from './ApiPlayground';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface DeploymentCardProps {
   deployment: CloudDeployment;
@@ -57,11 +59,11 @@ export function DeploymentCard({
   };
 
   return (
-    <div className={`p-3 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10 space-y-2`}>
+    <div className={`p-3 ${DEPLOYMENT_TOKENS.cardRadius} bg-surface-1 border border-hair space-y-2`}>
       {/* Header row: name + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="typo-body text-foreground/90">
+          <span className="typo-body text-ink-1">
             {d.label || personaName}
           </span>
           {(() => {
@@ -90,7 +92,7 @@ export function DeploymentCard({
               disabled={isBusy}
               isLoading={testRunning ?? false}
               icon={<FlaskConical className="w-3.5 h-3.5" />}
-              className="hover:!text-blue-400 hover:!bg-blue-500/10"
+              className="hover:!text-status-info hover:!bg-status-info/10"
             />
           )}
           {d.status === 'active' && (
@@ -101,7 +103,7 @@ export function DeploymentCard({
               onClick={() => handleAction(d.id, () => onPause(d.id))}
               isLoading={isBusy}
               icon={<Pause className="w-3.5 h-3.5" />}
-              className="hover:!text-amber-400 hover:!bg-amber-500/10"
+              className="hover:!text-status-warning hover:!bg-status-warning/10"
             />
           )}
           {d.status === 'paused' && (
@@ -112,54 +114,50 @@ export function DeploymentCard({
               onClick={() => handleAction(d.id, () => onResume(d.id))}
               isLoading={isBusy}
               icon={<Play className="w-3.5 h-3.5" />}
-              className="hover:!text-emerald-400 hover:!bg-emerald-500/10"
+              className="hover:!text-status-success hover:!bg-status-success/10"
             />
           )}
-          <button
+          <Button aria-label={dt.remove_deployment}
             type="button"
-            title={dt.remove_deployment}
+            tooltip={dt.remove_deployment}
             onClick={() => handleAction(d.id, () => onRemove(d.id))}
             disabled={isBusy}
-            className="p-1.5 rounded-card text-foreground hover:text-red-400
-                       hover:bg-red-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<Trash2 className="w-3.5 h-3.5" />}
+          />
         </div>
       </div>
 
       {/* Endpoint URL */}
       <div className="flex items-center gap-1.5">
-        <code className="flex-1 typo-caption text-foreground bg-secondary/40 px-2 py-1 rounded-card truncate border border-primary/10">
+        <code className="flex-1 typo-caption text-ink-1 bg-surface-2 px-2 py-1 rounded-card truncate border border-hair">
           {endpointUrl}
         </code>
-        <button
+        <Button aria-label={dt.copy_endpoint}
           type="button"
-          title={dt.copy_endpoint}
+          tooltip={dt.copy_endpoint}
           onClick={() => copyEndpoint(d.slug)}
-          className="p-1.5 rounded-card text-foreground hover:text-foreground/90
-                     hover:bg-secondary/50 transition-colors cursor-pointer focus-ring"
-        >
-          {copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
+        />
         {sanitizeExternalUrl(endpointUrl) && (
-          <a
+          <Tooltip content={dt.open_endpoint}><a
             href={sanitizeExternalUrl(endpointUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            title={dt.open_endpoint}
-            className="p-1.5 rounded-card text-foreground hover:text-foreground/90
-                       hover:bg-secondary/50 transition-colors focus-ring"
-          >
+            className="p-1.5 rounded-card text-ink-1 hover:text-ink-1
+                       hover:bg-surface-2 transition-colors focus-ring">
             <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          </a></Tooltip>
         )}
       </div>
 
       {/* Budget gauge */}
       {d.maxMonthlyBudgetUsd != null && (
         <div className="space-y-1">
-          <div className="flex items-center justify-between typo-caption text-foreground">
+          <div className="flex items-center justify-between typo-caption text-ink-2">
             <span className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
               {dt.budget_label} {formatCost(d.currentMonthCostUsd)} / {formatCost(d.maxMonthlyBudgetUsd)}
@@ -168,7 +166,7 @@ export function DeploymentCard({
               ? <span>{t.status_tokens.deployment.unknown}</span>
               : <Numeric value={budgetPct} unit="percent" precision={0} />}
           </div>
-          <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+          <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${budgetColor(budgetPct ?? 0)}`}
               style={{ width: `${Math.min(100, budgetPct ?? 0)}%` }}
@@ -178,10 +176,10 @@ export function DeploymentCard({
       )}
 
       {/* Stats row */}
-      <div className="flex items-center gap-4 typo-caption text-foreground">
-        <span>{dt.label_invocations} <span className="text-foreground font-medium">{d.invocationCount}</span></span>
-        <span>{dt.label_last_called} <span className="text-foreground">{timeAgo(d.lastInvokedAt)}</span></span>
-        <span>{dt.label_created} <span className="text-foreground">{timeAgo(d.createdAt)}</span></span>
+      <div className="flex items-center gap-4 typo-caption text-ink-2">
+        <span>{dt.label_invocations} <span className="text-ink-1 font-medium">{d.invocationCount}</span></span>
+        <span>{dt.label_last_called} <span className="text-ink-1">{timeAgo(d.lastInvokedAt)}</span></span>
+        <span>{dt.label_created} <span className="text-ink-1">{timeAgo(d.createdAt)}</span></span>
       </div>
 
       {/* Inline test result */}
@@ -189,8 +187,8 @@ export function DeploymentCard({
         <div
           className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card border typo-caption ${
             testResult.status === 'pass'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-red-500/10 border-red-500/20 text-red-400'
+              ? 'bg-status-success/10 border-status-success/20 text-status-success'
+              : 'bg-status-error/10 border-status-error/20 text-status-error'
           }`}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -198,26 +196,27 @@ export function DeploymentCard({
               {testResult.status === 'pass' ? dt.test_pass : dt.test_fail}
             </span>
             {testResult.durationMs != null && (
-              <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />
+              <Numeric value={testResult.durationMs} unit="ms" className="text-ink-1" />
             )}
             {testResult.costUsd != null && testResult.costUsd > 0 && (
-              <Numeric value={testResult.costUsd} unit="usd" className="text-foreground" />
+              <Numeric value={testResult.costUsd} unit="usd" className="text-ink-1" />
             )}
             {testResult.error && (
-              <span className="truncate text-red-400/80" title={testResult.error}>
+              <Tooltip content={testResult.error}><span className="truncate text-status-error">
                 {testResult.error}
-              </span>
+              </span></Tooltip>
             )}
           </div>
           {onDismissTest && (
-            <button
+            <Button
               type="button"
               aria-label={t.common.dismiss}
               onClick={() => onDismissTest(d.id)}
-              className="p-0.5 rounded hover:bg-primary/10 transition-colors shrink-0 cursor-pointer"
-            >
-              <X className="w-3 h-3" />
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
+              icon={<X className="w-3 h-3" />}
+            />
           )}
         </div>
       )}

@@ -64,8 +64,8 @@ describe('tool-call step numbering', () => {
         onFork={() => {}}
       />,
     );
-    const forkButton = container.querySelector('button[title]')!;
-    expect(forkButton.getAttribute('title')).toContain('3');
-    expect(forkButton.getAttribute('title')).not.toContain('4');
+    const forkButton = container.querySelector('button[aria-label]')!;
+    expect(forkButton.getAttribute('aria-label')).toContain('3');
+    expect(forkButton.getAttribute('aria-label')).not.toContain('4');
   });
 });

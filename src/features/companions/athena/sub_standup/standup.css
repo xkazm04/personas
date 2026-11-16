@@ -1,0 +1,52 @@
+/*
+ * Athena > Standup: the shared overlays' treatment (dossier drawer, away-rules
+ * sheet, key legend) and the host fill. The page itself is
+ * styled by parts/standup-page.css + parts/standup-figure.css (`sc-`).
+ * Type is a typo-* class on each element and every colour is a token
+ * (--primary, --status-*, --role-*, the kit's --rule/--line) or color-mix()
+ * over one. PROPOSED = dashed warning outline, DECIDED = solid primary,
+ * RUNNING = hatched success: the three never share a treatment.
+ */
+/* On :root so the portalled sheets (away rules, keys) read the same treatment as the page. */
+:root {
+  --su-prop: var(--status-warning);
+  --su-dec: var(--primary);
+  --su-run: var(--status-success);
+  --su-hold: var(--status-error);
+  --su-ref: var(--status-neutral);
+}
+
+.su-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.0625rem 0.5rem; border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent); border-radius: var(--radius-pill, 9999px); white-space: nowrap; }
+.su-chip--lock { border-color: color-mix(in srgb, var(--su-hold) 45%, transparent); background: color-mix(in srgb, var(--su-hold) 9%, transparent); }
+.su-chip--lock::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--su-hold); }
+
+/* ---- the dossier's state chip: the three that must never be confused ---- */
+.su-st { flex: none; display: inline-flex; align-items: center; padding: 0.0625rem 0.4rem; border-radius: var(--radius-interactive, 0.375rem); text-transform: uppercase; letter-spacing: 0.04em; }
+.su-st--proposed { color: var(--su-prop); outline: 1.5px dashed var(--su-prop); outline-offset: -1.5px; }
+.su-st--decided { color: var(--background); background: var(--su-dec); }
+.su-st--running { color: var(--background); background: repeating-linear-gradient(135deg, var(--su-run) 0 6px, color-mix(in srgb, var(--su-run) 78%, var(--background)) 6px 12px); background-size: 34px 100%; animation: su-march 1.2s linear infinite; }
+.su-st--done { color: var(--su-run); outline: 1.5px solid color-mix(in srgb, var(--su-run) 60%, transparent); outline-offset: -1.5px; }
+.su-st--waits { color: var(--background); background: var(--su-hold); }
+.su-st--refused { color: var(--su-ref); outline: 1.5px solid var(--su-ref); outline-offset: -1.5px; background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--su-ref) 22%, transparent) 0 2px, transparent 2px 6px); }
+.su-st--quiet { color: var(--foreground); outline: 1px solid var(--line); outline-offset: -1px; }
+@keyframes su-march { to { background-position: 34px 0; } }
+
+/* ---- the dossier's act dots, coloured by kind ---- */
+.su-k { fill: var(--status-neutral); }
+.su-k--push { fill: var(--su-run); }
+.su-k--dispatch { fill: var(--status-info); }
+.su-k--ask_parked, .su-k--stop { fill: var(--su-hold); }
+.su-k--ask_delegated { fill: var(--role-agent); }
+.su-k--drift { fill: var(--su-prop); }
+.su-k--agent_created, .su-k--agent_retuned { fill: var(--role-highlight); }
+
+.su-kbd { display: inline-block; min-width: 1.25rem; padding: 0 0.3rem; text-align: center; border: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent); border-bottom-width: 2px; border-radius: var(--radius-interactive, 0.375rem); background: var(--background); color: var(--foreground); }
+.su-error { color: var(--status-error); }
+
+@media (prefers-reduced-motion: reduce) {
+  .su-st--running { animation: none; }
+}
+:root[data-motion="reduce"] .su-st--running { animation: none; }
+
+/* The page fills the Athena body: the kit host becomes the flex column it hangs from. */
+.k-host:has(> .sc-page) { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }

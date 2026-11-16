@@ -5,6 +5,7 @@ import { getSeverityStyles } from './graphConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SimulationPanel } from './SimulationPanel';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface BlastRadiusPanelProps {
   blast: BlastRadius;
@@ -29,9 +30,9 @@ export function BlastRadiusPanel({
     <div className="space-y-2">
       {/* Simulation toggle (only shown when handler provided) */}
       {onToggleSimulation && (
-        <div className="flex items-center justify-between px-3 py-1.5 rounded-card border border-primary/10 bg-secondary/20">
+        <div className="flex items-center justify-between px-3 py-1.5 rounded-card border border-hair bg-surface-1">
           <div className="flex items-center gap-2">
-            <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-fuchsia-400' : 'text-foreground'}`} />
+            <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-role-agent' : 'text-foreground'}`} />
             <span className="typo-caption text-foreground">{dep.simulate_revocation}</span>
           </div>
           {/* A switch is named by what it controls; its state is aria-checked.
@@ -55,17 +56,17 @@ export function BlastRadiusPanel({
         ) : (
           <div
             key="blast"
-            className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden"
+            className="animate-fade-slide-in rounded-modal border border-hair bg-surface-1 overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-hair">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-foreground" />
-                <span className="typo-body text-foreground/85">{dep.blast_radius}</span>
+                <span className="typo-body text-ink-1">{dep.blast_radius}</span>
               </div>
-              <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
+              <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
                 <X className="w-3.5 h-3.5 text-foreground" />
-              </button>
+              </Button>
             </div>
 
             <div className="p-3 space-y-3">
@@ -102,8 +103,8 @@ export function BlastRadiusPanel({
                   <div className="typo-caption text-foreground mb-1.5">{dep.affected_agents}</div>
                   <div className="space-y-1">
                     {blast.affectedAgents.map((agent) => (
-                      <div key={agent.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
-                        <Bot className="w-3 h-3 text-blue-400/60" />
+                      <div key={agent.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-surface-1 border border-primary/8">
+                        <Bot className="w-3 h-3 text-status-info/60" />
                         <span className="typo-caption text-foreground flex-1 truncate">{agent.name}</span>
                         {agent.via && (
                           <span className="typo-code text-foreground">{agent.via}</span>
@@ -120,8 +121,8 @@ export function BlastRadiusPanel({
                   <div className="typo-caption text-foreground mb-1.5">{dep.affected_events}</div>
                   <div className="space-y-1">
                     {blast.affectedEvents.map((evt) => (
-                      <div key={evt.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
-                        <Zap className="w-3 h-3 text-amber-400/60" />
+                      <div key={evt.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-surface-1 border border-primary/8">
+                        <Zap className="w-3 h-3 text-status-warning/60" />
                         <span className="typo-caption text-foreground truncate">{evt.name}</span>
                       </div>
                     ))}

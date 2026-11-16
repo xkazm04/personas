@@ -54,7 +54,7 @@ export function AthenaChatSlowNotice({
           transition={{ duration: 0.18, ease: CHAT_EASE }}
           className={`flex items-center gap-2 rounded-card border px-3 py-1.5 typo-caption ${
             level === 2
-              ? 'border-amber-500/30 bg-amber-500/[0.06] text-amber-300'
+              ? 'border-status-warning/30 bg-status-warning/10/[0.06] text-status-warning'
               : 'border-foreground/10 bg-foreground/[0.04] text-foreground'
           }`}
           data-testid="companion-slow-progress"

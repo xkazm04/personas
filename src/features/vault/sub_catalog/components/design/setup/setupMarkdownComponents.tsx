@@ -9,6 +9,7 @@ import {
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import Button from '@/features/shared/components/buttons/Button';
 
 // -- Copy button -------------------------------------------------
 
@@ -22,19 +23,18 @@ export function CopyButton({ text, className }: { text: string; className?: stri
 
   return (
     <Tooltip content={t.vault.design_phases.copy_to_clipboard}>
-      <button
+      <Button
         type="button"
         onClick={handleCopy}
         aria-label={t.vault.design_phases.copy_to_clipboard}
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body transition-all ${
-          copied
-            ? 'text-emerald-400 bg-emerald-500/10'
-            : 'text-foreground hover:text-foreground/95 hover:bg-secondary/60'
-        } ${className ?? ''}`}
+        variant={copied ? 'accent' : 'ghost'}
+        tone={copied ? 'success' : undefined}
+        size="xs"
+        className={className}
+        icon={copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
       >
-        {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
         {copied ? t.common.copied : t.common.copy}
-      </button>
+      </Button>
     </Tooltip>
   );
 }
@@ -50,7 +50,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
         return (
           <div className="relative group my-2">
             <code
-              className={`block p-3 bg-background/60 border border-primary/10 rounded-card typo-code overflow-x-auto ${className || ''}`}
+              className={`block p-3 bg-background/60 border border-hair rounded-card typo-code overflow-x-auto ${className || ''}`}
               {...props}
             >
               {children}
@@ -66,7 +66,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       return (
         <span className="inline-flex items-center gap-0.5">
           <code
-            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded typo-code text-amber-300"
+            className="px-1.5 py-0.5 bg-surface-2 border border-hair rounded-interactive typo-code text-status-warning"
             {...props}
           >
             {children}
@@ -85,17 +85,10 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       const safeUrl = sanitizeExternalUrl(url);
       return (
         <span className="inline-flex items-center gap-1">
-          <button
-            type="button"
-            onClick={safeUrl ? () => onOpenUrl(safeUrl) : undefined}
-            disabled={!safeUrl}
-            className={`text-left inline-flex items-center gap-1 ${
-              safeUrl ? 'text-primary hover:underline' : 'text-foreground cursor-not-allowed'
-            }`}
-          >
+          <Button variant="link" size="inline" onClick={safeUrl ? () => onOpenUrl(safeUrl) : undefined} disabled={!safeUrl} className="text-left">
             {children}
             <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-50" />
-          </button>
+          </Button>
           {safeUrl && <CopyButton text={safeUrl} />}
         </span>
       );
@@ -116,17 +109,17 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       <h1 className="typo-heading text-foreground mb-1.5 mt-2">{children}</h1>
     ),
     h2: ({ children }) => (
-      <h2 className="typo-heading text-foreground/90 mb-1 mt-2">{children}</h2>
+      <h2 className="typo-heading text-ink-1 mb-1 mt-2">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="typo-heading uppercase text-foreground mb-1 mt-1.5">{children}</h3>
+      <h3 className="typo-eyebrow text-foreground mb-1 mt-1.5">{children}</h3>
     ),
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>
     ),
-    hr: () => <hr className="border-primary/10 my-2" />,
+    hr: () => <hr className="border-hair my-2" />,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-2 border-primary/20 pl-3 italic text-foreground/90 my-2 typo-body">
+      <blockquote className="border-l-2 border-hair pl-3 italic text-ink-1 my-2 typo-body">
         {children}
       </blockquote>
     ),

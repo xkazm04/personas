@@ -8,8 +8,11 @@ import type { PersonaTrigger } from '@/lib/types/types';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
+import { ConfirmDestructiveModal, useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { usePendingTriggerFires } from '@/features/triggers/hooks/usePendingTriggerFires';
 import { getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PendingTriggerApprovalsProps {
   /** Scope to one agent's triggers. Omit for the workspace-wide queue. */
@@ -19,7 +22,9 @@ interface PendingTriggerApprovalsProps {
 /**
  * Surfaces trigger fires HELD for approval (the `approval` unattended-mode of
  * the destructive-action gate, UAT P5). Approving republishes the held event so
- * the run proceeds; discarding drops it. Renders nothing when there are none.
+ * the run proceeds; discarding drops it for good, so it asks first (a held
+ * webhook cannot be asked for again) and both outcomes say what happened.
+ * Renders nothing when there are none.
  *
  * Each row names the agent, the firing trigger and the event that arrived, plus
  * how long it has been waiting — a held fire whose age is invisible is a
@@ -30,6 +35,9 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
   const p = t.triggers.pending_approval;
   const { pending, triggerFor, forget } = usePendingTriggerFires(personaId);
   const [busy, setBusy] = useState<string | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
+  // Above the early return: the hook count must not change with the queue.
+  const { modal, confirm } = useConfirmDestructive();
   const personas = useAgentStore((s) => s.personas);
   const nameFor = (pid: string) => personas.find((x) => x.id === pid)?.name ?? pid.slice(0, 8);
 
@@ -40,6 +48,7 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
     try {
       await resolvePendingTriggerFire(id, approved);
       forget(id);
+      addToast(approved ? p.approved : p.discarded, 'success');
     } catch (e) {
       toastCatch('PendingTriggerApprovals.resolve')(e);
     } finally {
@@ -47,15 +56,24 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
     }
   };
 
+  const askDiscard = (id: string) => {
+    confirm({
+      title: p.discard,
+      message: t.common.confirm_destructive_cannot_undo,
+      confirmLabel: t.common.confirm_destructive_discard,
+      onConfirm: () => resolve(id, false),
+    });
+  };
+
   return (
     <div
       data-testid="pending-trigger-approvals"
-      className="mb-3 rounded-card border border-amber-500/25 bg-amber-500/5 p-3 space-y-2"
+      className="mb-3 rounded-card border border-status-warning/25 bg-status-warning/5 p-3 space-y-2"
     >
       <div className="flex items-center gap-2 flex-wrap">
-        <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-        <span className="typo-body text-amber-300">{p.title}</span>
-        <span className="typo-caption text-foreground">
+        <ShieldAlert className="w-4 h-4 text-status-warning shrink-0" />
+        <span className="typo-body text-status-warning">{p.title}</span>
+        <span className="typo-caption text-ink-2">
           {tx(pending.length === 1 ? p.subtitle_one : p.subtitle_other, { count: pending.length })}
         </span>
       </div>
@@ -67,10 +85,12 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
             trigger={triggerFor(pf)}
             personaName={nameFor(pf.persona_id)}
             busy={busy === pf.id}
-            onResolve={resolve}
+            onApprove={(id) => resolve(id, true)}
+            onDiscard={askDiscard}
           />
         ))}
       </div>
+      <ConfirmDestructiveModal {...modal} />
     </div>
   );
 }
@@ -80,10 +100,11 @@ interface PendingFireRowProps {
   trigger: PersonaTrigger | undefined;
   personaName: string;
   busy: boolean;
-  onResolve: (id: string, approved: boolean) => void;
+  onApprove: (id: string) => void;
+  onDiscard: (id: string) => void;
 }
 
-function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: PendingFireRowProps) {
+function PendingFireRow({ fire, trigger, personaName, busy, onApprove, onDiscard }: PendingFireRowProps) {
   const { t } = useTranslation();
   const p = t.triggers.pending_approval;
 
@@ -91,14 +112,14 @@ function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: Pending
     <div className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-background/40">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="typo-body text-foreground truncate">{personaName}</span>
+          <span className="typo-body text-ink-1 truncate">{personaName}</span>
           {trigger && (
-            <span className="typo-caption px-1.5 py-0.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground shrink-0">
+            <span className="inline-flex items-center typo-caption text-ink-2 shrink-0">
               {getTriggerTypeLabel(trigger.trigger_type, t)}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5 typo-caption text-foreground min-w-0">
+        <div className="flex items-center gap-1.5 typo-caption text-ink-2 min-w-0">
           <span className="truncate">{fire.event_type}</span>
           <span aria-hidden="true">·</span>
           <RelativeTime timestamp={fire.created_at} className="shrink-0" />
@@ -109,20 +130,20 @@ function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: Pending
         size="sm"
         isLoading={busy}
         icon={<Play className="w-3.5 h-3.5" />}
-        onClick={() => onResolve(fire.id, true)}
+        onClick={() => onApprove(fire.id)}
       >
         {p.run_now}
       </AsyncButton>
-      <button
+      <Button
         type="button"
         disabled={busy}
-        onClick={() => onResolve(fire.id, false)}
-        className="px-2 py-1 rounded-card text-foreground hover:bg-secondary/40 disabled:opacity-50"
-        title={p.discard}
+        onClick={() => onDiscard(fire.id)}
+        tooltip={p.discard}
         aria-label={p.discard}
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
+        variant="ghost"
+        size="icon-sm"
+        icon={<X className="w-3.5 h-3.5" />}
+      />
     </div>
   );
 }

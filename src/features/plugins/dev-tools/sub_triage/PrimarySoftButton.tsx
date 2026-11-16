@@ -7,7 +7,7 @@ import { PRIMARY_SOFT } from './triageTones';
  *
  * style-deviation: a raw <button>, not the shared Button. Button's tones are
  * statuses and roles; `highlight` is teal where light's primary is blue, and
- * `variant="accent"` without a tone paints `text-foreground/90`, which the
+ * `variant="accent"` without a tone paints `text-ink-2`, which the
  * unlayered `[data-theme^="light"] .text-foreground\/90` repair forces over any
  * `text-primary` beside it (measured: light rendered this label in foreground
  * ink). A primary tone on Button is the missing variant (Gate 2 retro).

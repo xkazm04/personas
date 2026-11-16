@@ -13,6 +13,7 @@ import { TerminalStats } from './monitorMeta';
 import { MonitorLedger } from './MonitorLedger';
 import { MonitorTotals } from './MonitorTotals';
 import type { MonitorTerminal } from './monitorTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * The minimized monitor layer inside the fullscreen grid overlay — a dense
@@ -118,24 +119,23 @@ export function MonitorView({
             <motion.div
               key={openTerm.id}
               layoutId={`monitor-term-${openTerm.id}`}
-              className="absolute inset-0 z-30 flex flex-col rounded-modal border border-primary/25 bg-[#0a0a0c] overflow-hidden shadow-elevation-4"
+              className="absolute inset-0 z-30 flex flex-col rounded-modal border border-hair bg-[#0a0a0c] overflow-hidden shadow-elevation-4"
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
             >
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/20 shrink-0">
-                <button
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-hair bg-surface-1 shrink-0">
+                <Button variant="ghost" size="icon-sm"
                   type="button"
                   data-testid="fleet-monitor-fullscreen-back"
                   onClick={() => setOpenId(null)}
                   aria-label={t.plugins.fleet.monitor_back}
-                  className="p-1 rounded-interactive text-foreground hover:bg-secondary/50 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                </button>
+                </Button>
                 <FleetStatusDots state={openSession.state} reason={openSession.stateReason} />
                 <span className="typo-body text-foreground truncate">
                   {openSession.name ?? openSession.title ?? openSession.projectLabel}
                 </span>
-                <span className="typo-caption text-foreground opacity-50">{openSession.projectLabel}</span>
+                <span className="typo-caption text-ink-3 ">{openSession.projectLabel}</span>
                 <div className="flex-1" />
                 <TerminalStats terminal={openTerm} />
               </div>

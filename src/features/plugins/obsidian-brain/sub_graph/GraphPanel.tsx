@@ -38,6 +38,8 @@ import { openNoteInObsidian } from '../openInObsidian';
 import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * The Orphans tile reads `stats.orphanCount` (every unlinked note in the vault)
  * while the list beside it read `listOrphans(15)`. The number and the list did
@@ -249,11 +251,11 @@ export default function GraphPanel() {
           ) : stats ? (
             <div className="grid grid-cols-5 gap-3">
               {[
-                { key: 'notes', label: t.plugins.obsidian_brain.stat_notes, value: stats.totalNotes, icon: Network, color: 'text-violet-300' },
-                { key: 'links', label: t.plugins.obsidian_brain.stat_links, value: stats.totalLinks, icon: GitBranch, color: 'text-blue-300' },
-                { key: 'orphans', label: t.plugins.obsidian_brain.stat_orphans, value: stats.orphanCount, icon: AlertTriangle, color: 'text-amber-300' },
-                { key: 'mocs', label: t.plugins.obsidian_brain.stat_mocs, value: stats.mocCount, icon: Compass, color: 'text-emerald-300' },
-                { key: 'daily', label: t.plugins.obsidian_brain.stat_daily_notes, value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-fuchsia-300' },
+                { key: 'notes', label: t.plugins.obsidian_brain.stat_notes, value: stats.totalNotes, icon: Network, color: 'text-ink-2' },
+                { key: 'links', label: t.plugins.obsidian_brain.stat_links, value: stats.totalLinks, icon: GitBranch, color: 'text-status-info' },
+                { key: 'orphans', label: t.plugins.obsidian_brain.stat_orphans, value: stats.orphanCount, icon: AlertTriangle, color: 'text-status-warning' },
+                { key: 'mocs', label: t.plugins.obsidian_brain.stat_mocs, value: stats.mocCount, icon: Compass, color: 'text-status-success' },
+                { key: 'daily', label: t.plugins.obsidian_brain.stat_daily_notes, value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-ink-2' },
               ].map((s) => {
                 const Icon = s.icon;
                 // The one tile whose number the list beside it does not yet
@@ -263,16 +265,15 @@ export default function GraphPanel() {
                   <>
                     <Icon className={`w-3.5 h-3.5 ${s.color}`} />
                     <p className={`typo-heading-lg ${s.color}`}>{s.value}</p>
-                    <p className="typo-caption text-foreground">{s.label}</p>
+                    <p className="typo-caption text-ink-2">{s.label}</p>
                   </>
                 );
                 const tileClass =
-                  'px-3 py-3 rounded-modal bg-secondary/20 border border-primary/10 flex flex-col items-start gap-1';
+                  'px-3 py-3 rounded-modal bg-surface-1 border border-hair flex flex-col items-start gap-1';
                 return expandable ? (
-                  <button
+                  <PressSurface
                     key={s.key}
-                    type="button"
-                    onClick={() => void expandOrphans()}
+                    onPress={() => void expandOrphans()}
                     disabled={orphansExpanding}
                     aria-busy={orphansExpanding}
                     data-testid="vault-stat-orphans-expand"
@@ -280,10 +281,10 @@ export default function GraphPanel() {
                       shown: orphans.length,
                       total: stats.orphanCount,
                     })}
-                    className={`${tileClass} text-left transition-colors hover:border-amber-400/40 hover:bg-amber-500/5 focus-ring disabled:is-disabled`}
+                    className={`${tileClass}`}
                   >
                     {body}
-                  </button>
+                  </PressSurface>
                 ) : (
                   <div key={s.key} data-testid={`vault-stat-${s.key}`} className={tileClass}>
                     {body}
@@ -301,17 +302,17 @@ export default function GraphPanel() {
           <div className="space-y-3">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-1" />
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') runSearch();
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) runSearch();
                   }}
                   placeholder={t.plugins.obsidian_brain.search_vault_placeholder}
                   aria-label={t.plugins.obsidian_brain.search_vault_placeholder}
-                  className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+                  className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all"
                 />
               </div>
               <Button
@@ -329,22 +330,18 @@ export default function GraphPanel() {
             {searchHits.length > 0 && (
               <div className="space-y-1.5 max-h-96 overflow-y-auto">
                 {searchHits.map((hit) => (
-                  <button
-                    key={hit.path}
-                    type="button"
-                    onClick={() => openNoteInObsidian(vaultName, hit.path)}
-                    title={t.plugins.obsidian_brain.open_in_obsidian}
-                    className="group w-full text-left px-3 py-2.5 rounded-modal border border-primary/10 hover:border-violet-500/30 hover:bg-secondary/20 transition-colors focus-ring"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="typo-heading typo-card-label truncate transition-colors">{hit.title}</p>
-                      <span className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="typo-caption text-foreground tabular-nums">{t.plugins.obsidian_brain.score_label} {hit.score}</span>
-                        <ExternalLink className="w-3 h-3 text-violet-400/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </span>
-                    </div>
-                    <p className="typo-caption text-foreground line-clamp-2">{hit.snippet}</p>
-                  </button>
+                  <Tooltip content={t.plugins.obsidian_brain.open_in_obsidian} key={hit.path}>
+                    <PressSurface onPress={() => openNoteInObsidian(vaultName, hit.path)} className="group w-full px-3 py-2.5 rounded-modal border border-hair">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="typo-heading typo-card-label truncate transition-colors">{hit.title}</p>
+                        <span className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className="typo-caption text-ink-2 tabular-nums">{t.plugins.obsidian_brain.score_label} {hit.score}</span>
+                          <ExternalLink className="w-3 h-3 text-ink-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </span>
+                      </div>
+                      <p className="typo-caption text-ink-2 line-clamp-2">{hit.snippet}</p>
+                    </PressSurface>
+                  </Tooltip>
                 ))}
               </div>
             )}
@@ -376,16 +373,12 @@ export default function GraphPanel() {
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {orphans.map((o) => (
-                  <button
-                    key={o.path}
-                    type="button"
-                    onClick={() => openNoteInObsidian(vaultName, o.path)}
-                    title={o.path}
-                    className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card bg-secondary/20 hover:bg-secondary/40 transition-colors focus-ring text-left"
-                  >
-                    <span className="typo-caption text-foreground truncate flex-1 group-hover:text-violet-300 transition-colors">{o.title}</span>
-                    <ExternalLink className="w-3 h-3 text-violet-400/70 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
+                  <Tooltip content={o.path} key={o.path}>
+                    <PressSurface onPress={() => openNoteInObsidian(vaultName, o.path)} className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card bg-surface-1 hover:bg-surface-2">
+                      <span className="typo-caption text-ink-2 truncate flex-1 group-hover:text-ink-2 transition-colors">{o.title}</span>
+                      <ExternalLink className="w-3 h-3 text-ink-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </PressSurface>
+                  </Tooltip>
                 ))}
               </div>
             )}
@@ -397,19 +390,15 @@ export default function GraphPanel() {
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {mocs.map((m) => (
-                  <button
-                    key={m.path}
-                    type="button"
-                    onClick={() => openNoteInObsidian(vaultName, m.path)}
-                    title={m.path}
-                    className="group w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card bg-secondary/20 hover:bg-secondary/40 transition-colors focus-ring text-left"
-                  >
-                    <span className="typo-caption text-foreground truncate group-hover:text-violet-300 transition-colors">{m.title}</span>
-                    <span className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="typo-caption text-emerald-400/70">{m.outgoingLinkCount} →</span>
-                      <ExternalLink className="w-3 h-3 text-violet-400/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </span>
-                  </button>
+                  <Tooltip content={m.path} key={m.path}>
+                    <PressSurface onPress={() => openNoteInObsidian(vaultName, m.path)} className="group w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card bg-surface-1 hover:bg-surface-2">
+                      <span className="typo-caption text-ink-2 truncate group-hover:text-ink-2 transition-colors">{m.title}</span>
+                      <span className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="typo-caption text-status-success">{m.outgoingLinkCount} →</span>
+                        <ExternalLink className="w-3 h-3 text-ink-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </span>
+                    </PressSurface>
+                  </Tooltip>
                 ))}
               </div>
             )}
@@ -426,7 +415,7 @@ export default function GraphPanel() {
                 onChange={(e) => setJournalSection(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.journal_section_placeholder}
                 aria-label={t.plugins.obsidian_brain.journal_section_placeholder}
-                className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+                className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all"
               />
               <Button
                 variant="accent"
@@ -446,7 +435,7 @@ export default function GraphPanel() {
               placeholder={t.plugins.obsidian_brain.journal_body_placeholder}
               aria-label={t.plugins.obsidian_brain.quick_journal}
               rows={4}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all resize-none"
             />
           </div>
         </SectionCard>
@@ -460,17 +449,17 @@ export default function GraphPanel() {
               onChange={(e) => setMeetingTitle(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_title_placeholder}
               aria-label={t.plugins.obsidian_brain.meeting_title_placeholder}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all"
             />
             <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-1" />
               <input
                 type="text"
                 value={meetingAttendees}
                 onChange={(e) => setMeetingAttendees(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.meeting_attendees_placeholder}
                 aria-label={t.plugins.obsidian_brain.meeting_attendees_placeholder}
-                className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+                className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all"
               />
             </div>
             <textarea
@@ -479,7 +468,7 @@ export default function GraphPanel() {
               placeholder={t.plugins.obsidian_brain.meeting_body_placeholder}
               aria-label={t.plugins.obsidian_brain.meeting_body_placeholder}
               rows={5}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all resize-none"
             />
             <Button
               variant="accent"
@@ -512,7 +501,7 @@ export default function GraphPanel() {
 // stats moves nothing.
 // ---------------------------------------------------------------------------
 
-const STAT_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const STAT_GHOST_BAR = 'rounded-interactive bg-surface-2';
 
 function VaultStatsGhost() {
   return (
@@ -520,7 +509,7 @@ function VaultStatsGhost() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="px-3 py-3 rounded-modal bg-secondary/20 border border-primary/10 flex flex-col items-start gap-1 animate-fade-in"
+          className="px-3 py-3 rounded-modal bg-surface-1 border border-hair flex flex-col items-start gap-1 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <span className={`w-3.5 h-3.5 ${STAT_GHOST_BAR}`} />

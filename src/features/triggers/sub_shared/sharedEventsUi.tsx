@@ -79,7 +79,7 @@ export function FeedIcon({
   const isAsset = typeof icon === 'string' && icon.startsWith('/');
   return (
     <div
-      className={`flex items-center justify-center rounded-card flex-shrink-0 border border-primary/15 ${className}`}
+      className={`flex items-center justify-center rounded-card flex-shrink-0 border border-hair ${className}`}
       style={{ backgroundColor: `${color}2e` }}
     >
       {isAsset ? (
@@ -101,7 +101,7 @@ const MINOR_STYLE: SeverityStyle = {
   dot: 'bg-status-info', text: 'text-status-info', bg: 'bg-status-info/10', border: 'border-status-info/20',
 };
 const SEVERITY_STYLES: Record<string, SeverityStyle> = {
-  patch: { dot: 'bg-foreground/40', text: 'text-foreground/70', bg: 'bg-secondary/40', border: 'border-primary/10' },
+  patch: { dot: 'bg-surface-2', text: 'text-ink-2', bg: 'bg-surface-2', border: 'border-hair' },
   minor: MINOR_STYLE,
   major: { dot: 'bg-status-warning', text: 'text-status-warning', bg: 'bg-status-warning/10', border: 'border-status-warning/25' },
   breaking: { dot: 'bg-status-error', text: 'text-status-error', bg: 'bg-status-error/10', border: 'border-status-error/25' },
@@ -151,17 +151,17 @@ export function LastChangeCell({
 }) {
   const { t } = useTranslation();
   if (!activity) {
-    return <span className="typo-caption text-foreground/40">{t.triggers.marketplace.no_last_change}</span>;
+    return <span className="typo-caption text-ink-3">{t.triggers.marketplace.no_last_change}</span>;
   }
   const p = parseChangePayload(activity.lastPayload);
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
       <div className="flex items-center gap-2 min-w-0">
         <SeverityBadge severity={p.severity} label={severityLabel(t, p.severity)} />
-        <RelativeTime timestamp={activity.lastFiredAt} className="typo-caption text-foreground/60" />
+        <RelativeTime timestamp={activity.lastFiredAt} className="typo-caption text-ink-2" />
       </div>
       {showSummary && p.summary && (
-        <p className="typo-caption text-foreground/70 truncate">{p.summary}</p>
+        <p className="typo-caption text-ink-2 truncate">{p.summary}</p>
       )}
     </div>
   );

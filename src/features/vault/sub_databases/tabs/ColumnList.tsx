@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -78,14 +79,14 @@ export function ColumnList({
 
   return (
     <>
-      <div className="rounded-card border border-primary/10 overflow-hidden">
+      <div className="rounded-card border border-hair overflow-hidden">
         <table className="w-full typo-body">
           <thead>
-            <tr className="bg-secondary/40 border-b border-primary/10">
-              <th className="px-3 py-2 text-left w-1/3 typo-caption font-mono uppercase tracking-widest text-foreground">{columnLabel}</th>
-              <th className="px-3 py-2 text-left w-1/4 typo-caption font-mono uppercase tracking-widest text-foreground">{typeLabel}</th>
-              {!isApi && <th className="px-3 py-2 text-center w-20 typo-caption font-mono uppercase tracking-widest text-foreground">{db.nullable}</th>}
-              {!isApi && <th className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{db.default_val}</th>}
+            <tr className="bg-surface-2 border-b border-hair">
+              <th className="px-3 py-2 text-left w-1/3 typo-eyebrow text-foreground">{columnLabel}</th>
+              <th className="px-3 py-2 text-left w-1/4 typo-eyebrow text-foreground">{typeLabel}</th>
+              {!isApi && <th className="px-3 py-2 text-center w-20 typo-eyebrow text-foreground">{db.nullable}</th>}
+              {!isApi && <th className="px-3 py-2 text-left typo-eyebrow text-foreground">{db.default_val}</th>}
             </tr>
           </thead>
           <tbody>
@@ -97,13 +98,13 @@ export function ColumnList({
                   <tr
                     key={`ghost-${r}`}
                     aria-hidden="true"
-                    className={`border-b border-primary/5 animate-fade-in ${r % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10'}`}
+                    className={`border-b border-hair animate-fade-in ${r % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10'}`}
                     style={{ animationDelay: `${120 + r * 35}ms` }}
                   >
                     {Array.from({ length: ghostCells }).map((_, c) => (
                       <td key={c} className="px-3 py-1.5">
                         <span
-                          className={`inline-block h-3.5 rounded bg-primary/[0.06] ${GHOST_BAR_WIDTHS[(r + c) % GHOST_BAR_WIDTHS.length]}`}
+                          className={`inline-block h-3.5 rounded-interactive bg-primary/[0.06] ${GHOST_BAR_WIDTHS[(r + c) % GHOST_BAR_WIDTHS.length]}`}
                         />
                       </td>
                     ))}
@@ -112,12 +113,12 @@ export function ColumnList({
               : columns.map((col, i) => (
                   <tr
                     key={col.column_name}
-                    className={`border-b border-primary/5 ${i % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10'}`}
+                    className={`border-b border-hair ${i % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10'}`}
                   >
                     <td className="px-3 py-1.5 font-mono text-foreground">
                       {col.column_name}
                     </td>
-                    <td className="px-3 py-1.5 font-mono text-blue-400/70">
+                    <td className="px-3 py-1.5 font-mono text-status-info/70">
                       {col.data_type}
                     </td>
                     {!isApi && (
@@ -125,15 +126,19 @@ export function ColumnList({
                         {col.is_nullable === 'YES' ? (
                           <span className="text-foreground">{db.column_nullable_yes}</span>
                         ) : (
-                          <span className="text-amber-400/70 font-medium">{db.not_null}</span>
+                          <span className="text-status-warning/70 font-medium">{db.not_null}</span>
                         )}
                       </td>
                     )}
                     {!isApi && (
-                      <td className="px-3 py-1.5 text-foreground truncate max-w-[200px]" title={col.column_default ?? ''}>
-                        {col.column_default ?? (
-                          <span className="text-foreground">-</span>
-                        )}
+                      <td className="px-3 py-1.5 text-foreground max-w-[200px]">
+                        <Tooltip content={col.column_default ?? ''}>
+                          <span className="block truncate">
+                            {col.column_default ?? (
+                              <span className="text-foreground">-</span>
+                            )}
+                          </span>
+                        </Tooltip>
                       </td>
                     )}
                   </tr>

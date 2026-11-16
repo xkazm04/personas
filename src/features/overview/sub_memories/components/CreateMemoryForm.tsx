@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CheckCircle2 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -25,7 +27,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
   const label = `Importance: ${value} of ${maxScale}`;
 
   return (
-    <div className="flex items-center gap-1.5" title={label}>
+    <Tooltip content={label}><div className="flex items-center gap-1.5">
       {/* The element carried `ref={(el) => barRef[1](el)}` over a `useState`
           held as a ref. Nothing ever read `barRef[0]`, so the only effect was a
           setState from the ref callback on mount and on unmount — two extra
@@ -50,7 +52,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
         />
       </div>
       <span className="typo-data text-foreground min-w-[24px]">({value}/{maxScale})</span>
-    </div>
+    </div></Tooltip>
   );
 }
 
@@ -99,13 +101,13 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="animate-fade-slide-in mx-4 md:mx-6 mb-1 mt-4 p-4 rounded-modal bg-secondary/40 backdrop-blur-sm border border-violet-500/20 relative overflow-hidden"
+      className="animate-fade-slide-in mx-4 md:mx-6 mb-1 mt-4 p-4 rounded-modal bg-surface-1 backdrop-blur-sm border border-role-agent/20 relative overflow-hidden"
     >
       {showSuccess && (
           <div className="animate-fade-slide-in absolute inset-0 z-10 flex items-center justify-center bg-secondary/80 backdrop-blur-sm rounded-modal">
             <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <span className="typo-heading text-emerald-300">{t.overview.memory_form.created_success}</span>
+              <CheckCircle2 className="w-5 h-5 text-status-success" />
+              <span className="typo-heading text-status-success">{t.overview.memory_form.created_success}</span>
             </div>
           </div>
         )}
@@ -113,23 +115,21 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void handleSave(); }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor={agentId} className="typo-code uppercase text-foreground mb-1.5 block">{t.overview.memory_form.agent}</label>
+            <label htmlFor={agentId} className="typo-eyebrow mb-1.5 block">{t.overview.memory_form.agent}</label>
             <ThemedSelect id={agentId} value={personaId} onChange={(e) => setPersonaId(e.target.value)}>
               {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </ThemedSelect>
           </div>
           <fieldset>
-            <legend className="typo-code uppercase text-foreground mb-1.5">{t.overview.memory_form.category}</legend>
+            <legend className="typo-eyebrow mb-1.5">{t.overview.memory_form.category}</legend>
             <div className="flex items-center gap-1.5 flex-wrap">
               {ALL_MEMORY_CATEGORIES.map((cat) => {
                 const colors = MEMORY_CATEGORY_COLORS[cat];
                 const isActive = category === cat;
                 return (
-                  <button key={cat} type="button" onClick={() => setCategory(cat)} aria-pressed={isActive}
-                    className={`rounded-card transition-all ${isActive ? 'ring-1 ring-offset-1 ring-offset-background ring-current' : 'opacity-50 hover:opacity-80'}`}
-                  >
+                  <Button variant="ghost" size="icon-sm" key={cat} onClick={() => setCategory(cat)} aria-pressed={isActive}>
                     <CategoryChip category={cat} colors={colors} />
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -137,30 +137,30 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <label htmlFor={titleId} className="typo-code uppercase text-foreground mb-1.5 block">{t.overview.memory_form.title}</label>
-          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.overview.memory_form.title_placeholder} aria-required="true" className="w-full px-3 py-2 typo-body bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground" autoFocus />
+          <label htmlFor={titleId} className="typo-eyebrow mb-1.5 block">{t.overview.memory_form.title}</label>
+          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.overview.memory_form.title_placeholder} aria-required="true" className="w-full px-3 py-2 typo-body bg-background/60 border border-hair rounded-modal outline-none focus-visible:border-role-agent/40 text-foreground placeholder:text-foreground" autoFocus />
         </div>
 
         <div>
-          <label htmlFor={contentId} className="typo-code uppercase text-foreground mb-1.5 block">{t.overview.memory_form.content}</label>
-          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder={t.overview.memory_form.content_placeholder} rows={3} aria-required="true" className="w-full px-3 py-2 typo-body bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground resize-none" />
+          <label htmlFor={contentId} className="typo-eyebrow mb-1.5 block">{t.overview.memory_form.content}</label>
+          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder={t.overview.memory_form.content_placeholder} rows={3} aria-required="true" className="w-full px-3 py-2 typo-body bg-background/60 border border-hair rounded-modal outline-none focus-visible:border-role-agent/40 text-foreground placeholder:text-foreground resize-none" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <fieldset>
-            <legend className="typo-code uppercase text-foreground mb-1.5">{t.overview.memory_form.importance}</legend>
+            <legend className="typo-eyebrow mb-1.5">{t.overview.memory_form.importance}</legend>
             <InteractiveImportanceBar value={importance} onChange={setImportance} />
           </fieldset>
           <div>
-            <label htmlFor={tagsId} className="typo-code uppercase text-foreground mb-1.5 block">{t.overview.memory_form.tags} <span className="normal-case text-foreground">{t.overview.memory_form.tags_hint}</span></label>
-            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t.overview.memory_form.tags_placeholder} className="w-full px-3 py-2 typo-body bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground" />
+            <label htmlFor={tagsId} className="typo-eyebrow mb-1.5 block">{t.overview.memory_form.tags} <span className="normal-case text-foreground">{t.overview.memory_form.tags_hint}</span></label>
+            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t.overview.memory_form.tags_placeholder} className="w-full px-3 py-2 typo-body bg-background/60 border border-hair rounded-modal outline-none focus-visible:border-role-agent/40 text-foreground placeholder:text-foreground" />
           </div>
         </div>
 
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors">{t.common.cancel}</button>
-          <button type="submit" disabled={!canSave || saving} title={saving ? t.overview.memory_form.saving_memory : !canSave ? t.overview.memory_form.fill_required : undefined} className="px-4 py-1.5 typo-heading rounded-modal bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? t.overview.memory_form.saving : t.overview.memory_form.save_memory}</button>
+          <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
+          <Button variant="accent" tone="agent" size="sm" type="submit" disabled={!canSave || saving} tooltip={saving ? t.overview.memory_form.saving_memory : !canSave ? t.overview.memory_form.fill_required : undefined}>{saving ? t.overview.memory_form.saving : t.overview.memory_form.save_memory}</Button>
         </div>
       </form>
     </div>

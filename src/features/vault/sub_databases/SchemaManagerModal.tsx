@@ -14,6 +14,7 @@ import { QueriesTab } from './tabs/QueriesTab';
 import { ConsoleTab } from './tabs/ConsoleTab';
 import { ChatTab } from './tabs/ChatTab';
 import { getQueryLanguage } from './introspectionQueries';
+import Button from '@/features/shared/components/buttons/Button';
 
 type SchemaTab = 'chat' | 'tables' | 'queries' | 'console';
 
@@ -93,17 +94,17 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
   const queryLanguage = getQueryLanguage(credential.service_type);
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="schema-manager-title" size="6xl" portal staggerChildren={false} panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]">
+    <BaseModal isOpen onClose={onClose} titleId="schema-manager-title" size="6xl" portal staggerChildren={false} panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]">
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-hair bg-surface-1 shrink-0">
         <div
-          className="w-9 h-9 rounded-card flex items-center justify-center border border-primary/15"
+          className="w-9 h-9 rounded-card flex items-center justify-center border border-hair"
           style={{ backgroundColor: `${color}15` }}
         >
           {iconUrl ? (
             <ThemedConnectorIcon url={iconUrl} label={credential.name} color={color} size="w-5 h-5" />
           ) : (
-            <div className="w-5 h-5 rounded" style={{ backgroundColor: color }} />
+            <div className="w-5 h-5 rounded-interactive" style={{ backgroundColor: color }} />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -117,34 +118,43 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveName();
-                    if (e.key === 'Escape') { setIsEditingName(false); setEditName(credential.name); }
+                    if (e.key === 'Escape') {
+                      // Cancel the rename only: the modal's window-level Escape would otherwise also close it.
+                      e.stopPropagation();
+                      setIsEditingName(false);
+                      setEditName(credential.name);
+                    }
                   }}
                   onBlur={saveName}
                   autoFocus
-                  className="flex-1 min-w-0 typo-heading text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="flex-1 min-w-0 typo-heading text-ink-1 bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
-                <button
+                <Button
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
-                  className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
-                  title={db.save_name}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  tooltip={db.save_name} aria-label={db.save_name}
                 >
                   <Check className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             ) : (
               <>
-                <h2 id="schema-manager-title" className="typo-heading text-foreground/90 truncate">
+                <h2 id="schema-manager-title" className="typo-heading text-ink-1 truncate">
                   {credential.name}
                 </h2>
-                <button
+                <Button
                   type="button"
                   onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
-                  className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 group-focus-within/name:opacity-100 focus-visible:opacity-100 transition-all shrink-0"
-                  title={db.rename_credential}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="opacity-0 group-hover/name:opacity-100 group-focus-within/name:opacity-100 focus-visible:opacity-100 shrink-0"
+                  tooltip={db.rename_credential} aria-label={db.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -152,33 +162,32 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
             {db.schema_manager} -- {connector?.label || credential.service_type}
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
-          className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
+          variant="ghost"
+          size="icon-sm"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
+      <div className="flex items-center gap-1 px-6 pt-3 border-b border-hair shrink-0">
         {TAB_ORDER.map((tabId) => {
           const Icon = TAB_ICONS[tabId];
           const isActive = tabId === activeTab;
           return (
-            <button
+            <Button
               type="button"
               key={tabId}
               onClick={() => { setVisited((prev) => new Set([...prev, tabId])); setActiveTab(tabId); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body transition-colors ${
-                isActive
-                  ? 'text-foreground/90'
-                  : 'text-foreground hover:text-muted-foreground/70'
-              }`}
+              variant="ghost"
+              size="md"
+              className="relative"
+              icon={<Icon className="w-3.5 h-3.5" />}
             >
-              <Icon className="w-3.5 h-3.5" />
               {TAB_LABELS[tabId]}
               {isActive && (
                 <motion.div
@@ -187,7 +196,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-            </button>
+            </Button>
           );
         })}
       </div>

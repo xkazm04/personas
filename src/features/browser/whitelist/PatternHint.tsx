@@ -22,19 +22,19 @@ export default function PatternHint() {
   const a = t.browser.add_site;
 
   return (
-    <div className="rounded-input border border-primary/10 bg-secondary/30 px-3 py-2 space-y-1">
-      <p className="typo-caption text-foreground">{a.pattern_hint_title}</p>
+    <div className="rounded-input border border-hair bg-surface-1 px-3 py-2 space-y-1">
+      <p className="typo-caption text-ink-2">{a.pattern_hint_title}</p>
       <ul className="space-y-0.5">
-        <li className="typo-caption text-foreground">
+        <li className="typo-caption text-ink-2">
           <code className="font-mono">{WILDCARD_HOST}</code>{' '}
           {a.pattern_hint_subdomain}
         </li>
-        <li className="typo-caption text-foreground">
+        <li className="typo-caption text-ink-2">
           <code className="font-mono">{WILDCARD_PORT}</code>{' '}
           {a.pattern_hint_port}
         </li>
       </ul>
-      <p className="typo-caption text-foreground">
+      <p className="typo-caption text-ink-2">
         <code className="font-mono">{SEEDED_ROW}</code>{' '}
         {a.pattern_hint_example}
       </p>

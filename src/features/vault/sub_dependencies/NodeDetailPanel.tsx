@@ -1,7 +1,9 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { X } from 'lucide-react';
 import type { GraphNode } from './credentialGraph';
 import { KIND_ICONS } from './graphConstants';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface NodeDetailPanelProps {
   node: GraphNode | null;
@@ -25,16 +27,16 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
 
   return (
     <div
-      className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden"
+      className="animate-fade-slide-in rounded-modal border border-hair bg-surface-1 overflow-hidden"
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-hair">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4" style={{ color: node.color }} />
-          <span className="typo-body text-foreground/85">{node.label}</span>
+          <span className="typo-body text-ink-1">{node.label}</span>
         </div>
-        <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
+        <Button type="button" onClick={onClose} variant="ghost" size="icon-sm">
           <X className="w-3.5 h-3.5 text-foreground" />
-        </button>
+        </Button>
       </div>
 
       <div className="p-3 space-y-2">
@@ -47,18 +49,13 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
             if (!connNode) return null;
             const ConnIcon = KIND_ICONS[connNode.kind];
             return (
-              <button
-                key={edge.id}
-                type="button"
-                onClick={() => onNodeClick(connNode.id)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
-              >
+              <PressSurface key={edge.id} onPress={() => onNodeClick(connNode.id)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card">
                 <ConnIcon className="w-3 h-3 flex-shrink-0" style={{ color: connNode.color }} />
                 <span className="typo-caption text-foreground truncate flex-1">{connNode.label}</span>
                 {edge.label && (
                   <span className="typo-caption text-foreground">{edge.label}</span>
                 )}
-              </button>
+              </PressSurface>
             );
           })}
         </div>

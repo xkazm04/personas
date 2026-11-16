@@ -71,8 +71,8 @@ export function GigPersonaPolicySection() {
     <div className="mt-6" data-testid="gig-persona-policy">
       <SectionCard
         title={s.gig_policy_title}
-        icon={<ShieldCheck className="w-4 h-4 text-status-success" />}
-        titleClassName="text-primary"
+        icon={<ShieldCheck className="w-4 h-4 text-ink-2" />}
+        titleClassName="text-ink-1"
       >
         <p className="typo-caption text-foreground mb-3">{s.gig_policy_desc}</p>
         {error && (

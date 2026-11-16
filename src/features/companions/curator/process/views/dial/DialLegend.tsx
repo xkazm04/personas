@@ -63,7 +63,7 @@ export function DialLegend({ figs, rings, hover, arrive, onOpenStation, onHover 
               <span className="dial-row-name typo-heading-lg">
                 <Chip ring={ring} />
                 {name}
-                {f.rank > 0 && <span className="dial-rank typo-caption">{tx(p.rank, { rank: f.rank })}</span>}
+                {f.rank > 0 && <span className="dial-rank typo-eyebrow">{tx(p.rank, { rank: f.rank })}</span>}
               </span>
               {f.reached === 0 ? (
                 <>

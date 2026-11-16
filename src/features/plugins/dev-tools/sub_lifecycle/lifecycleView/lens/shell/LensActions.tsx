@@ -32,8 +32,7 @@ export const LensActions = memo(function LensActions() {
         disabled={!snapshot}
       />
       <Button
-        variant="accent"
-        tone="agent"
+        variant="secondary"
         size="sm"
         icon={<Sparkles className={GLYPH.sm} />}
         onClick={askAthena}

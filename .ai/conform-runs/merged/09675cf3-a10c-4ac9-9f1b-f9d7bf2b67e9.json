@@ -1,0 +1,145 @@
+{
+ "schema": "conform-run/1",
+ "worker": "09675cf3-a10c-4ac9-9f1b-f9d7bf2b67e9",
+ "subject": "status-vocabulary",
+ "evaluatedAt": "2026-11-05T22:17:41.285513+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "display-table-primitives",
+   "subject": "status-vocabulary",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/display/StatusDot.tsx:45 StatusDot keys its colour table and its separate SHAPE table by a bare string. That turns off the compile check on the ConnectionState/SeverityState unions, splits colour and glyph into two parallel maps, and lets an unknown severity fall back to calm `text-foreground` (line 139) with no shape, when it should fall back to the most severe member.",
+   "techniques": [
+    {
+     "technique": "status-color-mapping",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/display/StatusDot.tsx:45 Keyed by a bare string rather than the union. Colour and shape (SHAPE, line 120) sit in two parallel tables. Raw palette literals are used instead of semantic roles. The unknown-member fallback is neutral, even for the severity kind."
+    }
+   ]
+  },
+  {
+   "context": "plugins-fleet-tests",
+   "subject": "status-vocabulary",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/sub_harvest/FleetRunSessionRow.tsx:29 When a FleetSessionState member has no FLEET_STATE_META entry, the run-report row shows the raw wire token (e.g. `awaiting_input`) as its visible label instead of a translated unknown label.",
+   "techniques": [
+    {
+     "technique": "vocabulary-chain-integrity",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/sub_harvest/FleetRunSessionRow.tsx:29 Falls back to the raw machine token; the meta lookup is an array .find, so the type system does not check it covers every member."
+    },
+    {
+     "technique": "number-formatting",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/sub_harvest/FleetRunSessionRow.tsx:46 The UI row uses the markdown helper formatTokens (toFixed + k/M, no locale). FleetContextPill.tsx:92 in the same context uses the shared Numeric primitive."
+    },
+    {
+     "technique": "timestamp-display",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts:39 Bare toLocaleString() lets the host machine pick locale and format, even though the file header calls the output 'locale-independent on purpose'."
+    },
+    {
+     "technique": "status-color-mapping",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetContextPill.tsx:64 Size verdict maps to semantic status roles, not raw hues, and the Gauge icon plus label mean colour is not the only signal."
+    },
+    {
+     "technique": "reserved-attention-hue",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:76 Stale is pinned to its own amber class, separate from awaiting_input's 'waiting' class (violet in globals.css). A test pins this."
+    }
+   ]
+  },
+  {
+   "context": "overview-health",
+   "subject": "status-vocabulary",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_events/components/EventLogList.tsx:218 The events table chooses each row's accent with an inline ternary over status strings, using raw palette literals. This bypasses the status-token table, and `dead_letter`/`discarded` get no accent at all, so a failure-class member reads as calm.",
+   "techniques": [
+    {
+     "technique": "status-color-mapping",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_events/components/EventLogList.tsx:218 Per-call-site status-to-hue decision with raw red/amber literals and no table keyed by PersonaEventStatus. HealingEffectivenessPanel's rateColor does the same. SLACard.tsx:53 does use HEALTH_STATUS_TOKEN."
+    },
+    {
+     "technique": "number-formatting",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_sla/libs/slaHelpers.ts:2 Hand-rolled percent with toFixed and no locale binding, rendered by SLACard.tsx:59. Elsewhere in the same context, HealingEffectivenessPanel uses Numeric."
+    },
+    {
+     "technique": "timestamp-display",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:146 Elapsed labels go through the shared RelativeTime primitive."
+    },
+    {
+     "technique": "vocabulary-chain-integrity",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_events/libs/eventStatusOptions.ts:18 Filter vocabulary is checked against the generated wire type, and labels resolve through tokenLabel."
+    },
+    {
+     "technique": "untrusted-label-rendering",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_events/libs/eventTypeLabel.ts:30 Free-form fleet event identifiers are only typographically humanized, never promoted to curated vocabulary. The raw id stays in a tooltip."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-05T22:17:41.285513+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "status-vocabulary"
+   ],
+   "techniques": [
+    "status-color-mapping"
+   ],
+   "deviations": 1,
+   "context": "display-table-primitives",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-05T22:17:41.285513+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "status-vocabulary"
+   ],
+   "techniques": [
+    "number-formatting",
+    "reserved-attention-hue",
+    "status-color-mapping",
+    "timestamp-display",
+    "vocabulary-chain-integrity"
+   ],
+   "deviations": 1,
+   "context": "plugins-fleet-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-05T22:17:41.285513+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "status-vocabulary"
+   ],
+   "techniques": [
+    "number-formatting",
+    "status-color-mapping",
+    "timestamp-display",
+    "untrusted-label-rendering",
+    "vocabulary-chain-integrity"
+   ],
+   "deviations": 1,
+   "context": "overview-health",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

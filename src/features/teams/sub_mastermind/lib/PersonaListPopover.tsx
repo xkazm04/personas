@@ -6,7 +6,9 @@
 // declared — the SAME `navigateTo` switch the Monitor's activity rows use, so
 // the destination never depends on which surface the click came from. A row
 // whose process declares no destination (or a demo island's) stays inert.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Bot } from 'lucide-react';
 
 import { elapsedStr, processStatusLabel, processStatusMeta } from '@/features/fleet/monitor/monitorModel';
@@ -67,22 +69,20 @@ export function PersonaListPopover({ rows, x, y, onOpen, onClose }: {
             {/* the Monitor's own status dot — same vocabulary, same colours */}
             <span className={`w-2 h-2 rounded-full shrink-0 ${meta.dot} ${meta.pulse ? 'animate-pulse' : ''}`} aria-hidden />
             <span className="truncate flex-1">{row.name}</span>
-            <span className="typo-caption text-foreground/50 tabular-nums shrink-0">{trailing}</span>
+            <span className="typo-data text-ink-3 shrink-0">{trailing}</span>
           </>
         );
-        const layout = 'w-full flex items-center gap-2 px-3 py-2 text-left typo-body text-foreground/70';
+        const layout = 'w-full flex items-center gap-2 px-3 py-2 text-left typo-body text-ink-2';
         return (
           <li key={row.personaId}>
             {row.navigable ? (
-              <button
-                type="button"
-                className={`${layout} rounded-md transition-colors hover:bg-secondary/40 hover:text-foreground focus-ring`}
-                onClick={() => { onOpen(row.personaId); onClose(); }}
-                title={t.mastermind.persona_open}
+              <Tooltip content={t.mastermind.persona_open}><PressSurface
+                className={`${layout} rounded-md  hover:bg-surface-2 hover:text-foreground `}
+                onPress={() => { onOpen(row.personaId); onClose(); }}
                 data-testid={`mm-persona-row-${row.personaId}`}
               >
                 {body}
-              </button>
+              </PressSurface></Tooltip>
             ) : (
               <div className={`${layout} cursor-default`} data-testid={`mm-persona-row-${row.personaId}`}>{body}</div>
             )}

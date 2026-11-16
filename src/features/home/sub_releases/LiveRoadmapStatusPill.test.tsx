@@ -31,6 +31,8 @@ const MIN_TARGET_PX = 24;
 /** The px a Tailwind spacing class (`h-7`, `w-6`) resolves to, 4px per step. */
 function sizePx(className: string, axis: 'h' | 'w'): number {
   for (const cls of className.split(/\s+/)) {
+    // The shared Button sizes icon controls from the density role (--control-h, 1.875rem = 30px at its smallest).
+    if (cls === `${axis}-[var(--control-h)]`) return 30;
     const m = /^([hw])-(\d+(?:\.\d+)?)$/.exec(cls);
     if (m && m[1] === axis) return Number(m[2]) * 4;
   }

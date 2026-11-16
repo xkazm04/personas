@@ -85,13 +85,13 @@ export function DockSkillPicker({ activeProjectId, onPick, onClose }: DockSkillP
           columns come from, the how-to as a caption under it (it used to be
           squeezed onto the title line and truncated mid-sentence), one
           primary/10 hairline. */}
-      <div className="flex flex-shrink-0 items-start gap-2.5 border-b border-primary/10 py-2.5 pl-3 pr-1.5">
+      <div className="flex flex-shrink-0 items-start gap-2.5 border-b border-hair py-2.5 pl-3 pr-1.5">
         <LayoutGrid className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden />
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="typo-heading flex-shrink-0 text-foreground">{quickT.skill_picker_title}</h2>
             {registry.header && (
-              <span className="typo-label inline-flex min-w-0 items-center gap-1.5 rounded-pill border border-primary/15 bg-secondary/40 px-2 py-0.5 text-foreground">
+              <span className="typo-label inline-flex min-w-0 items-center gap-1.5 rounded-pill border border-hair bg-surface-1 px-2 py-0.5 text-foreground">
                 <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: registry.header.color }} aria-hidden />
                 <span className="truncate">{registry.header.name}</span>
               </span>

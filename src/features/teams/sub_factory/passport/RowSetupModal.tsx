@@ -8,7 +8,9 @@
 // The chosen direction (+ optional custom instructions) dispatches a FLEET
 // terminal in the project's repo root — Fleet is the LLM engine here, not the
 // Dev Runner. The cell's icon then flips to the state-tinted terminal icon.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useMemo, useRef, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { MessagesSquare, Rocket, ScanSearch, ShieldCheck, Sparkles, X } from 'lucide-react';
 
 import { listCredentials } from '@/api/vault/credentials';
@@ -142,27 +144,26 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
   return (
     <BaseModal isOpen onClose={onClose} titleId="row-setup-title" portal maxWidthClass="max-w-2xl" staggerChildren={false}>
       <div data-testid="row-setup-modal">
-        <div className="flex items-start gap-2.5 pb-2 border-b border-primary/10">
+        <div className="flex items-start gap-2.5 pb-2 border-b border-hair">
           <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: INK.teal }} aria-hidden />
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">{passport.identity.name}</div>
+            <div className="typo-eyebrow">{passport.identity.name}</div>
             <h2 id="row-setup-title" className="typo-body text-foreground">{rowLabel}</h2>
-            <p className="typo-caption text-foreground/55 mt-0.5">
+            <p className="typo-caption text-ink-3 mt-0.5">
               {tx(w.setup_row_state, { level: currentLabel })}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring">
+          <Button variant="ghost" size="icon-sm" className="ml-auto shrink-0" onClick={onClose} aria-label={t.common.close}>
             <X className="w-4 h-4" aria-hidden />
-          </button>
+          </Button>
         </div>
 
         <div className="grid gap-2 mt-3" data-testid="row-setup-directions">
           {(() => {
             const on = selected === GUIDED_ID;
             return (
-              <button
-                type="button"
-                onClick={() => setSelected(on ? null : GUIDED_ID)}
+              <PressSurface
+                onPress={() => setSelected(on ? null : GUIDED_ID)}
                 className="text-left rounded-card px-3 py-2.5 transition-colors focus-ring"
                 style={{
                   border: `1px solid ${on ? INK.violet : `${INK.violet}44`}`,
@@ -172,24 +173,23 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <MessagesSquare className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-                  <span className="typo-caption text-foreground truncate">{w.setup_row_guided}</span>
-                  <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
+                  <span className="typo-caption text-ink-2 truncate">{w.setup_row_guided}</span>
+                  <span className="shrink-0 rounded-interactive px-1.5 py-0.5 typo-caption" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
                     {w.setup_row_interactive}
                   </span>
                 </span>
-                <span className="block typo-caption text-foreground/55 mt-0.5 pl-[22px]">
+                <span className="block typo-caption text-ink-3 mt-0.5 pl-[22px]">
                   {w.setup_row_guided_hint}
                 </span>
-              </button>
+              </PressSurface>
             );
           })()}
           {directions.map((d) => {
             const on = selected === d.id;
             return (
-              <button
+              <PressSurface
                 key={d.id}
-                type="button"
-                onClick={() => setSelected(on ? null : d.id)}
+                onPress={() => setSelected(on ? null : d.id)}
                 className="text-left rounded-card px-3 py-2.5 transition-colors focus-ring"
                 style={{
                   border: `1px solid ${on ? INK.teal : 'rgba(148,163,184,.18)'}`,
@@ -198,16 +198,16 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
                 data-testid={`direction-${d.id}`}
               >
                 <span className="flex items-center gap-2 min-w-0">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={on ? { background: INK.teal, boxShadow: `0 0 5px ${INK.teal}88` } : { border: '1px solid rgba(148,163,184,.45)' }} />
-                  <span className="typo-caption text-foreground truncate">{d.label}</span>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={on ? { background: INK.teal } : { border: '1px solid rgba(148,163,184,.45)' }} />
+                  <span className="typo-caption text-ink-2 truncate">{d.label}</span>
                   {d.fromScan && (
-                    <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
+                    <span className="shrink-0 rounded-interactive px-1.5 py-0.5 typo-caption" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
                       {w.setup_row_from_scan}
                     </span>
                   )}
                 </span>
-                <span className="block typo-caption text-foreground/55 mt-0.5 pl-4">{d.hint}</span>
-              </button>
+                <span className="block typo-caption text-ink-3 mt-0.5 pl-4">{d.hint}</span>
+              </PressSurface>
             );
           })}
         </div>
@@ -217,23 +217,23 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           onChange={(e) => setInstruction(e.target.value)}
           rows={2}
           placeholder={w.setup_row_instruction_ph}
-          className="w-full bg-transparent border rounded-input px-2.5 py-1.5 typo-caption text-foreground focus-ring resize-none mt-3"
+          className="w-full bg-transparent border rounded-input px-2.5 py-1.5 typo-caption text-ink-2 focus-ring resize-none mt-3"
           style={{ borderColor: 'rgba(148,163,184,.25)' }}
           data-testid="row-setup-instruction"
         />
 
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={busy || !selected || !raw}
           onClick={deploy}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-40"
-          style={{ color: INK.teal, border: `1px solid ${INK.teal}55` }}
+          className="mt-3 w-full"
+          icon={<Rocket className="w-3.5 h-3.5" aria-hidden />}
           data-testid="row-setup-deploy"
         >
-          <Rocket className="w-3.5 h-3.5" aria-hidden />
           {busy ? w.setup_row_dispatching : w.setup_row_deploy}
-        </button>
-        <p className="text-[10px] text-foreground/35 text-center mt-1.5">
+        </Button>
+        <p className="typo-caption text-ink-3 text-center mt-1.5">
           {w.setup_row_note}
         </p>
       </div>

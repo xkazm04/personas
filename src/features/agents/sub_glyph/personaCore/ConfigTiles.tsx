@@ -16,6 +16,7 @@ import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { useTranslation } from "@/i18n/useTranslation";
 import { ACCENT, CONFLICT_ACCENT, CONFLICT_STYLES, EFFORT_ACCENT, EFFORT_TIERS, MODEL_TIERS } from "./catalog";
 import type { PersonaCore } from "./types";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface RadioOptionProps {
   role: "radio";
@@ -101,14 +102,14 @@ function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb, co
     <motion.button
       type="button" whileTap={{ scale: 0.96 }} onClick={onClick} data-testid={testid}
       {...(radio ?? { "aria-pressed": active })}
-      className={`flex-1 min-w-0 flex flex-col items-center gap-1 px-2 py-2 rounded-input border transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/85 border-card-border hover:border-foreground/30"}`}
+      className={`flex-1 min-w-0 flex flex-col items-center gap-1 px-2 py-2 rounded-input border transition-colors cursor-pointer ${active ? "text-ink-1" : "text-ink-1 border-card-border hover:border-hair-2"}`}
       style={active ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.14) } : undefined}
     >
       <Icon className="w-4 h-4" style={{ color: active ? color : undefined }} />
-      <span className="typo-body text-foreground">{label}</span>
+      <span className="typo-body text-ink-1">{label}</span>
       {costLabel && (
         <>
-          <span aria-hidden className="typo-caption tabular-nums text-foreground/85" data-testid={testid ? `${testid}-cost` : undefined}>
+          <span aria-hidden className="typo-caption tabular-nums text-ink-2" data-testid={testid ? `${testid}-cost` : undefined}>
             {costLabel}
           </span>
           <span className="sr-only">{costAria}</span>
@@ -165,19 +166,19 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
         const h = 12 + i * 6; // ascending
         return (
           <Tooltip key={e.id} content={t.agents[e.blurbKey]}>
-            <button type="button" onClick={() => core.setEffort(e.id)} data-testid={`core-effort-${e.id}`} {...option(e.id)}
-              className="flex-1 flex flex-col items-center gap-1 cursor-pointer group">
+            <PressSurface onPress={() => core.setEffort(e.id)} data-testid={`core-effort-${e.id}`} {...option(e.id)}
+              className="flex-1 flex flex-col items-center gap-1 group">
               {/* The OFF bar is a semantic class, not an inline literal-white
                   fill: an inline style outranks the app's [data-theme^="light"]
                   overrides, so the unlit steps painted white-on-white in light
                   themes. The lit bars stay inline — they are tinted from the
                   meter's own accent, which no class can express. */}
               <span
-                className={`w-full rounded-sm transition-colors ${on ? "" : "bg-secondary/60"}`}
+                className={`w-full rounded-interactive transition-colors ${on ? "" : "bg-surface-2"}`}
                 style={{ height: h, background: on ? colorWithAlpha(EFFORT_ACCENT, core.state.effort === e.id ? 0.9 : 0.5) : undefined }}
               />
-              <span className={`typo-body ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{t.models[`effort_${e.id}`]}</span>
-            </button>
+              <span className={`typo-body ${core.state.effort === e.id ? "text-ink-1" : "text-ink-1 group-hover:text-ink-1"}`}>{t.models[`effort_${e.id}`]}</span>
+            </PressSurface>
           </Tooltip>
         );
       })}

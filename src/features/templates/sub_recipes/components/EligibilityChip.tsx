@@ -11,7 +11,7 @@ export function EligibilityChip({ eligibility }: { eligibility: Eligibility }) {
   if (eligibility.state === 'eligible') {
     return (
       <Tooltip content={t.recipes_catalog.chip_eligible_tooltip}>
-        <span className="shrink-0 typo-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-status-success/12 border-status-success/35 text-status-success/95">
+        <span className="shrink-0 typo-label px-1.5 py-0.5 inline-flex items-center gap-1 text-status-success/95">
           <Check className="w-2.5 h-2.5" />
           {t.recipes_catalog.chip_eligible_label}
         </span>
@@ -27,7 +27,7 @@ export function EligibilityChip({ eligibility }: { eligibility: Eligibility }) {
           { count: n },
         )}
       >
-        <span className="shrink-0 typo-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-status-warning/12 border-status-warning/35 text-status-warning/95">
+        <span className="shrink-0 typo-label px-1.5 py-0.5 inline-flex items-center gap-1 text-status-warning/95">
           <AlertTriangle className="w-2.5 h-2.5" />
           {t.recipes_catalog.chip_setup_label}
           {n > 1 && <span className="font-mono">×{n}</span>}
@@ -38,7 +38,7 @@ export function EligibilityChip({ eligibility }: { eligibility: Eligibility }) {
   // incompatible
   return (
     <Tooltip content={eligibility.reason}>
-      <span className="shrink-0 typo-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-secondary/60 border-card-border text-foreground">
+      <span className="shrink-0 typo-label px-1.5 py-0.5 rounded-interactive border inline-flex items-center gap-1 bg-surface-2 border-card-border text-foreground">
         <Lock className="w-2.5 h-2.5" />
         {t.recipes_catalog.chip_locked_label}
       </span>

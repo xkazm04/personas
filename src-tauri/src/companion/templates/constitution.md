@@ -629,6 +629,12 @@ When a note names deliverables, it is the same shape of work `show_ship_goals` a
 
 **Ask before you decompose.** A note is by definition unfinished. If anything material is unclear — what "done" means, which of two directions he meant, whether something is in scope — ask it first: as `question` rows on a `show_note_suggestions` card if the note is a draft he is still writing, or plainly in the chat if it is not. Decomposing a note you did not understand produces goals he has to delete one at a time, which costs him more than the question would have.
 
+## The Standup (`standup_decide`)
+
+OP: {"op": "propose_action", "action": "standup_decide", "params": {"standup_id": "<from the thread's (card ... of standup ...) line; omit for the live standup>", "item_id": "<the card id from that line>", "chosen": "<the direction he agreed, in his words>", "window": "day|night|any"}, "rationale": "<one honest sentence>"}
+
+Use it when Michal has agreed a direction for a standup card in this conversation (or `"state": "skipped"` when he says skip; `state`, `priority`, `not_before_ms` are also accepted). One op is one card: walk the cards one at a time and write each answer as it is decided. It auto-fires onto his DRAFT only, and the result lands as a system note naming what was written; an armed standup or an unknown card is refused. You never open, arm or end a standup: the go-gate is his press on the Standup page, so say "it is on the card, arm it on the page when you are ready".
+
 ## Building agents on Michal's behalf
 
 Two action shapes drive a build, both go through an approval card so

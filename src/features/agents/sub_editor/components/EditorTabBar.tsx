@@ -1,5 +1,3 @@
-import { useId } from 'react';
-import { motion } from 'framer-motion';
 import { FileText, Settings, FlaskConical, Activity, Wand2, HeartPulse } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -11,6 +9,7 @@ import type { Tier } from '@/lib/constants/uiModes';
 import { TIERS } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useHealthCheck } from '@/features/agents/sub_health';
+import Button from '@/features/shared/components/buttons/Button';
 
 type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; minTier?: Tier };
 const tabDefs: TabDefBase[] = [
@@ -37,18 +36,18 @@ function TabBadge({ variant, count, srLabel }: { variant: TabBadgeVariant; count
   const sr = srLabel ? <span className="sr-only">{srLabel}</span> : null;
   if (variant === 'error') {
     return (
-      <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption text-center">
+      <span className="ml-auto min-w-4 text-status-error typo-data text-center">
         {count ?? '!'}{sr}
       </span>
     );
   }
-  return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse">{sr}</span>;
+  return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-status-warning">{sr}</span>;
 }
 
 const GRADE_TONE: Record<'healthy' | 'degraded' | 'unhealthy', string> = {
-  healthy:   'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
-  degraded:  'border-amber-500/25 bg-amber-500/10 text-amber-400',
-  unhealthy: 'border-red-500/25 bg-red-500/10 text-red-400',
+  healthy:   'text-status-success',
+  degraded:  'text-status-warning',
+  unhealthy: 'text-status-error',
 };
 
 function HealthBadge() {
@@ -66,7 +65,7 @@ function HealthBadge() {
     ? GRADE_TONE.unhealthy
     : score
       ? GRADE_TONE[score.grade]
-      : 'border-primary/15 bg-secondary/40 text-foreground';
+      : 'text-ink-2';
   const badgeLabel = running
     ? labels.design_health_checking
     : failed
@@ -75,17 +74,18 @@ function HealthBadge() {
         ? `${labels[`design_health_${score.grade}` as const] ?? score.grade} · ${score.value}`
         : labels.design_health_never_checked;
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="sm"
+      tooltip={labels.design_health_run}
       onClick={() => selectedPersona && health.runHealthCheck(selectedPersona)}
       disabled={running || !selectedPersona}
-      title={labels.design_health_run}
       data-testid="editor-health-badge"
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card border typo-body transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap ${badgeTone} hover:opacity-90`}
+      className={`whitespace-nowrap ${badgeTone}`}
+      icon={<HeartPulse className="w-3.5 h-3.5" />}
     >
-      <HeartPulse className="w-3.5 h-3.5" />
-      <span>{badgeLabel}</span>
-    </button>
+      <span className="num">{badgeLabel}</span>
+    </Button>
   );
 }
 
@@ -95,13 +95,8 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const tier = useTier();
   const editorLabels = t.agents.editor_ui;
-  // Per-instance so two editor tab bars (e.g. a future multi-draft editor)
-  // never share a framer-motion layoutId — a shared id makes the active-tab
-  // underline teleport/animate between the two bars (see PanelTabBar /
-  // SegmentedTabs for the same pattern).
-  const layoutIdInstance = useId();
   return (
-    <div className="border-b border-primary/10 bg-primary/5">
+    <div className="border-b border-hair bg-surface-1">
       <div className={`flex items-center ${IS_MOBILE ? 'px-1' : 'px-6'}`}>
         <div className={`flex overflow-x-auto flex-1 min-w-0 ${IS_MOBILE ? 'gap-0' : 'gap-1'} scrollbar-none`}>
           {tabDefs.filter((td) => !td.minTier || tier.isVisible(td.minTier)).map((tab) => {
@@ -110,20 +105,20 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
             const tabDirty = isTabDirty(tab.id, dirtyTabs);
             const label = (editorLabels as Record<string, string>)[tab.labelKey] ?? tab.labelKey;
             return (
-              <button
-                type="button"
+              <Button
                 key={tab.id}
+                tooltip={label}
+                variant="ghost"
+                size="md"
+                pressed={isActive}
                 onClick={() => setEditorTab(tab.id)}
                 data-testid={`editor-tab-${tab.id}`}
                 // On mobile the visible label is hidden, and a title is not a
                 // reliable accessible name on touch devices.
                 aria-label={IS_MOBILE ? label : undefined}
-                title={label}
-                className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
-                  isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
-                }`}
+                className="whitespace-nowrap"
+                icon={<Icon className="w-4 h-4" />}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
                 {!IS_MOBILE && label}
                 {failedTabs.includes(tab.id)
                   ? <TabBadge variant="error" srLabel={editorLabels.tab_save_failed_indicator} />
@@ -138,14 +133,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                     : tabDirty
                       ? <TabBadge variant="dirty" srLabel={editorLabels.unsaved_changes} />
                       : null}
-                {isActive && (
-                  <motion.div
-                    layoutId={`personaEditorTab-${layoutIdInstance}`}
-                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
-              </button>
+              </Button>
             );
           })}
         </div>

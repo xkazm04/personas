@@ -67,7 +67,7 @@ export function CoverageBar({ tally, height = 8 }: { tally: KpiTally; height?: n
 export function SizeBar({ total, max, height = 3 }: { total: number; max: number; height?: number }) {
   const width = max <= 0 ? 0 : Math.sqrt(total / max) * 100;
   return (
-    <span aria-hidden="true" className="block w-full rounded-full bg-secondary/40" style={{ height }}>
+    <span aria-hidden="true" className="block w-full rounded-full bg-surface-1" style={{ height }}>
       <span className="block h-full rounded-full bg-primary/50" style={{ width: `${width}%` }} />
     </span>
   );

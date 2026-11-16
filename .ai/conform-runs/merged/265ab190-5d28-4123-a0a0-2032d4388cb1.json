@@ -1,0 +1,85 @@
+{
+  "schema": "conform-run/1",
+  "worker": "265ab190-5d28-4123-a0a0-2032d4388cb1",
+  "subject": "prompt-assembly",
+  "evaluatedAt": "2026-11-06T05:02:14.320423+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "vault-shared-playground",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/shared/playground/tabs/useCredentialRecipes.ts:76 The playground's one LLM touchpoint passes typed inputs (a credential id and a description) to the recipe generator, which runs elsewhere. RecipeCreateFlow only displays the returned prompt_template, so no prompt is assembled here. A case-insensitive search of its 6 directories found 0 hits for systemPrompt, max_tokens, cache_control, tokenBudget and contextBudget.",
+      "techniques": [],
+      "absenceTerms": [
+        "systemPrompt",
+        "max_tokens",
+        "cache_control",
+        "tokenBudget",
+        "contextBudget"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "prompt-assembly",
+      "context": "companions-page",
+      "reason": "evidence leans on fusion/text.tsx, which is not a tracked file"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "i18n",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "fleet-monitor-channels",
+      "reason": "withdrawn after review: reviewer (sonnet): The verdict says no prompt is assembled in this context, but ConversationComposer.tsx:64-68 builds an Athena prompt in the frontend. It interpolates teamName, teamId and the user's text into a template and passes it to setPendingPrompt with autoSend. The anchor, useConversation.ts:233, only shows th"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "settings-network",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor, ExposureManager.tsx:9, is a type import line and does not show that prompt composition is absent. I also did not confirm the claim about AmbientContextPanel. My grep for prompt in the context found only store and message-metric hits, but that does not make the incidental anchor valid."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T05:02:14.320423+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "fleet-monitor-channels",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T05:02:14.320423+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "settings-network",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T05:02:14.320423+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "vault-shared-playground",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

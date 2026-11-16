@@ -4,6 +4,7 @@
 // claim a trend we cannot see); a simulated/composed series is dashed. A
 // failed read is stated as a failure with a Retry, never as empty axes.
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { AXIS_PROPS, GRID_PROPS, SIMULATED_DASH, TARGET_LINE_PROPS, TOOLTIP_STYLE } from '../kpiChartTheme';
@@ -14,7 +15,7 @@ import { MAX_PANELS, type PanelSeries } from './KpiGroupLayer.model';
 import { KpiOverflowTable } from './KpiOverflowTable';
 
 const GHOST = 'h-24 rounded-card bg-primary/[0.06] animate-fade-in';
-const PANEL = 'rounded-card border border-primary/15 bg-secondary/10 p-2 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none';
+const PANEL = 'rounded-card border border-hair bg-surface-1 p-2 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none';
 const GRID = 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3';
 
 export function KpiSmallMultiples({
@@ -36,7 +37,7 @@ export function KpiSmallMultiples({
   const overflow = series.slice(MAX_PANELS);
 
   return (
-    <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 space-y-3" data-testid="kpi-layer-multiples">
+    <section className="rounded-card border border-hair bg-surface-1 p-4 space-y-3" data-testid="kpi-layer-multiples">
       <div>
         <h3 className="typo-eyebrow text-foreground">{o.layer_multiples_title}</h3>
         <p className="typo-caption">{o.layer_multiples_caption}</p>
@@ -45,13 +46,9 @@ export function KpiSmallMultiples({
       {status === 'failed' ? (
         <div className="space-y-2">
           <p className="typo-caption">{o.trends_failed}</p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="rounded-interactive border border-primary/25 bg-secondary/30 px-2.5 py-1 typo-label text-foreground hover:bg-secondary/50 focus-ring"
-          >
+          <Button variant="secondary" size="sm" onClick={onRetry}>
             {o.retry}
-          </button>
+          </Button>
         </div>
       ) : series.length === 0 ? (
         status === 'loading' ? (
@@ -99,14 +96,15 @@ function MiniPanel({
   const tooFew = points.length < 3;
   return (
     <div className={PANEL} data-testid="kpi-layer-panel">
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="inline"
         onClick={() => onOpen(kpi.id)}
         aria-label={kpi.name}
-        className="typo-label text-foreground truncate max-w-full text-left hover:text-primary focus-ring rounded-interactive"
+        className="truncate max-w-full text-left"
       >
         {kpi.name}
-      </button>
+      </Button>
       <LazyChart
         fallback={<div className={GHOST} style={{ animationDelay: '150ms' }} aria-hidden="true" />}
         render={(R) => (

@@ -18,7 +18,7 @@ export function OllamaFooter() {
         href="https://ollama.com"
         target="_blank"
         rel="noopener noreferrer"
-        className="text-emerald-400/70 hover:text-emerald-400 inline-flex items-center gap-0.5"
+        className="text-status-success hover:text-status-success inline-flex items-center gap-0.5"
       >
         {t.overview.popup_fields.ollama_domain} <ExternalLink className="w-2.5 h-2.5" />
       </a>

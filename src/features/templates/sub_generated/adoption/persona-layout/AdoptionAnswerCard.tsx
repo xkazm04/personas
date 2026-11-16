@@ -13,6 +13,7 @@ import {
   resolveStackableOptions,
 } from '../questionnaire/questionnaireHelpers';
 import { useQuestionnaireKeyboardNav } from '../questionnaire/useQuestionnaireKeyboardNav';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AdoptionAnswerCardProps {
   /** The dimension whose questions this card is presenting. */
@@ -202,33 +203,32 @@ export function AdoptionAnswerCard({
           skips this capability's bound questions (filtered out upstream)
           and dims the petal. Re-enabling restores. */}
       {onToggleDim && (
-        <button
+        <Button
           type="button"
           onClick={() => onToggleDim(isDimActive === false)}
-          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
-            isDimActive === false
-              ? 'bg-primary/15 hover:bg-primary/30 text-primary border border-primary/40'
-              : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
-          }`}
-          title={
+          variant={isDimActive === false ? 'accent' : 'ghost'}
+          tone={isDimActive === false ? 'highlight' : undefined}
+          size="xs"
+          tooltip={
             isDimActive === false
               ? t.templates.adopt_modal.persona_layout_dim_reenable
               : t.templates.adopt_modal.persona_layout_dim_disable_title
           }
+          icon={<Power className="w-3 h-3" />}
         >
-          <Power className="w-3 h-3" />
           {isDimActive === false ? t.templates.adopt_modal.persona_layout_dim_disabled : t.templates.adopt_modal.persona_layout_dim_disable}
-        </button>
+        </Button>
       )}
-      <button
+      <Button
         type="button"
         onClick={goPrev}
         disabled={activeIdx === 0}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+        variant="ghost"
+        size="sm"
+        icon={<ChevronLeft className="w-3.5 h-3.5" />}
       >
-        <ChevronLeft className="w-3.5 h-3.5" />
         {t.templates.adopt_modal.previous}
-      </button>
+      </Button>
 
       <div className="flex-1 text-center">
         {allAnswered ? (
@@ -244,23 +244,26 @@ export function AdoptionAnswerCard({
       </div>
 
       {activeIdx < orderedQuestions.length - 1 ? (
-        <button
+        <Button
           type="button"
           onClick={goNext}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] cursor-pointer transition-colors"
+          variant="ghost"
+          size="sm"
+          iconRight={<ChevronRight className="w-3.5 h-3.5" />}
         >
           {t.templates.adopt_modal.next}
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full typo-caption text-foreground bg-primary/25 hover:bg-primary/40 border border-primary/40 cursor-pointer transition-colors"
+          variant="accent"
+          tone="highlight"
+          size="sm"
+          iconRight={<Check className="w-3.5 h-3.5" />}
         >
           {t.templates.adopt_modal.persona_layout_dim_done}
-          <Check className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import { ExecutionListFilters } from './ExecutionListFilters';
 import { BulkRerunToolbar } from './BulkRerunToolbar';
 import type { useExecutionCompare } from './useExecutionCompare';
 import type { useExecutionBulk } from './useExecutionBulk';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionListToolbarProps {
   rows: ExecutionListItem[];
@@ -31,8 +32,8 @@ export function ExecutionListToolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90">
-        <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
+      <h4 className="flex items-center gap-2.5 typo-heading text-ink-1">
+        <span className="w-6 h-[2px] bg-surface-1 rounded-full" />
         <Clock className="w-3.5 h-3.5" />
         {e.history}
       </h4>
@@ -66,14 +67,13 @@ export function ExecutionListToolbar({
       />
       {compare.starredPair && (
         <Tooltip content={e.compare_starred_pair_tooltip}>
-          <button
+          <Button
             type="button"
             onClick={() => { const [l, r] = compare.starredPair!; void compare.openPair(l, r); }}
-            className="flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors text-status-warning hover:bg-status-warning/10 border border-status-warning/20"
-          >
-            <Star className="w-3 h-3" fill="currentColor" />
-            {e.compare_starred_pair}
-          </button>
+            variant="secondary"
+            size="xs"
+            icon={<Star className="w-3 h-3" fill="currentColor" />}
+          >{e.compare_starred_pair}</Button>
         </Tooltip>
       )}
       <div className="ml-auto">

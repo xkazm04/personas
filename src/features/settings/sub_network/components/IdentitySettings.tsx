@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { InlineConfirm } from './InlineConfirm';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import Button from '@/features/shared/components/buttons/Button';
 
 export { IdentitySettings };
 export default function IdentitySettings() {
@@ -98,7 +99,7 @@ export default function IdentitySettings() {
           <Fingerprint className="w-4 h-4" />
           {st.your_identity}
         </h3>
-        <div className="rounded-modal border border-border bg-secondary/20 p-4 space-y-3">
+        <div className="rounded-modal border border-border bg-surface-1 p-4 space-y-3">
           {localIdentity ? (
             <>
               <div className="flex items-center justify-between">
@@ -108,14 +109,15 @@ export default function IdentitySettings() {
                     {truncatePeerId(localIdentity.peer_id)}
                   </div>
                 </div>
-                <button
+                <Button
                   type="button"
                   onClick={handleCopyCard}
-                  className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                  variant="secondary"
+                  size="sm"
+                  icon={copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? t.common.copied : st.copy_identity_card}
-                </button>
+                </Button>
               </div>
 
               <div>
@@ -125,24 +127,25 @@ export default function IdentitySettings() {
                     <input
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSaveName(); }}
                       className="flex-1 px-2 py-1 typo-body rounded-card border border-border bg-background focus-ring"
                       maxLength={64}
                       autoFocus
                     />
-                    <button type="button" onClick={handleSaveName} className="px-2 py-1 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90">{st.save}</button>
-                    <button type="button" onClick={() => setEditingName(false)} className="px-2 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50">{st.cancel}</button>
+                    <Button type="button" onClick={handleSaveName} variant="primary" size="xs">{st.save}</Button>
+                    <Button type="button" onClick={() => setEditingName(false)} variant="secondary" size="xs">{st.cancel}</Button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="typo-body text-foreground">{localIdentity.display_name}</span>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => { setNameInput(localIdentity.display_name); setEditingName(true); }}
-                      className="typo-caption text-foreground hover:text-foreground underline"
+                      variant="ghost"
+                      size="sm"
                     >
                       {st.edit}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -161,16 +164,16 @@ export default function IdentitySettings() {
             <div className="space-y-3" aria-hidden="true">
               <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: '120ms' }}>
                 <div className="space-y-1.5">
-                  <span className="block h-2.5 w-20 rounded bg-primary/[0.06]" />
-                  <span className="block h-3.5 w-32 rounded bg-primary/[0.06]" />
+                  <span className="block h-2.5 w-20 rounded-interactive bg-primary/[0.06]" />
+                  <span className="block h-3.5 w-32 rounded-interactive bg-primary/[0.06]" />
                 </div>
                 <span className="h-7 w-28 rounded-card bg-primary/[0.06]" />
               </div>
               <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '155ms' }}>
-                <span className="block h-2.5 w-24 rounded bg-primary/[0.06]" />
-                <span className="block h-3.5 w-28 rounded bg-primary/[0.06]" />
+                <span className="block h-2.5 w-24 rounded-interactive bg-primary/[0.06]" />
+                <span className="block h-3.5 w-28 rounded-interactive bg-primary/[0.06]" />
               </div>
-              <span className="block h-2.5 w-32 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '190ms' }} />
+              <span className="block h-2.5 w-32 rounded-interactive bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '190ms' }} />
             </div>
           )}
         </div>
@@ -180,18 +183,19 @@ export default function IdentitySettings() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h3 className="typo-heading text-foreground">{st.trusted_peers}</h3>
-          <button
+          <Button
             type="button"
             onClick={() => setShowImportForm(!showImportForm)}
-            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+            variant="secondary"
+            size="xs"
+            icon={<UserPlus className="w-3.5 h-3.5" />}
           >
-            <UserPlus className="w-3.5 h-3.5" />
             {st.add_peer}
-          </button>
+          </Button>
         </div>
 
         {showImportForm && (
-          <div className="rounded-modal border border-border bg-secondary/20 p-4 mb-3 space-y-2">
+          <div className="rounded-modal border border-border bg-surface-1 p-4 mb-3 space-y-2">
             <label className="typo-caption text-foreground">{st.paste_identity_card}</label>
             <textarea
               value={importInput}
@@ -207,21 +211,23 @@ export default function IdentitySettings() {
               className="w-full px-3 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
             />
             <div className="flex gap-2 pt-1">
-              <button
+              <Button
                 type="button"
                 onClick={handleImportPeer}
                 disabled={!importInput.trim()}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                size="sm"
               >
                 {st.add_trusted_peer}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => { setShowImportForm(false); setImportInput(''); setImportNotes(''); }}
-                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
+                variant="secondary"
+                size="sm"
               >
                 {st.cancel}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -235,16 +241,16 @@ export default function IdentitySettings() {
             {trustedPeers.map((peer) => (
               <div
                 key={peer.peer_id}
-                className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between"
+                className="rounded-modal border border-border bg-surface-1 p-3 flex items-center justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 typo-body text-foreground truncate">
                     {peer.trust_level === 'verified' ? (
-                      <TrustVerifiedIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      <TrustVerifiedIcon className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
                     ) : peer.trust_level === 'revoked' ? (
-                      <TrustRevokedIcon className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                      <TrustRevokedIcon className="w-3.5 h-3.5 text-status-error flex-shrink-0" />
                     ) : (
-                      <TrustUnknownIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                      <TrustUnknownIcon className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
                     )}
                     <span className="truncate">{peer.display_name}</span>
                   </div>
@@ -254,10 +260,10 @@ export default function IdentitySettings() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                    peer.trust_level === 'manual' ? 'bg-blue-500/10 text-blue-400' :
-                    peer.trust_level === 'verified' ? 'bg-green-500/10 text-green-400' :
-                    'bg-red-500/10 text-red-400'
+                  <span className={`typo-caption px-1.5 py-0.5 rounded-full ${
+                    peer.trust_level === 'manual' ? 'bg-status-info/10 text-status-info' :
+                    peer.trust_level === 'verified' ? 'bg-status-success/10 text-status-success' :
+                    'bg-status-error/10 text-status-error'
                   }`}>
                     {peer.trust_level}
                   </span>
@@ -267,14 +273,15 @@ export default function IdentitySettings() {
                       onConfirm={() => handleRevoke(peer.peer_id, peer.display_name)}
                     >
                       {({ requestConfirm }) => (
-                        <button
+                        <Button
                           type="button"
                           onClick={requestConfirm}
-                          title={t.sharing.revoke_trust}
-                          className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
+                          tooltip={t.sharing.revoke_trust} aria-label={t.sharing.revoke_trust}
+                          variant="ghost"
+                          size="icon-sm"
                         >
                           <TrustRevokedIcon className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       )}
                     </InlineConfirm>
                   )}
@@ -283,14 +290,15 @@ export default function IdentitySettings() {
                     onConfirm={() => handleDelete(peer.peer_id, peer.display_name)}
                   >
                     {({ requestConfirm }) => (
-                      <button
+                      <Button
                         type="button"
                         onClick={requestConfirm}
-                        title={t.sharing.remove_peer}
-                        className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors"
+                        tooltip={t.sharing.remove_peer} aria-label={t.sharing.remove_peer}
+                        variant="ghost"
+                        size="icon-sm"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     )}
                   </InlineConfirm>
                 </div>

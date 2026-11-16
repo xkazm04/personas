@@ -112,12 +112,12 @@ export default function GuideToolArc({
               animate={{ opacity: why ? 0.55 : 1, x, y, scale: 1 }}
               transition={{ type: 'spring', stiffness: 320, damping: 26, delay: 0.03 * i }}
               className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 shadow-elevation-3 ${
-                i === focus ? 'border-primary bg-secondary text-foreground' : 'border-border bg-background text-foreground/90'
+                i === focus ? 'border-primary bg-secondary text-foreground' : 'border-border bg-background text-ink-2'
               }`}
             >
               <Icon className="h-4 w-4 text-primary" />
               <span className="typo-title">{label[tool.id][0]}</span>
-              <kbd className="rounded-interactive border border-border px-1.5 font-mono text-xs text-foreground/90">{i + 1}</kbd>
+              <kbd className="rounded-interactive border border-border px-1.5 font-mono typo-caption text-ink-2">{i + 1}</kbd>
             </motion.button>
           );
         })}

@@ -92,7 +92,7 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
         <table className="w-full min-w-[46rem] border-collapse" data-testid="kpi-books-table">
           <caption className="sr-only">{o.books_caption}</caption>
           <thead>
-            <tr className="border-b border-primary/10">
+            <tr className="border-b border-hair">
               <Th className="w-8 text-left">{o.books_rank}</Th>
               <Th className="w-[34%] text-left">{altitude.project ? o.books_group : o.books_project}</Th>
               <Th className="text-right">{o.books_declared}</Th>
@@ -139,7 +139,7 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   // The same header token UnifiedTable uses, so this table and the app's
   // other tables have one header style.
-  return <th className={`pb-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground ${className}`}>{children}</th>;
+  return <th className={`pb-2 pr-3 typo-eyebrow text-ink-2 ${className}`}>{children}</th>;
 }
 
 function Td({ children }: { children: React.ReactNode }) {
@@ -154,7 +154,7 @@ function LedgerGhost() {
       {[0, 1, 2, 3, 4].map((i) => (
         <span
           key={i}
-          className="block h-10 rounded bg-primary/[0.06] animate-fade-in"
+          className="block h-10 rounded-interactive bg-surface-2 animate-fade-in"
           style={{ animationDelay: `${185 + i * 30}ms` }}
         />
       ))}

@@ -18,6 +18,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
 import type { HealthyConnector } from '@/features/agents/shared/quickConfig/useHealthyConnectors';
 import { ComposerBrandIcon } from './ComposerBrandIcon';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConnectorTableScopeRowProps {
   connector: HealthyConnector;
@@ -76,7 +78,7 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
   };
 
   return (
-    <div className="rounded-card border border-card-border/50 bg-secondary/15 px-3 py-2.5">
+    <div className="rounded-card border border-card-border/50 bg-surface-1 px-3 py-2.5">
       <div className="flex items-center gap-2.5">
         <div
           className="shrink-0 w-7 h-7 rounded-interactive flex items-center justify-center overflow-hidden"
@@ -86,76 +88,74 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
             <ComposerBrandIcon iconUrl={meta.iconUrl} color={meta.color} size={16} />
           ) : null}
         </div>
-        <span className="flex-1 min-w-0 truncate typo-body text-foreground">{meta.label}</span>
+        <span className="flex-1 min-w-0 truncate typo-body text-ink-1">{meta.label}</span>
         {/* All-tables toggle */}
-        <button
+        <Button
           type="button"
           onClick={() => setAll(!isAll)}
           role="checkbox"
           aria-checked={isAll}
-          className="inline-flex items-center gap-1.5 typo-caption text-foreground cursor-pointer"
+          variant="ghost"
+          size="sm"
         >
           <span
-            className={`w-4 h-4 rounded-[5px] border flex items-center justify-center transition-colors ${
-              isAll ? 'bg-primary border-primary' : 'border-card-border'
-            }`}
+          className={`w-4 h-4 rounded-[5px] border flex items-center justify-center transition-colors ${
+          isAll ? 'bg-primary border-primary' : 'border-card-border'
+          }`}
           >
-            {isAll && <Check className="w-3 h-3 text-foreground" strokeWidth={3} />}
+          {isAll && <Check className="w-3 h-3 text-ink-1" strokeWidth={3} />}
           </span>
           {t.agents.glyph_db_scope_all}
-        </button>
+        </Button>
       </div>
 
       {!isAll && (
         <div className="mt-2 pl-9">
           {loading ? (
-            <span role="status" className="typo-caption text-foreground">
+            <span role="status" className="typo-caption text-ink-2">
               {t.agents.glyph_db_scope_loading}
             </span>
           ) : error ? (
-            <button
-              type="button"
+            <Button
+              variant="link"
+              size="inline"
               onClick={() => void fetchTables(true)}
-              className="inline-flex items-center gap-1.5 typo-caption text-status-error cursor-pointer hover:underline"
+              className="typo-caption text-status-error"
             >
               <AlertCircle className="w-3.5 h-3.5" />
               {t.agents.glyph_db_scope_error}
               <RefreshCw className="w-3 h-3" />
-            </button>
+            </Button>
           ) : tableNames.length === 0 ? (
-            <span className="typo-caption text-foreground italic">{t.agents.glyph_db_scope_empty}</span>
+            <span className="typo-caption text-ink-2 italic">{t.agents.glyph_db_scope_empty}</span>
           ) : (
             <>
               <div className="flex flex-wrap gap-1.5">
                 {tables.map((tb) => {
                   const on = isTableOn(tb.table_name);
                   return (
-                    <button
-                      key={tb.table_name}
-                      type="button"
-                      onClick={() => toggleTable(tb.table_name)}
-                      role="checkbox"
-                      aria-checked={on}
-                      title={tb.display_label ?? tb.table_name}
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
-                        on
-                          ? 'border-primary/50 bg-primary/15 text-foreground'
-                          : 'border-card-border/50 text-foreground hover:bg-foreground/5'
-                      }`}
-                    >
-                      <span
+                    <Tooltip content={tb.display_label ?? tb.table_name}><Button
+  key={tb.table_name}
+  type="button"
+  onClick={() => toggleTable(tb.table_name)}
+  role="checkbox"
+  aria-checked={on}
+  variant={on ? 'secondary' : 'ghost'}
+  size="xs"
+>
+  <span
                         className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center ${
                           on ? 'bg-primary border-primary' : 'border-card-border'
                         }`}
                       >
-                        {on && <Check className="w-2.5 h-2.5 text-foreground" strokeWidth={3} />}
+                        {on && <Check className="w-2.5 h-2.5 text-ink-1" strokeWidth={3} />}
                       </span>
                       {tb.display_label ?? tb.table_name}
-                    </button>
+</Button></Tooltip>
                   );
                 })}
               </div>
-              <span className="mt-1.5 block typo-caption text-foreground">
+              <span className="mt-1.5 block typo-caption text-ink-2">
                 {tx(t.agents.glyph_db_scope_selected, {
                   count: selected.length === 0 ? tableNames.length : selected.length,
                   total: tableNames.length,

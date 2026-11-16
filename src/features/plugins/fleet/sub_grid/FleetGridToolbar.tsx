@@ -38,7 +38,7 @@ export function FleetGridToolbar(p: FleetGridToolbarProps) {
       {sessions.length > 0 && p.waitingCount === 0 && (
         <span
           data-testid="fleet-all-clear"
-          className="inline-flex items-center gap-1.5 rounded-card border border-status-success/25 bg-status-success/10 px-2.5 py-0.5 typo-caption text-status-success"
+          className="inline-flex items-center gap-1.5 rounded-card border border-hair bg-surface-1 px-2.5 py-0.5 typo-caption text-status-success"
         >
           <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
           {f.all_clear}

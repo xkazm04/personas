@@ -61,7 +61,7 @@ export function DialPlate({ top, width, stageH, name, serial, brief, rimCount, s
     >
       <span className="flex items-baseline gap-2 min-w-0">
         {width >= 200 && <span className="shrink-0" style={{ ...LETTERING, fontSize: 10, color: "var(--ink)" }}>{serial ? COPY.plate.serial(serial) : COPY.plate.schematic}</span>}
-        <span className="truncate typo-body text-foreground">{name}</span>
+        <span className="truncate typo-body text-ink-1">{name}</span>
         <span className="ml-auto shrink-0 typo-code">{COPY.plate.rim(rimCount)}</span>
       </span>
       {brief && (

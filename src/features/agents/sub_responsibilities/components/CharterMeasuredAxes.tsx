@@ -42,16 +42,16 @@ export function CharterMeasuredAxes({
       .filter(Boolean).join(' · ');
 
   return (
-    <div className="flex flex-col gap-1.5 border-t border-primary/10 pt-1.5" data-testid="resp-profile-axes" data-learning={learning ? 'true' : 'false'}>
+    <div className="flex flex-col gap-1.5 border-t border-hair pt-1.5" data-testid="resp-profile-axes" data-learning={learning ? 'true' : 'false'}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="typo-label text-foreground">{c.profile_axes_label}</span>
-        <span className="typo-caption text-foreground tabular-nums" data-testid="resp-profile-axes-runs">
+        <span className="typo-label text-ink-1">{c.profile_axes_label}</span>
+        <span className="typo-caption text-ink-2 tabular-nums" data-testid="resp-profile-axes-runs">
           {learning
             ? tx(c.profile_axes_learning, { count, total: formatNumeric(required, 'count', { language }) })
             : tx(c.profile_axes_runs, { count })}
         </span>
         {measured.dominant && (
-          <span className="typo-caption text-foreground">{tx(c.profile_axes_dominant, { axis: axes[measured.dominant] })}</span>
+          <span className="typo-caption text-ink-2">{tx(c.profile_axes_dominant, { axis: axes[measured.dominant] })}</span>
         )}
         {mismatch && (
           <span data-testid="resp-profile-axes-mismatch">

@@ -57,13 +57,13 @@ describe('resolvePeerConnectionState', () => {
 describe('PeerCard connection control', () => {
   it('offers Connect for a peer that dropped after a recorded connect', () => {
     renderCard(false, 'Connected');
-    expect(screen.getByTitle('connect')).toBeInTheDocument();
-    expect(screen.queryByTitle('disconnect')).toBeNull();
+    expect(screen.getByLabelText('connect')).toBeInTheDocument();
+    expect(screen.queryByLabelText('disconnect')).toBeNull();
   });
 
   it('offers Disconnect for a peer that linked up after a recorded failure', () => {
     renderCard(true, 'Failed');
-    expect(screen.getByTitle('disconnect')).toBeInTheDocument();
-    expect(screen.queryByTitle('connect')).toBeNull();
+    expect(screen.getByLabelText('disconnect')).toBeInTheDocument();
+    expect(screen.queryByLabelText('connect')).toBeNull();
   });
 });

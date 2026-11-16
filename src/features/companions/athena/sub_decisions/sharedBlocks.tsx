@@ -4,6 +4,8 @@ import EmptyState, {
   NoResults,
 } from '@/features/shared/components/feedback/ScenarioEmptyState';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Presentational fragments shared by the Decisions panel prototype
  * variants — scope banner, filter input, and loading/error/empty states.
@@ -21,25 +23,27 @@ export function ScopeBanner({
   const { t } = useTranslation();
   return (
     <div
-      className="flex items-start gap-2 rounded-card border border-fuchsia-500/30 bg-fuchsia-500/5 px-3 py-2"
+      className="flex items-start gap-2 rounded-card border border-hair-2 bg-surface-2 px-3 py-2"
       data-testid="companion-decisions-scope-banner"
     >
-      <Sparkles className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
+      <Sparkles className="w-4 h-4 text-ink-2 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <div className="typo-caption">
           {t.athena.decisions_panel_currently_designing}
         </div>
         <div className="typo-body text-foreground truncate">{intent}</div>
       </div>
-      <button
+      <Button
         type="button"
         onClick={onShowAll}
-        className="shrink-0 inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 rounded-interactive px-1.5 py-0.5 hover:bg-foreground/[0.06] focus-ring transition-colors"
         data-testid="companion-decisions-show-all"
+        variant="ghost"
+        size="sm"
+        className="shrink-0"
       >
         <X className="w-3 h-3" />
         {t.athena.decisions_panel_show_all}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -67,7 +71,7 @@ export function DecisionsFilterInput({
   );
 }
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 const GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-40', 'w-32', 'w-44'];
 
 /**
@@ -111,7 +115,7 @@ export function DecisionsGhostRows() {
 
 export function DecisionsErrorRow({ message }: { message: string }) {
   return (
-    <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+    <div className="rounded-card border border-status-error/30 bg-status-error/10 px-3 py-2 typo-caption text-status-error">
       {message}
     </div>
   );

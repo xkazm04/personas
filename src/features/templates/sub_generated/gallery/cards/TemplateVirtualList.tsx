@@ -131,7 +131,7 @@ export function TemplateVirtualList({
   // Sticky header — static chrome. Renders identically above ghost rows,
   // the settled-empty state, and real rows so no swap ever moves it.
   const header = (
-    <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'var(--background)' }}>
+    <div className="flex items-center border-b border-hair bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'var(--background)' }}>
       {density === 'comfortable' && <div className="w-20 px-4 py-3" />}
       <div className="flex-1 text-left typo-body text-foreground px-4 py-2">{t.templates.list.template_name}</div>
       <div className={`typo-body text-foreground px-4 py-2 flex-shrink-0 ${density === 'compact' ? 'w-32 text-center' : 'w-auto text-right'}`}>
@@ -236,7 +236,7 @@ export function TemplateVirtualList({
 
         {isFetchingMore && (
           <div className="flex items-center justify-center py-4">
-            <div className="w-4 h-4 border-2 border-primary/20 border-t-primary/60 rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-hair border-t-primary/60 rounded-full animate-spin" />
           </div>
         )}
       </div>
@@ -254,7 +254,7 @@ export function TemplateVirtualList({
 // arrives, playing the same cascade in the same geometry. No `animate-pulse`.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 /** Deterministic width variation so ghosts read as rows, not a barcode. */
 const GHOST_NAME_WIDTHS = ['w-48', 'w-40', 'w-56', 'w-36', 'w-44'];
 const GHOST_ROW_COUNT = 8;
@@ -269,7 +269,7 @@ function GalleryGhostRows({ density }: { density: Density }) {
         return density === 'compact' ? (
           <div
             key={i}
-            className="flex items-center gap-2 border-b border-primary/5 px-4 animate-fade-in"
+            className="flex items-center gap-2 border-b border-hair px-4 animate-fade-in"
             style={{ height: rowHeight, animationDelay: delay }}
           >
             <span className={`h-3 ${nameW} max-w-full ${GHOST_BAR}`} />
@@ -278,15 +278,15 @@ function GalleryGhostRows({ density }: { density: Density }) {
         ) : (
           <div
             key={i}
-            className="flex items-center border-b border-primary/5 animate-fade-in"
+            className="flex items-center border-b border-hair animate-fade-in"
             style={{ height: rowHeight, animationDelay: delay }}
           >
             <div className="w-20 px-4 flex-shrink-0 flex items-center">
-              <span className="w-4.5 h-4.5 rounded bg-primary/[0.06]" />
+              <span className="w-4.5 h-4.5 rounded-interactive bg-primary/[0.06]" />
             </div>
             <div className="flex-1 px-4 min-w-0 space-y-1.5">
               <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
-              <span className="block h-3 w-3/5 max-w-full rounded bg-primary/[0.04]" />
+              <span className="block h-3 w-3/5 max-w-full rounded-interactive bg-primary/[0.04]" />
               <span className="block h-2.5 w-24 rounded-full bg-primary/[0.04]" />
             </div>
             <div className="w-28 px-4 flex-shrink-0 flex justify-center">

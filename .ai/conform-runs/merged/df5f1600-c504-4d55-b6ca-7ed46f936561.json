@@ -1,0 +1,81 @@
+{
+ "schema": "conform-run/1",
+ "worker": "df5f1600-c504-4d55-b6ca-7ed46f936561",
+ "subject": "accessibility",
+ "evaluatedAt": "2026-11-08T00:23:47.491451+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "shared-components-layout",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:9 AsyncButton detects reduced motion with framer-motion's hook instead of the repo's single signal (useMotion.ts, which also reads the in-app Appearance toggle), so a user who turns on reduced motion in the app still gets AsyncButton's swap animation.",
+   "techniques": [
+    {
+     "technique": "preference-respect",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:9 Detects the preference ad hoc and skips the in-app override. FullScreenOverlay.tsx:24 imports the repo hook correctly."
+    },
+    {
+     "technique": "keyboard-navigation-models",
+     "verdict": "conformant",
+     "evidence": "src/features/shared/components/layout/SegmentedTabs.tsx:144 Roving tabindex with arrow-key handling inside a role=tablist. PanelTabBar does the same."
+    },
+    {
+     "technique": "primitive-level-a11y",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/buttons/Button.tsx:102 Button offers icon-only sizes (icon-xs to icon-lg, line 24), but nothing in the props requires an accessible name for them and there is no dev check, so nameless icon buttons compile."
+    },
+    {
+     "technique": "name-and-description-wiring",
+     "verdict": "conformant",
+     "evidence": "src/features/shared/components/buttons/CopyButton.tsx:79 The icon-only CopyButton is now named by aria-label, not by title alone. That part of the earlier verdict is fixed."
+    },
+    {
+     "technique": "live-region-architecture",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/buttons/CopyButton.tsx:136 The 'copied' result only swaps the visible label. Nothing in the file calls the announcer, so the result may never be spoken."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "accessibility",
+   "context": "shared-chrome",
+   "reason": "pair anchor refused: placeholder evidence at src/features/shared/chrome/CommandPalette.tsx:458"
+  },
+  {
+   "subject": "accessibility",
+   "context": "shared-components-forms",
+   "reason": "pair anchor refused: placeholder evidence at src/features/shared/components/forms/KeyValueEditor.tsx:169"
+  },
+  {
+   "subject": "accessibility",
+   "context": "cockpit-widget-tests",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-08T00:23:47.491451+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "keyboard-navigation-models",
+    "live-region-architecture",
+    "name-and-description-wiring",
+    "preference-respect",
+    "primitive-level-a11y"
+   ],
+   "deviations": 1,
+   "context": "shared-components-layout",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

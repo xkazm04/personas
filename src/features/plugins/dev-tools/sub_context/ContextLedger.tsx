@@ -35,6 +35,7 @@ import {
   useFilteredGroups,
   useMemberCounts,
 } from './contextMapPerf';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** One shared empty array, so a context with no features still hands the
  *  memoised row a referentially stable prop. */
@@ -107,16 +108,16 @@ export default function ContextLedger(props: ContextLedgerProps) {
           <Layers className="w-3.5 h-3.5 text-primary" />
           {t.uc_title}
           {cols.length > 0 && (
-            <span className="typo-caption text-foreground tabular-nums">({cols.length})</span>
+            <span className="typo-caption text-foreground num">({cols.length})</span>
           )}
         </h3>
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.context_search_placeholder}
-            className={`${INPUT_FIELD} !py-1 !pl-8 !text-sm`}
+            className={`${INPUT_FIELD} !py-1 !pl-8 !typo-body`}
             aria-label={t.context_search_placeholder}
           />
         </div>
@@ -127,7 +128,7 @@ export default function ContextLedger(props: ContextLedgerProps) {
 
       {/* inline new-group form — opened by the page's "+ Group" action */}
       {showNewGroup && (
-        <div className="animate-fade-slide-in mb-2 border border-primary/10 rounded-modal p-3 bg-primary/5 space-y-2.5">
+        <div className="animate-fade-slide-in mb-2 border border-hair rounded-modal p-3 bg-surface-1 space-y-2.5">
           <div className="flex items-center gap-2">
             <input
               value={newGroupName}
@@ -138,8 +139,7 @@ export default function ContextLedger(props: ContextLedgerProps) {
               autoFocus
             />
             <Button
-              variant="accent"
-              tone="warning"
+              variant="secondary"
               size="sm"
               disabled={!newGroupName.trim()}
               onClick={handleCreateGroup}
@@ -172,15 +172,15 @@ export default function ContextLedger(props: ContextLedgerProps) {
           secondaryAction={{ label: t.add_group, icon: Plus, onClick: () => onShowNewGroup(true) }}
         />
       ) : (
-      <div className="rounded-card border border-primary/10 overflow-auto min-h-0 flex-1">
+      <div className="rounded-card border border-hair overflow-auto min-h-0 flex-1">
         {/* column header — one clickable cell per use case */}
         <div
-          className="grid items-end gap-0 px-3 py-2 bg-secondary/20 border-b border-primary/10 sticky top-0 z-10 backdrop-blur"
+          className="grid items-end gap-0 px-3 py-2 bg-surface-1 border-b border-hair sticky top-0 z-10 backdrop-blur"
           style={{ gridTemplateColumns: gridTemplate }}
         >
-          <span className="typo-label text-foreground/60">{t.context_column_label}</span>
+          <span className="typo-label text-ink-2">{t.context_column_label}</span>
           {cols.length === 0 ? (
-            <span className="typo-caption text-foreground/40 pl-2">—</span>
+            <span className="typo-caption text-ink-3 pl-2">—</span>
           ) : (
             memberSets.map(({ uc }) => {
               const meta = kindMeta(uc.kind);
@@ -188,16 +188,14 @@ export default function ContextLedger(props: ContextLedgerProps) {
               const selected = uc.id === selectedUseCaseId;
               return (
                 <Tooltip key={uc.id} content={`${uc.name} · ${tx(t.uc_span_count, { count: uc.context_ids.length })}`}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectUseCase(selected ? null : uc.id)}
+                  <PressSurface
+                    onPress={() => onSelectUseCase(selected ? null : uc.id)}
                     aria-pressed={selected}
-                    className={`h-full flex items-start justify-center pt-0.5 rounded-t transition-colors ${
-                      selected ? 'bg-primary/15' : 'hover:bg-secondary/40'
-                    }`}
+                    className="h-full flex items-start justify-center pt-0.5 rounded-t"
+                    selected={selected}
                   >
                     <Icon className={`w-3.5 h-3.5 ${KIND_TEXT[meta.stem]}`} />
-                  </button>
+                  </PressSurface>
                 </Tooltip>
               );
             })
@@ -211,13 +209,13 @@ export default function ContextLedger(props: ContextLedgerProps) {
           const dot = colorDot(g.color);
           return (
             <div key={g.id} style={skipStyle(ledgerGroupHeight(g.contexts.length))}>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 border-b border-primary/5">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-1 border-b border-hair">
                 <span className={`w-2.5 h-2.5 rounded-full ${dot.bg}`} />
                 <span className="typo-title">{g.name}</span>
-                <span className="typo-caption text-foreground/50 tabular-nums">{g.contexts.length}</span>
+                <span className="typo-caption text-ink-3 num">{g.contexts.length}</span>
               </div>
 
-              <div className="divide-y divide-primary/5">
+              <div className="divide-y divide-hair">
                 {g.contexts.map((c) => (
                   <LedgerRow
                     key={c.id}
@@ -269,14 +267,14 @@ export default function ContextLedger(props: ContextLedgerProps) {
 // no animate-pulse, staggered fade-in per §C of the loading doctrine.
 function ContextLedgerGhost() {
   return (
-    <div className="rounded-card border border-primary/10 overflow-hidden" aria-hidden="true">
+    <div className="rounded-card border border-hair overflow-hidden" aria-hidden="true">
       {[0, 1].map((g) => (
         <div key={g}>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 border-b border-primary/5 animate-fade-in" style={{ animationDelay: `${120 + g * 70}ms` }}>
-            <span className="w-2.5 h-2.5 rounded-full bg-primary/[0.08]" />
-            <span className="h-3 w-24 rounded bg-primary/[0.06]" />
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-1 border-b border-hair animate-fade-in" style={{ animationDelay: `${120 + g * 70}ms` }}>
+            <span className="w-2.5 h-2.5 rounded-full bg-surface-2" />
+            <span className="h-3 w-24 rounded-interactive bg-surface-2" />
           </div>
-          <div className="divide-y divide-primary/5">
+          <div className="divide-y divide-hair">
             {[0, 1, 2].map((r) => {
               const i = g * 3 + r;
               return (
@@ -285,7 +283,7 @@ function ContextLedgerGhost() {
                   className="flex items-center gap-2.5 px-3 py-1.5 animate-fade-in"
                   style={{ animationDelay: `${120 + i * 35}ms` }}
                 >
-                  <span className={`h-2.5 rounded bg-primary/[0.06] ${['w-40', 'w-28', 'w-36', 'w-32', 'w-44', 'w-24'][i % 6]}`} />
+                  <span className={`h-2.5 rounded-interactive bg-surface-2 ${['w-40', 'w-28', 'w-36', 'w-32', 'w-44', 'w-24'][i % 6]}`} />
                 </div>
               );
             })}

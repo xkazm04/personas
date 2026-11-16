@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -49,12 +50,15 @@ export default function TeamMemoryPanel({
     try { await onLoadMore(); } finally { setLoadingMore(false); }
   }, [onLoadMore]);
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleCategoryChange = (cat: string) => {
+    // A pending search debounce closed over the PREVIOUS category and would
+    // fire after this click, re-filtering the list with the old chip.
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setActiveCategory(cat);
     onFilter(cat === 'all' ? undefined : cat, searchQuery || undefined);
   };
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
@@ -77,6 +81,9 @@ export default function TeamMemoryPanel({
   }, [onFilterByRun]);
 
   const handleClearAllFilters = useCallback(() => {
+    // Same stale-timer hazard: a debounced search typed just before the click
+    // would re-apply the search the user just cleared.
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setActiveCategory('all');
     setSearchQuery('');
     setActiveRunFilter(null);
@@ -90,7 +97,7 @@ export default function TeamMemoryPanel({
   // (resize handle, stored width, window drag listeners) went with the DAG
   // canvas; `TeamMemoryPane` is the only host and always passed `pane`.
   return (
-    <div className="h-full w-full max-w-xl flex flex-col rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden">
+    <div className="h-full w-full max-w-xl flex flex-col rounded-modal border border-hair bg-surface-1 overflow-hidden">
       <MemoryPanelHeader
         total={total}
         viewMode={viewMode}
@@ -136,11 +143,10 @@ export default function TeamMemoryPanel({
       </div>
 
       {stats && stats.total > 0 && (
-        <div className="border-t border-primary/10 px-3 py-2">
-          <button
-            type="button"
-            className="flex items-center justify-between w-full typo-body text-foreground hover:text-muted-foreground/70"
-            onClick={() => setStatsExpanded(!statsExpanded)}
+        <div className="border-t border-hair px-3 py-2">
+          <PressSurface
+            className="flex items-center justify-between w-full typo-body text-foreground hover:text-ink-2"
+            onPress={() => setStatsExpanded(!statsExpanded)}
           >
             {/* `getTeamMemoryStats(teamId, category, search)` takes no runId --
                 these stats, and the per-category counts under them, always
@@ -150,10 +156,10 @@ export default function TeamMemoryPanel({
                 the list it sat beneath. Say whose numbers they are. */}
             <span className="flex items-center gap-1.5 min-w-0">
               <span className="truncate">{tx(pt.avg_importance, { value: stats.avg_importance.toFixed(1), count: stats.category_counts.length })}</span>
-              {activeRunFilter && <span className="typo-caption text-foreground flex-shrink-0">{pt.stats_team_wide}</span>}
+              {activeRunFilter && <span className="typo-caption text-ink-2 flex-shrink-0">{pt.stats_team_wide}</span>}
             </span>
             {statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+          </PressSurface>
           {statsExpanded && (
             <div className="mt-1.5 space-y-0.5">
               {stats.category_counts.map(([cat, count]) => (

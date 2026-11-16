@@ -1,0 +1,112 @@
+{
+  "worker": "cloud-20261031-personas-9",
+  "evaluatedAt": "2026-10-31",
+  "pairs": [
+    {
+      "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:51 the deadline-before-sleep ordering claim still compares indexOf('POLL_DEADLINE'), a bare identifier, so a later `let deadline = started + POLL_DEADLINE` above a check moved after the sleep keeps the test green while the budget it computes is wrong.",
+      "techniques": [
+        {"technique": "pin-the-call-not-the-name", "verdict": "deviation", "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:51 ordering rests on the bare identifier `POLL_DEADLINE`, not a needle prose cannot spell such as `elapsed() >= POLL_DEADLINE` (the decision rule: an ordering claim never rests on a bare identifier)."},
+        {"technique": "unreached-decisions-pin-nothing", "verdict": "realized", "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:46 the backend budget is read from the real Rust source (`HTTP_TIMEOUT` in http_clients.rs) at run time rather than a copied constant, so the parity claim reaches the decision it names."}
+      ],
+      "registryProposal": ""
+    },
+    {
+      "context": "cd7e7cc7-cc5b-44a1-9bff-76b34af21966",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust side is a hand-copied literal list (:30) and the file never reads twin.rs, so a Rust-only change to VALID_CHANNELS stays green - the claim the file makes is the one it does not pin.",
+      "techniques": [
+        {"technique": "unreached-decisions-pin-nothing", "verdict": "deviation", "evidence": "src/api/__tests__/enums.test.ts:30 `RUST_VALID_CHANNELS` is a literal copy, so mutating the Rust decision the header (:15) names cannot reach the assertion; the decision rule says a file's claim is settled by mutating the decision it names."},
+        {"technique": "pin-the-call-not-the-name", "verdict": "deviation", "evidence": "src/api/__tests__/enums.test.ts:30 no structural pin over src-tauri/src/commands/infrastructure/twin.rs exists at all; sibling parity tests in this repo (src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:46) show the read-the-source shape is available."}
+      ],
+      "registryProposal": ""
+    },
+    {
+      "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:65 the prior deviation is fixed (each metric kind must now render a distinct label), and no new deviation was found in the files read, but only 3 of 25 techniques are anchored - below the conformant evidence floor of 13.",
+      "techniques": [
+        {"technique": "unreached-decisions-pin-nothing", "verdict": "realized", "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:65 asserts the four kinds produce four distinct labels, so collapsing kinds onto `custom` now fails."},
+        {"technique": "pin-the-call-not-the-name", "verdict": "realized", "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:61 every source walk declares a floor (a matcher that finds nothing fails), and :24 strips line comments so a kind named only in prose never counts."},
+        {"technique": "negative-control-tests", "verdict": "unread", "evidence": "src/features/home/sub_cockpit/widgets/__tests__/malformedConfig.test.tsx:32 a not.toThrow assertion over malformed configs; whether a recorded mutation proved it can fail was not checked."}
+      ],
+      "registryProposal": ""
+    },
+    {
+      "context": "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "src-tauri/src/commands/contest/node.rs:541 the real-instrument contract test still drives contest.mjs against a temp project and fails rather than skips under CI (:524), but only 3 of 25 techniques are anchored in this context, below the conformant floor of 13, so the prior conformant verdict cannot be re-issued on this evidence.",
+      "techniques": [
+        {"technique": "assert-through-the-reader", "verdict": "realized", "evidence": "src-tauri/src/commands/contest/node.rs:541 the async test runs init/plan/status/collect through the real contest.mjs reader and asserts what it reads back from the record.json Personas wrote."},
+        {"technique": "negative-control-tests", "verdict": "realized", "evidence": "src-tauri/src/commands/contest/node.rs:536 asserts the missing-prerequisite path is an error under CI and a skip elsewhere, so the contract test cannot silently skip in the lane that must run it."},
+        {"technique": "isolation-lanes", "verdict": "realized", "evidence": "src-tauri/src/commands/contest/driver.rs:1161 each test arena is a private tempdir discarded whole, so sidecar tests share no state."}
+      ],
+      "registryProposal": ""
+    },
+    {
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 the test-bridge seeder still flips the persona_executions row to 'completed' with a raw UPDATE after creating it through the repo, so the seeded run skips the product's status-transition door and can hold a state the product could never write.",
+      "techniques": [
+        {"technique": "fixture-economics", "verdict": "deviation", "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 raw `UPDATE persona_executions SET status = 'completed'` bypasses the write path with no assertion afterwards that the seeded row satisfies the door's invariants (seeded-data honesty)."}
+      ],
+      "registryProposal": ""
+    },
+    {
+      "context": "6da794b4-7a5f-4087-a4d4-fb8a416456e5",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged (:827) loops, finds none and passes without asserting anything - a green result over a population the decision never fired on, published as a pass.",
+      "techniques": [
+        {"technique": "unreached-decisions-pin-nothing", "verdict": "deviation", "evidence": "src-tauri/src/commands/eval_runs.rs:827 the test reports ok with zero engagement; the decision rule requires engagement published beside the verdict (no-difference over an unengaged population is blindness) and a test name that does not overstate."}
+      ],
+      "registryProposal": ""
+    },
+    {
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "tests/playwright/athena-conversation.spec.ts:110 a missing tab-memory testid past the polling deadline still adds a warn annotation and returns, so the live-app spec reports green over an assertion it never reached.",
+      "techniques": [
+        {"technique": "live-app-harness", "verdict": "deviation", "evidence": "tests/playwright/athena-conversation.spec.ts:110 a broken test-identifier contract is converted into a passing test with an annotation instead of a failure (failure must be spelled differently from empty success)."},
+        {"technique": "pin-the-call-not-the-name", "verdict": "realized", "evidence": "tests/playwright/__tests__/selector-contract.test.ts:7 a static, two-sided contract requires every literal testid the specs query to be emitted by src/, which is the interim pin for specs no CI lane runs."}
+      ],
+      "registryProposal": ""
+    },
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "src-tauri/db/src/lib.rs:2463 init_test_db still copies a once-per-process migrated template with a usability probe, which realizes fixture-economics, but only 2 of 25 techniques are anchored for this context (and lib.rs is outside its file list), below the conformant floor of 13.",
+      "techniques": [
+        {"technique": "fixture-economics", "verdict": "realized", "evidence": "src-tauri/db/src/lib.rs:2473 copies the template per test; :2343 drops the builder handle before the first copy; :2487 probes the copy before handoff; :2333 removes a stale template from a crashed run."},
+        {"technique": "isolation-lanes", "verdict": "realized", "evidence": "src-tauri/db/src/repos/dev/lens_scan_tests.rs:5 each foreign-store fixture is a throwaway SQLite file per test, removed on drop."}
+      ],
+      "registryProposal": "The conformant floor (half of 25 techniques, 13 distinct anchors) is effectively unreachable for a narrow context such as one command module or one repo layer, because most test-harness techniques (history-driven-partitioning, flake-lifecycle, long-lane-certification, context-starved-executor, far-side-oracle) are properties of the harness, not of a context. Consider a per-technique scope field (harness-wide vs per-suite) so a context is judged only against the techniques that can be realized inside it."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-31T00:00:00Z",
+      "bundle": "software-engineering",
+      "subjects": ["test-harness"],
+      "techniques": ["pin-the-call-not-the-name", "unreached-decisions-pin-nothing", "fixture-economics", "live-app-harness", "negative-control-tests", "assert-through-the-reader", "isolation-lanes"],
+      "deviations": 5
+    }
+  ]
+}

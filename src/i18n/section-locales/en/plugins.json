@@ -3193,7 +3193,7 @@
     "cross_project_map_btn": "Cross-Project Map",
     "new_project": "New Project",
     "select_or_create": "Select a project below or create a new one.",
-    "all_projects": "All Projects (",
+    "all_projects": "All Projects",
     "no_projects_yet": "No projects yet",
     "create_first_project": "Create First Project",
     "tech_stack": "Tech Stack",
@@ -3335,7 +3335,7 @@
   "dev_runner": {
     "self_healing": "Self-Healing",
     "auto_heal": "Auto-heal",
-    "heal_all": "Heal All (",
+    "heal_all": "Heal All",
     "fp_test_failure_label": "Test Failure",
     "fp_test_failure_action": "Re-scan affected context and regenerate implementation with test constraints",
     "fp_build_error_label": "Build Error",

@@ -14,6 +14,7 @@
 // panels at all. The Cockpit died partly because one hallucinated spec was
 // saved forever with no way out. Per project, one click, gone.
 import { useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { motion } from 'framer-motion';
 import { RotateCcw, X } from 'lucide-react';
 
@@ -62,39 +63,25 @@ export function AthenaPanel({ target, panel, projectName, dispatchTarget, onClos
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.2, ease: 'linear' }}
-      className="absolute top-0 right-0 bottom-0 w-[380px] max-w-full z-30 bg-secondary/95 backdrop-blur-sm border-l border-primary/15 shadow-elevation-4 overflow-y-auto"
+      className="absolute top-0 right-0 bottom-0 w-[380px] max-w-full z-30 bg-secondary/95 backdrop-blur-sm border-l border-hair shadow-elevation-4 overflow-y-auto"
       data-testid="mm-athena-panel"
     >
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 bg-secondary/95 border-b border-primary/10">
+      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 bg-secondary/95 border-b border-hair">
         <div className="min-w-0">
-          <span className="block typo-label text-foreground/90 truncate">{projectName}</span>
+          <span className="block typo-label text-ink-2 truncate">{projectName}</span>
           {panel.composedAt && (
-            <span className="flex items-center gap-1 typo-caption text-foreground">
+            <span className="flex items-center gap-1 typo-caption text-ink-2">
               {t.mastermind.athena_panel_composed}
               <RelativeTime timestamp={panel.composedAt} />
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setConfirmReset(true)}
-          title={t.mastermind.athena_panel_reset}
-          aria-label={t.mastermind.athena_panel_reset}
-          className="ml-auto p-1 rounded-interactive text-foreground hover:bg-primary/10 transition-colors focus-ring"
-          data-testid="mm-athena-panel-reset"
-        >
+        <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={() => setConfirmReset(true)} tooltip={t.mastermind.athena_panel_reset} aria-label={t.mastermind.athena_panel_reset} data-testid="mm-athena-panel-reset">
           <RotateCcw className="w-4 h-4" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          title={t.mastermind.athena_panel_close}
-          aria-label={t.mastermind.athena_panel_close}
-          className="p-1 rounded-interactive text-foreground hover:bg-primary/10 transition-colors focus-ring"
-          data-testid="mm-athena-panel-close"
-        >
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={onClose} tooltip={t.mastermind.athena_panel_close} aria-label={t.mastermind.athena_panel_close} data-testid="mm-athena-panel-close">
           <X className="w-4 h-4" aria-hidden />
-        </button>
+        </Button>
       </div>
 
       <div className="px-4 py-3">
@@ -106,9 +93,9 @@ export function AthenaPanel({ target, panel, projectName, dispatchTarget, onClos
           />
         ) : (
           // Degrade to a plain, resettable note — never a permanent error box.
-          <div className="rounded-card border border-primary/10 bg-secondary/20 p-4" data-testid="mm-athena-panel-empty">
-            <p className="typo-body text-foreground/90">{t.mastermind.athena_panel_unreadable}</p>
-            <p className="typo-caption text-foreground mt-1">{t.mastermind.athena_panel_unreadable_hint}</p>
+          <div className="rounded-card border border-hair bg-surface-1 p-4" data-testid="mm-athena-panel-empty">
+            <p className="typo-body text-ink-2">{t.mastermind.athena_panel_unreadable}</p>
+            <p className="typo-caption text-ink-2 mt-1">{t.mastermind.athena_panel_unreadable_hint}</p>
           </div>
         )}
       </div>

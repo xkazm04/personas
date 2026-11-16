@@ -151,4 +151,22 @@ describe('NumberStepper', () => {
     fireEvent.click(inc(), { detail: 1 });
     expect(field().value).toBe('15');
   });
+
+  it('shows the stepped value while the field is focused (ArrowUp, held +)', () => {
+    render(<Harness initial={10} step={2} />);
+    fireEvent.focus(field());
+    fireEvent.keyDown(field(), { key: 'ArrowUp' });
+    expect(field().value).toBe('12');
+    fireEvent.pointerDown(inc());
+    fireEvent.pointerUp(inc());
+    expect(field().value).toBe('14');
+  });
+
+  it('shows the clamped value after Enter while still focused', () => {
+    render(<Harness initial={10} min={1} max={50} />);
+    fireEvent.focus(field());
+    fireEvent.change(field(), { target: { value: '999' } });
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(field().value).toBe('50');
+  });
 });

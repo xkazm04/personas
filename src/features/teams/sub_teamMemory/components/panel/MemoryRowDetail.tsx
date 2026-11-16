@@ -1,4 +1,6 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -48,26 +50,26 @@ export default function MemoryRowDetail({
   }, [id, editTitle, editContent, editCategory, editImportance, onSave]);
 
   return (
-    <div className="px-2.5 py-2 rounded-modal border border-violet-500/25 bg-violet-500/5 space-y-1.5">
+    <div className="px-2.5 py-2 rounded-modal border border-role-agent/25 bg-role-agent/5 space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="typo-body text-violet-400">{pt.edit_memory_title}</span>
+        <span className="typo-body text-role-agent">{pt.edit_memory_title}</span>
         <div className="flex items-center gap-1">
           <Tooltip content={t.common.save}>
-            <button type="button" onClick={handleSave} className="p-1 rounded-card hover:bg-emerald-500/15 text-emerald-400" aria-label={t.common.save}>
+            <Button variant="ghost" size="icon-sm" onClick={handleSave} aria-label={t.common.save}>
               <Check className="w-3 h-3" />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content={t.common.cancel}>
-            <button type="button" onClick={onCancel} className="p-1 rounded-card hover:bg-primary/10 text-foreground" aria-label={t.common.cancel}>
+            <Button variant="ghost" size="icon-sm" onClick={onCancel} aria-label={t.common.cancel}>
               <X className="w-3 h-3" />
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>
 
       <input
         ref={titleRef}
-        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30"
+        className="w-full typo-body bg-secondary/60 border border-hair rounded-card px-2 py-1 text-ink-2 placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/30"
         value={editTitle}
         onChange={(e) => setEditTitle(e.target.value)}
         placeholder={pt.title_placeholder}
@@ -75,7 +77,7 @@ export default function MemoryRowDetail({
       />
 
       <textarea
-        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 resize-none"
+        className="w-full typo-body bg-secondary/60 border border-hair rounded-card px-2 py-1 text-ink-2 placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/30 resize-none"
         value={editContent}
         onChange={(e) => setEditContent(e.target.value)}
         placeholder={pt.content_placeholder}
@@ -92,34 +94,27 @@ export default function MemoryRowDetail({
             if (picked) setEditCategory(picked);
           }}
           renderTrigger={({ isOpen, toggle }) => (
-            <button
-              type="button"
-              onClick={toggle}
-              aria-label={pt.category_label}
-              className="inline-flex items-center gap-1 typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-0.5 text-foreground hover:border-primary/20 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
-            >
-              {tokenLabel(t, 'memory_category', editCategory)}
-              <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <Button variant="secondary" size="xs" onClick={toggle} aria-label={pt.category_label} iconRight={<ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}>
+{tokenLabel(t, 'memory_category', editCategory)}
+</Button>
           )}
         >
           {({ close, focusIndex }) => (
             <div className="py-1 bg-secondary/95">
               {CATEGORIES.map((c, idx) => (
-                <button
+                <PressSurface
                   key={c}
-                  type="button"
                   role="option"
                   aria-selected={editCategory === c}
-                  onClick={() => { setEditCategory(c); close(); }}
-                  className={`w-full text-left px-2 py-1 typo-body transition-colors ${
+                  onPress={() => { setEditCategory(c); close(); }}
+                  className={`w-full  px-2 py-1 typo-body  ${
                     idx === focusIndex || editCategory === c
                       ? 'bg-primary/10 text-foreground'
-                      : 'text-foreground/80 hover:bg-primary/5'
+                      : 'text-ink-2 hover:bg-surface-2'
                   }`}
                 >
                   {tokenLabel(t, 'memory_category', c)}
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}

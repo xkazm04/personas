@@ -223,7 +223,7 @@ export default function WebviewPage() {
   return (
     <ContentBox data-testid="webview-page">
       <ContentHeader
-        icon={<Globe className="w-4 h-4 text-sky-400" />}
+        icon={<Globe className="w-4 h-4 text-role-external" />}
         iconColor="sky"
         title={v.title}
         subtitle={v.subtitle}

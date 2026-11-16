@@ -19,7 +19,7 @@ export function TwinEmptyState({ icon: Icon, title }: { icon: LucideIcon; title:
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Icon className="w-5 h-5 text-violet-400" />}
+        icon={<Icon className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={title}
         subtitle={t.emptyState.subtitle}

@@ -46,7 +46,12 @@ import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useHydratedDesignResult } from './useHydratedDesignResult';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface ChronologyAdoptionViewProps {
@@ -940,6 +945,45 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (nextAuto) setAutoDetectedIds(nextAuto);
   }, [adoptionQuestions, dynamicOptions, adoptionAnswers, autoDetectedIds, hasAdoptionQuestions]);
 
+  // The answers reach test_build_draft and promote only through this save: on a
+  // rejected write build_sessions.adoption_answers stays empty and the test runs
+  // on template placeholders. So the failure is the person's to see and retry,
+  // and the adjust and auto-test effects below hold until the save lands. The
+  // hold is a ref as well as state: those effects run in the same commit as the
+  // effect that starts the save, when state still reads the old value.
+  const answerSaveHeldRef = useRef(false);
+  const answerSaveLatest = useRef(createLatestWins()).current;
+  const lastAnswerSaveRef = useRef<{ sessionId: string; json: string } | null>(null);
+  // The rejection, not its copy: resolved at render, so persistAnswers stays
+  // stable. It is a dep of the save effect, and t changes when a locale section
+  // loads, which would otherwise write the answers again.
+  const [answerSaveError, setAnswerSaveError] = useState<{ cause: unknown } | null>(null);
+  const [answerSaveEpoch, setAnswerSaveEpoch] = useState(0);
+
+  const persistAnswers = useCallback((sessionId: string, json: string) => {
+    answerSaveHeldRef.current = true;
+    lastAnswerSaveRef.current = { sessionId, json };
+    const token = answerSaveLatest.next();
+    setAnswerSaveError(null);
+    saveAdoptionAnswers(sessionId, json).then(
+      () => {
+        if (!answerSaveLatest.isCurrent(token)) return;
+        answerSaveHeldRef.current = false;
+        setAnswerSaveEpoch((n) => n + 1);
+      },
+      (err: unknown) => {
+        silentCatch("ChronologyAdoptionView:persistAdoptionAnswers")(err);
+        if (!answerSaveLatest.isCurrent(token)) return;
+        setAnswerSaveError({ cause: err });
+      },
+    );
+  }, [answerSaveLatest]);
+
+  const retryAnswerSave = useCallback(() => {
+    const last = lastAnswerSaveRef.current;
+    if (last) persistAnswers(last.sessionId, last.json);
+  }, [persistAnswers]);
+
   // When questions are completed, store answers in the build draft and transition to draft_ready.
   // Adoption sessions are pre-designed templates — they don't have active LLM build tasks,
   // so we skip the refinement call and apply answers directly as parameter overrides.
@@ -993,11 +1037,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         // field today; the matrix preview already reflects the filter).
         selected_use_case_ids: showUseCasePicker ? [...selectedUseCaseIds] : null,
       };
-      void saveAdoptionAnswers(sessionId, JSON.stringify(payload)).catch(
-        silentCatch("ChronologyAdoptionView:persistAdoptionAnswers"),
-      );
+      persistAnswers(sessionId, JSON.stringify(payload));
     }
-  }, [questionsComplete, seeded, adoptionAnswers, filteredAdoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
+  }, [questionsComplete, seeded, adoptionAnswers, filteredAdoptionQuestions, selectedUseCaseIds, showUseCasePicker, persistAnswers]);
 
   // Seed the matrix cells from the template — deferred until questionnaire is completed
   // (if one exists). This prevents creating a draft persona when the user might
@@ -1211,6 +1253,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (hasFilteredQuestions && !questionsComplete) return;
     if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
     if (build.buildError) return;
+    if (answerSaveHeldRef.current) return;
     if (adjustedPersonaId === personaId || adjustingRef.current) return;
     const sessionId = adoptionSessionIdRef.current;
     if (!sessionId) return;
@@ -1236,7 +1279,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         setAdjustedPersonaId(personaId);
       }
     })();
-  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId]);
+  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId, answerSaveEpoch]);
 
   useEffect(() => {
     if (!seeded || !personaId) return;
@@ -1245,12 +1288,13 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (hasFilteredQuestions && !questionsComplete) return;
     if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
     if (build.buildError) return;
+    if (answerSaveHeldRef.current) return;
     // Wait for the always-on adjustment pass to finish so the test/promote run
     // against the specialized IR.
     if (adjustedPersonaId !== personaId) return;
     autoTestedRef.current = personaId;
     void lifecycle.handleStartTest();
-  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId, lifecycle]);
+  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId, lifecycle, answerSaveEpoch]);
   useEffect(() => {
     if (!seeded || !personaId) return;
     // Terminal phases: end the process activity
@@ -1373,15 +1417,25 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     ],
   );
 
+  // The hold covers the manual Test button too: it would run the same placeholders.
+  const startTestUnlessHeld = useCallback(() => {
+    if (answerSaveHeldRef.current) return;
+    return lifecycle.handleStartTest();
+  }, [lifecycle]);
+
   // Discard the current draft persona and close the adoption modal.
   // Shown as "Delete Draft" in the Command Hub when tests are skipped/failed
   // and the user wants to abandon the adoption rather than retry or approve.
+  // Asks first, as the X route does: the button sits beside retry and refine.
+  const [deleteDraftAsked, setDeleteDraftAsked] = useState(false);
   const handleDeleteDraft = useCallback(() => {
+    setDeleteDraftAsked(false);
     const agent = useAgentStore.getState();
     const sys = useSystemStore.getState();
-    // Fire-and-forget cleanup — UI closes immediately either way
+    // The UI closes immediately either way; a failed delete leaves a stray
+    // agent behind, so it says so.
     if (personaId) {
-      void agent.deletePersona(personaId).catch(silentCatch("ChronologyAdoptionView:deleteDraftCleanup"));
+      void agent.deletePersona(personaId).catch(toastCatch("ChronologyAdoptionView:deleteDraftCleanup"));
     }
     agent.resetBuildSession();
     void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
@@ -1395,7 +1449,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
   const handleViewAgent = useCallback(() => {
-    if (!personaId) return;
+    if (!personaId || fadeOut) return; // a second click during the fade must not fire onPersonaCreated twice
 
     setFadeOut(true);
     setTimeout(() => {
@@ -1419,7 +1473,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       // so they don't have to guess from created_at ordering.
       onPersonaCreated(personaId);
     }, 400);
-  }, [personaId, onPersonaCreated]);
+  }, [personaId, fadeOut, onPersonaCreated]);
 
   // Auto-redirect after promotion (matches UnifiedBuildEntry behavior)
   const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
@@ -1525,19 +1579,20 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           // it is injected rather than changed in place.
           <div
             role="alert"
-            className="mx-4 mt-2 flex items-center justify-between gap-3 px-3 py-2 rounded-modal border border-amber-500/25 bg-amber-500/10"
+            className="mx-4 mt-2 flex items-center justify-between gap-3 px-3 py-2 rounded-modal border border-status-warning/25 bg-status-warning/10"
           >
-            <span className="typo-body text-amber-200">
+            <span className="typo-body text-status-warning">
               {t.templates.adopt_modal.capabilities_load_failed}
             </span>
-            <button
+            <Button
               type="button"
               onClick={retryHydration}
-              className="focus-ring inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal border border-amber-500/30 typo-body text-amber-200 hover:bg-amber-500/15 transition-colors"
+              variant="secondary"
+              size="xs"
+              icon={<RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />}
             >
-              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               {t.templates.adopt_modal.retry}
-            </button>
+            </Button>
           </div>
         )}
         {/* Composition x-ray — shows the template as mentality + catalog
@@ -1567,6 +1622,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       {/* Build / test / promote phases live INSIDE the Persona Layout shell —
           Persona Sigil hero + capability rows + phase-aware controls below,
           the same screen the user just configured. */}
+      {answerSaveError && (
+        <InlineErrorBanner compact className="mb-2 flex-shrink-0" message={inlineErrorCopy(t, answerSaveError.cause)} onRetry={retryAnswerSave} />
+      )}
       <PersonaLayoutBuild
         buildPhase={build.buildPhase}
         completeness={build.completeness}
@@ -1575,11 +1633,11 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         cellStates={build.cellStates}
         pendingQuestions={build.pendingQuestions}
         onAnswerBuildQuestion={build.handleAnswer}
-        onStartTest={lifecycle.handleStartTest}
+        onStartTest={startTestUnlessHeld}
         onApproveTest={lifecycle.handlePromote}
         onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
         onRejectTest={lifecycle.handleRejectTest}
-        onDeleteDraft={handleDeleteDraft}
+        onDeleteDraft={() => setDeleteDraftAsked(true)}
         onRefine={lifecycle.handleRefine}
         onViewAgent={handleViewAgent}
         templateName={templateName}
@@ -1593,6 +1651,17 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           original PersonaMatrix variant; keep the callbacks live for build
           flow even though no surface currently invokes them. */}
       {void (handleApplyEdits || handleDiscardEdits)}
+
+      <ConfirmDestructiveModal
+        open={deleteDraftAsked}
+        config={deleteDraftAsked ? {
+          title: t.templates.adopt_modal.discard_title,
+          message: t.templates.adopt_modal.discard_body,
+          confirmLabel: t.templates.adopt_modal.discard_confirm,
+          onConfirm: handleDeleteDraft,
+          onCancel: () => setDeleteDraftAsked(false),
+        } : null}
+      />
 
       {/* Note: questionnaire is rendered inline in the !seeded branch above.
           Once seeded === true the user has already submitted, so no need

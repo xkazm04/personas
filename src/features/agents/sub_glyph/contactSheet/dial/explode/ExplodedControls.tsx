@@ -36,8 +36,8 @@ export function ExplodedControls({ dim, label, desc, value, isCompose, item, row
     title: COPY.fan.sections.what,
     node: (
       <>
-        {desc && <p className="typo-body-lg text-foreground">{desc}</p>}
-        {isCompose && !quick && <p className="typo-body text-foreground">{dim === "task" ? COPY.fan.preLaunch : COPY.fan.later}</p>}
+        {desc && <p className="typo-body-lg text-ink-1">{desc}</p>}
+        {isCompose && !quick && <p className="typo-body text-ink-1">{dim === "task" ? COPY.fan.preLaunch : COPY.fan.later}</p>}
       </>
     ),
   });

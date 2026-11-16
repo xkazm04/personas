@@ -30,7 +30,7 @@ export function ProseBody({ item, lead, children }: { item: DecisionItem; lead?:
   const caseBody = <MarkdownRenderer content={item.body} className="typo-body-lg text-foreground" />;
   const reasoning = item.reasoning?.trim() ? <MarkdownRenderer content={item.reasoning} className="typo-body text-foreground" /> : null;
   const evidence = item.evidence
-    ? <pre className="au-well whitespace-pre-wrap break-words rounded-card px-4 py-3 typo-code text-foreground">{item.evidence}</pre>
+    ? <pre className="au-well whitespace-pre-wrap break-words rounded-card px-4 py-3 typo-code text-ink-2">{item.evidence}</pre>
     : null;
 
   return (

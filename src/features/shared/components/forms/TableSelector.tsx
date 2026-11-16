@@ -79,6 +79,7 @@ export function TableSelector({
             disabled={loading}
             className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/40 disabled:opacity-40 transition-colors"
             title="Refresh"
+            aria-label={t.common.refresh}
           >
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           </button>

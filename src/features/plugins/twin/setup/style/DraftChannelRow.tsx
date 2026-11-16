@@ -29,7 +29,7 @@ function firstExample(raw: string | null | undefined): string | null {
 function Part({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <p className="typo-caption uppercase tracking-[0.14em]">{label}</p>
+      <p className="typo-eyebrow">{label}</p>
       {children}
     </div>
   );
@@ -50,7 +50,7 @@ export function DraftChannelRow({ draft, current, checked, onToggle }: DraftChan
           type="checkbox"
           checked={checked}
           onChange={() => onToggle(draft.channel)}
-          className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded border-primary/30 bg-secondary/30 accent-primary"
+          className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded-interactive border-primary/30 bg-secondary/30 accent-primary"
         />
         <span className="typo-title">{tx(ts.applyTo, { channel: draft.channel })}</span>
       </label>

@@ -36,6 +36,7 @@ import { resolveDirectorSurface } from './directorSurface';
 import type { DirectorRosterEntry } from '@/api/director';
 import { lazyRetry } from '@/lib/lazyRetry';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 // The deep parts of the tab load as their own chunks. The two modals load on
 // their first open and stay mounted after it (so their close animation plays);
 // the campaign report and the watched pipelines sit below the coaching table
@@ -185,12 +186,11 @@ export default function DirectorCoachingTab() {
       <ContentHeader
         icon={
           <span className="relative inline-flex items-center justify-center">
-            <span aria-hidden className="absolute -inset-2 rounded-full bg-violet-500/30 blur-md animate-glow-breathe motion-reduce:hidden" />
             <span className="relative inline-flex">
               {d.director ? (
                 <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-5 h-5" />
               ) : (
-                <Clapperboard className="w-5 h-5 text-violet-300" />
+                <Clapperboard className="w-5 h-5 text-ink-2" />
               )}
             </span>
           </span>
@@ -272,7 +272,7 @@ export default function DirectorCoachingTab() {
                 <PeriodSelect value={d.period ?? p.periodDays} onChange={d.setPeriod} />
                 {p.avgScore != null && (
                   <span className="inline-flex items-center gap-1.5">
-                    <Star className="w-3.5 h-3.5 text-violet-300" />
+                    <Star className="w-3.5 h-3.5 text-ink-2" />
                     {t.director.kpi_avg_score}
                     <Numeric value={p.avgScore} precision={1} className="text-foreground font-medium tabular-nums" />
                   </span>
@@ -285,22 +285,24 @@ export default function DirectorCoachingTab() {
                 )}
                 {d.lastReport && <BatchOutcomeLine outcome={describeBatchOutcome(d.lastReport)} />}
                 {openReviewCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => useOverviewStore.getState().setOverviewTab('manual-review')}
-                    title={t.director.open_reviews_hint}
-                    className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded"
-                    data-testid="director-open-reviews"
-                  >
-                    <Inbox className="w-3.5 h-3.5 text-amber-400" />
-                    {tx(t.director.open_reviews, { count: openReviewCount })}
-                  </button>
+                  <Tooltip content={t.director.open_reviews_hint}>
+                    <Button
+                      type="button"
+                      onClick={() => useOverviewStore.getState().setOverviewTab('manual-review')}
+                      data-testid="director-open-reviews"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <Inbox className="w-3.5 h-3.5 text-status-warning" />
+                      {tx(t.director.open_reviews, { count: openReviewCount })}
+                    </Button>
+                  </Tooltip>
                 )}
               </div>
               {/* Memory toggle */}
               {d.vaultConfigured ? (
                 <div className="flex items-center gap-2 shrink-0">
-                  <Brain className={`w-3.5 h-3.5 ${d.brainEnabled ? 'text-violet-300' : 'text-foreground'}`} />
+                  <Brain className={`w-3.5 h-3.5 ${d.brainEnabled ? 'text-ink-2' : 'text-foreground'}`} />
                   <span className="typo-caption text-foreground">{t.director.brain_title}</span>
                   <AccessibleToggle
                     checked={d.brainEnabled}
@@ -310,16 +312,19 @@ export default function DirectorCoachingTab() {
                   />
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={openBrain}
-                  className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors shrink-0"
-                  title={t.director.brain_unavailable}
-                >
-                  <Brain className="w-3.5 h-3.5" />
-                  {t.director.brain_title}
-                  <ExternalLink className="w-3 h-3" />
-                </button>
+                <Tooltip content={t.director.brain_unavailable}>
+                  <Button
+                    type="button"
+                    onClick={openBrain}
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    <Brain className="w-3.5 h-3.5" />
+                    {t.director.brain_title}
+                    <ExternalLink className="w-3 h-3" />
+                  </Button>
+                </Tooltip>
               )}
             </div>
 
@@ -453,9 +458,11 @@ function Scorecard({
                 const runPct = (m.executions / maxModelRuns) * 100;
                 const valuePct = m.executions > 0 ? (m.valueDelivered / m.executions) * 100 : 0;
                 return (
-                  <div key={m.model} className="grid grid-cols-[1.6fr_auto_auto_auto] items-center gap-3 px-1.5 py-1 rounded">
+                  <div key={m.model} className="grid grid-cols-[1.6fr_auto_auto_auto] items-center gap-3 px-1.5 py-1 rounded-interactive">
                     <div className="min-w-0">
-                      <div className="typo-caption text-foreground truncate" title={m.model}>{m.model}</div>
+                      <Tooltip content={m.model}>
+                        <div className="typo-caption text-foreground truncate" >{m.model}</div>
+                      </Tooltip>
                       <div className="mt-1 h-1.5 rounded-pill bg-secondary/60 overflow-hidden" style={{ width: `${Math.max(runPct, 8)}%` }}>
                         <div className="h-full rounded-pill" style={{ width: `${valuePct}%`, background: 'var(--status-success)' }} />
                       </div>
@@ -493,7 +500,7 @@ function Scorecard({
  * root delay. No pulse — the entrance stagger is the only motion.
  */
 function DirectorScorecardPlaceholder() {
-  const bar = 'bg-primary/[0.06] rounded';
+  const bar = 'bg-surface-2 rounded-interactive';
   /** Absolute delay for a section, `stepMs` past the root's own 150ms gate. */
   const delayOf = (stepMs: number) => `${150 + stepMs}ms`;
   return (

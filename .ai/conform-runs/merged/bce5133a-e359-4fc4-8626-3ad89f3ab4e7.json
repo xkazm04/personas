@@ -1,0 +1,121 @@
+{
+ "schema": "conform-run/1",
+ "worker": "bce5133a-e359-4fc4-8626-3ad89f3ab4e7",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T03:08:11.036388+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "site-whitelist-management",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/browser/__tests__/pendingApproval.test.ts:5 The suite's payload is a hand copy that names the wrong producer: useDecisionQueue.ts no longer builds approval payloads (its created_at sites build message_attention payloads), and the real producer is rosterDecisions.ts:111-115, which no test reaches. So if rosterDecisions stops emitting `params` as a JSON string, pendingBrowserTabId returns null for every browser approval and the suite stays green.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/browser/__tests__/pendingApproval.test.ts:5 The file claims the producer's exact shape but holds a hand-built JSON.stringify copy (:6-7). The real producer, rosterDecisions.ts:111, is never driven, so changing the value only at the crossing goes uncaught."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "deviation",
+     "evidence": "src/features/browser/__tests__/structure.test.ts:42 Bare-identifier needle over an unstripped haystack (read() at :20 does not strip comments). A comment or a declaration that renders nothing satisfies it, so the 'failed tab list is not painted as empty state' claim rests on a name, not a call."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/features/browser/whitelist/__tests__/useWhitelistActions.remove.test.tsx:30 Module-level mocks are reset before each test, so the true and false delete answers do not leak between cases."
+    }
+   ]
+  },
+  {
+   "context": "notepad-tests",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/notepad/__tests__/noteSuggestions.test.ts:21 The note_suggestions wire is hand-built JSON on both sides: Rust json! in note_suggestions.rs:86-100 is pinned only by its own literal test (note_suggestions.rs:671), and this suite parses a TS-authored copy of the keys. Rename body_md or row_id in Rust config(), updating the Rust test too, and parseNoteSuggestionRows drops every row (that is what it is designed to do) while this suite stays green. Each side pins its own copy, and the header (:14-16) calls this parse the type check.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/notepad/__tests__/noteSuggestions.test.ts:21 An untyped crossing (strings marshalled across processes) tested only against a hand fixture. The sibling notepadCapParity reads the Rust source; this file does not."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/__tests__/notepadCapParity.test.ts:15 The cap-parity gate records both mutations used to prove it fails in each direction."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/__tests__/notepadCapParity.test.ts:23 The needle is the full declaration shape, which prose cannot write by accident, and a miss throws (:24)."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/__tests__/notepadStore.test.ts:111 The singleton store, rows, localStorage and IPC mocks are reset per test in beforeEach."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/__tests__/notepadStore.test.ts:104 Debounced save timing is driven on a faked clock, not by wall time."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "api-bridge-tests",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "shared-components-layout",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "i18n-generated",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T03:08:11.036388+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "isolation-lanes",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "site-whitelist-management",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T03:08:11.036388+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "isolation-lanes",
+    "negative-control-tests",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "notepad-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

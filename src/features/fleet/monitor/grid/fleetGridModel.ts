@@ -48,9 +48,9 @@ export interface SquareVisual {
 
 export const SQUARE_VISUAL: Record<SquareState, SquareVisual> = {
   running:   { box: 'bg-primary/20 border-primary/55',          text: 'text-primary',         accent: 'bg-primary',      pulse: true },
-  failed:    { box: 'bg-red-500/20 border-red-500/55',          text: 'text-red-200',         accent: 'bg-red-400',      pulse: false },
-  attention: { box: 'bg-amber-500/20 border-amber-500/50',      text: 'text-amber-100',       accent: 'bg-amber-400',    pulse: false },
-  idle:      { box: 'bg-foreground/[0.05] border-foreground/12', text: 'text-foreground/45',  accent: 'bg-foreground/30', pulse: false },
+  failed:    { box: 'bg-status-error/20 border-status-error/55',          text: 'text-status-error',         accent: 'bg-status-error',      pulse: false },
+  attention: { box: 'bg-status-warning/20 border-status-warning/50',      text: 'text-status-warning',       accent: 'bg-status-warning',    pulse: false },
+  idle:      { box: 'bg-foreground/[0.05] border-foreground/12', text: 'text-ink-3',  accent: 'bg-foreground/30', pulse: false },
 };
 
 /** Display order + label key for the legend (urgency-first). */

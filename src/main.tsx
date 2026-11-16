@@ -21,6 +21,8 @@ import { isLocaleCode, type LocaleCode } from "./i18n/locales.manifest";
 import { sectionsForRoute } from "./i18n/routeSections";
 import { isOnboardingCompletedPersisted } from "./stores/slices/system/onboardingSlice";
 import type { SidebarSection } from "./lib/types/types";
+import "@fontsource-variable/inter/opsz.css";
+import "@fontsource-variable/jetbrains-mono/wght.css";
 import "./styles/globals.css";
 import { silentCatch } from '@/lib/silentCatch';
 import { ensureAppDataDir } from '@/lib/icons/customIconStore';

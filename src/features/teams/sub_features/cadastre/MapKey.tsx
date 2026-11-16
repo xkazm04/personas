@@ -1,6 +1,7 @@
 // The key under the map: one swatch per standing with its count, and the lens
 // key at the right. Hovering a swatch lights its parcels; the three that are
 // also filters (at your gate, in trouble, unclaimed) filter on click.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { TFeatures } from '../featuresModel';
 import { PARCEL_CATS, type CadFilter, type ParcelCat } from './cadastreModel';
 import { catLabel } from './ParcelTip';
@@ -22,20 +23,19 @@ export function MapKey({ counts, onHover, onFilter, t, tx }: MapKeyProps) {
         const label = catLabel(c, t);
         const asFilter = AS_FILTER[c];
         return (
-          <button
+          <PressSurface
             key={c}
-            type="button"
             className="k"
             data-cat={c}
             aria-label={tx(t.cadastre_key_item, { count: counts[c], label })}
             onMouseEnter={() => onHover(c)}
             onFocus={() => onHover(c)}
-            onClick={asFilter ? () => onFilter(asFilter) : undefined}
+            onPress={() => { if (asFilter) onFilter(asFilter); }}
           >
             <i className={`sw f-${c}`} aria-hidden="true" />
             <b>{counts[c]}</b>
             <span className="kl">{label}</span>
-          </button>
+          </PressSurface>
         );
       })}
       <span className="sp">

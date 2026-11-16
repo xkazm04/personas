@@ -76,12 +76,12 @@ export function avatarTint(m: LiveMessage): string {
 }
 
 const NON_PERSONA_ICON: Partial<Record<LiveMessage['kind'], { Icon: LucideIcon; color: string }>> = {
-  athena: { Icon: Sparkles, color: 'text-violet-300' },
-  director: { Icon: Compass, color: 'text-sky-300' },
-  directive: { Icon: User, color: 'text-emerald-400' },
+  athena: { Icon: Sparkles, color: 'text-role-agent' },
+  director: { Icon: Compass, color: 'text-status-info' },
+  directive: { Icon: User, color: 'text-status-success' },
   // Being in this map is also what stops `hasPersona` from firing for a Slack
   // row — whose `personaId` is a Slack user id, not a persona.
-  slack: { Icon: Hash, color: 'text-teal-300' },
+  slack: { Icon: Hash, color: 'text-status-success' },
 };
 
 const SIZE_CLASS = { xs: 'w-5 h-5', sm: 'w-7 h-7', md: 'w-8 h-8' } as const;
@@ -154,8 +154,8 @@ export function liveMessageType(m: LiveMessage): LiveMessageType {
  *  no information is lost. Shared by every pop-up presentation. */
 export const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string }> = {
   decision: { Icon: Scale, cls: 'text-status-warning' },
-  directive: { Icon: User, cls: 'text-emerald-400' },
-  channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
+  directive: { Icon: User, cls: 'text-status-success' },
+  channel: { Icon: MessagesSquare, cls: 'text-ink-2' },
 };
 
 /** How long a pop-up lives from arrival, while the operator is not holding the

@@ -72,24 +72,24 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
               <div className="relative flex items-center justify-center">
                 {isActive && (
                   <div
-                    className="animate-fade-in absolute w-7 h-7 rounded-full bg-violet-500/20"
+                    className="animate-fade-in absolute w-7 h-7 rounded-full bg-role-agent/20"
                   />
                 )}
                 <div
                   className={`animate-fade-in w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-300 ${
                     isActive
-                      ? 'bg-violet-500/30 border border-violet-400/50'
+                      ? 'bg-role-agent/30 border border-role-agent/50'
                       : isCompleted
-                        ? 'bg-emerald-500/20 border border-emerald-400/40'
-                        : 'bg-secondary/40 border border-primary/10'
+                        ? 'bg-status-success/20 border border-status-success/40'
+                        : 'bg-surface-2 border border-hair'
                   }`}
                 >
                   {isCompleted ? (
-                    <Check className="w-3 h-3 text-emerald-400" strokeWidth={3} />
+                    <Check className="w-3 h-3 text-status-success" strokeWidth={3} />
                   ) : (
                     <Icon
                       className={`w-3 h-3 ${
-                        isActive ? 'text-violet-300' : 'text-foreground'
+                        isActive ? 'text-role-agent' : 'text-foreground'
                       }`}
                     />
                   )}
@@ -104,9 +104,9 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                 <span
                   className={`typo-body truncate transition-colors duration-300 block ${
                     isActive
-                      ? 'text-violet-300'
+                      ? 'text-role-agent'
                       : isCompleted
-                        ? 'text-emerald-400/70'
+                        ? 'text-status-success/70'
                         : 'text-foreground'
                   }`}
                 >
@@ -129,7 +129,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
               <div className="flex-1 h-px mx-1.5 min-w-4">
                 <div
                   className={`h-full rounded-full transition-colors duration-300 ${
-                    i < activeIndex ? 'bg-emerald-400/40' : 'bg-secondary/25'
+                    i < activeIndex ? 'bg-status-success/40' : 'bg-surface-1'
                   }`}
                 />
               </div>

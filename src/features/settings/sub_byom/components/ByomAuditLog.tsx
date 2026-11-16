@@ -10,10 +10,10 @@ const VIRTUALIZE_THRESHOLD = 25;
 const SCROLL_HEIGHT_PX = 480;
 
 const STATUS_CLASSES: Record<string, string> = {
-  completed: 'bg-emerald-500/15 text-emerald-400',
-  failed: 'bg-red-500/15 text-red-400',
+  completed: 'bg-status-success/15 text-status-success',
+  failed: 'bg-status-error/15 text-status-error',
 };
-const STATUS_DEFAULT = 'bg-secondary/50 text-foreground';
+const STATUS_DEFAULT = 'bg-surface-2 text-foreground';
 
 // Eight columns. The two rule columns sit between the model and the persona
 // because they are the DECISION the row records - which routing rule picked
@@ -55,7 +55,7 @@ const AuditRow = memo(function AuditRow({ entry, failoverLabel, style }: AuditRo
   return (
     <div
       role="row"
-      className="grid items-center border-b border-primary/5 hover:bg-secondary/20"
+      className="grid items-center border-b border-hair hover:bg-surface-1"
       style={{ ...style, gridTemplateColumns: GRID_COLS }}
     >
       <div role="cell" className="p-2.5 min-w-0 flex items-center gap-1.5">
@@ -63,7 +63,7 @@ const AuditRow = memo(function AuditRow({ entry, failoverLabel, style }: AuditRo
           {ENGINE_LABELS[entry.engine_kind] || entry.engine_kind}
         </span>
         {entry.was_failover && (
-          <span className="typo-caption shrink-0 px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">
+          <span className="typo-caption shrink-0 px-1.5 py-0.5 text-status-warning">
             {failoverLabel}
           </span>
         )}
@@ -120,7 +120,7 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-hair bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.audit_title} />
         <p className="typo-body text-foreground">
           {s.audit_hint}
@@ -133,11 +133,11 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
         ) : (
           <div
             role="table"
-            className="border border-primary/10 rounded-card overflow-hidden typo-body"
+            className="border border-hair rounded-card overflow-hidden typo-body"
           >
             <div
               role="row"
-              className="grid border-b border-primary/10 bg-secondary/30"
+              className="grid border-b border-hair bg-surface-1"
               style={{ gridTemplateColumns: GRID_COLS }}
             >
               <div role="columnheader" className="text-left p-2.5 text-foreground">{s.audit_provider}</div>

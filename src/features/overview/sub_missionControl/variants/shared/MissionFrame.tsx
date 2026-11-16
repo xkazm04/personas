@@ -14,7 +14,6 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { DashboardRangeSwitch } from '@/features/overview/components/dashboard/widgets/DashboardRangeSwitch';
@@ -52,7 +51,6 @@ export function MissionFrame({ children, testId }: { children: ReactNode; testId
 
   return (
     <ContentBox data-testid={testId}>
-      <HeroMesh preset="dashboard" />
       <ContentHeader
         title={t.overview.dashboard.mission_control_eyebrow}
         subtitle={`${greeting}, ${displayName}`}

@@ -28,6 +28,9 @@ import { navigateToAthenaSetup } from './athenaRoutes';
 import { VoiceControlPopover } from './VoiceControlPopover';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 /**
  * Right-edge sidebar with three groups:
  *
@@ -218,17 +221,18 @@ export function AthenaToolbar(props: {
       {/* Minimize / expand handle — a vertically-centered arrow tab straddling
           the toolbar's inner edge. Replaces the old header compact button.
           ◀ collapses the panel to compact width; ▶ expands it back. */}
-      {dock === 'panel' && <button
-        type="button"
-        onClick={onToggleCompact}
-        data-testid="companion-toggle-compact"
-        aria-pressed={compact}
-        aria-label={compact ? t.athena.compact_toggle_expand : t.athena.compact_toggle_collapse}
-        title={compact ? t.athena.compact_toggle_expand : t.athena.compact_toggle_collapse}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
-      >
-        {compact ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-      </button>}
+      {dock === 'panel' && <Tooltip content={compact ? t.athena.compact_toggle_expand : t.athena.compact_toggle_collapse}>
+        <button
+          type="button"
+          onClick={onToggleCompact}
+          data-testid="companion-toggle-compact"
+          aria-pressed={compact}
+          aria-label={compact ? t.athena.compact_toggle_expand : t.athena.compact_toggle_collapse}
+          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
+        >
+          {compact ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+        </button>
+      </Tooltip>}
 
       {/* Plugins group — single Dev Tools toggle */}
       <PluginToggleButton
@@ -384,22 +388,19 @@ function ToolbarButton({
   testId?: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      data-testid={testId}
-      className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
-        active
-          ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
-          : 'text-foreground hover:text-foreground hover:bg-foreground/5'
-      }`}
-      aria-label={label}
-      title={label}
-      aria-pressed={active}
-    >
-      {icon}
-    </button>
+    <Tooltip content={label}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onClick}
+        disabled={disabled}
+        data-testid={testId}
+        aria-label={label}
+        pressed={active}
+      >
+        {icon}
+      </Button>
+    </Tooltip>
   );
 }
 
@@ -424,29 +425,21 @@ function PluginToggleButton({
   testId?: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-testid={testId}
-      data-companion-plugin-enabled={enabled ? 'true' : 'false'}
-      className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-all focus-ring ${
-        enabled
-          ? 'bg-primary/25 text-primary ring-1 ring-primary/60'
-          : 'text-foreground hover:text-foreground hover:bg-foreground/5'
-      }`}
-      // Themed glow that tracks the active theme's primary, instead of the
-      // old hardcoded blue rgba that was off-brand on every non-blue theme.
-      style={
-        enabled
-          ? { boxShadow: '0 0 10px color-mix(in srgb, var(--primary) 40%, transparent)' }
-          : undefined
-      }
-      aria-label={label}
-      title={label}
-      aria-pressed={enabled}
-    >
-      {icon}
-    </button>
+    <Tooltip content={label}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onClick}
+        data-testid={testId}
+        data-companion-plugin-enabled={enabled ? 'true' : 'false'}
+        // Themed glow that tracks the active theme's primary, instead of the
+        // old hardcoded blue rgba that was off-brand on every non-blue theme.
+        aria-label={label}
+        pressed={enabled}
+      >
+        {icon}
+      </Button>
+    </Tooltip>
   );
 }
 
@@ -512,55 +505,55 @@ function ConnectorIconButton({
 
   return (
     <div ref={wrapRef} className="relative">
-      <button
-        type="button"
-        onClick={onToggle}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          setMenuOpen(true);
-        }}
-        data-testid={`companion-connector-${name}`}
-        data-companion-connector-enabled={enabled ? 'true' : 'false'}
-        className={`w-9 h-9 rounded-full inline-flex items-center justify-center border-2 transition-all focus-ring overflow-hidden ${
-          enabled
-            ? 'bg-foreground/20 text-foreground'
-            : 'bg-foreground/8 hover:bg-foreground/15'
-        }`}
-        style={{ ...enabledStyle, ...ringStyle }}
-        aria-label={`${meta.label} (${
-          enabled
-            ? t.athena.connector_state_enabled
-            : t.athena.connector_state_disabled
-        })`}
-        title={`${meta.label} — ${
+      <Tooltip content={`${meta.label} — ${
           enabled
             ? t.athena.connector_action_disable
             : t.athena.connector_action_enable
-        } · ${t.athena.connector_right_click_menu_hint}`}
-        aria-pressed={enabled}
-      >
-        {meta.iconUrl ? (
-          <ComposerBrandIcon iconUrl={meta.iconUrl} color={meta.color} size={20} />
-        ) : (
-          <meta.Icon className="w-5 h-5" style={{ color: meta.color }} />
-        )}
-      </button>
+        } · ${t.athena.connector_right_click_menu_hint}`}>
+        <button
+          type="button"
+          onClick={onToggle}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setMenuOpen(true);
+          }}
+          data-testid={`companion-connector-${name}`}
+          data-companion-connector-enabled={enabled ? 'true' : 'false'}
+          className={`w-9 h-9 rounded-full inline-flex items-center justify-center border-2 transition-all focus-ring overflow-hidden ${
+            enabled
+              ? 'bg-foreground/20 text-foreground'
+              : 'bg-foreground/8 hover:bg-foreground/15'
+          }`}
+          style={{ ...enabledStyle, ...ringStyle }}
+          aria-label={`${meta.label} (${
+            enabled
+              ? t.athena.connector_state_enabled
+              : t.athena.connector_state_disabled
+          })`}
+          aria-pressed={enabled}
+        >
+          {meta.iconUrl ? (
+            <ComposerBrandIcon iconUrl={meta.iconUrl} color={meta.color} size={20} />
+          ) : (
+            <meta.Icon className="w-5 h-5" style={{ color: meta.color }} />
+          )}
+        </button>
+      </Tooltip>
       {menuOpen && (
         <div
           className={`absolute ${menuSide === 'right' ? 'left-9' : 'right-9'} top-0 z-50 min-w-[160px] rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3 py-1`}
           role="menu"
         >
-          <button
-            type="button"
-            onClick={() => {
+          <PressSurface
+            onPress={() => {
               setMenuOpen(false);
               onRemove();
             }}
-            className="w-full text-left px-3 py-1.5 typo-caption text-foreground/85 hover:bg-foreground/5 focus-ring"
             role="menuitem"
+            className="w-full px-3 py-1.5 typo-caption text-ink-2"
           >
             {t.athena.connectors_remove_from_sidebar}
-          </button>
+          </PressSurface>
         </div>
       )}
     </div>

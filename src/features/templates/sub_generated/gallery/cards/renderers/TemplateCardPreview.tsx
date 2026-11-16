@@ -41,12 +41,12 @@ export function TemplateCardPreview({
           animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
           exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 8, scale: 0.98 }}
           transition={TRANSITION_NORMAL}
-          className="absolute top-0 left-full ml-2 z-40 w-[320px] max-h-[400px] overflow-y-auto rounded-modal border border-primary/15 bg-background/95 backdrop-blur-sm shadow-elevation-4 hidden md:block"
+          className="absolute top-0 left-full ml-2 z-40 w-[320px] max-h-[400px] overflow-y-auto rounded-modal border border-hair bg-background/95 backdrop-blur-sm shadow-elevation-4 hidden md:block"
         >
           <div className={`${CARD_PADDING.standard} space-y-4`}>
             {/* Full Description */}
             <div>
-              <h4 className="typo-heading text-foreground/90 mb-1.5">
+              <h4 className="typo-heading text-ink-1 mb-1.5">
                 {name}
               </h4>
               <p className="typo-body text-foreground">
@@ -61,7 +61,7 @@ export function TemplateCardPreview({
                 <div className="space-y-2">
                   {displayFlows.map((flow) => (
                     <div key={flow.id} className="flex items-start gap-2">
-                      <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0 mt-0.5" />
+                      <CircleDot className="w-3 h-3 text-role-agent/60 flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
                         <span className="typo-body text-foreground">
                           {flow.name}
@@ -92,7 +92,7 @@ export function TemplateCardPreview({
                     return (
                       <div key={c} className="flex items-center gap-2">
                         <div
-                          className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                          className="w-5 h-5 rounded-interactive flex items-center justify-center flex-shrink-0"
                           style={{ backgroundColor: `${meta.color}18` }}
                         >
                           <ConnectorIcon meta={meta} size="w-3 h-3" />
@@ -101,7 +101,7 @@ export function TemplateCardPreview({
                           {meta.label}
                         </span>
                         {health === 'ready' ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70 flex-shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-status-success/70 flex-shrink-0" />
                         ) : health === 'missing' ? (
                           <XCircle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
                         ) : (

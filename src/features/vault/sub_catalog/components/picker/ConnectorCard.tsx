@@ -58,12 +58,12 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
   const { shouldAnimate } = useMotion();
 
   const ringClass = isOwned
-    ? 'ring-1 ring-inset ring-emerald-500/40'
-    : 'ring-1 ring-inset ring-primary/40';
+    ? 'ring-1 ring-inset ring-hair-2'
+    : 'ring-1 ring-inset ring-hair';
 
   const bgClass = isOwned
-    ? 'bg-emerald-500/8 hover:bg-emerald-500/15'
-    : 'bg-secondary/25 hover:bg-secondary/50';
+    ? 'bg-surface-2 hover:bg-sel'
+    : 'bg-surface-1 hover:bg-surface-2';
 
   return (
     <motion.button
@@ -93,7 +93,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
           <motion.span
             variants={badgeStrong}
             data-testid={`catalog-connector-new-${connector.name}`}
-            className="absolute -top-1.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-semibold uppercase tracking-wide bg-violet-500/15 border-violet-500/30 text-violet-300"
+            className="absolute -top-1.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-eyebrow text-role-agent"
           >
             <Sparkles className="w-2.5 h-2.5" />
             {ps.new_connector_ribbon}
@@ -124,7 +124,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
       {isDesktopBridge(connector) && (
         <motion.span
           variants={badgeStrong}
-          className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-medium bg-orange-500/10 border-orange-500/20 text-orange-400"
+          className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-label text-status-warning"
         >
           <Monitor className="w-2.5 h-2.5" />
           {ps.desktop_bridge_badge}
@@ -141,7 +141,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
         >
           <motion.span
             variants={badgeStrong}
-            className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-medium bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+            className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-label text-status-success"
           >
             <BadgeCheck className="w-2.5 h-2.5" />
             {recipeIndicator.usageCount > 0 ? recipeIndicator.usageCount : ps.recipe_cached}
@@ -165,7 +165,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
         {/* Owned/ready cue — a shape+text signal, not color alone (the emerald ring is reinforcement). */}
         {isOwned && (
           <span className="absolute -bottom-1 -right-1 inline-flex items-center justify-center rounded-full bg-background ring-2 ring-background">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+            <CheckCircle2 className="w-4 h-4 text-status-success" aria-hidden="true" />
             <span className="sr-only">{t.common.connected}</span>
           </span>
         )}
@@ -174,7 +174,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
       {/* Label — 2-line clamp keeps card height stable whether label is 1 or 2 lines */}
       <motion.span
         variants={labelVariants}
-        className="typo-heading text-foreground/90 w-full line-clamp-2 min-h-[2rem] flex items-center justify-center px-1"
+        className="typo-heading text-ink-1 w-full line-clamp-2 min-h-[2rem] flex items-center justify-center px-1"
       >
         {connector.label}
       </motion.span>

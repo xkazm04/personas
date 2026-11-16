@@ -1,0 +1,103 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d5fd826c-7224-4efb-ae2d-d7489d83c886",
+ "subject": "agent-cli-transport",
+ "evaluatedAt": "2026-11-07T23:29:42.458264+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "engine-project-tracking",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:598 The hourly pulse consolidator runs a pure text-to-JSON turn (generate seam) over notes the prompt itself labels UNTRUSTED, yet spawns the CLI with full tool access and no deny list. It also inherits the whole host environment, so an injected note runs against an agent that can use every tool and see every app secret.",
+   "techniques": [
+    {
+     "technique": "permission-stance-enforcement",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:598 A generate-mode call should hold no tool grants. Instead it gets the widest stance, and defends with prompt delimiters ('asked it nicely'). The empty scratch cwd removes only ambient CLAUDE.md/hooks."
+    },
+    {
+     "technique": "subscription-auth-selection",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/runner/mod.rs:2386 Persona executions (connector/web content) use the non-scrubbed spawn, which inherits the full host env incl. PERSONAS_API_KEY set at boot (finalize.rs:52). spawn_scrubbed exists (cli_process.rs) but is opt-in and used only for drive.mjs. The consolidator's own Command::new at consolidator.rs:425 inherits the env the same way. Billing strip itself is right (see output note)."
+    },
+    {
+     "technique": "output-normalization",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:493 Concatenates every assistant text block and never reads the result event's is_error/subtype. Failure is a bare non-zero exit plus stderr (line 528), not a typed outcome. Stdout/stderr are kept separate (good)."
+    }
+   ]
+  },
+  {
+   "context": "commands-credentials",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:455 The earlier not-applicable verdict is wrong. spawn_claude_and_collect is a second, hand-rolled Claude CLI spawn door used by credential design, the negotiator and the auto-credential browser. That browser drives Playwright over arbitrary third-party web pages (auto_cred_browser.rs:609) while the child inherits the full host environment, so untrusted page content runs next to every app secret.",
+   "techniques": [
+    {
+     "technique": "subscription-auth-selection",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:455 No env_clear/allowlist for a child reading untrusted web content. The billing strip IS applied last (line 482, force_subscription_auth), but at a call site whose own comment records that it was once missing there."
+    },
+    {
+     "technique": "output-normalization",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:547 Non-JSON stdout lines are appended into the answer text (stream noise poisons the parse). The result event's is_error/subtype is not read. Failure is the last stderr line (line 611), not a typed outcome. Stdin write errors are discarded."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-cli-transport",
+   "context": "agents-deployment",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "hooks-execution",
+   "reason": "evidence leans on core/src/types.rs, which is not a tracked file"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "persona-build-matrix",
+   "reason": "evidence leans on build_session/runner.rs, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-07T23:29:42.458264+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [
+    "output-normalization",
+    "permission-stance-enforcement",
+    "subscription-auth-selection"
+   ],
+   "deviations": 1,
+   "context": "engine-project-tracking",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T23:29:42.458264+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [
+    "output-normalization",
+    "subscription-auth-selection"
+   ],
+   "deviations": 1,
+   "context": "commands-credentials",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

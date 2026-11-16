@@ -3,6 +3,7 @@
 // run, else its open item with the top score; `lensMvps` decides). A sweep
 // judges every unit through every lens, so this strip is where a lens whose
 // best finding scored below the cut still shows its best finding.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { LevelBadge } from '@/features/plugins/dev-tools/constants/ideaBadges';
 import { TruncateWithTooltip } from '@/features/shared/components/display/TruncateWithTooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -26,7 +27,7 @@ export function LensMvpStrip({
   if (mvps.length === 0) return null;
   return (
     <section aria-label={r.backlog_mvps_title} className="flex flex-col gap-1.5">
-      <h3 className="typo-label text-foreground">{r.backlog_mvps_title}</h3>
+      <h3 className="typo-label text-ink-2">{r.backlog_mvps_title}</h3>
       <ul className="flex gap-2 overflow-x-auto pb-1">
         {mvps.map((m) => (
           <li key={m.lens ?? m.id} className="shrink-0 w-64">
@@ -44,10 +45,9 @@ function MvpCard({ idea, onOpen }: { idea: BacklogIdea; onOpen: (row: BacklogIde
   return (
     // A whole-card press target: one local element, the documented exception
     // to `raw-button-element` (the shared Button has no class merge).
-    <button
-      type="button"
-      onClick={(e) => { e.stopPropagation(); onOpen(idea); }}
-      className="w-full text-left flex flex-col gap-1.5 rounded-card border border-primary/15 bg-secondary/20 p-2.5 hover:bg-primary/5 transition-colors"
+    <PressSurface
+      onPress={(e) => { e.stopPropagation(); onOpen(idea); }}
+      className="w-full flex flex-col gap-1.5 rounded-card border border-hair bg-surface-1 p-2.5"
     >
       <span className="flex items-center justify-between gap-2 min-w-0">
         <span className="typo-caption text-primary truncate">{idea.lens}</span>
@@ -59,6 +59,6 @@ function MvpCard({ idea, onOpen }: { idea: BacklogIdea; onOpen: (row: BacklogIde
         <LevelBadge label={r.backlog_effort} value={idea.effort} />
         <LevelBadge label={r.backlog_risk} value={idea.risk} />
       </span>
-    </button>
+    </PressSurface>
   );
 }

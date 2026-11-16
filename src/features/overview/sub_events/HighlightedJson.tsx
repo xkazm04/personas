@@ -11,13 +11,13 @@ function colorizeJson(json: string): React.ReactNode[] {
   while ((match = TOKEN_RE.exec(json)) !== null) {
     if (match.index > last) nodes.push(json.slice(last, match.index));
     if (match[1]) {
-      nodes.push(<span key={key++} className="text-sky-400">{match[1]}</span>, ':');
+      nodes.push(<span key={key++} className="text-role-external">{match[1]}</span>, ':');
     } else if (match[2]) {
-      nodes.push(<span key={key++} className="text-emerald-400">{match[2]}</span>);
+      nodes.push(<span key={key++} className="text-status-success">{match[2]}</span>);
     } else if (match[3]) {
-      nodes.push(<span key={key++} className="text-amber-400">{match[3]}</span>);
+      nodes.push(<span key={key++} className="text-status-warning">{match[3]}</span>);
     } else if (match[4]) {
-      nodes.push(<span key={key++} className="text-violet-400">{match[4]}</span>);
+      nodes.push(<span key={key++} className="text-role-agent">{match[4]}</span>);
     }
     last = match.index + match[0].length;
   }

@@ -24,6 +24,7 @@ import { formatDuration } from '@/lib/utils/formatters';
 import { phaseLabel } from './extractStreamPhase';
 import type { NarrationEntry, StoredNarration } from './narrationTimeline';
 import { Collapse } from '@/features/shared/components/display/Collapse';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Keep the live log glanceable — older rows collapse into "+N earlier". */
 const LIVE_MAX_ROWS = 5;
@@ -42,7 +43,7 @@ function EntryRow({ entry }: { entry: NarrationEntry }) {
     entry.kind === 'beat' ? (
       <Sparkles className="w-3 h-3 text-primary shrink-0" />
     ) : entry.endedAt != null ? (
-      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+      <CheckCircle2 className="w-3 h-3 text-status-success shrink-0" />
     ) : (
       <Loader2 className="w-3 h-3 text-primary animate-spin shrink-0" />
     );
@@ -126,17 +127,16 @@ export function NarrationTrail({ narration }: { narration: StoredNarration }) {
       transition={{ duration: shouldAnimate ? 0.24 : 0, ease }}
       data-testid="companion-narration-trail"
     >
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="xs"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? c.narration_hide : c.narration_show}
-        className={`group/trail inline-flex max-w-full items-center gap-1.5 rounded-interactive px-2 py-1 typo-caption transition-colors hover:bg-foreground/[0.06] ${
-          open ? 'bg-foreground/[0.05]' : ''
-        }`}
+        pressed={open}
       >
         <motion.span
-          className="flex shrink-0 text-foreground/45 group-hover/trail:text-foreground/70"
+          className="flex shrink-0 text-ink-3 group-hover/trail:text-ink-2"
           aria-hidden
           initial={false}
           animate={{ rotate: open ? 90 : 0 }}
@@ -145,10 +145,10 @@ export function NarrationTrail({ narration }: { narration: StoredNarration }) {
           <ChevronRight className="w-3 h-3" />
         </motion.span>
         <span className="truncate">
-          <span className="font-medium text-foreground/85">{c.narration_trail_label}</span>
-          <span className="text-foreground/45"> — {steps} · {duration}</span>
+          <span className="font-medium text-ink-2">{c.narration_trail_label}</span>
+          <span className="text-ink-3"> — {steps} · {duration}</span>
         </span>
-      </button>
+      </Button>
       <Collapse open={open} unmountWhenClosed duration={220}>
         <ul className="mt-1 space-y-1.5 rounded-card border border-foreground/10 bg-foreground/[0.04] px-3 py-2">
           {toolEntries.map((e) => (

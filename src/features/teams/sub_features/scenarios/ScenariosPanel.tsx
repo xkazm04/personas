@@ -49,7 +49,7 @@ export function ScenariosPanel({
   const worst = worstInScope(feature.scenarios);
 
   return (
-    <section className="rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 p-4" data-testid="features-scenarios">
+    <section className="rounded-card border border-hair bg-surface-1 shadow-elevation-1 p-4" data-testid="features-scenarios">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="typo-body-lg text-foreground">{t.scenarios_title}</h3>
@@ -72,21 +72,21 @@ export function ScenariosPanel({
           <p className="typo-caption">{t.envelope_none}</p>
         ) : (
           <>
-            <span className="typo-caption text-foreground">{t.envelope_label}</span>
-            <span className="rounded-pill border border-status-success/50 px-2 py-0.5 typo-caption text-status-success">
+            <span className="typo-caption text-ink-2">{t.envelope_label}</span>
+            <span className="typo-caption text-status-success">
               {tx(t.envelope_holds, { count: envelope.holds.length })}
             </span>
-            <span className="rounded-pill border border-status-error/50 px-2 py-0.5 typo-caption text-status-error">
+            <span className="typo-caption text-status-error">
               {tx(t.envelope_weak, { count: envelope.weak.length })}
             </span>
-            <span className="rounded-pill border border-border px-2 py-0.5 typo-caption text-foreground">
+            <span className="typo-caption text-ink-2">
               {tx(t.envelope_unmeasured, { count: envelope.unmeasured.length })}
             </span>
-            <span className="rounded-pill border border-border px-2 py-0.5 typo-caption text-foreground">
+            <span className="typo-caption text-ink-2">
               {tx(t.envelope_out_of_scope, { count: envelope.outOfScope.length })}
             </span>
             {worst ? (
-              <span className="typo-caption text-foreground">{tx(t.envelope_worst, { name: worst.title })}</span>
+              <span className="typo-caption text-ink-2">{tx(t.envelope_worst, { name: worst.title })}</span>
             ) : null}
           </>
         )}
@@ -124,7 +124,7 @@ export function ScenariosPanel({
       )}
 
       {proposed.length > 0 ? (
-        <div className="mt-4 rounded-card border border-dashed border-violet-400/50 p-3" data-testid="features-proposed">
+        <div className="mt-4 rounded-card border border-dashed border-role-agent/50 p-3" data-testid="features-proposed">
           <h4 className="typo-body-lg text-foreground">{t.proposed_title}</h4>
           <p className="mt-0.5 max-w-prose typo-caption">{t.proposed_subtitle}</p>
           <ul className="mt-2 flex flex-col gap-2">

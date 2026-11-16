@@ -7,7 +7,7 @@
  * summary band, a row of up to three model-performance cards (header chip,
  * composite-score block, three score bars, cost/duration foot), and a ghost
  * scenario-breakdown table. Placeholder bars use the same
- * `bg-primary/10 animate-pulse` treatment as `ListSkeleton` /
+ * `bg-surface-1 animate-pulse` treatment as `ListSkeleton` /
  * `ContentHeaderSkeleton` so every loading surface reads as one family.
  *
  * Render it as the `LabTab` Suspense fallback (panel-chunk hydration) and in
@@ -24,7 +24,7 @@ interface LabResultsSkeletonProps {
 }
 
 // Shared placeholder-bar treatment — matches ListSkeleton / ContentHeaderSkeleton.
-const BAR = 'rounded bg-primary/10 animate-pulse';
+const BAR = 'rounded-interactive bg-surface-1 animate-pulse';
 
 export function LabResultsSkeleton({ cards = 3, rows = 5, className }: LabResultsSkeletonProps) {
   const cardCount = Math.max(1, Math.min(cards, 3));
@@ -35,10 +35,10 @@ export function LabResultsSkeleton({ cards = 3, rows = 5, className }: LabResult
       data-testid="lab-results-skeleton"
     >
       {/* Executive summary band */}
-      <div className="rounded-modal border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 overflow-hidden">
+      <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
         <div className="px-5 py-4 space-y-3">
           <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-card bg-primary/10 animate-pulse flex-shrink-0" />
+            <span className="w-8 h-8 rounded-card bg-surface-1 animate-pulse flex-shrink-0" />
             <div className="space-y-1.5">
               <span className={`block h-3.5 w-32 ${BAR}`} />
               <span className={`block h-3 w-44 ${BAR}`} />
@@ -53,21 +53,21 @@ export function LabResultsSkeleton({ cards = 3, rows = 5, className }: LabResult
         <span className={`block h-3 w-40 ${BAR}`} />
         <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${cardCount}, 1fr)` }}>
           {Array.from({ length: cardCount }).map((_, i) => (
-            <div key={i} className="rounded-modal border border-primary/10 overflow-hidden">
+            <div key={i} className="rounded-modal border border-hair overflow-hidden">
               {/* Card header */}
-              <div className="px-4 py-3 bg-secondary/30 flex items-center justify-between">
+              <div className="px-4 py-3 bg-surface-1 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`h-5 w-6 ${BAR}`} />
                   <span className={`h-4 w-20 ${BAR}`} />
                 </div>
-                <span className="h-4 w-12 rounded-full bg-primary/10 animate-pulse" />
+                <span className="h-4 w-12 rounded-full bg-surface-1 animate-pulse" />
               </div>
 
               {/* Score section */}
               <div className="px-4 py-3 space-y-3 bg-background/40">
                 {/* Big composite score */}
-                <div className="flex items-center gap-3 p-3 rounded-card bg-primary/5">
-                  <span className="h-9 w-12 rounded bg-primary/15 animate-pulse flex-shrink-0" />
+                <div className="flex items-center gap-3 p-3 rounded-card bg-surface-1">
+                  <span className="h-9 w-12 rounded-interactive bg-primary/15 animate-pulse flex-shrink-0" />
                   <div className="flex-1 space-y-1.5">
                     <span className={`block h-3 w-16 ${BAR}`} />
                     <span className={`block h-2.5 w-24 ${BAR}`} />
@@ -82,13 +82,13 @@ export function LabResultsSkeleton({ cards = 3, rows = 5, className }: LabResult
                         <span className={`h-2.5 w-20 ${BAR}`} />
                         <span className={`h-2.5 w-8 ${BAR}`} />
                       </div>
-                      <span className="block h-1.5 w-full rounded-full bg-primary/10 animate-pulse" />
+                      <span className="block h-1.5 w-full rounded-full bg-surface-1 animate-pulse" />
                     </div>
                   ))}
                 </div>
 
                 {/* Cost & duration foot */}
-                <div className="flex items-center gap-3 pt-1 border-t border-primary/5">
+                <div className="flex items-center gap-3 pt-1 border-t border-hair">
                   <span className={`h-2.5 w-14 ${BAR}`} />
                   <span className={`h-2.5 w-14 ${BAR}`} />
                 </div>
@@ -101,9 +101,9 @@ export function LabResultsSkeleton({ cards = 3, rows = 5, className }: LabResult
       {/* Ghost scenario-breakdown table */}
       <div className="space-y-3">
         <span className={`block h-3 w-40 ${BAR}`} />
-        <div className="overflow-hidden border border-primary/10 rounded-modal">
+        <div className="overflow-hidden border border-hair rounded-modal">
           {/* Header row */}
-          <div className="flex items-center gap-3 px-3 py-2.5 border-b border-primary/10 bg-secondary/20">
+          <div className="flex items-center gap-3 px-3 py-2.5 border-b border-hair bg-surface-1">
             <span className={`h-2.5 flex-1 ${BAR}`} />
             {Array.from({ length: cardCount }).map((_, i) => (
               <span key={i} className={`h-2.5 w-16 flex-shrink-0 ${BAR}`} />
@@ -114,12 +114,12 @@ export function LabResultsSkeleton({ cards = 3, rows = 5, className }: LabResult
             <div
               key={i}
               className={`flex items-center gap-3 px-3 py-3 border-b border-primary/[0.06] last:border-b-0 ${
-                i % 2 === 1 ? 'bg-secondary/10' : ''
+                i % 2 === 1 ? 'bg-surface-1' : ''
               }`}
             >
               <span className={`h-3 flex-1 max-w-[200px] ${BAR}`} />
               {Array.from({ length: cardCount }).map((_, j) => (
-                <span key={j} className="h-8 w-16 flex-shrink-0 rounded-card bg-primary/10 animate-pulse" />
+                <span key={j} className="h-8 w-16 flex-shrink-0 rounded-card bg-surface-1 animate-pulse" />
               ))}
             </div>
           ))}

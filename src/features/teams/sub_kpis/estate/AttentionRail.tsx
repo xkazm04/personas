@@ -8,6 +8,7 @@
 //
 // Each row still prints the same rank number the canvas paints, so a name read
 // here has a findable place over there.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -80,15 +81,14 @@ export function AttentionRail({
                           </span>
                         }
                       >
-                        <button
-                          type="button"
-                          onClick={() => onOpen(pick)}
+                        <PressSurface
+                          onPress={() => onOpen(pick)}
                           data-testid={`kpi-rail-${pick.id}`}
-                          className="flex w-full items-center gap-2 rounded-interactive px-1.5 py-1.5 text-left transition-colors hover:bg-secondary/30 focus-ring"
+                          className="flex w-full items-center gap-2 rounded-interactive px-1.5 py-1.5"
                         >
                           <span
                             aria-hidden="true"
-                            className="flex size-5 shrink-0 items-center justify-center rounded-full typo-label tabular-nums"
+                            className="flex size-5 shrink-0 items-center justify-center rounded-full typo-data"
                             style={{ background: KIND_TONE[moveKind(move)], color: 'var(--background)' }}
                           >
                             {pick.rank}
@@ -97,7 +97,7 @@ export function AttentionRail({
                           <span className={`shrink-0 ${KT.metaFigure}`}>
                             {`${pick.tally.measured}/${pick.tally.total}`}
                           </span>
-                        </button>
+                        </PressSurface>
                       </Tooltip>
                     </li>
                   );

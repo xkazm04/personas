@@ -27,7 +27,7 @@ export function MotionEmptyState({
   return (
     <div className="flex flex-col items-center justify-center text-center gap-3 py-8">
       <motion.div
-        className={`relative flex items-center justify-center rounded-2xl border ${accent.border} ${accent.soft}`}
+        className={`relative flex items-center justify-center rounded-card border ${accent.border} ${accent.soft}`}
         style={{ width: 200, height: 200 }}
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -36,7 +36,7 @@ export function MotionEmptyState({
         {/* accent glow behind the motif (dark theme only — washes out on white) */}
         {isDark && (
           <div
-            className="pointer-events-none absolute inset-0 rounded-2xl opacity-60"
+            className="pointer-events-none absolute inset-0 rounded-card opacity-60"
             style={{ background: `radial-gradient(circle at 50% 45%, ${base.glow}, transparent 70%)` }}
           />
         )}

@@ -9,6 +9,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { extractMessage } from '@/lib/silentCatch';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger('devtools-project-dropdown');
 
@@ -103,13 +105,7 @@ export function DevToolsProjectDropdown({
       onSelectFocused={handleSelect}
       ariaLabel="Select DevTools project"
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
-          onClick={toggle}
-          className={`w-full flex items-center justify-between px-4 py-3 typo-body rounded-xl border border-primary/15 bg-background/80 text-foreground transition-all hover:border-primary/25 focus:outline-none ${
-            isOpen ? 'border-primary/25' : ''
-          }`}
-        >
+        <Button variant="secondary" size="md" onClick={toggle} className="w-full justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
             <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
             {loading ? (
@@ -118,7 +114,7 @@ export function DevToolsProjectDropdown({
                 {t.shared.devtools_loading_projects}
               </span>
             ) : error ? (
-              <span className="text-rose-400/80 typo-caption">{t.shared.devtools_load_failed}</span>
+              <span className="text-status-error typo-caption">{t.shared.devtools_load_failed}</span>
             ) : selected ? (
               <div className="min-w-0 flex items-baseline gap-2">
                 <span className="font-medium truncate">{selected.name}</span>
@@ -137,11 +133,11 @@ export function DevToolsProjectDropdown({
               isOpen ? 'rotate-180' : ''
             }`}
           />
-        </button>
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (
-        <div className="w-full bg-background border border-primary/15 rounded-xl shadow-elevation-3 overflow-hidden">
+        <div className="w-full bg-background border border-hair rounded-card shadow-elevation-3 overflow-hidden">
           {loading ? (
             <div className="px-4 py-6 flex items-center justify-center gap-2 typo-body text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -149,7 +145,7 @@ export function DevToolsProjectDropdown({
             </div>
           ) : error ? (
             <div className="px-4 py-6 text-center">
-              <p className="typo-body text-rose-400/80 mb-1">{t.shared.devtools_load_failed}</p>
+              <p className="typo-body text-status-error mb-1">{t.shared.devtools_load_failed}</p>
               <p className="typo-caption text-foreground">{resolveErrorTranslated(t, extractMessage(error.raw)).message}</p>
             </div>
           ) : projects.length === 0 ? (
@@ -173,27 +169,22 @@ export function DevToolsProjectDropdown({
                 const isSelected = project.id === value;
                 const isFocused = i === focusIndex;
                 return (
-                  <button
+                  <PressSurface
                     key={project.id}
-                    type="button"
                     role="option"
                     aria-selected={isSelected}
                     data-testid={`devtools-project-option-${project.id}`}
-                    onClick={() => {
+                    onPress={() => {
                       onSelect(project);
                       close();
                     }}
-                    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
-                      isFocused
-                        ? 'bg-primary/10'
-                        : isSelected
-                          ? 'bg-primary/[0.06]'
-                          : 'hover:bg-secondary/40'
-                    }`}
+                    className={`w-full px-4 py-2.5 flex items-center gap-3 ${isFocused ? 'bg-surface-1' : ''}`}
+                    selected={isSelected}
+                    aria-pressed={undefined}
                   >
                     <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body text-foreground/90 truncate">
+                      <div className="typo-body text-ink-2 truncate">
                         {project.name}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -203,7 +194,7 @@ export function DevToolsProjectDropdown({
                           </span>
                         )}
                         {project.tech_stack && (
-                          <span className="typo-caption text-foreground bg-secondary/50 px-1.5 py-0.5 rounded-interactive">
+                          <span className="typo-caption text-foreground bg-surface-1 px-1.5 py-0.5 rounded-interactive">
                             {project.tech_stack}
                           </span>
                         )}
@@ -212,7 +203,7 @@ export function DevToolsProjectDropdown({
                     {isSelected && (
                       <Check className="w-4 h-4 text-primary flex-shrink-0" />
                     )}
-                  </button>
+                  </PressSurface>
                 );
               })}
             </div>

@@ -1,0 +1,143 @@
+{
+ "schema": "conform-run/1",
+ "worker": "237802de-ecdd-42d8-a3e6-0c43cdbbe0b7",
+ "subject": "trust-base",
+ "evaluatedAt": "2026-11-08T02:31:22.746658+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "i18n-generated",
+   "subject": "trust-base",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:25 The fixture claims a full `Translations` object but only fills `error_registry`. That is safe only because `resolveErrorTranslated` reads nothing but `t.error_registry` (src/i18n/useTranslatedError.ts:214). Neither the cast nor the resolver mentions this, so if the resolver starts reading another section, the cast still compiles and the test fails at runtime instead of type-checking.",
+   "techniques": [
+    {
+     "technique": "soundness-argument-names-its-dependencies",
+     "verdict": "deviation",
+     "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:25 Double cast past the checker. It is safe only because of what useTranslatedError.ts:214 reads, and neither the cast site nor that line says so."
+    },
+    {
+     "technique": "trusted-leaf-gets-an-outside-test",
+     "verdict": "conformant",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:31 Applied by analogy. reason_token is a raw String that no type checks (comment at :9). The test reads the real Rust source as an independent oracle and fails if the parse finds nothing. One gap: it compares whole sets with a single equality (:35) instead of asserting each direction separately."
+    }
+   ]
+  },
+  {
+   "context": "passport-wall-model",
+   "subject": "trust-base",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The fixture claims to be a `CrossProjectMetadataMap` but leaves out the required `cross_project` and `total_projects` fields (src/api/devTools/devTools.ts:382) and adds a top-level `relations` key the type does not have. It works only because the hook reads just `projects` and `generated_at` (usePassportData.ts:174,180), and nothing records that dependence.",
+   "techniques": [
+    {
+     "technique": "soundness-argument-names-its-dependencies",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The cast is safe only because of which fields usePassportData reads, and nothing says so. The stray top-level `relations` key suggests the fixture has already drifted from the type."
+    },
+    {
+     "technique": "census-counts-unmarked-members",
+     "verdict": "conformant",
+     "evidence": "src/features/teams/sub_factory/passport/passportHistory.ts:41 Fixes the problem by removing it: the JSON.parse result is decoded into `unknown` and then checked (also usePassportData.ts:64 with Array.isArray and a filter). The untyped decoder output never reaches typed code unchecked."
+    }
+   ]
+  },
+  {
+   "context": "companion-ui-controls",
+   "subject": "trust-base",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "tests/playwright/message-modal-features.spec.ts:61 The spec casts past the type checker to call `bridgeExec`, which is declared `private` at tests/playwright/companion-bridge.ts:135. The cast is safe only because of that distant declaration, and neither end records the dependency, so renaming the method or changing its signature in the bridge breaks this spec only at runtime.",
+   "techniques": [
+    {
+     "technique": "soundness-argument-names-its-dependencies",
+     "verdict": "deviation",
+     "evidence": "tests/playwright/message-modal-features.spec.ts:61 Reaches a private member through a double cast (four sites in this file). The private declaration at companion-bridge.ts:135 has no note saying specs depend on it."
+    },
+    {
+     "technique": "census-counts-unmarked-members",
+     "verdict": "deviation",
+     "evidence": "tests/playwright/template-marathon-fixtures.ts:218 An unspelled member: JSON.parse returns `any`, which is assigned to a variable with a declared shape, with no `as` and no check. No type-aware lint in eslint.config.js counts this kind of flow."
+    }
+   ]
+  },
+  {
+   "context": "teams-teamworkspace",
+   "subject": "trust-base",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/useTeamStudioData.ts:90 A DB column is cast to `DesignContextShape` with no stated invariant and no check. It is safe only if every writer of design_context stores an object with a `useCases` array. A JSON `null` passes the try block and then throws at `ctx.useCases` on line 94, which is outside the try.",
+   "techniques": [
+    {
+     "technique": "soundness-argument-names-its-dependencies",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/useTeamStudioData.ts:90 A cast at a data boundary that depends on the shape design_context's writer produces. The site names no dependency, and the code does not turn it into a check: `title` and the other fields are never type-checked, and neither is the array."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-08T02:31:22.746658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "trust-base"
+   ],
+   "techniques": [
+    "soundness-argument-names-its-dependencies",
+    "trusted-leaf-gets-an-outside-test"
+   ],
+   "deviations": 1,
+   "context": "i18n-generated",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T02:31:22.746658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "trust-base"
+   ],
+   "techniques": [
+    "census-counts-unmarked-members",
+    "soundness-argument-names-its-dependencies"
+   ],
+   "deviations": 1,
+   "context": "passport-wall-model",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T02:31:22.746658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "trust-base"
+   ],
+   "techniques": [
+    "census-counts-unmarked-members",
+    "soundness-argument-names-its-dependencies"
+   ],
+   "deviations": 1,
+   "context": "companion-ui-controls",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T02:31:22.746658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "trust-base"
+   ],
+   "techniques": [
+    "soundness-argument-names-its-dependencies"
+   ],
+   "deviations": 1,
+   "context": "teams-teamworkspace",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

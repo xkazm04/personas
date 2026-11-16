@@ -29,27 +29,27 @@ export function DirectorPanel() {
   const lastVerdictAt = d.verdicts[0]?.createdAt ?? null;
 
   return (
-    <div className="mx-3 mt-2 flex items-center gap-3 rounded-card border border-violet-500/20 bg-violet-500/[0.04] px-4 py-2.5">
+    <div className="mx-3 mt-2 flex items-center gap-3 rounded-card border border-role-agent/20 bg-role-agent/[0.04] px-4 py-2.5">
       <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-4 h-4" />
       <div className="min-w-0 flex-1">
-        <div className="typo-body text-foreground/90">{t.director.panel_title}</div>
-        <div className="typo-caption text-foreground flex items-center gap-1.5 flex-wrap">
+        <div className="typo-body text-ink-1">{t.director.panel_title}</div>
+        <div className="typo-caption text-ink-2 flex items-center gap-1.5 flex-wrap">
           <span className="inline-flex items-center gap-1">
-            <Star className="w-3 h-3 text-violet-400/70" />
+            <Star className="w-3 h-3 text-role-agent" />
             {inScope > 0 ? tx(t.director.scope_summary, { count: inScope }) : t.director.scope_empty}
           </span>
           {avg != null && (
             <>
-              <span className="text-foreground">·</span>
+              <span className="text-ink-1">·</span>
               <span>
-                {t.director.kpi_avg_score} <Numeric value={avg} precision={1} className="text-foreground" />
+                {t.director.kpi_avg_score} <Numeric value={avg} precision={1} className="text-ink-1" />
               </span>
             </>
           )}
           {lastVerdictAt && (
             <>
-              <span className="text-foreground">·</span>
-              <span className="text-foreground">{t.director.last_review}</span>
+              <span className="text-ink-1">·</span>
+              <span className="text-ink-1">{t.director.last_review}</span>
               <RelativeTime timestamp={lastVerdictAt} />
             </>
           )}

@@ -4,6 +4,7 @@
 import type { CSSProperties } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 import { DIM_REGISTRY, type DimKey } from '../../lib/dimRegistry';
 import type { Box, ChartGeo } from '../soundingsGeometry';
@@ -55,9 +56,9 @@ export function ReadingCard({ station, dimKey, stations, g, card, h }: {
             <div className="sd-c-note">{m.soundings_view_only}</div>
           ) : node.action ? (
             <div className="sd-acts">
-              <button type="button" className="sd-act" data-testid="sd-improve" onClick={(e) => h.onImprove(node, anchorOf(e))}>
+              <Button variant="secondary" size="sm" data-testid="sd-improve" onClick={(e) => h.onImprove(node, anchorOf(e))}>
                 {tx(m.soundings_improve_action, { action: actionWord(node.action) })}
-              </button>
+              </Button>
             </div>
           ) : null}
         </div>

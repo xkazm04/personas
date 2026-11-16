@@ -1,0 +1,109 @@
+{
+ "schema": "conform-run/1",
+ "worker": "1518d76e-adc2-492f-9276-e69871103cf5",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-11-10T23:02:09.298139+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "teams-factory-passport-improve",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:190 The context's one eval-harness construct is the deploy prompt that commissions a harness for a managed repo. It makes 'runs green' the completion criterion for an agent that writes both the cases and the runner, and never asks for any case to be shown capable of failing, so a harness of unfailable cases satisfies it.",
+   "techniques": [
+    {
+     "technique": "unaided-baseline-screening",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:190 Green is required, but there is no deprived or failing run to prove that any case could go red, so a pass is not shown to be reachable evidence."
+    },
+    {
+     "technique": "candidate-write-access",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:189 The same agent writes the cases, the runner and the summary, and is then held to that suite's verdict. No holdout is declared and no write surface is enumerated."
+    }
+   ],
+   "registryProposal": "The standard has no technique for COMMISSIONING a harness: a prompt or spec that tells an agent to build an eval suite. That is a common scaffolder pattern, and 'make it green before finishing' is its typical failure, which combines unaided-baseline-screening with candidate-write-access. A short technique, or a use_when trigger on those two, would cover it."
+  },
+  {
+   "context": "overview-memories",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_memories/libs/memoryConflicts.ts:56 Conflict detection is a deterministic Jaccard/bigram text similarity with no model under test and no scored scenarios. A case-insensitive search of src/features/overview/sub_memories for eval, benchmark and rubric found no hits, so this context has no eval harness to judge.",
+   "techniques": [],
+   "absenceTerms": [
+    "eval",
+    "benchmark",
+    "rubric"
+   ]
+  },
+  {
+   "context": "templates-recipes",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_recipes/eligibility.ts:36 Recipe logic is deterministic connector set-membership, adaptation and binding substitution; nothing runs a model against scenarios. A case-insensitive search of sub_recipes, templates/components and sub_diagrams for eval, benchmark and rubric found no hits.",
+   "techniques": [],
+   "absenceTerms": [
+    "eval",
+    "benchmark",
+    "rubric"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "eval-harness",
+   "context": "lib-utils-sanitizers",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "eval-harness",
+   "context": "overview-patterns",
+   "reason": "The context lists no files, and its description (a practice review modal) names no paths I could resolve with confidence, so I had no code to judge."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-10T23:02:09.298139+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "candidate-write-access",
+    "unaided-baseline-screening"
+   ],
+   "deviations": 1,
+   "context": "teams-factory-passport-improve",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:02:09.298139+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "overview-memories",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:02:09.298139+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "templates-recipes",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -1,4 +1,6 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { useState, useCallback, useMemo } from 'react';
 import { History, ChevronUp } from 'lucide-react';
@@ -87,12 +89,12 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
 
   return (
     <div
-      className="group relative px-2.5 py-2 rounded-modal border border-primary/5 hover:border-primary/15 transition-colors"
+      className="group relative px-2.5 py-2 rounded-modal border border-hair hover:border-hair transition-colors"
       onDoubleClick={onEdit ? startEdit : undefined}
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="typo-body text-foreground/90 truncate">{memory.title}</p>
+          <p className="typo-body text-ink-2 truncate">{memory.title}</p>
           <p className="typo-body text-foreground line-clamp-2 mt-0.5">{memory.content}</p>
           <div className="flex items-center gap-2 mt-1.5">
             <CategoryChip
@@ -100,37 +102,29 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
               source="team"
               label={tokenLabel(t, 'memory_category', memory.category)}
             />
-            <span className="typo-body px-1.5 py-0.5 rounded-full bg-primary/5 text-foreground">
+            <span className="typo-body px-1.5 py-0.5 rounded-interactive bg-surface-1 text-foreground">
               {isAuto ? pt.auto_label : pt.manual_label}
             </span>
             <div className="flex items-center gap-0.5">
               {Array.from({ length: IMPORTANCE_DOTS }).map((_, i) => (
-                <button
-                  type="button"
+                <PressSurface
                   key={i}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${i < dots ? 'bg-amber-400' : 'bg-primary/10'} hover:bg-amber-300`}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${i < dots ? 'bg-status-warning' : 'bg-primary/10'} hover:bg-status-warning`}
                   // Re-clicking the rung a memory already sits on writes nothing:
                   // the dot row is coarser than the 1-10 field behind it, so an
                   // unguarded click could round-trip the value into a different
                   // number with no visible change to the dots.
-                  onClick={() => {
+                  onPress={() => {
                     const next = dotsToImportance(i);
                     if (next !== memory.importance) onImportanceChange(memory.id, next);
                   }}
-                  aria-label={`${pt.importance_label} ${dotsToImportance(i)}`}
-                />
+                  aria-label={`${pt.importance_label} ${dotsToImportance(i)}`}>{null}</PressSurface>
               ))}
             </div>
             {revisions.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowHistory(!showHistory)}
-                className="flex items-center gap-0.5 typo-body text-foreground hover:text-violet-400 transition-colors"
-                aria-label={pt.version_history}
-                aria-expanded={showHistory}
-              >
-                <History className="w-3 h-3" /><span>{revisions.length}</span>
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} aria-label={pt.version_history} aria-expanded={showHistory} icon={<History className="w-3 h-3" />}>
+<span>{revisions.length}</span>
+</Button>
             )}
           </div>
 
@@ -140,15 +134,15 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
           <MemoryProvenance memberId={memory.member_id} personaId={memory.persona_id} runId={memory.run_id} />
 
           {showHistory && revisions.length > 0 && (
-            <div className="mt-2 space-y-1.5 border-t border-primary/10 pt-2">
+            <div className="mt-2 space-y-1.5 border-t border-hair pt-2">
               <div className="flex items-center justify-between">
                 <span className="typo-body text-foreground">{pt.version_history}</span>
-                <button type="button" onClick={() => setShowHistory(false)} aria-label={t.common.close} className="p-0.5 text-foreground hover:text-foreground/70">
+                <Button variant="ghost" size="icon-sm" onClick={() => setShowHistory(false)} aria-label={t.common.close}>
                   <ChevronUp className="w-3 h-3" />
-                </button>
+                </Button>
               </div>
               {[...revisions].reverse().map((rev, i) => (
-                <div key={i} className="pl-2 border-l-2 border-primary/10 space-y-0.5">
+                <div key={i} className="pl-2 border-l-2 border-hair space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="typo-body text-foreground truncate">{rev.title}</span>
                     <span className="typo-body text-foreground">{tokenLabel(t, 'memory_category', rev.category)}</span>

@@ -10,6 +10,8 @@ import type { ChatCard } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRefOpener } from './RefOpenerContext';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export function ReportCard({ card }: { card: ChatCard }) {
   const { t } = useTranslation();
   const open = useRefOpener();
@@ -23,13 +25,15 @@ export function ReportCard({ card }: { card: ChatCard }) {
       <FileText className="w-3.5 h-3.5 shrink-0 text-primary" aria-hidden />
       <span className="typo-body text-foreground truncate min-w-0 flex-1">{title}</span>
       {id && (
-        <button
+        <Button
           type="button"
           onClick={() => open('report', id)}
-          className="shrink-0 typo-caption text-primary hover:underline underline-offset-2 rounded-interactive focus-ring"
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
         >
           {t.athena.report_open}
-        </button>
+        </Button>
       )}
     </div>
   );

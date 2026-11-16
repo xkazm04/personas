@@ -35,6 +35,7 @@ import {
   type SttEngineStatus,
   type WhisperModelListing,
 } from '@/api/companion';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Voice-input (speech-to-text) configuration. Lives at the bottom of the
@@ -82,8 +83,8 @@ export default function SttPanel() {
           />
         </div>
         {engine === 'browser' && (
-          <div className="mx-1 mb-2 rounded-card border border-amber-500/30 bg-amber-500/5 px-3 py-2">
-            <p className="typo-caption text-amber-300/90">
+          <div className="mx-1 mb-2 rounded-card border border-status-warning/30 bg-status-warning/5 px-3 py-2">
+            <p className="typo-caption text-status-warning">
               {t.athena.stt_browser_disclosure}
             </p>
           </div>
@@ -130,25 +131,21 @@ interface EngineButtonProps {
 
 function EngineButton({ active, onClick, icon, label, caption, disabled = false }: EngineButtonProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       disabled={disabled}
       aria-pressed={active}
-      className={`text-left rounded-card border p-3 transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
-        active
-          ? 'border-cyan-500/50 bg-cyan-500/10'
-          : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
-      }`}
+      className="text-left rounded-card border border-hair p-3"
+      selected={active}
     >
       <div className="flex items-center gap-2">
-        <span className={active ? 'text-cyan-300' : 'text-foreground'}>{icon}</span>
-        <span className={`typo-body ${active ? 'text-cyan-200' : 'text-foreground'}`}>
+        <span className={active ? 'text-ink-2' : 'text-foreground'}>{icon}</span>
+        <span className={`typo-body ${active ? 'text-ink-2' : 'text-foreground'}`}>
           {label}
         </span>
       </div>
       <p className="typo-caption mt-1">{caption}</p>
-    </button>
+    </PressSurface>
   );
 }
 
@@ -258,20 +255,21 @@ function WhisperConfig() {
         titleClassName="text-primary"
         icon={
           <Cpu
-            className={`w-4 h-4 ${status?.installed ? 'text-emerald-400' : 'text-foreground'}`}
+            className={`w-4 h-4 ${status?.installed ? 'text-status-success' : 'text-foreground'}`}
           />
         }
         status={statusLoading ? 'neutral' : status?.installed ? 'success' : 'warning'}
         action={
-          <button
+          <Button
             type="button"
             onClick={() => void refreshStatus()}
-            className="p-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground transition-colors focus-ring"
-            title={t.athena.stt_refresh}
+            tooltip={t.athena.stt_refresh}
             aria-label={t.athena.stt_refresh}
+            variant="ghost"
+            size="icon-sm"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         }
       >
         <div className="px-1 py-2 space-y-2">
@@ -288,7 +286,7 @@ function WhisperConfig() {
                   : t.athena.stt_not_installed}
               </div>
               {status && (
-                <p className="typo-code text-[11px] text-foreground break-all">
+                <p className="typo-code text-foreground break-all">
                   {status.installed ? status.binaryPath : status.expectedPath}
                 </p>
               )}
@@ -360,7 +358,7 @@ function WhisperConfig() {
             before installing is a legitimate thing to do.
           */}
           {!statusLoading && !status?.installed && (
-            <p className="typo-caption text-amber-300">
+            <p className="typo-caption text-status-warning">
               {t.athena.stt_models_engine_first}
             </p>
           )}
@@ -384,7 +382,7 @@ function WhisperConfig() {
                 <div
                   key={m.modelId}
                   className={`rounded-card border p-2.5 ${
-                    selected ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-foreground/10'
+                    selected ? 'border-hair-2 bg-surface-2' : 'border-foreground/10'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -394,7 +392,7 @@ function WhisperConfig() {
                         <span className="typo-title truncate">{m.label}</span>
                         <span className="typo-caption">{m.approxSizeMb} MB</span>
                         {selected && (
-                          <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300">
+                          <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-interactive bg-surface-2 text-ink-2">
                             <CheckCircle2 className="w-3 h-3" />
                             {t.athena.stt_model_selected}
                           </span>
@@ -405,23 +403,25 @@ function WhisperConfig() {
                     <div className="shrink-0 flex items-center gap-1.5">
                       {m.isDownloaded ? (
                         <>
-                          <button
+                          <Button
                             type="button"
                             onClick={() => setModelId(m.modelId)}
                             disabled={selected}
-                            className="px-2.5 py-1.5 rounded-interactive typo-caption bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 transition-colors focus-ring disabled:opacity-40"
+                            variant="ghost"
+                            size="sm"
                           >
                             {t.athena.stt_model_select}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
                             onClick={() => void onDelete(m.modelId)}
-                            className="p-1.5 rounded-interactive text-foreground hover:text-rose-300 hover:bg-rose-500/10 transition-colors focus-ring"
-                            title={t.athena.stt_model_delete}
+                            tooltip={t.athena.stt_model_delete}
                             aria-label={t.athena.stt_model_delete}
+                            variant="ghost"
+                            size="icon-sm"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          </Button>
                         </>
                       ) : downloading ? (
                         <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
@@ -429,29 +429,30 @@ function WhisperConfig() {
                           {pct != null ? `${pct}%` : t.athena.stt_model_downloading}
                         </span>
                       ) : (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => void onDownload(m.modelId)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption bg-secondary/50 hover:bg-secondary/70 border border-foreground/10 text-foreground transition-colors focus-ring"
+                          variant="secondary"
+                          size="sm"
                         >
-                          {failed ? <XCircle className="w-3.5 h-3.5 text-rose-400" /> : <Download className="w-3.5 h-3.5" />}
+                          {failed ? <XCircle className="w-3.5 h-3.5 text-status-error" /> : <Download className="w-3.5 h-3.5" />}
                           {failed
                             ? t.athena.stt_model_failed
                             : t.athena.stt_model_download}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
                   {downloading && pct != null && (
                     <div className="mt-2 h-1 rounded-full bg-foreground/10 overflow-hidden">
                       <div
-                        className="h-full bg-cyan-400 transition-all"
+                        className="h-full bg-surface-2 transition-all"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                   )}
                   {failed && prog?.error && (
-                    <p className="typo-caption text-rose-300 mt-2 break-words">{prog.error}</p>
+                    <p className="typo-caption text-status-error mt-2 break-words">{prog.error}</p>
                   )}
                 </div>
               );

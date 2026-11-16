@@ -8,8 +8,9 @@
  *
  * Kit buttons: approving a proposal is the tile's one call to action
  * (`tone="primary"`); the rest are default. A press shows the kit's real busy
- * spinner; the destructive meaning of pause and decline lives in their
- * confirm dialog, not in a hue.
+ * spinner; the destructive meaning of pause lives in its confirm dialog, not
+ * in a hue. Approve and decline have no confirm step yet, so their label is
+ * always the fixed verb, never the widget's own text.
  */
 import { useState } from 'react';
 import { Check, Pause, Play, X } from 'lucide-react';
@@ -61,7 +62,12 @@ function ActionButton({ action }: { action: CockpitWidgetAction }) {
   const [state, setState] = useState<ActionState>('idle');
   const [confirming, setConfirming] = useState(false);
 
-  const label = action.label ?? defaultLabel(action.kind, t);
+  // Approve and decline always say what they do: a model-written label must not
+  // stand in front of a one-click approval (DW-95). Rerun and pause keep theirs.
+  const label =
+    action.kind === 'approve_approval' || action.kind === 'decline_approval'
+      ? defaultLabel(action.kind, t)
+      : (action.label ?? defaultLabel(action.kind, t));
 
   const execute = async () => {
     setState('busy');

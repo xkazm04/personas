@@ -103,12 +103,12 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
       {/* Drop overlay */}
       <DropZoneGlow active={isDragOver} radius={12} />
       {isDragOver && (
-        <div className="absolute inset-0 z-10 bg-violet-500/5 rounded-modal flex items-center justify-center backdrop-blur-[1px] pointer-events-none">
+        <div className="absolute inset-0 z-10 bg-role-agent/5 rounded-modal flex items-center justify-center backdrop-blur-[1px] pointer-events-none">
           <div className="flex flex-col items-center gap-2 text-center">
-            <div className="w-12 h-12 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <Upload className="w-6 h-6 text-violet-400" />
+            <div className="w-12 h-12 rounded-modal bg-role-agent/15 border border-role-agent/25 flex items-center justify-center">
+              <Upload className="w-6 h-6 text-role-agent" />
             </div>
-            <p className="typo-body text-violet-300">{disabled ? sh.ingest_in_progress : sh.drop_to_ingest}</p>
+            <p className="typo-body text-role-agent">{disabled ? sh.ingest_in_progress : sh.drop_to_ingest}</p>
             {!disabled && <p className="typo-caption text-foreground">{sh.drop_supported}</p>}
           </div>
         </div>
@@ -123,7 +123,7 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
       {ingesting && (
         <div className="absolute inset-0 z-10 bg-background/50 flex items-center justify-center backdrop-blur-[1px]">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-role-agent/30 border-t-violet-500 rounded-full animate-spin" />
             <span className="typo-body text-foreground">{sh.starting_ingestion}</span>
           </div>
         </div>

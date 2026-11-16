@@ -71,7 +71,7 @@ export function FeatureTab({
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
           <h2 className="typo-heading-lg text-foreground">{feature.name}</h2>
           <span className="typo-caption">{kindLabel(feature.kind, t)}</span>
-          <span className="inline-flex items-center gap-1.5 rounded-pill border border-border px-2 py-0.5 typo-caption text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
             <CouncilGlyph kind={row.kind} t={tDev} />
             {councilLabel(row.kind, tDev)}
           </span>

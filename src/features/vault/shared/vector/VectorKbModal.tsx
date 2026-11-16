@@ -1,6 +1,7 @@
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { createLogger } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('vector-kb-modal');
 import { X, FileText, Search, Settings, Brain, Pencil, Check, Table2, AlertCircle, RefreshCw } from 'lucide-react';
@@ -15,6 +16,7 @@ import { SettingsTab } from './tabs/SettingsTab';
 import { ExtractTab } from './tabs/ExtractTab';
 import { DocGhostRows } from './tabs/DocGhostRows';
 import { useCredentialRename } from '@/features/vault/shared/hooks/useCredentialRename';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 type VectorTab = 'documents' | 'search' | 'extract' | 'settings';
@@ -44,6 +46,8 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
   // user no way back (failure-not-empty-success).
   const [loadFailed, setLoadFailed] = useState(false);
   const hasKbRef = useRef(false);
+  // An ingest refresh racing the initial load (or a kb switch) must not let the older answer win.
+  const [loadGen] = useState(createLatestWins);
 
   // Extract kb_id from credential metadata
   const kbId = extractKbId(credential);
@@ -54,17 +58,20 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
     // A refresh after an ingest must not hide the tab that is already painted;
     // only the first (or a retried) load owns the loading state.
     if (!hasKbRef.current) setLoading(true);
+    const token = loadGen.next();
     try {
       const data = await getKnowledgeBase(kbId);
+      if (!loadGen.isCurrent(token)) return;
       hasKbRef.current = true;
       setKb(data);
     } catch (err) {
+      if (!loadGen.isCurrent(token)) return;
       setLoadFailed(true);
       logger.error('Failed to load knowledge base', { error: String(err) });
     } finally {
-      setLoading(false);
+      if (loadGen.isCurrent(token)) setLoading(false);
     }
-  }, [kbId]);
+  }, [kbId, loadGen]);
 
   useEffect(() => {
     if (!kbId) {
@@ -100,12 +107,12 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
       titleId="vector-kb-title"
       size="6xl"
       portal
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-hair bg-surface-1 shrink-0">
         <div
-          className="w-9 h-9 rounded-card flex items-center justify-center border border-primary/15"
+          className="w-9 h-9 rounded-card flex items-center justify-center border border-hair"
           style={{ backgroundColor: `${color}15` }}
         >
           <Brain className="w-5 h-5" style={{ color }} />
@@ -122,36 +129,36 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   onKeyDown={handleKeyDown}
                   onBlur={saveName}
                   autoFocus
-                  className="flex-1 min-w-0 typo-heading text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="flex-1 min-w-0 typo-heading text-ink-1 bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
-                <button
+                <Button
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
-                  className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
-                  title={sh.save_name}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  tooltip={sh.save_name}
                   aria-label={sh.save_name}
                 >
                   <Check className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             ) : (
               <>
-                <h2 id="vector-kb-title" className="typo-heading text-foreground/90 truncate">
+                <h2 id="vector-kb-title" className="typo-heading text-ink-1 truncate">
                   {kb?.name || credential.name}
                 </h2>
-                <button
+                <Button
                   type="button"
                   onClick={startEditing}
-                  /* focus-visible:opacity-100 is not decoration: without it the
-                     rename control is in the tab order while painted at zero
-                     opacity, so a keyboard user focuses a button they cannot
-                     see. Hover alone cannot reveal it for them. */
-                  className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 focus-visible:opacity-100 transition-all shrink-0"
-                  title={sh.rename_credential}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="opacity-0 group-hover/name:opacity-100 focus-visible:opacity-100 shrink-0"
+                  tooltip={sh.rename_credential}
                   aria-label={sh.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -164,14 +171,15 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             )}
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={sh.close}
-          className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
+          variant="ghost"
+          size="icon-sm"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Tab bar */}
@@ -179,37 +187,15 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         role="tablist"
         aria-label={sh.vector_kb}
         onKeyDown={handleTabKeyDown}
-        className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0"
+        className="flex items-center gap-1 px-6 pt-3 border-b border-hair shrink-0"
       >
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = tab.id === activeTab;
           return (
-            <button
-              type="button"
-              key={tab.id}
-              role="tab"
-              id={`vector-kb-tab-${tab.id}`}
-              aria-selected={isActive}
-              aria-controls={`vector-kb-panel-${tab.id}`}
-              tabIndex={isActive ? 0 : -1}
-              onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body transition-colors ${
-                isActive
-                  ? 'text-foreground/90'
-                  : 'text-foreground hover:text-muted-foreground/70'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
+            <OptionChip key={tab.id} role="tab" id={`vector-kb-tab-${tab.id}`} aria-controls={`vector-kb-panel-${tab.id}`} tabIndex={isActive ? 0 : -1} selected={isActive} onSelect={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }} icon={<Icon className="w-3.5 h-3.5" />}>
               {sh[tab.labelKey]}
-              {isActive && (
-                <motion.div
-                  layoutId="vectorKbTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500/60 rounded-full"
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-              )}
-            </button>
+            </OptionChip>
           );
         })}
       </div>
@@ -281,16 +267,18 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         {!loading && !kb && loadFailed && (
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
             <div>
-              <AlertCircle className="w-10 h-10 text-red-400/40 mx-auto mb-3" aria-hidden />
+              <AlertCircle className="w-10 h-10 text-status-error/40 mx-auto mb-3" aria-hidden />
               <p className="typo-body text-foreground">{t.errors.boundary_title_generic}</p>
-              <button
+              <Button
                 type="button"
                 onClick={() => void refreshKb()}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
+                className="mt-3"
+                icon={<RefreshCw className="w-3 h-3" aria-hidden />}
               >
-                <RefreshCw className="w-3 h-3" aria-hidden />
                 {t.common.retry}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -298,7 +286,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         {!loading && !kb && !loadFailed && (
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
             <div>
-              <Brain className="w-10 h-10 text-violet-400/30 mx-auto mb-3" aria-hidden />
+              <Brain className="w-10 h-10 text-role-agent/30 mx-auto mb-3" aria-hidden />
               <p className="typo-body text-foreground">{sh.kb_not_found}</p>
             </div>
           </div>

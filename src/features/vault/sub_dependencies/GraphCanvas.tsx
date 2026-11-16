@@ -83,7 +83,7 @@ export function GraphCanvas({ nodes, edges, counts, filterKind, selectedNodeId, 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[600px] rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden"
+      className="relative w-full h-[600px] rounded-modal border border-hair bg-secondary/5 shadow-elevation-2 overflow-hidden"
       onMouseLeave={() => setHovered(null)}
     >
       <div
@@ -176,7 +176,7 @@ export function GraphCanvas({ nodes, edges, counts, filterKind, selectedNodeId, 
 
 function GraphNodeCircle({ node, pos, selected, highlighted, dimmed, onHover, onClick }: {
   node: GraphNode; pos: NodePos; selected: boolean; highlighted: boolean; dimmed: boolean;
-  onHover: (id: string) => void; onClick: () => void;
+  onHover: (id: string | null) => void; onClick: () => void;
 }) {
   const color = node.color;
   const health = node.kind === 'credential' ? node.meta.healthOk : undefined;
@@ -197,6 +197,9 @@ function GraphNodeCircle({ node, pos, selected, highlighted, dimmed, onHover, on
       aria-pressed={selected}
       onMouseEnter={() => onHover(node.id)}
       onFocus={() => onHover(node.id)}
+      // Without this a keyboard user tabbing out of the graph left the last node
+      // highlighted and every other node dimmed.
+      onBlur={() => onHover(null)}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -236,7 +239,7 @@ function ClusterLabel({ label, count, center, tint }: { label: string; count: nu
 
 function SizeLegend({ label }: { label: string }) {
   return (
-    <div className="absolute left-3 top-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
+    <div className="absolute left-3 top-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-hair px-3 py-2">
       <span className="typo-label text-foreground">{label}</span>
       <svg width={10} height={10}><circle cx={5} cy={5} r={3} fill="currentColor" className="text-foreground" /></svg>
       <svg width={18} height={18}><circle cx={9} cy={9} r={7} fill="currentColor" className="text-foreground" /></svg>
@@ -251,7 +254,7 @@ function KindLegend({ kindLabels, counts, relationshipsLabel, healthLabels }: {
   healthLabels: { ok: string; bad: string; unknown: string };
 }) {
   return (
-    <div className="absolute left-3 bottom-3 flex flex-col gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
+    <div className="absolute left-3 bottom-3 flex flex-col gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-hair px-3 py-2">
       <div className="flex items-center gap-3">
         {KIND_ORDER.map((kind) => {
           const Icon = KIND_ICONS[kind];
@@ -259,12 +262,12 @@ function KindLegend({ kindLabels, counts, relationshipsLabel, healthLabels }: {
             <div key={kind} className="flex items-center gap-1.5">
               <Icon className="w-3 h-3" style={{ color: KIND_TINT[kind] }} />
               <span className="typo-caption text-foreground">{kindLabels[kind]}</span>
-              <span className="typo-data text-foreground/90">{counts[kind]}</span>
+              <span className="typo-data text-ink-1">{counts[kind]}</span>
             </div>
           );
         })}
       </div>
-      <div className="flex items-center gap-3 pt-2 border-t border-primary/10">
+      <div className="flex items-center gap-3 pt-2 border-t border-hair">
         <span className="typo-caption text-foreground">{relationshipsLabel}</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: HEALTH_HEX.ok }} /><span className="typo-caption text-foreground">{healthLabels.ok}</span></span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: HEALTH_HEX.bad }} /><span className="typo-caption text-foreground">{healthLabels.bad}</span></span>

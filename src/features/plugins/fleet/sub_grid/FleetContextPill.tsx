@@ -70,8 +70,7 @@ export function FleetContextPill({ claudeSessionId, sessionId, canCompact = fals
   // Disabled while the session is mid-turn; the Button's own disabledReason explains why.
   const compact = (
     <Button
-      variant="accent"
-      tone="warning"
+      variant="secondary"
       size="xs"
       data-testid="fleet-context-compact"
       icon={<Minimize2 className="w-3 h-3" aria-hidden="true" />}
@@ -86,7 +85,7 @@ export function FleetContextPill({ claudeSessionId, sessionId, canCompact = fals
   return (
     <span className="inline-flex items-center gap-2">
       <Tooltip content={f.context_size_hint}>
-        <span data-testid="fleet-context-pill" className={`inline-flex items-center gap-1 typo-body tabular-nums ${tone}`}>
+        <span data-testid="fleet-context-pill" className={`inline-flex items-center gap-1 typo-body num ${tone}`}>
           <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
           <span>{f.context_size_label}</span>
           <Numeric value={ctx} unit="count" />

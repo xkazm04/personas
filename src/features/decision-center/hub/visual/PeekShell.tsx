@@ -130,14 +130,14 @@ export function PeekShell({
         <span className="typo-heading text-foreground">{label}</span>
         {count !== null && (
           <span className="flex items-baseline gap-1 typo-caption">
-            <span className="typo-heading tabular-nums text-foreground" data-testid="decision-peek-count">{count}</span>
+            <span className="typo-data text-foreground" data-testid="decision-peek-count">{count}</span>
             {m.dc_hub_peek_waiting}
           </span>
         )}
         <span className="ml-auto flex items-center gap-1.5">{actions}</span>
       </header>
       {children}
-      <footer className="flex flex-shrink-0 items-center gap-1.5 border-t border-primary/10 px-4 py-2 typo-caption" aria-hidden>
+      <footer className="flex flex-shrink-0 items-center gap-1.5 border-t border-hair px-4 py-2 typo-caption" aria-hidden>
         <Keycap>↑</Keycap><Keycap>↓</Keycap> {m.dc_hub_key_move}
         {/* One walk hint: the arrows, then the lane keys the lane peek adds,
             then the word they all share ("chips" until the WP10 cutover). */}

@@ -16,6 +16,9 @@ import {
 import type { KbIngestProgressPayload } from "@/lib/eventRegistry";
 import { useKbIngestProgress } from "./kbIngestListener";
 
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
+
 const TITLE_ID = "drive-knowledge-drawer-title";
 
 type Tab = "ask" | "extract";
@@ -115,22 +118,15 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
   }, [extractBlocked, tab]);
 
   const tabButton = (id: Tab, label: string, Icon: typeof Brain) => (
-    <button
-      type="button"
+    <OptionChip
       role="tab"
-      aria-selected={tab === id}
       disabled={id === "extract" && extractBlocked}
       data-testid={`drive-kb-tab-${id}`}
-      onClick={() => setTab(id)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body transition-colors focus-ring ${
-        tab === id
-          ? "bg-violet-500/20 border border-violet-500/45 text-violet-50"
-          : "border border-transparent text-foreground hover:bg-secondary/50"
-      } disabled:opacity-40 disabled:cursor-not-allowed`}
-    >
+      onSelect={() => setTab(id)}
+      selected={tab === id}
+    ><span className="inline-flex items-center gap-1.5">
       <Icon className="w-3.5 h-3.5" />
-      {label}
-    </button>
+      {label}</span></OptionChip>
   );
 
   return (
@@ -138,8 +134,8 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
       <div className="contents">
         <div className="px-5 py-4 border-b border-primary/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-modal bg-violet-500/20 border border-violet-500/45 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-violet-100" />
+            <div className="w-10 h-10 rounded-modal bg-surface-2 border border-hair-2 flex items-center justify-center">
+              <Brain className="w-5 h-5 text-ink-2" />
             </div>
             <div className="flex-1 min-w-0">
               <div id={TITLE_ID} className="typo-section-title truncate">
@@ -149,14 +145,15 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
                 {tx(d.kb_docs_n, { count: kb.documentCount })}
               </div>
             </div>
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-input text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               aria-label={d.cancel}
+              variant="ghost"
+              size="icon-sm"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
           {/* The in-flight strip. It sits UNDER the permanent header rather
               than replacing it, so a running job never hides the KB it is
@@ -195,7 +192,7 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
                   aria-valuenow={progress.documentsDone}
                 >
                   <div
-                    className="h-full bg-violet-400 transition-[width] duration-300"
+                    className="h-full bg-surface-2 transition-[width] duration-300"
                     style={{
                       width: `${Math.round((progress.documentsDone / progress.documentsTotal) * 100)}%`,
                     }}

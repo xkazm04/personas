@@ -7,6 +7,8 @@ import { VaultConnectorPicker } from "@/features/vault/components/VaultConnector
 import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
 import { CELL_KEY_TO_DIM } from "./glyphLayoutHelpers";
 import { useTranslation } from "@/i18n/useTranslation";
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 interface GlyphAnswerCardProps {
@@ -73,21 +75,21 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
           className="w-7 h-7 rounded-input flex items-center justify-center"
           style={{ background: `${color}33`, boxShadow: `0 0 10px ${color}66` }}
         >
-          <HelpCircle className="w-4 h-4 text-foreground" />
+          <HelpCircle className="w-4 h-4 text-ink-1" />
         </span>
-        <span className="typo-label text-foreground flex-1">
+        <span className="typo-label text-ink-1 flex-1">
           {dim ? dimText.label[dim] : question.cellKey.replace(/-/g, " ")}
         </span>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="text-foreground hover:text-foreground/80"
           aria-label={t.common.close}
-        >
-          <X className="w-4 h-4" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+        />
       </div>
-      <p className={dlg ? "typo-title text-foreground text-left leading-relaxed" : "typo-body-lg text-foreground"}>{question.question}</p>
+      <p className={dlg ? "typo-title text-ink-1 text-left leading-relaxed" : "typo-body-lg text-ink-1"}>{question.question}</p>
       {category ? (
         <VaultConnectorPicker
           category={category}
@@ -100,15 +102,14 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
           {options.length > 0 && (
             <div className={dlg ? "flex flex-col gap-2 items-start" : "flex flex-wrap gap-2"}>
               {options.map((opt, i) => (
-                <button
+                <PressSurface
                   key={i}
-                  type="button"
-                  onClick={() => submit(opt)}
-                  className={`border typo-body text-foreground transition-colors cursor-pointer bg-primary/10 hover:bg-primary/20 ${dlg ? "w-full text-left px-3.5 py-2.5 rounded-none" : "px-2.5 py-1.5 rounded-full"}`}
+                  onPress={() => submit(opt)}
+                  className={`border bg-surface-1 ${dlg ? "w-full px-3.5 py-2.5 rounded-none" : "px-2.5 py-1.5 rounded-full"}`}
                   style={{ borderColor: `${color}40` }}
                 >
                   {opt}
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}
@@ -117,17 +118,19 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submit(text); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) submit(text); }}
               placeholder={t.templates.chronology.answer_own_words_placeholder}
-              className={`flex-1 bg-primary/5 border text-foreground placeholder:text-foreground/40 focus:outline-none ${dlg ? "px-3.5 py-3 rounded-none typo-body-lg text-left" : "px-3 py-2 rounded-modal typo-body"}`}
+              className={`flex-1 bg-surface-1 border text-ink-1 placeholder:text-ink-3 focus:outline-none ${dlg ? "px-3.5 py-3 rounded-none typo-body-lg text-left" : "px-3 py-2 rounded-modal typo-body"}`}
               style={{ borderColor: `${color}40` }}
               autoFocus
             />
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="md"
               onClick={() => submit(text)}
               disabled={!text.trim()}
-              className={`border typo-body text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 transition-colors ${dlg ? "px-4 rounded-none" : "px-3 py-2 rounded-modal"}`}
+              icon={<Send className="w-3.5 h-3.5" />}
+              className={dlg ? "px-4 rounded-none" : ""}
               style={{
                 background: `${color}33`,
                 borderColor: `${color}66`,
@@ -135,7 +138,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
             >
               <Send className="w-3.5 h-3.5" />
               {t.common.send}
-            </button>
+            </Button>
           </div>
         </>
       )}

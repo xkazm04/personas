@@ -14,7 +14,7 @@ describe('colour row popup returns focus to its opener', () => {
 
   it('Escape with focus in the hex field puts focus back on the swatch button', () => {
     render(<ColorRow label="Primary" value="#336699" derivedValue={undefined} onChange={() => {}} />);
-    const trigger = screen.getByTitle('Pick Primary');
+    const trigger = screen.getByLabelText('Pick Primary');
     fireEvent.click(trigger);
     const region = screen.getByRole('region', { name: 'Primary color picker' });
     const hex = within(region).getByRole('textbox');
@@ -27,6 +27,6 @@ describe('colour row popup returns focus to its opener', () => {
 
   it('the popup region is not announced as a menu', () => {
     render(<ColorRow label="Primary" value="#336699" derivedValue={undefined} onChange={() => {}} />);
-    expect(screen.getByTitle('Pick Primary').getAttribute('aria-haspopup')).not.toBe('true');
+    expect(screen.getByLabelText('Pick Primary').getAttribute('aria-haspopup')).not.toBe('true');
   });
 });

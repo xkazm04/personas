@@ -7,6 +7,8 @@ import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeybo
 import { isFreeKey } from '../useDecisionKeys';
 import type { GuideCard } from './guideModel';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // Athena's next moves after a finished step: 2-3 cards, each a real turn. Enter
 // takes the first, 1-3 pick, X passes on the first. Keys are ignored while the
 // user is typing or a popover is open (same guards as the question card), and
@@ -68,7 +70,7 @@ export default function GuideDeck({
 
   return (
     <div ref={rootRef} className="pointer-events-auto flex w-full flex-col items-center gap-2">
-      <p className="rounded-full border border-border bg-background/80 px-3 py-1 typo-caption text-foreground/90 backdrop-blur">
+      <p className="rounded-interactive border border-border bg-background/80 px-3 py-1 typo-caption text-ink-2 backdrop-blur">
         <span className="font-medium text-primary">{g.suggests}</span> {g.suggests_keys}
       </p>
       <div className="flex w-full justify-center gap-3">
@@ -78,26 +80,20 @@ export default function GuideDeck({
             initial={shouldAnimate ? { opacity: 0, y: 24 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.07 * i }}
-            className="flex w-72 flex-col rounded-card border border-primary/25 bg-gradient-to-b from-secondary/95 to-background/95 p-4 shadow-elevation-3 backdrop-blur"
+            className="flex w-72 flex-col rounded-card border border-primary/25 bg-surface-1 from-secondary/95 to-background/95 p-4 shadow-elevation-3 backdrop-blur"
           >
-            {c.goal && <p className="typo-caption text-foreground/90">{tx(g.serves, { goal: c.goal })}</p>}
+            {c.goal && <p className="typo-caption text-ink-2">{tx(g.serves, { goal: c.goal })}</p>}
             <h3 className="mt-1 typo-title-lg text-foreground">{title(c)}</h3>
-            <p className="mt-1 line-clamp-2 typo-body text-foreground/90">{why(c)}</p>
-            <p className="mt-2 typo-caption text-foreground/90">{estimate}</p>
+            <p className="mt-1 line-clamp-2 typo-body text-ink-2">{why(c)}</p>
+            <p className="mt-2 typo-caption text-ink-2">{estimate}</p>
             <div className="mt-3 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => onAccept(c)}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 typo-title transition-colors ${
-                  i === 0 ? 'bg-primary text-background hover:bg-primary/90' : 'border border-border text-foreground hover:border-primary/60'
-                }`}
-              >
+              <Button onClick={() => onAccept(c)} variant={i === 0 ? 'primary' : 'secondary'} size="md">
                 {i === 0 ? g.do_it : g.yes}
-                <kbd className="rounded-interactive border border-current/40 px-1 font-mono text-xs">{i + 1}</kbd>
-              </button>
-              <button type="button" onClick={() => onDecline(c)} className="typo-body text-foreground/90 hover:text-foreground">
+                <kbd className="rounded-interactive border border-current/40 px-1 font-mono typo-caption">{i + 1}</kbd>
+              </Button>
+              <Button type="button" onClick={() => onDecline(c)} variant="ghost" size="sm">
                 {g.not_now}
-              </button>
+              </Button>
             </div>
           </motion.article>
         ))}

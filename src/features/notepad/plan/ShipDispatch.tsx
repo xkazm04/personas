@@ -16,6 +16,7 @@ import { toastCatch } from '@/lib/silentCatch';
 
 import { dispatchRowToFleet, passportDispatchKey } from '@/features/teams/sub_factory/passport/passportFleet';
 import type { ExitCriterion, ShipMilestoneVM } from '@/lib/milestone/shipModel';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Session key: `passport:ship-<criterion>:<projectId>` — the `passport:`
  *  prefix keeps it inside usePassportFleetSessions' watch window. */
@@ -145,17 +146,16 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={10}
-          className="w-full rounded-input border border-foreground/[0.12] bg-background/70 px-3 py-2 typo-caption text-foreground/90 outline-none focus:border-primary/40 resize-y"
+          className="w-full rounded-input border border-foreground/[0.12] bg-background/70 px-3 py-2 typo-caption text-ink-2 outline-none focus:border-primary/40 resize-y"
           data-testid="ship-dispatch-prompt"
         />
         <div className="flex items-center justify-end gap-2 mt-3">
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring"
           >
             {t.common.cancel}
-          </button>
+          </Button>
           <AsyncButton
             isLoading={busy}
             disabled={prompt.trim().length === 0}

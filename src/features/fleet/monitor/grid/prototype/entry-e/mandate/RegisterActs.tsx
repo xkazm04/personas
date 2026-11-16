@@ -39,7 +39,7 @@ export function RegisterActs({ mandates, onOpenLog }: {
     <section className="ae-plate flex min-w-0 flex-col gap-2 rounded-card px-1 pb-2 pt-2" aria-label={m.ml_act_log} data-testid="mandate-register-acts">
       <header className="flex items-center gap-2 px-3">
         <Engraved>{m.ml_act_log}</Engraved>
-        {log.acts && <span className="typo-data tabular-nums text-foreground">{log.counts.all}</span>}
+        {log.acts && <span className="typo-data num text-foreground">{log.counts.all}</span>}
         <Button variant="ghost" size="xs" className="ml-auto" onClick={() => onOpenLog()} icon={<ScrollText className="h-3.5 w-3.5" aria-hidden />} aria-keyshortcuts="L">
           {m.ml_act_log} <Kbd>L</Kbd>
         </Button>
@@ -58,7 +58,7 @@ export function RegisterActs({ mandates, onOpenLog }: {
                 <ProjectName key="p" projectId={x?.projectId ?? null} mirror={x?.mirror}>{x?.projectName ?? m.ml_project_unknown}</ProjectName>,
                 <Actor key="b" actor={a.actor} />,
                 <Undo key="u" act={a} />,
-                <RelativeTime key="t" timestamp={a.createdAt} className="typo-data k-regular k-quiet tabular-nums" />,
+                <RelativeTime key="t" timestamp={a.createdAt} className="typo-data k-regular k-quiet num" />,
               ]}
               onPress={() => onOpenLog(a.id)}
             />

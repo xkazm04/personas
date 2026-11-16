@@ -62,7 +62,7 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
   // Show empty state only once the fetch has settled and nothing was found.
   if (isEmpty) {
     return (
-      <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10">
+      <div className="mx-6 mt-4 rounded-modal border border-dashed border-hair bg-surface-1">
         <ScenarioEmptyState
           glyph={RATELIMIT_GLYPH}
           size="sm"
@@ -74,23 +74,23 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
   }
 
   return (
-    <div className="mx-6 mt-4 rounded-modal border border-primary/10 bg-secondary/30 backdrop-blur-sm p-3">
+    <div className="mx-6 mt-4 rounded-modal border border-hair bg-surface-1 backdrop-blur-sm p-3">
       <div className="flex items-center gap-4 typo-body">
-        <div className="flex items-center gap-1.5 text-foreground">
+        <div className="flex items-center gap-1.5 text-ink-1">
           <Shield className="w-3.5 h-3.5" />
           <span className="font-medium">{t.triggers.rate_limits_heading}</span>
         </div>
 
         <div className="flex items-center gap-3 flex-1">
           {/* Rate-limited triggers count */}
-          <div className="flex items-center gap-1.5 text-foreground">
+          <div className="flex items-center gap-1.5 text-ink-1">
             <span className="font-mono">{stats.rateLimitedCount}</span>
             <span>{stats.rateLimitedCount === 1 ? t.triggers.trigger_configured : t.triggers.triggers_configured}</span>
           </div>
 
           {/* Concurrent */}
           {stats.totalConcurrent > 0 && (
-            <div className="flex items-center gap-1.5 text-blue-400/80">
+            <div className="flex items-center gap-1.5 text-status-info">
               <Layers className="w-3 h-3" />
               <span className="font-mono">{stats.totalConcurrent}</span>
               <span>{t.triggers.running_stat}</span>
@@ -99,7 +99,7 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
 
           {/* Queue depth */}
           {stats.totalQueued > 0 && (
-            <div className="flex items-center gap-1.5 text-amber-400/80">
+            <div className="flex items-center gap-1.5 text-status-warning">
               <AlertTriangle className="w-3 h-3" />
               <span className="font-mono">{stats.totalQueued}</span>
               <span>{t.triggers.queued_bare}</span>
@@ -108,7 +108,7 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
 
           {/* Throttled */}
           {stats.throttledCount > 0 && (
-            <div className="flex items-center gap-1.5 text-red-400/80">
+            <div className="flex items-center gap-1.5 text-status-error">
               <Shield className="w-3 h-3" />
               <span className="font-mono">{stats.throttledCount}</span>
               <span>{t.triggers.throttled_stat}</span>
@@ -121,7 +121,7 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
           <div className="w-24 h-1.5 bg-primary/8 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                stats.throttledCount > 0 ? 'bg-red-400' : stats.totalQueued > 0 ? 'bg-amber-400' : 'bg-emerald-400'
+                stats.throttledCount > 0 ? 'bg-status-error' : stats.totalQueued > 0 ? 'bg-status-warning' : 'bg-status-success'
               }`}
               style={{
                 width: `${Math.min(100, stats.rateLimitedCount > 0
@@ -146,11 +146,11 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
 // (fill-mode both) so a fast fetch never paints it at all. No animate-pulse.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 
 function RateLimitGhost() {
   return (
-    <div className="mx-6 mt-4 rounded-modal border border-primary/10 bg-secondary/30 backdrop-blur-sm p-3" aria-hidden="true">
+    <div className="mx-6 mt-4 rounded-modal border border-hair bg-surface-1 backdrop-blur-sm p-3" aria-hidden="true">
       <div className="flex items-center gap-4 typo-body">
         <div
           className="flex items-center gap-1.5 animate-fade-in"

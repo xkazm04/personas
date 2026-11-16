@@ -36,8 +36,8 @@ export function QueueGhost({ rows = 8 }: { rows?: number }) {
           className="flex flex-col justify-center gap-1.5 rounded-input border border-dashed border-border bg-foreground/[0.02] px-2"
           style={{ width: QUEUE_TILE_W, height: QUEUE_TILE_H }}
         >
-          <span className="h-[0.6em] w-28 rounded bg-primary/[0.06] typo-body" />
-          <span className="h-[0.5em] w-16 rounded bg-primary/[0.05] typo-caption" />
+          <span className="h-[0.6em] w-28 rounded-interactive bg-surface-2 typo-body" />
+          <span className="h-[0.5em] w-16 rounded-interactive bg-surface-2 typo-caption" />
         </div>
       ))}
     </div>

@@ -22,22 +22,22 @@ const ORIGIN_META: Record<
   standards_finding: {
     labelKey: 'origin_standards_finding',
     icon: ClipboardCheck,
-    tw: 'bg-sky-500/10 text-sky-300 border-sky-500/25',
+    tw: 'bg-status-info/10 text-status-info border-status-info/25',
   },
   passport_gap: {
     labelKey: 'origin_passport_gap',
     icon: Target,
-    tw: 'bg-violet-500/10 text-violet-300 border-violet-500/25',
+    tw: 'bg-role-agent/10 text-role-agent border-role-agent/25',
   },
   llm_cost: {
     labelKey: 'origin_llm_cost',
     icon: DollarSign,
-    tw: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+    tw: 'bg-status-warning/10 text-status-warning border-status-warning/25',
   },
   sentry_spike: {
     labelKey: 'origin_sentry_spike',
     icon: AlertTriangle,
-    tw: 'bg-red-500/10 text-red-300 border-red-500/25',
+    tw: 'bg-status-error/10 text-status-error border-status-error/25',
   },
   // Pink, not emerald (operator, Gate 2): an off-track KPI is bad news and must not
   // wear the success hue. A raw step like its ten siblings, not role-human: the
@@ -46,24 +46,24 @@ const ORIGIN_META: Record<
   kpi_offtrack: {
     labelKey: 'origin_kpi_offtrack',
     icon: Activity,
-    tw: 'bg-pink-500/10 text-pink-300 border-pink-500/25',
+    tw: 'bg-role-human/10 text-role-human border-role-human/25',
   },
   // Zinc, not indigo (operator, Gate 3): light rendered indigo 6.5 from
   // Readiness's violet. A dormant skill reads as the quiet grey it is.
   skill_dormant: {
     labelKey: 'origin_skill_dormant',
     icon: MoonStar,
-    tw: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/25',
+    tw: 'bg-surface-2 text-ink-3 border-hair-2',
   },
   doc_rot: {
     labelKey: 'origin_doc_rot',
     icon: FileClock,
-    tw: 'bg-orange-500/10 text-orange-300 border-orange-500/25',
+    tw: 'bg-status-warning/10 text-status-warning border-status-warning/25',
   },
   kpi_sim: {
     labelKey: 'origin_kpi_sim',
     icon: FlaskConical,
-    tw: 'bg-teal-500/10 text-teal-300 border-teal-500/25',
+    tw: 'bg-role-external/10 text-role-external border-role-external/25',
   },
   // Fuchsia, not rose (operator, Gate 3): rose sat 4.0 from Errors' red in
   // dark. The 400 step in dark (300 would be 9.8 from KPI pink); light's repair
@@ -71,7 +71,7 @@ const ORIGIN_META: Record<
   memory_disputed: {
     labelKey: 'origin_memory_disputed',
     icon: BrainCircuit,
-    tw: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/25',
+    tw: 'bg-role-human/10 text-role-human border-role-human/25',
   },
   // Not a measurement sensor: the Workspace Knowledge Center materializing an
   // adopted practice (or a pitfall to fix) as one backlog item per member repo.
@@ -80,7 +80,7 @@ const ORIGIN_META: Record<
   workspace_practice: {
     labelKey: 'origin_workspace_practice',
     icon: Library,
-    tw: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/25',
+    tw: 'bg-status-info/10 text-status-info border-status-info/25',
   },
   // The scan-sweep skill's findings + deep-scan escalations, arriving through
   // the memory-outbox door rather than an in-app sensor.
@@ -89,7 +89,7 @@ const ORIGIN_META: Record<
   scan_sweep: {
     labelKey: 'origin_scan_sweep',
     icon: Compass,
-    tw: 'bg-lime-500/10 text-lime-300 border-lime-500/25',
+    tw: 'bg-status-success/10 text-status-success border-status-success/25',
   },
 };
 

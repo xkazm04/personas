@@ -22,6 +22,7 @@ import { ExpandedRowContent } from './ExpandedRowContent';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ComfortableRowProps {
   review: PersonaDesignReview;
@@ -103,22 +104,23 @@ function ComfortableRowImpl({
         tabIndex={0}
         role="button"
         aria-expanded={isExpanded}
-        className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
+        className="group flex items-center border-b border-hair hover:bg-surface-1 cursor-pointer transition-colors"
         data-testid={`template-row-${review.id}`}
       >
         <div className="w-20 px-4 py-4 flex-shrink-0 flex items-center gap-1.5">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={(e) => { e.stopPropagation(); if (!compareDisabled) onToggleCompare(review); }}
             disabled={compareDisabled}
-            aria-pressed={isCompareSelected}
+            pressed={isCompareSelected}
             aria-label={isCompareSelected ? t.templates.compare.remove_from_compare : t.templates.compare.add_to_compare}
             data-testid={`compare-toggle-${review.id}`}
-            className={`flex-shrink-0 rounded outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] ${
+            className={`flex-shrink-0 transition-opacity ${
               isCompareSelected
                 ? 'opacity-100'
                 : compareDisabled
-                  ? 'opacity-0 group-hover:opacity-30 focus-visible:opacity-30 cursor-not-allowed'
+                  ? 'opacity-0 group-hover:opacity-30 focus-visible:opacity-30'
                   : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
             }`}
           >
@@ -127,7 +129,7 @@ function ComfortableRowImpl({
             ) : (
               <Square className="w-4 h-4 text-foreground" />
             )}
-          </button>
+          </Button>
           {isExpanded ? (
             <ChevronDown className="w-4.5 h-4.5 text-foreground" />
           ) : (
@@ -142,7 +144,7 @@ function ComfortableRowImpl({
                   {highlightMatch(review.test_case_name, searchQuery)}
                 </span>
                 {isAiResult && (
-                  <span className="px-1.5 py-0.5 typo-body rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
+                  <span className="typo-body text-role-agent flex-shrink-0">
                     <Sparkles className="w-2.5 h-2.5 inline -mt-px mr-0.5" />AI
                   </span>
                 )}
@@ -153,7 +155,7 @@ function ComfortableRowImpl({
                       { count: review.adoption_count },
                     )}
                   >
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code text-status-success/70">
                       <Download className="w-2.5 h-2.5" />
                       {review.adoption_count}
                     </span>
@@ -161,7 +163,7 @@ function ComfortableRowImpl({
                 )}
                 {flowCount > 0 && (
                   <Tooltip content={`${flowCount} ${t.templates.expanded.flows}`}>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 flex-shrink-0">
+                    <span className="inline-flex items-center gap-1 typo-body text-role-agent flex-shrink-0">
                       <Workflow className="w-2.5 h-2.5" />
                       {flowCount}
                     </span>
@@ -189,7 +191,7 @@ function ComfortableRowImpl({
         <div className="w-28 px-4 py-4 flex-shrink-0">
           <div className="flex justify-center">
             {review.adoption_count > 0 ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+              <span className="inline-flex items-center gap-1.5 typo-data text-ink-2">
                 <Download className="w-3.5 h-3.5" />
                 {review.adoption_count}
               </span>
@@ -216,7 +218,7 @@ function ComfortableRowImpl({
       </div>
       {/* Expanded content -- CSS-only fade-in, no framer-motion */}
       {isExpanded && (
-        <div className="border-b border-primary/10 bg-secondary/20 animate-expand-in">
+        <div className="border-b border-hair bg-surface-1 animate-expand-in">
           <ExpandedRowContent
             review={review}
             designResult={designResult}

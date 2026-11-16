@@ -22,6 +22,8 @@ import {
 } from '@/api/companion';
 import { SetupRow, VoiceEngineInstallBlock, PreviewButton, useVoicePreview } from './voiceEngineShared';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Kokoro voice picker. Higher-quality local TTS via the sherpa-onnx sidecar.
  *
@@ -190,15 +192,16 @@ function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
             />
           </>
         )}
-        <button
+        <Button
           type="button"
           onClick={onRecheck}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground typo-caption transition-colors focus-ring disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           {t.athena.voice_kokoro_recheck}
-        </button>
+        </Button>
       </div>
     </SectionCard>
   );
@@ -223,7 +226,7 @@ function KokoroVoiceRow({ voice, selected, previewable, onSelect }: KokoroVoiceR
   return (
     <div
       className={`rounded-card border p-3 ${
-        selected ? 'border-cyan-500/40 bg-cyan-500/5' : 'border-foreground/10 bg-secondary/20'
+        selected ? 'border-hair-2 bg-surface-2' : 'border-foreground/10 bg-secondary/20'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -234,7 +237,7 @@ function KokoroVoiceRow({ voice, selected, previewable, onSelect }: KokoroVoiceR
               · {genderLabel} · {voice.languageLabel} · {voice.grade}
             </span>
             {selected && (
-              <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
+              <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-interactive bg-surface-2 text-ink-2">
                 <CheckCircle2 className="w-3 h-3" />
                 {t.athena.voice_piper_voice_selected}
               </span>
@@ -243,17 +246,18 @@ function KokoroVoiceRow({ voice, selected, previewable, onSelect }: KokoroVoiceR
           <p className="typo-caption mt-0.5">{voice.description}</p>
         </div>
         <div className="flex flex-col gap-1.5 shrink-0">
-          <button
+          <Button
             type="button"
             onClick={onSelect}
             disabled={selected}
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 typo-caption transition-colors focus-ring disabled:opacity-40"
+            variant="ghost"
+            size="sm"
           >
             <CheckCircle2 className="w-3 h-3" />
             {selected
               ? t.athena.voice_piper_voice_selected
               : t.athena.voice_piper_voice_select}
-          </button>
+          </Button>
           <PreviewButton
             previewState={previewState}
             onPreview={onPreview}

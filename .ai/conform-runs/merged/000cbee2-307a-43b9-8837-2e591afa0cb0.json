@@ -1,0 +1,81 @@
+{
+ "schema": "conform-run/1",
+ "worker": "000cbee2-307a-43b9-8837-2e591afa0cb0",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-03T22:14:23.905110+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "lib-harness",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/harness/verifier.ts:131 The '0 means pass' check only runs inside the catch branch, but every custom gate is a `grep ... | wc -l` pipeline that exits 0 (probed: a 51-line count exits 0). So runGate takes the success branch and reports every typography, i18n and notification audit as passed whatever the count, and the final report (orchestrator.ts:318) publishes those passes.",
+   "techniques": [
+    {
+     "technique": "assert-through-the-reader",
+     "verdict": "deviation",
+     "evidence": "src/lib/harness/__tests__/verifier.test.ts:88 The emitted shell pipeline is checked against a mocked execSync that throws, and the real reader (sh) never throws on `| wc -l`. The shell is available and cheap, but the oracle never runs it."
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/lib/harness/__tests__/verifier.test.ts:119 'still reads a zero-count custom gate as a pass' pins a decision that real commands never reach, because the pipeline's exit is wc's 0. The test is green while every nonzero count also passes."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/lib/harness/__tests__/verifier.test.ts:12 Unit tests inherit no machine state because child_process is stubbed. That same stub is why the reader is never consulted."
+    },
+    {
+     "technique": "suite-partitioning",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/verifier.ts:37 The module wires `npm run test -- --run` as one required gate and owns no partition of its own. Lane design is the repo's, not this context's."
+    }
+   ],
+   "registryProposal": "assert-through-the-reader could name shell pipeline exit semantics (the exit status is the last stage's, so `| wc -l` always exits 0) as a third shape. It is the commonest way a count-gate's verdict detaches from its count."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "triggers-triggers",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "triggers-studio",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "test-runner-lab",
+   "reason": "evidence leans on core/src/models/output_assertion.rs, which is not a tracked file"
+  },
+  {
+   "subject": "test-harness",
+   "context": "hooks-utility-interaction",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T22:14:23.905110+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-through-the-reader",
+    "isolation-lanes",
+    "suite-partitioning",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "lib-harness",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

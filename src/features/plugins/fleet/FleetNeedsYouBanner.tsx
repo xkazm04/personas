@@ -3,28 +3,30 @@ import { Hourglass, MessageSquare, Send, X, SkipForward } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useNowTick, formatAgo, waitTier, type WaitTier } from './relativeAgo';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // Escalating chip accents by how long a session has been blocked: violet
 // while fresh, amber past 5 minutes, red past 15. Driven by the banner's
 // existing 30s tick — passive escalation, no per-second churn.
 const TIER_CHIP: Record<WaitTier, { chip: string; hover: string; age: string; divider: string }> = {
   fresh: {
-    chip: 'border-violet-400/30 bg-violet-400/10 text-violet-100',
-    hover: 'hover:bg-violet-400/20',
-    age: 'text-violet-300/80',
-    divider: 'border-violet-400/30',
+    chip: 'border-hair bg-surface-2 text-ink-1',
+    hover: 'hover:bg-sel',
+    age: 'text-role-agent',
+    divider: 'border-hair',
   },
   aging: {
-    chip: 'border-amber-400/40 bg-amber-400/10 text-amber-100',
-    hover: 'hover:bg-amber-400/20',
-    age: 'text-amber-300/90',
-    divider: 'border-amber-400/40',
+    chip: 'border-hair bg-surface-2 text-status-warning',
+    hover: 'hover:bg-sel',
+    age: 'text-status-warning',
+    divider: 'border-hair',
   },
   stuck: {
-    chip: 'border-red-400/45 bg-red-400/10 text-red-100',
-    hover: 'hover:bg-red-400/20',
-    age: 'text-red-300/90',
-    divider: 'border-red-400/45',
+    chip: 'border-hair bg-surface-2 text-status-error',
+    hover: 'hover:bg-sel',
+    age: 'text-status-error',
+    divider: 'border-hair',
   },
 };
 
@@ -92,26 +94,25 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
       role="region"
       aria-label={t.plugins.fleet.needs_you_aria}
       data-testid="fleet-needs-you"
-      className="mb-3 rounded-card border border-violet-400/30 bg-violet-400/10 px-3 py-2"
+      className="mb-3 rounded-card border border-hair bg-surface-1 px-3 py-2"
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="relative inline-flex h-2 w-2 shrink-0" aria-hidden="true">
-          <span className="absolute inset-0 rounded-full bg-violet-400 opacity-60 animate-ping" />
-          <span className="relative h-2 w-2 rounded-full bg-violet-400" />
+          <span className="relative h-2 w-2 rounded-full bg-role-agent" />
         </span>
-        <Hourglass className="w-3.5 h-3.5 text-violet-300 shrink-0" aria-hidden="true" />
-        <span className="typo-caption text-violet-200 mr-1">{label}</span>
+        <Hourglass className="w-3.5 h-3.5 text-role-agent shrink-0" aria-hidden="true" />
+        <span className="typo-caption text-ink-1 mr-1">{label}</span>
         {waiting.length > 1 && (
-          <button
+          <Button variant="secondary" size="icon-sm"
             type="button"
             data-testid="fleet-needs-you-cycle-next"
             onClick={onCycleNext}
             aria-label={t.plugins.fleet.jump_next}
-            title={t.plugins.fleet.jump_next}
-            className="mr-1 flex items-center rounded-interactive border border-violet-400/30 bg-violet-400/10 p-1 text-violet-100 transition-colors hover:bg-violet-400/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+            tooltip={t.plugins.fleet.jump_next}
+            className="mr-1"
           >
             <SkipForward className="w-3 h-3" aria-hidden="true" />
-          </button>
+          </Button>
         )}
         <div className="flex flex-wrap items-center gap-1.5">
           {waiting.map((s) => {
@@ -122,14 +123,13 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
               <span
                 key={s.id}
                 data-wait-tier={tier}
-                className={`flex items-center overflow-hidden rounded-interactive border text-[13px] ${tc.chip}`}
+                className={`flex items-center overflow-hidden rounded-interactive border typo-caption ${tc.chip}`}
               >
-                <button
+                <Tooltip content={s.stateReason ? `${name} — ${s.stateReason}` : t.plugins.fleet.jump_to_session}><button
                   type="button"
                   data-testid={`fleet-needs-you-chip-${s.id}`}
                   onClick={() => onJump(s.id)}
-                  title={s.stateReason ? `${name} — ${s.stateReason}` : t.plugins.fleet.jump_to_session}
-                  className={`flex items-center gap-1 px-2 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60`}
+                  className={`flex items-center gap-1 px-2 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60`}
                 >
                   <span className="truncate max-w-[140px]">{name}</span>
                   {/* What Claude is waiting for (Notification message), plus
@@ -139,17 +139,16 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
                     <span className={`truncate max-w-[220px] ${tc.age}`}>· {s.stateReason}</span>
                   )}
                   <span className={`whitespace-nowrap ${tc.age}`}>· {formatAgo(t, Number(s.lastActivityMs), now)}</span>
-                </button>
-                <button
+                </button></Tooltip>
+                <Tooltip content={tx(t.plugins.fleet.reply_to, { name })}><button
                   type="button"
                   data-testid={`fleet-needs-you-reply-${s.id}`}
                   onClick={() => { setReplyTo(s.id); setText(''); }}
                   aria-label={tx(t.plugins.fleet.reply_to, { name })}
-                  title={tx(t.plugins.fleet.reply_to, { name })}
-                  className={`border-l ${tc.divider} px-1.5 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60`}
+                  className={`border-l ${tc.divider} px-1.5 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60`}
                 >
                   <MessageSquare className="w-3 h-3" aria-hidden="true" />
-                </button>
+                </button></Tooltip>
               </span>
             );
           })}
@@ -168,26 +167,24 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
             onKeyDown={(e) => { if (e.key === 'Escape') { setReplyTo(null); setText(''); } }}
             placeholder={tx(t.plugins.fleet.reply_placeholder, { name: replyTarget.name ?? replyTarget.projectLabel })}
             autoFocus
-            className="min-w-0 flex-1 rounded-input border border-violet-400/30 bg-secondary/40 px-2 py-1 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+            className="min-w-0 flex-1 rounded-input border border-hair bg-surface-1 px-2 py-1 typo-body text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60"
           />
-          <button
+          <Button variant="primary" size="sm"
             type="submit"
             data-testid="fleet-reply-send"
             disabled={!text.trim() || sending}
-            className="flex items-center gap-1 rounded-interactive bg-violet-500/80 px-2 py-1 text-[13px] font-medium text-foreground transition-colors hover:bg-violet-500 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
           >
             <Send className="w-3 h-3" aria-hidden="true" />
             {sending ? t.plugins.fleet.reply_sending : t.plugins.fleet.reply_send}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => { setReplyTo(null); setText(''); }}
             aria-label={t.plugins.fleet.reply_cancel}
-            title={t.plugins.fleet.reply_cancel}
-            className="rounded-interactive p-1 text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+            tooltip={t.plugins.fleet.reply_cancel}
           >
             <X className="w-3.5 h-3.5" aria-hidden="true" />
-          </button>
+          </Button>
         </form>
       )}
     </div>

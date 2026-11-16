@@ -205,7 +205,7 @@ export function AthenaFleetPlanCard({
 
       {error !== null && (
         <p
-          className="typo-caption text-rose-400 break-words"
+          className="typo-caption text-status-error break-words"
           data-testid="athena-plan-error"
         >
           {resolveErrorTranslated(t, error).message}

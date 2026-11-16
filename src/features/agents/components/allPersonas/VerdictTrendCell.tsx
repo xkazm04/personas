@@ -16,7 +16,7 @@ export function VerdictTrendCell({ scores }: { scores: number[] | undefined }) {
   const list = scores ?? [];
 
   if (list.length === 0) {
-    return <span className="typo-caption text-foreground">—</span>;
+    return <span className="typo-caption text-ink-2">—</span>;
   }
 
   const latest = list[list.length - 1]!;
@@ -26,7 +26,7 @@ export function VerdictTrendCell({ scores }: { scores: number[] | undefined }) {
     return (
       <Tooltip content={t.director.col_verdict_tooltip}>
         <span
-          className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded text-[11px] tabular-nums"
+          className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded-interactive typo-caption tabular-nums"
           style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}
         >
           {latest}
@@ -40,7 +40,7 @@ export function VerdictTrendCell({ scores }: { scores: number[] | undefined }) {
     <Tooltip content={tooltipText}>
       <span className="inline-flex items-center gap-1.5">
         <ScoreSparkline scores={list} />
-        <span className="text-[11px] tabular-nums" style={{ color: tone.color }}>
+        <span className="typo-caption tabular-nums" style={{ color: tone.color }}>
           {latest}
         </span>
       </span>

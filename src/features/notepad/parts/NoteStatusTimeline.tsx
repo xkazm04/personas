@@ -66,19 +66,19 @@ export function NoteStatusTimeline({ note, plan }: { note: DevNote; plan?: NoteP
           <li key={step} className="flex items-start gap-2.5">
             <span
               className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border ${
-                reached ? 'border-primary/30 bg-primary/10 text-foreground' : 'border-primary/10 text-foreground/60'
+                reached ? 'border-primary/30 bg-surface-1 text-foreground' : 'border-hair text-ink-2'
               }`}
             >
               <Icon className="w-3 h-3" aria-hidden />
             </span>
             <span className="min-w-0 flex flex-col">
-              <span className={`typo-caption ${current ? 'text-foreground' : reached ? 'text-foreground/80' : 'text-foreground/60'}`}>
+              <span className={`typo-caption ${current ? 'text-foreground' : reached ? 'text-ink-2' : 'text-ink-2'}`}>
                 {meta.labelKey(t)}
               </span>
               {at ? (
-                <RelativeTime timestamp={at} className="typo-caption text-foreground/60" />
+                <RelativeTime timestamp={at} className="typo-caption text-ink-2" />
               ) : stampless ? (
-                <span className="typo-caption text-foreground/60">{t.notepad.timeline_no_stamp}</span>
+                <span className="typo-caption text-ink-2">{t.notepad.timeline_no_stamp}</span>
               ) : null}
             </span>
           </li>

@@ -1,4 +1,5 @@
 import { importanceColor, importanceGradient } from '../libs/memoryVisualTokens';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // The only surviving export of what used to be this module's row/badge kit.
 //
@@ -24,7 +25,7 @@ export function ImportanceBar({ value }: { value: number }) {
   const highImportance = value >= 4;
 
   return (
-    <div className="flex items-center gap-1.5" title={label} aria-label={label}>
+    <Tooltip content={label}><div className="flex items-center gap-1.5" aria-label={label}>
       <div
         className="relative w-10 h-1.5 rounded-full bg-muted-foreground/15 overflow-hidden"
         style={highImportance ? { boxShadow: `0 1px 4px ${importanceColor(value)}60` } : undefined}
@@ -34,7 +35,7 @@ export function ImportanceBar({ value }: { value: number }) {
           style={{ width: `${pct}%`, background: importanceGradient(value) }}
         />
       </div>
-      <span className="typo-caption text-foreground tabular-nums">{value}/{maxScale}</span>
-    </div>
+      <span className="typo-data text-ink-2">{value}/{maxScale}</span>
+    </div></Tooltip>
   );
 }

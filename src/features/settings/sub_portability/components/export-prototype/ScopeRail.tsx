@@ -1,19 +1,21 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Bot, Users, KeyRound, FolderGit2, BookOpen, Fingerprint, Sparkles, Boxes, Eraser, Lock, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExportKind, ExportPicker } from './types';
 import { ENCRYPTED_SCOPES } from './types';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Icon + accent per scope. A total `Record` on purpose — an eighth
  *  `ExportKind` without an entry here fails typecheck instead of rendering
  *  an undefined icon. */
 export const SCOPE_META: Record<ExportKind, { icon: LucideIcon; accent: string }> = {
-  personas: { icon: Bot, accent: 'bg-violet-500/10 text-violet-300' },
-  teams: { icon: Users, accent: 'bg-sky-500/10 text-sky-300' },
-  credentials: { icon: KeyRound, accent: 'bg-amber-500/10 text-amber-300' },
-  projects: { icon: FolderGit2, accent: 'bg-emerald-500/10 text-emerald-300' },
-  knowledge: { icon: BookOpen, accent: 'bg-indigo-500/10 text-indigo-300' },
-  twins: { icon: Fingerprint, accent: 'bg-rose-500/10 text-rose-300' },
-  athena: { icon: Sparkles, accent: 'bg-fuchsia-500/10 text-fuchsia-300' },
+  personas: { icon: Bot, accent: 'bg-role-agent/10 text-role-agent' },
+  teams: { icon: Users, accent: 'bg-status-info/10 text-status-info' },
+  credentials: { icon: KeyRound, accent: 'bg-status-warning/10 text-status-warning' },
+  projects: { icon: FolderGit2, accent: 'bg-status-success/10 text-status-success' },
+  knowledge: { icon: BookOpen, accent: 'bg-role-agent/10 text-role-agent' },
+  twins: { icon: Fingerprint, accent: 'bg-status-error/10 text-status-error' },
+  athena: { icon: Sparkles, accent: 'bg-role-agent/10 text-role-agent' },
 };
 
 /** Rail order (also the tab order of the picker). */
@@ -64,22 +66,13 @@ export function ScopeRail({
   };
 
   return (
-    <nav className="w-56 flex-shrink-0 border-r border-primary/10 bg-secondary/5 p-3 flex flex-col gap-1 overflow-y-auto">
+    <nav className="w-56 flex-shrink-0 border-r border-hair bg-secondary/5 p-3 flex flex-col gap-1 overflow-y-auto">
       {SCOPES.map((key) => {
         const { icon: Icon, accent } = SCOPE_META[key];
         const c = picker.counts[key];
         const active = scope === key;
         return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onScope(key)}
-            aria-current={active}
-            data-testid={`portability-scope-${key}`}
-            className={`relative flex items-center gap-2.5 pl-3 pr-2.5 py-2.5 rounded-card text-left transition-colors ${
-              active ? 'bg-primary/10 border border-primary/20' : 'border border-transparent hover:bg-secondary/20'
-            }`}
-          >
+          <PressSurface key={key} onPress={() => onScope(key)} aria-current={active} aria-pressed={undefined} selected={active} data-testid={`portability-scope-${key}`} className="relative flex items-center gap-2.5 pl-3 pr-2.5 py-2.5 rounded-card">
             {active && <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-primary" />}
             <span className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${accent}`}>
               <Icon className="w-4 h-4" />
@@ -91,29 +84,35 @@ export function ScopeRail({
               </span>
             </span>
             {ENCRYPTED.has(key) && (
-              <Lock className="w-3 h-3 text-amber-300 flex-shrink-0" aria-label={p.encrypted_scope} />
+              <Lock className="w-3 h-3 text-status-warning flex-shrink-0" aria-label={p.encrypted_scope} />
             )}
-          </button>
+          </PressSurface>
         );
       })}
 
       <div className="mt-auto pt-3 space-y-1">
-        <button
+        <Button
           type="button"
           onClick={() => setAll(true)}
           data-testid="portability-select-everything"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-secondary/25 transition-colors"
+          variant="ghost"
+          size="sm"
+          className="w-full"
+          icon={<Boxes className="w-3.5 h-3.5" />}
         >
-          <Boxes className="w-3.5 h-3.5" /> {p.select_everything}
-        </button>
-        <button
+           {p.select_everything}
+        </Button>
+        <Button
           type="button"
           onClick={() => setAll(false)}
           data-testid="portability-clear-all"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-secondary/25 transition-colors"
+          variant="ghost"
+          size="sm"
+          className="w-full"
+          icon={<Eraser className="w-3.5 h-3.5" />}
         >
-          <Eraser className="w-3.5 h-3.5" /> {p.clear_all}
-        </button>
+           {p.clear_all}
+        </Button>
       </div>
     </nav>
   );

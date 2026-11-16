@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -80,6 +80,13 @@ export function CredentialSchemaForm({
   const activeSubType = (config.subTypes.find((st) => st.id === subTypeId) ?? config.subTypes[0])!;
   const hasHealthcheck = !!activeSubType.healthcheck || !!config.customHealthcheck;
 
+  // Extra fields feed the healthcheck (customHealthcheck reads extraState), so
+  // an edit makes the previous verdict stale just like a field edit does.
+  const setExtraStateAndInvalidate = useCallback<typeof setExtraState>((u) => {
+    setExtraState(u);
+    health.invalidate();
+  }, [health]);
+
   const handleSubTypeChange = useCallback((id: string) => {
     setSubTypeId(id);
     health.invalidate();
@@ -105,7 +112,22 @@ export function CredentialSchemaForm({
     );
   }, [config.customHealthcheck, config.serviceTypePrefix, config.title, activeSubType, serviceTypeOverride, nameOverride, name, health, subTypeId, extraState]);
 
+  // CredentialEditForm has no saving state, so a second click while the create
+  // IPCs or the scope picker are in flight would mint a second connector and
+  // credential.
+  const savingRef = useRef(false);
+
   const handleSave = async (fieldValues: Record<string, string>) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    try {
+      await saveOnce(fieldValues);
+    } finally {
+      savingRef.current = false;
+    }
+  };
+
+  const saveOnce = async (fieldValues: Record<string, string>) => {
     const effectiveName = nameOverride ?? name.trim();
     if (!nameOverride && !name.trim()) {
       setError(tx(t.vault.credential_forms.name_required, { label: config.nameLabel }));
@@ -234,10 +256,10 @@ export function CredentialSchemaForm({
       )}
 
       {config.extraFields?.map((ef) => (
-        <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraState} />
+        <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraStateAndInvalidate} />
       ))}
 
-      {error && <p id="schema-form-error" role="alert" className="typo-body text-red-400">{error}</p>}
+      {error && <p id="schema-form-error" role="alert" className="typo-body text-status-error">{error}</p>}
     </div>
   );
 }

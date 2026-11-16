@@ -17,7 +17,7 @@ export function MentionMenu({ candidates, onPick }: {
           size="xs"
           block
           onMouseDown={(e) => { e.preventDefault(); onPick(m.name); }}
-          className={`justify-start! ${i === 0 ? 'bg-primary/10' : ''} [&>span:last-child]:flex [&>span:last-child]:w-full [&>span:last-child]:items-center [&>span:last-child]:gap-2`}
+          className={`justify-start! ${i === 0 ? 'bg-surface-1' : ''} [&>span:last-child]:flex [&>span:last-child]:w-full [&>span:last-child]:items-center [&>span:last-child]:gap-2`}
           icon={m.personaId === 'athena' ? <Sparkles className="h-3 w-3 text-role-agent" aria-hidden /> : undefined}
         >
           <span className="min-w-0 flex-1 truncate text-left typo-body text-foreground">{m.name.replace(/^T:\s*/, '')}</span>

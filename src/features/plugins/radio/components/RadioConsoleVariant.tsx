@@ -78,9 +78,9 @@ export default function RadioConsoleVariant(props: RadioVariantProps) {
       {groups.map((group) => (
         <section key={group.label} className="space-y-2.5">
           <div className="flex items-center gap-2">
-            {group.isYouTube ? <Music className="w-4 h-4 text-rose-400" /> : <Radio className="w-4 h-4 text-violet-400" />}
+            {group.isYouTube ? <Music className="w-4 h-4 text-status-error" /> : <Radio className="w-4 h-4 text-ink-2" />}
             <h3 className="typo-heading text-primary">{group.label}</h3>
-            <span className="typo-caption text-foreground tabular-nums rounded-full bg-secondary/30 px-2 py-0.5">
+            <span className="typo-caption text-foreground tabular-nums rounded-interactive bg-secondary/30 px-2 py-0.5">
               {group.stations.length}
             </span>
           </div>

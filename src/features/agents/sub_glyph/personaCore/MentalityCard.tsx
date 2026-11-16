@@ -12,6 +12,8 @@ import { MotionizedGlyph } from "@/features/shared/components/display/Motionized
 import { ACCENT, coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./catalog";
 import { ARCHETYPE_GLYPHS } from "./archetypeGlyphData";
 import type { Archetype } from "./types";
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 const axisColorOf = (axisId: string) => TRAIT_AXES.find((a) => a.id === axisId)?.color ?? ACCENT;
 
@@ -56,15 +58,12 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
   const Icon = coreIcon(a.icon);
   const traits = (ARCHETYPE_TRAITS[a.id] ?? []).flatMap((id) => { const trait = traitById(id); return trait ? [trait] : []; });
   return (
-    <button
+    <PressSurface
       ref={cardRef}
-      type="button"
-      onClick={onSelect}
+      onPress={onSelect}
       data-testid={`core-snapshot-${a.id}`}
-      aria-pressed={active}
-      className={`group relative flex items-center gap-3.5 p-3 rounded-card border text-left transition-colors cursor-pointer ${
-        active ? "" : "border-card-border/60 hover:bg-secondary/30 hover:border-card-border"
-      }`}
+      selected={active}
+      className="group relative flex items-center gap-3.5 p-3 rounded-card border border-hair"
       style={active ? { borderColor: colorWithAlpha(a.color, 0.55), background: colorWithAlpha(a.color, 0.1) } : undefined}
     >
       {/* Avatar — the signature AI-persona head glyph, drawing in on view */}
@@ -91,14 +90,14 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
               const TI = trait.icon;
               const c = axisColorOf(trait.axis);
               return (
-                <span key={trait.id} title={t.agents[trait.labelKey]} className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(c, 0.16) }}>
+                <Tooltip content={t.agents[trait.labelKey]}><span key={trait.id} className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(c, 0.16) }}>
                   <TI className="w-3 h-3" style={{ color: c }} />
-                </span>
+                </span></Tooltip>
               );
             })}
           </span>
         )}
       </span>
-    </button>
+    </PressSurface>
   );
 }

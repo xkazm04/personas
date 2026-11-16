@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { awaitExecutionResult } from '../../hooks/awaitExecutionResult';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -140,36 +141,38 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
 
   if (!expanded) {
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(true)}
         aria-expanded={false}
-        className="flex items-center gap-1.5 typo-caption text-foreground hover:text-indigo-400 transition-colors cursor-pointer py-0.5"
+        variant="ghost"
+        size="xs"
+        icon={<Terminal className="w-3 h-3" />}
       >
-        <Terminal className="w-3 h-3" />
         <span>{dt.title}</span>
         <ChevronRight className="w-3 h-3" />
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="space-y-2 border border-indigo-500/20 rounded-card bg-indigo-500/5 p-2.5">
+    <div className="space-y-2 border border-role-agent/20 rounded-card bg-role-agent/5 p-2.5">
       {/* Header */}
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(false)}
         aria-expanded
-        className="flex items-center gap-1.5 typo-caption text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+        variant="ghost"
+        size="sm"
+        icon={<Terminal className="w-3 h-3" />}
       >
-        <Terminal className="w-3 h-3" />
         <span>{dt.title}</span>
         <ChevronDown className="w-3 h-3" />
-      </button>
+      </Button>
 
       {/* Request body editor */}
       <div className="space-y-1">
-        <label htmlFor={bodyFieldId} className="text-[11px] font-medium text-foreground uppercase tracking-wider">
+        <label htmlFor={bodyFieldId} className="typo-eyebrow text-ink-1">
           {dt.request_body}
         </label>
         <textarea
@@ -178,10 +181,10 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           onChange={(e) => setBody(e.target.value)}
           rows={4}
           spellCheck={false}
-          className="w-full px-2.5 py-2 text-xs font-mono rounded-card
-                     bg-secondary/50 border border-primary/10
-                     text-foreground/90 placeholder:text-muted-foreground
-                     focus-visible:outline-none focus-visible:border-indigo-500/40
+          className="w-full px-2.5 py-2 typo-caption font-mono rounded-card
+                     bg-surface-2 border border-hair
+                     text-ink-1 placeholder:text-ink-3
+                     focus-visible:outline-none focus-visible:border-role-agent/40
                      resize-y transition-colors"
           placeholder={dt.request_body_placeholder}
         />
@@ -189,61 +192,49 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
 
       {/* Send button */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={handleSend}
           disabled={sending || !body.trim()}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/25 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-        >
-          {sending
+          variant="accent"
+          tone="agent"
+          size="sm"
+          icon={sending
             ? <Loader2 className="w-3 h-3 animate-spin" />
             : <Send className="w-3 h-3" />}
-          {sending ? dt.sending : dt.send_request}
-        </button>
+        >{sending ? dt.sending : dt.send_request}</Button>
 
-        <button
+        <Button
           type="button"
           onClick={() => setShowSnippets((p) => !p)}
-          className="flex items-center gap-1 px-2 py-1.5 typo-caption text-foreground hover:text-foreground/80 rounded-card hover:bg-secondary/40 transition-colors cursor-pointer"
-        >
-          <Code2 className="w-3 h-3" />
-          {dt.snippets}
-        </button>
+          variant="ghost"
+          size="sm"
+          icon={<Code2 className="w-3 h-3" />}
+        >{dt.snippets}</Button>
       </div>
 
       {/* Snippet panel */}
       {showSnippets && (
         <div className="space-y-1.5">
-          <p className="typo-caption text-foreground">{dt.snippets_target_endpoint}</p>
+          <p className="typo-caption text-ink-2">{dt.snippets_target_endpoint}</p>
           <div className="flex items-center gap-1">
             {(['curl', 'fetch'] as const).map((lang) => (
-              <button
+              <Button
                 key={lang}
                 type="button"
                 onClick={() => setSnippetLang(lang)}
-                className={`px-2 py-0.5 text-[11px] font-medium rounded-input transition-colors cursor-pointer ${
-                  snippetLang === lang
-                    ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
-                    : 'text-foreground hover:text-muted-foreground/80 border border-transparent'
-                }`}
-              >
-                {lang}
-              </button>
+                variant={snippetLang === lang ? 'secondary' : 'ghost'}
+                size="xs"
+              >{lang}</Button>
             ))}
-            <button
-              type="button"
-              onClick={copySnippet}
-              className="ml-auto flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded-input
-                         text-foreground hover:text-foreground/80
-                         hover:bg-secondary/40 transition-colors cursor-pointer"
-            >
+            <Button type="button" onClick={copySnippet} variant="ghost" size="xs" className="ml-auto">
               {copiedSnippet
-                ? <><Check className="w-3 h-3 text-emerald-400" /> {t.common.copied}</>
-                : <><Copy className="w-3 h-3" /> {t.common.copy}</>}
-            </button>
+              ? <><Check className="w-3 h-3 text-status-success" /> {t.common.copied}</>
+              : <><Copy className="w-3 h-3" /> {t.common.copy}</>}
+            </Button>
           </div>
-          <pre className="text-[11px] font-mono bg-secondary/50 border border-primary/10 rounded-card
-                         p-2.5 overflow-x-auto text-foreground whitespace-pre-wrap break-all">
+          <pre className="typo-caption font-mono bg-surface-2 border border-hair rounded-card
+                         p-2.5 overflow-x-auto text-ink-1 whitespace-pre-wrap break-all">
             {snippet}
           </pre>
         </div>
@@ -252,30 +243,30 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       {/* Response viewer */}
       {response && (
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="font-medium text-foreground uppercase tracking-wider">{dt.response_label}</span>
-            <span className={`px-1.5 py-0.5 rounded font-medium ${
+          <div className="flex items-center gap-2 typo-caption">
+            <span className="typo-eyebrow text-ink-2">{dt.response_label}</span>
+            <span className={`px-1.5 py-0.5 rounded-interactive font-medium ${
               response.status === 'success'
-                ? 'bg-emerald-500/10 text-emerald-400'
-                : 'bg-red-500/10 text-red-400'
+                ? 'bg-status-success/10 text-status-success'
+                : 'bg-status-error/10 text-status-error'
             }`}>
               {response.status === 'success' ? dt.local_run_completed : dt.local_run_failed}
             </span>
             {response.durationMs != null && (
-              <Numeric value={response.durationMs} unit="ms" className="text-foreground" />
+              <Numeric value={response.durationMs} unit="ms" className="text-ink-1" />
             )}
             {response.costUsd != null && response.costUsd > 0 && (
-              <Numeric value={response.costUsd} unit="usd" className="text-foreground" />
+              <Numeric value={response.costUsd} unit="usd" className="text-ink-1" />
             )}
             {response.model && (
-              <span className="text-foreground">{response.model}</span>
+              <span className="text-ink-1">{response.model}</span>
             )}
           </div>
           <pre className={`typo-code rounded-card p-2.5 overflow-x-auto whitespace-pre-wrap break-words
                           border max-h-64 overflow-y-auto ${
             response.status === 'success'
-              ? 'bg-emerald-500/5 border-emerald-500/15 text-foreground/85'
-              : 'bg-red-500/5 border-red-500/15 text-red-400/90'
+              ? 'bg-status-success/5 border-status-success/15 text-ink-1'
+              : 'bg-status-error/5 border-status-error/15 text-status-error'
           }`}>
             {response.error
               ? response.error

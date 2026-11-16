@@ -60,10 +60,10 @@ export default function PendingApprovalBar({ tabId }: { tabId: number | null }) 
     <div
       role="status"
       data-testid="webview-pending-approval"
-      className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-amber-500/25 bg-amber-500/10 min-w-0"
+      className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-status-warning/25 bg-status-warning/10 min-w-0"
     >
-      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-      <span className="typo-caption text-amber-400 truncate">{t.browser.webview.pending_body}</span>
+      <AlertCircle className="w-3.5 h-3.5 text-status-warning shrink-0" />
+      <span className="typo-caption text-status-warning truncate">{t.browser.webview.pending_body}</span>
     </div>
   );
 }

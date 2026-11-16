@@ -55,7 +55,7 @@ export function ReplyLane({ contactHandle = null }: {
 
   return (
     <section className="rounded-card border border-border bg-card/30 overflow-hidden">
-      <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-gradient-to-r from-primary/8 to-transparent">
+      <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface-1 from-primary/8 to-transparent">
         <span className="w-6 h-6 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
           <MessagesSquare className="w-3.5 h-3.5 text-primary" />
         </span>

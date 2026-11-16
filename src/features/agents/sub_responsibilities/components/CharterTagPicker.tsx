@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 export interface Choice<T extends string> {
   value: T;
@@ -33,7 +34,7 @@ export function TagPicker<T extends string>({
 }) {
   return (
     <div className="flex flex-col gap-1.5" data-testid={testId}>
-      <span className="typo-label text-foreground">{label}</span>
+      <span className="typo-label text-ink-1">{label}</span>
       <div
         role="radiogroup"
         aria-label={label}
@@ -42,26 +43,20 @@ export function TagPicker<T extends string>({
         {choices.map((c) => {
           const active = c.value === value;
           return (
-            <button
+            <OptionChip
               key={c.value}
-              type="button"
               role="radio"
-              aria-checked={active}
-              onClick={() => onChange(c.value)}
-              className={`flex flex-col items-start px-2.5 py-1 rounded-interactive border text-left transition-colors focus-ring ${
-                active
-                  ? 'bg-primary/15 border-primary/40 text-primary'
-                  : 'bg-secondary/30 border-primary/10 text-foreground/85 hover:border-primary/25'
-              }`}
+              selected={active}
+              onSelect={() => onChange(c.value)}
               data-testid={`${testId}-${c.value}`}
             >
               <span className="typo-body">{c.label}</span>
-              <span className="typo-caption text-foreground tabular-nums">{c.detail}</span>
-            </button>
+              <span className="typo-caption text-ink-2 tabular-nums">{c.detail}</span>
+            </OptionChip>
           );
         })}
       </div>
-      {hint && <p className="typo-caption text-foreground">{hint}</p>}
+      {hint && <p className="typo-caption text-ink-2">{hint}</p>}
     </div>
   );
 }

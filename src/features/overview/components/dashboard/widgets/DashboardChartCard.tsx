@@ -22,9 +22,9 @@ interface DashboardChartCardProps {
   title: string;
   /** Optional leading icon rendered in a tinted chip. */
   icon?: LucideIcon;
-  /** Tailwind classes for the icon chip (bg + text), e.g. 'bg-cyan-500/10 text-cyan-400'. */
+  /** Tailwind classes for the icon chip (bg + text), e.g. 'bg-role-highlight/10 text-role-highlight'. */
   iconChipClass?: string;
-  /** Decorative blur color class for the top-right glow, e.g. 'bg-cyan-500/5'. */
+  /** Decorative blur color class for the top-right glow, e.g. 'bg-role-highlight/5'. */
   accentClass?: string;
   /** Right-aligned header content: legend totals, a range switch, etc. */
   actions?: ReactNode;
@@ -42,8 +42,8 @@ interface DashboardChartCardProps {
 }
 
 export const DashboardChartCard = memo(function DashboardChartCard({
-  title, icon: Icon, iconChipClass = 'bg-cyan-500/10 text-cyan-400',
-  accentClass = 'bg-cyan-500/5', actions, footer, bodyHeightClass = 'h-32',
+  title, icon: Icon, iconChipClass = 'bg-role-highlight/10 text-role-highlight',
+  accentClass = 'bg-role-highlight/5', actions, footer, bodyHeightClass = 'h-32',
   isEmpty = false, emptyVariant = 'chart', ariaLabel, children,
 }: DashboardChartCardProps) {
   return (
@@ -54,7 +54,7 @@ export const DashboardChartCard = memo(function DashboardChartCard({
       <div className={`absolute top-0 right-0 w-32 h-32 ${accentClass} blur-3xl rounded-full pointer-events-none`} />
 
       <div className="flex items-center justify-between gap-2 relative z-10">
-        <h3 className="typo-label text-foreground flex items-center gap-2 min-w-0">
+        <h3 className="typo-label text-ink-2 flex items-center gap-2 min-w-0">
           {Icon && (
             <div className={`p-1.5 rounded-card ${iconChipClass}`}>
               <Icon className="w-3.5 h-3.5" />
@@ -79,7 +79,7 @@ export const DashboardChartCard = memo(function DashboardChartCard({
         )}
       </div>
 
-      {footer && <div className="pt-3 border-t border-primary/5 relative z-10">{footer}</div>}
+      {footer && <div className="pt-3 border-t border-hair relative z-10">{footer}</div>}
     </div>
   );
 });

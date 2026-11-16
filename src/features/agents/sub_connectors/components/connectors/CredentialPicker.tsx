@@ -3,13 +3,15 @@ import { Hash, Send, Mail, Bell, Check, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { CredentialMetadata } from '@/lib/types/types';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 export function channelIcon(type: string) {
   switch (type) {
-    case 'slack': return <Hash className="w-4 h-4 text-purple-400" />;
-    case 'telegram': return <Send className="w-4 h-4 text-blue-400" />;
-    case 'email': return <Mail className="w-4 h-4 text-amber-400" />;
-    default: return <Bell className="w-4 h-4 text-foreground" />;
+    case 'slack': return <Hash className="w-4 h-4 text-role-agent" />;
+    case 'telegram': return <Send className="w-4 h-4 text-status-info" />;
+    case 'email': return <Mail className="w-4 h-4 text-status-warning" />;
+    default: return <Bell className="w-4 h-4 text-ink-1" />;
   }
 }
 
@@ -38,59 +40,59 @@ export function CredentialPicker({
       itemCount={creds.length + 1}
       onSelectFocused={handleSelectFocused}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
+          pressed={isOpen}
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-modal typo-body text-foreground focus-ring transition-all"
+          className="w-full"
         >
           {selected ? (
             <>
               {channelIcon(selected.service_type)}
               <span className="flex-1 text-left truncate">{selected.name}</span>
-              <span className="typo-body text-foreground">{selected.service_type}</span>
+              <span className="typo-caption text-ink-3">{selected.service_type}</span>
             </>
           ) : (
-            <span className="flex-1 text-left text-foreground">{t.agents.connectors.cp_select}</span>
+            <span className="flex-1 text-left text-ink-2">{t.agents.connectors.cp_select}</span>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+          <ChevronDown className={`w-3.5 h-3.5 text-ink-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (
         <>
-          <button
-            type="button"
+          <OptionRow
             role="option"
-            aria-selected={!selectedId}
-            onClick={() => { onChange(''); close(); }}
-            className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
-              focusIndex === 0 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
-            } ${!selectedId ? 'text-foreground' : 'text-foreground'}`}
+            selected={!selectedId}
+            onSelect={() => { onChange(''); close(); }}
+            className={focusIndex === 0 ? 'bg-surface-2' : ''}
           >
-            <span className="text-foreground">&mdash;</span>
-            <span>{t.common.none}</span>
-          </button>
+            <span className="flex items-center gap-3">
+              <span className="text-ink-3">&mdash;</span>
+              <span>{t.common.none}</span>
+            </span>
+          </OptionRow>
           {creds.map((cred, i) => (
-            <button
+            <OptionRow
               key={cred.id}
-              type="button"
               role="option"
-              aria-selected={cred.id === selectedId}
-              onClick={() => { onChange(cred.id); close(); }}
-              className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
-                focusIndex === i + 1 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
-              } ${cred.id === selectedId ? 'text-foreground' : 'text-foreground'}`}
+              selected={cred.id === selectedId}
+              onSelect={() => { onChange(cred.id); close(); }}
+              className={focusIndex === i + 1 ? 'bg-surface-2' : ''}
+              meta={cred.service_type}
             >
-              {channelIcon(cred.service_type)}
-              <span className="flex-1 text-left truncate">{cred.name}</span>
-              <span className="typo-body text-foreground">{cred.service_type}</span>
-              {cred.id === selectedId && <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
-            </button>
+              <span className="flex items-center gap-3">
+                {channelIcon(cred.service_type)}
+                <span className="flex-1 truncate">{cred.name}</span>
+                {cred.id === selectedId && <Check className="w-3 h-3 text-status-success flex-shrink-0" />}
+              </span>
+            </OptionRow>
           ))}
           {creds.length === 0 && (
-            <div className="px-3 py-2 typo-body text-foreground">{t.agents.connectors.cp_no_creds}</div>
+            <div className="px-3 py-2 typo-body text-ink-1">{t.agents.connectors.cp_no_creds}</div>
           )}
         </>
       )}

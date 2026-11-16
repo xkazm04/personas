@@ -17,9 +17,9 @@ const GRADE_ICON: Record<string, typeof CheckCircle2> = {
 };
 
 const GRADE_COLOR: Record<string, string> = {
-  healthy: 'text-emerald-400',
-  degraded: 'text-amber-400',
-  critical: 'text-red-400',
+  healthy: 'text-status-success',
+  degraded: 'text-status-warning',
+  critical: 'text-status-error',
   unknown: 'text-foreground',
 };
 
@@ -45,14 +45,14 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
           return (
             <div
               key={persona.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-secondary/30 border border-primary/8"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-surface-1 border border-primary/8"
             >
               <GradeIcon className={`w-3 h-3 flex-shrink-0 ${gradeColor}`} />
               <span className="typo-caption text-foreground flex-1 truncate">{persona.name}</span>
               {persona.via && (
-                <span className="text-[10px] text-foreground font-mono">{persona.via}</span>
+                <span className="typo-caption text-foreground font-mono">{persona.via}</span>
               )}
-              <span className="text-[10px] text-foreground">
+              <span className="typo-caption text-foreground">
                 {Math.round(persona.recentExecutions / 7)}{dep.per_day}
               </span>
             </div>
@@ -82,17 +82,17 @@ export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
         {suggestions.map((fo) => (
           <div
             key={fo.credentialId}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-emerald-500/5 border border-emerald-500/10"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-status-success/5 border border-status-success/10"
           >
             {fo.healthOk === true ? (
-              <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+              <CheckCircle2 className="w-3 h-3 text-status-success flex-shrink-0" />
             ) : fo.healthOk === false ? (
-              <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+              <XCircle className="w-3 h-3 text-status-error flex-shrink-0" />
             ) : (
               <HelpCircle className="w-3 h-3 text-foreground flex-shrink-0" />
             )}
             <span className="typo-caption text-foreground flex-1 truncate">{fo.credentialName}</span>
-            <span className="text-[10px] text-foreground font-mono">{fo.serviceType}</span>
+            <span className="typo-caption text-foreground font-mono">{fo.serviceType}</span>
           </div>
         ))}
       </div>
@@ -110,8 +110,8 @@ export function MitigationSummary({ simulation }: MitigationSummaryProps) {
   if (simulation.severity === 'low') return null;
 
   return (
-    <div className="rounded-card bg-primary/5 border border-primary/10 p-2">
-      <div className="text-[10px] font-medium text-foreground mb-1">{dep.suggested_mitigations}</div>
+    <div className="rounded-card bg-primary/5 border border-hair p-2">
+      <div className="typo-label text-foreground mb-1">{dep.suggested_mitigations}</div>
       <ul className="typo-caption text-foreground space-y-0.5 list-disc list-inside">
         {simulation.failoverSuggestions.some((f) => f.healthOk === true) && (
           <li>{dep.mitigation_failover}</li>

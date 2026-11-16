@@ -160,7 +160,7 @@ export function RailList({
       {/* The tail. It is INSIDE the scroller on purpose: a footer pinned outside
           would claim "loading more" while the reader is still at the top. */}
       {hasMore && (
-        <p className="px-3 py-2 text-center typo-caption text-foreground opacity-50">
+        <p className="px-3 py-2 text-center typo-caption text-ink-3 ">
           {t.monitor.grid_rail_loading_more}
         </p>
       )}

@@ -43,10 +43,10 @@ export function StepIndicator({
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-card typo-heading transition-colors ${
                 isCurrent
-                  ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
+                  ? 'bg-role-agent/15 text-role-agent border border-role-agent/25'
                   : isCompleted
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'bg-secondary/30 text-foreground border border-primary/10'
+                    ? 'bg-status-success/10 text-status-success border border-status-success/20'
+                    : 'bg-surface-1 text-ink-1 border border-hair'
               }`}
             >
               {isCompleted ? (
@@ -57,7 +57,7 @@ export function StepIndicator({
               {step.label}
             </div>
             {i < steps.length - 1 && (
-              <ArrowRight className="w-3 h-3 text-foreground" />
+              <ArrowRight className="w-3 h-3 text-ink-1" />
             )}
           </div>
         );

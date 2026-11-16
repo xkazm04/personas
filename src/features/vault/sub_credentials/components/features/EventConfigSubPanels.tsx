@@ -3,6 +3,7 @@ import { Clock, Timer, ShieldAlert, CalendarClock } from 'lucide-react';
 import type { CredentialTemplateEvent } from '@/lib/types/types';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useTranslation, type Translations } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function safeParseConfig(json: string | null | undefined): Record<string, unknown> {
   if (!json) return {};
@@ -62,33 +63,32 @@ export function CronScheduleConfig({
 
       {!editing && cronExpr ? (
         <div className="flex items-center gap-2">
-          <code className="px-2 py-0.5 bg-background/50 border border-border/30 rounded typo-code text-foreground">
+          <code className="px-2 py-0.5 bg-background/50 border border-border/30 rounded-interactive typo-code text-foreground">
             {cronExpr}
           </code>
-          <button
+          <Button
             type="button"
             onClick={() => { setDraft(cronExpr); setEditing(true); }}
-            className="typo-body text-amber-400/80 hover:text-amber-400 transition-colors"
+            variant="ghost"
+            size="sm"
           >
             {t.common.edit}
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-2">
           <div className="flex flex-wrap gap-1">
             {presets.map((p) => (
-              <button
+              <Button
                 type="button"
                 key={p.value}
                 onClick={() => { setDraft(p.value); onUpdate({ cronExpression: p.value }); setEditing(false); }}
-                className={`px-2 py-0.5 rounded-card typo-body transition-colors ${
-                  draft === p.value
-                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                    : 'bg-secondary/40 text-foreground border border-transparent hover:bg-secondary/60'
-                }`}
+                variant={draft === p.value ? 'accent' : 'ghost'}
+                tone={draft === p.value ? 'warning' : undefined}
+                size="xs"
               >
                 {p.label}
-              </button>
+              </Button>
             ))}
           </div>
           <div className="flex items-center gap-2">
@@ -97,24 +97,27 @@ export function CronScheduleConfig({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="0 0 * * *"
-              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-card typo-code text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
+              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-card typo-code text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-status-warning/30"
             />
-            <button
+            <Button
               type="button"
               onClick={() => { onUpdate({ cronExpression: draft }); setEditing(false); }}
               disabled={!draft.trim()}
-              className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-card typo-body transition-colors disabled:opacity-50"
+              variant="accent"
+              tone="warning"
+              size="xs"
             >
               {t.common.save}
-            </button>
+            </Button>
             {cronExpr && (
-              <button
+              <Button
                 type="button"
                 onClick={() => { setDraft(cronExpr); setEditing(false); }}
-                className="px-2 py-1 text-foreground hover:text-foreground/90 typo-body transition-colors"
+                variant="ghost"
+                size="xs"
               >
                 {t.common.cancel}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -140,18 +143,16 @@ export function ExpirationThresholdConfig({
         <label className="typo-body text-foreground">{t.vault.event_config.rotate_when_expiring}</label>
         <div className="flex items-center gap-1">
           {[3, 7, 14, 30].map((d) => (
-            <button
+            <Button
               type="button"
               key={d}
               onClick={() => onUpdate({ thresholdDays: d })}
-              className={`px-2 py-0.5 rounded-card typo-code transition-colors ${
-                thresholdDays === d
-                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                  : 'bg-secondary/40 text-foreground border border-transparent hover:bg-secondary/60'
-              }`}
+              variant={thresholdDays === d ? 'accent' : 'ghost'}
+              tone={thresholdDays === d ? 'warning' : undefined}
+              size="xs"
             >
               {d}d
-            </button>
+            </Button>
           ))}
         </div>
       </div>

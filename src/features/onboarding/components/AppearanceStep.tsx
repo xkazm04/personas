@@ -1,4 +1,4 @@
-import { Check, Type, Languages, Rows2 } from 'lucide-react';
+import { Check, Type, Languages } from 'lucide-react';
 import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { switchLanguage, useLanguagePrefetch, useTranslation } from '@/i18n/useTranslation';
@@ -9,7 +9,7 @@ import {
   BrightnessPicker,
   SimpleThemePicker,
 } from '@/features/settings/components/AppearancePickers';
-import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
+import Button from '@/features/shared/components/buttons/Button';
 
 const ONBOARDING_LANGUAGES: { code: Language; label: string; flag: string }[] = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
@@ -33,8 +33,6 @@ export function AppearanceStep() {
   const setTextScale = useThemeStore((s) => s.setTextScale);
   const brightness = useThemeStore((s) => s.brightness);
   const setBrightness = useThemeStore((s) => s.setBrightness);
-  const density = useThemeStore((s) => s.density);
-  const setDensity = useThemeStore((s) => s.setDensity);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const language = useI18nStore((s) => s.language);
@@ -51,8 +49,8 @@ export function AppearanceStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading text-foreground/90 mb-1">{t.onboarding.appearance_heading}</h3>
-        <p className="typo-body text-foreground">
+        <h3 className="typo-heading text-ink-1 mb-1">{t.onboarding.appearance_heading}</h3>
+        <p className="typo-body text-ink-1">
           {t.onboarding.appearance_description}
         </p>
       </div>
@@ -60,14 +58,14 @@ export function AppearanceStep() {
       {/* Language - only when more than one UI locale ships (SHIPPED_UI_LOCALES). */}
       {UI_LANGUAGE_PICKER_ENABLED && <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Languages className="w-4 h-4 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.language_label}</span>
+          <Languages className="w-4 h-4 text-ink-1" />
+          <span className="typo-body text-ink-1">{t.onboarding.language_label}</span>
         </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
           {ONBOARDING_LANGUAGES.map((lang) => {
             const isActive = language === lang.code;
             return (
-              <button
+              <Button
                 type="button"
                 key={lang.code}
                 onFocus={() => prefetchWithIntent(lang.code)}
@@ -77,16 +75,13 @@ export function AppearanceStep() {
                 onPointerDown={() => prefetchNow(lang.code)}
                 onClick={() => setLanguage(lang.code)}
                 aria-pressed={isActive}
-                className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors typo-body ${
-                  isActive
-                    ? 'border-primary/30 bg-primary/5 text-foreground/90'
-                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5 text-foreground'
-                }`}
+                variant={isActive ? 'secondary' : 'ghost'}
+                size="sm"
               >
                 <span>{lang.flag}</span>
                 <span className="truncate">{lang.label}</span>
                 {isActive && <Check className="w-3 h-3 text-primary ml-auto shrink-0" />}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -95,37 +90,29 @@ export function AppearanceStep() {
       {/* Text size */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Type className="w-4 h-4 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.text_size_label}</span>
+          <Type className="w-4 h-4 text-ink-1" />
+          <span className="typo-body text-ink-1">{t.onboarding.text_size_label}</span>
         </div>
         <TextScalePicker textScale={textScale} setTextScale={setTextScale} />
       </div>
 
-      {/* Density */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Rows2 className="w-4 h-4 text-foreground" />
-          <span className="typo-body text-foreground">{t.onboarding.density_label}</span>
-        </div>
-        <DensityToggle density={density} onChange={setDensity} scopeId="onboarding" />
-      </div>
 
       {/* Dark themes */}
       <div className="space-y-2">
-        <span className="typo-body text-foreground">{t.onboarding.dark_label}</span>
+        <span className="typo-body text-ink-1">{t.onboarding.dark_label}</span>
         <SimpleThemePicker themes={darkThemes} themeId={themeId} setTheme={setTheme} />
       </div>
 
       {/* Light themes */}
       <div className="space-y-2">
-        <span className="typo-body text-foreground">{t.onboarding.light_label}</span>
+        <span className="typo-body text-ink-1">{t.onboarding.light_label}</span>
         <SimpleThemePicker themes={lightThemes} themeId={themeId} setTheme={setTheme} />
       </div>
 
       {/* Brightness */}
       <div className="space-y-2">
-        <span className="typo-body text-foreground">{t.onboarding.brightness_label}</span>
-        <p className="typo-body text-foreground">{t.onboarding.brightness_hint}</p>
+        <span className="typo-body text-ink-1">{t.onboarding.brightness_label}</span>
+        <p className="typo-body text-ink-1">{t.onboarding.brightness_hint}</p>
         <BrightnessPicker
           levels={brightnessLevels}
           brightness={brightness}

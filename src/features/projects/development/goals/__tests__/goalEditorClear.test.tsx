@@ -38,3 +38,19 @@ describe('GoalEditorModal edit', () => {
     expect(updateGoal.mock.calls[0]).toEqual(['g1', expect.objectContaining({ description: '' })]);
   });
 });
+
+describe('GoalEditorModal create', () => {
+  it('closes after the goal exists even when applying the picked status fails (no duplicate on retry)', async () => {
+    const onClose = vi.fn();
+    state.createGoal.mockResolvedValueOnce({ id: 'g2' });
+    updateGoal.mockRejectedValueOnce(new Error('boom'));
+    render(<GoalEditorModal isOpen onClose={onClose} projectId="p1" />);
+    fireEvent.change(await screen.findByLabelText('dev_lifecycle.goal_field_title'), { target: { value: 'New goal' } });
+    // Pick a non-default status through the select so updateGoal is attempted.
+    const select = document.querySelector('select') as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: 'in_progress' } });
+    fireEvent.click(screen.getByText('dev_lifecycle.goal_new_title', { selector: 'button, button *' }));
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(state.createGoal).toHaveBeenCalledTimes(1);
+  });
+});

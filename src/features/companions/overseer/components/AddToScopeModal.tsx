@@ -4,6 +4,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Add-to-scope picker — a searchable list of non-system personas not yet in the
@@ -46,7 +47,7 @@ export function AddToScopeModal({
       size="md"
       portal
       staggerChildren={false}
-      panelClassName="relative bg-gradient-to-b from-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col w-full max-h-[70vh]"
+      panelClassName="relative bg-surface-1 from-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-card shadow-elevation-4 overflow-hidden flex flex-col w-full max-h-[70vh]"
     >
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10 bg-secondary/20">
         <h3 id="director-add-scope-title" className="typo-body-lg text-foreground">
@@ -76,11 +77,10 @@ export function AddToScopeModal({
               const added = justAdded.has(p.id);
               return (
                 <li key={p.id}>
-                  <button
-                    type="button"
+                  <PressSurface
                     disabled={added}
-                    onClick={() => add(p.id)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-card hover:bg-secondary/40 transition-colors text-left disabled:opacity-60"
+                    onPress={() => add(p.id)}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-card"
                   >
                     <PersonaIcon icon={p.icon} color={p.color} size="w-4 h-4" />
                     <span className="typo-body text-foreground truncate flex-1">{p.name}</span>
@@ -89,9 +89,9 @@ export function AddToScopeModal({
                         <Check className="w-3.5 h-3.5" />
                       </span>
                     ) : (
-                      <Plus className="w-4 h-4 text-violet-300" />
+                      <Plus className="w-4 h-4 text-ink-2" />
                     )}
-                  </button>
+                  </PressSurface>
                 </li>
               );
             })}

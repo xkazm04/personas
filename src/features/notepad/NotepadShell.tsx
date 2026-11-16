@@ -36,8 +36,8 @@ export default function NotepadShell() {
       data-testid="notepad-shell"
       className="fixed inset-x-0 bottom-8 top-[var(--titlebar-height,40px)] z-[200] flex flex-col bg-background"
     >
-      <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-primary/10">
-        <span className="flex items-center gap-2 typo-caption text-foreground/60">
+      <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-hair">
+        <span className="flex items-center gap-2 typo-caption text-ink-2">
           <NotepadText className="w-4 h-4" aria-hidden />
           {t.notepad.title}
         </span>
@@ -47,11 +47,11 @@ export default function NotepadShell() {
           so the host swaps in under a frame that does not move. Geometry-matched
           to NoteOverview's own padding, h-12 capture line and h-52 cards. */}
       <div className="flex-1 px-8 py-6 flex flex-col gap-5">
-        <div className="h-12 w-40 rounded-input bg-secondary/25" />
-        <div className="h-12 rounded-card bg-secondary/25" />
+        <div className="h-12 w-40 rounded-input bg-surface-1" />
+        <div className="h-12 rounded-card bg-surface-1" />
         <div className="grid grid-cols-4 gap-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-52 rounded-card bg-secondary/20" />
+            <div key={i} className="h-52 rounded-card bg-surface-1" />
           ))}
         </div>
       </div>

@@ -84,7 +84,7 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
             aria-label={stateLabel ?? undefined}
           />
         )}
-        <span className="typo-body text-foreground/95 min-w-0">{name}</span>
+        <span className="typo-body text-ink-2 min-w-0">{name}</span>
         {(meta || actions) && (
           <span className="ml-auto shrink-0 inline-flex items-center gap-1.5">
             {meta}
@@ -95,7 +95,7 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
       {contexts.length > 0 && (
         <span className="flex items-center gap-1.5 mt-1 pl-[15px] flex-wrap">
           {contexts.map((c) => (
-            <span key={c} className="text-[10px] px-1.5 py-px rounded-full border border-foreground/10 text-foreground/50">{c}</span>
+            <span key={c} className="typo-caption px-1.5 py-px rounded-interactive border border-foreground/10 text-ink-3">{c}</span>
           ))}
         </span>
       )}
@@ -118,7 +118,7 @@ export function LedgerList({ children, testid }: { children: ReactNode; testid?:
  *  there on demand and out of the way once learned. */
 export function LedgerHeader({ title, count, aside }: {
   title: string; count: ReactNode; aside?: string;
-  /** Inert: typo-title owns the colour, so the text-foreground/75 this used
+  /** Inert: typo-title owns the colour, so the text-ink-2 this used
    *  to add never rendered (removed with the dead overrides, 2026-09-24). */
   muted?: boolean;
 }) {
@@ -132,7 +132,7 @@ export function LedgerHeader({ title, count, aside }: {
   return (
     <div className="flex items-baseline gap-2 mb-2">
       {aside ? <Tooltip content={aside} placement="top">{heading}</Tooltip> : heading}
-      <span className="typo-data text-foreground/40">{count}</span>
+      <span className="typo-data text-ink-3">{count}</span>
     </div>
   );
 }
@@ -162,7 +162,7 @@ export function LedgerObjectiveHeader({ objective, description, count }: {
     <div className="mb-3">
       <div className="flex items-baseline gap-3 min-w-0">
         <div className="min-w-0 flex-1">{objective}</div>
-        <span className="typo-data text-foreground/40 shrink-0">{count}</span>
+        <span className="typo-data text-ink-3 shrink-0">{count}</span>
       </div>
       {description}
     </div>
@@ -222,7 +222,7 @@ export function StatusMark({ status, label }: { status: string; label: string })
 export function UnassignedMark({ label }: { label: string }) {
   return (
     <Tooltip content={label}>
-      <span role="img" aria-label={label} className="text-foreground/60">
+      <span role="img" aria-label={label} className="text-ink-2">
         <CircleDashed className="w-3.5 h-3.5" aria-hidden />
       </span>
     </Tooltip>

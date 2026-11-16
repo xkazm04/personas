@@ -33,7 +33,7 @@ function Ghost() {
   return (
     <div aria-hidden className="space-y-2 animate-fade-in" style={{ animationDelay: '150ms' }}>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-14 rounded-card border border-border/60 bg-primary/[0.04]" />
+        <div key={i} className="h-14 rounded-card border border-border/60 bg-surface-2" />
       ))}
     </div>
   );
@@ -81,7 +81,7 @@ export function OrchestrationPanel({ open, onClose }: { open: boolean; onClose: 
           <ListOrdered className="h-3.5 w-3.5 text-foreground" aria-hidden />
         </div>
         <h2 id={TITLE_ID} className="min-w-0 truncate typo-title">{t.monitor.orch_panel_title}</h2>
-        <span className="ml-auto min-w-0 truncate typo-caption text-foreground opacity-60">
+        <span className="ml-auto min-w-0 truncate typo-caption text-ink-2 ">
           {t.monitor.orch_panel_subtitle}
         </span>
       </div>

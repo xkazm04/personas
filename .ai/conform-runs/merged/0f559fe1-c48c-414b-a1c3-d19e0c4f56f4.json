@@ -1,0 +1,124 @@
+{
+  "schema": "conform-run/1",
+  "worker": "0f559fe1-c48c-414b-a1c3-d19e0c4f56f4",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-11-06T02:55:00.422273+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "prompt-assembly-engine",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/prompt/templates.rs:207 The autonomous directive still sets a per-run quota of 1-3 durable memories. dispatch.rs writes each one straight into persona_memories via mem_repo::create, so every run mints consolidated beliefs inline. Nothing goes through a batched, judged distillation pass, and this contradicts the assembler's own 'If it won't change a future decision, don't store it' (assemble.rs:660).",
+      "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 Consolidation should be a batch over episodes with hindsight. Here a quota forces inline writes to the durable layer, and the preamble line 33 ('Treat memory writes as compounding') pushes the agent to hoard."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:23 Claims about the human (preference) go through the same auto-commit door as world facts. dispatch.rs:997 calls mem_repo::create with no proposal/pending lane, so a belief about the user is recalled as settled without review."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:28 The recency bridge (Recent Episodes) has its own small cap, separate from other sections. Only that tier is visible in this context; relevance-tier recall lives elsewhere."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:625 Episodes are injected as fenced records ('memory/data only'), high as record and low as belief, not as instructions."
+        }
+      ]
+    },
+    {
+      "context": "plugins-companion-decision",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 The orb's approval prompt renders only the action label and rationale. The write_fact params (scope incl. user, value, sources per catalog.rs:638) ride in an unrendered payload, and write_fact is classified LOW_RISK (actionRisk.ts:50), so the orb recommends approve. A durable belief, possibly about the user, gets adopted without the reviewer seeing the value or its grounds.",
+      "techniques": [
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 The proposal-reviewed lane requires the item to be visible and editable to the operator. Here the review surface hides the belief content and sources."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "companion-core-store",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "overview-director",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "webhook-ingestion",
+      "reason": "withdrawn after review: reviewer (sonnet): The evidence is about src-tauri/src/engine/memory_reflection.rs, which is not among the webhook-ingestion context files; a grep of the context's engine files, webhook.rs and composite.rs found no reference to memory_reflection, so the verdict is about a different context."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T02:55:00.422273+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "episodic-capture",
+        "memory-governance",
+        "recall-injection"
+      ],
+      "deviations": 1,
+      "context": "prompt-assembly-engine",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T02:55:00.422273+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "cross-context-promotion",
+        "decay-and-forgetting",
+        "filter-at-the-id-door",
+        "loss-site-inventory",
+        "memory-governance",
+        "memory-value-model",
+        "rollup-compaction"
+      ],
+      "deviations": 1,
+      "context": "webhook-ingestion",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T02:55:00.422273+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "memory-governance"
+      ],
+      "deviations": 1,
+      "context": "plugins-companion-decision",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

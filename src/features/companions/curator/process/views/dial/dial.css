@@ -57,8 +57,8 @@
 }
 .dial-left > button > * { grid-column: 1; }
 .dial-left > button > i { grid-column: 2; grid-row: 1 / span 3; font-style: normal; font-size: 1.5em; color: var(--color-status-error); }
-.dial-left > button[data-tone="bad"] { border-color: color-mix(in srgb, var(--color-status-error) 55%, transparent); background: color-mix(in srgb, var(--color-status-error) 11%, transparent); box-shadow: 0 0 2rem color-mix(in srgb, var(--color-status-error) 16%, transparent); }
-.dial-left > button[data-tone="bad"]:hover { background: color-mix(in srgb, var(--color-status-error) 20%, transparent); transform: translateY(-1px); }
+.dial-left > button[data-tone="bad"] { border-color: var(--hair-2); }
+.dial-left > button[data-tone="bad"]:hover { background: var(--surface-2); }
 .dial-left > button:disabled { cursor: default; }
 .dial-outs ul { list-style: none; margin: 0; padding: 0; }
 .dial-outs h2 { margin: 0 0 0.25rem; }
@@ -100,7 +100,7 @@
 .dial-row-name { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; color: var(--color-foreground); }
 .dial-legend button[data-hot] .dial-row-name { color: var(--color-status-error); }
 .dial-chip { flex: none; color: var(--color-foreground); }
-.dial-rank { padding: 0 0.55rem; border-radius: var(--radius-pill); color: var(--color-status-error); background: color-mix(in srgb, var(--color-status-error) 15%, transparent); white-space: nowrap; }
+.dial-rank { color: var(--color-status-error); white-space: nowrap; }
 .dial-two { display: flex; flex-wrap: wrap; gap: 0 0.8rem; white-space: nowrap; }
 .dial-two > span { display: inline-flex; align-items: center; gap: 0.4rem; }
 .dial-absent { display: inline-flex; align-items: center; gap: 0.5rem; }

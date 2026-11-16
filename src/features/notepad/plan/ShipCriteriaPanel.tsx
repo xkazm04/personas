@@ -31,6 +31,7 @@ import {
 import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
 import { CRIT_ROLE, PLAN_BORDER, PLAN_FILL, PLAN_HUE, PLAN_INK, PLAN_WASH } from './planInk';
 import { type ExitCriterion, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** One criterion, with its evidence readable instead of hidden in a tooltip. */
 function CriterionRow({ c, vm, project, onDispatch, onOpenTerminal }: {
@@ -70,30 +71,30 @@ function CriterionRow({ c, vm, project, onDispatch, onOpenTerminal }: {
       </span>
       {session && key ? (
         <Tooltip content={tx(t.ship.session_open_tooltip, { state: String(session.state).replace('_', ' ') })}>
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => onOpenTerminal(key)}
             aria-label={tx(t.ship.session_open_aria, { label: c.label })}
-            className="shrink-0 p-1.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
+            className="shrink-0"
           >
             {/* The fleet-session hue is the PASSPORT's own reading of a live
                 session's state, shared with every other surface that shows one.
                 It stays a value because the map it comes from is not this
                 folder's to re-express; the fallback is this folder's token. */}
             <SquareTerminal className="w-4 h-4" style={{ color: PASSPORT_FLEET_INK[String(session.state)] ?? PLAN_HUE.neutral }} aria-hidden />
-          </button>
+          </Button>
         </Tooltip>
       ) : dispatchable ? (
         <Tooltip content={t.ship.dispatch_gap_tooltip}>
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={() => onDispatch(c)}
             aria-label={tx(t.ship.dispatch_gap_aria, { label: c.label })}
-            className="shrink-0 p-1.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
+            className="shrink-0"
             data-testid={`ship-dispatch-${c.id}`}
           >
             <Zap className={`w-4 h-4 ${PLAN_INK.athena}`} aria-hidden />
-          </button>
+          </Button>
         </Tooltip>
       ) : null}
     </li>

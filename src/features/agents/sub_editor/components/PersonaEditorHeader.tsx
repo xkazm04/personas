@@ -21,6 +21,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface PersonaEditorHeaderProps {
   draft: PersonaDraft;
@@ -136,7 +137,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       <HeldTooltip tip={offProject ? tx(t.plugins.dev_projects.project_off_hint, { project: offProject.name }) : null}>
         <div className={`flex items-center gap-2 ${offProject ? 'pointer-events-none opacity-60' : ''}`} data-project-off={offProject ? true : undefined}>
           <span
-            className={`typo-heading transition-colors ${effective.enabled ? '' : 'text-foreground'}`}
+            className={`typo-heading transition-colors ${effective.enabled ? '' : 'text-ink-1'}`}
             style={effective.enabled ? { color: accent ?? undefined } : undefined}
           >
             {effective.enabled ? t.common.active : t.common.off}
@@ -173,10 +174,10 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-card shadow-elevation-3 p-2.5 z-50"
+            className="absolute top-full right-0 mt-2 w-64 bg-background border border-status-warning/30 rounded-card shadow-elevation-3 p-2.5 z-50"
           >
             <div className="flex items-start justify-between gap-1">
-              <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
+              <p className="typo-heading text-status-warning mb-1.5 flex items-center gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5" /> {t.agents.editor_ui.cannot_enable}
               </p>
               <Button
@@ -190,16 +191,15 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
               </Button>
             </div>
             {readiness.blockers.map((blocker) => (
-              <button
+              <PressSurface
                 key={blocker.id}
-                type="button"
                 data-testid={`readiness-fix-${blocker.id}`}
-                onClick={() => goFix(blocker)}
-                className="w-full flex items-center gap-1.5 text-left pl-5 pr-1 py-1 rounded-interactive typo-body text-foreground hover:bg-foreground/5 transition-colors focus-ring cursor-pointer"
+                onPress={() => goFix(blocker)}
+                className="w-full flex items-center gap-1.5 pl-5 pr-1 py-1 rounded-interactive"
               >
-                <span className="flex-1">{blocker.message}</span>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-              </button>
+                <span className="flex-1 typo-body text-ink-1">{blocker.message}</span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-status-warning" />
+              </PressSurface>
             ))}
           </motion.div>
         )}

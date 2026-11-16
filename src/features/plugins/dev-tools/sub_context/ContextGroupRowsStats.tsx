@@ -78,17 +78,17 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
           <Layers className="w-3.5 h-3.5 text-primary" />
           {t.uc_title}
           {useCaseState.active.length > 0 && (
-            <span className="typo-caption text-foreground tabular-nums">({useCaseState.active.length})</span>
+            <span className="typo-caption text-foreground num">({useCaseState.active.length})</span>
           )}
         </h3>
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.context_search_placeholder}
             aria-label={t.context_search_placeholder}
-            className={`${INPUT_FIELD} !py-1 !pl-8 !text-sm`}
+            className={`${INPUT_FIELD} !py-1 !pl-8 !typo-body`}
           />
         </div>
         <KpiLegend t={t} />
@@ -97,7 +97,7 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
         </div>
       </div>
 
-      <div className="rounded-card border border-primary/10 overflow-auto min-h-0 flex-1 divide-y divide-primary/[0.07]">
+      <div className="rounded-card border border-hair overflow-auto min-h-0 flex-1 divide-y divide-primary/[0.07]">
         {filteredGroups.map((g) => {
           const dot = colorDot(g.color);
           return (
@@ -110,7 +110,7 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
               <div className="flex items-center gap-1.5 shrink-0 w-44 pt-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot.bg}`} />
                 <span className="typo-title truncate">{g.name}</span>
-                <span className="typo-caption text-foreground/50 tabular-nums shrink-0">{g.contexts.length}</span>
+                <span className="typo-caption text-ink-3 num shrink-0">{g.contexts.length}</span>
               </div>
 
               {/* its contexts, inline */}
@@ -153,7 +153,7 @@ function KpiLegend({ t }: { t: ReturnType<typeof useTranslation>['t']['plugins']
   return (
     <div className="hidden lg:flex items-center gap-2.5 shrink-0 mr-1">
       {shown.map((s) => (
-        <span key={s} className="inline-flex items-center gap-1 typo-caption text-foreground/60">
+        <span key={s} className="inline-flex items-center gap-1 typo-caption text-ink-2">
           <span className={`w-1.5 h-1.5 rounded-full ${KPI_STATUS_DOT[s]}`} />
           {t[KPI_STATUS_LABEL_KEY[s]]}
           {isNeutral(s) && <span className="sr-only">(neutral)</span>}

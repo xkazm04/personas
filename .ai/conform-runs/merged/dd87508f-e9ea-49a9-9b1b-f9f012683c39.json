@@ -1,0 +1,227 @@
+{
+ "schema": "conform-run/1",
+ "worker": "dd87508f-e9ea-49a9-9b1b-f9f012683c39",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T00:45:49.053125+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "engine-build-session",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:2926 The scripted summary is markdown that the TypeScript modal parses (TestReportModal.tsx:208), but the Rust test checks it through a hand-written Rust copy of that parser with nothing tying the two together. If the real reader's heading rules change, every Rust assertion that the summary is readable by the modal stays green.",
+   "techniques": [
+    {
+     "technique": "assert-through-the-reader",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:2926 the oracle is a copy of the reader, not the reader; no TS test feeds a Rust-produced summary to parseReportSections"
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3394 the plan leg is poisoned, and the test asserts which producer answered: the plan LLM was never prompted (:3402)"
+    },
+    {
+     "technique": "far-side-oracle",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3061 the loopback API counts authorized hits, proving on the far side that the decrypted vault key actually arrived"
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3290 the cutoff is proven from the hanging row's own verdict; the 15s wall bound (:3268) is a loose one-sided hang guard against a 2s per-test timeout"
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3113 seed data is written through the production path (encrypted vault fields), so the fixture carries the real invariants"
+    },
+    {
+     "technique": "recorded-interaction-fixtures",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3539 recorded LLM drafts carry their capture date, the stated proxy when the remote side offers no identity"
+    },
+    {
+     "technique": "approval-snapshots-with-guarded-update",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3514 whole-structure equality against a code-derived expectation; there is no recorded snapshot suite with a record switch"
+    },
+    {
+     "technique": "live-app-harness",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3037 integration rung against a loopback mock; this context does not own a live-app lane"
+    }
+   ]
+  },
+  {
+   "context": "stores-slices-agents",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/agents/executionSlice.ts:298 runLifecycle.test.ts says it covers the page-refresh recovery fix, but it only drives the lifecycle unit. No test seeds 'personas:active-execution' (executionSlice.ts:272), so the recovery branch and this markRecovered call never run, and deleting the call (which also drops the re-armed 30-minute safety timeout) stays green.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:6 behavior of the shared method is pinned, its adoption at the call site is not; a grep for the storage key finds no test"
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 the bug path is asserted beside the fix, as a built-in control"
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/agents/__tests__/labSlice.fetchRuns.test.ts:42 the stale-response order is forced with deferred promises (resolved at :81), never with timers; the safety timeout uses fake timers (runLifecycle.test.ts:66)"
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:52 shared singleton store flags are reset per test, so test order cannot leak state"
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:7 one cheap IPC mock, built once per file and listing what each start/cancel resolves"
+    }
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-projects",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_projects/GitHubRepoSelector.tsx:103 githubRepoPaging.ts says it exists so the three credential outcomes can be tested without rendering, but the none/unhealthy/ready decision is still inline in the component (:100), and no test anywhere drives it or the github-pat-unhealthy test id. The stale-PAT collapse the test file names as its defect could come back green.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_projects/githubRepoPaging.ts:2 the module claims to pin both decisions; only the Link walk is lifted out and tested. The test header (githubRepoPaging.test.ts:13) names the stale-PAT case"
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:64 the cap is proven by counting calls, not by elapsed time"
+    },
+    {
+     "technique": "recorded-interaction-fixtures",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:24 hand-built Link headers, not recorded GitHub traffic"
+    }
+   ]
+  },
+  {
+   "context": "notepad-plan",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:27 The published readiness document is read by Rust ship_ops::SnapDoc, where every field is serde-default. The TS tests parse the TS output with their own TS-side shape (shipReadinessPublish.test.ts:45), and the Rust tests deserialize hand-written literals, so a field renamed on either side silently becomes empty while both suites stay green.",
+   "techniques": [
+    {
+     "technique": "assert-through-the-reader",
+     "verdict": "deviation",
+     "evidence": "src/features/notepad/plan/__tests__/shipReadinessPublish.test.ts:45 the emitted document is read back by the test's own type, never by the Rust reader it is written for"
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:25 a mutation that changes a field name only at the crossing survives, because each side's suite reads its own literals"
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/plan/__tests__/shipReadinessPublish.test.ts:51 debounce and dedupe are proven on a fake clock (advanced at :64), not with wall time"
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src/features/notepad/plan/__tests__/shipReadinessPublish.test.ts:82 a persisted prior state, including a pre-projectId legacy entry, is seeded so the restart path is exercised"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "triggers-triggers",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T00:45:49.053125+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "approval-snapshots-with-guarded-update",
+    "assert-the-schedule-not-the-stopwatch",
+    "assert-through-the-reader",
+    "far-side-oracle",
+    "fixture-economics",
+    "live-app-harness",
+    "recorded-interaction-fixtures",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "engine-build-session",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T00:45:49.053125+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "fixture-economics",
+    "isolation-lanes",
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "stores-slices-agents",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T00:45:49.053125+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "recorded-interaction-fixtures",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "plugins-dev-tools-projects",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T00:45:49.053125+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "assert-through-the-reader",
+    "fixture-economics",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "notepad-plan",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

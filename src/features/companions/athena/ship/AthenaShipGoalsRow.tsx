@@ -3,6 +3,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ShipGoalProposal } from '@/api/companion';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface Props {
   row: ShipGoalProposal;
   index: number;
@@ -44,7 +46,7 @@ export function AthenaShipGoalsRow({ row, index, disabled, onChange, onRemove }:
         <div className="min-w-0 flex items-center gap-2 flex-wrap">
           <span
             className={`shrink-0 px-1.5 py-0.5 rounded-interactive typo-caption text-foreground ${
-              adopts ? 'bg-teal-500/15' : 'bg-primary/15'
+              adopts ? 'bg-status-success/15' : 'bg-primary/15'
             }`}
           >
             {adopts ? c.ship_goals_badge_existing : c.ship_goals_badge_new}
@@ -58,16 +60,18 @@ export function AthenaShipGoalsRow({ row, index, disabled, onChange, onRemove }:
           )}
         </div>
         <Tooltip content={c.ship_goals_remove_row}>
-          <button
+          <Button
             type="button"
             onClick={onRemove}
             disabled={disabled}
             aria-label={c.ship_goals_remove_row}
-            className="shrink-0 p-1 rounded-interactive text-foreground hover:bg-secondary/70 disabled:is-disabled"
             data-testid={`athena-ship-goal-remove-${index}`}
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
           >
             <X className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </Tooltip>
       </div>
 

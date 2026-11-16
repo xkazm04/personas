@@ -44,7 +44,7 @@ function RollingCount({ n }: { n: number }) {
           animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
           exit={still ? { opacity: 0 } : { y: -dir * 14, opacity: 0, filter: 'blur(2px)' }}
           transition={still ? { duration: MOTION.duration.fast / 1000 } : { type: 'spring', ...MOTION.spring.snappy }}
-          className="au-count typo-body-lg tabular-nums text-foreground"
+          className="au-count typo-data-lg text-foreground"
         >
           {n}
         </motion.span>
@@ -92,7 +92,7 @@ export const ReadyChip = forwardRef<HTMLButtonElement, ReadyChipProps>(function 
         data-zero={zero ? '' : undefined}
         data-failed={count.failed ? '' : undefined}
         data-open={open ? '' : undefined}
-        className={`au-chip au-l-${count.lamp} rounded-input hover:bg-transparent ${count.failed ? 'text-status-error' : zero ? 'text-muted-foreground' : 'text-foreground'} ${compact ? 'px-1.5! [&>span]:gap-1' : 'px-2! [&>span]:gap-1.5'} [&>span]:inline-flex [&>span]:items-center`}
+        className={`au-chip au-l-${count.lamp} rounded-input hover:bg-transparent ${count.failed ? 'text-status-error' : zero ? 'text-ink-3' : 'text-foreground'} ${compact ? 'px-1.5! [&>span]:gap-1' : 'px-2! [&>span]:gap-1.5'} [&>span]:inline-flex [&>span]:items-center`}
       >
         <span className="relative inline-flex">
           <Icon className="h-4 w-4" aria-hidden />

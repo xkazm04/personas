@@ -58,7 +58,7 @@ export function EmptyProviderRow({ provider }: { provider: ProviderModel }) {
     >
       <ProviderMark provider={provider} />
       <Tooltip content={cliReasonHint(t, reason)}>
-        <span className="min-w-0 flex-1 truncate typo-body text-foreground opacity-60">{label}</span>
+        <span className="min-w-0 flex-1 truncate typo-body text-ink-2 ">{label}</span>
       </Tooltip>
       <WeekBorder w={null} />
     </div>
@@ -72,7 +72,7 @@ export function EmptyProviderRow({ provider }: { provider: ProviderModel }) {
 // capped window ever shows) and the pace slot (`PACE_BOX`, the glyph's own size,
 // held even when there is no pace so a paceless row does not shift).
 const CLUSTER_BOX = 'inline-flex flex-shrink-0 items-center gap-0.5 typo-caption';
-const FIGURE_BOX = 'inline-flex min-w-[3ch] items-baseline justify-end tabular-nums';
+const FIGURE_BOX = 'inline-flex min-w-[3ch] items-baseline justify-end num';
 const PACE_BOX = 'inline-flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center';
 /** The row's right-hand group: both clusters and the Forget act, packed tight against the row's right edge. */
 export const STATS_GROUP = 'ml-auto flex flex-shrink-0 items-center gap-1.5';
@@ -97,7 +97,7 @@ export function WindowCluster({
         <span
           role="img"
           aria-label={t.monitor.usage_window_none}
-          className={`${CLUSTER_BOX} text-foreground opacity-40`}
+          className={`${CLUSTER_BOX} text-ink-3 `}
           data-testid="fleet-usage-window"
           data-window={slot}
           data-empty

@@ -31,8 +31,8 @@ function EngineBadge({ engine, probe }: { engine: AthenaEngine; probe: EngineAva
   }, [probing]);
 
   const pill = probe?.installed
-    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
-    : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+    ? 'bg-status-success/15 text-status-success border-status-success/25'
+    : 'bg-status-error/10 text-status-error border-status-error/20';
 
   return (
     <div

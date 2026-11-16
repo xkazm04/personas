@@ -14,6 +14,8 @@ import { useRecipeEligibilityMap } from '../useEligibility';
 import { getCategoryLabels } from '../libs/categoryLabels';
 import { computeStaleRecipeIds } from '../libs/recipeStaleness';
 import { RecipesTableResults } from './RecipesTableResults';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface RecipesBrowseListProps {
   recipes: Recipe[];
@@ -197,7 +199,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t.recipes_catalog.search_placeholder}
-            className="pl-8 pr-3 py-1.5 rounded-input border border-card-border bg-secondary/40 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/45 transition-colors min-w-[220px]"
+            className="pl-8 pr-3 py-1.5 rounded-input border border-card-border bg-surface-2 typo-caption text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/45 transition-colors min-w-[220px]"
           />
         </div>
 
@@ -296,23 +298,21 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
       menuClassName="animate-fade-slide-in absolute top-full mt-1 left-0 min-w-[200px] bg-card-bg border border-card-border rounded-modal shadow-elevation-4 z-[100] overflow-hidden"
       renderTrigger={({ isOpen, toggle }) => (
         <Tooltip content={t.recipes_catalog.category_filter_aria}>
-          <button
+          <Button
             type="button"
             onClick={toggle}
             aria-expanded={isOpen}
             aria-label={t.recipes_catalog.category_filter_aria}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-input border typo-caption transition-colors cursor-pointer ${
-              isAll
-                ? 'border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/30'
-                : 'border-primary/35 bg-primary/12 text-primary hover:bg-primary/22'
-            }`}
+            variant={isAll ? 'secondary' : 'accent'}
+            tone={isAll ? undefined : 'highlight'}
+            size="sm"
+            iconRight={<ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
           >
             <span className="typo-label opacity-70">
               {t.recipes_catalog.category_filter_prefix}
             </span>
             <span>{current.label}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-          </button>
+          </Button>
         </Tooltip>
       )}
     >
@@ -322,19 +322,16 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
             const isActive = value === opt.value;
             const isFocused = focusIndex === i;
             return (
-              <button
+              <OptionRow
                 key={opt.value}
-                type="button"
                 role="option"
-                aria-selected={isActive}
-                onClick={() => { onChange(opt.value); close(); }}
-                className={`flex items-center gap-2 w-full px-3 py-2 typo-caption transition-colors cursor-pointer text-left ${
-                  isFocused ? 'bg-secondary/60' : 'hover:bg-secondary/40'
-                } ${isActive ? 'text-primary' : 'text-foreground'}`}
+                onSelect={() => { onChange(opt.value); close(); }}
+                selected={isActive}
+                className={`gap-2 px-3 typo-caption ${isFocused ? 'bg-surface-2' : ''}`}
               >
                 <span className="flex-1">{opt.label}</span>
                 {isActive && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-              </button>
+              </OptionRow>
             );
           })}
         </div>
@@ -357,26 +354,20 @@ interface EligibilityFilterChipProps {
 }
 
 function EligibilityFilterChip({ active, onClick, label, count, icon, tone }: EligibilityFilterChipProps) {
-  const toneCls = tone === 'success'
-    ? 'bg-status-success/12 border-status-success/35 text-status-success/95'
-    : tone === 'warning'
-      ? 'bg-status-warning/12 border-status-warning/35 text-status-warning/95'
-      : tone === 'muted'
-        ? 'bg-secondary/60 border-card-border text-foreground'
-        : 'bg-primary/12 border-primary/35 text-primary';
+  const activeTone = tone === 'success' ? 'success' : tone === 'warning' ? 'warning' : tone === 'muted' ? undefined : 'highlight';
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full typo-caption transition-colors cursor-pointer border ${
-        active ? toneCls : 'bg-secondary/40 border-card-border/60 text-foreground hover:text-foreground hover:border-foreground/30'
-      }`}
+      variant={active ? 'accent' : 'secondary'}
+      tone={active ? activeTone : undefined}
+      size="xs"
+      icon={icon}
     >
-      {icon}
       {label}
       {count !== undefined && count > 0 && (
         <span className="font-mono opacity-80">{count}</span>
       )}
-    </button>
+    </Button>
   );
 }

@@ -19,6 +19,7 @@ import { useCloudHealthMonitor } from '@/features/agents/sub_deployment/hooks/us
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DEPLOYMENT_ACCENTS } from '@/features/agents/sub_deployment/components/deploymentTokens';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 // ---------------------------------------------------------------------------
@@ -215,7 +216,7 @@ export default function CloudDeployPanel() {
           tabs={TABS.map((tab) => ({ ...tab, label: t.deployment.tabs[tab.id], disabled: tab.disabledWhenOffline && !isConnected }))}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          underlineClass="bg-indigo-500"
+          underlineClass="bg-role-agent"
           idPrefix="cloud-deploy"
           layoutIdPrefix="cloud-tab"
         />
@@ -299,18 +300,16 @@ function LatencyBadge({ ms }: { ms: number }) {
   const { t, tx } = useTranslation();
   const { color, bg, border } =
     ms < 200
-      ? { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
+      ? { color: 'text-status-success', bg: 'bg-status-success/10', border: 'border-status-success/20' }
       : ms < 1000
-        ? { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
-        : { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+        ? { color: 'text-status-warning', bg: 'bg-status-warning/10', border: 'border-status-warning/20' }
+        : { color: 'text-status-error', bg: 'bg-status-error/10', border: 'border-status-error/20' };
 
   return (
-    <span
-      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}
-      title={tx(t.deployment.status.latency_title, { ms })}
-    >
+    <Tooltip content={tx(t.deployment.status.latency_title, { ms })}><span
+      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}>
       <Activity className="w-3 h-3" />
       {ms}ms
-    </span>
+    </span></Tooltip>
   );
 }

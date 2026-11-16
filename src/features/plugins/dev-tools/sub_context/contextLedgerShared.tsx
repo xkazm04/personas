@@ -88,10 +88,10 @@ interface CoverageChipProps {
 }
 
 const COVERAGE_STEM: Record<string, string> = {
-  sky: 'text-sky-300',
-  violet: 'text-violet-300',
-  amber: 'text-amber-300',
-  rose: 'text-rose-300',
+  sky: 'text-status-info',
+  violet: 'text-role-agent',
+  amber: 'text-status-warning',
+  rose: 'text-status-error',
 };
 
 /** One compact metric — an icon + a count, muted to zero when there is none.
@@ -99,25 +99,26 @@ const COVERAGE_STEM: Record<string, string> = {
  *  A metric with attached work is clickable and hands off to that surface. */
 export function CoverageChip({ icon, count, label, stem, onJump, jumpTitle }: CoverageChipProps) {
   const active = count > 0;
-  const cls = `inline-flex items-center gap-1 tabular-nums typo-caption ${
-    active ? COVERAGE_STEM[stem] : 'text-foreground/25'
+  const cls = `inline-flex items-center gap-1 num typo-caption ${
+    active ? COVERAGE_STEM[stem] : 'text-ink-3'
   }`;
 
   if (active && onJump) {
     return (
-      <button
-        type="button"
-        title={jumpTitle}
+      <Tooltip content={jumpTitle}><Button
+        variant="link"
+        size="inline"
+        aria-label={jumpTitle}
         onClick={(e) => {
           // The row itself is clickable (opens the context) — don't do both.
           e.stopPropagation();
           onJump();
         }}
-        className={`${cls} hover:underline underline-offset-2`}
+        className={cls}
       >
         {icon}
         {count}
-      </button>
+      </Button></Tooltip>
     );
   }
 
@@ -238,18 +239,17 @@ export function ContextCoverage({
       {costUsd !== undefined && costUsd > 0 && (
         <Tooltip content={contextId ? t.ctx_cost_jump_tooltip : t.ctx_cost_tooltip}>
           {contextId ? (
-            <button
+            <Button variant="ghost" size="sm"
               type="button"
               onClick={jumpToCost}
               data-testid="context-cost-jump"
               aria-label={t.ctx_cost_jump_tooltip}
-              className="inline-flex items-center gap-1 tabular-nums typo-caption text-amber-300/90 rounded-interactive hover:text-amber-200 hover:underline focus-ring"
             >
               <DollarSign className="w-3 h-3" />
               <Numeric value={costUsd} precision={costUsd >= 1 ? 2 : 3} />
-            </button>
+            </Button>
           ) : (
-            <span className="inline-flex items-center gap-1 tabular-nums typo-caption text-amber-300/90">
+            <span className="inline-flex items-center gap-1 num typo-caption text-status-warning">
               <DollarSign className="w-3 h-3" />
               <Numeric value={costUsd} precision={costUsd >= 1 ? 2 : 3} />
             </span>
@@ -299,8 +299,7 @@ export function LedgerActions({
   }
   return (
     <Button
-      variant="accent"
-      tone="warning"
+      variant="secondary"
       size="sm"
       onClick={() => { state.scan().catch(toastCatch('ContextMap:featureScan')); }}
       disabled={!hasMap}

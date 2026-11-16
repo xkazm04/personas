@@ -20,12 +20,12 @@ export function LessonsPanel({ branches, workspaceLessons, loading }: {
   ].sort((a, b) => (b.row.date ?? '').localeCompare(a.row.date ?? ''));
 
   return (
-    <section className="rounded-card border border-border/50 bg-secondary/30 p-3">
+    <section className="rounded-card border border-border/50 bg-surface-1 p-3">
       <h3 className="typo-card-label pb-2">{t.plugins.dev_tools.trace_lessons_title}</h3>
       {loading && all.length === 0 ? (
         <div aria-hidden className="flex flex-col gap-1.5">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-5 rounded-interactive bg-primary/[0.06] animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
+            <div key={i} className="h-5 rounded-interactive bg-surface-2 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
           ))}
         </div>
       ) : all.length === 0 ? (

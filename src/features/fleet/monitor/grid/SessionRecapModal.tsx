@@ -94,7 +94,7 @@ export function SessionRecapModal({
         </div>
         <h2 id={TITLE_ID} className="min-w-0 truncate typo-title">{label}</h2>
         <span
-          className={`ml-auto flex flex-shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 typo-caption ${meta.chip} ${meta.text}`}
+          className={`ml-auto flex flex-shrink-0 items-center gap-1.5 rounded-interactive px-2 py-0.5 typo-caption ${meta.chip} ${meta.text}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
           {t.plugins.fleet[meta.labelKey]}
@@ -113,11 +113,11 @@ export function SessionRecapModal({
             flight — never a spinner, and never in place of the fields below,
             which come from the session row and are already known. */}
         {loading && !summary && !fallback && (
-          <div aria-hidden className="h-16 w-full animate-pulse rounded-card bg-secondary/30" />
+          <div aria-hidden className="h-16 w-full rounded-card bg-surface-1" />
         )}
 
         {settledEmpty && (
-          <p className="typo-body text-foreground opacity-55">
+          <p className="typo-body text-ink-3 ">
             {claudeSessionId ? t.monitor.grid_session_recap_empty : t.monitor.grid_session_recap_unbound}
           </p>
         )}
@@ -142,7 +142,7 @@ export function SessionRecapModal({
           <RecapField label={t.monitor.grid_session_recap_pending_tool}>
             <span className="typo-body text-foreground">{recap.pendingTool}</span>
             {recap.pendingToolSince && (
-              <span className="ml-2 typo-caption text-foreground opacity-55">
+              <span className="ml-2 typo-caption text-ink-3 ">
                 <RelativeTime timestamp={recap.pendingToolSince} />
               </span>
             )}
@@ -151,12 +151,12 @@ export function SessionRecapModal({
 
         <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3">
           <RecapField label={t.monitor.grid_session_recap_started}>
-            <span className="typo-caption text-foreground opacity-70">
+            <span className="typo-caption text-ink-2 ">
               <RelativeTime timestamp={Number(session.createdAtMs)} />
             </span>
           </RecapField>
           <RecapField label={t.monitor.grid_session_recap_last_activity}>
-            <span className="typo-caption text-foreground opacity-70">
+            <span className="typo-caption text-ink-2 ">
               <RelativeTime timestamp={Number(session.lastActivityMs)} />
             </span>
           </RecapField>
@@ -169,7 +169,7 @@ export function SessionRecapModal({
         {/* Say so when the window did not reach the whole file: "no summary
             found" and "I did not look that far back" are different answers. */}
         {recap?.truncated && (
-          <p className="typo-caption text-foreground opacity-45">
+          <p className="typo-caption text-ink-3 ">
             {t.monitor.grid_session_recap_truncated}
           </p>
         )}

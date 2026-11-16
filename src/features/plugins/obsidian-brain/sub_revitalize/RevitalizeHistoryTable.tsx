@@ -4,6 +4,7 @@ import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { StateMark } from '@/features/shared/components/display/StateMark';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
@@ -76,12 +77,12 @@ export default function RevitalizeHistoryTable() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-primary/10">
-                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_when}</th>
-                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_vault}</th>
-                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_result}</th>
-                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_cleaned}</th>
-                <th className="py-2 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_tokens}</th>
+              <tr className="border-b border-hair">
+                <th className="py-2 pr-3 typo-eyebrow text-ink-1">{ob.revitalize_history_col_when}</th>
+                <th className="py-2 pr-3 typo-eyebrow text-ink-1">{ob.revitalize_history_col_vault}</th>
+                <th className="py-2 pr-3 typo-eyebrow text-ink-1">{ob.revitalize_history_col_result}</th>
+                <th className="py-2 pr-3 typo-eyebrow text-ink-1">{ob.revitalize_history_col_cleaned}</th>
+                <th className="py-2 text-right typo-eyebrow text-ink-1">{ob.revitalize_history_col_tokens}</th>
               </tr>
             </thead>
             <tbody>
@@ -89,28 +90,25 @@ export default function RevitalizeHistoryTable() {
                 const failed = run.status === 'failed';
                 const tokensSaved = Math.max(0, run.estTokensBefore - run.estTokensAfter);
                 const statusPill = (
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full typo-caption border ${
-                      failed
-                        ? 'bg-red-500/10 text-red-400 border-red-500/25'
-                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                    }`}
-                  >
-                    {failed ? ob.revitalize_history_status_failed : ob.revitalize_history_status_completed}
-                  </span>
+                  <StateMark
+                    state={failed ? 'error' : 'success'}
+                    label={failed ? ob.revitalize_history_status_failed : ob.revitalize_history_status_completed}
+                  />
                 );
                 return (
-                  <tr key={run.id} className="border-b border-primary/5 last:border-b-0">
-                    <td className="py-2.5 pr-3 typo-caption text-foreground whitespace-nowrap align-top">
+                  <tr key={run.id} className="border-b border-hair last:border-b-0">
+                    <td className="py-2.5 pr-3 typo-caption text-ink-2 whitespace-nowrap align-top">
                       <RelativeTime timestamp={run.createdAt} />
-                      <p className="typo-caption text-foreground/90 mt-0.5">
+                      <p className="typo-caption text-ink-2 mt-0.5">
                         {tx(ob.revitalize_history_duration, { duration: formatDuration(run.durationSecs) })}
                       </p>
                     </td>
                     <td className="py-2.5 pr-3 typo-caption align-top max-w-[10rem]">
-                      <span className="text-violet-300 truncate block" title={run.vaultPath}>
-                        {run.vaultName}
-                      </span>
+                      <Tooltip content={run.vaultPath}>
+                        <span className="text-ink-2 truncate block" >
+                          {run.vaultName}
+                        </span>
+                      </Tooltip>
                     </td>
                     <td className="py-2.5 pr-3 align-top">
                       {failed && run.error ? (
@@ -121,22 +119,22 @@ export default function RevitalizeHistoryTable() {
                     </td>
                     <td className="py-2.5 pr-3 typo-caption align-top whitespace-nowrap">
                       {failed ? (
-                        <span aria-hidden className="text-foreground/90">—</span>
+                        <span aria-hidden className="text-ink-2">—</span>
                       ) : (
                         <span className="inline-flex items-center gap-2">
-                          <span className="text-red-400">{tx(ob.revitalize_history_removed_short, { count: run.filesDeleted })}</span>
-                          <span aria-hidden className="text-foreground/90">·</span>
-                          <span className="text-violet-300">{tx(ob.revitalize_history_merged_short, { count: run.filesMerged })}</span>
-                          <span aria-hidden className="text-foreground/90">·</span>
-                          <span className="text-cyan-300">{tx(ob.revitalize_history_updated_short, { count: run.filesUpdated })}</span>
+                          <span className="text-status-error">{tx(ob.revitalize_history_removed_short, { count: run.filesDeleted })}</span>
+                          <span aria-hidden className="text-ink-2">·</span>
+                          <span className="text-ink-2">{tx(ob.revitalize_history_merged_short, { count: run.filesMerged })}</span>
+                          <span aria-hidden className="text-ink-2">·</span>
+                          <span className="text-ink-2">{tx(ob.revitalize_history_updated_short, { count: run.filesUpdated })}</span>
                         </span>
                       )}
                     </td>
                     <td className="py-2.5 typo-caption text-right align-top">
                       {failed || tokensSaved === 0 ? (
-                        <span aria-hidden className="text-foreground/90">—</span>
+                        <span aria-hidden className="text-ink-2">—</span>
                       ) : (
-                        <span className="text-emerald-400">
+                        <span className="text-status-success">
                           <Numeric value={tokensSaved} unit="compact" />
                         </span>
                       )}

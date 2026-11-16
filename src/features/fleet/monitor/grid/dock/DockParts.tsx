@@ -45,7 +45,7 @@ export function DockReadout({ console: d }: { console: DockConsole }) {
         content={
           <span className="flex flex-col gap-0.5">
             <span>{c.quickT.estimate_cost_label}</span>
-            <span className="typo-label text-primary">
+            <span className="typo-label text-ink-1">
               {estimate.assumedModel ? c.quickT.estimate_assumed_model : c.quickT.estimate_disclaimer}
             </span>
           </span>
@@ -54,7 +54,7 @@ export function DockReadout({ console: d }: { console: DockConsole }) {
       >
         <span className={PILL} data-testid="quick-dispatch-gauge-cost">
           ≈
-          <span className="typo-data tabular-nums text-foreground">
+          <span className="typo-data num text-foreground">
             {armed ? formatEstimateCost(estimate.cost) : '-'}
           </span>
         </span>
@@ -62,7 +62,7 @@ export function DockReadout({ console: d }: { console: DockConsole }) {
       <Tooltip content={c.quickT.estimate_eta_label} placement="top">
         <span className={PILL} data-testid="quick-dispatch-gauge-eta">
           ~
-          <span className="typo-data tabular-nums text-foreground">
+          <span className="typo-data num text-foreground">
             {armed ? formatEstimateMinutes(estimate.minutes) : '-'}
           </span>
         </span>

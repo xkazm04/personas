@@ -2,6 +2,7 @@ import { CheckCircle, Shield } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { OAuthProgressRing, type OAuthRingPhase } from './OAuthProgressRing';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface OAuthSectionProps {
   onConsent: () => void;
@@ -64,7 +65,7 @@ export function OAuthSection({
     <>
       <div className="border-t border-primary/8" />
       <div>
-        <h4 className="typo-heading uppercase text-foreground mb-3">
+        <h4 className="typo-eyebrow text-foreground mb-3">
           {t.vault.autopilot.authentication}
         </h4>
 
@@ -82,16 +83,18 @@ export function OAuthSection({
         {!ringPhase && (
           <>
             <Tooltip content={consentDisabled && consentDisabledReason ? consentDisabledReason : ''} placement="top" delay={200}>
-              <button
+              <Button
                 onClick={onConsent}
                 type="button"
                 data-testid="oauth-authorize"
                 disabled={consentDisabled}
-                className="flex items-center gap-2 px-4 py-2 border rounded-modal typo-body transition-all bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/25 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="accent"
+                tone="info"
+                size="md"
+                icon={<Shield className="w-4 h-4" />}
               >
-                <Shield className="w-4 h-4" />
                 {consentLabel || tx(t.vault.forms.authorize_with, { label: 'Google' })}
-              </button>
+              </Button>
             </Tooltip>
             {consentHint && (
               <p className="mt-1.5 typo-body text-foreground">{consentHint}</p>
@@ -100,7 +103,7 @@ export function OAuthSection({
         )}
 
         {consentSuccessBadge && !ringPhase && (
-          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 typo-body">
+          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-success/15 border border-status-success/25 text-status-success typo-body">
             <CheckCircle className="w-3.5 h-3.5" />
             {consentSuccessBadge}
           </div>

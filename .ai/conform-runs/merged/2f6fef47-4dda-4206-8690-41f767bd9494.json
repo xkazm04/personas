@@ -1,0 +1,109 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2f6fef47-4dda-4206-8690-41f767bd9494",
+ "subject": "hitl-approval",
+ "evaluatedAt": "2026-11-08T04:01:50.741769+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "api-overview",
+   "subject": "hitl-approval",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/overview/reviews.ts:207 Choosing a review action records an approval and then re-runs the persona with a newly generated task to 'carry out' the choice (dispatch_review_action builds a prose task and calls execute_persona_inner), so what executes after approval was never staged or shown, which is the re-generation-after-approval defect.",
+   "techniques": [
+    {
+     "technique": "resume-after-decision",
+     "verdict": "deviation",
+     "evidence": "src/api/overview/reviews.ts:207 Approval resumes by re-deriving the action through a fresh LLM run (backend reviews.rs dispatch_review_action formats 'Carry out the chosen action now'), not by running a staged artifact byte for byte. The held-team-step and app-master branches are the exception."
+    },
+    {
+     "technique": "severity-sla-ladder",
+     "verdict": "deviation",
+     "evidence": "src/api/overview/reviews.ts:223 One deadline for every pending review. The same file buckets pending reviews by critical/warning/info (line 176), but the GC (manual_reviews.rs gc_stale_pending: WHERE status='pending' AND created_at < cutoff) ages critical items out on the same 7-day clock as info. There is no per-severity table and no hold rung."
+    },
+    {
+     "technique": "decision-records",
+     "verdict": "deviation",
+     "evidence": "src/api/overview/reviews.ts:197 The decision write takes an optional reason for every status, rejection included. The technique makes the reason mandatory on rejection. The call also carries no version or fingerprint of the reviewed content."
+    }
+   ]
+  },
+  {
+   "context": "glyph-persona-card",
+   "subject": "hitl-approval",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_glyph/useComposeConfig.tsx:272 The composer's Review toggle is never stored as a structured gate: it becomes a prose line appended to the build intent, and the build model's keyword heuristics decide whether a review gate exists (line 264). That is a prompt-level request, not a substrate gate.",
+   "techniques": [
+    {
+     "technique": "gate-state-machines",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_glyph/useComposeConfig.tsx:272 The user's explicit gate choice reaches the system only as a sentence for the LLM to interpret. The gated machine decides whether its own gate is armed."
+    },
+    {
+     "technique": "fail-closed-profile-for-headless",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_glyph/useComposeConfig.tsx:90 The default for a persona that will run on triggers with nobody watching is the open direction. Line 273 then tells the build 'Review: never \u2014 automatically publish without asking'. Closed-by-default is inverted."
+    },
+    {
+     "technique": "oracle-before-gate",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 Promotion sits behind a test run (glyphLayoutTypes testPassed/testOutputLines). Promoting past a failed test is a separate confirm modal, so the human decides against a named oracle."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "hitl-approval",
+   "context": "template-adoption-persona-layout",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "hitl-approval",
+   "context": "companions-page",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "hitl-approval",
+   "context": "templates-n8n-steps",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-08T04:01:50.741769+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "hitl-approval"
+   ],
+   "techniques": [
+    "decision-records",
+    "resume-after-decision",
+    "severity-sla-ladder"
+   ],
+   "deviations": 1,
+   "context": "api-overview",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T04:01:50.741769+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "hitl-approval"
+   ],
+   "techniques": [
+    "fail-closed-profile-for-headless",
+    "gate-state-machines",
+    "oracle-before-gate"
+   ],
+   "deviations": 1,
+   "context": "glyph-persona-card",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

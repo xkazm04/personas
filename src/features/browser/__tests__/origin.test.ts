@@ -17,6 +17,15 @@ describe('isValidBrowserOrigin', () => {
     expect(isValidBrowserOrigin('  https://example.com  ')).toBe(true);
   });
 
+  it('accepts a scheme default port the server would normalise away', () => {
+    expect(isValidBrowserOrigin('https://example.com:443')).toBe(true);
+    expect(isValidBrowserOrigin('http://example.com:80')).toBe(true);
+    expect(normalizeBrowserOrigin('https://example.com:443')).toBe('https://example.com');
+    // 443 is not http's default, so it stays a real port.
+    expect(isValidBrowserOrigin('http://example.com:443')).toBe(true);
+    expect(normalizeBrowserOrigin('http://example.com:443')).toBe('http://example.com:443');
+  });
+
   it('rejects a URL the user pasted instead of an origin', () => {
     expect(isValidBrowserOrigin('https://example.com/login')).toBe(false);
     expect(isValidBrowserOrigin('https://example.com?q=1')).toBe(false);

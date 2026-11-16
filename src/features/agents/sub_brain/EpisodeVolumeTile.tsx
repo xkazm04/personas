@@ -17,6 +17,7 @@ import {
   type EpisodeDayRow,
   type EpisodeRoleKey,
 } from './brainMath';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** The stack's series keys — every one is a numeric field of `EpisodeDayRow`. */
 type RoleSeries = EpisodeRoleKey | typeof OTHER_ROLE;
@@ -77,7 +78,7 @@ export function EpisodeVolumeTile({
       icon={<Activity className="w-3.5 h-3.5 text-primary" aria-hidden />}
       action={
         rows.length > 0 ? (
-          <span className="typo-caption text-foreground/85">
+          <span className="typo-caption text-ink-2">
             {tx(b.volume_total, { count: total })}
           </span>
         ) : undefined
@@ -106,20 +107,20 @@ export function EpisodeVolumeTile({
           />
         )}
 
-        <button
+        <Button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           data-testid="brain-volume-drilldown"
-          className="mt-3 inline-flex items-center gap-1.5 typo-caption text-foreground/85 hover:text-foreground transition-colors"
-        >
-          {open ? (
+          variant="ghost"
+          size="sm"
+          className="mt-3"
+          icon={open ? (
             <ChevronDown className="w-3.5 h-3.5" aria-hidden />
           ) : (
             <ChevronRight className="w-3.5 h-3.5" aria-hidden />
           )}
-          {open ? b.volume_hide_timeline : b.volume_show_timeline}
-        </button>
+        >{open ? b.volume_hide_timeline : b.volume_show_timeline}</Button>
         {open && (
           <div className="mt-2">
             <EpisodesTimeline personaId={personaId} framed={false} />
@@ -180,9 +181,9 @@ function VolumeChart({
               style={{ backgroundColor: fill(role) }}
               aria-hidden
             />
-            <span className="text-foreground/85">{roleLabel[role]}</span>
+            <span className="text-ink-1">{roleLabel[role]}</span>
             <Numeric
-              className="text-foreground"
+              className="text-ink-1"
               value={rows.reduce((n, r) => n + r[role], 0)}
               unit="plain"
             />

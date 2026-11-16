@@ -16,7 +16,7 @@ function formatBytes(bytes: number | bigint): string {
 /**
  * What the logs weigh, as a level-2 kit `Section` (kit batch home-3).
  *
- * It used to be a hand-rolled boxed card (`rounded-modal border bg-secondary/20`) with a
+ * It used to be a hand-rolled boxed card (`rounded-modal border bg-surface-1`) with a
  * `cyan-500/10` badge, a hand-rolled ghost of six positioned bars and four rows of prose. It is
  * now the kit: two facts in a `KeyValueGrid`, the two retention rules as the section's `desc`, and
  * the section's own `loading` ghost. Its fetch is its own, so its placeholder is retired by its

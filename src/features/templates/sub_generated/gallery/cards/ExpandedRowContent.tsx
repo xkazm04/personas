@@ -2,13 +2,14 @@ import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Play, Download, Workflow, Server, Zap, UserCheck, Bell } from 'lucide-react';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { deriveArchCategories } from '../../shared/architecturalCategories';
 import { deriveExpandedRowStats } from './expandedRowStats';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { ResolvedConnectorReadiness } from '../../shared/useConnectorReadiness';
 import type { LucideIcon } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ExpandedRowContentProps {
   review: PersonaDesignReview;
@@ -64,34 +65,37 @@ export function ExpandedRowContent({
     <div className="py-3 px-4 flex items-center gap-4">
       {/* Left: Action buttons */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <button
+        <Button
           type="button"
           onClick={onAdopt}
           data-testid="template-adopt-button"
-          className={`px-3 py-1.5 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+          variant="primary"
+          size="sm"
+          icon={<Download className="w-3.5 h-3.5" />}
         >
-          <Download className="w-3.5 h-3.5" />
           {t.templates.expanded.adopt}
-        </button>
+        </Button>
         {allConnectorsReady && (
-          <button
+          <Button
             type="button"
             onClick={onTryIt}
-            className={`px-3 py-1.5 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
+            variant="secondary"
+            size="sm"
+            icon={<Play className="w-3.5 h-3.5" />}
           >
-            <Play className="w-3.5 h-3.5" />
             {t.templates.expanded.try_it}
-          </button>
+          </Button>
         )}
         {counts.flowCount > 0 && onViewFlows && (
-          <button
+          <Button
             type="button"
             onClick={() => onViewFlows(review)}
-            className="px-3 py-1.5 typo-body rounded-modal border border-brand-purple/25 bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20 transition-colors inline-flex items-center gap-1.5"
+            variant="secondary"
+            size="sm"
+            icon={<Workflow className="w-3.5 h-3.5" />}
           >
-            <Workflow className="w-3.5 h-3.5" />
             {t.templates.expanded.flows}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -104,14 +108,14 @@ export function ExpandedRowContent({
           const Icon = stat.icon;
           const hasItems = stat.count > 0;
           return (
-            <div
-              key={stat.key}
+            <Tooltip key={stat.key} content={`${stat.count} ${stat.label}`}><div
+              role="img"
+              aria-label={`${stat.count} ${stat.label}`}
               className={`inline-flex items-center gap-1.5 ${hasItems ? '' : 'opacity-30'}`}
-              title={`${stat.count} ${stat.label}`}
             >
               <Icon className="w-4 h-4" style={{ color: hasItems ? stat.color : undefined }} />
               <span className="typo-data text-foreground">{stat.count}</span>
-            </div>
+            </div></Tooltip>
           );
         })}
       </div>

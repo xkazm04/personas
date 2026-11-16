@@ -33,11 +33,11 @@ export const LEVEL_PRESETS: Record<'effort' | 'risk', Preset[]> = {
 };
 
 const ACTIVE: Record<PresetTone, string> = {
-  success: 'bg-status-success/20 text-status-success border-status-success/30',
-  warning: 'bg-status-warning/20 text-status-warning border-status-warning/30',
-  error: 'bg-status-error/20 text-status-error border-status-error/30',
+  success: 'bg-surface-1 text-status-success border-hair',
+  warning: 'bg-surface-1 text-status-warning border-hair',
+  error: 'bg-surface-1 text-status-error border-hair',
 };
-const INACTIVE = 'bg-secondary/30 text-foreground border-border/20';
+const INACTIVE = 'bg-surface-1 text-foreground border-border/20';
 // The "no filter" band: the whole stored 1-5 scale. It must equal the host's
 // FULL_LEVEL_RANGE (backlogModel) or Clear would never hide; both were [1, 10]
 // after the scale moved to 1-5.
@@ -58,7 +58,7 @@ function PresetGroup({ heading, presets, range, onChange }: {
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         {/* style-deviation: at Gate 1 the operator read a head moved onto typo-eyebrow (one step smaller) as worse, so this one keeps its row size: typo-heading owns size and weight, the tracking stays a utility. */}
-        <span className="typo-heading uppercase tracking-wider text-primary">{heading}</span>
+        <span className="typo-eyebrow text-ink-3">{heading}</span>
         {!rangesEqual(range, ALL_RANGE) && (
           <Button variant="ghost" size="xs" onClick={() => onChange(ALL_RANGE)}>{t.common.clear}</Button>
         )}

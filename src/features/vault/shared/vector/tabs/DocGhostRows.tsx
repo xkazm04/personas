@@ -25,7 +25,7 @@ export function DocGhostRows({ rows = 4, header = false }: DocGhostRowsProps) {
     <div aria-hidden="true">
       {header && (
         <div
-          className="flex items-center gap-2 px-6 py-3 border-b border-primary/10 animate-fade-in"
+          className="flex items-center gap-2 px-6 py-3 border-b border-hair animate-fade-in"
           style={{ animationDelay: '120ms' }}
         >
           <span className={`h-3.5 w-28 rounded-card ${BAR}`} />

@@ -9,6 +9,7 @@ import type { ResolvedConnectorReadiness } from '../../../shared/useConnectorRea
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface TemplateCardBodyProps {
   connectors: string[];
@@ -36,7 +37,7 @@ export function TemplateCardBody({
   return (
     <>
       {/* Compact Body (mobile) */}
-      <div className={`${CARD_PADDING.dense} md:hidden border-t border-primary/5 space-y-2`}>
+      <div className={`${CARD_PADDING.dense} md:hidden border-t border-hair space-y-2`}>
         <div className="flex items-center justify-between typo-body">
           <span className="text-foreground">{t.templates.card.use_cases_label}</span>
           <span className="text-foreground">{displayFlows.length}</span>
@@ -52,27 +53,26 @@ export function TemplateCardBody({
       </div>
 
       {/* 3-Column Body */}
-      <div className={`hidden md:grid ${CARD_PADDING.standard} md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5`}>
+      <div className={`hidden md:grid ${CARD_PADDING.standard} md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-hair`}>
         {/* Use Cases */}
         <div className="min-w-0">
           <SectionLabel>{t.templates.card.use_cases_label}</SectionLabel>
           {displayFlows.length > 0 ? (
             <div className="space-y-1.5">
               {displayFlows.slice(0, 4).map((flow) => (
-                <button
-                  type="button"
+                <PressSurface
                   key={flow.id}
-                  onClick={(e) => {
+                  onPress={(e) => {
                     e.stopPropagation();
                     onViewFlows();
                   }}
-                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-input focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                  className="flex items-center gap-2 w-full group/flow rounded-input"
                 >
-                  <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
-                  <span className="typo-body text-foreground group-hover/flow:text-violet-300 truncate">
+                  <CircleDot className="w-3 h-3 text-role-agent/60 flex-shrink-0" />
+                  <span className="typo-body text-foreground group-hover/flow:text-role-agent truncate">
                     {flow.name}
                   </span>
-                </button>
+                </PressSurface>
               ))}
               {displayFlows.length > 4 && (
                 <span className="typo-body text-foreground pl-5">
@@ -95,9 +95,8 @@ export function TemplateCardBody({
                 const status = readinessMap.get(c);
                 const isReady = status?.health === 'ready';
                 return (
-                  <Tooltip content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">
+                  <Tooltip key={c} content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">
                     <div
-                      key={c}
                       className={`w-8 h-8 rounded-card flex items-center justify-center transition-opacity ${
                         isReady ? '' : 'opacity-30 grayscale'
                       }`}
@@ -123,7 +122,7 @@ export function TemplateCardBody({
                 const TriggerIcon = TRIGGER_ICONS[trigger.trigger_type] ?? Clock;
                 return (
                   <div key={i} className="flex items-center gap-2">
-                    <TriggerIcon className="w-3.5 h-3.5 text-blue-400/60 flex-shrink-0" />
+                    <TriggerIcon className="w-3.5 h-3.5 text-status-info/60 flex-shrink-0" />
                     <span className="typo-body text-foreground truncate">
                       {trigger.description || trigger.trigger_type}
                     </span>

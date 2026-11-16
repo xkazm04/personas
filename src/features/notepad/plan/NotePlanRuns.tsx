@@ -92,9 +92,9 @@ function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose?: () => void })
   const running = run.status === 'running';
 
   return (
-    <li className="rounded-card border border-primary/10 bg-secondary/10 px-3 py-2.5" data-testid={`note-run-${run.id}`}>
+    <li className="rounded-card border border-hair bg-surface-1 px-3 py-2.5" data-testid={`note-run-${run.id}`}>
       <div className="flex items-center gap-2 flex-wrap">
-        <Icon className="w-3.5 h-3.5 text-foreground/60 shrink-0" aria-hidden />
+        <Icon className="w-3.5 h-3.5 text-ink-2 shrink-0" aria-hidden />
         <span className="typo-title">{label}</span>
         <Badge
           variant={running ? 'cyan' : run.status === 'completed' ? 'emerald' : 'red'}
@@ -104,7 +104,7 @@ function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose?: () => void })
               reporting state, not a control the operator just pressed. */}
           {running ? t.notepad.run_running : run.status}
         </Badge>
-        <RelativeTime timestamp={run.startedAt} className="typo-caption text-foreground/60" />
+        <RelativeTime timestamp={run.startedAt} className="typo-caption text-ink-2" />
       </div>
 
       {ingest ? (
@@ -112,7 +112,7 @@ function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose?: () => void })
         // and offers no way to apply them, which is the ingest door's own rule.
         <ShipRunSummary summary={ingest} onCompose={onCompose} />
       ) : text ? (
-        <p className="typo-caption text-foreground/70 mt-1.5 whitespace-pre-wrap">{text}</p>
+        <p className="typo-caption text-ink-2 mt-1.5 whitespace-pre-wrap">{text}</p>
       ) : null}
     </li>
   );
@@ -166,7 +166,7 @@ export function NotePlanRuns({ noteId, onCompose }: {
     return (
       <ul className="flex flex-col gap-2" aria-hidden data-testid="note-runs-ghost">
         {[0, 1].map((i) => (
-          <li key={i} className="h-16 rounded-card bg-secondary/25" />
+          <li key={i} className="h-16 rounded-card bg-surface-1" />
         ))}
       </ul>
     );
@@ -189,7 +189,7 @@ export function NotePlanRuns({ noteId, onCompose }: {
 
   if (runs.length === 0) {
     return (
-      <p className="typo-caption text-foreground rounded-card border border-dashed border-primary/15 px-3 py-4 text-center" data-testid="note-runs-empty">
+      <p className="typo-caption text-foreground rounded-card border border-dashed border-hair px-3 py-4 text-center" data-testid="note-runs-empty">
         {t.notepad.runs_empty}
       </p>
     );

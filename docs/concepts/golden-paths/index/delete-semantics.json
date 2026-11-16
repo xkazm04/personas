@@ -383,6 +383,15 @@
       "resolvedFrom": "basename",
       "verbatim": "check-command-contract.mjs"
     },
+    "settings/sub_devices/components/PairedDevicesPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["126-127,148"],
+      "contexts": [
+        "| `settings/sub_devices/components/PairedDevicesPanel.tsx:126-127,148` | `InlineConfirm` inside a table `render:` column — the row identity is a table row, not a keyed component, so a re-sort under a…"
+      ],
+      "resolved": false
+    },
     "src-tauri/db/src/lib.rs": {
       "count": 6,
       "sections": [2,3,6,7],
@@ -961,16 +970,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "settings/sub_byom/libs/useByomSettings.ts"
-    },
-    "src/features/settings/sub_devices/components/PairedDevicesPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["126-127,148"],
-      "contexts": [
-        "| `settings/sub_devices/components/PairedDevicesPanel.tsx:126-127,148` | `InlineConfirm` inside a table `render:` column — the row identity is a table row, not a keyed component, so a re-sort under a…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "settings/sub_devices/components/PairedDevicesPanel.tsx"
     },
     "src/features/settings/sub_network/components/InlineConfirm.tsx": {
       "count": 1,

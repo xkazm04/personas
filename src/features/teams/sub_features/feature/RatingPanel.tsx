@@ -78,7 +78,7 @@ export function RatingPanel({ feature, t, tx, language }: RatingPanelProps) {
   const historyWidth = width === 0 ? 236 : Math.max(170, Math.min(236, width - roseSize - 220));
 
   return (
-    <section className="rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 p-4" data-testid="features-rating">
+    <section className="rounded-card border border-hair bg-surface-1 shadow-elevation-1 p-4" data-testid="features-rating">
       <div ref={panelRef} className="flex flex-wrap items-center gap-x-6 gap-y-6">
         {seats.length > 0 ? (
           /* The overall lives in the rose's hub, against the ring that IS the

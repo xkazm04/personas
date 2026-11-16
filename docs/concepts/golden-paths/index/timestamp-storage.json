@@ -135,6 +135,15 @@
       ],
       "resolved": false
     },
+    "night_plan.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["167"],
+      "contexts": [
+        "- **Correct only by accident.** `src/commands/companion/fleet_bridge.rs:1695,1730` (2-minute and 30-minute GC on `companion_approval.created_at`) work today *only* because that table happens to be un…"
+      ],
+      "resolved": false
+    },
     "plugins/companion/inbox/utils/formatRelativeTime.ts": {
       "count": 1,
       "sections": [8],
@@ -477,16 +486,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "profile_synthesis.rs"
-    },
-    "src-tauri/src/companion/jobs/night_plan.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["167"],
-      "contexts": [
-        "- **Correct only by accident.** `src/commands/companion/fleet_bridge.rs:1695,1730` (2-minute and 30-minute GC on `companion_approval.created_at`) work today *only* because that table happens to be un…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "night_plan.rs"
     },
     "src-tauri/src/companion/jobs/operations_views.rs": {
       "count": 1,

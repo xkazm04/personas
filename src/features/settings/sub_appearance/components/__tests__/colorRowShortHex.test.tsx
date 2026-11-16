@@ -22,7 +22,7 @@ describe('custom theme colour rows normalise short hex', () => {
     useThemeStore.setState({ customTheme: null, themeId: 'dark-midnight' });
     render(<CustomThemeCreator />);
 
-    fireEvent.click(screen.getByTitle(`Pick ${a.color_primary}`));
+    fireEvent.click(screen.getByLabelText(`Pick ${a.color_primary}`));
     const region = screen.getByRole('region', { name: `${a.color_primary} color picker` });
     fireEvent.change(within(region).getByRole('textbox'), { target: { value: '#abc' } });
     fireEvent.click(screen.getByRole('button', { name: a.save_apply }));

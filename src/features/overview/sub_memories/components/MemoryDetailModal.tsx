@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { X, Tag, ExternalLink, Layers } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -51,61 +53,56 @@ export default function MemoryDetailModal({
       titleId="memory-detail-title"
       maxWidthClass="max-w-2xl"
       staggerChildren={false}
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
     >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-secondary/20">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-hair bg-surface-1">
           <div className="flex items-center gap-3 min-w-0">
             <PersonaIcon icon={null} color={personaColor} display="framed" frameSize={"lg"}
               frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
             <div className="min-w-0">
-              <h3 id="memory-detail-title" className="typo-heading text-foreground/90 truncate">{personaName}</h3>
-              <span className="typo-caption text-foreground">{formatRelativeTime(memory.created_at)}</span>
+              <h3 id="memory-detail-title" className="typo-heading text-ink-2 truncate">{personaName}</h3>
+              <span className="typo-caption text-ink-2">{formatRelativeTime(memory.created_at)}</span>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
-          >
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}>
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Title */}
           <div>
-            <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.title_label}</div>
-            <p className="typo-heading text-foreground/90">{stripHtml(memory.title)}</p>
+            <div className="typo-eyebrow mb-1">{t.overview.memory_detail.title_label}</div>
+            <p className="typo-heading text-ink-2">{stripHtml(memory.title)}</p>
           </div>
 
           {/* Content */}
           <div>
-            <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.content_label}</div>
+            <div className="typo-eyebrow mb-1">{t.overview.memory_detail.content_label}</div>
             <p className="typo-body text-foreground whitespace-pre-wrap">{stripHtml(memory.content)}</p>
           </div>
 
           {/* Meta row */}
           <div className="flex items-center gap-4 flex-wrap">
             <div>
-              <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.category_label}</div>
+              <div className="typo-eyebrow mb-1">{t.overview.memory_detail.category_label}</div>
               <CategoryChip category={memory.category} />
             </div>
             <div>
-              <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.importance_label}</div>
+              <div className="typo-eyebrow mb-1">{t.overview.memory_detail.importance_label}</div>
               <ImportanceBar value={memory.importance} />
             </div>
             {memory.use_case_id && (
               <div>
-                <div className="typo-code text-foreground uppercase tracking-wider mb-1">Scope</div>
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-violet-500/15 border border-violet-500/30 text-violet-300 typo-body"
-                  title={`Capability: ${memory.use_case_id}`}
+                <div className="typo-eyebrow mb-1">Scope</div>
+                <Tooltip content={`Capability: ${memory.use_case_id}`}><span
+                  className="inline-flex items-center gap-1.5 typo-code text-ink-2"
                 >
-                  <Layers className="w-3 h-3" />
+                  <Layers className="w-3 h-3 text-role-agent" />
                   <span className="max-w-[140px] truncate">{memory.use_case_id}</span>
-                </span>
+                </span></Tooltip>
               </div>
             )}
           </div>
@@ -113,11 +110,11 @@ export default function MemoryDetailModal({
           {/* Tags */}
           {tags.length > 0 && (
             <div>
-              <div className="typo-code text-foreground uppercase tracking-wider mb-1.5">{t.overview.memory_detail.tags_label}</div>
+              <div className="typo-eyebrow mb-1.5">{t.overview.memory_detail.tags_label}</div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Tag className="w-3 h-3 text-foreground" />
+                <Tag className="w-3 h-3 text-ink-3" />
                 {tags.map((tag) => (
-                  <span key={tag} className="px-2 py-0.5 typo-code bg-secondary/40 text-foreground rounded border border-primary/10">{tag}</span>
+                  <span key={tag} className="typo-code text-ink-2 border-b border-hair">{tag}</span>
                 ))}
               </div>
             </div>
@@ -126,17 +123,15 @@ export default function MemoryDetailModal({
           {/* Reflection provenance — which memories this insight was synthesized from */}
           {memory.derived_from && memory.derived_from.length > 0 && (
             <div>
-              <div className="typo-code text-foreground uppercase tracking-wider mb-1.5">{t.overview.memory_detail.derived_from_label}</div>
+              <div className="typo-eyebrow mb-1.5">{t.overview.memory_detail.derived_from_label}</div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Layers className="w-3 h-3 text-amber-400/70" />
+                <Layers className="w-3 h-3 text-status-warning" />
                 {memory.derived_from.map((sourceId) => (
-                  <span
-                    key={sourceId}
-                    className="px-2 py-0.5 typo-code bg-amber-500/10 text-amber-300/80 rounded border border-amber-500/20"
-                    title={sourceId}
+                  <Tooltip key={sourceId} content={sourceId}><span
+                    className="typo-code text-ink-2 border-b border-hair"
                   >
                     {sourceId.slice(0, 8)}
-                  </span>
+                  </span></Tooltip>
                 ))}
               </div>
             </div>
@@ -147,34 +142,20 @@ export default function MemoryDetailModal({
 
           {/* Source execution link */}
           {memory.source_execution_id && (
-            <button
-              type="button"
-              onClick={() => { useAgentStore.getState().selectPersona(memory.persona_id); useSystemStore.getState().setEditorTab('use-cases'); onClose(); }}
-              className="inline-flex items-center gap-1.5 typo-caption text-blue-400/70 hover:text-blue-400 transition-colors"
-              title={`Execution: ${memory.source_execution_id}`}
-            >
-              <ExternalLink className="w-3 h-3" />
-              {t.overview.memory_detail.view_source_execution}
-            </button>
+            <Button variant="ghost" size="sm" onClick={() => { useAgentStore.getState().selectPersona(memory.persona_id); useSystemStore.getState().setEditorTab('use-cases'); onClose(); }} tooltip={`Execution: ${memory.source_execution_id}`} icon={<ExternalLink className="w-3 h-3" />}>
+{t.overview.memory_detail.view_source_execution}
+</Button>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-primary/10 bg-secondary/10">
-          <button
-            type="button"
-            onClick={() => { onDelete(); onClose(); }}
-            className="px-3 py-1.5 typo-caption rounded-card border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-          >
+        <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-hair bg-surface-1">
+          <Button variant="danger" size="sm" onClick={() => { onDelete(); onClose(); }}>
             {t.overview.memory_detail.delete_memory}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3 py-1.5 typo-caption rounded-card border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 transition-colors"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
     </BaseModal>
   );

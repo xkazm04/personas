@@ -26,6 +26,9 @@ import { BaseModal } from "@/features/shared/components/modals";
 
 import { isOcrCancellation, type useOcr } from "./useOcr";
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 const TITLE_ID = "drive-ocr-drawer-title";
 
 interface Props {
@@ -154,11 +157,11 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
         <div className="relative px-5 py-4 border-b border-primary/10 overflow-hidden">
           <div
             aria-hidden
-            className="absolute inset-0 bg-gradient-to-br from-violet-500/15 via-fuchsia-500/5 to-transparent pointer-events-none"
+            className="absolute inset-0 bg-surface-1 to-transparent pointer-events-none"
           />
           <div className="relative flex items-center gap-3">
-            <div className="w-10 h-10 rounded-modal bg-gradient-to-br from-violet-500/35 to-fuchsia-500/10 border border-violet-500/50 flex items-center justify-center shadow-[0_0_18px_-4px_rgba(167,139,250,0.6)]">
-              <ScanLine className="w-5 h-5 text-violet-100" />
+            <div className="w-10 h-10 rounded-modal bg-surface-1 border border-hair-2 flex items-center justify-center">
+              <ScanLine className="w-5 h-5 text-ink-2" />
             </div>
             <div className="flex-1 min-w-0">
               <div id={TITLE_ID} className="typo-section-title">
@@ -172,14 +175,15 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                   : t.plugins.drive.ocr_subtitle}
               </div>
             </div>
-            <button
+            <Button
               type="button"
               onClick={handleClose}
-              className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               aria-label={t.plugins.drive.cancel}
+              variant="ghost"
+              size="icon-sm"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -208,30 +212,27 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {(["gemini", "claude"] as const).map((b) => (
-                  <button
+                  <PressSurface
                     key={b}
-                    type="button"
-                    onClick={() => setBackend(b)}
+                    onPress={() => setBackend(b)}
                     disabled={phase === "running"}
-                    className={`rounded-input border px-3 py-2 typo-body text-left transition-colors focus-ring ${backend === b
-                        ? "border-violet-500/55 bg-violet-500/20 text-violet-50 shadow-[0_0_14px_-6px_rgba(167,139,250,0.6)]"
-                        : "border-primary/20 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:border-primary/30"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className="rounded-input border border-hair px-3 py-2 typo-body"
+                    selected={backend === b}
                   >
                     {b === "gemini"
                       ? t.plugins.drive.ocr_backend_gemini
                       : t.plugins.drive.ocr_backend_claude}
-                  </button>
+                  </PressSurface>
                 ))}
               </div>
             </div>
           )}
 
           {/* Model info */}
-          <div className="rounded-card border border-violet-500/35 bg-violet-500/10 px-3 py-2 flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-violet-200 flex-shrink-0" />
+          <div className="rounded-card border border-hair-2 bg-surface-2 px-3 py-2 flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-ink-2 flex-shrink-0" />
             <div className="typo-body text-foreground">
-              <span className="font-semibold text-violet-100">
+              <span className="font-semibold text-ink-2">
                 {t.plugins.drive.ocr_model_label}
               </span>{" "}
               <span className="font-mono">
@@ -243,22 +244,22 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
           {/* Backend status: Gemini → credential card; Claude → CLI info */}
           {backend === "gemini" ? (
             ocr.hasGemini ? (
-              <div className="rounded-card border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200 flex-shrink-0" />
+              <div className="rounded-card border border-status-success/35 bg-status-success/10 px-3 py-2 flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
                 <div className="typo-body text-foreground">
                   {t.plugins.drive.ocr_connector_ready}:{" "}
-                  <span className="font-semibold text-emerald-100">
+                  <span className="font-semibold text-status-success">
                     {ocr.geminiCredentialName}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="rounded-card border border-amber-500/40 bg-amber-500/10 px-3 py-2 typo-body text-amber-100">
+              <div className="rounded-card border border-status-warning/40 bg-status-warning/10 px-3 py-2 typo-body text-status-warning">
                 {t.plugins.drive.ocr_connector_missing}
               </div>
             )
           ) : (
-            <div className="rounded-card border border-sky-500/40 bg-sky-500/10 px-3 py-2 typo-body text-foreground">
+            <div className="rounded-card border border-status-info/40 bg-status-info/10 px-3 py-2 typo-body text-foreground">
               {t.plugins.drive.ocr_claude_info}
             </div>
           )}
@@ -274,7 +275,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={3}
                 placeholder={t.plugins.drive.ocr_prompt_placeholder}
-                className="w-full px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 resize-none transition-colors"
+                className="w-full px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-hair-2 focus:ring-2 focus:ring-hair-2 resize-none transition-colors"
               />
             </div>
           )}
@@ -283,8 +284,8 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
           {phase === "done" && result && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-                <span className="typo-body text-emerald-100">
+                <CheckCircle2 className="w-4 h-4 text-status-success" />
+                <span className="typo-body text-status-success">
                   {t.plugins.drive.ocr_done}
                 </span>
                 <span className="typo-caption text-foreground tabular-nums ml-auto">
@@ -297,10 +298,10 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                 {result.document.extracted_text || t.plugins.drive.ocr_empty}
               </pre>
               {saved && (
-                <div className="flex items-center gap-2 rounded-input bg-emerald-500/15 border border-emerald-500/35 px-3 py-1.5 typo-body text-emerald-100">
+                <div className="flex items-center gap-2 rounded-input bg-status-success/15 border border-status-success/35 px-3 py-1.5 typo-body text-status-success">
                   <FileText className="w-3.5 h-3.5" />
                   {t.plugins.drive.ocr_saved_to}:{" "}
-                  <span className="font-mono text-emerald-50">{saved}</span>
+                  <span className="font-mono text-status-success">{saved}</span>
                 </div>
               )}
             </div>
@@ -311,51 +312,56 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/15">
           {phase === "done" ? (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
               >
                 <Copy className="w-3.5 h-3.5" />
                 {t.plugins.doc_signing.copy}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleSave}
                 disabled={!!saved}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-gradient-to-b from-violet-500/30 to-fuchsia-500/10 text-violet-50 border border-violet-500/50 typo-body hover:from-violet-500/40 hover:to-fuchsia-500/15 disabled:opacity-50 transition-all focus-ring"
+                variant="secondary"
+                size="sm"
               >
                 <Save className="w-3.5 h-3.5" />
                 {saved ? t.plugins.drive.ocr_saved : t.plugins.drive.ocr_save}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleClose}
-                className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
               >
                 {t.plugins.drive.confirm}
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleClose}
-                className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
               >
                 {t.plugins.drive.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleExtract}
                 disabled={!canExtract || phase === "running"}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-gradient-to-b from-violet-500/30 to-fuchsia-500/10 text-violet-50 border border-violet-500/50 typo-body hover:from-violet-500/40 hover:to-fuchsia-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_0_14px_-4px_rgba(167,139,250,0.5)] focus-ring"
+                variant="secondary"
+                size="sm"
               >
                 <ScanLine className="w-3.5 h-3.5" />
                 {phase === "running"
                   ? t.plugins.drive.ocr_running
                   : t.plugins.drive.ocr_extract}
-              </button>
+              </Button>
             </>
           )}
         </div>

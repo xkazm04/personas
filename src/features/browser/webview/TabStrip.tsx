@@ -53,29 +53,17 @@ export default function TabStrip({ tabs, activeTabId, onSelect, onClose, error =
               className={[
                 'group flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-interactive border transition-colors max-w-56 min-w-0',
                 active
-                  ? 'border-primary/30 bg-primary/10'
-                  : 'border-primary/10 bg-secondary/30 hover:border-primary/20',
+                  ? 'border-hair bg-primary/10'
+                  : 'border-hair bg-surface-1 hover:border-hair',
               ].join(' ')}
             >
-              <button
-                type="button"
-                aria-current={active ? 'true' : undefined}
-                onClick={() => onSelect(tab.id)}
-                data-testid={`webview-tab-${tab.id}`}
-                className="flex items-center gap-1.5 min-w-0 focus-ring rounded-interactive"
-              >
+              <Button variant="ghost" size="sm" className="min-w-0" aria-current={active ? 'true' : undefined} onClick={() => onSelect(tab.id)} data-testid={`webview-tab-${tab.id}`}>
                 {tab.lease && <LiveStatusDot tone="syncing" />}
-                <span className="typo-caption text-foreground truncate">{tab.title || v.untitled}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onClose(tab.id)}
-                aria-label={v.close_tab}
-                data-testid={`webview-tab-close-${tab.id}`}
-                className="p-0.5 rounded-interactive text-foreground hover:text-foreground focus-ring"
-              >
+                <span className="typo-caption text-ink-2 truncate">{tab.title || v.untitled}</span>
+              </Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => onClose(tab.id)} aria-label={v.close_tab} data-testid={`webview-tab-close-${tab.id}`}>
                 <X className="w-3 h-3" />
-              </button>
+              </Button>
             </div>
           );
         })}

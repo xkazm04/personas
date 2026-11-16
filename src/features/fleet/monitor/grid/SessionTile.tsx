@@ -24,10 +24,11 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { sessionLabel, sessionStateMeta } from './fleetSessionModel';
-import { AFFORDANCE_BTN, FleetNode } from './board/node/FleetNode';
+import { FleetNode } from './board/node/FleetNode';
 import { asOrigin } from './board/queue/useQueueModel';
 import { originLabel } from './board/queue/originLabel';
 import { useDeviceName } from './remote/useDeviceName';
+import Button from '@/features/shared/components/buttons/Button';
 
 export const SessionTile = memo(function SessionTile({
   session, width, height, onOpen, onRecap, flash = false,
@@ -70,15 +71,15 @@ export const SessionTile = memo(function SessionTile({
       originDevice={originDevice}
       symbols={onOpen && onRecap ? (
         <Tooltip content={t.monitor.grid_session_recap_open}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={() => onRecap(session)}
             aria-label={t.monitor.grid_session_recap_open}
             data-testid="fleet-grid-session-recap"
-            className={AFFORDANCE_BTN}
           >
             <ScanEye className="h-2.5 w-2.5" aria-hidden />
-          </button>
+          </Button>
         </Tooltip>
       ) : undefined}
     />

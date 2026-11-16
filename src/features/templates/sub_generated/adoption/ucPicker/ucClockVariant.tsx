@@ -25,7 +25,7 @@ export function ClockVariant({ display, firing }: { display: TriggerDisplay; fir
             return (
               <span
                 key={i}
-                className={`relative inline-flex items-center justify-center leading-none font-mono text-[22px] font-bold transition-colors ${
+                className={`relative inline-flex items-center justify-center leading-none font-mono typo-heading-lg transition-colors ${
                   on ? 'text-primary' : 'text-foreground'
                 }`}
                 style={on ? { textShadow: '0 0 10px color-mix(in srgb, var(--color-primary) 60%, transparent)' } : undefined}
@@ -130,10 +130,10 @@ export function ClockVariant({ display, firing }: { display: TriggerDisplay; fir
       </div>
 
       <div className="mt-1 flex flex-col items-center gap-0">
-        <div className="text-[18px] font-bold tracking-tight text-foreground font-mono leading-tight tabular-nums">
+        <div className="typo-heading-lg tracking-tight text-foreground font-mono leading-tight tabular-nums">
           {display.primary} {display.secondary}
         </div>
-        <div className="text-[10px] text-foreground leading-tight">{display.detail}</div>
+        <div className="typo-caption text-foreground leading-tight">{display.detail}</div>
       </div>
     </>
   );

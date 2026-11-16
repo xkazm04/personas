@@ -4,6 +4,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaStore } from './athenaStore';
 import { TaskTag } from './TaskTag';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Persistent, turn-independent tray of every in-flight background Task
  * (Athena async-UX phase 2). Unlike the in-chat task tags (pinned to the
@@ -39,24 +41,26 @@ export function ActivityTray() {
 
   return (
     <div
-      className="mx-3 mb-1.5 rounded-card border border-blue-500/20 bg-blue-500/[0.04]"
+      className="mx-3 mb-1.5 rounded-card border border-status-info/20 bg-status-info/10/[0.04]"
       data-testid="companion-activity-tray"
       data-task-count={count}
     >
-      <button
+      <Button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center gap-2 w-full px-2.5 py-1.5 typo-caption text-foreground focus-ring rounded-card"
+        variant="ghost"
+        size="sm"
+        block
       >
         <Chevron className="w-3.5 h-3.5 shrink-0 text-foreground" />
-        <Activity className="w-3.5 h-3.5 shrink-0 text-blue-300/90 animate-pulse" />
+        <Activity className="w-3.5 h-3.5 shrink-0 text-status-info animate-pulse" />
         <span className="flex-1 text-left font-medium">
           {tx(
             count === 1 ? t.athena.tasks_running_one : t.athena.tasks_running_other,
             { count },
           )}
         </span>
-      </button>
+      </Button>
       {!collapsed && (
         <div className="px-2 pb-2 space-y-1">
           {running.map((job) => (

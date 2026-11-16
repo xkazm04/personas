@@ -7,6 +7,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
 import type { ViewName } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { RotateAllButton, TestAllButton } from './HeaderActionButtons';
+import Button from '@/features/shared/components/buttons/Button';
 
 /* -- Title-only header (no actions) -------------------------------- */
 
@@ -38,7 +39,7 @@ export function CredentialManagerHeader({ credentialCount, view }: CredentialMan
     : tx(credentialCount === 1 ? m.credentials_stored_one : m.credentials_stored_other, { count: credentialCount });
   return (
     <ContentHeader
-      icon={<Key className="w-5 h-5 text-emerald-400" />}
+      icon={<Key className="w-5 h-5 text-ink-2" />}
       iconColor="emerald"
       title={title}
       subtitle={subtitle}
@@ -90,7 +91,7 @@ export function CredentialToolbar({
   if (!showSearchBar && !(showActions && !isSimple)) return null;
 
   return (
-    <div className="flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-secondary/20 flex-shrink-0">
+    <div className="flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-hair bg-surface-1 flex-shrink-0">
       {/* Search */}
       {showSearchBar && (
         <div className="relative flex-1 min-w-0 max-w-md">
@@ -106,17 +107,19 @@ export function CredentialToolbar({
                 ? t.vault.manager.search_catalog
                 : t.vault.manager.search_credentials
             }
-            className="w-full pl-8 pr-8 py-1.5 rounded-card border border-primary/15 bg-background/80 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
+            className="w-full pl-8 pr-8 py-1.5 rounded-card border border-hair bg-background/80 typo-body text-foreground placeholder:text-ink-3 focus-ring"
           />
           {credentialSearch && (
-            <button
+            <Button
               type="button"
               onClick={() => onSearchChange('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/80 transition-colors"
-              title={t.vault.manager.clear_search}
+              variant="ghost"
+              size="icon-sm"
+              className="absolute right-2 top-1/2"
+              tooltip={t.vault.manager.clear_search} aria-label={t.vault.manager.clear_search}
             >
               <X className="w-3 h-3" />
-            </button>
+            </Button>
           )}
         </div>
       )}

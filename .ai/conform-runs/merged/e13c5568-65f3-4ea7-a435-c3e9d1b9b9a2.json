@@ -1,0 +1,76 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e13c5568-65f3-4ea7-a435-c3e9d1b9b9a2",
+ "subject": "repository-landing-document",
+ "evaluatedAt": "2026-11-08T05:11:12.929496+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "appearance-settings",
+   "subject": "repository-landing-document",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:43 The module puts together in-app settings sections (theme, density, locale, brightness) and makes or edits no repository front page. A grep of src/features/settings/sub_appearance/ for readme, shields.io, badge.svg and landing returned no hits, so this subject's precondition (a landing document, its badges, figures or host metadata) does not hold here.",
+   "techniques": [
+    {
+     "technique": "landing-document-as-router",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:43 An in-app settings scaffold, not a repository front page. Nothing here routes readers of a landing document."
+    }
+   ],
+   "absenceTerms": [
+    "readme",
+    "shields.io",
+    "badge.svg",
+    "landing"
+   ]
+  },
+  {
+   "context": "passport-wall-ui",
+   "subject": "repository-landing-document",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/PassportActionsRow.tsx:153 The wall's copy action hands the user a markdown readiness claim (scores out of 100, 'meets the standard \u2713'). The action catalog says it is ready to paste into a README, but the block links to no artifact that would go red, and no automated check exists anywhere, so once pasted the claim stays green after it stops being true.",
+   "techniques": [
+    {
+     "technique": "evidence-linked-badges",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/passportExport.ts:4 The exporter calls its output a 'report/badge' to drop into a README (line 2) and admits that the check able to fail does not exist yet. This is exactly the failure the technique names: a claim on the front page that no automated check backs. The date stamp on line 25 is a partial predicate, but it gives no link to an evidence target."
+    }
+   ],
+   "registryProposal": "evidence-linked-badges could say explicitly that it also covers generated claim blocks: tools that emit pasteable markdown readiness or score reports meant for a README. Those blocks are badges in function, and the technique's precondition currently reads as limited to image badges."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-08T05:11:12.929496+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "repository-landing-document"
+   ],
+   "techniques": [
+    "landing-document-as-router"
+   ],
+   "deviations": 0,
+   "context": "appearance-settings",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T05:11:12.929496+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "repository-landing-document"
+   ],
+   "techniques": [
+    "evidence-linked-badges"
+   ],
+   "deviations": 1,
+   "context": "passport-wall-ui",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

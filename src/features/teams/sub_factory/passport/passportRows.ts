@@ -162,7 +162,7 @@ export const SECTIONS: SectionSpec[] = [
         if (rot && rot.neverRead > 0) bits.push(`${rot.neverRead} unread`);
         return ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs], bits.length ? bits.join(' · ') : undefined);
       } },
-      { key: 'design-system', label: 'Design system', info: 'Whether an agent can read this repo’s visual rules before it writes UI. Informal = guidance exists somewhere the project chose; Documented = a root DESIGN.md at the portable spec location; Machine-readable = that file also carries the YAML token frontmatter (colors / typography / rounded / spacing / components), so a linter or generator can consume it, not just a human. Does not feed the automation score yet.', get: (p) => {
+      { key: 'design-system', label: 'Design system', info: 'Whether an agent can read this repo’s visual rules before it writes UI. Informal = guidance exists somewhere the project chose; Documented = a root DESIGN.md at the portable spec location; Machine-readable = that file also carries the YAML token frontmatter (colors / typography / rounded-interactive / spacing / components), so a linter or generator can consume it, not just a human. Does not feed the automation score yet.', get: (p) => {
         const lvl = p.automationReadiness.artifacts.designSystem;
         // Absent on passports derived before this probe existed — report the gap
         // rather than rendering a confident 'none' the scan never established.

@@ -177,22 +177,22 @@ describe('waterfallGeometry', () => {
 
 describe('durationColor', () => {
   it('is neutral when the duration is unknown', () => {
-    expect(durationColor(null)).toContain('bg-secondary');
-    expect(durationColor(undefined)).toContain('bg-secondary');
+    expect(durationColor(null)).toContain('bg-surface-2');
+    expect(durationColor(undefined)).toContain('bg-surface-2');
   });
 
   it('is green below the 2s tier boundary', () => {
-    expect(durationColor(0)).toContain('emerald');
-    expect(durationColor(1999)).toContain('emerald');
+    expect(durationColor(0)).toContain('status-success');
+    expect(durationColor(1999)).toContain('status-success');
   });
 
   it('is amber from 2s up to the 10s boundary', () => {
-    expect(durationColor(2000)).toContain('amber');
-    expect(durationColor(9999)).toContain('amber');
+    expect(durationColor(2000)).toContain('status-warning');
+    expect(durationColor(9999)).toContain('status-warning');
   });
 
   it('is red from 10s up', () => {
-    expect(durationColor(10000)).toContain('red');
-    expect(durationColor(120000)).toContain('red');
+    expect(durationColor(10000)).toContain('status-error');
+    expect(durationColor(120000)).toContain('status-error');
   });
 });

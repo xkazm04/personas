@@ -37,7 +37,7 @@ describe('delete-all confirm states the real blast radius', () => {
   it('counts every non-core memory, not the filtered view total', async () => {
     useOverviewStore.setState({ memories: [memory as never], memoriesTotal: 2, memoriesLoading: false, memoriesError: null });
     render(<MemoriesPageDense />);
-    const trigger = await screen.findByTitle('Delete all');
+    const trigger = await screen.findByLabelText('Delete all');
     fireEvent.click(trigger);
     await waitFor(() => expect(screen.getByText(/permanently deletes all/)).toBeTruthy());
     expect(screen.getByText(/permanently deletes all 11 memories/)).toBeTruthy();

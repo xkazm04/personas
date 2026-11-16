@@ -34,7 +34,7 @@ export const TONE_TEXT: Record<MeterTone, string> = {
 export const PACE_ICON: Record<Pace, typeof Flame> = { fast: Flame, steady: Gauge, slow: Snowflake };
 export const PACE_TONE: Record<Pace, string> = {
   fast: 'text-status-warning',
-  steady: 'text-foreground opacity-50',
+  steady: 'text-ink-3 ',
   slow: 'text-status-info',
 };
 

@@ -52,7 +52,7 @@ export function QuickDispatchSuggestions({
   if (hint) {
     return (
       <div
-        className="rounded-card border border-foreground/10 bg-secondary/95 backdrop-blur-sm shadow-elevation-3 px-3 py-2 typo-caption text-foreground"
+        className="rounded-card border border-foreground/10 bg-surface-1 backdrop-blur-sm shadow-elevation-3 px-3 py-2 typo-caption text-foreground"
         data-testid="quick-dispatch-suggestions-hint"
       >
         {hint}
@@ -64,7 +64,7 @@ export function QuickDispatchSuggestions({
 
   return (
     <div
-      className="rounded-card border border-foreground/10 bg-secondary/95 backdrop-blur-sm shadow-elevation-3 overflow-hidden"
+      className="rounded-card border border-foreground/10 bg-surface-1 backdrop-blur-sm shadow-elevation-3 overflow-hidden"
       data-testid="quick-dispatch-suggestions"
     >
       <ul id={listboxId} role="listbox" className="max-h-56 overflow-y-auto scrollbar-thin">
@@ -86,7 +86,7 @@ export function QuickDispatchSuggestions({
               }}
               onMouseEnter={() => onHoverIndex(idx)}
               className={`px-3 py-1.5 cursor-pointer transition-colors ${
-                active ? 'bg-primary/10' : 'hover:bg-foreground/[0.04]'
+                active ? 'bg-surface-1' : 'hover:bg-foreground/[0.04]'
               }`}
               data-testid="quick-dispatch-suggestion-item"
               data-active={active ? 'true' : 'false'}

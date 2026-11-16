@@ -379,10 +379,7 @@ for the full mechanics.
    `QuestionnaireFormGridParts.tsx`) before the default text input fallback.
 3. Add a default-answer handler if the type needs special
    initialization (most don't — `q.default` is a string).
-4. Update the audit script if you want the new type classified
-   differently (currently `audit-adoption-questions.cjs` buckets
-   unknown types as "text candidates").
-5. No Rust changes needed for rendering — the backend treats
+4. No Rust changes needed for rendering — the backend treats
    `design_result.adoption_questions` as opaque JSON. The answer
    pipeline reads answers by question ID regardless of type.
 

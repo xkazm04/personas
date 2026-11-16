@@ -11,6 +11,7 @@
  * `i === 0 ? 'opacity-40' : i === 1 ? 'opacity-70' : 'opacity-100'` ladder.
  */
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Check, Sun } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
@@ -62,8 +63,8 @@ const DENSITY: Record<AppearancePickerDensity, DensityTokens> = {
     swatchSize: 'w-6 h-6',
     swatchInner: 'p-2',
     brightnessIconSize: 'w-3.5 h-3.5',
-    textScaleLabelSize: 'text-[11px]',
-    themeLabelSize: 'text-[11px]',
+    textScaleLabelSize: 'typo-caption',
+    themeLabelSize: 'typo-caption',
     checkSize: 'w-2.5 h-2.5',
     checkPosition: 'top-1 right-1',
     brightnessSwatchIconSize: 'w-3.5 h-3.5',
@@ -91,19 +92,8 @@ export function TextScalePicker({
         const isActive = textScale === scale.id;
         const sizeClass = scale.id === 'large' ? 'typo-body-lg' : 'typo-heading-lg';
         return (
-          <button
-            key={scale.id}
-            type="button"
-            onClick={() => setTextScale(scale.id)}
-            aria-pressed={isActive}
-            data-testid={testIdPrefix ? `${testIdPrefix}-textscale-${scale.id}` : undefined}
-            className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border transition-colors ${
-              isActive
-                ? 'border-primary/30 bg-primary/5'
-                : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-            }`}
-          >
-            <span className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
+          <PressSurface key={scale.id} onPress={() => setTextScale(scale.id)} selected={isActive} data-testid={testIdPrefix ? `${testIdPrefix}-textscale-${scale.id}` : undefined} className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border ${isActive ? 'border-hair-2' : 'border-hair'}`}>
+            <span className={`font-semibold ${sizeClass} ${isActive ? 'text-ink-1' : 'text-foreground'}`}>
               Aa
             </span>
             <span className={`${d.textScaleLabelSize} ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
@@ -114,7 +104,7 @@ export function TextScalePicker({
                 <Check className={`${d.checkSize} text-primary`} />
               </div>
             )}
-          </button>
+          </PressSurface>
         );
       })}
     </div>
@@ -152,20 +142,9 @@ export function BrightnessPicker({
         const isActive = brightness === level.id;
         const iconOpacity = BRIGHTNESS_ICON_OPACITY_BY_INDEX[i] ?? 'opacity-100';
         return (
-          <button
-            key={level.id}
-            type="button"
-            onClick={() => setBrightness(level.id)}
-            aria-pressed={isActive}
-            data-testid={testIdPrefix ? `${testIdPrefix}-brightness-${level.id}` : undefined}
-            className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border transition-colors ${
-              isActive
-                ? 'border-primary/30 bg-primary/5'
-                : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-            }`}
-          >
-            <Sun className={`${d.brightnessSwatchIconSize} ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
-            <span className={`${density === 'compact' ? 'text-[11px]' : 'typo-caption'} ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+          <PressSurface key={level.id} onPress={() => setBrightness(level.id)} selected={isActive} data-testid={testIdPrefix ? `${testIdPrefix}-brightness-${level.id}` : undefined} className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border ${isActive ? 'border-hair-2' : 'border-hair'}`}>
+            <Sun className={`${d.brightnessSwatchIconSize} ${iconOpacity} ${isActive ? 'text-status-warning' : 'text-foreground'}`} />
+            <span className={`${density === 'compact' ? 'typo-caption' : 'typo-caption'} ${isActive ? 'text-ink-1 font-medium' : 'text-foreground'}`}>
               {t.settings.appearance[level.labelKey]}
             </span>
             {showDescription && (
@@ -176,7 +155,7 @@ export function BrightnessPicker({
                 <Check className={`${d.checkSize} text-primary`} />
               </div>
             )}
-          </button>
+          </PressSurface>
         );
       })}
     </div>
@@ -210,28 +189,17 @@ export function SimpleThemePicker({
       {themes.map((theme) => {
         const isActive = themeId === theme.id;
         return (
-          <button
-            key={theme.id}
-            type="button"
-            onClick={() => setTheme(theme.id)}
-            aria-pressed={isActive}
-            data-testid={testIdPrefix ? `${testIdPrefix}-theme-${theme.id}` : undefined}
-            className={`flex flex-col items-center ${d.cardGap} ${d.swatchInner} rounded-modal border transition-colors ${
-              isActive
-                ? 'border-primary/30 bg-primary/5'
-                : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-            }`}
-          >
+          <PressSurface key={theme.id} onPress={() => setTheme(theme.id)} selected={isActive} data-testid={testIdPrefix ? `${testIdPrefix}-theme-${theme.id}` : undefined} className={`flex flex-col items-center ${d.cardGap} ${d.swatchInner} rounded-modal border ${isActive ? 'border-hair-2' : 'border-hair'}`}>
             <div
               className={`${d.swatchSize} rounded-full border border-black/10 flex items-center justify-center`}
               style={{ backgroundColor: theme.primaryColor }}
             >
               {isActive && <Check className={`${d.checkSize} text-foreground drop-shadow-elevation-1`} />}
             </div>
-            <span className={`${d.themeLabelSize} ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+            <span className={`${d.themeLabelSize} ${isActive ? 'text-ink-1 font-medium' : 'text-foreground'}`}>
               {theme.label}
             </span>
-          </button>
+          </PressSurface>
         );
       })}
     </div>

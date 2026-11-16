@@ -11,6 +11,7 @@ import type {
   CreateAthenaCard,
   InstallState,
 } from '../../engine/createAthenaTypes';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** Engine choice + the install that follows it. */
 
@@ -34,18 +35,15 @@ export function StageCardEnginePick({
         {card.options.map((opt) => {
           const selected = opt.id === card.selected;
           return (
-            <button
+            <PressSurface
               key={opt.id}
-              type="button"
               role="radio"
-              aria-checked={selected}
-              onClick={() => actions.selectEngine(opt.id)}
-              className={`text-left rounded-card border p-4 focus-ring transition-colors duration-fast motion-reduce:transition-none ${
-                selected
-                  ? 'border-primary bg-primary/10'
-                  : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
-              }`}
+              onPress={() => actions.selectEngine(opt.id)}
               data-testid={`create-athena-engine-${opt.id}`}
+              className="text-left rounded-card border border-hair p-4"
+              selected={selected}
+              aria-checked={selected}
+              aria-pressed={undefined}
             >
               <div className="flex items-center gap-2">
                 <span className="typo-title">{copy[opt.id].title}</span>
@@ -56,19 +54,19 @@ export function StageCardEnginePick({
                 )}
                 <span
                   className={`ml-auto inline-flex items-center gap-1 typo-caption ${
-                    opt.installed ? 'text-primary' : 'text-foreground/85'
+                    opt.installed ? 'text-primary' : 'text-ink-2'
                   }`}
                 >
                   {opt.installed && <Check className="w-3 h-3" aria-hidden="true" />}
                   {opt.installed ? c.create_engine_installed : c.create_engine_needs_install}
                 </span>
               </div>
-              <p className="typo-caption text-foreground/85 mt-1.5">{copy[opt.id].desc}</p>
-            </button>
+              <p className="typo-caption text-ink-2 mt-1.5">{copy[opt.id].desc}</p>
+            </PressSurface>
           );
         })}
       </div>
-      <p className="typo-caption text-foreground/85">{card.why}</p>
+      <p className="typo-caption text-ink-2">{card.why}</p>
       <Button
         variant={card.confirmed ? 'secondary' : 'primary'}
         size="md"
@@ -99,7 +97,7 @@ function InstallProgress({ state }: { state: InstallState }) {
     <div className="space-y-2" data-testid="create-athena-install-progress">
       <div className="flex items-center gap-2 typo-caption text-foreground">
         <span>{label}</span>
-        <span className="ml-auto tabular-nums text-foreground/85">
+        <span className="ml-auto tabular-nums text-ink-2">
           {pct !== null ? (
             <Numeric value={pct} unit="percent" precision={0} />
           ) : (
@@ -124,15 +122,16 @@ function InstallProgress({ state }: { state: InstallState }) {
 function ManualLink({ href, label }: { href: string | null; label: string }) {
   if (!href) return null;
   return (
-    <button
+    <Button
       type="button"
       onClick={() => openExternalUrl(href).catch(toastCatch('CreateAthenaStage:openInstallLink'))}
       data-testid="create-athena-install-link"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-label transition-colors duration-fast motion-reduce:transition-none focus-ring"
+      variant="ghost"
+      size="icon-sm"
     >
       <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -180,7 +179,7 @@ export function StageCardInstall({
             <AlertTriangle className="w-4 h-4 mt-0.5 text-status-error shrink-0" aria-hidden="true" />
             <span>
               {c.create_install_failed}
-              {state.error && <span className="block typo-caption text-foreground/85 mt-0.5">{state.error}</span>}
+              {state.error && <span className="block typo-caption text-ink-2 mt-0.5">{state.error}</span>}
             </span>
           </p>
           <Button variant="primary" size="sm" onClick={actions.retryInstall} data-testid="create-athena-install-retry">

@@ -10,8 +10,8 @@ describe('ledger turn signals', () => {
     expect(laneSignal('awaiting_acceptance').labelKey).toBe('your_turn');
     expect(laneSignal('blocked').labelKey).toBe('your_turn');
     expect(laneSignal('in-progress').labelKey).toBe('agents_turn');
-    expect(ledgerRail('open', false)).toContain('amber');
-    expect(ledgerRail('in_progress', false)).toContain('blue');
+    expect(ledgerRail('open', false)).toContain('status-warning');
+    expect(ledgerRail('in_progress', false)).toContain('status-info');
     expect(ledgerRail('done', false)).toBeUndefined();
   });
 

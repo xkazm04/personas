@@ -146,7 +146,7 @@ export const PersonaLine = memo(function PersonaLine({
             {peer && <DeviceGlyph peerId={peer.peerId} name={peer.device} />}
             {peer ? <ResourceGlyph axis={peer.agent.dominant} /> : <PersonaResource personaId={card.personaId} />}
             {unseenChat > 0 && (
-              <span className="inline-flex flex-shrink-0 items-center gap-0.5 typo-label tabular-nums text-status-info">
+              <span className="inline-flex flex-shrink-0 items-center gap-0.5 typo-label num text-status-info">
                 <MessageCircle className="h-3.5 w-3.5" aria-hidden />{unseenChat}
               </span>
             )}

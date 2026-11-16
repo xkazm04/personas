@@ -30,12 +30,12 @@ const STATE_VIS: Partial<
   // tile is visual noise at scale (10+ CLIs). The blue label alone reads as
   // "Working" without the distraction; the other (non-animated) states keep a
   // static glance icon.
-  running: { labelKey: 'state_working', accent: 'text-blue-400' },
-  spawning: { Icon: Sparkle, labelKey: 'state_spawning', accent: 'text-cyan-400' },
-  idle: { Icon: CheckCircle2, labelKey: 'state_idle', accent: 'text-emerald-400' },
-  stale: { Icon: Clock, labelKey: 'state_stale', accent: 'text-orange-400' },
-  finished: { Icon: CheckCircle2, labelKey: 'state_finished', accent: 'text-teal-400' },
-  hibernated: { Icon: Moon, labelKey: 'state_hibernated', accent: 'text-indigo-400' },
+  running: { labelKey: 'state_working', accent: 'text-status-info' },
+  spawning: { Icon: Sparkle, labelKey: 'state_spawning', accent: 'text-status-info' },
+  idle: { Icon: CheckCircle2, labelKey: 'state_idle', accent: 'text-status-success' },
+  stale: { Icon: Clock, labelKey: 'state_stale', accent: 'text-status-warning' },
+  finished: { Icon: CheckCircle2, labelKey: 'state_finished', accent: 'text-status-success' },
+  hibernated: { Icon: Moon, labelKey: 'state_hibernated', accent: 'text-role-agent' },
   exited: { Icon: Ban, labelKey: 'state_exited', accent: 'text-foreground' },
   // Without this row the `?? STATE_VIS.idle!` below would paint a retired
   // dispatch as a healthy idle session, emerald tick and all.
@@ -55,11 +55,11 @@ export function FleetTileStatusBlock({ session: s }: { session: FleetSession }) 
     >
       {Icon && <Icon className={`w-6 h-6 ${vis.accent}`} aria-hidden="true" />}
       <span className={`typo-caption ${vis.accent}`}>{t.plugins.fleet[vis.labelKey]}</span>
-      <span className="typo-caption tabular-nums">
+      <span className="typo-caption num">
         {formatAgo(t, Number(s.lastActivityMs), now)}
       </span>
       {s.state === 'exited' && s.exitCode != null && s.exitCode !== 0 && (
-        <span className="typo-caption text-red-300">{`exit ${s.exitCode}`}</span>
+        <span className="typo-caption text-status-error">{`exit ${s.exitCode}`}</span>
       )}
       {s.state === 'hibernated' && (
         <span className="typo-caption opacity-70">{t.plugins.fleet.tombstone_wake_hint}</span>

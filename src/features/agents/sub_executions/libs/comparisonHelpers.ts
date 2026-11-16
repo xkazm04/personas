@@ -49,9 +49,9 @@ export function fmtCost(v: number | null | undefined, opts?: { precision?: 4 | '
 }
 
 export function deltaColor(pct: number, lowerIsBetter = true): string {
-  if (Math.abs(pct) < 5) return 'text-foreground';
+  if (Math.abs(pct) < 5) return 'text-ink-1';
   const good = lowerIsBetter ? pct < 0 : pct > 0;
-  return good ? 'text-emerald-400' : 'text-amber-400';
+  return good ? 'text-status-success' : 'text-status-warning';
 }
 
 /**

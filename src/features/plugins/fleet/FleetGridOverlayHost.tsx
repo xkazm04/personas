@@ -43,7 +43,13 @@ export default function FleetGridOverlayHost() {
     gcTerminals(new Set(sessions.map((s) => s.id)));
   }, [sessions]);
 
-  const close = useCallback(() => setGridOpen(false), [setGridOpen]);
+  // Escape / Back dismiss the topmost surface only: with the skill drawer open
+  // over the grid, both window Escape listeners fire, and closing the grid too
+  // dropped the operator out of the terminals they were applying a skill to.
+  const close = useCallback(() => {
+    if (skillsOpen) setSkillsOpen(false);
+    else setGridOpen(false);
+  }, [skillsOpen, setGridOpen]);
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,

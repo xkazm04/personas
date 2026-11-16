@@ -32,16 +32,16 @@ export function classifyExecutionStatus(status: string | null | undefined): Exec
 
 export function statusIcon(status: string) {
   switch (classifyExecutionStatus(status)) {
-    case 'completed': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-    case 'failed': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-    case 'cancelled': return <Ban className="w-3.5 h-3.5 text-amber-400" />;
+    case 'completed': return <CheckCircle2 className="w-3.5 h-3.5 text-status-success" />;
+    case 'failed': return <XCircle className="w-3.5 h-3.5 text-status-error" />;
+    case 'cancelled': return <Ban className="w-3.5 h-3.5 text-status-warning" />;
     // `LoadingSpinner` renders null, so a queued/running row had NO status
     // glyph at all. The shared liveness dot is the vocabulary for "in flight".
     case 'in_flight': return <LiveStatusDot tone="syncing" size="sm" className="mx-0.5" />;
     // Honest unknown: styled as its own thing, not as failure (false alarm)
     // and not as pending (false calm). The raw string rides along for
     // assistive tech; the expanded row prints it in full.
-    default: return <HelpCircle className="w-3.5 h-3.5 text-foreground" role="img" aria-label={status} data-status-class="unknown" />;
+    default: return <HelpCircle className="w-3.5 h-3.5 text-ink-1" role="img" aria-label={status} data-status-class="unknown" />;
   }
 }
 

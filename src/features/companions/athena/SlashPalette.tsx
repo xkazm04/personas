@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Slash-command palette — opens above the composer when the user types
@@ -84,24 +85,20 @@ export function SlashPalette({
           const active = idx === Math.min(selectedIndex, filtered.length - 1);
           return (
             <li key={preset.key}>
-              <button
+              <PressSurface
                 ref={(el) => {
                   itemRefs.current[idx] = el;
                 }}
-                type="button"
-                onClick={() => onSelect(preset)}
+                onPress={() => onSelect(preset)}
                 onMouseEnter={() => onHoverIndex(idx)}
-                className={`w-full text-left px-3 py-1.5 typo-caption transition-colors ${
-                  active
-                    ? 'bg-primary/10 text-foreground'
-                    : 'text-foreground hover:bg-foreground/[0.04]'
-                }`}
                 data-testid="companion-slash-item"
                 data-key={preset.key}
                 data-active={active ? 'true' : 'false'}
+                className="w-full px-3 py-1.5 typo-caption"
+                selected={active} aria-pressed={undefined}
               >
                 {preset.label}
-              </button>
+              </PressSurface>
             </li>
           );
         })}

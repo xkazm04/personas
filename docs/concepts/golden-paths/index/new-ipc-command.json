@@ -28,6 +28,7 @@
   ],
   "citations": {
     ".../*.ts": {"count":2,"sections":[7],"contexts":["| `validate_db_schema`, `get_schema_proposal_snapshot` | `SchemaValidationResult`, `SchemaProposalSnapshot` | `.../*.ts` |"],"resolved":false},
+    ".../MigrationResult.ts": {"count":1,"sections":[7],"contexts":["| `migrate_plaintext_credentials` (`crud.rs:447`) | `MigrationResult` | `.../MigrationResult.ts` |"],"resolved":false},
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["agreed; none is estimated. `src-tauri/target/**` and `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
     ".github/workflows/ci.yml": {
       "count": 8,
@@ -175,13 +176,6 @@
       "contexts": ["| `import_foraged_credential` (`foraging.rs:716`) | `ForageImportResult` | `.../ForageImportResult.ts` |"],
       "resolvedFrom": "elided-suffix",
       "verbatim": ".../ForageImportResult.ts"
-    },
-    "src/lib/bindings/MigrationResult.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["| `migrate_plaintext_credentials` (`crud.rs:447`) | `MigrationResult` | `.../MigrationResult.ts` |"],
-      "resolvedFrom": "elided-suffix",
-      "verbatim": ".../MigrationResult.ts"
     },
     "src/lib/bindings/NegotiationStartResult.ts": {
       "count": 1,

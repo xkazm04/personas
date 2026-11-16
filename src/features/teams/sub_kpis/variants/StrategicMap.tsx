@@ -11,6 +11,7 @@
 // group, which scrolled sideways forever and had exactly one level. This one
 // descends: portfolio to project inside the surface, then the group layer,
 // then the KPI.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -126,23 +127,22 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
           {layout.frames.map((frame) => (
             <div
               key={frame.projectId}
-              className="absolute rounded-card border border-primary/15"
+              className="absolute rounded-card border border-hair"
               style={{ left: frame.rect.x, top: frame.rect.y, width: frame.rect.w, height: frame.rect.h }}
             >
-              <button
-                type="button"
-                onClick={() => (altitude.project ? altitude.climb() : altitude.descend(frame.projectId))}
+              <PressSurface
+                onPress={() => (altitude.project ? altitude.climb() : altitude.descend(frame.projectId))}
                 data-testid={`kpi-map-frame-${frame.projectId}`}
-                className="flex w-full items-baseline gap-2 truncate rounded-t-card px-2 py-0.5 text-left hover:bg-secondary/30 focus-ring"
+                className="flex w-full items-baseline gap-2 truncate rounded-t-card px-2 py-0.5"
               >
                 <span className={`truncate ${KT.name}`}>{frame.label}</span>
-                <span className="shrink-0 typo-caption tabular-nums">
+                <span className="shrink-0 typo-data">
                   {tx(o.map_lit_of, { measured: frame.tally.measured, total: frame.tally.total })}
                 </span>
                 {frame.groupsUnknown && (
                   <span className="shrink-0 typo-caption text-status-warning">{o.groups_unknown}</span>
                 )}
-              </button>
+              </PressSurface>
             </div>
           ))}
           {layout.territories.map((territory) => (

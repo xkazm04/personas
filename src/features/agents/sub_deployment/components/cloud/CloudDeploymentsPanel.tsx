@@ -114,7 +114,7 @@ export function CloudDeploymentsPanel({
 
         <div className="flex items-end gap-2">
           <div className="flex-1 space-y-1.5">
-            <label htmlFor="deploy-persona-select" className="typo-body text-foreground">
+            <label htmlFor="deploy-persona-select" className="typo-body text-ink-1">
               Persona
             </label>
             <select
@@ -123,9 +123,9 @@ export function CloudDeploymentsPanel({
               onChange={(e) => setSelectedPersonaId(e.target.value)}
               disabled={isDeploying || deployablePersonas.length === 0}
               className="w-full px-3 py-2 typo-body rounded-modal
-                         bg-secondary/40 border border-primary/15
-                         text-foreground placeholder:text-muted-foreground
-                         focus-visible:outline-none focus-visible:border-indigo-500/40
+                         bg-surface-2 border border-hair
+                         text-ink-1 placeholder:text-ink-3
+                         focus-visible:outline-none focus-visible:border-role-agent/40
                          disabled:opacity-40 disabled:cursor-not-allowed
                          transition-colors"
             >
@@ -139,7 +139,7 @@ export function CloudDeploymentsPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="deploy-budget-select" className="typo-body text-foreground">
+            <label htmlFor="deploy-budget-select" className="typo-body text-ink-1">
               Budget
             </label>
             <select
@@ -148,9 +148,9 @@ export function CloudDeploymentsPanel({
               onChange={(e) => setSelectedBudget(e.target.value ? Number(e.target.value) : undefined)}
               disabled={isDeploying}
               className="w-full px-3 py-2 typo-body rounded-modal
-                         bg-secondary/40 border border-primary/15
-                         text-foreground
-                         focus-visible:outline-none focus-visible:border-indigo-500/40
+                         bg-surface-2 border border-hair
+                         text-ink-1
+                         focus-visible:outline-none focus-visible:border-role-agent/40
                          disabled:opacity-40 disabled:cursor-not-allowed
                          transition-colors"
             >
@@ -181,7 +181,7 @@ export function CloudDeploymentsPanel({
           <DeploymentCardGhosts />
         </div>
       ) : deployments.length === 0 ? (
-        <p className="typo-body text-foreground py-8 text-center">
+        <p className="typo-body text-ink-1 py-8 text-center">
           {t.deployment.deployments_panel.no_deployments_yet}
         </p>
       ) : (
@@ -233,15 +233,15 @@ function DeploymentCardGhosts() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className={`p-3 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10 space-y-2 animate-fade-in`}
+          className={`p-3 ${DEPLOYMENT_TOKENS.cardRadius} bg-surface-1 border border-hair space-y-2 animate-fade-in`}
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <div className="flex items-center justify-between">
-            <span className="h-3.5 w-32 rounded bg-primary/[0.06]" />
+            <span className="h-3.5 w-32 rounded-interactive bg-primary/[0.06]" />
             <span className="h-5 w-16 rounded-card bg-primary/[0.06]" />
           </div>
           <span className="block h-6 w-full rounded-card bg-primary/[0.06]" />
-          <span className="block h-3 w-48 rounded bg-primary/[0.06]" />
+          <span className="block h-3 w-48 rounded-interactive bg-primary/[0.06]" />
         </div>
       ))}
     </div>

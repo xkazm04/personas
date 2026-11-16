@@ -18,7 +18,6 @@
 
 pub mod connector_use;
 pub mod curation_run;
-pub mod night_plan;
 pub mod operations_views;
 pub mod research;
 pub mod scan_codebase;
@@ -272,7 +271,6 @@ fn default_title(kind: &str) -> String {
         research::KIND => "Researching".to_string(),
         "scan_codebase" => "Scanning codebase".to_string(),
         curation_run::KIND => "Curating memory".to_string(),
-        night_plan::KIND => "Planning the night shift".to_string(),
         session_review::KIND => "Reviewing a night session".to_string(),
         other => other.replace('_', " "),
     }
@@ -511,7 +509,13 @@ async fn dispatch_handler(
         "connector_use" => connector_use::run(pool, cred_pool, &params, progress).await,
         research::KIND => research::run(pool, cred_pool, job, &params, progress).await,
         curation_run::KIND => curation_run::run(pool, &params, progress).await,
-        night_plan::KIND => night_plan::run(pool, cred_pool, &params, progress).await,
+        // Retired with Night Shift's planning half (spark app-standup): a row
+        // enqueued before the update resolves with a message instead of
+        // failing as an unknown kind. The standup plans the night now.
+        "night_plan" => Ok(
+            "Night Shift planning is retired: the night is planned on the Standup page              (Companions > Athena > Standup)."
+                .to_string(),
+        ),
         session_review::KIND => session_review::run(pool, &params, progress).await,
         other => Err(AppError::Internal(format!(
             "unknown background job kind `{other}`"

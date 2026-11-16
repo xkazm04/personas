@@ -16,7 +16,7 @@ export function FirstErrorPlate({ text, onJump }: { text: string | null; onJump?
   const { dl } = useLifecycleViewModel();
   if (!text) return null;
   return (
-    <div className={`flex items-start gap-3 ${lcSurface('plate', 'border border-status-error/40 bg-status-error/5')}`} data-testid="lc6-viewer-first-error">
+    <div className={`flex items-start gap-3 ${lcSurface('plate', 'border border-hair bg-surface-1')}`} data-testid="lc6-viewer-first-error">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className={`${LT.label} text-status-error`}>{dl.lcx6_first_error}</span>
         <span className={`break-all ${LT.code}`}>{text}</span>

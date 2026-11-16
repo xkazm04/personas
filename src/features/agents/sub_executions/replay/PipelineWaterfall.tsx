@@ -114,9 +114,9 @@ function StageGhostRows() {
     <div className="divide-y divide-primary/5" data-testid="pipeline-stage-ghost" aria-hidden="true">
       {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="grid grid-cols-[180px_1fr_70px] gap-2 items-center px-3 py-1.5">
-          <div className="h-3 rounded bg-primary/10" style={{ width: `${55 + ((i * 13) % 35)}%` }} />
-          <div className="h-6 rounded bg-primary/5" />
-          <div className="h-3 rounded bg-primary/10 justify-self-end w-10" />
+          <div className="h-3 rounded-interactive bg-surface-1" style={{ width: `${55 + ((i * 13) % 35)}%` }} />
+          <div className="h-6 rounded-interactive bg-surface-1" />
+          <div className="h-3 rounded-interactive bg-surface-1 justify-self-end w-10" />
         </div>
       ))}
     </div>
@@ -177,11 +177,11 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   if (!trace || trace.spans.length === 0) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
-          <Activity className="w-6 h-6 text-foreground" />
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-surface-2 border border-hair flex items-center justify-center">
+          <Activity className="w-6 h-6 text-ink-1" />
         </div>
-        <p className="typo-body text-foreground">{e.no_pipeline_trace}</p>
-        <p className="typo-body text-foreground mt-1">{e.pipeline_traces_captured}</p>
+        <p className="typo-body text-ink-1">{e.no_pipeline_trace}</p>
+        <p className="typo-body text-ink-2 mt-1">{e.pipeline_traces_captured}</p>
       </div>
     );
   }
@@ -209,19 +209,19 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   return (
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex items-center gap-4 typo-body text-foreground">
+      <div className="flex items-center gap-4 typo-body text-ink-1">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-status-info/50" /> {e.legend_frontend}
+          <span className="w-2.5 h-2.5 rounded-interactive bg-status-info/50" /> {e.legend_frontend}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-status-success/50" /> {e.legend_backend}
+          <span className="w-2.5 h-2.5 rounded-interactive bg-status-success/50" /> {e.legend_backend}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-status-warning/50" /> {e.legend_engine}
+          <span className="w-2.5 h-2.5 rounded-interactive bg-status-warning/50" /> {e.legend_engine}
         </div>
         {toolSteps.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-status-neutral/40" /> {e.legend_tool_call}
+            <span className="w-2.5 h-2.5 rounded-interactive bg-status-neutral/40" /> {e.legend_tool_call}
           </div>
         )}
         {isLive && (
@@ -253,17 +253,17 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       <PipelineSummary trace={trace} execution={execution} />
 
       {/* Waterfall chart */}
-      <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
+      <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
         {/* Time axis header */}
-        <div className="grid grid-cols-[180px_1fr_70px] gap-2 px-3 py-1.5 border-b border-primary/10 bg-secondary/40">
-          <div className="typo-code text-foreground uppercase tracking-wider">
+        <div className="grid grid-cols-[180px_1fr_70px] gap-2 px-3 py-1.5 border-b border-hair bg-surface-2">
+          <div className="typo-eyebrow text-ink-1">
             {e.stage}
           </div>
-          <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
+          <div className="flex justify-between typo-eyebrow text-ink-1">
             <span>{e.zero_ms}</span>
             <span>{formatDuration(totalDurationMs)}</span>
           </div>
-          <div className="typo-code text-foreground uppercase tracking-wider text-right">
+          <div className="typo-eyebrow text-ink-1 text-right">
             {e.duration}
           </div>
         </div>
@@ -290,7 +290,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
                 {/* Sub-spans (tool calls within stream_output) */}
                 {hasSubSpans && isExpanded && streamEntry && (
                     <div
-                      className="animate-fade-slide-in bg-secondary/10"
+                      className="animate-fade-slide-in bg-surface-1"
                     >
                       {toolSteps.map((step) => (
                         <SubSpanBar
@@ -311,7 +311,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
 
         {/* Cost accrual overlay */}
         {execution.cost_usd != null && execution.cost_usd > 0 && !stored.loading && (
-          <div className="border-t border-primary/10">
+          <div className="border-t border-hair">
             <CostAccrualOverlay
               entries={trace.spans.filter(s => isPipelineStage(s.span_type))}
               totalDurationMs={totalDurationMs}
@@ -326,8 +326,8 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       {/* Error details */}
       {trace.spans.some(s => s.error) && (
         <div className="space-y-2">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
-            <AlertCircle className="w-2.5 h-2.5 text-red-400" /> {e.stage_errors}
+          <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
+            <AlertCircle className="w-2.5 h-2.5 text-status-error" /> {e.stage_errors}
           </div>
           {trace.spans
             .filter(s => s.error)
@@ -337,17 +337,17 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
               const meta = isStage ? STAGE_META[entry.span_type as PipelineStage] : null;
               const label = meta?.label ?? entry.name ?? entry.span_type;
               return (
-                <div key={entry.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-card">
+                <div key={entry.span_id} className="p-3 bg-status-error/5 border border-status-error/15 rounded-card">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${
+                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded-interactive border ${
                       config
                         ? `${config.bg} ${config.text} ${config.border}`
-                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                        : 'bg-status-error/10 text-status-error border-status-error/20'
                     }`}>
                       {label}
                     </span>
                   </div>
-                  <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">
+                  <pre className="typo-code text-status-error whitespace-pre-wrap break-words">
                     {entry.error}
                   </pre>
                 </div>

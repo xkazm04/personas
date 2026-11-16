@@ -9,7 +9,9 @@
 // Data derives from dev_milestones rows only — no percentages are stored; the
 // full exit-criteria machinery stays in the plan rail
 // (features/notepad/plan/useProjectPlan.ts).
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { ChevronRight, Flag } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -68,8 +70,8 @@ export function buildCoverRoadmap(rows: DevMilestone[]): CoverRoadmapVM {
 const MAX_PIPS = 7;
 
 const PIP_STYLE: Record<CoverMilestoneStatus, React.CSSProperties> = {
-  shipped: { background: INK.emerald, boxShadow: `0 0 6px ${INK.emerald}66` },
-  active: { background: INK.teal, boxShadow: `0 0 8px ${INK.teal}99`, outline: `2px solid ${INK.teal}44`, outlineOffset: 2 },
+  shipped: { background: INK.emerald },
+  active: { background: INK.teal, outline: `2px solid ${INK.teal}44`, outlineOffset: 2 },
   planned: { background: 'rgba(148,163,184,.22)' },
 };
 
@@ -94,13 +96,13 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
           <>
             <span className="flex items-center gap-1.5 shrink-0" aria-hidden>
               {shown.map((s) => (
-                <span key={s.id} className="w-2.5 h-2.5 rounded-full" style={PIP_STYLE[s.status]} title={s.name} />
+                <Tooltip content={s.name}><span key={s.id} className="w-2.5 h-2.5 rounded-full" style={PIP_STYLE[s.status]} /></Tooltip>
               ))}
               {overflow > 0 && (
-                <span className="typo-body-lg text-foreground/70">+{overflow}</span>
+                <span className="typo-body-lg text-ink-2">+{overflow}</span>
               )}
             </span>
-            <span className="ml-auto shrink-0 typo-body-lg tabular-nums text-foreground/70">
+            <span className="ml-auto shrink-0 typo-data-lg text-ink-2">
               {tx(t.ship.cover_shipped_count, { shipped: roadmap.shipped, total: roadmap.steps.length })}
             </span>
           </>
@@ -110,16 +112,16 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
         )}
       </span>
       <span className="mt-1 flex items-baseline gap-1.5 min-w-0">
-        <span className="typo-body-lg text-foreground/70 shrink-0">{t.ship.cover_next}</span>
+        <span className="typo-body-lg text-ink-2 shrink-0">{t.ship.cover_next}</span>
         <span className="typo-body-lg truncate text-foreground">
           {roadmap.next ? roadmap.next.name : t.ship.cover_all_shipped}
         </span>
         {roadmap.next?.targetDate && (
-          <span className="typo-body-lg tabular-nums text-foreground/70 shrink-0">{roadmap.next.targetDate}</span>
+          <span className="typo-data-lg text-ink-2 shrink-0">{roadmap.next.targetDate}</span>
         )}
         {roadmap.next && roadmap.forecast && (
           <span
-            className="typo-body-lg tabular-nums shrink-0"
+            className="typo-data-lg shrink-0"
             style={{ color: roadmap.forecast.late ? INK.amber : INK.teal }}
             data-testid="cover-roadmap-forecast"
           >
@@ -130,21 +132,19 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
     </>
   );
 
-  const shared = 'mt-3 pt-2.5 border-t border-dashed border-foreground/10 min-w-0 flex flex-col text-left';
+  const shared = 'mt-3 pt-2.5 border-t border-dashed border-hair min-w-0 flex flex-col text-left';
 
   if (!onOpenShip) {
     return <div className={shared} data-testid="cover-roadmap">{body}</div>;
   }
   return (
-    <button
-      type="button"
-      onClick={onOpenShip}
+    <Tooltip content={tx(t.ship.cover_open_aria, { name: projectName })}><PressSurface
+      onPress={onOpenShip}
       aria-label={tx(t.ship.cover_open_aria, { name: projectName })}
-      title={tx(t.ship.cover_open_aria, { name: projectName })}
-      className={`group/roadmap w-full rounded-card transition-colors hover:bg-primary/[0.05] focus-ring ${shared}`}
+      className={`group/roadmap w-full rounded-card  hover:bg-primary/[0.05]  ${shared}`}
       data-testid="cover-roadmap"
     >
       {body}
-    </button>
+    </PressSurface></Tooltip>
   );
 }

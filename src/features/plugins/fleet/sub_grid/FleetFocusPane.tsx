@@ -21,7 +21,7 @@ const FRAME = 'h-full border rounded-modal bg-background';
 const VIEW_ID = 'fleet-pane-view';
 const RIGHTVIEW_TESTID = 'fleet-rightview';
 
-function Placeholder({ testId, icon, border = 'border-primary/10', children }: {
+function Placeholder({ testId, icon, border = 'border-hair', children }: {
   testId?: string; icon: ReactNode; border?: string; children: ReactNode;
 }) {
   return (
@@ -97,7 +97,7 @@ export function FleetFocusPane({ session, gridOpen, view, onView, onCompact, onO
   );
 
   return (
-    <div className={`${FRAME} flex flex-col overflow-hidden ${attentionClass(sessionAttention(session)) || 'border-primary/10'}`}>
+    <div className={`${FRAME} flex flex-col overflow-hidden ${attentionClass(sessionAttention(session)) || 'border-hair'}`}>
       <FleetPaneToolbar session={session} switcher={switcher} onCompact={onCompact} onOpenSkills={onOpenSkills} onHibernate={onHibernate} />
       <div className="flex-1 min-h-0" role="tabpanel" id={`${VIEW_ID}-panel-${view}`} aria-labelledby={`${VIEW_ID}-tab-${view}`}>
         {view === 'insights' ? (
@@ -116,7 +116,7 @@ export function FleetFocusPane({ session, gridOpen, view, onView, onCompact, onO
           // attach to: show the transcript rollup; replies go through the
           // Needs-you banner or Athena.
           <div className="h-full flex flex-col min-h-0" data-testid="fleet-headless-pane">
-            <p className="shrink-0 px-3 py-2 typo-caption border-b border-primary/10">{f.headless_no_terminal}</p>
+            <p className="shrink-0 px-3 py-2 typo-caption border-b border-hair">{f.headless_no_terminal}</p>
             <div className="flex-1 min-h-0">
               <FleetSessionInsights claudeSessionId={session.claudeSessionId} />
             </div>

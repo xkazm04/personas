@@ -1,0 +1,65 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2d596ac9-cbb6-4ca8-a9ea-1a14b4ca3a43",
+ "subject": "llm-extracted-entity-graph",
+ "evaluatedAt": "2026-11-10T22:31:47.089146+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "vault-shared-vector",
+   "subject": "llm-extracted-entity-graph",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/shared/vector/tabs/ExtractTab.tsx:23 The Extract tab drives a per-document flat row extraction (kb_run_extraction -> kb_entities rows keyed by a fresh UUID, no relations, no cross-passage merge, entities not embedded into the vector index); searching the context for graph, relation and normaliz found no hits, so the graph-with-merged-nodes precondition does not hold.",
+   "techniques": [
+    {
+     "technique": "surface-form-identity-and-its-risk",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/kb_extract.rs:309 Each extracted row gets a minted UUID. entity_key is only a display label, never a join key, so no surface-form identity decision is ever made."
+    },
+    {
+     "technique": "accumulate-then-threshold-merge",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/kb_extract.rs:292 Every mention is a plain INSERT of its own row per document and run. Nothing merges a second passage into an existing node, so there is no merge operator to judge."
+    },
+    {
+     "technique": "recall-passes-with-a-declared-cap",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/kb_extract.rs:153 One extraction call per document, with no further recall pass. The satisficing risk is real here, but the technique is scoped to graph building, so this is recorded as a proposal and not as a deviation."
+    },
+    {
+     "technique": "recoverable-fan-out-write",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/kb_extract.rs:155 Extracted rows land in one SQLite table only. No vector-index or graph-store fan-out exists for entities."
+    }
+   ],
+   "absenceTerms": [
+    "graph",
+    "relation",
+    "normaliz"
+   ],
+   "registryProposal": "The recall failure (one pass returns a plausible handful, and truncated documents get EXTRACT_DOC_CHAR_CAP with no skip record) applies just as much to flat, schema-driven LLM row extraction with no graph. recall-passes-with-a-declared-cap may deserve a home that is not gated on building an entity graph (e.g. structured-output or a document-extraction subject)."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T22:31:47.089146+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "llm-extracted-entity-graph"
+   ],
+   "techniques": [
+    "accumulate-then-threshold-merge",
+    "recall-passes-with-a-declared-cap",
+    "recoverable-fan-out-write",
+    "surface-form-identity-and-its-risk"
+   ],
+   "deviations": 0,
+   "context": "vault-shared-vector",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

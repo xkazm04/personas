@@ -13,8 +13,8 @@ type AskState = 'idle' | 'composing' | 'failed';
  * with a Validation error, which this row can only render as the generic
  * "could not compose" line. Capping the field at the same number stops a long
  * topic from being typed into a request that is refused before Athena sees it.
- * The backend counts UTF-8 bytes, not characters, so a non-Latin topic can still
- * be refused under this cap; that half is the backend's to fix.
+ * Both sides count characters, not UTF-8 bytes, so the caps agree for any script
+ * (`maxLength` counts UTF-16 units, so the field is never looser than the backend).
  */
 export const COMPOSE_TOPIC_MAX = 120;
 
@@ -69,7 +69,7 @@ export function AskWalkthroughRow({ onComposed }: { onComposed: () => void }) {
       >
         <input
           type="text"
-          className="typo-body flex-1 min-w-0 h-9 px-3 rounded-input border border-primary/15 bg-transparent"
+          className="typo-body flex-1 min-w-0 h-9 px-3 rounded-input border border-hair bg-transparent"
           data-testid="learning-ask-walkthrough-input"
           aria-label={ht.ask_title}
           placeholder={ht.ask_placeholder}

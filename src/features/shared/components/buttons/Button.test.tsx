@@ -103,6 +103,25 @@ describe('Button disabledReason', () => {
   });
 });
 
+describe('Button tooltip', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows the tooltip content on hover and adds no wrapper box to the layout', () => {
+    vi.useFakeTimers();
+    render(<Button tooltip="Copy link">Copy</Button>);
+    const button = screen.getByRole('button', { name: 'Copy' });
+    expect(screen.queryByText('Copy link')).toBeNull();
+    fireEvent.mouseEnter(button);
+    act(() => {
+      vi.advanceTimersByTime(800);
+    });
+    expect(screen.getByText('Copy link')).toBeTruthy();
+    expect(button.getAttribute('title')).toBeNull();
+  });
+});
+
 /**
  * The accent variant's colour comes from ONE closed `tone` map: a status or a role
  * token, never a raw palette step, and never beside a second text colour.
@@ -118,7 +137,7 @@ describe('Button tone', () => {
     const cls = screen.getByRole('button', { name: 'Go' }).className;
     expect(cls).toContain(`text-${token}`);
     expect(cls).toContain(`bg-${token}/10`);
-    expect(cls).toContain(`border-${token}/30`);
+    expect(cls).toContain('border-hair-2');
     expect(cls).not.toMatch(/text-foreground/);
     expect(cls).not.toMatch(/-(?:violet|emerald|amber|rose|cyan|sky|blue|indigo)-\d/);
   });
@@ -126,12 +145,46 @@ describe('Button tone', () => {
   it('renders a neutral bordered button for accent without a tone', () => {
     render(<Button variant="accent">Go</Button>);
     const cls = screen.getByRole('button', { name: 'Go' }).className;
-    expect(cls).toContain('text-foreground/90');
+    expect(cls).toContain('text-ink-1');
     expect(cls).not.toMatch(/role-|status-/);
   });
 
   it('ignores tone outside the accent variant', () => {
     render(<Button variant="ghost" tone="success">Go</Button>);
     expect(screen.getByRole('button', { name: 'Go' }).className).not.toContain('status-success');
+  });
+});
+
+describe('Button double-submit guard', () => {
+  it('blocks a second click of the SAME async handler while it is pending', () => {
+    let release: () => void = () => {};
+    const onClick = vi.fn(() => new Promise<void>((r) => { release = r; }));
+    render(<Button onClick={onClick}>Save</Button>);
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button'));
+    expect(onClick).toHaveBeenCalledTimes(1);
+    release();
+  });
+
+  it('lets a toggle fire its NEW handler while the previous one is pending (Play -> Stop)', () => {
+    const play = vi.fn(() => new Promise<void>(() => {}));
+    const stop = vi.fn();
+    const { rerender } = render(<Button onClick={play}>Play</Button>);
+    fireEvent.click(screen.getByRole('button'));
+    rerender(<Button onClick={stop}>Stop</Button>);
+    fireEvent.click(screen.getByRole('button'));
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Button aria-pressed', () => {
+  it('keeps a caller aria-pressed when the pressed prop is not set', () => {
+    render(<Button aria-pressed={true}>Bold</Button>);
+    expect(screen.getByRole('button').getAttribute('aria-pressed')).toBe('true');
+  });
+  it('lets the pressed prop win over a caller aria-pressed', () => {
+    render(<Button pressed={false} aria-pressed={true}>Bold</Button>);
+    expect(screen.getByRole('button').getAttribute('aria-pressed')).toBe('false');
   });
 });

@@ -4,6 +4,8 @@ import { TABLE_HEAD_LABEL } from '@/features/shared/components/display/tableToke
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaSelectorModal } from '@/features/agents/components/PersonaSelectorModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface PersonaColumnFilterProps {
   value: string;
@@ -26,23 +28,26 @@ export function PersonaColumnFilter({ value, onChange, personas, label = 'Person
 
   return (
     <span className="inline-flex items-center gap-1.5">
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
+      <PressSurface
+        onPress={() => setOpen(true)}
+        selected={isFiltered}
+        aria-pressed={undefined}
+        className="rounded-input -mx-1 px-1"
       >
-        <span>{selected ? selected.name : label}</span>
-        {!selected && <Filter className="w-3 h-3 text-foreground" />}
-      </button>
+        <span className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} ${isFiltered ? 'text-ink-1' : 'text-ink-2'}`}>
+          <span>{selected ? selected.name : label}</span>
+          {!selected && <Filter className="w-3 h-3 text-ink-3" />}
+        </span>
+      </PressSurface>
       {selected && (
-        <button
+        <Button
           type="button"
           onClick={(e) => { e.stopPropagation(); onChange(''); }}
           aria-label={t.common.clear}
-          className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
-        >
-          <X className="w-3 h-3" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-3 h-3" />}
+        />
       )}
 
       {open && (

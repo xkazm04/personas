@@ -96,7 +96,7 @@ export function buildProjectColumns(d: ProjectColumnsDeps): TableColumn<Project>
     {
       key: 'attention',
       label: t.plugins.dev_projects.col_attention,
-      width: '96px',
+      width: '120px',
       sortable: true,
       // Unmeasured sorts LAST on the "needs me" pass rather than mixing in with
       // a measured 0 - an unwatched project is a question, not an answer.
@@ -112,7 +112,7 @@ export function buildProjectColumns(d: ProjectColumnsDeps): TableColumn<Project>
     {
       key: 'pulse',
       label: t.plugins.dev_projects.col_pulse,
-      width: '104px',
+      width: '112px',
       render: (project) => <PulseCell pulse={d.pulses.get(project.id)} />,
     },
     {
@@ -125,7 +125,7 @@ export function buildProjectColumns(d: ProjectColumnsDeps): TableColumn<Project>
       // The project switch - same act as the Monitor column's right-click.
       key: 'enabled',
       label: t.plugins.dev_projects.project_state_on,
-      width: '96px',
+      width: '120px',
       sortable: true,
       sortFn: (a, b) => Number(a.enabled) - Number(b.enabled),
       render: (project) => <ProjectSwitchCell projectId={project.id} />,

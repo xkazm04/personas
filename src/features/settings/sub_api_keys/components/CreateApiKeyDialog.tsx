@@ -9,12 +9,14 @@
  * `personas:execute:persona:<id>` scope per pick (no blanket execute). Keys are
  * time-boxed by default.
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { extractMessage } from '@/lib/silentCatch';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { ExecutePersonaPicker } from './ExecutePersonaPicker';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ScopeOption {
   id: string;
@@ -118,15 +120,16 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <h2 className="typo-body text-foreground">{s.create_dialog_title}</h2>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={submitting}
             aria-label={s.close}
-            className="text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            variant="ghost"
+            size="icon-sm"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto">
@@ -141,7 +144,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
               maxLength={64}
               autoFocus
               disabled={submitting}
-              className="w-full px-3 py-2 bg-background border border-border/40 rounded-input typo-body text-foreground focus:border-primary/60 focus:outline-none disabled:opacity-50"
+              className="w-full px-3 py-2 bg-background border border-border/40 rounded-input typo-body text-foreground focus:border-primary/60 focus:outline-none disabled:is-disabled"
             />
             <p className="typo-caption text-foreground mt-1">{s.field_name_hint}</p>
           </div>
@@ -152,40 +155,23 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
               {AVAILABLE_SCOPES.map((scope) => {
                 const isSelected = selectedScopes.has(scope.id);
                 return (
-                  <button
-                    key={scope.id}
-                    type="button"
-                    onClick={() => toggleScope(scope.id)}
-                    aria-pressed={isSelected}
-                    disabled={submitting}
-                    className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:opacity-50 ${
-                      isSelected ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-secondary/30 hover:bg-secondary/50'
-                    }`}
-                  >
+                  <PressSurface key={scope.id} onPress={() => toggleScope(scope.id)} selected={isSelected} disabled={submitting} className="w-full flex items-start gap-2 px-3 py-2 rounded-card border border-hair">
                     <input type="checkbox" checked={isSelected} readOnly className="mt-0.5" tabIndex={-1} aria-hidden="true" />
                     <div className="flex-1 min-w-0">
                       <code className="typo-code text-foreground">{scope.id}</code>
                       <p className="typo-caption text-foreground mt-0.5">{s[scope.descriptionKey]}</p>
                     </div>
-                  </button>
+                  </PressSurface>
                 );
               })}
 
-              <button
-                type="button"
-                onClick={() => setAllowExecute((v) => !v)}
-                aria-pressed={allowExecute}
-                disabled={submitting}
-                className={`w-full text-left flex items-start gap-2 px-3 py-2 rounded-card border transition-colors disabled:opacity-50 ${
-                  allowExecute ? 'border-primary/40 bg-primary/10' : 'border-border/30 bg-secondary/30 hover:bg-secondary/50'
-                }`}
-              >
+              <PressSurface onPress={() => setAllowExecute((v) => !v)} selected={allowExecute} disabled={submitting} className="w-full flex items-start gap-2 px-3 py-2 rounded-card border border-hair">
                 <input type="checkbox" checked={allowExecute} readOnly className="mt-0.5" tabIndex={-1} aria-hidden="true" />
                 <div className="flex-1 min-w-0">
                   <span className="typo-body text-foreground">{s.scope_execute_label}</span>
                   <p className="typo-caption text-foreground mt-0.5">{s.scope_execute_desc}</p>
                 </div>
-              </button>
+              </PressSurface>
             </div>
 
             {allowExecute && (
@@ -204,34 +190,36 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
               {EXPIRY_OPTIONS.map((opt) => {
                 const active = expiresInDays === opt.days;
                 return (
-                  <button
+                  <Button
                     key={opt.labelKey}
                     type="button"
                     onClick={() => setExpiresInDays(opt.days)}
                     disabled={submitting}
-                    className={`flex-1 px-2 py-1.5 rounded-interactive typo-caption border transition-colors disabled:opacity-50 ${
-                      active ? 'border-primary/50 bg-primary/15 text-foreground' : 'border-border/30 bg-secondary/30 text-foreground hover:bg-secondary/50'
-                    }`}
+                    variant={active ? 'accent' : 'secondary'}
+                    tone={active ? 'highlight' : undefined}
+                    size="sm"
+                    className="flex-1"
                   >
                     {s[opt.labelKey]}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
           </div>
 
-          {error && <div className="typo-caption text-red-400 bg-red-400/10 rounded p-2">{error}</div>}
+          {error && <div className="typo-caption text-status-error bg-status-error/10 rounded-interactive p-2">{error}</div>}
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border/30">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+            variant="ghost"
+            size="sm"
           >
             {s.cancel}
-          </button>
+          </Button>
           <AsyncButton
             variant="primary"
             size="sm"

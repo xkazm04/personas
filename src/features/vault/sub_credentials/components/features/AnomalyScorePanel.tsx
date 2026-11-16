@@ -9,11 +9,11 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
  * and renders a Disable-level credential as a green Healthy badge.
  */
 const REMEDIATION_LABELS: Record<Remediation, { labelKey: string; color: string; bg: string }> = {
-  Healthy: { labelKey: 'healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  BackoffRetry: { labelKey: 'transient_issues', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  PreemptiveRotation: { labelKey: 'degrading', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  RotateThenAlert: { labelKey: 'permanent_errors', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
-  Disable: { labelKey: 'critical', color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/25' },
+  Healthy: { labelKey: 'healthy', color: 'text-status-success', bg: 'bg-status-success/10 border-status-success/20' },
+  BackoffRetry: { labelKey: 'transient_issues', color: 'text-status-warning', bg: 'bg-status-warning/10 border-status-warning/20' },
+  PreemptiveRotation: { labelKey: 'degrading', color: 'text-status-warning', bg: 'bg-status-warning/10 border-status-warning/20' },
+  RotateThenAlert: { labelKey: 'permanent_errors', color: 'text-status-error', bg: 'bg-status-error/10 border-status-error/20' },
+  Disable: { labelKey: 'critical', color: 'text-status-error', bg: 'bg-status-error/15 border-status-error/25' },
 };
 
 export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; tolerance: number }) {
@@ -32,7 +32,7 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
         </div>
         <div className="flex items-center gap-2">
           {score.data_stale && (
-            <span className="typo-body text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">{an.stale}</span>
+            <span className="typo-body text-foreground bg-surface-2 px-1.5 py-0.5 rounded-interactive">{an.stale}</span>
           )}
           <span className="typo-data text-foreground">{tx(an.samples, { count: score.sample_count })}</span>
         </div>
@@ -50,13 +50,13 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
         <div className="flex items-center gap-3 typo-body text-foreground">
           {score.permanent_failure_rate_1h > 0 && (
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-status-error" />
               {tx(an.permanent, { rate: pct(score.permanent_failure_rate_1h) })}
             </span>
           )}
           {score.transient_failure_rate_1h > 0 && (
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-status-warning" />
               {tx(an.transient, { rate: pct(score.transient_failure_rate_1h) })}
             </span>
           )}
@@ -73,17 +73,17 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
 function RateBar({ label, rate, threshold }: { label: string; rate: number; threshold: number }) {
   const pct = Math.min(rate * 100, 100);
   const isOver = rate > threshold;
-  const barColor = isOver ? 'bg-red-400' : rate > 0 ? 'bg-amber-400' : 'bg-emerald-400/60';
+  const barColor = isOver ? 'bg-status-error' : rate > 0 ? 'bg-status-warning' : 'bg-status-success/60';
 
   return (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between">
         <span className="typo-code text-foreground">{label}</span>
-        <span className={`typo-code tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
+        <span className={`typo-code tabular-nums ${isOver ? 'text-status-error' : 'text-foreground'}`}>
           <Numeric value={pct} unit="percent" precision={0} />
         </span>
       </div>
-      <div className="h-1 bg-secondary/30 rounded-full overflow-hidden">
+      <div className="h-1 bg-surface-1 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
     </div>

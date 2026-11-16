@@ -7,6 +7,7 @@ import type {
   CreateAthenaStepId,
 } from '../../engine/createAthenaTypes';
 import { StageHero } from './StageHero';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * Left rail: hero on top, the numbered step list (the wizard IS a sequence,
@@ -49,12 +50,12 @@ function StepMarker({ index, status }: { index: number; status: CreateAthenaStep
       return <span className={`${base} bg-primary text-primary-foreground font-medium`}>{index}</span>;
     case 'skipped':
       return (
-        <span className={`${base} border border-dashed border-foreground/30 text-foreground/85`}>
+        <span className={`${base} border border-dashed border-foreground/30 text-ink-2`}>
           {index}
         </span>
       );
     default:
-      return <span className={`${base} border border-foreground/10 text-foreground/85`}>{index}</span>;
+      return <span className={`${base} border border-foreground/10 text-ink-2`}>{index}</span>;
   }
 }
 
@@ -77,7 +78,7 @@ function StepRow({
     step.status === 'current'
       ? 'typo-label text-foreground'
       : step.status === 'done'
-        ? 'typo-body text-foreground/85'
+        ? 'typo-body text-ink-2'
         : step.status === 'skipped'
           ? 'typo-caption line-through decoration-foreground/30'
           : 'typo-caption';
@@ -87,16 +88,15 @@ function StepRow({
   if (revisitable) {
     return (
       <li>
-        <button
-          type="button"
-          className={`${rowClass} hover:bg-secondary/40 focus-ring transition-colors duration-fast motion-reduce:transition-none`}
-          onClick={() => onGoTo(step.id)}
+        <PressSurface
+          onPress={() => onGoTo(step.id)}
           data-testid={testId}
           data-status={step.status}
+          className={rowClass}
         >
           <StepMarker index={index} status={step.status} />
           <span className={labelClass}>{label}</span>
-        </button>
+        </PressSurface>
       </li>
     );
   }
@@ -136,7 +136,7 @@ export function StageRail({ engine }: StageRailProps) {
         ))}
       </ol>
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-foreground/10">
-        <span className="typo-caption text-foreground/85 tabular-nums">
+        <span className="typo-caption text-ink-2 tabular-nums">
           {tx(c.create_progress, { current: engine.stepIndex + 1, total: engine.stepCount })}
         </span>
         <Button

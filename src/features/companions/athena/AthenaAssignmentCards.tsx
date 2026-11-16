@@ -2,6 +2,8 @@ import { ListChecks, X, CircleCheck, CircleX, Loader2, CircleDashed } from 'luci
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaStore, type AthenaAssignmentRef } from './athenaStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { PressSurface } from '@/features/shared/components/buttons';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Compact strip of Athena-dispatched team assignments. Renders above
  *  the chat messages list when at least one card is present; hidden
@@ -79,11 +81,10 @@ function AssignmentCardRow({
       data-testid={`athena-assignment-card-${card.assignmentId}`}
       className="group relative flex items-start rounded-card border border-primary/10 hover:border-primary/30 hover:bg-secondary/30 focus-within:border-primary/30 transition-colors"
     >
-      <button
-        type="button"
-        onClick={onOpen}
+      <PressSurface
+        onPress={onOpen}
         data-testid="athena-assignment-open"
-        className="focus-ring flex-1 min-w-0 flex items-start gap-2 pl-2 pr-8 py-1.5 rounded-card text-left"
+        className="flex-1 min-w-0 flex items-start gap-2 pl-2 pr-8 py-1.5 rounded-card"
       >
         <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${color} ${spin ? 'animate-spin' : ''}`} />
         <span className="flex-1 min-w-0">
@@ -93,16 +94,17 @@ function AssignmentCardRow({
             {card.failedSteps > 0 ? ` · ${card.failedSteps} failed` : ''}
           </span>
         </span>
-      </button>
-      <button
-        type="button"
+      </PressSurface>
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={onDismiss}
         data-testid="athena-assignment-dismiss"
-        className="focus-ring absolute right-1 top-1 p-1 rounded-interactive text-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-primary/10"
         aria-label={t.common.dismiss}
+        className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
       >
         <X className="w-3 h-3" />
-      </button>
+      </Button>
     </div>
   );
 }

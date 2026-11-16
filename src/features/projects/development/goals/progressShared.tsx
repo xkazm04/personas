@@ -20,6 +20,7 @@ import { isOngoing, isComplete, goalStatusMeta, goalStatusLabel, GOAL_STATUSES }
 import { GoalAtmosphere } from './goalsTheme';
 import { GoalDetailDrawer } from './GoalDetailDrawer';
 import { GoalEditorModal } from './GoalEditorModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 export const DAY = 86400000;
 
@@ -244,7 +245,7 @@ export const GoalSquare = memo(function GoalSquare({
 }) {
   const meta = goalStatusMeta(goal.status);
   const done = isComplete(goal.status);
-  const ring = overdue ? '0 0 0 1.5px rgba(239,68,68,0.75), ' : '';
+  const ring = overdue ? '0 0 0 1.5px var(--status-error), ' : '';
   // Hide rules, keyed off the strip's data-done-filter. A done goal always
   // vanishes under `none`; under `recent` it vanishes unless it finished inside
   // the window (a done goal with no completion stamp has no recency to prove,
@@ -265,7 +266,7 @@ export const GoalSquare = memo(function GoalSquare({
           width: NODE_PX,
           height: NODE_PX,
           backgroundColor: meta.map.fill,
-          boxShadow: `${ring}0 0 8px -1px ${meta.map.glow}`,
+          ...(ring ? { boxShadow: ring.replace(/, $/, '') } : {}),
           ...(animate ? { animationDelay: `${delay}ms` } : {}),
         }}
         className={`${animate ? 'animate-fade-slide-in' : ''} relative block overflow-hidden rounded-[5px] border border-background/80 transition-transform duration-150 hover:scale-125 hover:z-20 motion-reduce:transform-none focus-ring ${done ? 'opacity-60 hover:opacity-100' : ''} ${filterCls}`}
@@ -300,15 +301,14 @@ export function AddGoalButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button variant="secondary" size="icon-sm"
       type="button"
       onClick={onClick}
       aria-label={`${label} — ${projectName}`}
       style={{ width: NODE_PX, height: NODE_PX }}
-      className="flex items-center justify-center rounded-[5px] border border-dashed border-primary/25 text-foreground transition-colors hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-300 focus-ring"
     >
       <Plus className="w-3 h-3" />
-    </button>
+    </Button>
   );
 }
 
@@ -327,8 +327,8 @@ export function ProgressLegend({ dl }: { dl: DevLifecycleT }) {
       ))}
       <span className="inline-flex items-center gap-1.5">
         <span
-          className="w-3 h-3 rounded-[3px] bg-amber-400"
-          style={{ boxShadow: '0 0 0 1.5px rgba(239,68,68,0.75)' }}
+          className="w-3 h-3 rounded-[3px] bg-status-warning"
+          style={{ boxShadow: '0 0 0 1.5px var(--status-error)' }}
         />
         <span className="typo-caption text-foreground">{dl.timeline_overdue_group}</span>
       </span>
@@ -354,20 +354,20 @@ export function ProgressGhost() {
   return (
     <div
       aria-hidden="true"
-      className="rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden"
+      className="bg-surface-1 rounded-modal border border-hair overflow-hidden"
     >
       {Array.from({ length: GHOST_ROWS }).map((_, r) => (
-        <div key={r} className="flex items-stretch border-b border-primary/5 last:border-b-0">
+        <div key={r} className="flex items-stretch border-b border-hair last:border-b-0">
           <div
-            className="shrink-0 px-3 py-2.5 flex flex-col justify-center gap-1.5 min-w-0 border-r border-primary/5"
+            className="shrink-0 px-3 py-2.5 flex flex-col justify-center gap-1.5 min-w-0 border-r border-hair"
             style={{ width: GHOST_LEFT_W }}
           >
             <span
-              className="h-3 w-28 rounded bg-primary/[0.06] animate-fade-in"
+              className="h-3 w-28 rounded-interactive bg-surface-2 animate-fade-in"
               style={{ animationDelay: `${120 + r * 35}ms` }}
             />
             <span
-              className="h-2.5 w-16 rounded bg-primary/[0.06] animate-fade-in"
+              className="h-2.5 w-16 rounded-interactive bg-surface-2 animate-fade-in"
               style={{ animationDelay: `${120 + r * 35}ms` }}
             />
           </div>
@@ -380,7 +380,7 @@ export function ProgressGhost() {
               return (
                 <span
                   key={i}
-                  className="block rounded-[5px] bg-primary/[0.06] animate-fade-in"
+                  className="block rounded-[5px] bg-surface-2 animate-fade-in"
                   style={{
                     width: NODE_PX,
                     height: NODE_PX,

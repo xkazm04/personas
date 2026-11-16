@@ -1,4 +1,6 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useMemo } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { ExternalLink, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -46,15 +48,15 @@ export function LeaderboardMatrixPlaceholder() {
           {Array.from({ length: 4 }).map((_, i) => (
             <span key={i} className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-primary/[0.08]" />
-              <span className="h-2.5 w-6 rounded bg-primary/[0.06]" />
+              <span className="h-2.5 w-6 rounded-interactive bg-surface-2" />
             </span>
           ))}
         </div>
-        <span className="h-2.5 w-24 rounded bg-primary/[0.06]" />
+        <span className="h-2.5 w-24 rounded-interactive bg-surface-2" />
       </div>
 
       <div
-        className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1 animate-fade-in"
+        className="overflow-x-auto rounded-modal border border-hair bg-surface-1 shadow-elevation-1 animate-fade-in"
         style={{ animationDelay: '185ms' }}
       >
         <TableSkeleton columns={PLACEHOLDER_COLUMNS} rows={6} calm rowPaddingY="py-1.5" headerPaddingY="py-3" />
@@ -69,16 +71,16 @@ const COPY = {
 };
 
 const MEDAL_STYLE: Record<string, string> = {
-  gold: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
-  silver: 'bg-slate-300/15 border-slate-400/30 text-slate-200',
-  bronze: 'bg-orange-600/15 border-orange-600/30 text-orange-300',
+  gold: 'bg-status-warning/15 border-status-warning/30 text-status-warning',
+  silver: 'bg-slate-300/15 border-slate-400/30 text-ink-2',
+  bronze: 'bg-status-warning/15 border-status-warning/30 text-status-warning',
 };
 
 const LEGEND = [
-  { label: '80+', dot: 'bg-emerald-500' },
-  { label: '60+', dot: 'bg-blue-500' },
-  { label: '40+', dot: 'bg-amber-500' },
-  { label: '<40', dot: 'bg-red-500' },
+  { label: '80+', dot: 'bg-status-success' },
+  { label: '60+', dot: 'bg-status-info' },
+  { label: '40+', dot: 'bg-status-warning' },
+  { label: '<40', dot: 'bg-status-error' },
 ];
 
 /**
@@ -118,34 +120,29 @@ export function LeaderboardMatrixView({
       <div className="flex items-center justify-between gap-3 mb-2.5 px-1">
         <div className="flex items-center gap-3">
           {LEGEND.map((l) => (
-            <span key={l.label} className="flex items-center gap-1 typo-caption text-foreground">
+            <span key={l.label} className="flex items-center gap-1 typo-caption text-ink-2">
               <span className={`w-2 h-2 rounded-full ${l.dot}`} aria-hidden />
-              <span className="tabular-nums">{l.label}</span>
+              <span className="num">{l.label}</span>
             </span>
           ))}
         </div>
-        <span className="typo-caption text-foreground">{lb.sort_hint}</span>
+        <span className="typo-caption text-ink-2">{lb.sort_hint}</span>
       </div>
 
-      <div className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1">
+      <div className="overflow-x-auto rounded-modal border border-hair bg-surface-1 shadow-elevation-1">
         <table className="w-full border-separate border-spacing-0">
           <thead>
-            <tr className="bg-primary/[0.03]">
-              <th className="w-12 px-2 py-3 text-center typo-caption text-foreground">{COPY.rank}</th>
-              <th className="px-3 py-3 text-left typo-caption text-foreground">{t.overview.sla_card.agent}</th>
+            <tr className="bg-surface-1">
+              <th className="w-12 px-2 py-3 text-center typo-caption text-ink-2">{COPY.rank}</th>
+              <th className="px-3 py-3 text-left typo-caption text-ink-2">{t.overview.sla_card.agent}</th>
               {RANK_OPTIONS.map((opt) => {
                 const active = sortKey === opt.key;
                 const headline = opt.key === 'overall';
                 return (
-                  <th key={opt.key} aria-sort={active ? 'descending' : undefined} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-primary/10' : ''}`}>
-                    <button
-                      type="button"
-                      onClick={() => setSortKey(opt.key)}
-                      className={`mx-auto flex items-center justify-center gap-0.5 typo-caption transition-colors ${active ? 'text-primary' : 'text-foreground hover:text-primary/80'}`}
-                    >
-                      {lb[opt.labelKey]}
-                      <ChevronDown className={`w-3 h-3 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />
-                    </button>
+                  <th key={opt.key} aria-sort={active ? 'descending' : undefined} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-hair' : ''}`}>
+                    <Button variant="ghost" size="sm" className="mx-auto" onClick={() => setSortKey(opt.key)} iconRight={<ChevronDown className={`w-3 h-3 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />}>
+{lb[opt.labelKey]}
+</Button>
                     <div className={`mx-auto mt-1 h-0.5 w-6 rounded-full transition-colors ${active ? 'bg-primary' : 'bg-transparent'}`} />
                   </th>
                 );
@@ -166,27 +163,26 @@ export function LeaderboardMatrixView({
                   if (e.target === e.currentTarget) enter.markEntered(entry.personaId);
                 }}
               >
-                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                <td className="px-2 py-1.5 text-center align-middle border-t border-hair">
                   {entry.medal ? (
-                    <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-card border typo-caption tabular-nums ${MEDAL_STYLE[entry.medal]}`}>
+                    <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-card border typo-data ${MEDAL_STYLE[entry.medal]}`}>
                       {entry.rank}
                     </span>
                   ) : entry.rank === null ? (
                     <Unmeasured label={notMeasured} />
                   ) : (
-                    <span className="typo-caption text-foreground tabular-nums">{entry.rank}</span>
+                    <span className="typo-data text-ink-2">{entry.rank}</span>
                   )}
                 </td>
-                <td className="px-3 py-1.5 align-middle border-t border-primary/[0.06]">
-                  <button
-                    type="button"
-                    onClick={() => onNavigateToAgent(entry.personaId)}
-                    className="group/agent flex items-center gap-2.5 min-w-0 text-left"
+                <td className="px-3 py-1.5 align-middle border-t border-hair">
+                  <PressSurface
+                    onPress={() => onNavigateToAgent(entry.personaId)}
+                    className="group/agent flex items-center gap-2.5 min-w-0"
                   >
                     <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} name={entry.personaName} display="pop" frameSize="sm" />
                     <span className="typo-body text-foreground truncate group-hover/agent:text-primary transition-colors">{entry.personaName}</span>
                     <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/agent:opacity-100 text-primary/70 transition-opacity" />
-                  </button>
+                  </PressSurface>
                 </td>
                 {RANK_OPTIONS.map((opt) => (
                   <MetricCell
@@ -203,32 +199,28 @@ export function LeaderboardMatrixView({
 
             {rows.length > visibleCount && (
               <tr>
-                <td colSpan={8} className="border-t border-primary/[0.06] px-3 py-2 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setVisibleCount((n) => n + VISIBLE_CAP)}
-                    className="typo-caption text-primary/80 hover:text-primary transition-colors focus-ring rounded-interactive"
-                  >
+                <td colSpan={8} className="border-t border-hair px-3 py-2 text-center">
+                  <Button variant="ghost" size="sm" onClick={() => setVisibleCount((n) => n + VISIBLE_CAP)}>
                     {t.overview.activity.load_more}
-                  </button>
+                  </Button>
                 </td>
               </tr>
             )}
 
             {/* Fleet-average reference row */}
             <tr className="bg-primary/[0.02]">
-              <td className="border-t-2 border-dashed border-primary/20" />
-              <td className="px-3 py-1.5 align-middle border-t-2 border-dashed border-primary/20">
-                <span className="typo-caption text-foreground uppercase tracking-wide">{lb.fleet_average}</span>
+              <td className="border-t-2 border-dashed border-hair" />
+              <td className="px-3 py-1.5 align-middle border-t-2 border-dashed border-hair">
+                <span className="typo-eyebrow">{lb.fleet_average}</span>
               </td>
               {RANK_OPTIONS.map((opt) => {
                 const v = fleetValue(opt.key, fleetAvgScore, fleetBenchmark);
                 return (
-                  <td key={opt.key} className={`px-2 py-1.5 text-center border-t-2 border-dashed border-primary/20 ${opt.key === 'overall' ? 'border-r border-primary/10' : ''}`}>
+                  <td key={opt.key} className={`px-2 py-1.5 text-center border-t-2 border-dashed border-hair ${opt.key === 'overall' ? 'border-r border-hair' : ''}`}>
                     {v === null ? (
                       <Unmeasured label={notMeasured} />
                     ) : (
-                      <span className={`typo-body font-mono tabular-nums ${scoreTint(Math.round(v)).text}`}>{Math.round(v)}</span>
+                      <span className={`typo-data font-mono ${scoreTint(Math.round(v)).text}`}>{Math.round(v)}</span>
                     )}
                   </td>
                 );
@@ -245,7 +237,7 @@ export function LeaderboardMatrixView({
  *  Never a 0 or a neutral 50 (registry scoring-rubrics / unmeasured-honesty). */
 function Unmeasured({ label }: { label: string }) {
   return (
-    <span className="typo-caption text-foreground">
+    <span className="typo-caption text-ink-2">
       <span aria-hidden>—</span>
       <span className="sr-only">{label}</span>
     </span>
@@ -257,7 +249,7 @@ function MetricCell({ value, emphasized, headline, notMeasured }: {
 }) {
   if (value === null) {
     return (
-      <td className={`px-1.5 py-1 align-middle text-center border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>
+      <td className={`px-1.5 py-1 align-middle text-center border-t border-hair ${headline ? 'border-r border-hair' : ''}`}>
         <div className={`rounded-card px-2 py-1 ${emphasized ? 'ring-1 ring-primary/40' : ''}`}>
           <Unmeasured label={notMeasured} />
         </div>
@@ -266,9 +258,9 @@ function MetricCell({ value, emphasized, headline, notMeasured }: {
   }
   const tint = scoreTint(value);
   return (
-    <td className={`px-1.5 py-1 align-middle border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>
+    <td className={`px-1.5 py-1 align-middle border-t border-hair ${headline ? 'border-r border-hair' : ''}`}>
       <div className={`relative rounded-card px-2 py-1 text-center overflow-hidden ${tint.bg} ${emphasized ? 'ring-1 ring-primary/40' : ''}`}>
-        <div className={`${headline ? 'typo-heading' : 'typo-body'} tabular-nums ${tint.text}`}>{value}</div>
+        <div className={`${headline ? 'typo-data' : 'typo-body'} ${tint.text}`}>{value}</div>
         <span
           aria-hidden
           className="absolute left-0 bottom-0 h-0.5 rounded-full opacity-60"

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { executeApiRequest, type ApiEndpoint, type ApiProxyResponse } from '@/api/system/apiProxy';
 import { applyPathSeeds, isFullyResolved, seedPathParams, type ScopedResources } from './scopeParamSeed';
 import { RUN_LOG_MARK } from './tabs/apiExplorerHelpers';
@@ -102,6 +102,11 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
   const [lines, setLines] = useState<string[]>([]);
   const [progress, setProgress] = useState<TestProgress | null>(null);
   const cancelledRef = useRef(false);
+  // Ref guard: the isRunning closure is stale between a click and its re-render.
+  const runningRef = useRef(false);
+
+  // Stop firing requests when the playground unmounts mid-batch.
+  useEffect(() => () => { cancelledRef.current = true; }, []);
 
   const addLog = useCallback((line: string) => {
     const entry = `[${timestamp()}] ${line}`;
@@ -113,7 +118,8 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
   }, []);
 
   const runAll = useCallback((endpoints: ApiEndpoint[], credentialId: string, scoped?: ScopedResources) => {
-    if (isRunning) return;
+    if (runningRef.current) return;
+    runningRef.current = true;
 
     cancelledRef.current = false;
     setIsRunning(true);
@@ -230,9 +236,10 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
         addLog(`Done: ${passed} passed, ${failed} failed, ${skippedCount} skipped (${elapsed}s)`);
       }
 
+      runningRef.current = false;
       setIsRunning(false);
     });
-  }, [isRunning, addLog]);
+  }, [addLog]);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;

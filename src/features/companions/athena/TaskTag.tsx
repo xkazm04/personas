@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, Hourglass, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BackgroundJob } from '@/api/companion';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Compact, read-only tag for one background Task (Athena async-UX phase 2).
  * Renders a status icon, the task's short title, an optional determinate
@@ -42,16 +43,18 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
     >
       <div className="flex items-center gap-2 typo-caption">
         <Icon className={`w-3.5 h-3.5 shrink-0 ${tone} ${running ? 'animate-spin' : ''}`} />
-        <span className="flex-1 truncate text-foreground" title={title}>
-          {title}
-        </span>
+        <Tooltip content={title}>
+          <span className="flex-1 truncate text-foreground" >
+            {title}
+          </span>
+        </Tooltip>
         {note && <span className="text-foreground shrink-0 tabular-nums">{note}</span>}
         <span className={`shrink-0 ${tone}`}>{statusLabel}</span>
       </div>
       {pct != null && running && (
         <div className="mt-1 h-1 rounded-full bg-foreground/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-blue-400/70 transition-[width] duration-300"
+            className="h-full rounded-full bg-status-info/20 transition-[width] duration-300"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -93,8 +96,8 @@ function statusFor(t: ReturnType<typeof useTranslation>['t'], status: string): s
 }
 
 function visualFor(status: string, failed: boolean): { Icon: typeof Hourglass; accent: string; tone: string } {
-  if (status === 'queued') return { Icon: Hourglass, accent: 'border-foreground/10 bg-secondary/40', tone: 'text-foreground/55' };
-  if (status === 'running') return { Icon: Loader2, accent: 'border-blue-500/30 bg-blue-500/[0.05]', tone: 'text-blue-300/90' };
-  if (failed) return { Icon: AlertCircle, accent: 'border-rose-500/30 bg-rose-500/[0.06]', tone: 'text-rose-300/90' };
-  return { Icon: CheckCircle2, accent: 'border-emerald-500/30 bg-emerald-500/[0.06]', tone: 'text-emerald-300/90' };
+  if (status === 'queued') return { Icon: Hourglass, accent: 'border-foreground/10 bg-secondary/40', tone: 'text-ink-2' };
+  if (status === 'running') return { Icon: Loader2, accent: 'border-status-info/30 bg-status-info/10/[0.05]', tone: 'text-status-info' };
+  if (failed) return { Icon: AlertCircle, accent: 'border-status-error/30 bg-status-error/10/[0.06]', tone: 'text-status-error' };
+  return { Icon: CheckCircle2, accent: 'border-status-success/30 bg-status-success/10/[0.06]', tone: 'text-status-success' };
 }

@@ -73,27 +73,27 @@ describe('ContextCoverage — the ledger row\'s metric cluster', () => {
 
   it('a zero-count metric is inert — no jump affordance', () => {
     renderCoverage({ goalCount: 0, ideaCount: 0 });
-    expect(screen.queryByTitle('Open in Goals')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('Open triage')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Open in Goals')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Open triage')).not.toBeInTheDocument();
   });
 
   it('clicking the goal metric seeds the spotlight and opens the Goals board', () => {
     renderCoverage({ goalCount: 2, firstGoalId: 'goal-XYZ' });
-    fireEvent.click(screen.getByTitle('Open in Goals'));
+    fireEvent.click(screen.getByLabelText('Open in Goals'));
     expect(setPendingGoalSpotlightId).toHaveBeenCalledWith('goal-XYZ');
     expect(openGoalsBoardMock).toHaveBeenCalled();
   });
 
   it('still opens Goals when firstGoalId is absent but goals exist', () => {
     renderCoverage({ goalCount: 1 });
-    fireEvent.click(screen.getByTitle('Open in Goals'));
+    fireEvent.click(screen.getByLabelText('Open in Goals'));
     expect(setPendingGoalSpotlightId).not.toHaveBeenCalled();
     expect(openGoalsBoardMock).toHaveBeenCalled();
   });
 
   it('clicking the idea metric jumps to Approvals › Backlog', () => {
     renderCoverage({ ideaCount: 5 });
-    fireEvent.click(screen.getByTitle('Open triage'));
+    fireEvent.click(screen.getByLabelText('Open triage'));
     // The pending mode must be seeded BEFORE the navigation, or ManualReviewList
     // mounts on `reviews` and the handoff silently lands on the wrong tab.
     expect(setPendingApprovalsMode).toHaveBeenCalledWith('backlog');
@@ -117,7 +117,7 @@ describe('ContextCoverage — the ledger row\'s metric cluster', () => {
         />
       </div>,
     );
-    fireEvent.click(screen.getByTitle('Open in Goals'));
+    fireEvent.click(screen.getByLabelText('Open in Goals'));
     expect(openGoalsBoardMock).toHaveBeenCalled();
     expect(onRowClick).not.toHaveBeenCalled();
   });

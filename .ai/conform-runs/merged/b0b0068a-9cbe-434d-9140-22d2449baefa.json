@@ -1,0 +1,148 @@
+{
+ "schema": "conform-run/1",
+ "worker": "b0b0068a-9cbe-434d-9140-22d2449baefa",
+ "subject": "sidecar-provisioning",
+ "evaluatedAt": "2026-11-10T23:14:42.497667+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "plugins-dev-tools-lifecycle",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/blocks/InstallControl.tsx:2 The only install surface here dispatches a backend dev task that adds lifecycle bindings to the user's repository (installLifecycle -> dev_tools_lifecycle_install). It does not download, verify or resolve any sidecar binary or model file, and a search of sub_lifecycle and dev-tools for sha256, checksum, onnx, gguf and fastembed found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "sha256",
+    "checksum",
+    "onnx",
+    "gguf",
+    "fastembed"
+   ]
+  },
+  {
+   "context": "dev-tools-shell",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/DevToolsPage.tsx:7 The shell is a React tab router that lazy-loads sub-pages and holds constant catalogs, with no external executables or model artifacts to provision. A search of the dev-tools tree for sha256, checksum, onnx, gguf and fastembed found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "sha256",
+    "checksum",
+    "onnx",
+    "gguf",
+    "fastembed"
+   ]
+  },
+  {
+   "context": "plugins-gitlab",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:7 The GitLab plugin polls pipeline state over IPC/HTTP and sends notifications. Its only \"provision\" is credential provisioning in GitLabDeployModal, which is not artifact provisioning. A search of src/features/plugins/gitlab for sha256, checksum, onnx, gguf and fastembed found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "sha256",
+    "checksum",
+    "onnx",
+    "gguf",
+    "fastembed"
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-llm-overview",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:2 This context normalizes remote observability-tool HTTP responses through the credential API proxy, with no local engines, binaries or model files to fetch, resolve or isolate. A search for sha256, checksum, onnx, gguf and fastembed found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "sha256",
+    "checksum",
+    "onnx",
+    "gguf",
+    "fastembed"
+   ]
+  },
+  {
+   "context": "project-overview",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_overview/adapters.ts:2 The overview page reads remote connector APIs through executeApiRequest and renders the stats, with no provisioned sidecar or model artifact. A search for sha256, checksum, onnx, gguf and fastembed found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "sha256",
+    "checksum",
+    "onnx",
+    "gguf",
+    "fastembed"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T23:14:42.497667+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-dev-tools-lifecycle",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:14:42.497667+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "dev-tools-shell",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:14:42.497667+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-gitlab",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:14:42.497667+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-dev-tools-llm-overview",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:14:42.497667+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "project-overview",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

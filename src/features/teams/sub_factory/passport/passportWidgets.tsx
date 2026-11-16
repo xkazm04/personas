@@ -2,6 +2,7 @@
 // atoms both variants (Grid + Wall) compose. Keeping the seal / pips / gap mark
 // identical across variants is deliberate: the cell LAYOUT diverges per variant
 // metaphor, but a "readiness seal" should read the same wherever it appears.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Bot, CheckCircle2, ShieldCheck, Layers, Plug, Check, Minus, Info, type LucideIcon } from 'lucide-react';
@@ -45,7 +46,7 @@ export function ReadinessSeal({
         className={`inline-flex items-center gap-1.5 rounded-card border ${pad} ${tint.bg} ${seal ? 'ring-1 ' + tint.ring + ' shadow-elevation-1' : ''} cursor-default`}
         style={{ borderColor: `color-mix(in srgb, ${tint.hex} 40%, transparent)` }}
       >
-        <span className={`${codeCls} font-bold tabular-nums leading-none ${tint.text}`}>{code}</span>
+        <span className={`${codeCls} font-bold num leading-none ${tint.text}`}>{code}</span>
         <span className={`typo-data ${tint.text} opacity-75`}>{score}</span>
       </span>
     </Tooltip>
@@ -78,11 +79,11 @@ export function ScoreBar({
   return (
     <div className="w-full">
       <div className="flex items-baseline justify-between gap-2 mb-1">
-        <span className="typo-label text-foreground/45">{label}</span>
+        <span className="typo-label text-ink-3">{label}</span>
         <Tooltip content={`${name}: ${score}/100`}>
           <span className="inline-flex items-baseline gap-1 cursor-default">
-            <span className={`typo-caption tabular-nums ${tint.text}`}>{code}</span>
-            <span className={`typo-caption tabular-nums ${tint.text} opacity-70`}>{score}</span>
+            <span className={`typo-data ${tint.text}`}>{code}</span>
+            <span className={`typo-data ${tint.text} opacity-70`}>{score}</span>
           </span>
         </Tooltip>
       </div>
@@ -109,7 +110,7 @@ export function Pips({ items, size = 7 }: { items: Array<{ label: string; on: bo
               background: it.on ? '#10b981' : 'color-mix(in srgb, var(--foreground) 14%, transparent)',
             }}
           />
-          <span className={`typo-caption tabular-nums ${it.on ? 'text-foreground/80' : 'text-foreground/35'}`}>{it.label}</span>
+          <span className={`typo-data ${it.on ? 'text-ink-2' : 'text-ink-3'}`}>{it.label}</span>
         </span>
       ))}
     </span>
@@ -119,7 +120,7 @@ export function Pips({ items, size = 7 }: { items: Array<{ label: string; on: bo
 /** A single yes/no capability — check or muted dash. */
 export function BoolMark({ on, label }: { on: boolean; label?: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 typo-caption ${on ? 'text-emerald-300' : 'text-foreground/35'}`}>
+    <span className={`inline-flex items-center gap-1.5 typo-caption ${on ? 'text-status-success' : 'text-ink-3'}`}>
       {on ? <Check className="w-3.5 h-3.5" aria-hidden /> : <Minus className="w-3.5 h-3.5" aria-hidden />}
       {label && <span>{label}</span>}
     </span>
@@ -147,35 +148,33 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
 
   return (
     <>
-      <button
+      <Tooltip content={`What "${label}" means`}><PressSurface
         ref={triggerRef}
-        type="button"
-        onClick={(e) => {
+        onPress={(e) => {
           // Read the rect NOW — e.currentTarget is detached by the time a
           // state-updater callback runs.
           const rect = e.currentTarget.getBoundingClientRect();
           setAnchor((a) => (a ? null : rect));
         }}
         aria-expanded={Boolean(anchor)}
-        title={`What "${label}" means`}
-        className="group/rl inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.05] transition-colors cursor-help focus-ring"
+        className="group/rl inline-flex items-center gap-1 rounded-interactive -mx-1 px-1 py-0.5 cursor-help"
       >
-        <span className="typo-caption text-foreground/65 group-hover/rl:text-foreground/90 transition-colors">{label}</span>
+        <span className="typo-caption text-ink-3 group-hover/rl:text-ink-2 transition-colors">{label}</span>
         <Info className="w-3 h-3 flex-shrink-0 text-primary/70 opacity-0 group-hover/rl:opacity-100 transition-opacity" aria-hidden />
-      </button>
+      </PressSurface></Tooltip>
       {anchor && pos && createPortal(
         <div
           ref={panelRef}
           role="dialog"
           aria-label={`${label}: meaning`}
           style={{ top: pos.top, left: pos.left, width: INFO_TIP_WIDTH }}
-          className="fixed z-[9996] rounded-modal border border-primary/15 bg-background shadow-elevation-4 px-3 py-2.5"
+          className="fixed z-[9996] rounded-modal border border-hair bg-background shadow-elevation-4 px-3 py-2.5"
         >
-          <span className="flex items-center gap-1.5 typo-caption text-foreground mb-1">
+          <span className="flex items-center gap-1.5 typo-caption text-ink-2 mb-1">
             <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" aria-hidden />
             {label}
           </span>
-          <p className="typo-caption text-foreground/65" style={{ fontWeight: 400 }}>{info}</p>
+          <p className="typo-caption text-ink-3" style={{ fontWeight: 400 }}>{info}</p>
         </div>,
         document.body,
       )}
@@ -189,8 +188,8 @@ export function Chip({ label, tone = 'neutral' }: { label: string; tone?: 'neutr
     <span
       className={`inline-flex items-center rounded-input px-1.5 py-0.5 typo-caption whitespace-nowrap ${
         tone === 'accent'
-          ? 'bg-primary/10 text-primary border border-primary/15'
-          : 'bg-secondary/40 text-foreground border border-primary/8'
+          ? 'bg-primary/10 text-primary border border-hair'
+          : 'bg-surface-1 text-foreground border border-hair'
       }`}
     >
       {label}
@@ -208,21 +207,20 @@ export function Chip({ label, tone = 'neutral' }: { label: string; tone?: 'neutr
 export function BlockersBadge({ blockers, clearLabel }: { blockers: string[]; clearLabel: string }) {
   if (blockers.length === 0) {
     return (
-      <span title={clearLabel} className="inline-flex items-center shrink-0" data-testid="cover-blockers-clear">
+      <Tooltip content={clearLabel}><span className="inline-flex items-center shrink-0" data-testid="cover-blockers-clear">
         <CheckCircle2 className="w-5 h-5" style={{ color: INK.emerald }} aria-hidden />
         <span className="sr-only">{clearLabel}</span>
-      </span>
+      </span></Tooltip>
     );
   }
   return (
-    <span
-      title={blockers.join(' · ')}
+    <Tooltip content={blockers.join(' · ')}><span
       className="inline-flex items-center gap-1 rounded-input border px-1.5 py-0.5 shrink-0"
       style={{ borderColor: `${INK.red}66`, background: `${INK.red}1f` }}
       data-testid="cover-blockers-badge"
     >
       <AlertTriangle className="w-5 h-5" style={{ color: INK.red }} aria-hidden />
-      <span className="typo-body-lg tabular-nums" style={{ color: INK.red }}>{blockers.length}</span>
-    </span>
+      <span className="typo-data-lg" style={{ color: INK.red }}>{blockers.length}</span>
+    </span></Tooltip>
   );
 }

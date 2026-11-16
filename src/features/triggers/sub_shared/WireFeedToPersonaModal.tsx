@@ -24,6 +24,7 @@ import { createTrigger } from '@/api/pipeline/triggers';
 import { draftLinkToTriggerInput } from '@/features/triggers/sub_studio/libs/studioCommit';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 export interface WireFeedToPersonaModalProps {
   entry: SharedEventCatalogEntry;
   onClose: () => void;
@@ -74,32 +75,22 @@ export function WireFeedToPersonaModal({ entry, onClose }: WireFeedToPersonaModa
       <div className="flex flex-col max-h-[70vh]" data-testid="wire-feed-modal">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-card-border/60 shrink-0">
           <Radio className="w-4 h-4 text-primary shrink-0" aria-hidden />
-          <h2 id="wire-feed-title" className="typo-label text-foreground truncate">
+          <h2 id="wire-feed-title" className="typo-label text-ink-1 truncate">
             {m.wire_title} — {entry.name}
           </h2>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-4 py-3">
-          <p className="typo-caption text-foreground/90 mb-2">{m.wire_hint}</p>
+          <p className="typo-caption text-ink-2 mb-2">{m.wire_hint}</p>
           {sorted.length === 0 ? (
-            <p className="py-4 typo-caption text-foreground/90 text-center">{m.wire_empty}</p>
+            <p className="py-4 typo-caption text-ink-2 text-center">{m.wire_empty}</p>
           ) : (
             <ul className="space-y-1" role="radiogroup" aria-label={m.wire_title}>
               {sorted.map((p) => (
                 <li key={p.id}>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={selected === p.id}
-                    onClick={() => setSelected(p.id)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-interactive typo-caption transition-colors ${
-                      selected === p.id
-                        ? 'bg-primary/15 text-primary border border-primary/35'
-                        : 'bg-secondary/40 text-foreground border border-card-border hover:border-foreground/30'
-                    }`}
-                  >
+                  <OptionRow role="radio" selected={selected === p.id} onSelect={() => setSelected(p.id)}>
                     {p.name}
-                  </button>
+                  </OptionRow>
                 </li>
               ))}
             </ul>

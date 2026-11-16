@@ -9,6 +9,8 @@ import { TwinChannelMarks } from './TwinChannelMarks';
 import { TwinSlotStrip } from './TwinSlotStrip';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * One twin, as a card.
  *
@@ -83,7 +85,7 @@ export function TwinCard({
         <div className="flex items-start gap-3 px-4 pt-4">
           <span
             aria-hidden
-            className={`w-9 h-9 shrink-0 rounded-card bg-gradient-to-br ${gender.tint} flex items-center justify-center ${gender.color} typo-title-lg`}
+            className={`w-9 h-9 shrink-0 rounded-card bg-surface-1 ${gender.tint} flex items-center justify-center ${gender.color} typo-title-lg`}
           >
             {gender.glyph}
           </span>
@@ -98,14 +100,16 @@ export function TwinCard({
             </span>
           ) : (
             <Tooltip content={twin.profiles.delete} placement="top">
-              <button
+              <Button
                 type="button"
                 onClick={onDelete}
                 aria-label={twin.profiles.delete}
-                className="pointer-events-auto shrink-0 p-1.5 rounded-interactive text-muted opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:text-status-error hover:bg-secondary/40"
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 opacity-0 group-hover:opacity-100"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </Tooltip>
           )}
         </div>

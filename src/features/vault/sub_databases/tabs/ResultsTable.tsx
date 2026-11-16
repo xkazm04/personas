@@ -33,7 +33,6 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
       {executing && (
         <div key="executing" className="animate-fade-slide-in flex items-center justify-center pt-8 gap-2">
           <span className="relative flex h-3 w-3 items-center justify-center">
-            <span className="animate-ping absolute h-full w-full rounded-full bg-status-success opacity-40" />
             <span className="relative rounded-full h-1.5 w-1.5 bg-status-success" />
           </span>
           <span className="typo-body text-foreground">{db.executing_query}</span>

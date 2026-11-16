@@ -74,7 +74,7 @@ export function BpNotRunning() {
     <KitHost testId="lens-release-bp-down">
       <Section title={R.bp_down_title} level={2}>
         <p className="typo-body text-foreground">{R.bp_down_body}</p>
-        <code className="typo-code text-foreground">{BP_START_COMMAND}</code>
+        <code className="typo-code text-ink-2">{BP_START_COMMAND}</code>
       </Section>
     </KitHost>
   );

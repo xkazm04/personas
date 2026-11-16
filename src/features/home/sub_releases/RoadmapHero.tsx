@@ -19,15 +19,15 @@ export function RoadmapHero({ item, enter, t }: { item: DisplayItem; enter: Reve
             {/* style-deviation: operator Gate 1 kept the tracked mono micro head; typo-eyebrow is sans at 0.06em and read worse, no token carries 0.22em tracking. */}
             <span className={`typo-code uppercase tracking-[0.22em] ${ITEM_STATUS_HEAD[item.status]}`}>{t.itemStatus[item.status]}</span>
           </span>
-          <span className="typo-code text-foreground">· #{item.sort_order} · {t.priority[item.priority]}</span>
+          <span className="typo-code text-ink-1">· #{item.sort_order} · {t.priority[item.priority]}</span>
         </div>
-        <div className="rounded-modal border border-primary/15 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent p-7">
+        <div className="rounded-modal border border-hair bg-surface-1 p-7">
           {/* style-deviation: the glow marks the one featured item; the operator kept this effect on typo-card-label at Gate 0. */}
           <h2 className="typo-heading text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
             {item.title}
           </h2>
           {item.description && (
-            <p className="typo-body mt-4 max-w-prose text-foreground">{item.description}</p>
+            <p className="typo-body mt-4 max-w-prose text-ink-1">{item.description}</p>
           )}
         </div>
       </article>

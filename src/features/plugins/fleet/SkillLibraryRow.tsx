@@ -1,6 +1,9 @@
 import { Terminal, Download } from 'lucide-react';
 import type { SkillEntry } from '@/api/devTools/devTools';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   skill: SkillEntry;
@@ -18,50 +21,46 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
   const { t } = useTranslation();
   const f = t.plugins.fleet;
   return (
-    <div className="group flex items-center gap-1 rounded-card border border-transparent hover:border-primary/15 hover:bg-secondary/30 transition-colors">
-      <button
-        type="button"
+    <div className="group flex items-center gap-1 rounded-card border border-transparent hover:border-hair hover:bg-surface-1 transition-colors">
+      <Tooltip content={canApply ? `/${skill.name}` : f.skills_drawer_no_target}><PressSurface
         data-testid={`fleet-drawer-apply-${skill.name}`}
         disabled={!canApply}
-        onClick={() => onLoad(skill.name)}
-        title={canApply ? `/${skill.name}` : f.skills_drawer_no_target}
-        className="flex-1 min-w-0 text-left px-2 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+        onPress={() => onLoad(skill.name)}
+        className="flex-1 min-w-0 px-2 py-1.5"
       >
         <div className="flex items-center gap-1.5">
           <Terminal className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
           <span className="typo-card-label truncate">{skill.name}</span>
           {skill.syncState === 'diverged' && (
-            <span
+            <Tooltip content={f.skill_sync_diverged_hint}><span
               data-testid={`fleet-drawer-drift-${skill.name}`}
-              className="shrink-0 rounded-full bg-status-warning/15 px-1.5 py-px text-[10px] font-medium text-status-warning"
-              title={f.skill_sync_diverged_hint}
+              className="shrink-0 rounded-interactive bg-status-warning/15 px-1.5 py-px typo-caption text-status-warning"
             >
               {f.skill_sync_diverged}
-            </span>
+            </span></Tooltip>
           )}
           {skill.syncState === 'in_sync' && (
-            <span
-              className="shrink-0 rounded-full bg-status-success/15 px-1.5 py-px text-[10px] font-medium text-status-success"
-              title={f.skill_sync_in_sync_hint}
+            <Tooltip content={f.skill_sync_in_sync_hint}><span
+              className="shrink-0 rounded-interactive bg-status-success/15 px-1.5 py-px typo-caption text-status-success"
             >
               {f.skill_sync_in_sync}
-            </span>
+            </span></Tooltip>
           )}
         </div>
         {skill.description && (
-          <p className="text-[12px] text-foreground opacity-60 truncate mt-0.5 pl-4.5">{skill.description}</p>
+          <p className="typo-caption text-ink-2 truncate mt-0.5 pl-4.5">{skill.description}</p>
         )}
-      </button>
-      <button
+      </PressSurface></Tooltip>
+      <Button variant="ghost" size="icon-sm"
         type="button"
         data-testid={`fleet-drawer-install-${skill.name}`}
         onClick={() => onInstall(skill.name)}
-        title={f.skill_install}
+        tooltip={f.skill_install}
         aria-label={f.skill_install}
-        className="shrink-0 p-1.5 mr-1 rounded text-foreground opacity-0 group-hover:opacity-70 hover:opacity-100 transition-opacity"
+        className="shrink-0 mr-1 group-hover:opacity-70"
       >
         <Download className="w-3.5 h-3.5" />
-      </button>
+      </Button>
     </div>
   );
 }

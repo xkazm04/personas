@@ -612,6 +612,42 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     }
   },
   "athena": {
+    "standup": {
+      "rev": {},
+      "voice": {},
+      "since": {},
+      "machine": {},
+      "state": {},
+      "row": {},
+      "cards": {},
+      "groups": {
+        "decide": {},
+        "agents": {},
+        "waits": {},
+        "blank": {},
+        "filler": {},
+        "refused": {}
+      },
+      "footer": {},
+      "rules": {
+        "classes": {},
+        "notes": {}
+      },
+      "dossier": {},
+      "keys": {},
+      "actions": {},
+      "console": {
+        "col": {},
+        "meter": {},
+        "machine": {},
+        "decision": {},
+        "today": {},
+        "detail": {},
+        "footer": {},
+        "kinds": {}
+      },
+      "chat": {}
+    },
     "orchestration": {}
   },
   "media_studio": {},

@@ -113,6 +113,10 @@ export function NumberStepper({
           : clamp(valueRef.current + dir * step);
       if (next !== valueRef.current) {
         valueRef.current = next;
+        // While the field is focused the value->draft sync is suspended (so
+        // typing "0." survives), which left the visible text frozen on ArrowUp /
+        // a held +/- (pointerdown keeps focus in the field). Show the step.
+        setDraft(String(next));
         onChange(next);
         return true;
       }
@@ -179,6 +183,7 @@ export function NumberStepper({
       const trimmed = raw.trim();
       if (trimmed === '') {
         const next = allowEmpty ? null : clamp(defaultValue ?? min ?? 0);
+        setDraft(next == null ? '' : String(next));
         onChange(next);
         fireCommit(next);
         return;
@@ -190,6 +195,9 @@ export function NumberStepper({
         return;
       }
       const next = clamp(n);
+      // Enter commits while still focused, so the blur-time resync never runs:
+      // show the clamped value instead of the out-of-range text.
+      setDraft(String(next));
       onChange(next);
       fireCommit(next);
     },

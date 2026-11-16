@@ -17,6 +17,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { TraceEmberCell } from './TraceEmberCell';
 import { TraceGhosts } from './TraceGhosts';
 import type { HeatTier, TraceModel } from './traceTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface TraceOverviewProps {
   model: TraceModel;
@@ -64,14 +65,14 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
         <div className="overflow-auto flex-1 min-h-0">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-secondary/90 backdrop-blur-sm">
-                <th className="text-left typo-caption font-mono uppercase tracking-widest text-foreground px-3 py-2 border-b-2 border-border">
+              <tr className="bg-surface-1 backdrop-blur-sm">
+                <th className="text-left typo-eyebrow text-ink-3 px-3 py-2 border-b-2 border-border">
                   {tx(t.plugins.dev_tools.trace_skills_count, { count: model.skills.length })}
                 </th>
-                <th className="typo-caption font-mono uppercase tracking-widest text-foreground pr-2 py-2 border-b-2 border-border text-right w-12">v</th>
+                <th className="typo-eyebrow text-ink-3 pr-2 py-2 border-b-2 border-border text-right w-12">v</th>
                 {model.projects.map((p) => (
-                  <th key={p.id} className="typo-caption font-mono uppercase tracking-widest text-foreground px-1 py-2 border-b-2 border-border border-l border-border/20 max-w-[76px]">
-                    <span className="block truncate" title={p.name}>{p.name}</span>
+                  <th key={p.id} className="typo-eyebrow text-ink-3 px-1 py-2 border-b-2 border-border border-l border-border/20 max-w-[76px]">
+                    <Tooltip content={p.name}><span className="block truncate">{p.name}</span></Tooltip>
                   </th>
                 ))}
               </tr>
@@ -92,27 +93,27 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                       order={rowIdx - wave.newSince}
                       hasEntered={reveal.hasEntered}
                       markEntered={reveal.markEntered}
-                      className={`group ${rowIdx % 2 === 1 ? 'bg-secondary/25' : ''} hover:bg-primary/5 transition-colors`}
+                      className={`group ${rowIdx % 2 === 1 ? 'bg-surface-1' : ''} hover:bg-surface-2 transition-colors`}
                     >
                       <td className="px-3 py-1 border-b border-border/40">
                         <div className="flex items-center gap-2 min-w-48">
-                          <button
+                          <Button variant="ghost" size="sm"
                             type="button"
                             onClick={() => onSelectSkill(s.name)}
-                            className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
-                            title={s.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
+                            className="min-w-0"
+                            tooltip={s.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
                           >
                             <Icon size={16} style={s.visual ? { color: s.visual.color } : undefined} className="shrink-0" />
                             <span className="typo-body truncate">{s.name}</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost" size="icon-sm"
                             type="button"
                             onClick={() => onOpenInfo(s.name)}
                             aria-label={t.plugins.dev_tools.trace_open_info}
-                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-foreground transition-opacity ml-auto"
+                            className="group-hover:opacity-100 ml-auto"
                           >
                             <Info size={13} />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                       <td className="pr-2 py-1 border-b border-border/40 text-right">
@@ -131,7 +132,7 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                             <span className="inline-flex items-center">
                               <TraceEmberCell cell={cell} accent={s.visual?.color ?? null} onClick={() => onSelectSkill(s.name)} />
                               {mismatch && (
-                                <span className="typo-label tabular-nums text-foreground opacity-40 hover:opacity-100 transition-opacity -ml-0.5">
+                                <span className="typo-label num text-ink-3 hover:text-ink-1 transition-opacity -ml-0.5">
                                   {cell.installedVersion ?? '1.0'}
                                 </span>
                               )}
@@ -146,7 +147,7 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
             </tbody>
             {!showGhost && !settledEmpty && (
               <tfoot>
-                <tr className="bg-secondary/60">
+                <tr className="bg-surface-1">
                   <td className="px-3 py-1.5 typo-caption text-foreground text-right" colSpan={2}>30d</td>
                   {columnTotals.map((n, i) => (
                     <td key={model.projects[i]?.id ?? i} className="text-center typo-data py-1.5 border-l border-border/20">

@@ -9,6 +9,9 @@ import type { RefObject } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { splitOnMention, type ResolvedMention } from './athenaOrbMention';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Speaking bloom. When motion is allowed the node is driven imperatively from
  * the live TTS level (see `useAthenaOrbAudioGlow`), so it takes a ref rather
@@ -36,7 +39,7 @@ export function OrbSpeakingGlow({
 
 /** One-shot blooms: the message-reaction pulse and the forward-ack. */
 export function OrbPulseGlow({ tone, reduceMotion }: { tone: 'primary' | 'amber'; reduceMotion?: boolean }) {
-  const color = tone === 'amber' ? 'bg-amber-400/55' : 'bg-primary/55';
+  const color = tone === 'amber' ? 'bg-status-warning/20' : 'bg-primary/55';
   return (
     <span
       aria-hidden
@@ -67,21 +70,22 @@ export function OrbUnreadBadge({
   reduceMotion: boolean;
 }) {
   return (
-    <span
-      aria-hidden
-      data-testid="companion-orb-unread"
-      data-unread-count={count}
-      title={label}
-      className="absolute -bottom-1 -left-1 inline-flex items-center justify-center gap-0.5 h-5 min-w-[1.25rem] px-1 rounded-full bg-primary text-background ring-2 ring-background shadow-elevation-2"
-    >
-      {!reduceMotion && <span className="absolute inset-0 rounded-full bg-primary/60 animate-ping" />}
-      <MessageSquareText className="relative w-3 h-3 shrink-0" />
-      {count > 1 && (
-        <span className="relative typo-caption tabular-nums">
-          {count > 9 ? '9+' : count}
-        </span>
-      )}
-    </span>
+    <Tooltip content={label}>
+      <span
+        aria-hidden
+        data-testid="companion-orb-unread"
+        data-unread-count={count}
+        className="absolute -bottom-1 -left-1 inline-flex items-center justify-center gap-0.5 h-5 min-w-[1.25rem] px-1 rounded-full bg-primary text-background ring-2 ring-background shadow-elevation-2"
+      >
+        {!reduceMotion && <span className="absolute inset-0 rounded-full bg-primary/60 animate-ping" />}
+        <MessageSquareText className="relative w-3 h-3 shrink-0" />
+        {count > 1 && (
+          <span className="relative typo-caption tabular-nums">
+            {count > 9 ? '9+' : count}
+          </span>
+        )}
+      </span>
+    </Tooltip>
   );
 }
 
@@ -105,7 +109,7 @@ export function OrbTaskDots({
       {dots.map((d, i) => (
         <span
           key={i}
-          className={`absolute w-2 h-2 rounded-full bg-blue-400 ring-2 ring-background shadow-elevation-1 ${
+          className={`absolute w-2 h-2 rounded-full bg-status-info/10 ring-2 ring-background shadow-elevation-1 ${
             reduceMotion ? '' : 'animate-pulse'
           }`}
           style={{
@@ -152,15 +156,16 @@ export function OrbCaption({
       {parts && mention && onFollow ? (
         <>
           {parts.before}
-          <button
+          <Button
             type="button"
             onClick={() => onFollow(mention.key)}
             aria-label={tx(t.athena.orb_focus_node, { name: parts.label })}
             data-testid="orb-caption-focus"
-            className="pointer-events-auto rounded-interactive font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary focus-ring"
+            variant="ghost"
+            size="sm"
           >
             {parts.label}
-          </button>
+          </Button>
           {parts.after}
         </>
       ) : (

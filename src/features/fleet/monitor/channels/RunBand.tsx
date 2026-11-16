@@ -67,8 +67,8 @@ export const RunBand = memo(function RunBand({ assignmentId, items, expanded, ro
           <Lamp lamp={look} />
           <Engraved className="min-w-0 flex-1 truncate">{word}</Engraved>
           {steps.length > 0 && <Segments count={steps.length} lit={done} tone={SEG_TONE[state]} thin className="w-12 flex-shrink-0" />}
-          <span className="typo-data tabular-nums text-foreground">{tx(t.monitor.conv_steps, { done, total: steps.length })}</span>
-          {rework > 0 && <span className="typo-data tabular-nums text-status-warning">{tx(t.monitor.conv_rework, { count: rework })}</span>}
+          <span className="typo-data num text-foreground">{tx(t.monitor.conv_steps, { done, total: steps.length })}</span>
+          {rework > 0 && <span className="typo-data num text-status-warning">{tx(t.monitor.conv_rework, { count: rework })}</span>}
           <PersonaStack ids={personaIds} index={personaIndex} />
           <span className="typo-caption"><RelativeTime timestamp={items[items.length - 1]!.at} /></span>
           <ChevronDown className={`h-4 w-4 flex-shrink-0 text-foreground transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden />

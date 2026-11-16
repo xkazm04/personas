@@ -80,7 +80,7 @@ export function ProfileSettings({
       onClose={onClose}
       titleId="usage-profile-title"
       size="sm"
-      panelClassName="rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3 p-4"
+      panelClassName="rounded-modal border border-hair bg-background/95 shadow-elevation-3 p-4"
       portal
     >
       <div className="flex flex-col gap-3" data-testid="fleet-usage-profile-dialog">

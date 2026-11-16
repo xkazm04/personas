@@ -62,20 +62,20 @@ function JsonHighlight({ json }: { json: string }) {
     let remaining = highlighted;
 
     const tagMap: Record<string, string> = {
-      k: 'text-sky-400',      // keys
-      s: 'text-emerald-400',  // strings
-      b: 'text-amber-400',    // booleans
-      n: 'text-violet-400',   // numbers
+      k: 'text-status-info',      // keys
+      s: 'text-status-success',  // strings
+      b: 'text-status-warning',    // booleans
+      n: 'text-role-agent',   // numbers
     };
 
     while (remaining.length > 0) {
       const match = remaining.match(/<([ksnb])>(.*?)<\/\1>/);
       if (!match) {
-        result.push(<span key={result.length} className="text-foreground">{remaining}</span>);
+        result.push(<span key={result.length} className="text-ink-1">{remaining}</span>);
         break;
       }
       const before = remaining.slice(0, match.index);
-      if (before) result.push(<span key={result.length} className="text-foreground">{before}</span>);
+      if (before) result.push(<span key={result.length} className="text-ink-1">{before}</span>);
       result.push(<span key={result.length} className={tagMap[match[1] ?? 'k']}>{match[2]}</span>);
       remaining = remaining.slice((match.index || 0) + match[0].length);
     }
@@ -83,7 +83,7 @@ function JsonHighlight({ json }: { json: string }) {
   }, [highlighted]);
 
   return (
-    <pre className="typo-caption pl-2 border-l-2 border-primary/10 my-0.5 whitespace-pre-wrap">
+    <pre className="typo-caption pl-2 border-l-2 border-hair my-0.5 whitespace-pre-wrap">
       {parts}
     </pre>
   );
@@ -100,7 +100,7 @@ const TerminalLine = memo(function TerminalLine({ text }: { text: string }) {
   const cls = TERMINAL_STYLE_MAP[style];
   const content = highlightLine(text);
   return (
-    <div className={cls || 'text-foreground/90'} data-testid="replay-terminal-line">
+    <div className={cls || 'text-ink-1'} data-testid="replay-terminal-line">
       {content || ' '}
     </div>
   );
@@ -178,10 +178,10 @@ export function ReplayTerminalPanel({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
         <RunningIcon size={14} className="opacity-60" />
-        <span className="typo-heading text-foreground">{e.output_panel}</span>
-        <span className="ml-auto typo-body tabular-nums text-foreground">
+        <span className="typo-heading text-ink-1">{e.output_panel}</span>
+        <span className="ml-auto typo-body tabular-nums text-ink-1">
           {tx(e.lines_counter, { visible: visibleLines.length, total: totalLines })}
         </span>
       </div>
@@ -218,7 +218,7 @@ export function ReplayTerminalPanel({
               <div
                 key={i}
                 aria-hidden="true"
-                className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${width}`}
+                className={`h-3 rounded-interactive bg-primary/[0.06] animate-fade-in ${width}`}
                 style={{ animationDelay: `${120 + i * 35}ms` }}
               />
             ))}
@@ -253,7 +253,7 @@ export function ReplayTerminalPanel({
               <path d="M55 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.5" />
               <path d="M65 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.35" />
             </svg>
-            <span className="typo-body text-foreground">{e.scrub_forward}</span>
+            <span className="typo-body text-ink-1">{e.scrub_forward}</span>
           </div>
         )}
       </div>

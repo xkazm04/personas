@@ -5,6 +5,9 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorTypes';
 import { isStaleResult, isUnreachable, STATUS_CONFIG, credentialMatchesConnector } from '../../libs/connectorTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface LinkPickerProps {
   isLinking: boolean;
@@ -27,36 +30,36 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
       {isLinking && (
         <div className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="mt-3 border border-primary/10 rounded-card bg-background/40 max-h-48 overflow-y-auto">
+          <div className="mt-3 border border-hair rounded-card bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
               <>
-                <p className="px-3 py-1.5 typo-heading text-foreground uppercase border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
+                <p className="px-3 py-1.5 typo-heading text-ink-1 uppercase border-b border-hair">{t.agents.connectors.st_best_match}</p>
                 {matchingCreds.map((cred) => (
-                  <button type="button" key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
-                    <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
+                  <PressSurface key={cred.id} onPress={() => onLinkCredential(status.name, cred.id, cred.name)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 border-b border-hair last:border-0">
+                    <Star className="w-3 h-3 text-status-warning flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="typo-body text-foreground truncate" title={cred.name}>{cred.name}</p>
-                      <p className="typo-body text-foreground">{cred.service_type}</p>
+                      <Tooltip content={cred.name}><p className="typo-body text-ink-1 truncate">{cred.name}</p></Tooltip>
+                      <p className="typo-body text-ink-1">{cred.service_type}</p>
                     </div>
-                  </button>
+                  </PressSurface>
                 ))}
               </>
             )}
             {otherCreds.length > 0 && (
               <>
                 {matchingCreds.length > 0 && (
-                  <p className="px-3 py-1.5 typo-heading text-foreground uppercase border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
+                  <p className="px-3 py-1.5 typo-heading text-ink-1 uppercase border-b border-hair">{t.agents.connectors.st_other_creds}</p>
                 )}
                 {otherCreds.map((cred) => (
-                  <button type="button" key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
+                  <PressSurface key={cred.id} onPress={() => onLinkCredential(status.name, cred.id, cred.name)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 border-b border-hair last:border-0">
                     <div className="w-3 h-3 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="typo-body text-foreground truncate" title={cred.name}>{cred.name}</p>
-                      <p className="typo-body text-foreground">{cred.service_type}</p>
+                      <Tooltip content={cred.name}><p className="typo-body text-ink-1 truncate">{cred.name}</p></Tooltip>
+                      <p className="typo-body text-ink-1">{cred.service_type}</p>
                     </div>
-                  </button>
+                  </PressSurface>
                 ))}
               </>
             )}
@@ -82,14 +85,14 @@ export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose
       {swapOpen && alternatives.length > 0 && (
         <div className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="mt-3 border border-sky-500/20 rounded-card bg-background/40">
-            <p className="px-3 py-1.5 text-[11px] font-semibold text-sky-400/50 uppercase tracking-wider border-b border-sky-500/10">{t.agents.connectors.st_swap_alt}</p>
+          <div className="mt-3 border border-status-info/20 rounded-card bg-background/40">
+            <p className="px-3 py-1.5 typo-eyebrow text-status-info border-b border-status-info/10">{t.agents.connectors.st_swap_alt}</p>
             {alternatives.map((alt) => (
-              <button type="button" key={alt} onClick={() => { onSwap(statusName, alt); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-sky-500/10 transition-colors border-b border-sky-500/5 last:border-0">
-                <ArrowLeftRight className="w-3 h-3 text-sky-400/50 flex-shrink-0" />
-                <span className="typo-body text-foreground">{alt}</span>
-              </button>
+              <PressSurface key={alt} onPress={() => { onSwap(statusName, alt); onClose(); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 border-b border-hair last:border-0">
+                <ArrowLeftRight className="w-3 h-3 text-status-info flex-shrink-0" />
+                <span className="typo-body text-ink-1">{alt}</span>
+              </PressSurface>
             ))}
           </div>
         </div>
@@ -108,18 +111,14 @@ function LastCheckedNote({ result, onRetest }: { result: ConnectorTestResult; on
   if (!result.cached || !result.testedAt) return null;
   const stale = isStaleResult(result);
   return (
-    <p className={`typo-caption pl-4.5 flex items-center gap-1 ${stale ? 'text-amber-400' : 'text-foreground'}`}>
+    <p className={`typo-caption pl-4.5 flex items-center gap-1 ${stale ? 'text-status-warning' : 'text-ink-1'}`}>
       {stale && <Clock className="w-3 h-3 flex-shrink-0" />}
       <span>{t.agents.connectors.st_last_checked}</span>
       <RelativeTime timestamp={result.testedAt} />
       {stale && onRetest && (
-        <button
-          type="button"
-          onClick={onRetest}
-          className="ml-1 underline underline-offset-2 hover:text-amber-300 transition-colors cursor-pointer"
-        >
+        <Button variant="link" size="inline" onClick={onRetest} className="ml-1">
           {t.agents.connectors.st_retest}
-        </button>
+        </Button>
       )}
     </p>
   );
@@ -135,7 +134,7 @@ function LastVerdictNote({ verdict }: { verdict: ConnectorTestResult }) {
     ? t.agents.connectors.status_unverifiable
     : verdict.success ? t.agents.connectors.status_ready : t.agents.connectors.status_failed;
   return (
-    <p data-testid="connector-last-verdict" className="typo-caption pl-4.5 flex items-center gap-1 text-foreground">
+    <p data-testid="connector-last-verdict" className="typo-caption pl-4.5 flex items-center gap-1 text-ink-2">
       <span>{t.agents.connectors.st_last_checked}</span>
       <span>{label}</span>
       {verdict.testedAt && <RelativeTime timestamp={verdict.testedAt} />}
@@ -172,13 +171,19 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
         {status.linkError && (
           <div className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="mt-2.5 px-3 py-2 rounded-modal typo-body bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-start gap-1.5">
+            <div className="mt-2.5 px-3 py-2 rounded-modal typo-body bg-status-warning/10 border border-status-warning/20 text-status-warning flex items-start gap-1.5">
               <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
               <span className="flex-1">{status.linkError}</span>
               {onClearLinkError && (
-                <button type="button" aria-label={t.common.dismiss} onClick={() => onClearLinkError(status.name)} className="p-0.5 rounded hover:bg-amber-500/15 transition-colors flex-shrink-0">
-                  <X className="w-3 h-3" />
-                </button>
+                <Button
+                  type="button"
+                  aria-label={t.common.dismiss}
+                  onClick={() => onClearLinkError(status.name)}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="flex-shrink-0"
+                  icon={<X className="w-3 h-3" />}
+                />
               )}
             </div>
           </div>
@@ -192,7 +197,7 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
               <WifiOff className="w-3 h-3 flex-shrink-0" />
               <span>{t.agents.connectors.status_unreachable}</span>
             </div>
-            <p className="typo-body text-foreground pl-4.5">{t.agents.connectors.unreachable_hint}</p>
+            <p className="typo-body text-ink-1 pl-4.5">{t.agents.connectors.unreachable_hint}</p>
             {status.result.message && <p className="typo-body pl-4.5 break-all">{status.result.message}</p>}
             <LastCheckedNote result={status.result} onRetest={onRetest} />
             {status.lastVerdict && <LastVerdictNote verdict={status.lastVerdict} />}
@@ -203,8 +208,8 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
       {status.result && !status.testing && !unreachable && (
         <div className={`mt-2.5 px-3 py-2 rounded-modal typo-body ${
           unverifiable ? `${STATUS_CONFIG.unverifiable.bg} border ${STATUS_CONFIG.unverifiable.color}`
-            : status.result.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-              : 'bg-red-500/10 border border-red-500/20 text-red-400'
+            : status.result.success ? 'bg-status-success/10 border border-status-success/20 text-status-success'
+              : 'bg-status-error/10 border border-status-error/20 text-status-error'
         }`}>
           {status.result.success ? (
             <div className="space-y-1">
@@ -223,7 +228,7 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
                 <span>{translated?.friendly ?? status.result.message}</span>
               </div>
               {translated?.suggestion && (
-                <p className="typo-body text-red-400/60 pl-4.5">{translated.suggestion}</p>
+                <p className="typo-body text-status-error pl-4.5">{translated.suggestion}</p>
               )}
               <LastCheckedNote result={status.result} onRetest={onRetest} />
             </div>

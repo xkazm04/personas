@@ -1,4 +1,6 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { memo } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Ear, ExternalLink } from 'lucide-react';
 import { parsePayload, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -32,9 +34,9 @@ import { KIND_META, type StreamRowLabels } from '../libs/streamKinds';
 export const ROW_HEIGHT = 30;
 
 const KIND_TEXT: Record<string, string> = {
-  step: 'text-sky-300',
-  memory: 'text-amber-200/90',
-  deliberation: 'text-violet-300',
+  step: 'text-role-external',
+  memory: 'text-status-warning',
+  deliberation: 'text-role-agent',
 };
 
 /*
@@ -59,7 +61,7 @@ function ImportanceDots({ value }: { value: number }) {
       {[0, 1, 2, 3, 4].map((i) => (
         <span
           key={i}
-          className={`w-1 h-1 rounded-full ${i < filled ? 'bg-amber-300/90' : 'bg-foreground/20'}`}
+          className={`w-1 h-1 rounded-full ${i < filled ? 'bg-status-warning' : 'bg-ink-4'}`}
         />
       ))}
     </span>
@@ -96,14 +98,13 @@ export const StreamRow = memo(function StreamRow({
       ? (FAMILY_TEXT[fam ?? 'other'] ?? '')
       : item.kind === 'step'
         ? (STEP_TONE[item.label] ?? KIND_TEXT.step ?? '')
-        : (KIND_TEXT[kind] ?? 'text-foreground/60');
+        : (KIND_TEXT[kind] ?? 'text-ink-3');
   const KindIcon = KIND_META[kind].icon;
   const verb = head.verb ? labels.verb[head.verb] : null;
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(row)}
+    <PressSurface
+      onPress={() => onOpen(row)}
       /* TWO INSET SHADOWS, NOT A BORDER. The leading 2px rail is the team's
          colour (identity of the channel); the trailing 1px hairline is the row
          divider the log needs to read as a ledger rather than a wall of text.
@@ -116,29 +117,29 @@ export const StreamRow = memo(function StreamRow({
          and costs no layout at all. */
       style={{
         height: ROW_HEIGHT,
-        boxShadow: `inset 2px 0 0 ${team.teamColor}, inset 0 -1px 0 color-mix(in oklab, var(--foreground) 9%, transparent)`,
+        boxShadow: `inset 2px 0 0 ${team.teamColor}, inset 0 -1px 0 var(--hair)`,
       }}
-      className="w-full text-left flex items-center gap-2 px-3 hover:bg-secondary/25 transition-colors"
+      className="w-full flex items-center gap-2 px-3"
     >
-      <span className={`typo-code opacity-55 text-foreground tabular-nums flex-shrink-0`}>{hhmmss(item.at)}</span>
+      <span className="typo-data text-ink-3 flex-shrink-0">{hhmmss(item.at)}</span>
       <span className={`flex-shrink-0 ${tone}`}>
         <KindIcon className="w-3.5 h-3.5" role="img" aria-label={labels.kind[kind]} />
       </span>
-      <span className={`typo-code w-24 flex-shrink-0 truncate`} style={{ color }} title={sign}>
+      <Tooltip content={sign}><span className="typo-code w-24 flex-shrink-0 truncate" style={{ color }}>
         {sign}
-      </span>
+      </span></Tooltip>
       {verb && <span className={`typo-label flex-shrink-0 ${tone}`}>{verb}</span>}
       {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
-      <span className="typo-body text-foreground truncate" title={head.title}>
+      <Tooltip content={head.title}><span className="typo-body text-ink-1 truncate">
         {head.title}
-      </span>
+      </span></Tooltip>
       {heard > 0 && (
-        <span className={`ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-code text-foreground opacity-60`} title={`Heard by ${heard}`}>
+        <Tooltip content={`Heard by ${heard}`}><span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-data text-ink-3">
           <Ear className="w-3 h-3" /> {heard}
-        </span>
+        </span></Tooltip>
       )}
       {parsed?.artifact && (
-        <span className={`flex-shrink-0 inline-flex items-center gap-1 typo-code text-foreground opacity-70`}>
+        <span className="flex-shrink-0 inline-flex items-center gap-1 typo-code text-ink-2">
           <ExternalLink className="w-3 h-3" /> {parsed.artifact.label}
         </span>
       )}
@@ -147,10 +148,9 @@ export const StreamRow = memo(function StreamRow({
           and interactive elements don't nest. Short hash for the eye; the
           click applies the FULL id to the search lens. */}
       {item.assignmentId && (
-        <span
+        <Tooltip content={labels.assignment}><span
           role="button"
           tabIndex={-1}
-          title={labels.assignment}
           onClick={(e) => {
             if (!onAssignment) return;
             e.stopPropagation();
@@ -162,11 +162,11 @@ export const StreamRow = memo(function StreamRow({
             e.stopPropagation();
             onAssignment(item.assignmentId!);
           }}
-          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-full border border-border bg-secondary/20 typo-code tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
+          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-interactive border border-hair bg-surface-1 typo-data text-ink-3 hover:text-ink-1 transition-colors`}
         >
           #{item.assignmentId.slice(0, 4)}
-        </span>
+        </span></Tooltip>
       )}
-    </button>
+    </PressSurface>
   );
 });

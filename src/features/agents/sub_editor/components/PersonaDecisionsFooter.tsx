@@ -13,6 +13,7 @@ import {
   type CompanionDesignDecision,
 } from '@/api/companion';
 import { navigateToCompanions } from '@/features/companions/navigation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Footer chip on the persona editor showing Athena's design decisions
@@ -67,48 +68,49 @@ export function PersonaDecisionsFooter({ personaId }: { personaId: string }) {
 
   return (
     <div
-      className="border-t border-foreground/10 bg-secondary/30 px-6 py-2"
+      className="border-t border-hair bg-surface-1 px-6 py-2"
       data-testid="persona-decisions-footer"
     >
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground/90 rounded-interactive"
           aria-expanded={open}
+          variant="ghost"
+          size="sm"
+          icon={<Chevron className="w-3 h-3" />}
         >
-          <Chevron className="w-3 h-3" />
-          <ScrollText className="w-3 h-3 text-fuchsia-400/85" />
+          <ScrollText className="w-3 h-3 text-role-highlight" />
           <span>
-            {decisions.length === 1
-              ? t.agents.persona_decisions_footer_one
-              : t.agents.persona_decisions_footer_many.replace(
-                  '{count}',
-                  String(decisions.length),
-                )}
+          {decisions.length === 1
+          ? t.agents.persona_decisions_footer_one
+          : t.agents.persona_decisions_footer_many.replace(
+          '{count}',
+          String(decisions.length),
+          )}
           </span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={handleOpenFullAudit}
-          className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/80 rounded-interactive"
-          title={t.agents.persona_decisions_footer_open_audit}
-        >
-          <ExternalLink className="w-3 h-3" />
-          <span>{t.agents.persona_decisions_footer_open_audit}</span>
-        </button>
+          tooltip={t.agents.persona_decisions_footer_open_audit}
+          variant="ghost"
+          size="sm"
+          className="ml-auto"
+          icon={<ExternalLink className="w-3 h-3" />}
+        ><span>{t.agents.persona_decisions_footer_open_audit}</span></Button>
       </div>
       {open && (
-        <ol className="mt-2 space-y-1.5 pl-5 border-l border-fuchsia-500/20">
+        <ol className="mt-2 space-y-1.5 pl-5 border-l border-role-highlight/20">
           {visible.map((d) => (
             <li key={d.id} className="space-y-0.5">
-              <div className="flex items-baseline gap-1.5 typo-caption text-foreground/85">
+              <div className="flex items-baseline gap-1.5 typo-caption text-ink-2">
                 <span className="font-medium">{d.label}</span>
-                <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
+                <ChevronRight className="w-3 h-3 text-ink-1 shrink-0" />
                 <span>{d.choice}</span>
               </div>
-              <div className="flex items-baseline gap-1.5 typo-caption text-foreground pl-1">
-                <GitBranch className="w-3 h-3 text-foreground shrink-0" />
+              <div className="flex items-baseline gap-1.5 typo-caption text-ink-2 pl-1">
+                <GitBranch className="w-3 h-3 text-ink-1 shrink-0" />
                 <span className="leading-snug">{d.rationale}</span>
               </div>
             </li>

@@ -2,6 +2,7 @@ import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import { ChevronRight, CheckCircle2, CircleDashed, XCircle } from 'lucide-react';
 import { formatDuration, formatCost } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface ChainSpanRowProps {
   trace: ExecutionTrace;
@@ -45,7 +46,7 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
     ? 'text-status-error'
     : settled
       ? 'text-status-success'
-      : 'text-foreground';
+      : 'text-ink-1';
 
   // Six fixed-width slots on one non-wrapping line clipped this row below
   // ~420px, against a parent that hides its overflow. The rest of the detail
@@ -53,31 +54,29 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
   // the waterfall pans inside its own scroller); this row wraps instead — the
   // metrics group drops to a second line rather than off the edge.
   return (
-    <button
-      type="button"
-      onClick={onOpen}
+    <PressSurface
+      onPress={onOpen}
       disabled={isCurrent}
-      className={`w-full flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 text-left transition-colors ${
-        isCurrent ? 'bg-primary/10 cursor-default' : 'hover:bg-secondary/40'
-      }`}
+      selected={isCurrent}
+      className="w-full flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5"
       data-testid="chain-span-row"
     >
-      <span className="typo-code text-foreground tabular-nums w-5 text-right flex-shrink-0">{index + 1}</span>
+      <span className="typo-code text-ink-1 tabular-nums w-5 text-right flex-shrink-0">{index + 1}</span>
       <StatusIcon className={`w-4 h-4 flex-shrink-0 ${statusClass}`} data-testid="chain-span-status" />
-      <span className="typo-code text-foreground flex-shrink-0">#{trace.execution_id.slice(0, 8)}</span>
+      <span className="typo-code text-ink-1 flex-shrink-0">#{trace.execution_id.slice(0, 8)}</span>
       {isCurrent && (
-        <span className="typo-code px-1.5 py-0.5 rounded-card bg-primary/15 text-primary/80 border border-primary/20 flex-shrink-0">
+        <span className="typo-code text-primary/80 flex-shrink-0">
           {e.chain_current}
         </span>
       )}
-      <span className="typo-code text-foreground ml-auto whitespace-nowrap flex-shrink-0">{tx(e.chain_spans_count, { count: trace.spans.length })}</span>
-      <span className="typo-code text-foreground w-16 text-right flex-shrink-0">{formatDuration(trace.total_duration_ms)}</span>
-      <span className="typo-code text-foreground w-20 text-right flex-shrink-0" data-testid="chain-span-cost">
+      <span className="typo-code text-ink-1 ml-auto whitespace-nowrap flex-shrink-0">{tx(e.chain_spans_count, { count: trace.spans.length })}</span>
+      <span className="typo-code text-ink-1 w-16 text-right flex-shrink-0">{formatDuration(trace.total_duration_ms)}</span>
+      <span className="typo-code text-ink-1 w-20 text-right flex-shrink-0" data-testid="chain-span-cost">
         {pricedSpans > 0 ? formatCost(cost, { precision: 4, language }) : '-'}
       </span>
       {isCurrent
         ? <span className="w-3.5 h-3.5 flex-shrink-0" />
-        : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
-    </button>
+        : <ChevronRight className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />}
+    </PressSurface>
   );
 }

@@ -6,6 +6,7 @@
  * Memory Actions and the main content grid.
  */
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Sparkles,
@@ -44,45 +45,45 @@ const TYPE_CONFIG: Record<RecommendationType, {
 }> = {
   downgrade_model: {
     icon: TrendingDown,
-    accent: 'text-cyan-400',
-    bg: 'bg-cyan-500/8',
-    border: 'border-cyan-500/15',
-    badge: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20',
+    accent: 'text-role-highlight',
+    bg: 'bg-role-highlight/8',
+    border: 'border-role-highlight/15',
+    badge: 'bg-role-highlight/10 text-role-highlight border-role-highlight/20',
   },
   reduce_retries: {
     icon: Zap,
-    accent: 'text-amber-400',
-    bg: 'bg-amber-500/8',
-    border: 'border-amber-500/15',
-    badge: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+    accent: 'text-status-warning',
+    bg: 'bg-status-warning/8',
+    border: 'border-status-warning/15',
+    badge: 'bg-status-warning/10 text-status-warning border-status-warning/20',
   },
   investigate_failures: {
     icon: Search,
-    accent: 'text-rose-400',
-    bg: 'bg-rose-500/8',
-    border: 'border-rose-500/15',
-    badge: 'bg-rose-500/10 text-rose-300 border-rose-500/20',
+    accent: 'text-status-error',
+    bg: 'bg-status-error/8',
+    border: 'border-status-error/15',
+    badge: 'bg-status-error/10 text-status-error border-status-error/20',
   },
   consolidate_personas: {
     icon: Sparkles,
-    accent: 'text-violet-400',
-    bg: 'bg-violet-500/8',
-    border: 'border-violet-500/15',
-    badge: 'bg-violet-500/10 text-violet-300 border-violet-500/20',
+    accent: 'text-role-agent',
+    bg: 'bg-role-agent/8',
+    border: 'border-role-agent/15',
+    badge: 'bg-role-agent/10 text-role-agent border-role-agent/20',
   },
   cost_anomaly: {
     icon: DollarSign,
-    accent: 'text-red-400',
-    bg: 'bg-red-500/8',
-    border: 'border-red-500/15',
-    badge: 'bg-red-500/10 text-red-300 border-red-500/20',
+    accent: 'text-status-error',
+    bg: 'bg-status-error/8',
+    border: 'border-status-error/15',
+    badge: 'bg-status-error/10 text-status-error border-status-error/20',
   },
   healthy_fleet: {
     icon: CheckCircle2,
-    accent: 'text-emerald-400',
-    bg: 'bg-emerald-500/8',
-    border: 'border-emerald-500/15',
-    badge: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+    accent: 'text-status-success',
+    bg: 'bg-status-success/8',
+    border: 'border-status-success/15',
+    badge: 'bg-status-success/10 text-status-success border-status-success/20',
   },
 };
 
@@ -139,18 +140,17 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
     <div
       className={`animate-fade-slide-in rounded-modal border ${config.border} ${config.bg} overflow-hidden`}
     >
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
+      <PressSurface
+        onPress={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/[0.04] transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3"
       >
         <div className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${config.badge} border`}>
           <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-heading text-foreground/90">
+            <span className="typo-heading text-ink-2">
               {rec.title}
             </span>
             <span className={`typo-label px-1.5 py-0.5 rounded-input ${config.badge} border`}>
@@ -164,16 +164,16 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
         <div className="flex-shrink-0 text-foreground">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
-      </button>
+      </PressSurface>
 
       {expanded && (
           <div
             className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="px-4 pb-3 pt-1 border-t border-primary/5 space-y-2.5">
+            <div className="px-4 pb-3 pt-1 border-t border-hair space-y-2.5">
               {/* Impact */}
               <div className="flex items-start gap-2">
-                <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-ink-2 mt-0.5 w-16 flex-shrink-0">
                   {t.overview.fleet_optimization.label_impact}
                 </span>
                 <span className="typo-body text-foreground">{rec.impact}</span>
@@ -181,7 +181,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 
               {/* Action */}
               <div className="flex items-start gap-2">
-                <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-ink-2 mt-0.5 w-16 flex-shrink-0">
                   {t.overview.fleet_optimization.label_action}
                 </span>
                 <span className="typo-body text-foreground">{rec.suggestedAction}</span>
@@ -190,7 +190,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {/* Affected agents */}
               {rec.personaNames.length > 0 && (
                 <div className="flex items-start gap-2">
-                  <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
+                  <span className="typo-label text-ink-2 mt-0.5 w-16 flex-shrink-0">
                     {t.overview.fleet_optimization.label_agent}
                   </span>
                   <span className="typo-body text-foreground">
@@ -205,7 +205,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
       {/* Follow-up actions: tune the affected agent in its Lab, or hand the
           whole suggestion to Athena. Always visible (no expand needed). */}
       {showActions && (
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-t border-primary/5">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-t border-hair">
           {personaId && (
             <Tooltip content={tx(t.overview.fleet_optimization.open_lab_hint, { persona: personaName ?? '' })}>
               <Button
@@ -259,7 +259,7 @@ export default function FleetOptimizationCard() {
 
   return (
     <div className="space-y-1.5">
-      <h3 className="typo-label text-foreground px-1 flex items-center gap-1.5">
+      <h3 className="typo-label text-ink-2 px-1 flex items-center gap-1.5">
         <Sparkles className="w-3 h-3" />
         {t.overview.fleet_optimization.title}
       </h3>

@@ -2,6 +2,8 @@ import { Sparkles, Check, X, AlertTriangle } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sessionAttention, isNeverAttached, type FleetTileApproval } from './fleetAttention';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface Props {
   session: FleetSession;
@@ -33,37 +35,34 @@ export function FleetTileAthenaBar({ session, approvals, asking, onApprove, onRe
   if (suggestion) {
     return (
       <div
-        className="flex items-center gap-1.5 px-2 py-1 border-t border-violet-400/30 bg-violet-500/12 shrink-0"
+        className="flex items-center gap-1.5 px-2 py-1 border-t border-hair bg-surface-1 shrink-0"
         data-testid={`fleet-athena-suggest-${session.id}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <Sparkles className="w-3 h-3 text-violet-300 shrink-0" aria-hidden="true" />
-        <span
-          className="typo-caption truncate flex-1 min-w-0 text-violet-100 font-mono"
-          title={suggestion.rationale}
+        <Sparkles className="w-3 h-3 text-role-agent shrink-0" aria-hidden="true" />
+        <Tooltip content={suggestion.rationale}><span
+          className="typo-caption truncate flex-1 min-w-0 text-role-agent font-mono"
         >
           {suggestion.text || suggestion.rationale}
-        </span>
-        <button
+        </span></Tooltip>
+        <Button variant="ghost" size="icon-sm"
           type="button"
           data-testid={`fleet-athena-approve-${session.id}`}
           onClick={() => onApprove(suggestion.id)}
           aria-label={t.plugins.fleet.athena_approve_send}
-          title={t.plugins.fleet.athena_approve_send}
-          className="flex items-center rounded-interactive p-1 text-emerald-300 transition-colors hover:bg-emerald-500/20"
+          tooltip={t.plugins.fleet.athena_approve_send}
         >
           <Check className="w-3.5 h-3.5" />
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="icon-sm"
           type="button"
           data-testid={`fleet-athena-reject-${session.id}`}
           onClick={() => onReject(suggestion.id)}
           aria-label={t.plugins.fleet.athena_dismiss}
-          title={t.plugins.fleet.athena_dismiss}
-          className="flex items-center rounded-interactive p-1 text-foreground transition-colors hover:bg-secondary/50"
+          tooltip={t.plugins.fleet.athena_dismiss}
         >
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
     );
   }
@@ -71,11 +70,11 @@ export function FleetTileAthenaBar({ session, approvals, asking, onApprove, onRe
   if (asking) {
     return (
       <div
-        className="flex items-center gap-1.5 px-2 py-1 border-t border-primary/15 bg-secondary/30 shrink-0"
+        className="flex items-center gap-1.5 px-2 py-1 border-t border-hair bg-surface-1 shrink-0"
         data-testid={`fleet-athena-thinking-${session.id}`}
         role="status"
       >
-        <Sparkles className="w-3 h-3 text-primary animate-pulse shrink-0" aria-hidden="true" />
+        <Sparkles className="w-3 h-3 text-ink-2 shrink-0" aria-hidden="true" />
         <span className="typo-caption text-foreground">{t.plugins.fleet.athena_thinking}</span>
       </div>
     );
@@ -83,29 +82,28 @@ export function FleetTileAthenaBar({ session, approvals, asking, onApprove, onRe
 
   if (isNeverAttached(session)) {
     return (
-      <div
-        className="flex items-center gap-1.5 px-2 py-1 border-t border-rose-400/25 bg-rose-500/10 text-rose-200 shrink-0"
+      <Tooltip content={t.plugins.fleet.athena_never_attached_hint}><div
+        className="flex items-center gap-1.5 px-2 py-1 border-t border-hair bg-surface-1 text-status-error shrink-0"
         data-testid={`fleet-athena-never-attached-${session.id}`}
-        title={t.plugins.fleet.athena_never_attached_hint}
       >
         <AlertTriangle className="w-3 h-3 shrink-0" aria-hidden="true" />
         <span className="typo-caption truncate">{t.plugins.fleet.athena_never_attached}</span>
-      </div>
+      </div></Tooltip>
     );
   }
 
   if (sessionAttention(session) === 'stale') {
     return (
-      <button
+      <Button variant="accent" tone="warning" size="sm"
         type="button"
         data-testid={`fleet-athena-ask-${session.id}`}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={() => onAsk(session)}
-        className="flex items-center gap-1.5 px-2 py-1 border-t border-amber-400/25 bg-amber-500/10 text-amber-200 transition-colors hover:bg-amber-500/20 shrink-0"
+        className="shrink-0"
       >
         <Sparkles className="w-3 h-3 shrink-0" aria-hidden="true" />
         <span className="typo-caption">{t.plugins.fleet.athena_ask}</span>
-      </button>
+      </Button>
     );
   }
 

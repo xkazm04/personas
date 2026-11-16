@@ -66,7 +66,7 @@ export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () =>
     <BaseModal isOpen onClose={onClose} titleId="kpi-proposal-modal-title" size="md" portal>
       <div className="flex flex-col max-h-[80vh]" data-testid="kpi-proposal-modal">
         {/* Header band */}
-        <div className="flex items-start gap-3 px-5 py-4 border-b border-primary/10">
+        <div className="flex items-start gap-3 px-5 py-4 border-b border-hair">
           <span className="rounded-interactive bg-primary/10 p-2 flex-shrink-0">
             <CatIcon className="w-5 h-5 text-primary" aria-hidden />
           </span>
@@ -74,10 +74,10 @@ export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () =>
             <h2 id="kpi-proposal-modal-title" className="typo-heading text-foreground">
               {kpi.name}
             </h2>
-            <p className="typo-caption text-foreground mt-0.5">
+            <p className="typo-caption text-ink-2 mt-0.5">
               {cat.label(t)} · {cad.label(t)}
               {kpi.baseline_value != null && (
-                <span className="inline-flex items-center gap-1 ml-2 tabular-nums rounded-interactive border border-status-success/30 bg-status-success/10 px-1.5 py-0.5">
+                <span className="inline-flex items-center gap-1 ml-2 num rounded-interactive border border-status-success/30 bg-status-success/10 px-1.5 py-0.5">
                   <FlaskConical className="w-3 h-3" />
                   {tx(t.kpis.evidence_chip, { value: kpi.baseline_value, unit: kpi.unit || '' })}
                 </span>
@@ -109,51 +109,46 @@ export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () =>
           <Section title={t.kpis.section_how}>
             <p className="typo-body text-foreground">{describeMeasurement(kpi, t, tx)}</p>
             {kpi.baseline_value != null && (
-              <p className="typo-caption text-foreground mt-1 inline-flex items-center gap-1">
+              <p className="typo-caption text-ink-2 mt-1 inline-flex items-center gap-1">
                 {t.kpis.evidence_tooltip}
               </p>
             )}
-            <details className="typo-caption text-foreground opacity-80 mt-1.5">
+            <details className="typo-caption text-ink-2 mt-1.5">
               <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>
-              <code className="typo-code block mt-1 break-all rounded-input bg-secondary/30 p-2">
+              <code className="typo-code block mt-1 break-all rounded-input bg-surface-1 p-2">
                 {kpi.measure_config}
               </code>
             </details>
             {kpi.needed_connector && (
-              <button
-                type="button"
-                onClick={() => setConnectOpen(true)}
-                className="mt-2 inline-flex items-center gap-1 typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-secondary/40 transition-colors focus-ring"
-              >
-                <Cable className="w-3 h-3" />
-                {tx(t.kpis.connect_cta, { service: kpi.needed_connector })}
-              </button>
+              <Button variant="ghost" size="xs" className="mt-2" onClick={() => setConnectOpen(true)} icon={<Cable className="w-3 h-3" />}>
+{tx(t.kpis.connect_cta, { service: kpi.needed_connector })}
+</Button>
             )}
           </Section>
 
           <Section title={t.kpis.section_target}>
             <div className="flex items-end gap-3 flex-wrap">
-              <label className="flex flex-col gap-0.5 typo-caption text-foreground">
+              <label className="flex flex-col gap-0.5 typo-caption text-ink-2">
                 {tx(t.kpis.target_label, { unit: kpi.unit || '—' })}
                 <input
                   type="number"
                   defaultValue={kpi.target_value ?? undefined}
                   onChange={(e) => setTarget(e.target.value)}
-                  className="w-32 rounded-input border border-border bg-secondary/30 px-3 py-2 typo-body text-foreground tabular-nums focus-ring"
+                  className="w-32 rounded-input border border-border bg-surface-1 px-3 py-2 typo-data text-foreground focus-ring"
                   data-testid="kpi-modal-target-input"
                 />
               </label>
-              <label className="flex flex-col gap-0.5 typo-caption text-foreground">
+              <label className="flex flex-col gap-0.5 typo-caption text-ink-2">
                 {t.kpis.target_date_label}
                 <input
                   type="date"
                   defaultValue={kpi.target_date?.slice(0, 10) ?? undefined}
                   onChange={(e) => setDate(e.target.value)}
-                  className="rounded-input border border-border bg-secondary/30 px-3 py-2 typo-body text-foreground focus-ring"
+                  className="rounded-input border border-border bg-surface-1 px-3 py-2 typo-body text-foreground focus-ring"
                 />
               </label>
               {kpi.target_value != null && (
-                <p className="typo-caption text-foreground pb-2">
+                <p className="typo-caption text-ink-2 pb-2">
                   {t.kpis.suggested_target_label}: <Numeric value={kpi.target_value} /> {kpi.unit}
                 </p>
               )}
@@ -162,7 +157,7 @@ export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () =>
         </div>
 
         {/* Footer action band */}
-        <div className="flex items-center gap-2 px-5 py-3 border-t border-primary/10">
+        <div className="flex items-center gap-2 px-5 py-3 border-t border-hair">
           <div className="flex-1" />
           <Button
             size="sm"

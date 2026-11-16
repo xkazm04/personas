@@ -16,6 +16,9 @@ import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { capabilityLabel, connectorDisplayName } from './athenaLabels';
 import { useAthenaStore } from './athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 /**
  * Inline chat-card that surfaces the live state of a `connector_use`
  * background job: spinner during queued/running, ✓/✗ on completion. The
@@ -92,11 +95,10 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
       data-job-id={job.id}
       data-job-status={job.status}
     >
-      <button
-        type="button"
-        onClick={() => hasBody && setOpen((v) => !v)}
+      <PressSurface
+        onPress={() => hasBody && setOpen((v) => !v)}
         disabled={!hasBody}
-        className="flex items-center gap-2 w-full text-left typo-body disabled:cursor-default"
+        className="flex items-center gap-2 w-full typo-body disabled:cursor-default"
       >
         {hasBody ? (
           <Chevron className="w-3.5 h-3.5 text-foreground shrink-0" />
@@ -120,11 +122,11 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
         <span className="typo-caption text-foreground shrink-0">
           {statusLabel}
         </span>
-      </button>
+      </PressSurface>
       {open && hasBody && (
         <div className="mt-2 pl-5 border-l border-foreground/10 typo-caption text-foreground">
           {failed && job.errorText ? (
-            <div className="text-rose-300/90 whitespace-pre-wrap font-mono">
+            <div className="text-status-error whitespace-pre-wrap font-mono">
               {job.errorText}
             </div>
           ) : job.resultText ? (
@@ -139,15 +141,16 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
       {failed && (
         <div className="mt-2 pl-5 flex items-center gap-2 typo-caption">
           {retryingState.phase === 'idle' && (
-            <button
+            <Button
               type="button"
               onClick={handleRetry}
-              className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] px-2 py-0.5 text-foreground transition-colors focus-ring"
               data-testid="companion-connector-retry"
+              variant="secondary"
+              size="sm"
             >
               <RefreshCcw className="w-3 h-3" />
               <span>{t.athena.connector_call_retry}</span>
-            </button>
+            </Button>
           )}
           {retryingState.phase === 'firing' && (
             <span className="inline-flex items-center gap-1 text-foreground">
@@ -157,7 +160,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
           )}
           {retryingState.phase === 'fired' && (
             <span
-              className="inline-flex items-center gap-1 text-emerald-300/90"
+              className="inline-flex items-center gap-1 text-status-success"
               data-testid="companion-connector-retried"
             >
               <CheckCircle2 className="w-3 h-3" />
@@ -168,7 +171,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
             </span>
           )}
           {retryingState.phase === 'error' && (
-            <span className="inline-flex items-center gap-1 text-rose-300/90">
+            <span className="inline-flex items-center gap-1 text-status-error">
               <AlertCircle className="w-3 h-3" />
               {t.athena.connector_call_retry_failed.replace(
                 '{message}',
@@ -228,18 +231,18 @@ function iconFor(
   if (status === 'running') {
     return {
       Icon: Loader2,
-      accent: 'border-blue-500/30 bg-blue-500/[0.05]',
+      accent: 'border-status-info/30 bg-status-info/10/[0.05]',
     };
   }
   if (failed) {
     return {
       Icon: AlertCircle,
-      accent: 'border-rose-500/30 bg-rose-500/[0.06]',
+      accent: 'border-status-error/30 bg-status-error/10/[0.06]',
     };
   }
   return {
     Icon: CheckCircle2,
-    accent: 'border-emerald-500/30 bg-emerald-500/[0.06]',
+    accent: 'border-status-success/30 bg-status-success/10/[0.06]',
   };
 }
 
@@ -273,9 +276,9 @@ function RetriedJobStatus({ job }: { job: BackgroundJob | undefined }) {
   const { Icon } = iconFor(job.status, newFailed);
   const tone =
     job.status === 'completed'
-      ? 'text-emerald-300/90'
+      ? 'text-status-success'
       : newFailed
-        ? 'text-rose-300/90'
+        ? 'text-status-error'
         : 'text-foreground';
   return (
     <div

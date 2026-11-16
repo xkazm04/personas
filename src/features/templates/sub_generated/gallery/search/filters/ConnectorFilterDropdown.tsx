@@ -7,6 +7,8 @@ import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewpor
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export function ConnectorFilterDropdown({
   availableConnectors,
@@ -67,24 +69,25 @@ export function ConnectorFilterDropdown({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
+      <Button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+        variant="secondary"
+        size="md"
+        icon={<Filter className="w-3.5 h-3.5" />}
+        iconRight={<ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
       >
-        <Filter className="w-3.5 h-3.5" />
         {t.templates.search.connectors_label}
         {connectorFilter.length > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 typo-body">
+          <span className="ml-0.5 text-role-agent typo-body">
             {connectorFilter.length}
           </span>
         )}
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      </Button>
 
       {isOpen && (
-        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-primary/20 rounded-modal shadow-elevation-3 min-w-[280px] overflow-hidden">
-          <div className="px-3 py-2 border-b border-primary/10">
+        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-hair rounded-modal shadow-elevation-3 min-w-[280px] overflow-hidden">
+          <div className="px-3 py-2 border-b border-hair">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
               <input
@@ -93,7 +96,7 @@ export function ConnectorFilterDropdown({
                 value={dropdownSearch}
                 onChange={(e) => setDropdownSearch(e.target.value)}
                 placeholder={t.templates.search.search_connectors}
-                className="w-full pl-8 pr-3 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-modal text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                className="w-full pl-8 pr-3 py-1.5 typo-body bg-surface-2 border border-hair rounded-modal text-ink-1 placeholder:text-foreground focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
               />
             </div>
           </div>
@@ -103,11 +106,10 @@ export function ConnectorFilterDropdown({
               const meta = getConnectorMeta(item.name);
               const isSelected = connectorFilter.includes(item.name);
               return (
-                <button
-                  type="button"
+                <PressSurface
                   key={item.name}
-                  onClick={() => toggleConnector(item.name)}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-primary/5 transition-colors"
+                  onPress={() => toggleConnector(item.name)}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5"
                 >
                   <div
                     className="w-6 h-6 rounded-card flex items-center justify-center flex-shrink-0"
@@ -115,20 +117,20 @@ export function ConnectorFilterDropdown({
                   >
                     <ConnectorIcon meta={meta} size="w-4 h-4" />
                   </div>
-                  <span className="typo-body text-foreground/90 flex-1">{highlightMatch(meta.label, debouncedSearch.trim())}</span>
-                  <span className="typo-data text-foreground px-1.5 py-0.5 rounded-full bg-secondary/60">
+                  <span className="typo-body text-ink-1 flex-1">{highlightMatch(meta.label, debouncedSearch.trim())}</span>
+                  <span className="typo-data text-foreground px-1.5 py-0.5 rounded-full bg-surface-2">
                     {item.count}
                   </span>
                   <div
-                    className={`w-4.5 h-4.5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                    className={`w-4.5 h-4.5 rounded-interactive border flex items-center justify-center flex-shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-violet-500/30 border-violet-500/50'
-                        : 'border-primary/20'
+                        ? 'bg-role-agent/30 border-role-agent/50'
+                        : 'border-hair'
                     }`}
                   >
-                    {isSelected && <CheckCircle2 className="w-3 h-3 text-violet-300" />}
+                    {isSelected && <CheckCircle2 className="w-3 h-3 text-role-agent" />}
                   </div>
-                </button>
+                </PressSurface>
               );
             })}
             {filtered.length === 0 && (
@@ -139,17 +141,18 @@ export function ConnectorFilterDropdown({
           </div>
 
           {connectorFilter.length > 0 && (
-            <div className="border-t border-primary/10 px-1 py-1">
-              <button
-                type="button"
+            <div className="border-t border-hair px-1 py-1">
+              <Button
                 onClick={() => {
                   setConnectorFilter([]);
                   setIsOpen(false);
                 }}
-                className="w-full px-3.5 py-2 text-left typo-body text-foreground hover:text-foreground/95 hover:bg-primary/5 rounded-modal transition-colors"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
               >
                 {t.templates.search.clear_all}
-              </button>
+              </Button>
             </div>
           )}
         </div>

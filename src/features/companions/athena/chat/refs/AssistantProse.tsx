@@ -24,6 +24,8 @@ import { parseRefHref, rewriteRefHrefs } from './refGrammar';
 import { foldAfterSentences } from './replyFold';
 import { useReplyCap } from './useReplyCap';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * The `a` override. Non-ref links keep the renderer's default behaviour
  * (sanitized, new window) so overriding `a` costs nothing elsewhere.
@@ -93,17 +95,19 @@ export const AssistantProse = memo(function AssistantProse({
         components={REF_COMPONENTS}
       />
       {folded && (
-        <button
+        <Button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             setExpanded(true);
           }}
-          className="mt-1.5 typo-caption text-primary hover:underline underline-offset-2 rounded-interactive focus-ring"
           data-testid="companion-reply-read-rest"
+          variant="ghost"
+          size="sm"
+          className="mt-1.5"
         >
           {t.athena.reply_read_rest}
-        </button>
+        </Button>
       )}
     </>
   );

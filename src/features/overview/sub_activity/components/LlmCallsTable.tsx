@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { RefreshCw } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -248,12 +249,11 @@ export default function LlmCallsTable() {
                 <span className="typo-body text-foreground">{'—'}</span>
               )}
               {e.thinkingLevel && (
-                <span
-                  title={t.agents.executions.thinking_tooltip}
-                  className="shrink-0 px-1.5 py-0.5 rounded-card typo-caption bg-secondary/40 border border-primary/10 text-foreground"
+                <Tooltip content={t.agents.executions.thinking_tooltip}><span
+                  className="shrink-0 px-1.5 py-0.5 rounded-card typo-caption bg-surface-1 border border-hair text-ink-2"
                 >
                   {tokenLabel(t, 'thinking', e.thinkingLevel)}
-                </span>
+                </span></Tooltip>
               )}
             </span>
           );
@@ -310,7 +310,7 @@ export default function LlmCallsTable() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* This lens's control band, on the geometry Activity's FilterBar uses. */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
+      <div className="px-4 md:px-6 py-3 border-b border-hair flex items-center gap-2 flex-shrink-0">
         <SegmentedTabs<TimeWindow>
           tabs={windowTabs}
           activeTab={timeWindow}
@@ -320,17 +320,10 @@ export default function LlmCallsTable() {
           fullWidth={false}
           ariaLabel={t.overview.usage_filters.time_range_label}
         />
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border-primary/15 disabled:opacity-60"
-          title={t.common.refresh}
-        >
-          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="typo-body">{t.common.refresh}</span>
-        </button>
-        <span className="ml-auto typo-code text-foreground">
+        <Button variant="secondary" size="sm" onClick={handleRefresh} disabled={isRefreshing} tooltip={t.common.refresh} icon={<RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />}>
+<span className="typo-body">{t.common.refresh}</span>
+</Button>
+        <span className="ml-auto typo-code text-ink-2">
           {tx(t.overview.activity.showing, { count: rows.length, total: globalExecutionCounts.total })}
         </span>
       </div>

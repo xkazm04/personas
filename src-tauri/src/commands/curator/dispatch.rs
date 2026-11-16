@@ -287,6 +287,16 @@ pub(super) fn authorization_line() -> String {
          you are about to run - that line is the safe default for a human running it by \
          hand, and it has not been edited, so read it as still binding for every invocation \
          except this one.\n\
+         A push publishes every commit between the remote branch and the ref you push, not \
+         only the ones this run made - a pathspec confines a commit, never a push. In any \
+         project this run touches, list that range first (`git log --oneline \
+         origin/<branch>..<ref>`) and push only a ref whose range holds nothing but this \
+         run's own commits. A local default branch already ahead of its remote carries other \
+         sessions' work, and so does any branch cut from it or stacked on another unpushed \
+         branch: cut a worktree from `origin/<branch>`, carry your commits there and push \
+         that, or leave them committed locally and say so. This checkout's default branch is \
+         the one exception - sibling dispatched runs commit to it under this same grant, so \
+         their commits riding along is expected.\n\
          It does NOT cover, and nothing in this run may do: `--no-verify`, `LEFTHOOK=0`, \
          `HUSKY=0`, any `*_SKIP_GATE`, or force-pushing a default branch - a gate that \
          blocks is an answer; discarding uncommitted changes anywhere; touching a worktree \
@@ -730,6 +740,32 @@ mod tests {
             assert!(
                 line.contains(limit),
                 "the limit {limit} must travel with it"
+            );
+        }
+    }
+
+    /// The grant names where pushing stops, not only that pushing is allowed.
+    ///
+    /// A pathspec confines a commit and nothing confines a push: pushing a
+    /// local default branch that is already ahead of its remote publishes
+    /// other sessions' unreviewed commits under this run's name. An agent told
+    /// "you may push" with no stopping point will finish the whole path, and it
+    /// is right to, because nothing told it otherwise. So the brief must carry
+    /// the range check and the way out (a worktree cut from the remote branch).
+    /// The loop composer in `.claude/skills/curator/loop.py` sends the same
+    /// paragraph; the two doors must not drift on it.
+    #[test]
+    fn the_authorization_names_where_a_push_stops() {
+        let line = authorization_line();
+        for clause in [
+            "a pathspec confines a commit, never a push",
+            "git log --oneline origin/<branch>..<ref>",
+            "cut a worktree from `origin/<branch>`",
+            "leave them committed locally and say so",
+        ] {
+            assert!(
+                line.contains(clause),
+                "the push stopping point {clause:?} must travel with the grant: {line}"
             );
         }
     }

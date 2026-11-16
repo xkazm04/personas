@@ -23,7 +23,7 @@ function AttachmentThumb({
 
   return (
     <li data-testid="report-attachment-image" className="min-w-0">
-      <div className={`relative aspect-video overflow-hidden rounded-card border border-primary/15 bg-secondary/20 ${missing ? 'border-dashed' : ''}`}>
+      <div className={`relative aspect-video overflow-hidden rounded-card border border-hair bg-surface-1 ${missing ? 'border-dashed' : ''}`}>
         {missing ? (
           <AttachmentMissing framed={false} />
         ) : (
@@ -61,7 +61,7 @@ function AttachmentFileChip({ attachment }: { attachment: ReportAttachment }) {
   return (
     <li
       data-testid="report-attachment-file"
-      className="inline-flex max-w-full items-center gap-2 rounded-input border border-primary/15 bg-secondary/30 px-2.5 py-1.5"
+      className="inline-flex max-w-full items-center gap-2 rounded-input border border-hair bg-surface-1 px-2.5 py-1.5"
     >
       <Paperclip className="h-3.5 w-3.5 shrink-0 text-foreground" aria-hidden="true" />
       <span className="typo-body truncate">{attachment.name}</span>

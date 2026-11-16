@@ -14,7 +14,9 @@
  * `projectId`. The mode→capability matrix it advertises is enforced in
  * `engine/autopilot.rs`; keep the copy below in sync with that matrix.
  */
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 import { useEffect, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Power, Activity, Lightbulb, Rocket, type LucideIcon } from 'lucide-react';
 
 import { getAutopilotMode, setAutopilotMode, type AutopilotMode } from '@/api/devTools/autopilot';
@@ -80,27 +82,23 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
 
   return (
     <div className={className}>
-      <span className="block typo-label text-foreground/60 mb-1.5">{t.kpis.autopilot_label}</span>
-      <div role="radiogroup" aria-label={t.kpis.autopilot_label} className="inline-flex rounded-interactive border border-primary/15 bg-secondary/20 p-0.5">
+      <span className="block typo-label text-ink-3 mb-1.5">{t.kpis.autopilot_label}</span>
+      <div role="radiogroup" aria-label={t.kpis.autopilot_label} className="inline-flex gap-1">
         {MODES.map((m) => {
           const Icon = m.icon;
           const isActive = m.mode === mode;
           return (
-            <button
-              key={m.mode}
-              type="button"
-              role="radio"
-              aria-checked={isActive}
-              disabled={busy || mode === null}
-              onClick={() => select(m.mode)}
-              title={m.desc(t)}
-              className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 typo-caption transition-colors disabled:opacity-60 ${
-                isActive ? 'bg-background shadow-elevation-1' : 'text-foreground/55 hover:text-foreground/80'
-              }`}
-              style={isActive ? { color: m.accent } : undefined}
-            >
-              <Icon className="w-3.5 h-3.5" /> {m.label(t)}
-            </button>
+            <Tooltip key={m.mode} content={m.desc(t)}>
+              <OptionChip
+                role="radio"
+                selected={isActive}
+                disabled={busy || mode === null}
+                onSelect={() => select(m.mode)}
+                icon={<Icon className="w-3.5 h-3.5" />}
+              >
+                {m.label(t)}
+              </OptionChip>
+            </Tooltip>
           );
         })}
       </div>
@@ -111,7 +109,7 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
           onRetry={() => setReload((n) => n + 1)}
         />
       ) : active && (
-        <p className="typo-caption text-foreground/60 mt-1.5 max-w-md">{active.desc(t)}</p>
+        <p className="typo-caption text-ink-3 mt-1.5 max-w-md">{active.desc(t)}</p>
       )}
     </div>
   );

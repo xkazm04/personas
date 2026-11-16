@@ -123,7 +123,7 @@ export default function MemoriesPageGraph() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Brain className="w-5 h-5 text-violet-400" />}
+        icon={<Brain className="w-5 h-5 text-role-agent" />}
         iconColor="violet"
         title={t.overview.memories.title}
         subtitle={tx(memoriesTotal === 1 ? mui.stored_subtitle_one : mui.stored_subtitle, { count: memoriesTotal })}
@@ -144,10 +144,9 @@ export default function MemoriesPageGraph() {
             >
               {mui.review}
             </Button>
-            <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
-              <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
-              {t.common.add}
-            </button>
+            <Button variant="secondary" size="sm" onClick={() => setShowAddForm((v) => !v)} icon={<Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />}>
+{t.common.add}
+</Button>
           </div>
         }
       />
@@ -156,15 +155,15 @@ export default function MemoriesPageGraph() {
 
       <ContentBody flex>
         {/* Top stats + filter row */}
-        <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-hair bg-secondary/5 flex-shrink-0">
           <div className="flex items-center gap-3 typo-body flex-wrap mr-auto">
             <KpiMetric label={mui.kpi_nodes} value={stats.nodes} />
             <KpiDivider />
-            <KpiMetric label={mui.kpi_personas} value={stats.personas} tone="text-cyan-300" />
+            <KpiMetric label={mui.kpi_personas} value={stats.personas} tone="text-role-highlight" />
             <KpiDivider />
-            <KpiMetric label={mui.kpi_clusters} value={stats.categories} tone="text-violet-300" />
+            <KpiMetric label={mui.kpi_clusters} value={stats.categories} tone="text-role-agent" />
             <KpiDivider />
-            <KpiMetric label={mui.kpi_avg_importance} value={stats.avg.toFixed(1)} tone="text-amber-300" />
+            <KpiMetric label={mui.kpi_avg_importance} value={stats.avg.toFixed(1)} tone="text-status-warning" />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -173,18 +172,9 @@ export default function MemoriesPageGraph() {
               const colors = MEMORY_CATEGORY_COLORS[cat]!;
               const active = activeCategory === cat;
               return (
-                <button
-                  type="button"
-                  key={cat}
-                  onClick={() => { setActiveCategory(cat); setSelected(null); }}
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body transition-all border ${
-                    active
-                      ? `${colors.bg} ${colors.text} border-current/30`
-                      : 'text-foreground hover:text-foreground hover:bg-secondary/30 border-transparent'
-                  }`}
-                >
+                <Button variant={active ? "secondary" : "ghost"} size="sm" key={cat} onClick={() => { setActiveCategory(cat); setSelected(null); }}>
                   {colors.label}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -485,12 +475,12 @@ function PersonaLegend({ personas, memories, label }: { personas: { id: string; 
   if (personasInGraph.length === 0) return null;
 
   return (
-    <div className="absolute left-3 bottom-3 flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
-      <span className="typo-label text-foreground">{label}</span>
+    <div className="absolute left-3 bottom-3 flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-card border border-hair px-3 py-2">
+      <span className="typo-label text-ink-2">{label}</span>
       {personasInGraph.map((p) => (
         <div key={p.id} className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color ?? '#6B7280' }} />
-          <span className="typo-caption text-foreground truncate max-w-[100px]">{p.name}</span>
+          <span className="typo-caption text-ink-2 truncate max-w-[100px]">{p.name}</span>
         </div>
       ))}
     </div>
@@ -499,13 +489,13 @@ function PersonaLegend({ personas, memories, label }: { personas: { id: string; 
 
 function SizeLegend({ labels }: { labels: { size: string; importance: string; low: string; high: string } }) {
   return (
-    <div className="absolute left-3 top-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
-      <span className="typo-label text-foreground">{labels.size}</span>
-      <span className="typo-caption text-foreground">{labels.importance}</span>
+    <div className="absolute left-3 top-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-hair px-3 py-2">
+      <span className="typo-label text-ink-2">{labels.size}</span>
+      <span className="typo-caption text-ink-2">{labels.importance}</span>
       <svg width={10} height={10}><circle cx={5} cy={5} r={3} fill="currentColor" className="text-foreground" /></svg>
-      <span className="typo-caption text-foreground">{labels.low}</span>
+      <span className="typo-caption text-ink-2">{labels.low}</span>
       <svg width={16} height={16}><circle cx={8} cy={8} r={6} fill="currentColor" className="text-foreground" /></svg>
-      <span className="typo-caption text-foreground">{labels.high}</span>
+      <span className="typo-caption text-ink-2">{labels.high}</span>
     </div>
   );
 }
@@ -526,7 +516,7 @@ function DetailPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute right-3 top-3 z-50 w-80 rounded-modal border border-primary/20 bg-background/95 backdrop-blur-xl p-4 shadow-elevation-3"
+      className="absolute right-3 top-3 z-50 w-80 rounded-modal border border-hair bg-background/95 backdrop-blur-xl p-4 shadow-elevation-3"
     >
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex items-start gap-2 min-w-0">
@@ -535,20 +525,20 @@ function DetailPanel({
           </div>
           <div className="min-w-0">
             <p className="typo-body text-foreground line-clamp-2">{stripHtml(memory.title)}</p>
-            <p className="typo-caption text-foreground mt-0.5">{personaName}</p>
+            <p className="typo-caption text-ink-2 mt-0.5">{personaName}</p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="p-1 rounded-input hover:bg-secondary/40 text-foreground flex-shrink-0">
+        <Button variant="ghost" size="icon-sm" className="flex-shrink-0" aria-label={t.common.close} onClick={onClose}>
           <X className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-3">
-        <DetailStat label={t.overview.memory_detail.importance_label} value={`${memory.importance}/5`} tone="text-amber-300" />
+        <DetailStat label={t.overview.memory_detail.importance_label} value={`${memory.importance}/5`} tone="text-status-warning" />
         {/* Machine token from the backend — resolved through the token map, not
             printed raw (see the same fix on the dense table's Tier column). */}
         <DetailStat label={t.overview.memories_ui.col_tier} value={tokenLabel(t, 'memory_tier', memory.tier)} tone="text-foreground" />
-        <DetailStat label={t.overview.memories_ui.col_hits} value={memory.access_count} tone="text-emerald-300" />
+        <DetailStat label={t.overview.memories_ui.col_hits} value={memory.access_count} tone="text-status-success" />
       </div>
 
       <div className="h-1.5 w-full rounded-full bg-foreground/10 overflow-hidden mb-3">
@@ -557,9 +547,9 @@ function DetailPanel({
 
       <p className="typo-body text-foreground line-clamp-4 mb-3">{stripHtml(memory.content)}</p>
 
-      <div className="flex items-center justify-between typo-caption text-foreground pt-2 border-t border-primary/10">
+      <div className="flex items-center justify-between typo-caption text-ink-2 pt-2 border-t border-hair">
         <span><DebtText k="auto_last_seen_56462f81" /> {formatRelativeTime(lastSeen)}</span>
-        <button type="button" onClick={onDelete} className="text-red-400/80 hover:text-red-400">{t.common.delete}</button>
+        <Button variant="danger" size="sm" onClick={onDelete}>{t.common.delete}</Button>
       </div>
     </motion.div>
   );
@@ -567,8 +557,8 @@ function DetailPanel({
 
 function DetailStat({ label, value, tone = 'text-foreground' }: { label: string; value: string | number; tone?: string }) {
   return (
-    <div className="rounded-input bg-secondary/40 px-2 py-1.5 text-center border border-primary/10">
-      <p className="typo-label text-foreground">{label}</p>
+    <div className="rounded-input bg-surface-1 px-2 py-1.5 text-center border border-hair">
+      <p className="typo-label text-ink-2">{label}</p>
       <p className={`typo-data ${tone}`}>{value}</p>
     </div>
   );
@@ -576,9 +566,9 @@ function DetailStat({ label, value, tone = 'text-foreground' }: { label: string;
 
 function FilterPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className={`rounded-full px-3 py-1 typo-body transition-all ${active ? 'bg-primary/15 text-foreground' : 'text-foreground hover:text-foreground hover:bg-secondary/30'}`}>
+    <Button variant={active ? "secondary" : "ghost"} size="sm" onClick={onClick}>
       {children}
-    </button>
+    </Button>
   );
 }
 

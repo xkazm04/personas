@@ -97,6 +97,9 @@ export function UseCaseRow({
       data-testid={`uc-row-${uc.id}`}
       onClick={onOpen}
       onKeyDown={(e) => {
+        // Only the row's own keystrokes: Enter/Space on the run / power buttons or
+        // the policy slot bubble up here and must activate THOSE, not open the row.
+        if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onOpen();

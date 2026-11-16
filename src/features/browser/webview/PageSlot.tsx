@@ -60,7 +60,7 @@ export default function PageSlot({ hasTab }: PageSlotProps) {
     <div
       ref={ref}
       data-testid="webview-slot"
-      className="flex-1 min-h-0 min-w-0 rounded-card border border-primary/10 bg-background/40 overflow-hidden"
+      className="flex-1 min-h-0 min-w-0 rounded-card border border-hair bg-background/40 overflow-hidden"
     >
       {/* Only ever visible when no page covers the slot. A page IS covering it
           whenever a tab is open, so this copy is not competing with anything. */}

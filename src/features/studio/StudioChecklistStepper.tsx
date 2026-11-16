@@ -69,7 +69,7 @@ export default function StudioChecklistStepper({
             </span>
             <div className="min-w-0 flex-1">
               <div
-                className={`typo-body ${p.status === 'pending' && !draft ? 'text-foreground/50' : 'text-foreground'} ${p.status === 'active' ? 'font-medium' : ''}`}
+                className={`typo-body ${p.status === 'pending' && !draft ? 'text-ink-2' : 'text-foreground'} ${p.status === 'active' ? 'font-medium' : ''}`}
               >
                 {p.title}
               </div>

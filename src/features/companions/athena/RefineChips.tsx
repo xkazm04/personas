@@ -2,6 +2,8 @@ import { Code2, Maximize2, Minimize2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { companionRecordUxSignal } from '@/api/companion';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Three tiny refinement chips rendered below the latest completed
  * assistant bubble. Each chip resends the previous user message with a
@@ -63,7 +65,7 @@ export function RefineChips({
       {chips.map((c) => {
         const Icon = c.icon;
         return (
-          <button
+          <Button
             key={c.key}
             type="button"
             disabled={disabled}
@@ -72,11 +74,12 @@ export function RefineChips({
               companionRecordUxSignal('refine_chip', JSON.stringify({ variant: c.key }));
               onSend(`${priorUserMessage}${c.suffix}`);
             }}
-            className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] disabled:opacity-40 disabled:cursor-not-allowed px-2 py-0.5 typo-caption text-foreground transition-colors"
+            variant="secondary"
+            size="sm"
           >
             <Icon className="w-3 h-3" />
             <span>{c.label}</span>
-          </button>
+          </Button>
         );
       })}
     </div>

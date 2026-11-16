@@ -175,8 +175,7 @@ export function RunDeskControls({
         {dr.batch_from_accepted}
       </Button>
       <Button
-        variant="accent"
-        tone="warning"
+        variant="primary"
         size="sm"
         icon={<Play className="w-3.5 h-3.5" />}
         disabled={queued === 0}
@@ -186,8 +185,7 @@ export function RunDeskControls({
         {dr.start_batch}
       </Button>
       <Button
-        variant="accent"
-        tone="agent"
+        variant="secondary"
         size="sm"
         icon={<InfinityIcon className="w-3.5 h-3.5" />}
         disabled={!projectId || queued === 0}
@@ -221,8 +219,8 @@ export function RunDeskControls({
       {/* Concurrency stepper — `maxParallelTasks` existed in the slice but had
           no UI, so the value could only ever be its default. */}
       <Tooltip content={dr.concurrency_hint}>
-        <div className="flex items-center gap-1.5 ml-auto rounded-interactive border border-primary/10 bg-secondary/30 px-2 py-1">
-          <span className="typo-caption text-foreground">{dr.concurrency}</span>
+        <div className="flex items-center gap-1.5 ml-auto rounded-interactive border border-hair bg-surface-1 px-2 py-1">
+          <span className="typo-caption text-ink-3">{dr.concurrency}</span>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -232,7 +230,7 @@ export function RunDeskControls({
           >
             <Minus className="w-3 h-3" />
           </Button>
-          <span className="typo-caption tabular-nums w-4 text-center">{maxParallelTasks}</span>
+          <span className="typo-data w-4 text-center">{maxParallelTasks}</span>
           <Button
             variant="ghost"
             size="icon-sm"

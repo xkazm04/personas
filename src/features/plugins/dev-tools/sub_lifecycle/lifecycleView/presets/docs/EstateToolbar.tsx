@@ -55,7 +55,7 @@ export function EstateToolbar({ view }: { view: DocsView }) {
         <SearchField value={view.filter.query} onChange={view.setQuery} placeholder={dl.lcx7_search} inputRef={searchRef} testId="lcx7-search" />
       </div>
       {/* A live region stays mounted, so the count it announces is heard when a filter first applies. */}
-      <span className={`${LT.meta} tabular-nums`} role="status" data-testid="lcx7-shown">
+      <span className={`${LT.meta} num`} role="status" data-testid="lcx7-shown">
         {view.filtering ? tx(dl.lcx7_shown, { shown: view.shown, total: view.total }) : ''}
       </span>
       {view.filtering && (

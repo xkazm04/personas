@@ -25,7 +25,7 @@ describe('hover-only controls reveal on focus', () => {
 
   it('the credential rename pencil', () => {
     render(<SchemaManagerModal credential={cred} connector={undefined} onClose={() => {}} />);
-    const btn = screen.getByTitle(en.vault.databases.rename_credential);
+    const btn = screen.getByLabelText(en.vault.databases.rename_credential);
     expect(btn.className).toContain('focus-visible:opacity-100');
   });
 

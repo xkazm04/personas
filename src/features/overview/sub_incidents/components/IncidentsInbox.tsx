@@ -160,21 +160,15 @@ export default function IncidentsInbox() {
   return (
     <ContentBox data-testid="incidents-inbox">
       <ContentHeader
-        icon={<Inbox className="w-5 h-5 text-amber-400" />}
+        icon={<Inbox className="w-5 h-5 text-status-warning" />}
         iconColor="amber"
         title={t.overview.incidents.title}
         subtitle={t.overview.incidents.subtitle}
         actions={
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => { void refresh(); void autonomous.refresh(); }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
-              aria-label={t.overview.incidents.refresh}
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-              {t.overview.incidents.refresh}
-            </button>
+            <Button variant="secondary" size="sm" onClick={() => { void refresh(); void autonomous.refresh(); }} aria-label={t.overview.incidents.refresh} icon={<RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />}>
+{t.overview.incidents.refresh}
+</Button>
             {/* Hidden when there is nothing to clear: an action that would do
                 nothing must not offer itself. */}
             {clearableIds.length > 0 && (

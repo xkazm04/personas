@@ -26,7 +26,7 @@ export function PresetProcessHost({ preset, onOpenTeam }: PresetProcessHostProps
       <PresetProcessBlueprint preset={preset} a={a} customizing={customizing} setCustomizing={setCustomizing} />
 
       {/* Persistent footer — adoption gate / open-team CTA */}
-      <div className="flex-shrink-0 px-5 py-3 border-t border-primary/10 bg-background flex items-center justify-between gap-3">
+      <div className="flex-shrink-0 px-5 py-3 border-t border-hair bg-background flex items-center justify-between gap-3">
         <PresetFooterHint a={a} />
         <PresetPrimaryActions a={a} customizing={customizing} onToggleCustomize={() => setCustomizing((p) => !p)} />
       </div>

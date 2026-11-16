@@ -43,7 +43,7 @@ export default function RadioPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Headphones className="w-5 h-5 text-violet-400" />}
+        icon={<Headphones className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={t.radio.settings_title}
         subtitle={t.radio.manage_subtitle}

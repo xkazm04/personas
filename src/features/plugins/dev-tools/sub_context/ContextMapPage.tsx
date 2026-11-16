@@ -400,6 +400,8 @@ export default function ContextMapPage() {
   }, [activeProjectId, fetchContextGroups, fetchContexts]);
 
   const handleScan = useCallback(async () => {
+    // scanCodebase resolves without scanning when no project is active, which would strand the process row as running.
+    if (!activeProjectId) return;
     setScanLines([]);
     useOverviewStore.getState().processStarted(
       'context_scan',
@@ -410,13 +412,14 @@ export default function ContextMapPage() {
     try { await scanCodebase(activeProject?.root_path); } catch {
       useOverviewStore.getState().processEnded('context_scan', 'failed');
     }
-  }, [scanCodebase, activeProject?.root_path, activeProject?.name]);
+  }, [scanCodebase, activeProjectId, activeProject?.root_path, activeProject?.name]);
 
   // Incremental re-scan — only re-derives contexts for files that changed since
   // the last scan (delta_mode), so frequent updates stay cheap. Same streaming
   // + completion path as a full scan; the backend short-circuits when nothing
   // changed.
   const handleRescan = useCallback(async () => {
+    if (!activeProjectId) return;
     setScanLines([]);
     useOverviewStore.getState().processStarted(
       'context_scan',
@@ -427,7 +430,7 @@ export default function ContextMapPage() {
     try { await scanCodebase(activeProject?.root_path, true); } catch {
       useOverviewStore.getState().processEnded('context_scan', 'failed');
     }
-  }, [scanCodebase, activeProject?.root_path, activeProject?.name]);
+  }, [scanCodebase, activeProjectId, activeProject?.root_path, activeProject?.name]);
 
   // Plan a recurring (weekly) context-scan automation for this project. Creates
   // a `system_op_automation` schedule the background loop runs — surfacing in
@@ -468,7 +471,8 @@ export default function ContextMapPage() {
   }, [activeScanId, activeProject?.name, t, tx]);
 
   const handleCreateGroup = (name: string, color: string) => {
-    createContextGroup({ name, color });
+    if (!activeProjectId) return;
+    createContextGroup({ name, color }).catch(silentCatch('ContextMapPage:createContextGroup'));
   };
 
   // Inline per-context idea scan — reuses the scanner's agent matching + the
@@ -623,17 +627,17 @@ export default function ContextMapPage() {
           <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowNewGroup(true)}>{t.plugins.dev_tools.group}</Button>
           {hasContexts ? (
             <>
-              <Button variant="accent" tone="warning" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} loading={scanning} onClick={handleRescan}>{t.plugins.dev_tools.context_rescan}</Button>
+              <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} loading={scanning} onClick={handleRescan}>{t.plugins.dev_tools.context_rescan}</Button>
               <Button variant="secondary" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan} data-testid="context-scan-button">{t.plugins.dev_tools.context_full_rescan}</Button>
               <Button variant="secondary" size="sm" icon={<CalendarClock className="w-3.5 h-3.5" />} loading={planning} onClick={handlePlanUpdate}>{t.plugins.dev_tools.context_plan_update}</Button>
             </>
           ) : (
-            <Button variant="accent" tone="warning" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan} data-testid="context-scan-button">{t.plugins.dev_tools.scan_codebase}</Button>
+            <Button variant="secondary" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan} data-testid="context-scan-button">{t.plugins.dev_tools.scan_codebase}</Button>
           )}
           {lastScannedAt && (
             <span className="ml-auto inline-flex items-center gap-1.5 typo-caption text-foreground">
               {t.plugins.dev_tools.context_last_scanned}{' '}
-              <RelativeTime timestamp={lastScannedAt} className="tabular-nums" />
+              <RelativeTime timestamp={lastScannedAt} className="num" />
             </span>
           )}
         </ActionRow>

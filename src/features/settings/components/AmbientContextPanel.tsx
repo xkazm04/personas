@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch, extractMessage } from '@/lib/silentCatch';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { resolveError } from '@/lib/errors/errorRegistry';
+import Button from '@/features/shared/components/buttons/Button';
 
 const SOURCE_ICONS: Record<string, typeof Clipboard> = {
   clipboard: Clipboard,
@@ -182,7 +183,7 @@ export function AmbientContextPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Radio className="w-4 h-4 text-blue-400" />
+          <Radio className="w-4 h-4 text-status-info" />
           <h3 className="typo-body text-foreground">{s.title}</h3>
         </div>
         <AccessibleToggle
@@ -212,24 +213,25 @@ export function AmbientContextPanel() {
 
       {/* Live snapshot */}
       {ambientEnabled && ambientSnapshot && (
-        <div className="border border-primary/10 rounded-card bg-secondary/20 p-3 space-y-2">
+        <div className="border border-hair rounded-card bg-surface-1 p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="typo-caption text-foreground">{s.live_context}</span>
             <div className="flex items-center gap-2 typo-caption text-foreground">
               <span>{tx(s.total_signals, { count: Number(ambientSnapshot.totalSignalsCaptured) })}</span>
-              <button
+              <Button
                 type="button"
                 onClick={() => selectedPersonaId && fetchAmbientSnapshot(selectedPersonaId)}
-                className="hover:text-foreground/80 transition-colors"
+                variant="ghost"
+                size="icon-sm"
               >
                 <RefreshCw className="w-3 h-3" />
-              </button>
+              </Button>
             </div>
           </div>
 
           {ambientSnapshot.activeApp && (
             <div className="flex items-center gap-1.5 typo-caption">
-              <AppWindow className="w-3 h-3 text-purple-400" />
+              <AppWindow className="w-3 h-3 text-role-agent" />
               <span className="text-foreground font-medium">
                 {ambientSnapshot.activeApp}
                 {ambientSnapshot.activeWindowTitle && (
@@ -277,13 +279,14 @@ export function AmbientContextPanel() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="typo-caption text-foreground">{s.sensory_policy}</span>
-            <button
+            <Button
               type="button"
               onClick={handleReset}
-              className="typo-caption text-foreground hover:text-foreground/80 transition-colors"
+              variant="ghost"
+              size="sm"
             >
               {s.reset_defaults}
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -292,19 +295,17 @@ export function AmbientContextPanel() {
               { key: 'fileChanges' as const, label: s.file_changes, icon: FolderOpen },
               { key: 'appFocus' as const, label: s.app_focus, icon: AppWindow },
             ]).map(({ key, label, icon: Icon }) => (
-              <button
+              <Button
                 type="button"
                 key={key}
                 onClick={() => handlePolicyChange(key, !localPolicy[key])}
-                className={`flex flex-col items-center gap-1 p-2 rounded-card border typo-caption transition-colors ${
-                  localPolicy[key]
-                    ? 'border-blue-500/30 bg-blue-500/5 text-blue-400'
-                    : 'border-primary/10 bg-secondary/20 text-foreground'
-                }`}
+                variant={localPolicy[key] ? 'accent' : 'secondary'}
+                tone={localPolicy[key] ? 'info' : undefined}
+                size="sm"
+                icon={<Icon className="w-3.5 h-3.5" />}
               >
-                <Icon className="w-3.5 h-3.5" />
                 <span>{label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -320,32 +321,34 @@ export function AmbientContextPanel() {
                 onChange={(e) => setFilterInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddFilter()}
                 placeholder={s.focus_filter_placeholder}
-                className="flex-1 px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
+                className="flex-1 px-2 py-1 bg-surface-2 border border-hair rounded-interactive typo-caption text-foreground placeholder:text-ink-3"
               />
-              <button
+              <Button
                 type="button"
                 onClick={handleAddFilter}
                 disabled={!filterInput.trim()}
-                className="px-2 py-1 bg-secondary/40 hover:bg-secondary/60 typo-caption rounded text-foreground disabled:opacity-50"
+                variant="ghost"
+                size="xs"
               >
                 {s.add}
-              </button>
+              </Button>
             </div>
             {localPolicy.focusAppFilter.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {localPolicy.focusAppFilter.map((app, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-secondary/30 rounded typo-caption text-foreground"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-surface-1 rounded-interactive typo-caption text-foreground"
                   >
                     {app}
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleRemoveFilter(i)}
-                      className="text-foreground hover:text-foreground/80"
+                      variant="ghost"
+                      size="sm"
                     >
                       &times;
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>
@@ -359,17 +362,18 @@ export function AmbientContextPanel() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <Zap className="w-3.5 h-3.5 text-status-warning" />
               <span className="typo-caption text-foreground">{s.context_rules}</span>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => setShowRuleForm(!showRuleForm)}
-              className="flex items-center gap-1 typo-caption text-blue-400 hover:text-blue-300 transition-colors"
+              variant="ghost"
+              size="sm"
+              icon={<Plus className="w-3 h-3" />}
             >
-              <Plus className="w-3 h-3" />
               {s.add_rule}
-            </button>
+            </Button>
           </div>
 
           <p className="typo-caption text-foreground">
@@ -378,12 +382,12 @@ export function AmbientContextPanel() {
 
           {/* Rule creation form */}
           {showRuleForm && (
-            <div className="border border-primary/10 rounded-card bg-secondary/20 p-3 space-y-2.5">
+            <div className="border border-hair rounded-card bg-surface-1 p-3 space-y-2.5">
               <input
                 value={ruleName}
                 onChange={(e) => setRuleName(e.target.value)}
                 placeholder={s.rule_name_placeholder}
-                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
+                className="w-full px-2 py-1 bg-surface-2 border border-hair rounded-interactive typo-caption text-foreground placeholder:text-ink-3"
               />
 
               <div className="space-y-1">
@@ -394,18 +398,16 @@ export function AmbientContextPanel() {
                     { src: 'file_watcher' as const, label: s.file_changes },
                     { src: 'app_focus' as const, label: s.app_focus },
                   ]).map(({ src, label }) => (
-                    <button
+                    <Button
                       type="button"
                       key={src}
                       onClick={() => toggleSource(src)}
-                      className={`px-2 py-0.5 rounded typo-caption border transition-colors ${
-                        ruleSources.includes(src)
-                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                          : 'border-primary/15 bg-secondary/30 text-foreground'
-                      }`}
+                      variant={ruleSources.includes(src) ? 'accent' : 'secondary'}
+                      tone={ruleSources.includes(src) ? 'warning' : undefined}
+                      size="xs"
                     >
                       {label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -414,7 +416,7 @@ export function AmbientContextPanel() {
                 value={ruleSummaryContains}
                 onChange={(e) => setRuleSummaryContains(e.target.value)}
                 placeholder={s.summary_contains_placeholder}
-                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
+                className="w-full px-2 py-1 bg-surface-2 border border-hair rounded-interactive typo-caption text-foreground placeholder:text-ink-3"
               />
 
               <div className="grid grid-cols-2 gap-2">
@@ -422,13 +424,13 @@ export function AmbientContextPanel() {
                   value={rulePathGlob}
                   onChange={(e) => setRulePathGlob(e.target.value)}
                   placeholder={s.file_glob_placeholder}
-                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
+                  className="px-2 py-1 bg-surface-2 border border-hair rounded-interactive typo-caption text-foreground placeholder:text-ink-3"
                 />
                 <input
                   value={ruleAppFilter}
                   onChange={(e) => setRuleAppFilter(e.target.value)}
                   placeholder={s.app_filter_placeholder}
-                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
+                  className="px-2 py-1 bg-surface-2 border border-hair rounded-interactive typo-caption text-foreground placeholder:text-ink-3"
                 />
               </div>
 
@@ -438,7 +440,7 @@ export function AmbientContextPanel() {
                   <select
                     value={ruleAction}
                     onChange={(e) => setRuleAction(e.target.value as ContextAction)}
-                    className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground"
+                    className="w-full px-2 py-1 bg-surface-2 border border-hair rounded-interactive typo-caption text-foreground"
                   >
                     <option value="triggerExecution">{s.action_trigger}</option>
                     <option value="emitEvent">{s.action_emit}</option>
@@ -458,21 +460,23 @@ export function AmbientContextPanel() {
               </div>
 
               <div className="flex justify-end gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowRuleForm(false)}
-                  className="px-2.5 py-1 typo-caption text-foreground hover:text-foreground/80 transition-colors"
+                  variant="ghost"
+                  size="xs"
                 >
                   {s.cancel}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleAddRule}
                   disabled={!ruleName.trim()}
-                  className="px-2.5 py-1 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 typo-caption rounded-input transition-colors disabled:opacity-50"
+                  variant="ghost"
+                  size="xs"
                 >
                   {s.create_rule}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -485,10 +489,10 @@ export function AmbientContextPanel() {
               {contextRules.map((rule) => (
                 <div
                   key={rule.id}
-                  className="flex items-center justify-between px-2.5 py-1.5 border border-primary/10 rounded-card bg-secondary/10"
+                  className="flex items-center justify-between px-2.5 py-1.5 border border-hair rounded-card bg-secondary/10"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-amber-400' : 'text-foreground'}`} />
+                    <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-status-warning' : 'text-foreground'}`} />
                     <div className="min-w-0">
                       <span className="typo-caption text-foreground block truncate">{rule.name}</span>
                       <span className="typo-caption text-foreground block truncate">
@@ -498,13 +502,15 @@ export function AmbientContextPanel() {
                       </span>
                     </div>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => removeContextRule(rule.id)}
-                    className="text-foreground hover:text-red-400 transition-colors shrink-0 ml-2"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 ml-2"
                   >
                     <Trash2 className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>

@@ -1,0 +1,174 @@
+{
+ "schema": "conform-run/1",
+ "worker": "10e0d8b3-8b4f-4646-a322-9656ffb7b96d",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T02:44:59.802086+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-triggers",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:93 isWithinActiveWindow, documented as a mirror of Rust ActiveWindow::is_active_at, checks TODAY's weekday for the after-midnight part of an overnight window, while Rust (src-tauri/core/src/models/trigger.rs, overnight branch) checks the PREVIOUS weekday. For a Monday-only 22:00-06:00 window, the badge shows Tuesday 05:00 as 'sleeping' while the engine fires, and shows Monday 05:00 as 'armed' while the engine does not. The only overnight test lists all seven days, so it never reaches this decision, and no test compares the TS mirror with Rust.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:120 All seven days are listed, so the day-membership decision for the overnight tail is never reached. Changing it to prev-weekday, or leaving it as today, passes either way."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "deviation",
+     "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:89 The mirror claim lives only in a comment. Nothing reads is_active_at, and no Rust test names this file for the window logic (TIME_BASED_KINDS has such a tripwire; this function does not). The mirror has already drifted."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:23 A fixed instant is injected, so no test depends on the wall clock or the host timezone."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:71 The regression test asserts the exact shape that shipped, so the old enabled-only reading would fail it."
+    }
+   ]
+  },
+  {
+   "context": "stores-slices-overview",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/overview/homeSpineWindows.test.ts:23 The test's name claims the 24h boundary, but its rows sit an hour either side of it (NOW-HOUR, NOW-DAY-HOUR). Changing `age <= DAY_MS` (homeSpineWindows.ts:46) or `age <= 2 * DAY_MS` to `<` passes every computeActivePersonaWindow test. The sibling computeEventWindow does pin its exact cutoff (test line 56).",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/overview/homeSpineWindows.ts:46 The decision the test name claims is never reached by any fixture. Low severity, but the name overstates. The producer discrimination in personaHealthSlice.bundle.test.ts:143 (proxy vs measured) is good practice."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/overview/homeSpineWindows.test.ts:4 Window helpers take an injected now. No wall clock is used."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/overview/eventSlice.test.ts:32 Each test builds a fresh slice, so nothing is inherited from the previous test."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/overview/eventSlice.test.ts:65 The regression test's control is its own fix: the pre-fix module Map would compute delta 0 and fail."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/network/__tests__/meshSliceParity.test.ts:15 The needle carries a typed declaration shape that prose cannot spell, and it fails loudly when not found."
+    },
+    {
+     "technique": "configuration-axes-cross-the-ladder",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/network/networkSlice.test.ts:142 Exercises the no-p2p build cell inside the default run."
+    }
+   ]
+  },
+  {
+   "context": "vault-database-tests",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:25 The file claims parity between the backend's introspect_db_tables/columns output and the UI parser, but the 'backend result' is a hand-written QueryResult. Renaming a column alias in the Rust SQL (e.g. `table_type` at src-tauri/engine/src/db_query.rs:965) breaks TablesTab while this test stays green. The column names cross the process boundary as untyped strings, which is exactly where a behavioural pin is owed.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:27 The backend side is asserted from a comment, not read. Only the parser is pinned, so the name overstates. The repo's own Rust-source pins (e.g. api/__tests__) show the far side is readable."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:173 The poll deadline is asserted on a virtual clock on both sides of NL_QUERY_POLL_TIMEOUT_MS."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:55 The module-scoped transcript cache, which survives remounts by design, is reset per test."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:171 The 61s probe is chosen so the old 60s watchdog would fail it. The regression's control is its fix."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "shared-components-layout",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "api-bridge-tests",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T02:44:59.802086+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "negative-control-tests",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "triggers-triggers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T02:44:59.802086+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "configuration-axes-cross-the-ladder",
+    "isolation-lanes",
+    "negative-control-tests",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "stores-slices-overview",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T02:44:59.802086+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "isolation-lanes",
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "vault-database-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

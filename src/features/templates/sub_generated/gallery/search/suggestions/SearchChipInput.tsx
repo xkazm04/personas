@@ -39,10 +39,10 @@ function SearchChipInputImpl({
   const showAutocomplete = showPrefixAutocomplete || showBrowse;
 
   return (
-    <div className={`relative flex-1 min-w-0 max-w-[400px] flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-modal transition-all ${
+    <div className={`relative flex-1 min-w-0 max-w-[400px] flex items-center flex-wrap gap-1 bg-surface-2 border rounded-modal transition-all ${
       aiSearchMode
         ? 'border-indigo-500/20 focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20'
-        : 'border-primary/10 focus-within:border-violet-500/30 focus-within:ring-1 focus-within:ring-violet-500/20'
+        : 'border-hair focus-within:border-role-agent/30 focus-within:ring-1 focus-within:ring-role-agent/20'
     }`}>
       {/* The glyph stays put while an AI search runs: the busy state belongs to
           the Send control the user pressed, and AiSearchStatusBar says it in words. */}
@@ -53,7 +53,7 @@ function SearchChipInputImpl({
       {chips.map((chip, i) => {
         let Icon: typeof Search | null = null;
         let chipColor: string | undefined;
-        let chipBg = 'bg-violet-500/10 border-violet-500/20 text-violet-300';
+        let chipBg = 'bg-role-agent/10 border-role-agent/20 text-role-agent';
 
         if (chip.type === 'category') {
           const meta = getCategoryMeta(chip.value);
@@ -76,11 +76,16 @@ function SearchChipInputImpl({
             className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-body rounded-full border flex-shrink-0 ${chipBg}`}>
             {Icon && <Icon className="w-3 h-3" style={{ color: chipColor }} />}
             {chip.label}
-            <button type="button" onClick={() => removeChip(i)}
+            <Button
+              type="button"
+              onClick={() => removeChip(i)}
               aria-label={tx(t.templates.search.remove_filter_aria, { label: chip.label })}
-              className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-white/10">
+              variant="ghost"
+              size="icon-sm"
+              className="ml-0.5"
+            >
               <X className="w-2.5 h-2.5" aria-hidden="true" />
-            </button>
+            </Button>
           </span>
         );
       })}
@@ -96,7 +101,7 @@ function SearchChipInputImpl({
         onFocus={() => setBrowsing(true)}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && aiSearchMode && onAiSearchSubmit && inputValue.trim()) {
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing && aiSearchMode && onAiSearchSubmit && inputValue.trim()) {
             e.preventDefault();
             onAiSearchSubmit(inputValue.trim());
           }
@@ -109,16 +114,16 @@ function SearchChipInputImpl({
             : aiSearchMode ? t.templates.search.placeholder_ai
             : t.templates.search.placeholder_default
         }
-        className="flex-1 min-w-[120px] py-2 pr-10 typo-body bg-transparent text-foreground/90 placeholder:text-foreground/40 focus-visible:outline-none"
+        className="flex-1 min-w-[120px] py-2 pr-10 typo-body bg-transparent text-ink-1 placeholder:text-ink-3 focus-visible:outline-none"
       />
 
       <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
         {aiSearchMode ? (
           <>
             {inputValue && (
-              <button type="button" onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
+              <Button type="button" onClick={clearAll} aria-label={t.templates.search.clear_search_aria} variant="ghost" size="icon-sm">
                 <X className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
+              </Button>
             )}
             <Button
               variant="accent"
@@ -135,9 +140,9 @@ function SearchChipInputImpl({
           </>
         ) : (
           (inputValue || chips.length > 0) && (
-            <button type="button" onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
+            <Button type="button" onClick={clearAll} aria-label={t.templates.search.clear_search_aria} variant="ghost" size="icon-sm">
               <X className="w-3.5 h-3.5" aria-hidden="true" />
-            </button>
+            </Button>
           )
         )}
       </div>

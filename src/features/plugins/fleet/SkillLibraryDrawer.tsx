@@ -9,6 +9,7 @@ import { applySkillToSessions } from './applySkillToSessions';
 import { useSkillData } from './sub_skills/useSkillData';
 import { SkillInstallModal } from './sub_skills/SkillInstallModal';
 import { SkillLibraryRow } from './SkillLibraryRow';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 interface Props {
   open: boolean;
@@ -123,8 +124,8 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
       <div className="absolute inset-0 bg-black/50 surface-blur-modal" onClick={onClose} aria-hidden="true" />
 
       {/* Left panel — roughly sidebar-width, slides in. */}
-      <div className="animate-fade-slide-in absolute left-0 top-0 bottom-0 w-[340px] max-w-[85vw] flex flex-col bg-background border-r border-primary/10 shadow-elevation-4">
-        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-primary/10 shrink-0">
+      <div className="animate-fade-slide-in absolute left-0 top-0 bottom-0 w-[340px] max-w-[85vw] flex flex-col bg-background border-r border-hair shadow-elevation-4">
+        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-hair shrink-0">
           <BookOpen className="w-4 h-4 text-primary" aria-hidden="true" />
           <span className="typo-caption text-foreground">{f.skills_drawer_title}</span>
           <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={onClose} aria-label={t.common.close}>
@@ -133,28 +134,22 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
         </div>
 
         {/* Apply target hint */}
-        <div className={`px-3 py-1.5 text-[13px] border-b border-primary/5 ${canApply ? 'text-foreground' : 'text-amber-300'}`}>
+        <div className={`px-3 py-1.5 typo-caption border-b border-hair ${canApply ? 'text-foreground' : 'text-status-warning'}`}>
           {canApply ? tx(f.skills_drawer_apply_to, { name: targetLabel }) : f.skills_drawer_no_target}
         </div>
 
         {/* Source toggle + refresh */}
         <div className="flex items-center gap-1 px-3 py-2 shrink-0">
-          <div className="inline-flex items-center rounded-card border border-primary/10 bg-secondary/30 p-0.5" role="group" aria-label={f.skill_source_label}>
+          <div className="inline-flex items-center rounded-card border border-hair bg-surface-1 p-0.5" role="group" aria-label={f.skill_source_label}>
             {sources.map((s) => (
-              <button
+              <OptionChip
                 key={s.id}
-                type="button"
                 data-testid={`fleet-drawer-source-${s.id}`}
-                aria-pressed={source === s.id}
-                onClick={() => setSource(s.id)}
-                className={`px-2 py-0.5 rounded-card text-[12px] font-medium transition-colors ${
-                  source === s.id
-                    ? 'bg-primary/10 text-primary border border-primary/25'
-                    : 'text-foreground hover:bg-secondary/40 border border-transparent'
-                }`}
+                onSelect={() => setSource(s.id)}
+                selected={source === s.id}
               >
                 {s.label}
-              </button>
+              </OptionChip>
             ))}
           </div>
           <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={fetchSkills} aria-label={t.common.refresh} title={t.common.refresh}>
@@ -172,14 +167,14 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
             onChange={(e) => setSearch(e.target.value)}
             aria-label={f.skills_drawer_search}
             placeholder={f.skills_drawer_search}
-            className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1.5 pl-7 pr-2 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+            className="w-full rounded-input border border-hair bg-surface-1 py-1.5 pl-7 pr-2 typo-body text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
           />
         </div>
 
         {/* Skill list */}
         <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5" data-testid="fleet-drawer-list">
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-[13px] text-foreground opacity-70">
+            <div className="text-center py-8 typo-caption text-ink-2 ">
               <AlertCircle className="w-5 h-5 mx-auto mb-1.5 opacity-60" aria-hidden="true" />
               {f.skills_drawer_empty}
             </div>
@@ -197,7 +192,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
         </div>
 
         {/* Command composer — edit args, then apply to the focused terminal. */}
-        <div className="border-t border-primary/10 p-2 shrink-0">
+        <div className="border-t border-hair p-2 shrink-0">
           <div className="flex items-center gap-1.5">
             <input
               ref={composerRef}
@@ -205,10 +200,10 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
               data-testid="fleet-drawer-command"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitCommand(); } }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); submitCommand(); } }}
               disabled={!canApply}
               placeholder={f.skills_drawer_command_placeholder}
-              className="flex-1 min-w-0 rounded-input border border-primary/10 bg-secondary/40 py-1.5 px-2 text-[14px] font-mono text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-50"
+              className="flex-1 min-w-0 rounded-input border border-hair bg-surface-1 py-1.5 px-2 typo-body text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-50"
             />
             <Button
               variant="primary"

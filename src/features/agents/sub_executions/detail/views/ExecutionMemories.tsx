@@ -7,6 +7,7 @@ import { isTerminalState } from '@/lib/execution/executionState';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionMemoriesProps {
   executionId: string;
@@ -41,26 +42,28 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
 
   return (
     <div>
-      <button
+      <Button
         type="button"
         onClick={() => setShowMemories(!showMemories)}
         aria-expanded={showMemories}
-        className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2"
+        variant="ghost"
+        size="sm"
+        className="mb-2"
+        icon={showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       >
-        {showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        <Brain className="w-4 h-4 text-violet-400" />
+        <Brain className="w-4 h-4 text-role-agent" />
         {tx(t.agents.executions.memories_created, { count: executionMemories.length })}
-      </button>
+      </Button>
       {showMemories && (
           <div className="animate-fade-slide-in space-y-1.5">
             {executionMemories.map((mem) => {
               return (
-                <div key={mem.id} className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-modal">
+                <div key={mem.id} className="p-3 bg-role-agent/5 border border-role-agent/15 rounded-modal">
                   <div className="flex items-center gap-2 mb-1">
                     <CategoryChip category={mem.category} />
-                    <span className="typo-heading text-foreground/90">{stripHtml(mem.title)}</span>
+                    <span className="typo-heading text-ink-1">{stripHtml(mem.title)}</span>
                   </div>
-                  <p className="typo-body text-foreground line-clamp-2">{stripHtml(mem.content)}</p>
+                  <p className="typo-body text-ink-1 line-clamp-2">{stripHtml(mem.content)}</p>
                 </div>
               );
             })}

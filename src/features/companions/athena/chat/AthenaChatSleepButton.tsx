@@ -123,7 +123,7 @@ export function AthenaChatSleepButton({
           className={
             className
               ? `grid place-items-center shrink-0 transition-colors focus-ring ${className} ${open ? activeClassName : ''}`
-              : `p-1.5 rounded-interactive text-foreground hover:text-amber-400 hover:bg-amber-500/10 transition-colors focus-ring ${open ? 'text-amber-400 bg-amber-500/10' : ''}`
+              : `p-1.5 rounded-interactive text-foreground hover:text-status-warning hover:bg-status-warning/10 transition-colors focus-ring ${open ? 'text-status-warning bg-status-warning/10' : ''}`
           }
           aria-label={label}
         >
