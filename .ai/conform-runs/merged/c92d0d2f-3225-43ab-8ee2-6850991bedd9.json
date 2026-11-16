@@ -1,0 +1,174 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c92d0d2f-3225-43ab-8ee2-6850991bedd9",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-11-06T01:10:01.769324+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "stores-slices-overview",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/overview/memorySlice.ts:192 The merge door writes one new row and the backend hard-DELETEs both originals in the same transaction (memories.rs:1662/1666). Nothing is marked superseded or archived, and no tombstone or lineage link is written, so the merged belief cannot enumerate what it replaced and a bad merge cannot be audited or undone.",
+      "techniques": [
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/memorySlice.ts:192 The technique requires that the members remain, linked, auditable and out of default reads. Here the members are destroyed even though a non-default archive tier exists (:121)."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 Deletion is supposed to be reserved for redaction. The merge goes straight to DELETE with no archive and no tombstone, although the single-delete path does write a fact tombstone (memories.rs:1430-1436)."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1666 The technique says supersede, don't replace. The second original is removed instead of being marked superseded-by the merged id, so the lineage is lost."
+        },
+        {
+          "technique": "scope-before-similarity",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1581 The write door re-checks that both members share one persona scope. The merged row takes its persona from its members (:1604), not from the caller's input."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/overview/memorySlice.ts:263 The LLM reflection pass only proposes. Live rows change only when the user applies a proposal."
+        }
+      ]
+    },
+    {
+      "context": "plugins-dev-tools-skills",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:70 Coverage per context is counted client-side from one capped list. The backend clamps the requested 500 to MAX_LIST=50 and orders by updated_at DESC, with no 30-day filter. Any context outside the 50 most recently updated nodes reads as 0 (uncovered) and gets dispatched again, a context with only old nodes reads as covered, and the cut is never reported.",
+      "techniques": [
+        {
+          "technique": "coverage-instrumentation",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:30 The instrument claims a 30-day freshness count but actually measures membership in a global newest-50 window, so a zero does not mean the context is uncovered."
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:652 The cap silently cuts 500 down to 50. No notice reaches the reader saying content was truncated."
+        }
+      ]
+    },
+    {
+      "context": "resource-tracking",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 A team-bound project with zero live memories writes no snapshot (only a scan-summary counter), and memory_health_overview returns only each project's latest snapshot. A never-populated project is missing from the list, and a project whose memories all decayed out keeps serving its last healthy score indefinitely.",
+      "techniques": [
+        {
+          "technique": "coverage-instrumentation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 The empty-corpus case is counted only in the transient scan summary. The persisted overview never names the hole."
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:268 The latest-snapshot read gives no notice that a project was skipped or has gone empty since that snapshot."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:100 Staleness is measured against a per-item half-life applied to last access, not a fixed age."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:114 Unconfirmed proposals live in their own table, separate from persona_memories."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:151 The governance pillar penalises the backlog and age of the human-review queue."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "stores-slices-agents",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "schedules-components",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor calendarHelpers.ts:300 is only the SLOT_RUN_TOLERANCE_MS constant, so it is incidental and does not show that agent memory is absent; the claim rests only on a keyword grep, which returned zero hits when I re-ran it."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T01:10:01.769324+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "decay-and-forgetting",
+        "memory-governance",
+        "rollup-compaction",
+        "scope-before-similarity"
+      ],
+      "deviations": 1,
+      "context": "stores-slices-overview",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T01:10:01.769324+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "schedules-components",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T01:10:01.769324+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "coverage-instrumentation",
+        "loss-site-inventory"
+      ],
+      "deviations": 1,
+      "context": "plugins-dev-tools-skills",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T01:10:01.769324+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "coverage-instrumentation",
+        "loss-site-inventory",
+        "memory-governance",
+        "memory-value-model",
+        "pending-beliefs-live-apart"
+      ],
+      "deviations": 1,
+      "context": "resource-tracking",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

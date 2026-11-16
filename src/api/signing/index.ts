@@ -45,15 +45,15 @@ export class SignDocumentRejectedError extends Error {
 // `sign_document` command. It refuses paths that match obvious secret /
 // private-key / wallet locations.
 //
-// Trust assumption: backend enforcement of the same allowlist has NOT been
-// verified by this audit (the Rust side was out of scope for the
-// 2026-04-27 ambiguity audit). Until a contract test pairs this list with
-// the backend's allowlist, treat this guard as the PRIMARY gate, not
-// defense in depth — a future persona tool that calls
-// `invoke("sign_document", …)` directly would bypass this check entirely
-// and could sign arbitrary credential files. If you find yourself wanting
-// to call the IPC directly, route through `signDocument` instead, or
-// confirm the backend enforces these patterns and update this comment.
+// Trust model: the backend is the PRIMARY gate. `sign_document`
+// (src-tauri/src/commands/signing/mod.rs) rejects `is_sensitive_credential_path`
+// (src-tauri/engine/src/path_safety.rs) on the resolved path, so a direct
+// `invoke("sign_document", …)` from a persona tool or a future feature is
+// refused there too. This renderer list is defense in depth: it fails fast,
+// before the IPC round trip, with a friendlier message. The backend list is a
+// superset (it blocks any `private_key.<ext>`); keep every pattern below
+// covered there. `__tests__/sensitivePathParity.test.ts` pins that pairing.
+// Do not loosen either side without the other.
 //
 // Pattern shape: each regex must match its documented threat AND fail
 // against innocuous paths that share substrings (e.g. `private_key` was

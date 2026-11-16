@@ -3,6 +3,8 @@ import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EXECUTION_ORIGINS, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { ORIGIN_META, originLabel } from './OriginBadge';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface OriginFilterDropdownProps {
   value: ExecutionOrigin | null;
@@ -28,20 +30,17 @@ export function OriginFilterDropdown({ value, onChange }: OriginFilterDropdownPr
         onChange(next === value ? null : next);
       }}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
+        <Button
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
-          className={`flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors border ${
-            value !== null
-              ? 'bg-primary/10 text-primary/80 border-primary/20'
-              : 'text-foreground hover:text-muted-foreground/70 border-transparent'
-          }`}
+          variant={value !== null ? 'secondary' : 'ghost'}
+          size="xs"
+          icon={<Route className="w-3 h-3" />}
         >
-          <Route className="w-3 h-3" />
           {value === null ? e.origin_filter_all : originLabel(t, value)}
           <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       )}
     >
       {({ close }) => (
@@ -50,25 +49,21 @@ export function OriginFilterDropdown({ value, onChange }: OriginFilterDropdownPr
             const active = option === value;
             const Icon = option === null ? Route : ORIGIN_META[option].icon;
             return (
-              <button
-                type="button"
+              <OptionRow
                 key={option ?? 'all'}
                 role="option"
-                aria-selected={active}
-                onClick={() => {
+                selected={active}
+                onSelect={() => {
                   onChange(active ? null : option);
                   close();
                 }}
-                className={`flex items-center gap-2 w-full px-3 py-1.5 typo-body transition-colors hover:bg-secondary/40 ${
-                  active ? 'text-primary' : 'text-foreground'
-                }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span className="flex-1 text-left">
                   {option === null ? e.origin_filter_all : originLabel(t, option)}
                 </span>
                 {active && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-              </button>
+              </OptionRow>
             );
           })}
         </div>

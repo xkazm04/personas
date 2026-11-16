@@ -1,0 +1,145 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4a54bb07-14fc-4d71-a2fa-e821e7a979ee",
+  "subject": "browser-credential-boundary",
+  "evaluatedAt": "2026-11-06T23:11:09.380011+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "site-whitelist-management",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/src/commands/browser/sites.rs:80 The whitelist binds a site to a vault credential by id only, through a #[requires(privileged)] command. The site shape the webview receives carries credentialId and no secret column, so the login secret stays in Rust.",
+      "techniques": [
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "conformant",
+          "evidence": "src/lib/bindings/BrowserSite.ts:26 The site shape has a reference column and no column for the secret value; SiteChips.tsx:104 renders only bound or none."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:80 The UI sends origin and credential_id. The secret is resolved server-side when browser_login runs. The command is gated privileged."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:66 Confirming a scan sends only the origin, so the scan result stays server-side and the client never carries it back (the keep-it-server-side variant)."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:75 The origin is operator-typed configuration, validated to scheme://host[:port]. It is not an address that arrives inside a dependency's response."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:55 No upstream broker is involved: failures are local command refusals from a closed BrowserRefusalCode vocabulary, shown to the local operator."
+        }
+      ]
+    },
+    {
+      "context": "vault-databases-tabs",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:295 The database tabs send only a credential id and the SQL. Rust attaches the connection secret, fetches through the SSRF-safe client, scrubs credential fields from errors and re-classifies mutations itself, so the webview never holds a database credential.",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:295 Only credentialId and the SQL cross IPC; the credential is attached in the Rust engine."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/db_query.rs:138 Hosts that come from credential data are fetched through the SSRF-safe resolver client, which judges the resolved address."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/db_query.rs:148 The database belongs to the operator, so error detail is legitimate for them; credential field values are scrubbed before the error returns."
+        },
+        {
+          "technique": "allowlisted-operator-stream",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:225 Telemetry carries an enumerated bucket and never the SQL text. Console history is kept in memory only (ConsoleTab.tsx:51)."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/db_query.rs:703 The SQL and the allowMutation flag are the operator's own input. The server re-derives the mutation class instead of trusting a carried result, so there is nothing to seal."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "browser-credential-boundary",
+      "context": "commands-credentials",
+      "reason": "evidence leans on core/http_clients.rs, which is not a tracked file"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "vault-credentials-components-features",
+      "reason": "evidence leans on engine/mcp_tools.rs, which is not a tracked file"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "browser-webview-control",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor browserStore.ts:25 is an import line, so it doesn't show that credential material is absent. The not-applicable rests only on a keyword grep, and this context's PageSlot hosts the embedded webview, which is where cookies and session material would sit."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T23:11:09.380011+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "browser-webview-control",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T23:11:09.380011+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "opaque-upstream-errors",
+        "outbound-fetch-destination-validation",
+        "server-sealed-client-roundtrip"
+      ],
+      "deviations": 0,
+      "context": "site-whitelist-management",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T23:11:09.380011+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "allowlisted-operator-stream",
+        "broker-proxy-attaches-secret",
+        "opaque-upstream-errors",
+        "outbound-fetch-destination-validation",
+        "server-sealed-client-roundtrip"
+      ],
+      "deviations": 0,
+      "context": "vault-databases-tabs",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

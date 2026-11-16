@@ -20,6 +20,5 @@ export type UnregisteredCommand =
   | "gitlab_trigger_pipeline"
   | "create_chat_session"
   | "zapier_create_zap"
-  | "zapier_list_zaps"
   | "zapier_trigger_webhook"
   | "lab_create_version_snapshot";

@@ -25,7 +25,7 @@ describe('CloudConnectionForm connected state', () => {
   // TLS for a plain-http localhost orchestrator.
   it('prints the stored orchestrator URL once, with its own scheme', () => {
     render(<CloudConnectionForm {...connected('https://orch.example.com')} />);
-    const line = screen.getByText((_, el) => el?.tagName === 'P' && !!el.textContent?.includes('orch.example.com'));
+    const line = screen.getByText((_, el) => el?.tagName === 'P' && el.textContent?.trim() === 'https://orch.example.com');
     expect(line.textContent?.trim()).toBe('https://orch.example.com');
   });
 

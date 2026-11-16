@@ -473,6 +473,36 @@ async fn process_webhook(
         }
     }
 
+    // 2a. Author gate. The signature names the relay (GitHub, GitLab, ...),
+    // not the person who caused the event: on a public repo any stranger's
+    // comment or push is a validly signed delivery. Decide on the author the
+    // relay itself authenticates before anything is woken; denied events are
+    // recorded (the request log row) and not run, and answered 202 so the
+    // relay does not retry them.
+    let payload_json = serde_json::from_slice::<serde_json::Value>(body).ok();
+    let author = match decide_author(trigger.config.as_deref(), payload_json.as_ref()) {
+        AuthorDecision::NoAuthor => None,
+        AuthorDecision::Allowed(login) => Some(login),
+        AuthorDecision::Denied(login) => {
+            tracing::info!(
+                trigger_id = %trigger_id,
+                author = %login,
+                "Webhook author not allowed for this trigger; recorded, not woken",
+            );
+            return (
+                StatusCode::ACCEPTED,
+                no_headers(),
+                WebhookResponse {
+                    accepted: false,
+                    event_id: None,
+                    error: Some(format!(
+                        "Author '{login}' is not allowed to wake this trigger (set allowed_authors in the trigger config)"
+                    )),
+                },
+            );
+        }
+    };
+
     // 2b. Rate limit: max webhook calls per trigger per minute (tier-aware).
     // Runs AFTER the HMAC check on purpose: the trigger id is the URL path, so
     // anyone who knows it could otherwise burn the bucket with unsigned POSTs
@@ -483,6 +513,36 @@ async fn process_webhook(
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .webhook_trigger_max;
+    // Per-author bucket first: with a relay, every stranger's event is the
+    // real sender's delivery, so the endpoint bucket alone lets one author
+    // starve the rest. The endpoint bucket below stays as the ceiling.
+    if let Some(ref login) = author {
+        let author_max = webhook_trigger_max.div_ceil(2).max(1);
+        let author_key = format!("webhook-author:{}:{}", trigger_id, login);
+        if let Err(retry_after) =
+            state
+                .rate_limiter
+                .check(&author_key, author_max, WEBHOOK_TRIGGER_WINDOW)
+        {
+            tracing::warn!(
+                trigger_id = %trigger_id,
+                author = %login,
+                retry_after = retry_after,
+                "Webhook rate limited per author",
+            );
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                no_headers(),
+                WebhookResponse {
+                    accepted: false,
+                    event_id: None,
+                    error: Some(format!(
+                        "Rate limited: max {author_max} webhook calls/minute per author. Retry after {retry_after}s"
+                    )),
+                },
+            );
+        }
+    }
     let rate_key = format!("webhook:{}", trigger_id);
     if let Err(retry_after) =
         state
@@ -547,9 +607,9 @@ async fn process_webhook(
     }
 
     // 4. Parse body as JSON payload (or use raw string)
-    let payload = match serde_json::from_slice::<serde_json::Value>(body) {
-        Ok(v) => Some(serde_json::to_string(&v).unwrap_or_default()),
-        Err(_) => {
+    let payload = match payload_json {
+        Some(v) => Some(serde_json::to_string(&v).unwrap_or_default()),
+        None => {
             // Not JSON -- wrap as raw text
             let text = String::from_utf8_lossy(body);
             if text.is_empty() {
@@ -618,6 +678,81 @@ async fn process_webhook(
                 },
             )
         }
+    }
+}
+
+/// Who may wake a webhook trigger, decided on the event's author.
+#[derive(Debug, PartialEq, Eq)]
+enum AuthorDecision {
+    /// The payload names no outside author (a service reporting its own
+    /// event): the signature check is the whole gate.
+    NoAuthor,
+    /// Allowed author, lowercased (the per-author rate-limit key).
+    Allowed(String),
+    /// Author outside the gate: record, do not wake.
+    Denied(String),
+}
+
+/// The author the relay authenticates, and the account that owns the source.
+///
+/// GitHub / Gitea / Forgejo: `sender.login`, owner `repository.owner.login`.
+/// GitLab: `user_username` (or `user.username`), owner the first segment of
+/// `project.path_with_namespace`.
+fn delivery_author(payload: &serde_json::Value) -> Option<(String, Option<String>)> {
+    let str_at = |ptr: &str| {
+        payload
+            .pointer(ptr)
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    };
+    if let Some(login) = str_at("/sender/login") {
+        return Some((login, str_at("/repository/owner/login")));
+    }
+    let gitlab_user = str_at("/user_username").or_else(|| str_at("/user/username"))?;
+    let owner = str_at("/project/path_with_namespace")
+        .and_then(|p| p.split('/').next().map(str::to_string));
+    Some((gitlab_user, owner))
+}
+
+/// Decide whether this delivery's author may wake the trigger.
+///
+/// `allowed_authors` in the trigger config (a JSON array of logins, or a
+/// comma-separated string; `"*"` admits anyone) is the allowlist. Without it
+/// the default is the owner check: only the account that owns the repository
+/// or project (the connected account's own identity) wakes the agent.
+fn decide_author(config: Option<&str>, payload: Option<&serde_json::Value>) -> AuthorDecision {
+    let Some((author, owner)) = payload.and_then(delivery_author) else {
+        return AuthorDecision::NoAuthor;
+    };
+    let author = author.to_lowercase();
+    let allowlist: Option<Vec<String>> = config
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
+        .and_then(|cfg| match cfg.get("allowed_authors") {
+            Some(serde_json::Value::Array(items)) => Some(
+                items
+                    .iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.trim().to_lowercase())
+                    .filter(|s| !s.is_empty())
+                    .collect(),
+            ),
+            Some(serde_json::Value::String(s)) => Some(
+                s.split(',')
+                    .map(|s| s.trim().to_lowercase())
+                    .filter(|s| !s.is_empty())
+                    .collect(),
+            ),
+            _ => None,
+        });
+    let allowed = match allowlist {
+        Some(list) => list.iter().any(|a| a == "*" || *a == author),
+        None => owner.is_some_and(|o| o.to_lowercase() == author),
+    };
+    if allowed {
+        AuthorDecision::Allowed(author)
+    } else {
+        AuthorDecision::Denied(author)
     }
 }
 
@@ -874,6 +1009,117 @@ mod tests {
                 .0;
         }
         assert_eq!(last, StatusCode::TOO_MANY_REQUESTS);
+    }
+
+    fn signed(body: &[u8]) -> HeaderMap {
+        let mut mac = HmacSha256::new_from_slice(b"s3cret").unwrap();
+        mac.update(body);
+        let sig = format!("sha256={}", hex::encode(mac.finalize().into_bytes()));
+        let mut headers = HeaderMap::new();
+        headers.insert("x-hub-signature-256", HeaderValue::from_str(&sig).unwrap());
+        headers
+    }
+
+    fn github_event(sender: &str, owner: &str) -> Bytes {
+        Bytes::from(format!(
+            r#"{{"action":"created","sender":{{"login":"{sender}"}},"repository":{{"owner":{{"login":"{owner}"}}}}}}"#
+        ))
+    }
+
+    fn event_count(state: &WebhookState) -> i64 {
+        let conn = crate::db::PoolExt::conn(&state.pool, "test:webhook-author").unwrap();
+        conn.query_row("SELECT COUNT(*) AS n FROM persona_events", [], |r| {
+            r.get("n")
+        })
+        .unwrap()
+    }
+
+    /// A validly signed event caused by a stranger on a public repo must not
+    /// wake the agent, and must not spend the owner's allowance.
+    #[tokio::test]
+    async fn stranger_signed_event_is_recorded_not_woken() {
+        let (state, id) = rate_limited_state(3);
+        for _ in 0..10 {
+            let body = github_event("mallory", "alice");
+            let (status, _, resp) = process_webhook(&state, &id, &signed(&body), &body).await;
+            assert_eq!(status, StatusCode::ACCEPTED, "{:?}", resp.error);
+            assert!(!resp.accepted);
+        }
+        assert_eq!(event_count(&state), 0, "a stranger must not wake the agent");
+
+        let body = github_event("alice", "alice");
+        let (status, _, resp) = process_webhook(&state, &id, &signed(&body), &body).await;
+        assert_eq!(status, StatusCode::OK, "{:?}", resp.error);
+        assert!(resp.accepted);
+        assert_eq!(event_count(&state), 1);
+    }
+
+    /// One allowed author cannot spend the whole endpoint bucket.
+    #[tokio::test]
+    async fn one_author_cannot_starve_another() {
+        let (state, id) = rate_limited_state(4);
+        crate::db::PoolExt::conn(&state.pool, "test:webhook-author")
+            .unwrap()
+            .execute(
+                "UPDATE persona_triggers SET config = ?1 WHERE id = ?2",
+                params![
+                    r#"{"webhook_secret":"s3cret","event_type":"x","allowed_authors":["bob","carol"]}"#,
+                    id
+                ],
+            )
+            .unwrap();
+        let mut limited = false;
+        for _ in 0..4 {
+            let body = github_event("bob", "acme");
+            let (status, _, _) = process_webhook(&state, &id, &signed(&body), &body).await;
+            limited |= status == StatusCode::TOO_MANY_REQUESTS;
+        }
+        assert!(limited, "bob is bounded by his own bucket");
+        let body = github_event("Carol", "acme");
+        let (status, _, resp) = process_webhook(&state, &id, &signed(&body), &body).await;
+        assert_eq!(status, StatusCode::OK, "{:?}", resp.error);
+    }
+
+    #[test]
+    fn author_decision_defaults_and_allowlist() {
+        let gh = |s: &str, o: &str| -> serde_json::Value {
+            serde_json::json!({"sender": {"login": s}, "repository": {"owner": {"login": o}}})
+        };
+        // No author in the payload: signature-only (a service reporting itself).
+        assert_eq!(
+            decide_author(None, Some(&serde_json::json!({"build": 1}))),
+            AuthorDecision::NoAuthor
+        );
+        assert_eq!(decide_author(None, None), AuthorDecision::NoAuthor);
+        // Default: owner only.
+        assert_eq!(
+            decide_author(None, Some(&gh("Alice", "alice"))),
+            AuthorDecision::Allowed("alice".into())
+        );
+        assert_eq!(
+            decide_author(None, Some(&gh("eve", "alice"))),
+            AuthorDecision::Denied("eve".into())
+        );
+        // Allowlist replaces the owner default; "*" opts out.
+        let cfg = r#"{"allowed_authors":"eve, frank"}"#;
+        assert_eq!(
+            decide_author(Some(cfg), Some(&gh("eve", "alice"))),
+            AuthorDecision::Allowed("eve".into())
+        );
+        assert_eq!(
+            decide_author(Some(cfg), Some(&gh("alice", "alice"))),
+            AuthorDecision::Denied("alice".into())
+        );
+        assert_eq!(
+            decide_author(Some(r#"{"allowed_authors":["*"]}"#), Some(&gh("x", "y"))),
+            AuthorDecision::Allowed("x".into())
+        );
+        // GitLab shape.
+        let gl = serde_json::json!({"user_username": "dana", "project": {"path_with_namespace": "dana/app"}});
+        assert_eq!(
+            decide_author(None, Some(&gl)),
+            AuthorDecision::Allowed("dana".into())
+        );
     }
 
     #[test]

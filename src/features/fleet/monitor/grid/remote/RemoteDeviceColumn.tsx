@@ -40,9 +40,9 @@ export function RemoteDeviceColumn({ column, width, renderRow, focusKey, staged 
         <div className="flex w-full items-baseline gap-1.5 px-1 py-0.5 text-foreground">
           <Laptop className="h-3 w-3 flex-shrink-0 self-center text-foreground" aria-hidden />
           <span className="min-w-0 flex-1 truncate typo-label">{tx(t.monitor.remote_on_device, { device })}</span>
-          <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">{column.rows.length}</span>
+          <span className="flex-shrink-0 typo-caption num opacity-50">{column.rows.length}</span>
         </div>
-        <span aria-hidden className="h-0.5 w-full rounded-full bg-sky-500/40" />
+        <span aria-hidden className="h-0.5 w-full rounded-full bg-status-info/40" />
       </div>
       {staged ? (
         <ColumnBody rows={column.rows} renderRow={renderRow} focusKey={focusKey} maxHeight={COLUMN_BODY_MAX_H} />

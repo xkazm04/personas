@@ -24,7 +24,7 @@ function verdictStyle(verdict: string): string {
     case 'failed':
       return 'bg-status-error/10 text-status-error border-status-error/25';
     default:
-      return 'bg-secondary/40 text-foreground/90 border-primary/10';
+      return 'bg-surface-2 text-ink-1 border-hair';
   }
 }
 
@@ -129,7 +129,7 @@ export function EventHistoryModal({ entry, onClose }: Props) {
             subtitle={m.history_empty_hint}
           />
         ) : (
-          <ol className="relative flex flex-col gap-4 pl-5 border-l border-primary/15">
+          <ol className="relative flex flex-col gap-4 pl-5 border-l border-hair">
             {changes.map((c) => {
               const p = parseChangePayload(c.payload);
               const runs = runsByFiring.get(c.id) ?? [];
@@ -137,20 +137,20 @@ export function EventHistoryModal({ entry, onClose }: Props) {
                 <li key={c.id} className="relative">
                   {/* timeline node */}
                   <span className="absolute -left-[1.4rem] top-1.5 w-2.5 h-2.5 rounded-full bg-primary/60 ring-4 ring-background" />
-                  <div className="flex flex-col gap-2 rounded-card border border-primary/10 bg-card/50 p-3.5">
+                  <div className="flex flex-col gap-2 rounded-card border border-hair bg-card/50 p-3.5">
                     <div className="flex items-start justify-between gap-3">
-                      <span className="typo-body text-foreground">{c.title}</span>
+                      <span className="typo-body text-ink-1">{c.title}</span>
                       <SeverityBadge severity={p.severity} label={severityLabel(t, p.severity)} />
                     </div>
                     {p.summary && (
-                      <p className="typo-body text-foreground/90">{p.summary}</p>
+                      <p className="typo-body text-ink-1">{p.summary}</p>
                     )}
                     {p.tags && p.tags.length > 0 && (
                       <div className="flex flex-wrap items-center gap-1.5">
                         {p.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input bg-secondary/50 text-foreground/70 typo-caption"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input bg-surface-2 text-ink-2 typo-caption"
                           >
                             <Tag className="w-2.5 h-2.5" />
                             {tag}
@@ -158,7 +158,7 @@ export function EventHistoryModal({ entry, onClose }: Props) {
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center flex-wrap gap-x-4 gap-y-1 pt-0.5 typo-caption text-foreground/60">
+                    <div className="flex items-center flex-wrap gap-x-4 gap-y-1 pt-0.5 typo-caption text-ink-2">
                       <span>{m.history_detected} <RelativeTime timestamp={c.firedAt} /></span>
                       {c.releaseVersion && (
                         <span>{tx(m.history_release, { version: c.releaseVersion })}</span>
@@ -176,8 +176,8 @@ export function EventHistoryModal({ entry, onClose }: Props) {
                       )}
                     </div>
                     {runs.length > 0 && (
-                      <div className="flex flex-col gap-1.5 pt-1.5 border-t border-primary/10">
-                        <span className="typo-caption text-foreground">{m.impact_title}</span>
+                      <div className="flex flex-col gap-1.5 pt-1.5 border-t border-hair">
+                        <span className="typo-caption text-ink-2">{m.impact_title}</span>
                         {runs.map((r) => (
                           <div key={r.id} className="flex items-center flex-wrap gap-x-2.5 gap-y-1 min-w-0">
                             <span
@@ -186,10 +186,10 @@ export function EventHistoryModal({ entry, onClose }: Props) {
                               {verdictLabel(t, r.verdict)}
                             </span>
                             {r.commitSha && (
-                              <code className="typo-caption text-foreground/90 font-mono">{r.commitSha.slice(0, 7)}</code>
+                              <code className="typo-caption text-ink-1 font-mono">{r.commitSha.slice(0, 7)}</code>
                             )}
-                            <span className="typo-caption text-foreground/90 truncate flex-1 min-w-0">{r.summary}</span>
-                            <RelativeTime timestamp={r.createdAt} className="typo-caption text-foreground/90 flex-shrink-0" />
+                            <span className="typo-caption text-ink-2 truncate flex-1 min-w-0">{r.summary}</span>
+                            <RelativeTime timestamp={r.createdAt} className="typo-caption text-ink-1 flex-shrink-0" />
                           </div>
                         ))}
                       </div>
@@ -205,16 +205,16 @@ export function EventHistoryModal({ entry, onClose }: Props) {
   );
 }
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 const GHOST_WIDTHS = ['w-40', 'w-28', 'w-36'] as const;
 
 function HistoryGhostRows() {
   return (
-    <ol className="relative flex flex-col gap-4 pl-5 border-l border-primary/15" aria-hidden="true">
+    <ol className="relative flex flex-col gap-4 pl-5 border-l border-hair" aria-hidden="true">
       {GHOST_WIDTHS.map((w, i) => (
         <li key={i} className="relative animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
           <span className="absolute -left-[1.4rem] top-1.5 w-2.5 h-2.5 rounded-full bg-primary/[0.06] ring-4 ring-background" />
-          <div className="flex flex-col gap-2 rounded-card border border-primary/10 bg-card/50 p-3.5">
+          <div className="flex flex-col gap-2 rounded-card border border-hair bg-card/50 p-3.5">
             <span className={`h-3.5 ${w} ${GHOST_BAR}`} />
             <span className={`h-3 w-full ${GHOST_BAR}`} />
             <span className={`h-3 w-24 ${GHOST_BAR}`} />

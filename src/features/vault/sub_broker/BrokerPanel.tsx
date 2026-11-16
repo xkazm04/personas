@@ -56,7 +56,7 @@ export function BrokerPanel() {
         title={b.title}
         subtitle={b.subtitle}
         icon={<ShieldCheck className="w-4 h-4 text-primary/60" />}
-        titleClassName="text-primary"
+        titleClassName="text-ink-1"
       >
         <Banner severity="warning" compact neutralBody message={b.exclusion_note} />
       </SectionCard>
@@ -64,7 +64,7 @@ export function BrokerPanel() {
       <SectionCard
         title={b.consumers_header}
         icon={<Users className="w-4 h-4 text-primary/60" />}
-        titleClassName="text-primary"
+        titleClassName="text-ink-1"
       >
         {consumers === null && !loadError && <ListSkeleton rows={3} rowHeight={56} leading />}
         {loadError && (
@@ -128,7 +128,7 @@ function ConsumerRow({ consumer, onChanged }: { consumer: BrokerConsumer; onChan
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-card border border-primary/15 bg-primary/5">
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-card border border-hair bg-primary/5">
           <KeyRound className="w-4 h-4 text-primary" />
         </div>
         <div className="flex-1 min-w-0 space-y-1">
@@ -195,7 +195,7 @@ function ConsumerRow({ consumer, onChanged }: { consumer: BrokerConsumer; onChan
       />
 
       {showActivity && (
-        <div className="mt-3 ml-11 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2">
+        <div className="mt-3 ml-11 rounded-card border border-hair bg-surface-1 px-3 py-2">
           {activity === null ? (
             <ListSkeleton rows={3} rowHeight={20} />
           ) : activity.length === 0 ? (

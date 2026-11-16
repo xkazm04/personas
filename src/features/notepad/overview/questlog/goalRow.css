@@ -51,7 +51,7 @@
 
 .rw-marks { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; vertical-align: baseline; }
 
-.rw-mk { display: inline-flex; align-items: center; gap: 2px; font-size: 0.75rem; font-weight: 700; line-height: 1; }
+.rw-mk { display: inline-flex; align-items: center; gap: 2px; font-size: calc(var(--type-12) * var(--type-f)); font-weight: 700; line-height: 1; }
 .rw-mk i { width: 5px; height: 5px; border-radius: var(--radius-pill); background: currentColor; display: block; }
 
 .rw-wait { color: var(--brand-rose); }

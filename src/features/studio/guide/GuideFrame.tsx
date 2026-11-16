@@ -9,6 +9,9 @@ import { useStudioStore } from '../studioStore';
 import { useStudioHistory } from '../studioHistory';
 import type { StudioPreviewState } from '../useStudioPreview';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
+
 // The main frame: the app being built, wrapped and given full focus (contest
 // A/1). A thin header says what the frame shows in plain words; the address,
 // reload and snapshots sit at its right edge. Its gradient hairline brightens
@@ -52,29 +55,23 @@ export default function GuideFrame({
         working ? 'border-primary/60' : 'border-border'
       }`}
     >
-      <header className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-gradient-to-r from-secondary/70 via-secondary/40 to-secondary/70 px-3">
+      <header className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-surface-1 from-secondary/70 via-secondary/40 to-secondary/70 px-3">
         <span className={`h-2 w-2 rounded-full ${live && !vision ? 'bg-status-success' : 'bg-primary'}`} />
-        <span className="typo-body text-foreground/85">{label}</span>
+        <span className="typo-body text-ink-2">{label}</span>
         {blueprint && !vision && (
           // TODO(prototype, 2026-09-25): two sheet styles until one is chosen.
           <div role="group" aria-label={g.sheet_style_label} className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border p-0.5">
             {(['drafting', 'plan'] as const).map((style) => (
-              <button
-                key={style}
-                type="button"
-                aria-pressed={sheetStyle === style}
-                onClick={() => setSheetStyle(style)}
-                className={`rounded-interactive px-2 py-0.5 typo-caption ${sheetStyle === style ? 'bg-primary/15 text-primary' : 'hover:bg-secondary/60'}`}
-              >
+              <OptionChip key={style} onSelect={() => setSheetStyle(style)} selected={sheetStyle === style}>
                 {style === 'drafting' ? g.sheet_style_drafting : g.sheet_style_plan}
-              </button>
+              </OptionChip>
             ))}
           </div>
         )}
         {vision && onCancelCreate && (
-          <button type="button" onClick={onCancelCreate} aria-label={t.common.close} className="ml-auto rounded-interactive p-1 text-foreground/90 hover:text-foreground">
+          <Button type="button" onClick={onCancelCreate} aria-label={t.common.close} variant="ghost" size="icon-sm" className="ml-auto">
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         )}
         {live && !vision && !blueprint && activeId && (
           <div className="ml-auto flex items-center gap-1">
@@ -96,7 +93,7 @@ export default function GuideFrame({
               }}
               spellCheck={false}
               aria-label={t.studio.preview_path}
-              className="w-40 rounded-input border border-border bg-background/60 px-2 py-0.5 font-mono text-sm text-foreground/85 outline-none focus:border-primary/60"
+              className="w-40 rounded-input border border-border bg-background/60 px-2 py-0.5 font-mono typo-body text-ink-2 outline-none focus:border-primary/60"
             />
             {navRoutes.length > 0 && (
               <datalist id="guide-routes">
@@ -105,9 +102,9 @@ export default function GuideFrame({
                 ))}
               </datalist>
             )}
-            <button type="button" onClick={reloadActive} aria-label={t.studio.reload_preview} className="rounded-interactive p-1.5 text-foreground/90 hover:bg-secondary/60 hover:text-foreground">
+            <Button type="button" onClick={reloadActive} aria-label={t.studio.reload_preview} variant="ghost" size="icon-sm">
               <RotateCcw className="h-4 w-4" />
-            </button>
+            </Button>
             <StudioVersions id={activeId} onRestored={reloadActive} />
           </div>
         )}

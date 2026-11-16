@@ -106,3 +106,32 @@ describe('themeStore onRehydrateStorage — customTheme re-injection', () => {
     expect(customTheme.injectCustomThemeStyle).not.toHaveBeenCalled();
   });
 });
+
+describe('themeStore density — one geometry since v3 (Normal)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    document.documentElement.removeAttribute('data-density');
+  });
+
+  async function rehydrateWith(density: string, version: number) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { density }, version }));
+    await useThemeStore.persist.rehydrate();
+    return useThemeStore.getState().density;
+  }
+
+  it.each([
+    ['cozy', 1], ['comfortable', 1], ['compact', 1], ['comfortable', 2], ['compact', 2],
+  ] as const)('%s at v%i becomes compact (Normal)', async (old, version) => {
+    expect(await rehydrateWith(old, version)).toBe('compact');
+    expect(document.documentElement.getAttribute('data-density')).toBe('compact');
+  });
+
+  it('setDensity folds every value onto compact', () => {
+    useThemeStore.getState().setDensity('comfortable');
+    expect(useThemeStore.getState().density).toBe('compact');
+    useThemeStore.getState().setDensity('cozy');
+    expect(useThemeStore.getState().density).toBe('compact');
+    expect(document.documentElement.getAttribute('data-density')).toBe('compact');
+  });
+});

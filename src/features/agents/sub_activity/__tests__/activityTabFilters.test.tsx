@@ -75,11 +75,11 @@ describe('Activity run-only filters', () => {
     render(<ActivityTab />);
     fireEvent.click(screen.getByText(/^activity_filters\.all/));
     expect(await screen.findByText('activity.filter_starred_only')).toBeTruthy();
-    expect(screen.getByTitle('activity.filter_tag')).toBeTruthy();
+    expect(screen.getByLabelText('activity.filter_tag')).toBeTruthy();
     fireEvent.click(screen.getByText(/^activity_filters\.events/));
     await waitFor(() => expect(screen.getByText('Foo Bar')).toBeTruthy());
     expect(screen.queryByText('activity.filter_starred_only')).toBeNull();
-    expect(screen.queryByTitle('activity.filter_tag')).toBeNull();
+    expect(screen.queryByLabelText('activity.filter_tag')).toBeNull();
   });
 });
 

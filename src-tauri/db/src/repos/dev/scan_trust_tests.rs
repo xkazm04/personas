@@ -118,6 +118,54 @@ fn a_prediction_arriving_after_the_human_decided_is_not_recorded() {
     );
 }
 
+/// A decided item's slice is the slice that decided it. A later sweep that
+/// re-files the same finding (the dedup guard hands back this row) and
+/// re-scores its size must not move it: the slice a human reversal demotes,
+/// and the window the decision is counted in, are read from these fields.
+#[test]
+fn a_re_sweep_does_not_move_a_decided_item_to_another_slice() {
+    let pool = pool();
+    let pid = project(&pool);
+    let id = filed(&pool, &pid, "error-handler", "Swallowed error", "accept");
+    let decided_slice = slice_key(&get_idea_by_id(&pool, &id).unwrap());
+    assert_eq!(decided_slice, "technical|error-handler|-|S");
+    crate::PoolExt::conn(&pool, "test:scan_trust")
+        .expect("conn")
+        .execute(
+            "UPDATE dev_ideas SET status = 'accepted', decided_by = ?1, decided_at = ?2
+              WHERE id = ?3",
+            params![MACHINE_SCAN_SWEEP, at(1), id],
+        )
+        .unwrap();
+
+    let resweep = ScanFindingFields {
+        lens: Some("code-optimizer".into()),
+        size: Some("M".into()),
+        score: Some(51.0),
+        ..Default::default()
+    };
+    record_scan_finding(&pool, &id, &resweep).unwrap();
+    let idea = get_idea_by_id(&pool, &id).unwrap();
+    assert_eq!(slice_key(&idea), decided_slice, "the decided slice is kept");
+    assert_eq!(idea.score, Some(51.0), "a re-sweep still re-scores");
+}
+
+#[test]
+fn a_re_sweep_still_moves_a_pending_item() {
+    let pool = pool();
+    let pid = project(&pool);
+    let id = filed(&pool, &pid, "error-handler", "Swallowed error", "accept");
+    let resweep = ScanFindingFields {
+        size: Some("M".into()),
+        ..Default::default()
+    };
+    record_scan_finding(&pool, &id, &resweep).unwrap();
+    assert_eq!(
+        slice_key(&get_idea_by_id(&pool, &id).unwrap()),
+        "technical|error-handler|-|M"
+    );
+}
+
 #[test]
 fn a_proof_maps_onto_verify_state_and_a_better_remeasured_not_better_is_reported() {
     let pool = pool();

@@ -21,6 +21,6 @@ describe('TaskOutputPanel copy', () => {
     render(<TaskOutputPanel taskId="t" lines={['a', 'b']} isRunning />);
     expect(screen.getByText('plugins.dev_runner.output_lines_other')).toBeInTheDocument();
     expect(screen.getByText('plugins.dev_runner.output_streaming')).toBeInTheDocument();
-    expect(screen.getByRole('button').getAttribute('title')).toBe('plugins.dev_runner.output_show_rendered');
+    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('plugins.dev_runner.output_show_rendered');
   });
 });

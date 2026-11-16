@@ -49,7 +49,7 @@ export function RetireKeysDialog({ keys, now, revoke, onClose, onDone }: RetireK
     <BaseModal isOpen onClose={onClose} titleId="retire-keys-title" size="md" portal>
       <div className="p-6 space-y-4">
         <div className="flex items-center gap-2">
-          <Unplug className="w-4 h-4 text-red-400" />
+          <Unplug className="w-4 h-4 text-status-error" />
           <h2 id="retire-keys-title" className="typo-heading text-foreground">
             {s.retire_title}
           </h2>
@@ -62,15 +62,15 @@ export function RetireKeysDialog({ keys, now, revoke, onClose, onDone }: RetireK
               key={c.key.id}
               data-testid="retire-row"
               data-key-id={c.key.id}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-border/30 bg-secondary/20"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-border/30 bg-surface-1"
             >
-              <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <Globe className="w-3.5 h-3.5 text-status-info shrink-0" />
               <code className="typo-code text-foreground truncate min-w-0 flex-1">{c.key.bound_origin}</code>
               <code className="typo-code text-foreground">{c.key.key_prefix}</code>
               <RelativeTime timestamp={c.key.created_at} className="typo-caption text-foreground" />
               <span
-                className={`typo-caption px-1.5 py-0.5 rounded shrink-0 ${
-                  c.reason === 'expired' ? 'text-red-400 bg-red-400/10' : 'text-amber-400 bg-amber-400/10'
+                className={`typo-caption px-1.5 py-0.5 rounded-interactive shrink-0 ${
+                  c.reason === 'expired' ? 'text-status-error bg-status-error/10' : 'text-status-warning bg-status-warning/10'
                 }`}
               >
                 {c.reason === 'expired' ? s.retire_reason_expired : s.retire_reason_superseded}
@@ -87,8 +87,8 @@ export function RetireKeysDialog({ keys, now, revoke, onClose, onDone }: RetireK
                 {tx(s.retire_result, { retired: outcome.retired.length, total: plan.length })}
               </p>
               {outcome.failed.length > 0 && (
-                <div className="rounded-card border border-red-400/30 bg-red-400/5 p-2 space-y-1">
-                  <p className="flex items-center gap-1.5 typo-caption text-red-400">
+                <div className="rounded-card border border-status-error/30 bg-status-error/5 p-2 space-y-1">
+                  <p className="flex items-center gap-1.5 typo-caption text-status-error">
                     <AlertTriangle size={12} />
                     {s.retire_failed_label}
                   </p>

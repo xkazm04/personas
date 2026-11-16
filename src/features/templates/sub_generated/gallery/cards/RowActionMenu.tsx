@@ -3,6 +3,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { MoreVertical, Eye, RefreshCw, Trash2, X } from 'lucide-react';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface RowActionMenuProps {
   reviewId: string;
@@ -23,87 +25,91 @@ export function RowActionMenu({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           setOpen(true);
         }}
-        className="p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all"
+        variant="ghost"
+        size="icon-sm"
+        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
         aria-label={t.templates.row_actions.row_actions_label}
       >
         <MoreVertical className="w-4.5 h-4.5 text-foreground" />
-      </button>
+      </Button>
+      {/* The modal is portalled but React events still bubble through the row, so a
+          backdrop click (outside the panel's own stopPropagation) toggled the row. */}
+      <span className="contents" onClick={(e) => e.stopPropagation()}>
       <BaseModal
         isOpen={open}
         onClose={close}
         titleId="row-actions-title"
         size="sm"
-        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+        panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
         portal
       >
         <div
           onClick={(e) => e.stopPropagation()}
           className="flex flex-col"
         >
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
-            <h2 id="row-actions-title" className="typo-heading text-foreground/90">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-hair">
+            <h2 id="row-actions-title" className="typo-heading text-ink-1">
               {t.templates.row_actions.row_actions_label}
             </h2>
-            <button
+            <Button
               type="button"
               onClick={close}
-              className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
+              variant="ghost"
+              size="icon-sm"
               aria-label={t.common.close}
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
           <div className="py-1.5">
-            <button
-              type="button"
-              onClick={(e) => {
+            <PressSurface
+              onPress={(e) => {
                 e.stopPropagation();
                 close();
                 onViewDetails();
               }}
               data-testid="menu-view-details"
-              className="w-full flex items-center gap-3 px-5 py-3 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-5 py-3 typo-body text-ink-1"
             >
               <Eye className="w-4 h-4" />
               {t.templates.row_actions.view_details}
-            </button>
+            </PressSurface>
             {import.meta.env.DEV && (
               <>
-                <button
-                  type="button"
-                  onClick={(e) => {
+                <PressSurface
+                  onPress={(e) => {
                     e.stopPropagation();
                     close();
                     onRebuild();
                   }}
-                  className="w-full flex items-center gap-3 px-5 py-3 typo-body text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-5 py-3 typo-body text-status-info"
                 >
                   <RefreshCw className="w-4 h-4" />
                   {t.templates.row_actions.rebuild}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
+                </PressSurface>
+                <PressSurface
+                  onPress={(e) => {
                     e.stopPropagation();
                     close();
                     onDelete(reviewId);
                   }}
-                  className={`w-full flex items-center gap-3 px-5 py-3 typo-body transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
+                  className={`w-full flex items-center gap-3 px-5 py-3 typo-body ${BUTTON_VARIANTS.delete.text}`}
                 >
                   <Trash2 className="w-4 h-4" />
                   {t.templates.row_actions.delete_template}
-                </button>
+                </PressSurface>
               </>
             )}
           </div>
         </div>
       </BaseModal>
+      </span>
     </>
   );
 }

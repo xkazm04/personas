@@ -8,8 +8,9 @@ import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from './reviewParseCache';
-import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export function ReviewExpandedDetail({
   review,
@@ -49,8 +50,8 @@ export function ReviewExpandedDetail({
     <div className="space-y-6">
       {/* 1. Summary Card */}
       {designResult.summary && (
-        <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-modal px-4 py-3">
-          <p className="typo-body text-foreground/90">{designResult.summary}</p>
+        <div className="border border-role-agent/10 rounded-modal px-4 py-3 bg-surface-1">
+          <p className="typo-body text-ink-1">{designResult.summary}</p>
         </div>
       )}
 
@@ -66,15 +67,14 @@ export function ReviewExpandedDetail({
           <SectionLabel>{t.templates.review_detail.use_case_flows}</SectionLabel>
           <div className="flex items-center gap-3 flex-wrap">
             {flows.map((flow) => (
-              <button
+              <PressSurface
                 key={flow.id}
-                type="button"
-                onClick={onViewDiagram}
-                className="bg-violet-500/5 border border-violet-500/15 rounded-modal px-4 py-3 text-left hover:bg-violet-500/10 hover:border-violet-500/25 transition-all group min-w-[180px]"
+                onPress={onViewDiagram}
+                className="bg-surface-1 border border-hair rounded-modal px-4 py-3 group min-w-[180px]"
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
-                  <span className="typo-body text-foreground group-hover:text-foreground/95 truncate">
+                  <Workflow className="w-4 h-4 text-role-agent/70 group-hover:text-role-agent transition-colors" />
+                  <span className="typo-body text-foreground group-hover:text-ink-1 truncate">
                     {flow.name}
                   </span>
                 </div>
@@ -82,10 +82,10 @@ export function ReviewExpandedDetail({
                   <span>{t.templates.overview_tab.nodes.replace('{count}', String(flow.nodes.length))}</span>
                   <span>{t.templates.overview_tab.edges.replace('{count}', String(flow.edges.length))}</span>
                 </div>
-                <div className="typo-body text-violet-400/50 mt-1.5 group-hover:text-violet-400/70 transition-colors">
+                <div className="typo-body text-role-agent/50 mt-1.5 group-hover:text-role-agent/70 transition-colors">
                   {t.templates.review_detail.view_diagram}
                 </div>
-              </button>
+              </PressSurface>
             ))}
           </div>
         </div>
@@ -93,11 +93,11 @@ export function ReviewExpandedDetail({
 
       {/* 4. Adjustment Section */}
       {adjustment && (
-        <div className="bg-amber-500/5 border border-amber-500/15 rounded-modal px-4 py-3 space-y-2">
+        <div className="bg-status-warning/5 border border-status-warning/15 rounded-modal px-4 py-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-400/80" />
-              <h4 className="typo-body text-amber-400/80 uppercase">
+              <Lightbulb className="w-4 h-4 text-status-warning/80" />
+              <h4 className="typo-eyebrow text-status-warning/80">
                 {t.templates.overview_tab.suggested_adjustment}
                 {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                   <span className="ml-1.5 text-foreground normal-case">
@@ -106,25 +106,27 @@ export function ReviewExpandedDetail({
                 )}
               </h4>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => onApplyAdjustment(adjustment.suggestion)}
               disabled={isRunning}
-              className="px-3 py-1.5 typo-body rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              variant="accent"
+              tone="warning"
+              size="sm"
+              icon={<RotateCcw className="w-3 h-3" />}
             >
-              <RotateCcw className="w-3 h-3" />
               {t.templates.review_detail.apply_rerun}
-            </button>
+            </Button>
           </div>
           <p className="typo-body text-foreground">{adjustment.reason}</p>
-          <div className="bg-background/50 rounded-modal px-3 py-2 typo-body text-foreground/90 border border-primary/10">
+          <div className="bg-background/50 rounded-modal px-3 py-2 typo-body text-ink-1 border border-hair">
             {adjustment.suggestion}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {adjustment.appliedFixes.map((fix: string, i: number) => (
               <span
                 key={i}
-                className="px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/15 text-amber-400/70"
+                className="typo-body text-status-warning"
               >
                 {fix}
               </span>
@@ -135,8 +137,8 @@ export function ReviewExpandedDetail({
 
       {/* 6. References indicator */}
       {review.had_references && (
-        <div className="flex items-center gap-1.5 typo-body text-violet-400/50">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400/40" />
+        <div className="flex items-center gap-1.5 typo-body text-role-agent/50">
+          <span className="w-1.5 h-1.5 rounded-full bg-role-agent/40" />
           {t.templates.review_detail.used_references}
         </div>
       )}
@@ -144,29 +146,31 @@ export function ReviewExpandedDetail({
       {/* 7. Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-primary/[0.08]">
         {onAdopt ? (
-          <button
+          <Button
             type="button"
             onClick={onAdopt}
             disabled={isAdopting}
-            className={`px-4 py-2.5 typo-body rounded-modal border disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+            variant="primary"
+            size="md"
+            icon={<Download className="w-4 h-4" />}
           >
-            <Download className="w-4 h-4" />
             {t.templates.review_detail.adopt_as_new_persona}
-          </button>
+          </Button>
         ) : (
           <div />
         )}
-        <button
+        <Button
           type="button"
           onClick={() => setShowJson(!showJson)}
-          className="typo-body text-violet-400/60 hover:text-violet-400/80 transition-colors"
+          variant="ghost"
+          size="sm"
         >
           {showJson ? t.templates.review_detail.hide_raw_json : t.templates.review_detail.view_raw_json}
-        </button>
+        </Button>
       </div>
 
       {showJson && (
-        <pre className="p-3 bg-background/70 rounded-card border border-primary/10 typo-body text-foreground overflow-x-auto max-h-[300px] overflow-y-auto">
+        <pre className="p-3 bg-background/70 rounded-card border border-hair typo-body text-foreground overflow-x-auto max-h-[300px] overflow-y-auto">
           {JSON.stringify(designResult, null, 2)}
         </pre>
       )}

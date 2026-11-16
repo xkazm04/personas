@@ -48,11 +48,11 @@ export function TileTech({ tokens, label }: { tokens: readonly string[]; label: 
               </span>
             </Tooltip>
           ) : (
-            <span className="lt-tech__token typo-caption text-foreground">{m.label}</span>
+            <span className="lt-tech__token typo-caption text-ink-2">{m.label}</span>
           )}
         </span>
       ))}
-      {rest > 0 && <span className="typo-caption text-foreground">+{rest}</span>}
+      {rest > 0 && <span className="typo-caption text-ink-2">+{rest}</span>}
     </span>
   );
 }

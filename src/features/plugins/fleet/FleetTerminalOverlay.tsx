@@ -22,6 +22,7 @@ import { MonitorView } from './sub_monitor/MonitorView';
 import {
   peekGridViewOnOpen, resolveGridViewOnOpen, recordGridViewPick, type GridViewId,
 } from './fleetGridView';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * How long a tile keeps its live terminal after it stops needing the operator.
@@ -260,7 +261,10 @@ export function FleetTerminalOverlay({
     if (!open) return;
     setBackInterceptor(onClose);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      // Esc belongs to the shell/TUI while an xterm has focus (vim, claude).
+      if (e.target instanceof Element && e.target.closest('.xterm')) return;
+      onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -298,16 +302,15 @@ export function FleetTerminalOverlay({
       aria-label={t.plugins.fleet.grid_overlay_aria}
     >
       {/* Header — back button (minimize) + count. */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/20 shrink-0">
-        <button
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair bg-surface-1 shrink-0">
+        <Button variant="secondary" size="sm"
           type="button"
           data-testid="fleet-overlay-back"
           onClick={onClose}
-          className="flex items-center gap-1 rounded-interactive border border-primary/15 px-2 py-1 text-foreground transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
         >
           <ChevronLeft className="w-4 h-4" />
           {t.plugins.fleet.grid_back}
-        </button>
+        </Button>
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
         <FleetAttentionLegend />
@@ -324,30 +327,29 @@ export function FleetTerminalOverlay({
           ariaLabel={t.plugins.fleet.monitor_view_switcher_aria}
           className="ml-2"
         />
-        <button
+        <Button variant="secondary" size="sm"
           type="button"
           data-testid="fleet-overlay-spawn"
           onClick={onSpawn}
           disabled={!canSpawn}
-          title={t.plugins.fleet.new_session}
-          className="ml-auto flex items-center gap-1.5 rounded-interactive border border-primary/25 bg-primary/10 px-2 py-1 text-primary transition-colors hover:bg-primary/20 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+          tooltip={t.plugins.fleet.new_session}
+          className="ml-auto"
         >
           <Play className="w-3.5 h-3.5" />
           {t.plugins.fleet.new_session}
-        </button>
+        </Button>
         {/* Debug recorder — DEV-only, and deliberately adjacent to New session:
             arming it is a decision you make while watching the grid. */}
         {import.meta.env.DEV && <FleetDebugLogButton />}
-        <button
+        <Button variant="secondary" size="sm"
           type="button"
           data-testid="fleet-overlay-skills"
           onClick={onOpenSkills}
-          title={t.plugins.fleet.skills_drawer_title}
-          className="flex items-center gap-1.5 rounded-interactive border border-primary/15 px-2 py-1 text-foreground transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+          tooltip={t.plugins.fleet.skills_drawer_title}
         >
           <BookOpen className="w-3.5 h-3.5" />
           {t.plugins.fleet.skills_button}
-        </button>
+        </Button>
       </div>
 
       {view === 'monitor' ? (

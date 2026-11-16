@@ -5,6 +5,7 @@ import { COMPOSITE_WINDOW_MAX_SECONDS } from './buildTriggerConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** The catalog carries this label as an inline "Operator:" prefix; a field
  *  label takes it without the trailing colon (ASCII, full-width, or the
@@ -48,8 +49,8 @@ export function CompositeConfig({
               placeholder={t.triggers.composite_event_type_placeholder}
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'composite-conditions-error' : undefined}
-              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring transition-all ${
-                validationError ? 'border-red-500/30' : 'border-primary/15'
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-ink-1 typo-body placeholder-ink-3 focus-ring transition-all ${
+                validationError ? 'border-status-error/30' : 'border-hair'
               }`}
             />
             <input
@@ -62,18 +63,26 @@ export function CompositeConfig({
                 setCompositeConditions(updated);
               }}
               placeholder={t.triggers.source_filter_optional}
-              className="w-40 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring transition-all"
+              className="w-40 px-3 py-2 bg-background/50 border border-hair rounded-modal text-ink-1 typo-body placeholder-ink-3 focus-ring transition-all"
             />
             {compositeConditions.length > 1 && (
-              <button type="button" onClick={() => setCompositeConditions(compositeConditions.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Button
+                type="button"
+                onClick={() => setCompositeConditions(compositeConditions.filter((_, j) => j !== i))}
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-3.5 h-3.5" />}
+              />
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setCompositeConditions([...compositeConditions, { event_type: '' }])} className="flex items-center gap-1 typo-body text-rose-400/80 hover:text-rose-400 transition-colors">
-          <Plus className="w-3.5 h-3.5" /> {t.triggers.composite.add_condition}
-        </button>
+        <Button
+          type="button"
+          onClick={() => setCompositeConditions([...compositeConditions, { event_type: '' }])}
+          variant="danger"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
+        >{t.triggers.composite.add_condition}</Button>
       </TriggerFieldGroup>
       <TriggerFieldGroup label={fieldLabel(t.triggers.operator_colon)}>
         <div className="flex gap-1.5">
@@ -83,18 +92,13 @@ export function CompositeConfig({
             { value: 'sequence', label: t.triggers.op_sequence_label, desc: t.triggers.op_sequence_desc },
           ] as const).map((op) => (
             <Tooltip key={op.value} content={op.desc}>
-              <button
+              <Button
                 type="button"
                 aria-pressed={compositeOperator === op.value}
                 onClick={() => setCompositeOperator(op.value)}
-                className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
-                  compositeOperator === op.value
-                    ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                    : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
-                }`}
-              >
-                {op.label}
-              </button>
+                variant={compositeOperator === op.value ? 'secondary' : 'ghost'}
+                size="sm"
+              >{op.label}</Button>
             </Tooltip>
           ))}
         </div>

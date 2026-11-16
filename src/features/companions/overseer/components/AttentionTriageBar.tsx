@@ -2,10 +2,11 @@ import { ShieldCheck } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import { attentionCounts, ATTENTION_ORDER, FLAG_TONE, type AttentionFlag } from '../attention';
-import { toneFill } from '../directorScore';
 import { toggleFilter, type RosterFilter } from '../rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 /**
  * Portfolio attention-triage summary — the per-row attention flags rolled up
  * across the whole roster into one compact strip (N need-review · N low · …).
@@ -48,22 +49,15 @@ export function AttentionTriageBar({
       {ATTENTION_ORDER.filter((f) => counts[f] > 0).map((f) => {
         const active = filter?.type === 'flag' && filter.flag === f;
         return (
-          <button
-            key={f}
-            type="button"
-            onClick={() => onSelect(toggleFilter(filter, { type: 'flag', flag: f }))}
-            aria-pressed={active}
-            title={t.director.triage_chip_hint}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-pill typo-caption transition-shadow focus-ring"
-            style={{
-              color: FLAG_TONE[f],
-              backgroundColor: toneFill(FLAG_TONE[f], active ? 24 : 14),
-              boxShadow: active ? `inset 0 0 0 1px ${FLAG_TONE[f]}` : undefined,
-            }}
-          >
-            {FLAG_LABEL[f]}
-            <Numeric value={counts[f]} className="font-semibold tabular-nums" />
-          </button>
+          <Tooltip content={t.director.triage_chip_hint} key={f}>
+            <OptionChip
+              onSelect={() => onSelect(toggleFilter(filter, { type: 'flag', flag: f }))}
+              selected={active}
+              style={{ color: FLAG_TONE[f] }}
+            ><span className="inline-flex items-center gap-1.5">
+              {FLAG_LABEL[f]}
+              <Numeric value={counts[f]} className="font-semibold tabular-nums" /></span></OptionChip>
+          </Tooltip>
         );
       })}
     </span>

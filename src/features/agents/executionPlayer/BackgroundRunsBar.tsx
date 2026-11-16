@@ -9,11 +9,11 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { backgroundLaneActions, backgroundSummary, openBackgroundRun } from './backgroundRuns';
 
 const STATUS_DOT: Record<BackgroundExecution['status'], string> = {
-  running: 'bg-blue-400 animate-pulse',
-  queued: 'bg-amber-400',
-  completed: 'bg-emerald-400',
-  failed: 'bg-red-400',
-  cancelled: 'bg-amber-400',
+  running: 'bg-status-info animate-pulse',
+  queued: 'bg-status-warning',
+  completed: 'bg-status-success',
+  failed: 'bg-status-error',
+  cancelled: 'bg-status-warning',
 };
 
 /**
@@ -36,9 +36,9 @@ export function BackgroundRunsBar() {
   const actions = selected ? backgroundLaneActions(selected) : null;
 
   return (
-    <div className="border-b border-primary/5 bg-secondary/10" data-testid="background-runs-bar">
+    <div className="border-b border-hair bg-surface-1" data-testid="background-runs-bar">
       <div className="flex items-center gap-1.5 px-3 py-1.5">
-        <span className="typo-caption uppercase tracking-wider text-foreground mr-1">{t.execution.background}</span>
+        <span className="typo-eyebrow text-ink-1 mr-1">{t.execution.background}</span>
         {runs.map((bg) => {
           const isSelected = bg.executionId === selectedId;
           return (
@@ -62,19 +62,19 @@ export function BackgroundRunsBar() {
         })}
         <span className="ml-auto flex items-center gap-2 typo-caption tabular-nums">
           {summary.running > 0 && (
-            <span className="text-blue-400">{tx(t.execution.bg_running, { count: summary.running })}</span>
+            <span className="text-status-info">{tx(t.execution.bg_running, { count: summary.running })}</span>
           )}
           {summary.failed > 0 && (
-            <span className="text-red-400">{tx(t.execution.bg_failed, { count: summary.failed })}</span>
+            <span className="text-status-error">{tx(t.execution.bg_failed, { count: summary.failed })}</span>
           )}
         </span>
       </div>
 
       {selected && actions && (
         <div className="flex items-center gap-1.5 px-3 pb-1.5" data-testid="background-run-actions">
-          <span className="typo-body text-foreground truncate min-w-0 flex-1">
+          <span className="typo-body text-ink-1 truncate min-w-0 flex-1">
             {selected.personaName}
-            <span className="text-foreground">{` · ${tokenLabel(t, 'execution', selected.status)}`}</span>
+            <span className="text-ink-1">{` · ${tokenLabel(t, 'execution', selected.status)}`}</span>
           </span>
           {actions.stop && (
             <AsyncButton
@@ -82,7 +82,7 @@ export function BackgroundRunsBar() {
               size="xs"
               icon={<Square className="w-3 h-3" />}
               onClick={() => cancelBackgroundExecution(selected.executionId)}
-              className="text-red-400/80 hover:text-red-400 hover:bg-red-500/15"
+              className="text-status-error hover:text-status-error hover:bg-status-error/15"
               data-testid="background-run-stop"
             >
               {t.execution.bg_stop}

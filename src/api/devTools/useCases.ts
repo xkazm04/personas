@@ -22,15 +22,6 @@ export async function listUseCases(
   return invoke<DevUseCase[]>("dev_tools_list_use_cases", { projectId, status });
 }
 
-export async function getUseCase(id: string): Promise<DevUseCase> {
-  return invoke<DevUseCase>("dev_tools_get_use_case", { id });
-}
-
-/** Every non-archived use case whose slice includes this context. */
-export async function listUseCasesForContext(contextId: string): Promise<DevUseCase[]> {
-  return invoke<DevUseCase[]>("dev_tools_list_use_cases_for_context", { contextId });
-}
-
 export interface CreateUseCaseInput {
   projectId: string;
   name: string;
@@ -57,17 +48,6 @@ export interface UpdateUseCaseInput {
   status?: UseCaseStatus;
   pinned?: boolean;
   contextIds?: string[];
-}
-
-export async function updateUseCase(
-  id: string,
-  updates: UpdateUseCaseInput,
-): Promise<DevUseCase> {
-  return invoke<DevUseCase>("dev_tools_update_use_case", { id, ...updates });
-}
-
-export async function deleteUseCase(id: string): Promise<boolean> {
-  return invoke<boolean>("dev_tools_delete_use_case", { id });
 }
 
 /** Start a feature scan (results land active); progress streams via USE_CASE_SCAN_* events. */

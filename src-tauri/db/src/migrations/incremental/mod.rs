@@ -99,6 +99,7 @@ mod e69_charter_mirror;
 mod e70_team_assignment_paused;
 mod e71_knowledge_annotation_types;
 mod e72_scan_finding_contract;
+mod e73_host_utilization;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -194,6 +195,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e70_team_assignment_paused::run(conn)?;
     e71_knowledge_annotation_types::run(conn)?;
     e72_scan_finding_contract::run(conn)?;
+    e73_host_utilization::run(conn)?;
 
     Ok(())
 }

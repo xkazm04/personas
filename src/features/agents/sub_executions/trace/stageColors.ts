@@ -24,13 +24,13 @@ export interface StageColor {
  * `stageCategory`, so the badge cannot drift from the waterfall again.
  */
 const STAGE_PALETTE: Record<PipelineStage, Omit<StageColor, 'category'>> = {
-  initiate:           { barGradient: 'bg-gradient-to-r from-blue-500/60 to-cyan-500/50',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
-  validate:           { barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  create_record:      { barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  spawn_engine:       { barGradient: 'bg-gradient-to-r from-violet-500/60 to-indigo-500/50',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
-  stream_output:      { barGradient: 'bg-gradient-to-r from-violet-500/60 to-indigo-500/50',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
-  finalize_status:    { barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  frontend_complete:  { barGradient: 'bg-gradient-to-r from-blue-500/60 to-cyan-500/50',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+  initiate:           { barGradient: 'bg-surface-1',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-status-info',    bg: 'bg-status-info/15',    border: 'border-status-info/25' },
+  validate:           { barGradient: 'bg-surface-1',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
+  create_record:      { barGradient: 'bg-surface-1',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
+  spawn_engine:       { barGradient: 'bg-surface-1',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-role-agent',  bg: 'bg-role-agent/15',  border: 'border-role-agent/25' },
+  stream_output:      { barGradient: 'bg-surface-1',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-role-agent',  bg: 'bg-role-agent/15',  border: 'border-role-agent/25' },
+  finalize_status:    { barGradient: 'bg-surface-1',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-status-success', bg: 'bg-status-success/15', border: 'border-status-success/25' },
+  frontend_complete:  { barGradient: 'bg-surface-1',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-status-info',    bg: 'bg-status-info/15',    border: 'border-status-info/25' },
 };
 
 /**

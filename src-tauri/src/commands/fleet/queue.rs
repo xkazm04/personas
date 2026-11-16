@@ -1518,6 +1518,12 @@ fn schedule_promotion(app: &AppHandle, refresh: bool) {
             refresh_budget_state(&app).await;
         }
         promote_head(&app).await;
+        if refresh {
+            // Dead-spot backfill (spark app-standup): on the 30 s budget tick
+            // only, AFTER promotion, so it only ever sees a slot the queue
+            // left empty. See `engine::resources::dead_spot`.
+            crate::engine::resources::dead_spot::backfill_tick(&app).await;
+        }
     });
     // The promotion pass's death is its own outcome: a panic here would leave
     // `PROMOTING` latched and the queue head wedged, so it is named and the
@@ -1677,6 +1683,33 @@ pub async fn promote_head(app: &AppHandle) {
     }
     announce_budget_state(app, cap, enabled);
     PROMOTING.store(false, Ordering::SeqCst);
+}
+
+/// What the door would do with a dead-spot backfill dispatch right now
+/// (spark app-standup, `engine::resources::dead_spot`): the SAME
+/// [`door_verdict`] an arrival gets - count cap, budgets, RAM gate, GPU token,
+/// aging, strict order - read, never acted on.
+pub(crate) fn backfill_probe(
+    app: &AppHandle,
+    req: &DispatchRequest,
+) -> crate::engine::resources::dead_spot::DoorProbe {
+    use crate::engine::resources::dead_spot::DoorProbe;
+    let cap = cap_via_app(app) as u32;
+    let now = now_ms();
+    let (inputs, used, _) = budget_reading(registry(), cap, dynamic_budgets_via_app(app), now);
+    match door_verdict(
+        registry(),
+        req,
+        now,
+        &inputs,
+        used,
+        strict_queue_order_via_app(app),
+    ) {
+        Door::Start { passed } if passed.is_empty() => DoorProbe::Starts,
+        Door::Start { passed } => DoorProbe::StartsPast(passed.len()),
+        Door::Queue(why) => DoorProbe::Waits(why.label()),
+        Door::Refuse => DoorProbe::Waits(REFUSAL_EXCEEDS_BUDGET.to_string()),
+    }
 }
 
 /// Spawn ONE queued row on its own id (whatever the cap says — the callers

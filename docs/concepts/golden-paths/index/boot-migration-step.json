@@ -204,7 +204,8 @@
       "sections": [7],
       "contexts": [
         "| `src/lib.rs:522` + `src/lib/bindings/StartupTimingReport.ts` | `get_startup_timing` is a live Tauri command with a generated binding and **zero frontend call sites** — the report is reachable and u…"
-      ]
+      ],
+      "resolved": false
     }
   }
 }

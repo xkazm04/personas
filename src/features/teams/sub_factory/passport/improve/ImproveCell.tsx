@@ -4,7 +4,9 @@
 // hover — so the user can see at a glance which items an LLM can upgrade. The
 // non-AI cells (standards toggles, connector binds, skills adoption) reveal a
 // subtle sparkle on hover only. Renders plain when there's nothing to improve.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, type ReactNode, type MouseEvent } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Sparkles, Cog } from 'lucide-react';
 
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
@@ -66,13 +68,11 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
   return (
     <>
       {showGear ? (
-        <button
-          type="button"
-          onClick={busy ? undefined : trigger}
+        <Tooltip content={busy ? 'Upgrade running…' : 'Upgrade with Claude'}><PressSurface
+          onPress={(e) => { if (!busy) trigger(e); }}
           disabled={busy}
           aria-busy={busy}
-          title={busy ? 'Upgrade running…' : 'Upgrade with Claude'}
-          className={`group/imp relative flex items-center w-full text-left rounded-interactive py-0.5 transition-colors ${
+          className={`group/imp relative flex items-center w-full  rounded-interactive py-0.5  ${
             busy ? 'cursor-default' : 'hover:bg-primary/[0.05] cursor-pointer'
           }`}
         >
@@ -83,17 +83,15 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
             }`}
             aria-hidden
           />
-        </button>
+        </PressSurface></Tooltip>
       ) : (
-        <button
-          type="button"
-          onClick={trigger}
-          title="Improve: golden-standard upgrades"
-          className="group/imp inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.06] transition-colors cursor-pointer"
+        <Tooltip content={"Improve: golden-standard upgrades"}><PressSurface
+          onPress={trigger}
+          className="group/imp inline-flex items-center gap-1 rounded-interactive -mx-1 px-1 py-0.5"
         >
           {children}
           <Sparkles className="w-3 h-3 flex-shrink-0 text-primary opacity-0 group-hover/imp:opacity-70 transition-opacity" aria-hidden />
-        </button>
+        </PressSurface></Tooltip>
       )}
       {open && (
         <ImproveSurface slug={slug} rowKey={rowKey} passport={passport} anchor={anchor} onClose={() => setOpen(false)} />

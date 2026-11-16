@@ -1,0 +1,171 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c88ec980-590a-4a5d-98a6-c330165bce76",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-11-04T04:19:41.469167+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "api-agents",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/companion.ts:716 The cloned-voice import door takes only a voiceId and a WAV (the Rust command at src-tauri/src/commands/companion/voice.rs:125-136 just validates and writes the file), so a real person's likeness enters the catalog with no consent or provenance record, which authored-voice-identity names as the failure.",
+   "techniques": [
+    {
+     "technique": "authored-voice-identity",
+     "verdict": "deviation",
+     "evidence": "src/api/companion.ts:711 Clone import carries no record of who was cloned, on what evidence, for what use. The 'cloned' vs 'premade' category (line 733) does keep the two kinds distinguishable, which is the part it gets right."
+    },
+    {
+     "technique": "engine-abstraction",
+     "verdict": "conformant",
+     "evidence": "src/api/companion.ts:552 One synthesis door with a typed TtsEngineId parameter dispatching to per-engine adapters. Descoped engines are recorded at line 518. Only the synthesis side was judged: the browser STT engine lives in the renderer, outside this context."
+    },
+    {
+     "technique": "bounded-playback-wait",
+     "verdict": "not-applicable",
+     "evidence": "src/api/companion.ts:501 The IPC returns audio bytes and the renderer plays them, so no wrapper here waits on playback. The synthesis wait is bounded separately (VOICE_IPC_TIMEOUT_MS, line 544)."
+    },
+    {
+     "technique": "voice-setup-experience",
+     "verdict": "conformant",
+     "evidence": "src/api/companion.ts:658 Only rule 2 judged: the installer takes no URL from the client (addresses live in the installing process), and progress has named terminal phases (line 617). Rule 1, the default recognizer, is judged in companions-page."
+    }
+   ]
+  },
+  {
+   "context": "companions-page",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:47 The composer's mic captures through useSpeechInput, which picks athenaSttEngine. Its default is 'browser' (src/stores/slices/system/athenaSlice.ts:353), and src/api/companion.ts:756-757 says that engine's audio goes to the OS vendor's cloud. So capture leaves the device by default, and the composer's labels ('Talk to Athena') never say so. on-device-vs-cloud requires on-device by default with cloud as a disclosed opt-in.",
+   "techniques": [
+    {
+     "technique": "on-device-vs-cloud",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:47 Default capture engine is the cloud-routed Web Speech engine, not local whisper. The mic affordance in this context carries no disclosure."
+    },
+    {
+     "technique": "stt-pipeline",
+     "verdict": "conformant",
+     "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:56 Interim text is shown only while listening and is never committed to the draft. Only finals are kept."
+    },
+    {
+     "technique": "transcript-normalization",
+     "verdict": "conformant",
+     "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:52 The final transcript goes into the editable draft unrewritten. Its destination is Athena (a reasoner), where the technique says not to normalize."
+    },
+    {
+     "technique": "spoken-intent-parsing",
+     "verdict": "not-applicable",
+     "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:63 Dictation is prose sent only on the user's explicit submit. No transcript is turned into a typed command here."
+    },
+    {
+     "technique": "voice-ux-integration",
+     "verdict": "conformant",
+     "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:86 One toggle both starts and stops capture, and its listening label is visible ('Listening\u2026 click to stop', nextCopy.ts:95). How unsupported/denied states render lives in the shared ChatInputBar, outside this context, and was not judged."
+    }
+   ]
+  },
+  {
+   "context": "i18n",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/i18n/englishSections.ts:46 The context is the English translation bundle, its lazy-parse cache and the error/translation helpers. A recursive search of src/i18n and src/lib found no speechSynthesis, SpeechRecognition, getUserMedia, MediaRecorder or companionTts. The only matches for 'voice'/'whisper' are translated UI strings in generated bundles, so no voice pipeline lives here.",
+   "techniques": [],
+   "absenceTerms": [
+    "speechSynthesis",
+    "SpeechRecognition",
+    "getUserMedia",
+    "MediaRecorder",
+    "companionTts"
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-lifecycle",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:2 The context is the Lifecycle Lens dev-tools surface. A recursive search of src/features/plugins/dev-tools/sub_lifecycle found no speechSynthesis, SpeechRecognition, getUserMedia, MediaRecorder or companionTts. The only 'speak' hits are figurative prose in comments (AdherenceSection.tsx:6, useLifecycleHeadline.ts:27).",
+   "techniques": [],
+   "absenceTerms": [
+    "speechSynthesis",
+    "SpeechRecognition",
+    "getUserMedia",
+    "MediaRecorder",
+    "companionTts"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "voice-io",
+   "context": "companion-narration-ops",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-04T04:19:41.469167+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "authored-voice-identity",
+    "bounded-playback-wait",
+    "engine-abstraction",
+    "voice-setup-experience"
+   ],
+   "deviations": 1,
+   "context": "api-agents",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:19:41.469167+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "on-device-vs-cloud",
+    "spoken-intent-parsing",
+    "stt-pipeline",
+    "transcript-normalization",
+    "voice-ux-integration"
+   ],
+   "deviations": 1,
+   "context": "companions-page",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:19:41.469167+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "i18n",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:19:41.469167+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-dev-tools-lifecycle",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

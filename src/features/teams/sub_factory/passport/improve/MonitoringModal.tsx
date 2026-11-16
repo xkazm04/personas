@@ -129,10 +129,10 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
   return (
     <BaseModal isOpen onClose={onClose} titleId="monitoring-modal-title" size="6xl" portal staggerChildren={false}>
       <div className="flex flex-col h-[calc(100dvh-160px)] min-h-[520px] max-h-[760px]" data-testid="monitoring-modal">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-1 flex-shrink-0">
           <Activity className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="monitoring-modal-title" className="typo-title truncate">{d.monitoring_modal_title}</span>
-          <span className="typo-caption text-foreground/60 truncate" style={{ fontWeight: 400 }}>· {projectName}</span>
+          <span className="typo-caption text-ink-3 truncate" style={{ fontWeight: 400 }}>· {projectName}</span>
         </div>
 
         <MonitoringConsole

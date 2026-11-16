@@ -1,0 +1,55 @@
+{
+  "schema": "conform-run/1",
+  "worker": "dc70cd6d-0c3c-47a3-96cc-f135c2517c2a",
+  "subject": "conversation-orchestration",
+  "evaluatedAt": "2026-11-08T01:43:05.289712+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "conversation-orchestration",
+      "context": "companion-ui-controls",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "conversation-orchestration",
+      "context": "companions-page",
+      "reason": "evidence leans on session/stream.rs, which is not a tracked file"
+    },
+    {
+      "subject": "conversation-orchestration",
+      "context": "commands-companion",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "conversation-orchestration",
+      "context": "onboarding-components",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "conversation-orchestration",
+      "context": "companion-brain",
+      "reason": "withdrawn after review: reviewer (sonnet): The verdict rests on templates/chat-core.md, a prompt template loaded by prompt/chat_family.rs, not on any brain/*.rs file in companion-brain, so it describes a different context; chat-core.md:208 also refers to a visible 'table' in replies, which cuts against the 'no table' claim."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-08T01:43:05.289712+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "conversation-orchestration"
+      ],
+      "techniques": [
+        "model-proposed-quick-replies",
+        "progress-beat-grammar",
+        "show-dont-tell-walkthrough",
+        "structured-visual-replies"
+      ],
+      "deviations": 1,
+      "context": "companion-brain",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

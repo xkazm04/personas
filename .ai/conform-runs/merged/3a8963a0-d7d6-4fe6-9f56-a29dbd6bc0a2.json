@@ -1,0 +1,117 @@
+{
+  "schema": "conform-run/1",
+  "worker": "3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2",
+  "subject": "app-shell",
+  "evaluatedAt": "2026-11-08T03:09:57.448751+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "stores-slices-system",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/uiSlice.ts:542 setSettingsTab writes any id without checking it against the current vocabulary. settingsTab is persisted (systemStore.ts:115), and the rehydrate path runs a membership guard only for sidebarSection, companionsPage and goalsView, not for settingsTab. So a retired or newer-build tab id makes SettingsPage.tsx:73 `tabComponents[tab]` undefined, and rendering `<Component />` crashes. That breaks navigation-model prohibitions 4 and 6 (restored locations are validated, and removed ids need a fallback).",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/uiSlice.ts:542 Sub-location setter has no validation, and the persisted settingsTab has no guard on restore (re-checked at HEAD; earlier anchor uiSlice.ts:570 has moved to :542). The section-level setter is fine: one door that records history (uiSlice.ts:494)."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/uiSlice.ts:684 Back/forward skip destinations whose registry gates now fail (minTier/devOnly), using the same gate context for titlebar, keyboard and mouse."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/uiSlice.ts:622 Overlay posture is closed at the navigation doors (setSidebarSection and navigateBack) rather than by each entry's own handler, so a header overlay is dismissed by any route change."
+        }
+      ]
+    },
+    {
+      "context": "fleet-monitor-shell",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/fleet/monitor/shell/monitorRouter.ts:104 The Monitor keeps one location value from a closed view union, and derives the tab highlight from it plus an urgent press, so the pressed pill and the rendered view cannot disagree. It also lazy-loads views behind one delayed boundary and gates its session-lifetime cost on visibility.",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/shell/monitorRouter.ts:11 Closed vocabulary. Deep links go through one viewForSignal mapping, and activeTab is derived (line 104). The deep-link effect calls setView directly (line 92) instead of goToView; this is harmless today, since goToView does nothing extra besides the press affordance."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/PersonaMonitor.tsx:3 One flat level of peer destinations; the old nested channels pill was retired (lines 8-10). The comment says four views, but the union now has five."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/shell/MonitorBody.tsx:48 Views are lazyRetry chunks under ONE boundary, so the outgoing view stays painted through the transition. The fallback is RouteChunkSkeleton, which waits 150ms before showing. Hiding instead of unmounting keeps state and scroll on return. No ErrorBoundary is visible in MonitorBody or at the useTitleBarTray mount site, so whether a failed chunk gets a stated failure screen depends on an outer boundary I did not confirm."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/monitorVisibility.ts:38 The overlay stays mounted for the whole session, and its cost is paid down by one visibility signal that gates polls, ticks (useElapsedTick.ts:53) and the Escape registration (useMonitorEscape enabled: visible)."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "app-shell",
+      "context": "display-data-formatters",
+      "reason": "withdrawn after review: reviewer (sonnet): The not-applicable anchor RelativeTime.tsx:2 is an import line that sits in the context but does not itself show that the shell vocabulary is absent. The claim rests only on a grep over directories, and the cited line is incidental."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-08T03:09:57.448751+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "display-data-formatters",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T03:09:57.448751+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "entitlement-gating",
+        "nav-hierarchy",
+        "navigation-model"
+      ],
+      "deviations": 1,
+      "context": "stores-slices-system",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T03:09:57.448751+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "lazy-section-loading",
+        "nav-hierarchy",
+        "navigation-model",
+        "shell-hosted-services"
+      ],
+      "deviations": 0,
+      "context": "fleet-monitor-shell",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

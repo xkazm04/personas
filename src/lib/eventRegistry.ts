@@ -381,6 +381,8 @@ export const EventName = {
   KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
   /** New pending approval rows (a turn, or a background pass that files one). */
   COMPANION_APPROVALS: 'companion://approvals',
+  /** A standup revision moved; payload names which one (re-read with standupCurrent). */
+  STANDUP_UPDATED: 'standup://updated',
 
   // Notepad — emitted by the run-artifact sweeper after it flips a note's
   // status (published → in_progress → completed/failed).
@@ -1333,6 +1335,7 @@ export interface EventPayloadMap {
   [EventName.RADIO_STATE]: RadioState;
   [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;
   [EventName.COMPANION_APPROVALS]: import('@/api/companion').CreatedApproval[];
+  [EventName.STANDUP_UPDATED]: import('@/lib/bindings/StandupUpdatedPayload').StandupUpdatedPayload;
 
   // Notepad sweeper flip. `status` is a NoteStatus token; typed as the binding
   // so a renamed variant breaks here rather than at a switch default.

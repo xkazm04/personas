@@ -70,7 +70,7 @@ export function TechStackCell({ tokens }: { tokens: readonly string[] }) {
               <span className="inline-flex items-center gap-1 shrink-0 cursor-default">
                 <TechGlyph icon={match.icon} />
                 {match.residual && (
-                  <span className="typo-caption text-foreground tabular-nums">{match.residual}</span>
+                  <span className="typo-caption text-foreground num">{match.residual}</span>
                 )}
               </span>
             </Tooltip>
@@ -79,7 +79,7 @@ export function TechStackCell({ tokens }: { tokens: readonly string[] }) {
         const long = label.length > PROSE_CHARS;
         return (
           <Tooltip key={`${label}-${i}`} content={label}>
-            <span className="inline-block rounded-input bg-secondary/40 border border-primary/10 px-1.5 py-0.5 typo-caption text-foreground min-w-0 max-w-[12rem] truncate cursor-default">
+            <span className="inline-block rounded-input bg-surface-1 border border-hair px-1.5 py-0.5 typo-caption text-foreground min-w-0 max-w-[12rem] truncate cursor-default">
               {long ? `${label.slice(0, PROSE_CHARS).trimEnd()}…` : label}
             </span>
           </Tooltip>
@@ -87,7 +87,7 @@ export function TechStackCell({ tokens }: { tokens: readonly string[] }) {
       })}
       {hidden.length > 0 && (
         <Tooltip content={hidden.join(', ')}>
-          <span className="inline-flex items-center shrink-0 rounded-input bg-secondary/40 border border-primary/10 px-1.5 py-0.5 typo-caption text-foreground tabular-nums cursor-default">
+          <span className="inline-flex items-center shrink-0 rounded-input bg-surface-1 border border-hair px-1.5 py-0.5 typo-caption text-foreground num cursor-default">
             +{hidden.length}
           </span>
         </Tooltip>

@@ -1,0 +1,67 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5177ad99-f58c-488f-a9e2-8a03d99d131e",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-11-03T08:23:14.742Z",
+ "pairs": [
+  {
+   "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/design-preview/DesignTestResults.tsx:42 renders a one-shot feasibility verdict (ready/partial/blocked) over a single design result; precondition unmet: no declared scenario set, trials, judge or aggregation exists, so nothing is measured repeatably",
+   "techniques": [
+    {
+     "technique": "scenario-design",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/design-preview/DesignTestResults.tsx:42 no scenarios, only a display of one DesignTestResult"
+    }
+   ]
+  },
+  {
+   "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:1 derives a readiness passport from observed repo evidence (scan output + DevProject row); EvalsLevel only records whether a target repo has evals, this code runs no candidate against scenarios, so the subject precondition is unmet",
+   "techniques": [
+    {
+     "technique": "metric-role-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:1 evidence-derived levels, not scored model runs"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "eval-harness",
+   "context": "06ef5a64-1796-4637-a4d9-f860bbe67562",
+   "reason": "recipes-playground: entry points under src/features/recipes/sub_playground are not tracked by git (git ls-files returns none), so there is no code to judge; map context looks stale. Left unknown."
+  },
+  {
+   "subject": "eval-harness",
+   "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+   "reason": "plugins-research-lab-reports: no tracked research-lab report files found; report synthesis code could not be located, left unknown."
+  },
+  {
+   "subject": "eval-harness",
+   "context": "ad601e35-b998-4029-97a5-77487f00d561",
+   "reason": "lib-types: shared type definitions; not read in depth this run, left unknown."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:23:14.742Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "scenario-design",
+    "metric-role-contract"
+   ],
+   "deviations": 0
+  }
+ ]
+}

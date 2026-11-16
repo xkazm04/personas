@@ -3,6 +3,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { BrainKind } from '@/api/companion';
 import { parseBrainLinks } from './parseBrainLinks';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Renders a small "Linked memories" chip strip below a markdown body
  * that contains brain-id tokens. Used by:
@@ -49,17 +51,18 @@ export function BrainLinksStrip({
       </div>
       <div className="flex flex-wrap items-baseline gap-1.5">
         {links.map((link) => (
-          <button
+          <Button
             key={link.raw}
             type="button"
             onClick={() => onOpen(link.kind, link.id)}
-            className="inline-flex items-baseline gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] hover:border-primary/30 px-1.5 py-0.5 typo-caption text-foreground transition-colors focus-ring"
             data-testid="companion-brain-link"
             data-kind={link.kind}
             data-id={link.id}
+            variant="secondary"
+            size="sm"
           >
             <code className="font-mono">{link.raw}</code>
-          </button>
+          </Button>
         ))}
       </div>
     </div>

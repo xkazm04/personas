@@ -95,16 +95,16 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
   }, [connector?.name, credential.service_type, googleOAuth]);
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="credential-playground-title" size="6xl" portal panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]">
+    <BaseModal isOpen onClose={onClose} titleId="credential-playground-title" size="6xl" portal panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]">
       <PlaygroundHeader credential={credential} connector={connector} onClose={onClose} />
-      <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
+      <div className="flex items-center gap-1 px-6 pt-3 border-b border-hair shrink-0">
         {tabs.map((tab) => {
           const Icon = tab.icon; const isActive = tab.id === activeTab;
           return (
             <Button key={tab.id} variant="ghost" size="sm"
               icon={<Icon className="w-3.5 h-3.5" />}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative ${isActive ? 'text-foreground/90' : 'text-foreground hover:text-muted-foreground/70'}`}>
+              className={`relative ${isActive ? 'text-ink-1' : 'text-foreground hover:text-ink-2'}`}>
               {tabLabel[tab.id]}
               {isActive && <motion.div layoutId="playgroundTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full" transition={{ type: 'spring', stiffness: 500, damping: 30 }} />}
             </Button>

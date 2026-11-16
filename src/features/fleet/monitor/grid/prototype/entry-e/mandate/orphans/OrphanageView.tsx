@@ -65,7 +65,7 @@ export function OrphanageView({ mandates }: { mandates: readonly MandateSummary[
           <span className="flex items-center gap-2">
             <Lamp lamp={{ tone: 'warn', lit: asking }} />
             <Engraved>{m.ml_orphanage}</Engraved>
-            <span className="typo-data tabular-nums text-foreground">{o.data ? total : null}</span>
+            <span className="typo-data num text-foreground">{o.data ? total : null}</span>
           </span>
           <p className="typo-body text-foreground">{head ?? m.ml_loading}</p>
           <p className="typo-caption">{o.data && o.data.unassigned > 0 ? tx(m.ml_orphans_unassigned, { count: o.data.unassigned }) : m.ml_orphans_lead}</p>

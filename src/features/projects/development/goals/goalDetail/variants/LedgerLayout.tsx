@@ -44,7 +44,7 @@ export function LedgerLayout({ isOpen }: { isOpen: boolean }) {
       status={
         <>
           <GoalStatusBadge status={goal.status} />
-          <span className="typo-caption text-foreground tabular-nums">{goal.progress}%</span>
+          <span className="typo-caption text-foreground num">{goal.progress}%</span>
         </>
       }
       actions={
@@ -71,7 +71,7 @@ export function LedgerLayout({ isOpen }: { isOpen: boolean }) {
 
           {/* The rail. `lg:border-l` only, so at narrow widths the grid
               collapses to one column and the rule would be a stray line. */}
-          <aside className="min-w-0 space-y-3 lg:border-l lg:border-primary/10 lg:pl-5">
+          <aside className="min-w-0 space-y-3 lg:border-l lg:border-hair lg:pl-5">
             <Outcome />
             <Dependencies />
             <LinkedTeams />

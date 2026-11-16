@@ -1,6 +1,8 @@
 # Live Roadmap
 
-Make the in-app Roadmap view (the special `roadmap` release inside "What's New") fetch its content from a published source at runtime, instead of being baked into the desktop binary at build time. The developer edits the roadmap once, every desktop user sees the update on next launch — no app release required.
+> **Note (2026-11-05).** Most of this document is the original implementation plan for Variant A, kept for its design reasoning; it no longer matches the code file for file. Variant A shipped, and the planned `HomeRoadmapView` / `HomeReleases` pair under the old `home/components/releases/` folder has since been collapsed into one view. The current surface is `src/features/home/sub_releases/HomeReleases.tsx`, with the hook `src/features/home/sub_releases/useLiveRoadmap.ts`, the merge logic in `src/features/home/sub_releases/roadmapItems.ts` (`buildDisplayItems`), the status pill `src/features/home/sub_releases/LiveRoadmapStatusPill.tsx`, the IPC wrapper `src/api/liveRoadmap.ts` and the command in `src-tauri/src/commands/live_roadmap.rs`. The file list and command signature under **Transport** and **Frontend integration** below are corrected to the shipped code; the rest of the body still describes the view as planned. The What's New tab is DEV-only (`devOnly: true` in `homeItems`), so a production build does not show the roadmap at all today.
+
+Make the in-app Roadmap view (the special `roadmap` release inside "What's New") fetch its content from a published source at runtime, instead of being baked into the desktop binary at build time. The developer edits the roadmap once, and every desktop build that shows the What's New tab sees the update on next launch — no app release required. (While that tab is DEV-only, that means DEV builds only; see the note above.)
 
 This document is the implementation contract for **Variant A (Static JSON over CDN)**, which we are shipping in this session. **Variant B (Supabase + Realtime)** is preserved at the bottom as a forward-looking option: not chosen now, kept to bound future work and capture the migration triggers so we don't drift toward it accidentally.
 
@@ -127,7 +129,7 @@ One file, all locales inline. Roadmap is small (4 items today, won't exceed ~30)
 - `release.items[].id` MUST be a string. Numeric ids (`"2"`, `"3"`) are fine — they match the existing convention in `releases.json`.
 - `i18n.en` is the single required locale block. All others are optional; missing locales fall back to `en` via the existing deep-merge loader behavior.
 - Unknown top-level keys are ignored (forward-compatible).
-- `release.items` MUST contain **at least one item**, and **every** item MUST have a matching non-empty `i18n.en` title. The validator rejects payloads that violate either rule (empty list, or an item with no/blank `en` content) and the app falls back to bundled content. This closes the "schema-valid but empty/contentless payload blanks the whole roadmap" hole: because the live payload always wins over bundled content, a single content-author mistake (empty array, missing locale block) would otherwise silently blank the roadmap — status pill included — for every desktop client, with the shipped fallback unreachable. `HomeRoadmapView.buildDisplayItems` carries the same guard as belt-and-suspenders against a *stale cache* written before this rule shipped: if the live payload yields zero displayable items it renders bundled content instead of `[roadmap.<id>]` placeholders.
+- `release.items` MUST contain **at least one item**, and **every** item MUST have a matching non-empty `i18n.en` title. The validator rejects payloads that violate either rule (empty list, or an item with no/blank `en` content) and the app falls back to bundled content. This closes the "schema-valid but empty/contentless payload blanks the whole roadmap" hole: because the live payload always wins over bundled content, a single content-author mistake (empty array, missing locale block) would otherwise silently blank the roadmap — status pill included — for every desktop client, with the shipped fallback unreachable. `buildDisplayItems` (now `src/features/home/sub_releases/roadmapItems.ts`; the plan placed it in `HomeRoadmapView`) carries the same guard as belt-and-suspenders against a *stale cache* written before this rule shipped: if the live payload yields zero displayable items it renders bundled content instead of `[roadmap.<id>]` placeholders.
 
 ### Transport: Tauri Rust command
 
@@ -138,11 +140,13 @@ Fetching happens in Rust, not JS, for three reasons:
 
 **New file: `src-tauri/src/commands/live_roadmap.rs`**
 
-Surface (called via `invokeWithTimeout`):
+Surface (called via `invokeWithTimeout`), as shipped (`live_roadmap.rs:162`):
 ```rust
 #[tauri::command]
-pub async fn fetch_roadmap(force: bool) -> Result<LiveRoadmap, String>
+pub async fn fetch_roadmap(app: AppHandle, force: bool) -> Result<LiveRoadmapResult, AppError>
 ```
+
+The original plan had `force` alone and returned the bare `LiveRoadmap` with a `String` error. The shipped command takes the `AppHandle` to resolve the cache path, returns a `LiveRoadmapResult` (the payload plus `fetchedAt` and its `source`: `network`, `cache` or `stale`), and fails with `AppError`.
 
 Behaviour:
 1. If `force == false` and a cached payload exists with `cached_at` < 1 hour ago, return the cache. Skip network.
@@ -156,22 +160,25 @@ Behaviour:
 
 Cache file path: `app_data_dir().join("roadmap_cache.json")`. Whatever the platform default app data dir is.
 
-Register the command in `src-tauri/src/lib.rs` `invoke_handler` per the project's "Adding a New Integration" memory pattern.
+The plan registered the command in the `lib.rs` `invoke_handler`; command registration has since moved to the IPC shards, and `fetch_roadmap` is listed in `src-tauri/src/ipc_shards/shard_4.rs:42`.
 
 ### Frontend integration
 
-**New file: `src/api/liveRoadmap.ts`** — thin wrapper around `invokeWithTimeout('fetch_roadmap', { force })`. Returns `LiveRoadmap | null` (null on error, never throws).
+As shipped (the plan's file names and shapes are noted where they differ):
 
-**New file: `src/features/home/components/releases/useLiveRoadmap.ts`** — React hook:
-- On mount, calls `fetchLiveRoadmap({ force: false })`. Sets state to the result.
-- Exposes `{ liveRoadmap, refresh, status }` where `status` is `'fresh' | 'cached' | 'fallback' | 'loading'`.
+**`src/api/liveRoadmap.ts`** — thin wrapper around `invokeWithTimeout('fetch_roadmap', { force })` (`fetchLiveRoadmap`). The plan had it return `LiveRoadmap | null`; it now returns an outcome that carries either the `LiveRoadmapResult` or a classified failure, and still never throws.
+
+**`src/features/home/sub_releases/useLiveRoadmap.ts`** — React hook:
+- On mount, calls `fetchLiveRoadmap` without forcing. Sets state to the result.
+- Exposes `{ roadmap, fetchedAt, status, refreshing, refresh }` where `status` is `'loading' | 'fresh' | 'cached' | 'stale' | 'unavailable'` (the plan had `{ liveRoadmap, refresh, status }` with `'fresh' | 'cached' | 'fallback' | 'loading'`).
 - `refresh()` calls with `force: true`.
+- Polls hourly, but only while What's New is the visible Home tab.
 
-**Edit: `src/features/home/components/releases/HomeRoadmapView.tsx`** — accept an optional `liveOverride?: LiveRoadmap` prop. When present, merge: use `liveOverride.release.items` for structural data and `liveOverride.i18n[lang] ?? liveOverride.i18n.en` for titles/descriptions, falling back to the bundled `useReleasesTranslation` for any missing labels (status names, priority names, summary pill text — those stay in the main i18n bundle since they're chrome, not content).
+**`src/features/home/sub_releases/roadmapItems.ts`** — `buildDisplayItems(…, liveOverride)` (the plan put this merge in a separate `HomeRoadmapView` component, since removed). When a live payload is present, merge: use `liveOverride.release.items` for structural data and `liveOverride.i18n[lang] ?? liveOverride.i18n.en` for titles/descriptions, falling back to the bundled `useReleasesTranslation` for any missing labels (status names, priority names, summary pill text — those stay in the main i18n bundle since they're chrome, not content).
 
-**Edit: `src/features/home/components/releases/HomeReleases.tsx`** — call `useLiveRoadmap()` once at the top. Pass `liveOverride` to `<HomeRoadmapView>` only when `selected.status === 'roadmap'`.
+**`src/features/home/sub_releases/HomeReleases.tsx`** — the single What's New view: calls `useLiveRoadmap()` once at the top and builds the roadmap's display items from it with `buildDisplayItems`. There is no release selection any more (the plan passed `liveOverride` only when `selected.status === 'roadmap'`).
 
-A small status pill in the roadmap view shows "Last updated 4m ago" / "Offline — showing cached" / "Refresh" so the user understands what they're looking at.
+A small status pill (`src/features/home/sub_releases/LiveRoadmapStatusPill.tsx`) shows "Last updated 4m ago" / "Offline — showing cached" / "Refresh" so the user understands what they're looking at.
 
 ### Roadmap surface visuals (traced glyphs)
 
@@ -304,7 +311,7 @@ The desktop-side code that consumes `LiveRoadmap` (`HomeRoadmapView`, the merge 
 ## References
 
 - Existing data layer: [`src/data/releases.ts`](../../../src/data/releases.ts), [`src/data/releases.json`](../../../src/data/releases.json)
-- Existing view: [`src/features/home/components/releases/HomeRoadmapView.tsx`](../../../src/features/home/components/releases/HomeRoadmapView.tsx)
+- Current view: [`src/features/home/sub_releases/HomeReleases.tsx`](../../../src/features/home/sub_releases/HomeReleases.tsx) (the plan's `HomeRoadmapView` was folded into it)
 - i18n source: [`src/i18n/locales/en.json`](../../../src/i18n/locales/en.json) → `releases.whats_new.*`
 - IPC pattern: [`src/lib/tauriInvoke.ts`](../../../src/lib/tauriInvoke.ts), CLAUDE.md → "Tauri IPC"
 - Integration scaffold pattern: project memory → "Adding a New Integration"

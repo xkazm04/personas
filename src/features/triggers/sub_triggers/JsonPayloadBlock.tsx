@@ -25,8 +25,8 @@ export function JsonPayloadBlock({
 
   return (
     <div className="space-y-1">
-      <div className={`${labelClassName} font-medium text-foreground uppercase tracking-wide`}>{label}</div>
-      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 typo-code text-foreground overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+      <div className={`${labelClassName} font-medium text-ink-1 uppercase tracking-wide`}>{label}</div>
+      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-hair typo-code text-ink-1 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
         {formatted}
       </pre>
     </div>

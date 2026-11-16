@@ -114,7 +114,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
             tabs={variants}
           />
           <div className="flex items-center gap-2">
-            <span className="typo-caption text-foreground uppercase tracking-wider">
+            <span className="typo-eyebrow text-ink-3">
               {dl.goal_status_done}
             </span>
             <SegmentedTabs<DoneFilter>
@@ -138,7 +138,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
           no remounts. */}
       <div
         data-done-filter={model.doneFilter}
-        className="group/strip relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden"
+        className="bg-surface-1 group/strip relative rounded-modal border border-hair overflow-hidden"
       >
         <ProgressViewProvider value={view}>
           {/* `role` is written out as well as spread. The helper supplies the
@@ -157,8 +157,8 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
 
         {/* Honest footer: the filter hides goals; say how many. */}
         {model.hiddenGoals > 0 && (
-          <div className="px-3 py-1.5 border-t border-primary/5 bg-secondary/10 text-right">
-            <span className="typo-caption text-foreground tabular-nums">
+          <div className="px-3 py-1.5 border-t border-hair bg-surface-1 text-right">
+            <span className="typo-caption text-foreground num">
               {tx(dl.progress_hidden_note, { count: model.hiddenGoals })}
             </span>
           </div>

@@ -36,9 +36,9 @@ export function EventTooltipContent({
     <div className="max-w-[240px]" data-testid="event-tooltip">
       <div className="flex items-center gap-1.5 mb-1">
         <PersonaIcon icon={event.agentIcon} color={event.agentColor ?? null} display="pop" frameSize="lg" />
-        <span className="font-medium text-foreground/90 truncate">{event.agentName}</span>
+        <span className="font-medium text-ink-1 truncate">{event.agentName}</span>
       </div>
-      <div className="text-foreground space-y-0.5">
+      <div className="text-ink-1 space-y-0.5">
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {event.time.toLocaleString(undefined, {
@@ -50,16 +50,16 @@ export function EventTooltipContent({
           })}
         </div>
         <div className="flex items-center gap-1 capitalize">
-          {event.kind === 'projected' && <span className="text-blue-400">{st.scheduled}</span>}
-          {event.kind === 'past-success' && <span className="text-emerald-400">{st.success}</span>}
-          {event.kind === 'past-failure' && <span className="text-red-400">{st.failed}</span>}
-          {event.kind === 'past-unknown' && <span className="text-foreground">{st.unverified}</span>}
+          {event.kind === 'projected' && <span className="text-status-info">{st.scheduled}</span>}
+          {event.kind === 'past-success' && <span className="text-status-success">{st.success}</span>}
+          {event.kind === 'past-failure' && <span className="text-status-error">{st.failed}</span>}
+          {event.kind === 'past-unknown' && <span className="text-ink-1">{st.unverified}</span>}
         </div>
         {event.kind === 'past-unknown' && (
-          <div className="text-foreground leading-snug normal-case">{st.unverified_tooltip}</div>
+          <div className="text-ink-1 leading-snug normal-case">{st.unverified_tooltip}</div>
         )}
         {otherConflicts.length > 0 && (
-          <div className="flex items-start gap-1 mt-1 pt-1 border-t border-primary/10 text-amber-400/90">
+          <div className="flex items-start gap-1 mt-1 pt-1 border-t border-hair text-status-warning">
             <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
             <span>
               {st.overlaps_with} {otherConflicts.slice(0, MAX_NAMED_PARTNERS).join(', ')}

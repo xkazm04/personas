@@ -16,18 +16,18 @@ export type ContextKpiStatus = 'none' | 'unmeasured' | 'off-track' | 'on-track' 
 /** Tailwind classes per status: a tinted surface + a matching border. Neutral
  *  states get the plain card treatment so the coloured ones actually pop. */
 export const KPI_STATUS_SURFACE: Record<ContextKpiStatus, string> = {
-  'off-track': 'bg-red-500/10 border-red-500/30 hover:border-red-500/50',
+  'off-track': 'bg-status-error/10 border-status-error/30 hover:border-status-error/50',
   'on-track': 'bg-primary/10 border-primary/25 hover:border-primary/45',
-  met: 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50',
+  met: 'bg-status-success/10 border-status-success/30 hover:border-status-success/50',
   unmeasured: 'bg-card/40 border-primary/10 hover:border-primary/30',
   none: 'bg-card/40 border-primary/10 hover:border-primary/30',
 };
 
 /** A small dot for legends / tile corners. Neutral statuses stay muted. */
 export const KPI_STATUS_DOT: Record<ContextKpiStatus, string> = {
-  'off-track': 'bg-red-400',
+  'off-track': 'bg-status-error',
   'on-track': 'bg-primary',
-  met: 'bg-emerald-400',
+  met: 'bg-status-success',
   unmeasured: 'bg-foreground/25',
   none: 'bg-foreground/15',
 };

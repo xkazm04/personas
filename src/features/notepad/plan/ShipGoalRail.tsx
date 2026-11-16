@@ -33,6 +33,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { PLAN_BORDER, PLAN_INK } from './planInk';
 import type { ShipGoal, ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import type { ShipData } from './useProjectPlan';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Below this the filter is noise — a rail you can read in one glance does not
  *  need a search box above it. */
@@ -72,26 +73,25 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
     <>
       <div className="flex items-center gap-2 mb-2">
         <h3 className="typo-title min-w-0">{t.ship.goals_rail_title}</h3>
-        <span className="typo-data text-foreground/40">{ship.goals.length}</span>
-        <button
+        <span className="typo-data text-ink-3">{ship.goals.length}</span>
+        <Button variant="secondary" size="xs"
           type="button"
-          onClick={onNewGoal}
-          className={`ml-auto shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
+          onClick={onNewGoal} className="ml-auto shrink-0"
           data-testid="ship-new-goal"
         >
           <Target className="w-3 h-3" aria-hidden />
           {t.ship.new_goal}
-        </button>
+        </Button>
       </div>
 
       {ship.goals.length >= FILTER_FROM && (
         <div className="relative mb-2">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" aria-hidden />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" aria-hidden />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.ship.filter_placeholder}
-            className={`${INPUT_FIELD} !py-1 !pl-8 !text-sm`}
+            className={`${INPUT_FIELD} !py-1 !pl-8 !typo-body`}
             aria-label={t.ship.filter_aria}
             data-testid="ship-lib-search"
           />
@@ -110,26 +110,24 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
               <span className="typo-caption text-foreground min-w-0 truncate">{g.name}</span>
               <span className="ml-auto inline-flex items-center gap-1 shrink-0">
                 <Tooltip content={t.ship.goal_assist_tooltip}>
-                  <button
+                  <Button variant="ghost" size="icon-sm"
                     type="button"
                     onClick={() => onAssistGoal(g)}
-                    className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
                     aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}
                   >
                     <Zap className={`w-3 h-3 ${PLAN_INK.athena}`} aria-hidden />
-                  </button>
+                  </Button>
                 </Tooltip>
                 {bound ? (
                   <span className="typo-caption shrink-0">{t.ship.bound}</span>
                 ) : (
-                  <button
+                  <Button variant="secondary" size="xs"
                     type="button"
-                    onClick={() => ship.setItem(vm.id, 'goal', g.id, 'core')}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring shrink-0 ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
+                    onClick={() => ship.setItem(vm.id, 'goal', g.id, 'core')} className="shrink-0"
                     aria-label={tx(t.ship.bind_aria, { name: g.name })}
                   >
                     <Plus className="w-3 h-3" aria-hidden />{t.ship.bind}
-                  </button>
+                  </Button>
                 )}
               </span>
             </li>

@@ -70,7 +70,7 @@ export function BoundRow({
         {setting.saved && !dirty ? s.saved : s.set}
       </Button>
       <span className="typo-caption text-foreground">{tx(s.autopilot_range, { min: bound.min, max: bound.max })}</span>
-      {setting.error && <span className="typo-caption text-red-400">{setting.error}</span>}
+      {setting.error && <span className="typo-caption text-status-error">{setting.error}</span>}
     </div>
   );
 }
@@ -113,7 +113,7 @@ export function AutopilotLimits() {
         <div className="min-w-0">
           <div className="typo-body text-foreground">{s.autopilot_pacing_label}</div>
           <p className="typo-caption text-foreground">{s.autopilot_pacing_hint}</p>
-          {pacing.error && <span className="typo-caption text-red-400">{pacing.error}</span>}
+          {pacing.error && <span className="typo-caption text-status-error">{pacing.error}</span>}
         </div>
       </div>
       <div className="space-y-2">

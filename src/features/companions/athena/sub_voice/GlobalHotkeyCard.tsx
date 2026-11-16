@@ -34,7 +34,7 @@ export function GlobalHotkeyCard() {
       titleClassName="text-primary"
       icon={
         <Keyboard
-          className={`w-4 h-4 ${enabled ? 'text-emerald-400' : 'text-foreground'}`}
+          className={`w-4 h-4 ${enabled ? 'text-status-success' : 'text-foreground'}`}
         />
       }
       status={enabled ? 'success' : 'neutral'}

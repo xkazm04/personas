@@ -5,6 +5,7 @@
 // or composed row never gets to speak for a state change. That filter is the
 // defect the contest's blind judge found in the winning prototype, which let
 // 39 simulation rows into a surface whose whole promise is honest measurement.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useMemo } from 'react';
 
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
@@ -100,15 +101,14 @@ function ChangeChip({ change, onOpen }: { change: StateChange; onOpen: () => voi
             : o.count_never_read;
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex max-w-[22rem] items-baseline gap-2 rounded-interactive border border-card-border bg-secondary/15 px-2 py-1 text-left hover:bg-secondary/35 focus-ring"
+    <PressSurface
+      onPress={onOpen}
+      className="flex max-w-[22rem] items-baseline gap-2 rounded-interactive border border-card-border bg-secondary/15 px-2 py-1"
     >
       <span className="min-w-0 flex-1 truncate typo-caption">{change.kpi.name}</span>
       <span className="shrink-0 typo-caption" style={{ color: TRACK_TONE[change.to] }}>
         {tx(o.changes_from_to, { from: label(change.from), to: label(change.to) })}
       </span>
-    </button>
+    </PressSurface>
   );
 }

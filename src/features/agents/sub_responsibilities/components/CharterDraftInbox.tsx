@@ -71,7 +71,7 @@ export function CharterDraftInbox({ personaId, onApplied }: CharterDraftInboxPro
       label: c.draft_title_label,
       width: 'minmax(160px, 1.2fr)',
       render: (p) => (
-        <span className="typo-body text-foreground/90 truncate">
+        <span className="typo-body text-ink-1 truncate">
           {p.draft?.title ?? c.draft_untitled}
         </span>
       ),
@@ -89,7 +89,7 @@ export function CharterDraftInbox({ personaId, onApplied }: CharterDraftInboxPro
       key: 'summary',
       label: c.draft_summary_label,
       width: 'minmax(200px, 2fr)',
-      render: (p) => <span className="typo-caption text-foreground">{p.summary ?? ''}</span>,
+      render: (p) => <span className="typo-caption text-ink-2">{p.summary ?? ''}</span>,
     },
     {
       key: 'actions',

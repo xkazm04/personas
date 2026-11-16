@@ -15,6 +15,7 @@ import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const SECTION_TABS: { id: ByomSection; labelKey: 'tab_providers' | 'tab_keys' | 'tab_routing' | 'tab_compliance' | 'tab_audit'; icon: typeof Shield }[] = [
   { id: 'policy', labelKey: 'tab_providers', icon: Shield },
@@ -41,7 +42,7 @@ export default function ByomSettings() {
     return (
       <ContentBox>
         <ContentHeader
-          icon={<Network className="w-5 h-5 text-violet-400" />}
+          icon={<Network className="w-5 h-5 text-ink-2" />}
           iconColor="violet"
           title={s.title}
           subtitle={s.loading}
@@ -53,41 +54,35 @@ export default function ByomSettings() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Network className="w-5 h-5 text-violet-400" />}
+        icon={<Network className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={s.title}
         subtitle={s.subtitle}
         actions={
           <div className="flex items-center gap-2">
             {bm.isDirty && (
-              <span className="typo-caption text-amber-400/80 mr-1">{s.unsaved_changes}</span>
+              <span className="typo-caption text-status-warning/80 mr-1">{s.unsaved_changes}</span>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingReset(true)}
               disabled={bm.isSaving}
-              className="px-3 py-1.5 typo-body rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              variant="secondary"
+              size="sm"
             >
               {s.reset}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={bm.handleSave}
               disabled={bm.hasBlockingErrors || bm.isSaving}
+              disabledReason={bm.hasBlockingErrors ? s.fix_errors : undefined}
               aria-busy={bm.isSaving}
-              title={bm.hasBlockingErrors ? s.fix_errors : undefined}
-              className={`px-3 py-1.5 typo-body rounded-modal border transition-colors ${
-                bm.hasBlockingErrors
-                  ? 'bg-red-500/15 text-red-400/60 border-red-500/30 cursor-not-allowed'
-                  : bm.isSaving
-                  ? 'bg-primary/20 text-primary/70 border-primary/30 cursor-wait'
-                  : bm.isDirty
-                  ? 'bg-primary/25 text-primary border-primary/40 hover:bg-primary/35'
-                  : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
-              }`}
+              variant="primary"
+              size="sm"
             >
               {s.save_policy}
-            </button>
+            </Button>
           </div>
         }
       />
@@ -103,15 +98,15 @@ export default function ByomSettings() {
             <div
               className={`rounded-modal border p-4 flex items-start gap-3 ${
                 bm.topLevelWarnings.some((w) => w.severity === 'error')
-                  ? 'border-red-500/30 bg-red-500/10'
-                  : 'border-amber-500/30 bg-amber-500/10'
+                  ? 'border-status-error/30 bg-status-error/10'
+                  : 'border-status-warning/30 bg-status-warning/10'
               }`}
             >
               <AlertTriangle
                 className={`w-5 h-5 shrink-0 mt-0.5 ${
                   bm.topLevelWarnings.some((w) => w.severity === 'error')
-                    ? 'text-red-400'
-                    : 'text-amber-400'
+                    ? 'text-status-error'
+                    : 'text-status-warning'
                 }`}
               />
               <ul className="flex-1 min-w-0 space-y-1">
@@ -119,7 +114,7 @@ export default function ByomSettings() {
                   <li
                     key={i}
                     className={`typo-body ${
-                      w.severity === 'error' ? 'text-red-300' : 'text-amber-300'
+                      w.severity === 'error' ? 'text-status-error' : 'text-status-warning'
                     }`}
                   >
                     {w.message}
@@ -131,22 +126,24 @@ export default function ByomSettings() {
 
           {/* Degraded-policy warning when stored JSON is corrupt */}
           {bm.corruptPolicyError && (
-            <div className="rounded-modal border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="rounded-modal border border-status-error/30 bg-status-error/10 p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-status-error shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <h3 className="typo-body text-red-300">{s.policy_corrupted}</h3>
-                <p className="typo-body text-red-300/80 mt-1">
+                <h3 className="typo-body text-status-error">{s.policy_corrupted}</h3>
+                <p className="typo-body text-status-error/80 mt-1">
                   {s.policy_corrupted_desc}
                 </p>
-                <p className="typo-caption text-red-400/60 mt-2 break-all">{bm.corruptPolicyError}</p>
+                <p className="typo-caption text-status-error/60 mt-2 break-all">{bm.corruptPolicyError}</p>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => setConfirmingReset(true)}
-                className="shrink-0 px-3 py-1.5 typo-body rounded-modal bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                variant="danger"
+                size="sm"
+                className="shrink-0"
               >
                 {s.reset_policy}
-              </button>
+              </Button>
             </div>
           )}
 

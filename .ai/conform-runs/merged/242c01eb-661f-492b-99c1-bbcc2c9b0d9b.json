@@ -1,0 +1,90 @@
+{
+  "schema": "conform-run/1",
+  "worker": "242c01eb-661f-492b-99c1-bbcc2c9b0d9b",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-11-05T23:04:00.079676+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "test-runner-lab",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/output_assertions.rs:486 No test reaches the branch that counts critical failures and drives the Completed-to-Incomplete downgrade. That is the branch output_assertion.rs:76-78 records as having silently never fired before. evaluate_assertions has no caller in any test (only execution.rs:2337 calls it), and the module's fixture hard-codes severity \"warning\" (:626). Deleting or inverting this branch would leave the suite green.",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:486 The tests drive only the pure evaluate_one. The severity decision and its downgrade payload are never executed."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:626 The only fixture pins severity to warning, so it carries none of the critical-path data the module exists to act on. The db template (init_test_db) that evaluate_assertions needs is never used in this module."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/rate_limiter.rs:218 This assertion relies on a real 50 ms window still being open, and the same file uses thread::sleep(60ms) for expiry (:220). A stall over 50 ms on a loaded runner flips it red with no defect. An injected clock would assert the schedule instead."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "triggers-triggers",
+      "reason": "evidence leans on core/src/validation/trigger.rs, which is not a tracked file"
+    },
+    {
+      "subject": "test-harness",
+      "context": "triggers-studio",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "test-harness",
+      "context": "hooks-utility-interaction",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "test-harness",
+      "context": "recipe-build-models",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor core/src/models/output_assertion.rs is not among the context's listed files (recipe, build_session, persona and so on). The :244 technique claim is also wrong: the inputs there (\"Contains\", \"LOG\") are case variants, not 'non-normalizable' ones. The hand-kept TOKENS and six-literal observa"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-05T23:04:00.079676+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "assert-the-schedule-not-the-stopwatch",
+        "fixture-economics",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 1,
+      "context": "test-runner-lab",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-05T23:04:00.079676+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 1,
+      "context": "recipe-build-models",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

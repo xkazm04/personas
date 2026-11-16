@@ -106,12 +106,12 @@ export function ProgressRingBadge({
           </linearGradient>
         </defs>
       </svg>
-      <span className={`typo-body px-1.5 py-0.5 rounded ${
+      <span className={`typo-body px-1.5 py-0.5 rounded-interactive ${
         completedCount === totalSteps && totalSteps > 0
-          ? 'bg-emerald-500/15 text-emerald-400'
+          ? 'bg-status-success/15 text-status-success'
           : completedCount > 0
             ? 'bg-primary/10 text-primary/70'
-            : 'bg-secondary/50 text-foreground'
+            : 'bg-surface-2 text-foreground'
       }`}>
         {completedCount}/{totalSteps}
       </span>

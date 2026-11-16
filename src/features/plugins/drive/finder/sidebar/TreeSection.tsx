@@ -49,8 +49,8 @@ export function TreeSection({ drive, activeDragCount, onExternalFolderDragOver }
               className="flex items-center gap-1.5 py-1.5 px-2 animate-fade-in"
               style={{ animationDelay: `${120 + i * 35}ms` }}
             >
-              <span className="w-3.5 h-3.5 rounded-interactive bg-primary/[0.06] flex-shrink-0" />
-              <span className={`h-3 ${w} rounded-interactive bg-primary/[0.06]`} />
+              <span className="w-3.5 h-3.5 rounded-interactive bg-surface-2 flex-shrink-0" />
+              <span className={`h-3 ${w} rounded-interactive bg-surface-2`} />
             </div>
           ))}
         </div>

@@ -12,6 +12,8 @@ import { deferDecision, skipDecision } from '../decision/decisionDeferral';
 import type { DecisionOption, DecisionSource } from '../decision/types';
 import { orbDock } from './athenaOrbDock';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /** Symbol shown on the collapsed chip, by what produced the decision. */
 const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
   approval: ShieldCheck,
@@ -214,30 +216,33 @@ export function OrbDecisionBubble() {
       {hidden ? (
         /* Fully hidden — a tiny restore peek dotted at the orb. Click to bring
            the decision back to its previous (compact or full) size. */
-        <button
+        <Button
           type="button"
           onClick={() => setHidden(false)}
           data-testid="athena-decision-restore"
           aria-label={t.athena.decision_show}
-          title={t.athena.decision_show}
-          className="pointer-events-auto relative flex items-center justify-center w-9 h-9 rounded-full bg-background/95 border border-primary/30 shadow-elevation-3 hover:border-primary/50 transition-colors"
+          tooltip={t.athena.decision_show}
+          variant="secondary"
+          size="sm"
+          className="relative"
         >
           <span className="absolute -top-0.5 -right-0.5 flex w-2 h-2">
             {!reduceMotion && <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />}
             <span className="relative inline-flex w-2 h-2 rounded-full bg-primary" />
           </span>
           <SourceIcon className="w-4 h-4 text-primary" aria-hidden />
-        </button>
+        </Button>
       ) : (
         <>
       {collapsed ? (
         /* Compact chip — a small symbol/label above the arrow. Click to expand. */
-        <button
+        <Button
           type="button"
           onClick={() => setCollapsed(false)}
           data-testid="athena-decision-expand"
           aria-label={t.athena.decision_expand}
-          className="flex items-center gap-2 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 pl-2.5 pr-3 py-2 hover:border-primary/50 transition-colors max-w-[420px]"
+          variant="secondary"
+          size="sm"
         >
           <span className="relative flex w-2 h-2 flex-shrink-0">
             {!reduceMotion && <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />}
@@ -245,14 +250,14 @@ export function OrbDecisionBubble() {
           </span>
           <SourceIcon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           {/* Wraps — never ellipsized; the chip caps line length, not content. */}
-          <span className="typo-caption text-foreground/90 text-left whitespace-normal break-words min-w-0">
+          <span className="typo-caption text-ink-2 text-left whitespace-normal break-words min-w-0">
             {shortLabel}
           </span>
-        </button>
+        </Button>
       ) : (
         <div className="relative rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3.5">
           <div data-testid="athena-decision-prompt">
-            <MarkdownRenderer content={decision.prompt} className="typo-body text-foreground/90" />
+            <MarkdownRenderer content={decision.prompt} className="typo-body text-ink-2" />
           </div>
 
           {/* Explain-in-Cockpit — composing / fallback states for the
@@ -284,7 +289,7 @@ export function OrbDecisionBubble() {
             <p
               data-testid="athena-decision-run-failed"
               role="alert"
-              className="mt-2.5 rounded-input border border-rose-500/25 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400"
+              className="mt-2.5 rounded-input border border-status-error/25 bg-status-error/10 px-3 py-2 typo-caption text-status-error"
             >
               {t.athena.decision_run_failed}
             </p>
@@ -299,7 +304,7 @@ export function OrbDecisionBubble() {
               <p className="typo-label text-primary">
                 {t.athena.decision_recommend_prefix}
               </p>
-              <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90" />
+              <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-ink-2" />
               {decision.detail && (
                 <p className="mt-1.5 typo-caption text-foreground">
                   {decision.detail}
@@ -322,100 +327,103 @@ export function OrbDecisionBubble() {
                   controls that change what the queue shows next, and a native
                   tooltip never reaches a keyboard user (golden path: tooltip). */}
               <Tooltip content={t.athena.decision_skip_hint}>
-                <button
+                <Button
                   type="button"
                   data-testid="athena-decision-skip"
                   onClick={skipCurrent}
-                  className="rounded-interactive px-2 py-1 typo-caption text-foreground hover:bg-foreground/10 transition-colors focus-ring"
+                  variant="ghost"
+                  size="sm"
                 >
                   {t.athena.decision_skip}
-                </button>
+                </Button>
               </Tooltip>
               <Tooltip content={t.athena.decision_snooze_hint}>
-                <button
+                <Button
                   type="button"
                   data-testid="athena-decision-snooze"
                   onClick={snoozeCurrent}
-                  className="rounded-interactive px-2 py-1 typo-caption text-foreground hover:bg-foreground/10 transition-colors focus-ring"
+                  variant="ghost"
+                  size="sm"
                 >
                   {t.athena.decision_later}
-                </button>
+                </Button>
               </Tooltip>
             </div>
           )}
 
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {decision.options.map((opt, i) => (
-              <button
-                key={opt.key}
-                type="button"
-                data-testid={`athena-decision-option-${i + 1}`}
-                onClick={() => pick(opt)}
-                title={opt.hint ?? opt.label}
-                className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
-                  opt.danger
-                    ? 'bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 text-rose-400'
-                    : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/30 text-primary'
-                }`}
-              >
-                <span
-                  className={`inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-medium ${
-                    opt.danger ? 'bg-rose-500/20' : 'bg-primary/20'
-                  }`}
-                  aria-hidden
+              <Tooltip content={opt.hint ?? opt.label} key={opt.key}>
+                <Button
+                  data-testid={`athena-decision-option-${i + 1}`}
+                  onClick={() => pick(opt)}
+                  variant={opt.danger ? 'danger' : 'secondary'} size="sm"
                 >
-                  {i + 1}
-                </span>
-                <span className="text-left whitespace-normal break-words min-w-0">
-                  {opt.label}
-                </span>
-              </button>
+                  <span
+                    className={`inline-flex items-center justify-center w-4 h-4 rounded-interactive typo-caption ${
+                      opt.danger ? 'bg-status-error/20' : 'bg-primary/20'
+                    }`}
+                    aria-hidden
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="text-left whitespace-normal break-words min-w-0">
+                    {opt.label}
+                  </span>
+                </Button>
+              </Tooltip>
             ))}
 
             {/* `0` — explain + recommend (slice 4), escalating into the
                 Explain-in-Cockpit turn. Icon-only (lightbulb); the `0` leader
                 key still triggers it. Does not clear the decision; disabled
                 while a composition is already in flight. */}
-            <button
+            <Button
               type="button"
               data-testid="athena-decision-option-0"
               onClick={() => explainDecision()}
               disabled={composing}
               aria-label={t.athena.decision_explain}
-              title={t.athena.decision_explain_hint}
-              className="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              tooltip={t.athena.decision_explain_hint}
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
             >
               <Lightbulb className="w-4 h-4" aria-hidden />
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
           {/* Fully-hide X — top-upper corner. Collapses the bubble to the
               restore peek (distinct from the bottom minimize/expand handle). */}
-          <button
-            type="button"
-            onClick={() => setHidden(true)}
-            data-testid="athena-decision-dismiss"
-            aria-label={t.athena.decision_dismiss}
-            title={t.athena.decision_dismiss}
-            className="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-background/95 border border-primary/25 text-foreground shadow-elevation-2 ring-2 ring-background hover:border-primary/50 transition"
-          >
-            <X className="w-3 h-3" />
-          </button>
+          <Tooltip content={t.athena.decision_dismiss}>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setHidden(true)}
+              data-testid="athena-decision-dismiss"
+              aria-label={t.athena.decision_dismiss}
+              className="absolute -top-2.5 -right-2.5 z-10"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </Tooltip>
 
           {/* The arrow/handle — minimize ⇄ expand; points at the orb. */}
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            data-testid="athena-decision-toggle"
-            aria-label={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}
-            title={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}
-            className="absolute -bottom-3 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-background shadow-elevation-2 ring-2 ring-background hover:brightness-110 transition"
-            style={handleSide}
-          >
-            {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
+          <Tooltip content={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}>
+            <Button
+              variant="primary"
+              size="icon-xs"
+              onClick={() => setCollapsed((c) => !c)}
+              data-testid="athena-decision-toggle"
+              aria-label={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}
+              style={handleSide}
+              className="absolute -bottom-3 z-10"
+            >
+              {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </Button>
+          </Tooltip>
         </>
       )}
     </motion.div>

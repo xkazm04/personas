@@ -11,6 +11,8 @@ import { Trash2, MoreHorizontal, Pencil } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAnchoredPortalPosition } from '@/features/shared/components/forms/useAnchoredPortalPosition';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** Fixed menu width — needed up front to right-align the portal to the trigger. */
 const MENU_WIDTH = 160;
@@ -62,24 +64,23 @@ export function ProjectRowMenu({
 
   return (
     <div className="self-center relative">
-      <button
+      <Button variant="ghost" size="icon-sm"
         ref={triggerRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t.plugins.dev_projects.edit_project}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); setConfirming(false); }}
-        className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
-      </button>
+      </Button>
       {open && pos && createPortal(
         <>
           <div className="fixed inset-0" style={{ zIndex: 9989 }} onClick={close} />
           <div
             role="menu"
             onClick={(e) => e.stopPropagation()}
-            className="rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden py-1"
+            className="rounded-modal border border-hair bg-background shadow-elevation-3 overflow-hidden py-1"
             style={{
               position: 'fixed',
               // Right-aligned to the trigger: the hook anchors left, and this
@@ -91,26 +92,22 @@ export function ProjectRowMenu({
               zIndex: 9990,
             }}
           >
-            <button
-              type="button"
+            <PressSurface
               role="menuitem"
-              onClick={handleEdit}
-              className="w-full flex items-center gap-2 px-3 py-2 typo-caption text-left text-foreground hover:bg-primary/5 transition-colors"
+              onPress={handleEdit}
+              className="w-full flex items-center gap-2 px-3 py-2 typo-caption text-foreground"
             >
               <Pencil className="w-3 h-3" />
               {t.plugins.dev_projects.edit_project}
-            </button>
-            <button
-              type="button"
+            </PressSurface>
+            <PressSurface
               role="menuitem"
-              onClick={handleDelete}
-              className={`w-full flex items-center gap-2 px-3 py-2 typo-caption text-left transition-colors ${
-                confirming ? 'bg-red-500/10 text-red-400' : 'text-red-400/70 hover:bg-red-500/5'
-              }`}
+              onPress={handleDelete}
+              className={`w-full flex items-center gap-2 px-3 py-2 typo-caption text-status-error ${confirming ? 'bg-status-error/10' : ''}`}
             >
               <Trash2 className="w-3 h-3" />
               {confirming ? `Delete "${projectName.slice(0, 12)}"?` : 'Delete Project'}
-            </button>
+            </PressSurface>
           </div>
         </>,
         document.body,

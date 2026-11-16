@@ -1,0 +1,7 @@
+/* The Follow chip (ui/header/FollowChip.tsx): the changes chip's shape, quiet until it follows. Colours are --bp-* only. */
+.bp-l1 .bp-chg.bp-follow { border-color: var(--bp-ink-3); background: none; color: var(--bp-ink-2); }
+.bp-l1 .bp-chg.bp-follow > i { background: var(--bp-ink-3); }
+.bp-l1 .bp-chg.bp-follow.bp-on { border-color: var(--bp-accent); color: var(--bp-ink-hi); background: color-mix(in srgb, var(--bp-accent) 14%, transparent); }
+.bp-l1 .bp-chg.bp-follow.bp-on > i { background: var(--bp-accent); }
+.bp-l1 .bp-chg.bp-follow.bp-off { border-color: var(--bp-amber); color: var(--bp-amber-2); }
+.bp-l1 .bp-chg.bp-follow.bp-off > i { background: var(--bp-amber); }

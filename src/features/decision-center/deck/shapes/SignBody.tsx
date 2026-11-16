@@ -55,7 +55,7 @@ function Refuses({ item }: { item: DecisionItem }) {
     <RailBlock label={m.ml_sign_refuses} testId="sign-refuses">
       {listed ? (
         <span className="flex flex-wrap gap-x-2 gap-y-1">
-          {listed.map((c) => <code key={c} className="typo-code text-foreground [overflow-wrap:anywhere]">{c}</code>)}
+          {listed.map((c) => <code key={c} className="typo-code text-ink-2 [overflow-wrap:anywhere]">{c}</code>)}
         </span>
       ) : (
         <span className={`typo-body ${classes === 'failed' ? 'text-status-warning' : 'text-foreground'}`}>{text}</span>

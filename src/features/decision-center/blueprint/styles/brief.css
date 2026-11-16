@@ -1,0 +1,22 @@
+/* The decision brief on a waiting card (ui/sheet/BriefFacts.tsx), bp's apps/web decision-brief.css re-inked in the sheet's
+   palette: one plain line per fact, the declined line in amber, the evidence opening under its line. Type comes from the
+   typo-* class on each element; this file writes layout and --bp-* colours only. */
+.bp-prop .bp-brief { margin: 0 0 0.5rem 1.9rem; width: calc(100% - 1.9rem); padding: 6px 10px; border-left: 3px solid var(--bp-ink-3); background: color-mix(in srgb, var(--bp-ink) 4%, transparent); }
+.bp-brief .bp-bf-adv { display: inline-block; margin: 0 0 6px; padding: 1px 6px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bp-amber-2); border: 1px solid var(--bp-amber); }
+.bp-brief .bp-bf-facts { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.bp-brief .bp-bf-facts > li { color: var(--bp-ink); overflow-wrap: anywhere; }
+.bp-brief .bp-bf-open { display: flex; width: 100%; gap: 8px; align-items: baseline; justify-content: space-between; text-align: left; }
+.bp-brief .bp-bf-open:hover span { color: var(--bp-ink-hi); text-decoration: underline; text-decoration-color: var(--bp-ink-3); text-underline-offset: 3px; }
+.bp-brief .bp-bf-open i { flex: none; font-style: normal; color: var(--bp-ink-2); }
+.bp-brief .bp-bf-facts > li.bp-bf-declined, .bp-brief .bp-bf-facts > li.bp-bf-declined span { color: var(--bp-amber-2); font-weight: 500; }
+.bp-brief .bp-bf-ev { margin: 4px 0 6px; padding: 0 0 0 10px; list-style: none; display: grid; gap: 4px; border-left: 1px solid var(--bp-ink-3); }
+.bp-brief .bp-bf-ev li { display: grid; grid-template-columns: auto 1fr; gap: 0 8px; color: var(--bp-ink); }
+.bp-brief .bp-bf-ev li small { grid-column: 2; color: var(--bp-ink-2); }
+.bp-brief .bp-bf-ev li.bp-bf-more { display: block; }
+.bp-brief .bp-bf-vd { text-transform: uppercase; color: var(--bp-mint-2); }
+.bp-brief .bp-bf-v-declined .bp-bf-vd { color: var(--bp-amber-2); }
+.bp-brief .bp-bf-ev q { display: block; margin-top: 1px; font-style: italic; color: var(--bp-ink-2); }
+
+/* A repeat: Decline is the first answer, its band ruled in amber (the brief's colour), never the approve mint. */
+.bp-opt.bp-ap.bp-rep { border-left-color: var(--bp-amber); }
+.bp-opt.bp-rep .bp-sug { color: var(--bp-amber-2); }

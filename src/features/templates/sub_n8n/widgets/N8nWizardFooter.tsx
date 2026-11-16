@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, RefreshCw, Check, AlertCircle, FlaskConical, Che
 import type { N8nWizardStep } from '../hooks/useN8nImportReducer';
 import Button, { type ButtonTone } from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface N8nWizardFooterProps {
   step: N8nWizardStep;
@@ -80,7 +81,7 @@ export function N8nWizardFooter({
   const nextAction = getNextAction();
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-primary/10 bg-secondary/10">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-hair bg-secondary/10">
       {/* Left: ghost Back button */}
       <Button variant="ghost" size="md" onClick={onBack} disabled={!canGoBack} icon={<ArrowLeft className="w-3.5 h-3.5" />}>
         {t.templates.n8n.back}
@@ -93,7 +94,7 @@ export function N8nWizardFooter({
       <div className="flex items-center gap-3">
         {/* Connector warning -- shown on edit step when connectors are unmapped */}
         {step === 'edit' && connectorsMissing > 0 && (
-          <span className="flex items-center gap-1.5 typo-body text-orange-400/80">
+          <span className="flex items-center gap-1.5 typo-body text-status-warning/80">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             {t.templates.n8n.connectors_need_credentials.replace('{count}', String(connectorsMissing))}
           </span>
@@ -101,9 +102,9 @@ export function N8nWizardFooter({
 
         {/* Test error message */}
         {step === 'edit' && testStatus === 'failed' && testError && (
-          <span className="typo-body text-red-400/80 max-w-[400px] line-clamp-2" title={testError}>
+          <Tooltip content={testError}><span className="typo-body text-status-error/80 max-w-[400px] line-clamp-2">
             {testError}
-          </span>
+          </span></Tooltip>
         )}
 
         {/* Test Persona button -- secondary action on edit step */}

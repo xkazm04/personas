@@ -89,13 +89,13 @@ export function CostAccrualOverlay({
   return (
     <div className="px-3 py-2">
       <div className="flex items-center gap-2 mb-1">
-        <DollarSign className="w-3 h-3 text-emerald-400" />
-        <span className="typo-code text-foreground uppercase tracking-wider">
+        <DollarSign className="w-3 h-3 text-status-success" />
+        <span className="typo-eyebrow text-ink-1">
           {tx(e.cost_accrual, { cost: totalCostUsd.toFixed(4) })}
         </span>
         {curveIsEstimated && (
           <span
-            className="flex items-center gap-1 typo-code text-status-warning uppercase tracking-wider"
+            className="flex items-center gap-1 typo-eyebrow text-status-warning"
             data-testid="cost-accrual-synthetic-badge"
           >
             <AlertCircle className="w-3 h-3" />
@@ -103,7 +103,7 @@ export function CostAccrualOverlay({
           </span>
         )}
       </div>
-      <div className="h-5 bg-primary/5 rounded overflow-hidden">
+      <div className="h-5 bg-surface-1 rounded-interactive overflow-hidden">
         <svg
           viewBox={`0 0 ${svgW} ${svgH}`}
           preserveAspectRatio="none"

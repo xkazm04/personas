@@ -18,6 +18,8 @@ import type { BlueprintData } from '../source';
 const openExternalUrl = vi.fn(async (_url: string) => {});
 vi.mock('@/api/system/system', async (orig) => ({ ...(await orig<typeof import('@/api/system/system')>()), openExternalUrl: (url: string) => openExternalUrl(url) }));
 vi.mock('@/api/system/settings', async (orig) => ({ ...(await orig<typeof import('@/api/system/settings')>()), getAppSetting: async () => null }));
+// bp's product table (Rust bp_products) is not there: the link names the product by its folder
+vi.mock('@/api/bpLink', async (orig) => ({ ...(await orig<typeof import('@/api/bpLink')>()), listBpProducts: async () => { throw new Error('bp offline'); } }));
 vi.mock('@/hooks/utility/interaction/useMotion', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/utility/interaction/useMotion')>()),
   useReducedMotion: () => true,

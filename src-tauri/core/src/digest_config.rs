@@ -10,7 +10,6 @@ use ts_rs::TS;
 /// User-configurable digest settings, stored as JSON under the
 /// `performance_digest` app_settings key.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DigestConfig {
     /// Whether the digest is enabled.

@@ -2,6 +2,7 @@ import { Plug, Wrench, Zap, MessageSquare, CheckCircle, AlertTriangle, XCircle, 
 import { useTranslation } from '@/i18n/useTranslation';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import type { AgentIR, DesignTestResult } from '@/lib/types/designTypes';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 export type DesignSection = 'connectors' | 'events' | 'messages';
 
@@ -31,10 +32,10 @@ export function DesignSummaryBar({ result, channelCount, subscriptionCount, feas
   const s = t.templates.design.summary;
 
   const allPills: { icon: LucideIcon; label: string; count: number; color: string; target: DesignSection }[] = [
-    { icon: Plug, label: s.connectors, count: result.suggested_connectors?.length ?? 0, color: 'text-sky-400', target: 'connectors' },
-    { icon: Wrench, label: s.tools, count: result.suggested_tools?.length ?? 0, color: 'text-violet-400', target: 'connectors' },
-    { icon: Zap, label: s.events, count: (result.suggested_triggers?.length ?? 0) + subscriptionCount, color: 'text-amber-400', target: 'events' },
-    { icon: MessageSquare, label: s.channels, count: channelCount, color: 'text-emerald-400', target: 'messages' },
+    { icon: Plug, label: s.connectors, count: result.suggested_connectors?.length ?? 0, color: 'text-status-info', target: 'connectors' },
+    { icon: Wrench, label: s.tools, count: result.suggested_tools?.length ?? 0, color: 'text-role-agent', target: 'connectors' },
+    { icon: Zap, label: s.events, count: (result.suggested_triggers?.length ?? 0) + subscriptionCount, color: 'text-status-warning', target: 'events' },
+    { icon: MessageSquare, label: s.channels, count: channelCount, color: 'text-status-success', target: 'messages' },
   ];
   const pills = allPills.filter((p) => p.count > 0);
 
@@ -45,10 +46,10 @@ export function DesignSummaryBar({ result, channelCount, subscriptionCount, feas
   const feasColors = FEASIBILITY_COLORS[feasKey] ?? FEASIBILITY_COLORS.partial!;
   const feasLabel = feasKey === 'ready' ? s.ready : feasKey === 'blocked' ? s.blocked : s.partial;
 
-  const base = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input bg-secondary/40 border border-primary/10';
+  const base = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input bg-surface-2 border border-hair';
 
   return (
-    <div className="sticky top-0 z-10 bg-background flex flex-wrap items-center gap-2 pt-2 pb-3 border-b border-primary/10">
+    <div className="sticky top-0 z-10 bg-background flex flex-wrap items-center gap-2 pt-2 pb-3 border-b border-hair">
       {pills.map((p) => {
         const inner = (
           <>
@@ -58,14 +59,13 @@ export function DesignSummaryBar({ result, channelCount, subscriptionCount, feas
           </>
         );
         return onJump ? (
-          <button
+          <PressSurface
             key={p.label}
-            type="button"
-            onClick={() => onJump(p.target)}
-            className={`${base} hover:bg-secondary/70 hover:border-primary/20 transition-colors cursor-pointer`}
+            onPress={() => onJump(p.target)}
+            className={base}
           >
             {inner}
-          </button>
+          </PressSurface>
         ) : (
           <span key={p.label} className={base}>
             {inner}

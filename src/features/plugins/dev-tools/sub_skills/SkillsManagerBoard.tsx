@@ -18,6 +18,9 @@ import { CoverageBar, LastUsed, MemoryBindingButton, UsageCount } from './skills
 import { SkillActionConfirm } from './SkillActionConfirm';
 import { SweepHeroRow } from './SweepHeroRow';
 import { UseSkillDialog } from './UseSkillDialog';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; skill: SkillEntry; tracked: boolean };
 
@@ -79,15 +82,15 @@ function Panel({ title, count, header, footer, children }: {
   title: string; count: number; header: React.ReactNode; footer: string; children: React.ReactNode;
 }) {
   return (
-    <section className="min-h-0 flex flex-col rounded-card border border-primary/12 bg-secondary/[0.12]">
-      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card flex-shrink-0">
+    <section className="min-h-0 flex flex-col rounded-card border border-hair bg-surface-1">
+      <div className="flex items-baseline gap-2 px-3 py-2 bg-surface-2 border-b border-hair rounded-t-card flex-shrink-0">
         <span className="typo-body text-foreground truncate">{title}</span>
-        <span className="typo-label text-foreground/40 tabular-nums flex-shrink-0">{count}</span>
+        <span className="typo-label text-ink-3 num flex-shrink-0">{count}</span>
       </div>
       {header}
       <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-1">{children}</div>
-      <div className="px-3 py-1.5 border-t border-primary/10 flex-shrink-0">
-        <span className="typo-label text-foreground/35">{footer}</span>
+      <div className="px-3 py-1.5 border-t border-hair flex-shrink-0">
+        <span className="typo-label text-ink-3">{footer}</span>
       </div>
     </section>
   );
@@ -105,25 +108,24 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
     const Icon = sort.dir === 'asc' ? ArrowUp : ArrowDown;
     const arrow = on ? <Icon className="w-3 h-3 flex-shrink-0" aria-hidden /> : null;
     return (
-      <button
-        type="button"
-        onClick={() => sort.toggle(k)}
-        className={`inline-flex items-center gap-1 w-full text-[10.5px] uppercase tracking-[0.12em] transition-colors focus-ring rounded-interactive whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${on ? 'text-foreground/80 font-semibold' : 'text-foreground/40 hover:text-foreground/70'}`}
+      <PressSurface
+        onPress={() => sort.toggle(k)}
         data-testid={`skills-manager-sort-${k}`}
+        className={`inline-flex items-center gap-1 w-full typo-eyebrow rounded-interactive whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${on ? 'text-ink-2' : 'text-ink-3'}`}
       >
         {align === 'right' && arrow}
         {label}
         {align === 'left' && arrow}
-      </button>
+      </PressSurface>
     );
   };
   return (
-    <div className={`${coverage ? PROJ_COLS : COLS} px-3 py-1.5 border-b border-primary/10 flex-shrink-0`}>
+    <div className={`${coverage ? PROJ_COLS : COLS} px-3 py-1.5 border-b border-hair flex-shrink-0`}>
       <SortHead k="name" label={d.skills_sort_skill} align="left" />
       {coverage && <SortHead k="coverage" label={d.skills_col_coverage} />}
       <SortHead k="usage" label={d.skills_sort_usage} />
       <SortHead k="lastused" label={d.skills_col_lastused} />
-      <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right whitespace-nowrap overflow-hidden">{d.skills_col_action}</span>
+      <span className="typo-eyebrow text-ink-3 text-right whitespace-nowrap overflow-hidden">{d.skills_col_action}</span>
     </div>
   );
 }
@@ -132,7 +134,7 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
 function GroupDivider({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 pt-3 pb-1">
-      <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/40 flex-shrink-0">{children}</span>
+      <span className="typo-eyebrow text-ink-3 flex-shrink-0">{children}</span>
       <span className="flex-1 h-px bg-foreground/10" />
     </div>
   );
@@ -143,17 +145,16 @@ function ActionIcon({ icon: Icon, title, onClick, disabled, testid }: {
   icon: typeof Play; title: string; onClick: () => void; disabled?: boolean; testid: string;
 }) {
   return (
-    <button
+    <Button variant="secondary" size="icon-sm"
       type="button"
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       disabled={disabled}
-      title={title}
+      tooltip={title}
       aria-label={title}
-      className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
       data-testid={testid}
     >
       <Icon className="w-3.5 h-3.5" aria-hidden />
-    </button>
+    </Button>
   );
 }
 
@@ -264,24 +265,23 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
       {/* Name cell: memory icon + name (click → skill info modal) */}
       <span className="flex items-center gap-2 min-w-0">
         <MemoryBindingButton binding={r.entry.memory} onSwitch={(next) => onSwitchMemory(r.entry.name, next)} />
-        <button
-          type="button"
-          onClick={() => onOpenInfo(r.entry.name)}
-          className="min-w-0 text-left hover:text-primary transition-colors"
+        <PressSurface
+          onPress={() => onOpenInfo(r.entry.name)}
           data-testid={`skills-manager-proj-${r.entry.name}`}
+          className="min-w-0 hover:text-primary"
         >
           <span className="typo-caption text-foreground truncate">{r.entry.name}</span>
-        </button>
+        </PressSurface>
       </span>
       {/* Coverage — its own column; click opens the context-coverage detail. */}
       <span className="flex justify-end">
         {r.tracked
           ? (
-            <button type="button" onClick={() => onOpenContexts(r.entry.name)} className="hover:opacity-80 transition-opacity" data-testid={`skills-manager-coverage-${r.entry.name}`}>
+            <Button variant="ghost" size="sm" type="button" onClick={() => onOpenContexts(r.entry.name)} data-testid={`skills-manager-coverage-${r.entry.name}`}>
               <CoverageBar row={r.coverage} total={totalContexts} />
-            </button>
+            </Button>
           )
-          : <span className="typo-label text-foreground/25">—</span>}
+          : <span className="typo-label text-ink-3">—</span>}
       </span>
       <UsageCount usage={r.usage} />
       <LastUsed usage={r.usage} />
@@ -339,27 +339,28 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
                 <li key={entry.name} className={`${COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
                   <span className="flex items-center gap-2 min-w-0">
                     {visual && (
-                      <span
+                      <Tooltip content={visual.label}><span
                         className="inline-flex items-center justify-center w-5 h-5 rounded-interactive border flex-shrink-0"
                         style={{ color: visual.color, borderColor: `${visual.color}40`, backgroundColor: `${visual.color}14` }}
-                        title={visual.label}
                       >
                         <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
-                      </span>
+                      </span></Tooltip>
                     )}
-                    <button type="button" onClick={() => onOpenInfo(entry.name)}
-                      className={`typo-caption truncate text-left hover:text-primary transition-colors ${installed ? 'text-foreground/45' : 'text-foreground'}`}
-                      data-testid={`skills-manager-ws-${entry.name}`}>
+                    <PressSurface
+                      onPress={() => onOpenInfo(entry.name)}
+                      data-testid={`skills-manager-ws-${entry.name}`}
+                      className={`typo-caption truncate ${installed ? 'text-ink-3' : 'text-ink-1'}`}
+                    >
                       {entry.name}
-                    </button>
+                    </PressSurface>
                   </span>
                   <UsageCount usage={usage} />
                   <LastUsed usage={usage} />
                   <span className="flex items-center justify-end">
                     {installed ? (
-                      <span title={tx(d.skills_installed_in, { name: projectName })} className="inline-flex p-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70" aria-label={tx(d.skills_installed_in, { name: projectName })} />
-                      </span>
+                      <Tooltip content={tx(d.skills_installed_in, { name: projectName })}><span className="inline-flex p-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-status-success" aria-label={tx(d.skills_installed_in, { name: projectName })} />
+                      </span></Tooltip>
                     ) : (
                       <ActionIcon icon={ArrowDownToLine} title={tx(d.skills_adopt_hint, { name: projectName })} onClick={() => setPending({ kind: 'adopt', skill: entry })} disabled={busy} testid={`skills-manager-adopt-${entry.name}`} />
                     )}
@@ -381,12 +382,12 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
         {libTab === 'custom' && !library.registry ? (
           <div className="py-8 px-4 text-center flex flex-col items-center gap-2">
             <p className="typo-body text-foreground">{d.skills_library_unwired_title}</p>
-            <p className="typo-caption text-foreground/70 max-w-sm">
+            <p className="typo-caption text-ink-2 max-w-sm">
               {library.workspaceId ? d.skills_library_unwired_body : d.skills_library_unwired_unassigned}
             </p>
           </div>
         ) : libRows.length === 0 ? (
-          <p className="typo-caption text-foreground/45 py-8 text-center">
+          <p className="typo-caption text-ink-3 py-8 text-center">
             {libTab === 'preset' ? d.skills_preset_empty : d.skills_ws_empty}
           </p>
         ) : null}
@@ -405,7 +406,7 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
             <ul>{plain.map(renderProjRow)}</ul>
           </>
         )}
-        {proj.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_proj_empty}</p>}
+        {proj.length === 0 && <p className="typo-caption text-ink-3 py-8 text-center">{d.skills_proj_empty}</p>}
       </Panel>
 
       {pending && pending.kind !== 'use' && (

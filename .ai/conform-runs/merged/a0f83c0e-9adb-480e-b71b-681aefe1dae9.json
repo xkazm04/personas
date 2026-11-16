@@ -1,0 +1,74 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a0f83c0e-9adb-480e-b71b-681aefe1dae9",
+  "subject": "agent-runtime-assembly",
+  "evaluatedAt": "2026-11-09T23:33:42.722149+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "api-agents",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "agents-connectors",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "shared-chrome",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor Sidebar.tsx:26 is a localStorage read of the collapse flag, which does not show that a hook chain, code loading or durable conversation state is absent. The grep for 'extension' etc. also only covered text, and BackgroundServices.tsx mounts many background hooks and was never traced."
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "browser-webview-control",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor PendingApprovalBar.tsx:6 is a header comment saying the bar decides nothing, so it is incidental to whether hooks or checkpoints are assembled. types.ts in this context also defines a 'webview' | 'extension' | 'playwright' backend kind, and 'extension' was not among the terms searched."
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "core-validation",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor validation/mod.rs:12 is the `use crate::error::AppError;` line, which shows nothing about absent hook chains or checkpoint stores. The claim rests on a grep alone, and validation/chat.rs and retrieval/mod.rs (743 lines) were not shown to be free of conversation or session handling."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-09T23:33:42.722149+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "shared-chrome",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T23:33:42.722149+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "browser-webview-control",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T23:33:42.722149+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "core-validation",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

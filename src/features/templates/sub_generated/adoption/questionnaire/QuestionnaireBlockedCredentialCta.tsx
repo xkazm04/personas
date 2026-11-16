@@ -1,5 +1,6 @@
 import { AlertCircle, Plus } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Replaces the input surface when the current question's vault category
@@ -28,14 +29,16 @@ export function QuestionnaireBlockedCredentialCta({
           </p>
         </div>
       </div>
-      <button
+      <Button
         type="button"
         onClick={() => onAddCredential(category)}
-        className="inline-flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-status-error/15 border border-status-error/40 text-status-error hover:bg-status-error/25 transition-colors ml-8"
+        variant="danger"
+        size="md"
+        className="ml-8"
+        icon={<Plus className="w-4 h-4" />}
       >
-        <Plus className="w-4 h-4" />
         {t.templates.adopt_modal.add_credential}
-      </button>
+      </Button>
     </div>
   );
 }

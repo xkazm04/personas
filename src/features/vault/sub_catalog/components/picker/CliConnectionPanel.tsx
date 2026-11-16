@@ -13,6 +13,7 @@ import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import Button from '@/features/shared/components/buttons/Button';
 
 type PanelState =
   | { kind: 'checking' }
@@ -119,14 +120,14 @@ export function CliConnectionPanel({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-card typo-body focus:outline-none focus:border-primary/40"
+          className="w-full px-3 py-2 bg-surface-2 border border-hair rounded-card typo-body focus:outline-none focus:border-primary/40"
           placeholder={`${connector.label} CLI`}
         />
       </div>
 
       {/* Header: binary + docs link */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/15 rounded-card">
-        <Terminal className="w-4 h-4 text-amber-400 shrink-0" />
+      <div className="flex items-center gap-2 px-3 py-2 bg-status-warning/5 border border-status-warning/15 rounded-card">
+        <Terminal className="w-4 h-4 text-status-warning shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="typo-body text-foreground">{spec.display_label}</div>
           <div className="typo-caption text-foreground">{l.binary_label}: <code className="font-mono">{spec.binary}</code></div>
@@ -135,7 +136,7 @@ export function CliConnectionPanel({
           href={spec.docs_url}
           target="_blank"
           rel="noreferrer"
-          className="typo-caption text-amber-400 hover:text-amber-300 inline-flex items-center gap-1"
+          className="typo-caption text-status-warning hover:text-status-warning inline-flex items-center gap-1"
         >
           {l.docs_link} <ExternalLink className="w-3 h-3" />
         </a>
@@ -149,48 +150,52 @@ export function CliConnectionPanel({
 
       {state.kind === 'error' && (
         <StateBlock
-          icon={<AlertCircle className="w-4 h-4 text-red-400" />}
+          icon={<AlertCircle className="w-4 h-4 text-status-error" />}
           title={l.error}
           description={resolveErrorTranslated(t, extractMessage(state.raw)).message}
-          action={<button type="button" onClick={runInstallCheck} className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40">{l.retry}</button>}
+          action={<Button type="button" onClick={runInstallCheck} variant="secondary" size="xs">{l.retry}</Button>}
         />
       )}
 
       {state.kind === 'not_installed' && (
-        <div className="space-y-2 p-3 bg-secondary/25 border border-primary/15 rounded-card">
+        <div className="space-y-2 p-3 bg-surface-1 border border-hair rounded-card">
           <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-status-warning shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="typo-body text-foreground">{l.not_installed_title}</div>
               <div className="typo-caption text-foreground">{tx(l.not_installed_desc, { label: spec.display_label })}</div>
             </div>
           </div>
-          <pre className="text-[11px] font-mono whitespace-pre-wrap bg-background/50 p-2 rounded border border-primary/10 text-foreground">
+          <pre className="typo-caption font-mono whitespace-pre-wrap bg-background/50 p-2 rounded-interactive border border-hair text-foreground">
             {spec.install_hint.replace(/\*\*/g, '')}
           </pre>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={copyInstallHint}
-              className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
+              variant="secondary"
+              size="xs"
+              icon={<Copy className="w-3 h-3" />}
             >
-              <Copy className="w-3 h-3" /> {l.copy}
-            </button>
-            <button
+               {l.copy}
+            </Button>
+            <Button
               type="button"
               onClick={runInstallCheck}
-              className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
+              variant="secondary"
+              size="xs"
+              icon={<RefreshCw className="w-3 h-3" />}
             >
-              <RefreshCw className="w-3 h-3" /> {l.recheck}
-            </button>
+               {l.recheck}
+            </Button>
           </div>
         </div>
       )}
 
       {state.kind === 'installed_unverified' && (
-        <div className="space-y-2 p-3 bg-secondary/25 border border-primary/15 rounded-card">
+        <div className="space-y-2 p-3 bg-surface-1 border border-hair rounded-card">
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-status-success shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="typo-body text-foreground">{l.installed_title}</div>
               <div className="typo-caption text-foreground">
@@ -201,13 +206,16 @@ export function CliConnectionPanel({
           <div className="typo-caption text-foreground">
             {spec.auth_instruction}
           </div>
-          <button
+          <Button
             type="button"
             onClick={runVerify}
-            className="typo-caption px-3 py-1.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-200 hover:bg-amber-500/30 inline-flex items-center gap-1"
+            variant="accent"
+            tone="warning"
+            size="sm"
+            icon={<CheckCircle2 className="w-3 h-3" />}
           >
-            <CheckCircle2 className="w-3 h-3" /> {l.verify_auth}
-          </button>
+             {l.verify_auth}
+          </Button>
         </div>
       )}
 
@@ -217,63 +225,70 @@ export function CliConnectionPanel({
       )}
 
       {state.kind === 'unauthenticated' && (
-        <div className="space-y-2 p-3 bg-red-500/5 border border-red-500/20 rounded-card">
+        <div className="space-y-2 p-3 bg-status-error/5 border border-status-error/20 rounded-card">
           <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-status-error shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="typo-body text-foreground">{l.not_authenticated_title}</div>
               <div className="typo-caption text-foreground">{state.verify.message}</div>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={runVerify}
-            className="typo-caption px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
+            variant="secondary"
+            size="sm"
+            icon={<RefreshCw className="w-3 h-3" />}
           >
-            <RefreshCw className="w-3 h-3" /> {l.recheck}
-          </button>
+             {l.recheck}
+          </Button>
         </div>
       )}
 
       {state.kind === 'authenticated' && (
-        <div className="space-y-2 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-card">
+        <div className="space-y-2 p-3 bg-surface-1 border border-hair rounded-card">
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-status-success shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="typo-body text-foreground">{l.authenticated_title}</div>
               <div className="typo-caption text-foreground break-all">{state.verify.message}</div>
             </div>
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={runVerify}
-              className="typo-caption px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
+              variant="secondary"
+              size="sm"
+              icon={<RefreshCw className="w-3 h-3" />}
             >
-              <RefreshCw className="w-3 h-3" /> {l.test_connection}
-            </button>
+               {l.test_connection}
+            </Button>
           </div>
         </div>
       )}
 
       {/* Footer buttons */}
-      <div className="flex justify-end gap-2 pt-2 border-t border-primary/10">
-        <button
+      <div className="flex justify-end gap-2 pt-2 border-t border-hair">
+        <Button
           type="button"
           onClick={onCancel}
-          className="typo-body px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40"
+          variant="secondary"
+          size="sm"
         >
           {l.cancel}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={handleSave}
           disabled={state.kind !== 'authenticated' || saving || !credentialName.trim()}
-          className="typo-body px-3 py-1.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          variant="accent"
+          tone="success"
+          size="sm"
+          icon={saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
         >
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
           {l.save_connection}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -291,7 +306,7 @@ function StateBlock({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2 p-3 bg-secondary/25 border border-primary/15 rounded-card">
+    <div className="flex items-start gap-2 p-3 bg-surface-1 border border-hair rounded-card">
       <div className="shrink-0 mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
         <div className="typo-body text-foreground">{title}</div>

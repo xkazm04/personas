@@ -83,7 +83,7 @@ export function ProposalInbox({ personaId, onApplied }: ProposalInboxProps) {
           isLoading ? (
             <div className="space-y-1.5" aria-hidden>
               {[0, 1].map((i) => (
-                <div key={i} className="h-12 rounded-input bg-secondary/30 animate-pulse" />
+                <div key={i} className="h-12 rounded-input bg-surface-1 animate-pulse" />
               ))}
             </div>
           ) : (
@@ -117,7 +117,7 @@ export function ProposalInbox({ personaId, onApplied }: ProposalInboxProps) {
                       title: kindLabel(p.kind),
                       summary: p.summary ?? p.instructions ?? null,
                       category: kindLabel(p.kind),
-                      accentClass: p.kind === 'self_model_diff' ? 'border-l-violet-400' : 'border-l-cyan-400',
+                      accentClass: p.kind === 'self_model_diff' ? 'border-l-role-agent' : 'border-l-role-external',
                       facts: [
                         { label: life.brain_fact_reviewed, value: p.reviewedCount },
                         { label: life.brain_fact_changes, value: p.proposedChanges },
@@ -130,20 +130,20 @@ export function ProposalInbox({ personaId, onApplied }: ProposalInboxProps) {
                     testId={`life-brain-proposal-${p.id}`}
                   />
                   {openId === p.id && (
-                    <li className="mx-4 mb-3 px-3 py-2 rounded-input bg-secondary/25 border border-primary/10 list-none">
+                    <li className="mx-4 mb-3 px-3 py-2 rounded-input bg-surface-1 border border-hair list-none">
                       {p.kind === 'self_model_diff' ? (
                         // The summary carries one preview line per anchored diff.
-                        <pre className="typo-code whitespace-pre-wrap break-words text-foreground/85">
+                        <pre className="typo-code whitespace-pre-wrap break-words text-ink-1">
                           {p.summary ?? ''}
                         </pre>
                       ) : (
                         <ul className="space-y-1">
                           {p.entries.map((e) => (
                             <li key={e.memoryId} className="flex items-center gap-2 typo-caption">
-                              <span className="typo-code px-1.5 py-px rounded-pill bg-primary/10 text-primary/80 border border-primary/15">
+                              <span className="typo-code px-1.5 py-px rounded-pill bg-primary/10 text-primary/80 border border-hair">
                                 {e.action}
                               </span>
-                              <span className="text-foreground/85 truncate">{e.title}</span>
+                              <span className="text-ink-1 truncate">{e.title}</span>
                             </li>
                           ))}
                         </ul>

@@ -141,7 +141,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80 space-y-2">
+      <div className="p-4 bg-status-error/10 border border-status-error/20 rounded-modal typo-code text-status-error space-y-2">
         <div>{tx(e.failed_to_load_trace, { error: resolveErrorTranslated(t, extractMessage(error.raw)).message })}</div>
         <Button variant="secondary" size="xs" onClick={retry} icon={<RefreshCw className="w-3 h-3" />}>
           {t.common.retry}
@@ -160,11 +160,11 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   if (!showGhost && !hasSpans) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
-          <Activity className="w-6 h-6 text-foreground" />
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-surface-2 border border-hair flex items-center justify-center">
+          <Activity className="w-6 h-6 text-ink-1" />
         </div>
-        <p className="typo-body text-foreground">{e.no_trace_data}</p>
-        <p className="typo-body text-foreground mt-1 max-w-[320px] mx-auto">{e.trace_empty_hint}</p>
+        <p className="typo-body text-ink-1">{e.no_trace_data}</p>
+        <p className="typo-body text-ink-2 mt-1 max-w-[320px] mx-auto">{e.trace_empty_hint}</p>
       </div>
     );
   }
@@ -194,11 +194,11 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
           numbers with none of the same visibility. */}
       {droppedSpanEvents > 0 && (
         <div
-          className="rounded-card border border-yellow-500/40 bg-yellow-500/10 p-3 flex items-center gap-2"
+          className="rounded-card border border-status-warning/40 bg-status-warning/10 p-3 flex items-center gap-2"
           data-testid="trace-live-events-dropped"
         >
-          <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
-          <span className="typo-body text-yellow-200/90">
+          <AlertTriangle className="w-4 h-4 text-status-warning shrink-0" />
+          <span className="typo-body text-status-warning">
             {tx(droppedSpanEvents === 1 ? e.live_events_dropped : e.live_events_dropped_other, {
               count: formatCount(droppedSpanEvents, { language, precision: 0 }),
               limit: formatCount(spanEventBufferCap, { language, precision: 0 }),
@@ -208,17 +208,17 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       )}
 
       {/* Time axis header */}
-      <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
+      <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
         {/* The span grid has a ~400px intrinsic minimum (two minmax(200px,...)
             columns). Without a horizontal scroller a narrow window crushes the
             name column instead of letting the user pan the waterfall. */}
         <div className="overflow-x-auto">
           <div className="min-w-[420px]">
-            <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
-              <div className="typo-code text-foreground uppercase tracking-wider">
+            <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-hair bg-surface-2">
+              <div className="typo-eyebrow text-ink-1">
                 {e.span}
               </div>
-              <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
+              <div className="flex justify-between typo-eyebrow text-ink-1">
                 <span>{e.zero_ms}</span>
                 {/* The axis end is unknown until spans land; the slot stays so the
                     header geometry never shifts when it fills in. */}
@@ -284,29 +284,29 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       {/* Error details */}
       {errorSpans.length > 0 && (
         <div className="space-y-2">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
-            <AlertCircle className="w-2.5 h-2.5 text-red-400" />
+          <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
+            <AlertCircle className="w-2.5 h-2.5 text-status-error" />
             {e.errors}
           </div>
           {shownErrorSpans
             .map((span) => {
               const config = getSpanTypeConfig(span.span_type);
               return (
-                <div key={span.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-card">
+                <div key={span.span_id} className="p-3 bg-status-error/5 border border-status-error/15 rounded-card">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border}`}>
+                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded-interactive border ${config.bg} ${config.color} ${config.border}`}>
                       {spanTypeLabel(t, span.span_type)}
                     </span>
-                    <span className="typo-code text-foreground">{span.name}</span>
+                    <span className="typo-code text-ink-1">{span.name}</span>
                   </div>
-                  <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">
+                  <pre className="typo-code text-status-error whitespace-pre-wrap break-words">
                     {span.error}
                   </pre>
                 </div>
               );
             })}
           {errorSpans.length > shownErrorSpans.length && (
-            <div className="typo-code text-foreground px-1" data-testid="trace-error-cards-capped">
+            <div className="typo-code text-ink-1 px-1" data-testid="trace-error-cards-capped">
               {tx(e.error_cards_capped, { shown: shownErrorSpans.length, total: errorSpans.length })}
             </div>
           )}
@@ -328,7 +328,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 // minimum display. No `animate-pulse`; the entrance stagger is the only motion.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 /** Deterministic width variation so ghosts read as spans, not a barcode. */
 const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 /** Indent pattern mimicking the tree's depth nesting. */
@@ -352,7 +352,7 @@ function TraceGhostRows({ label }: { label: string }) {
             <span className={`h-3 ${GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length]} max-w-full ${GHOST_BAR}`} />
           </div>
           <div className="relative h-5 w-full">
-            <div className="absolute inset-0 bg-primary/5 rounded" />
+            <div className="absolute inset-0 bg-surface-1 rounded-interactive" />
             <div
               className={`absolute top-0.5 bottom-0.5 ${GHOST_BAR}`}
               style={{ left: `${i * 6}%`, width: GHOST_BAR_WIDTHS[i % GHOST_BAR_WIDTHS.length] }}

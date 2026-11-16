@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Proposal, Release } from '@/lib/lensScan/wire';
 
-import { BP_URL_DEFAULT, bpBaseUrl, bpReleaseUrl, bpSlug } from '../bpLink';
+import { BP_URL_DEFAULT, bpBaseUrl, bpReleaseUrl, bpSlug, bpSlugByRoot } from '../bpLink';
 import { composeRelease, openReleaseOf, tagsFromReleases, versionOfReleaseId } from '../releaseComposition';
 import { probeBp } from '../useBpRelease';
 
@@ -74,6 +74,18 @@ describe('the bp link', () => {
   it('names the product by its repo folder, as bp slugs allow', () => {
     expect(bpSlug('C:/sample/teapot-works')).toBe('teapot-works');
     expect(bpSlug('C:\\sample\\Kiln Labs\\')).toBe('kiln-labs');
+  });
+
+  it("takes the slug from bp's product table by root: a worktree and a renamed slug resolve, an unknown root does not", () => {
+    const rows = [
+      { slug: 'personas', root: 'C:/t/hk-bp-ref-personas' },
+      { slug: 'kettle-web', root: 'C:\\Users\\me\\demo\\Kettle_Web\\' },
+      { slug: 'nameless' },
+    ];
+    expect(bpSlugByRoot(rows, 'c:\\t\\HK-BP-REF-PERSONAS')).toBe('personas');
+    expect(bpSlugByRoot(rows, '//?/C:/Users/me/demo/kettle_web')).toBe('kettle-web');
+    expect(bpSlug('C:/Users/me/demo/Kettle_Web')).toBe('kettle-web');
+    expect(bpSlugByRoot(rows, 'C:/elsewhere/atlas')).toBeUndefined();
   });
 
   it('probes bp only where the webview may connect; a refused connection is down', async () => {

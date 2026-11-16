@@ -163,7 +163,7 @@ export default function AddressBar({
       <p
         id="webview-address-refusal"
         role="status"
-        className={`typo-caption text-amber-400 ${refusal ? '' : 'sr-only'}`}
+        className={`typo-caption text-status-warning ${refusal ? '' : 'sr-only'}`}
       >
         {refusal ?? ''}
       </p>

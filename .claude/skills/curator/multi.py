@@ -846,6 +846,47 @@ def backlog_subjects(registry: pathlib.Path, repo: dict, exclude: set[str]) -> l
     return sorted(out, key=lambda x: (-x[2], x[1]))
 
 
+def owed_by_subject(repo: dict) -> dict[str, int]:
+    """`<domain>/<slug>` -> unknown + stale pairs still owed on non-weak contexts in `repo`'s map."""
+    rmap = _json_or(pathlib.Path(repo["root"]) / L.MAP_REL, {}) or {}
+    out: dict[str, int] = {}
+    for row in rmap.get("contexts", []):
+        if row.get("governance") in ("weak", "dead"):
+            continue
+        for p in row.get("subjects", []):
+            if not p.get("bundle"):
+                continue
+            unknown = p.get("state") in (None, "unknown")
+            if unknown or p.get("stale"):
+                key = f"{p['bundle']}/{p['subject']}"
+                out[key] = out.get(key, 0) + 1
+    return out
+
+
+def tried_mark(rnd: int, owed: int, digest: str | None) -> dict:
+    return {"round": rnd, "owed": owed, "digest": digest}
+
+
+def may_retry(mark, owed_now: int, digest_now: str | None) -> bool:
+    """May a subject `--multi` already tried in this repo be offered to a seat again?
+
+    A seat sees at most PAIR_BUDGET pairs, so a subject owing more than that was never finished
+    by one try. Until 2026-11-03 `tried` was forever, and 603 of 624 subjects with owed pairs
+    across 12 repos were locked out: the 2026-11-02 night stopped after 37 minutes on "nothing
+    claimable" with ~4,350 pairs unjudged. Retry when there is still something owed AND either
+    the last try made progress (fewer owed now than when it was tried) or the subject itself
+    changed in the registry since. A try that judged nothing stays excluded, so a subject no
+    seat can judge is not retried in a circle. A legacy mark (a bare round number, no count)
+    gets one more try, which records a count."""
+    if owed_now <= 0:
+        return False
+    if not isinstance(mark, dict):
+        return True
+    if digest_now and mark.get("digest") and digest_now != mark["digest"]:
+        return True
+    return owed_now < int(mark.get("owed") or 0)
+
+
 def backlog_size(repo: dict) -> dict:
     """Unknown and stale pair counts on non-weak contexts: the coverage still owed."""
     rmap = _json_or(pathlib.Path(repo["root"]) / L.MAP_REL, {}) or {}
@@ -909,13 +950,25 @@ def acquire(c, registry, skills, repos: list[dict], held: set[str], used: dict, 
                     return claim, d
                 L.settle(c, claim, "idled", "curator-multi: no judgeable pair (every pair weak, dead or judged and current)")
                 held.add(f"personas:{claim['subject']}")
-        excl = set(held) | set(tried)
+        owed = owed_by_subject(repo)
+        prefix = f"{repo['slug']}:"
+        locked = set()
+        for k, mark in tried.items():
+            if not k.startswith(prefix):
+                continue
+            address = k[len(prefix):]
+            b, _, s = address.partition("/")
+            entry = subject_entry(registry, b, s) or {}
+            if not may_retry(mark, owed.get(address, 0), entry.get("digest")):
+                locked.add(k)
+        excl = set(held) | locked
         cands = [x for x in backlog_subjects(registry, repo, excl)
                  if f"{repo['slug']}:*/{x[1]}" not in queued]
         cands.sort(key=lambda x: (subject_category(registry, x[0], x[1]) in used["categories"],))
         for bundle, slug, _w in cands[:6]:
             address = f"{bundle}/{slug}"
-            tried[f"{repo['slug']}:{address}"] = rnd
+            tried[f"{repo['slug']}:{address}"] = tried_mark(
+                rnd, owed.get(address, 0), (subject_entry(registry, bundle, slug) or {}).get("digest"))
             rid = file_request(c, "conform", f"--subject {slug} --repo {repo['slug']}", REQUEST_NOTE)
             claim = L.claim_one(c, registry, skills, {"queue"}, None, request_id=rid)
             if not claim or claim.get("declined") or claim.get("request_id") != rid:

@@ -25,6 +25,7 @@ import type { Translations } from '@/i18n/generated/types';
 import { resolvableRef } from './openRef';
 import { useRefOpener } from './RefOpenerContext';
 import type { RefKind } from './refGrammar';
+import Button from '@/features/shared/components/buttons/Button';
 
 const KIND_ICON: Record<RefKind, LucideIcon> = {
   approval: ShieldCheck,
@@ -71,21 +72,21 @@ export function RefLink({ kind, handle, children }: { kind: RefKind; handle: str
   const Icon = KIND_ICON[kind];
   return (
     <Tooltip content={refKindLabel(t, kind)}>
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="inline"
         onClick={(e) => {
           e.stopPropagation();
           open(kind, handle);
         }}
         onKeyDown={(e) => e.stopPropagation()}
-        className="inline text-left text-primary hover:underline underline-offset-2 decoration-primary/50 rounded-interactive focus-ring"
         data-testid="companion-ref-link"
         data-ref-kind={kind}
         data-ref-handle={handle}
       >
         <Icon className="inline-block w-3.5 h-3.5 mr-0.5 align-[-2px]" aria-hidden />
         {children}
-      </button>
+      </Button>
     </Tooltip>
   );
 }

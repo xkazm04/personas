@@ -60,3 +60,14 @@
 
 /* the shared empty state and banner sit on the paper, in bp's ink */
 .bp-picker .pj-state { border: 1px dashed var(--bp-ink-3); background: var(--bp-panel); color: var(--bp-ink); }
+
+/* Follow bp (picker/FollowLine.tsx, spark roadmap S6): the sheet header's Follow chip in the .pj-bt dress, quiet until
+   it follows; amber while bp does not answer. The note says what the last shared place could not do. */
+.pj-follow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; }
+.bp-press.pj-bt.pj-fchip { gap: 6px; color: var(--bp-ink-2); }
+.bp-press.pj-bt.pj-fchip > i { width: 7px; height: 7px; border-radius: 50%; background: var(--bp-ink-3); }
+.bp-press.pj-bt.pj-fchip.on { border-color: var(--bp-accent); color: var(--bp-ink-hi); background: color-mix(in srgb, var(--bp-accent) 14%, transparent); }
+.bp-press.pj-bt.pj-fchip.on > i { background: var(--bp-accent); }
+.bp-press.pj-bt.pj-fchip.off { border-color: var(--bp-amber); color: var(--bp-amber-2); }
+.bp-press.pj-bt.pj-fchip.off > i { background: var(--bp-amber); }
+.pj-fnote { font: 500 var(--bp-fs-12) var(--bp-font-mono); color: var(--bp-amber-2); }

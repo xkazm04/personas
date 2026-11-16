@@ -77,7 +77,7 @@ export function ManifestTab({ personaId }: { personaId: string }) {
 
   return (
     <div className="space-y-5 pb-10" data-testid="manifest-tab">
-      <header className="max-w-3xl space-y-1 border-b border-primary/10 pb-3">
+      <header className="max-w-3xl space-y-1 border-b border-hair pb-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="typo-title inline-flex items-center gap-2">
             <ScrollText className="w-4 h-4 text-primary" />
@@ -85,14 +85,14 @@ export function ManifestTab({ personaId }: { personaId: string }) {
           </h2>
           {pendingCount > 0 && (
             <span
-              className="typo-label px-2 py-0.5 rounded-pill bg-primary/10 text-primary border border-primary/20"
+              className="typo-label px-2 py-0.5 rounded-pill bg-primary/10 text-primary border border-hair"
               data-testid="manifest-pending-count"
             >
               {pendingCount === 1 ? m.pending_one : tx(m.pending_other, { count: pendingCount })}
             </span>
           )}
         </div>
-        <p className="typo-caption text-foreground">
+        <p className="typo-caption text-ink-2">
           {m.subtitle}
           {view?.updatedAt && (
             <>
@@ -138,7 +138,7 @@ export function ManifestTab({ personaId }: { personaId: string }) {
           {orphans.length > 0 && (
             <section className="space-y-2 pt-2" data-testid="manifest-orphan-proposals">
               <h3 className="typo-section-title">{m.orphan_title}</h3>
-              <p className="typo-caption text-foreground">{m.orphan_body}</p>
+              <p className="typo-caption text-ink-2">{m.orphan_body}</p>
               {orphans.map(({ proposal, previews }) => (
                 <ManifestProposalCard
                   key={proposal.id}

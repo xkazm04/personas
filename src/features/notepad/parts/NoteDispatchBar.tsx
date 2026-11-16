@@ -151,7 +151,7 @@ export function NoteDispatchBar({
     : t.notepad.ship_blocked_criteria_none;
 
   return (
-    <div className="flex items-center gap-3 px-5 py-3 border-t border-primary/10 bg-background/80">
+    <div className="flex items-center gap-3 px-5 py-3 border-t border-hair bg-background/80">
       <div className="w-64 flex-shrink-0">
         <DevToolsProjectDropdown
           value={note.projectId}
@@ -176,7 +176,7 @@ export function NoteDispatchBar({
           placeholder={t.notepad.ask_athena_placeholder}
           aria-label={t.notepad.ask_athena_placeholder}
           data-testid="notepad-athena-focus"
-          className="w-full px-3 py-2 typo-body rounded-input border border-primary/15 bg-background/60 text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-primary/30"
+          className="w-full px-3 py-2 typo-body rounded-input border border-hair bg-background/60 text-foreground placeholder:text-ink-2 focus:outline-none focus:border-primary/30"
         />
       </div>
 
@@ -305,7 +305,7 @@ export function NoteDispatchBar({
               >
                 {t.notepad.ship}
                 {plan && plan.unmet > 0 && (
-                  <span className="ml-1 px-1.5 rounded-full typo-data bg-secondary/60 text-foreground/80">
+                  <span className="ml-1 px-1.5 rounded-interactive typo-data bg-surface-1 text-ink-2">
                     {plan.totalCriteria - plan.unmet}/{plan.totalCriteria}
                   </span>
                 )}

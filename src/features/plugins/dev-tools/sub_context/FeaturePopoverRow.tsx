@@ -90,12 +90,12 @@ export function FeaturePopoverRow({
   };
 
   return (
-    <li className="flex items-center gap-2 px-3 py-2 border-b border-primary/5 last:border-b-0">
+    <li className="flex items-center gap-2 px-3 py-2 border-b border-hair last:border-b-0">
       <CouncilGlyph kind={kind} t={t} />
 
       <span className="flex flex-col min-w-0 flex-1">
         <span className="typo-body text-foreground truncate">{row.uc.name}</span>
-        <span className="typo-caption text-foreground tabular-nums">
+        <span className="typo-caption text-foreground num">
           {interpolate(t.council_span, {
             contexts: row.uc.context_ids.length,
             groups: row.groupCount,
@@ -115,7 +115,7 @@ export function FeaturePopoverRow({
             </span>
           )}
           {roundNo != null && roundNo > 1 && (
-            <span className="ml-1.5 px-1 rounded-interactive bg-secondary/40 text-foreground">
+            <span className="ml-1.5 px-1 rounded-interactive bg-surface-1 text-foreground">
               {interpolate(t.council_round, { round: roundNo })}
             </span>
           )}
@@ -146,8 +146,7 @@ export function FeaturePopoverRow({
           })}
         >
           <Button
-            variant="accent"
-            tone="warning"
+            variant="secondary"
             size="sm"
             className="shrink-0"
             data-testid="council-open-gate"

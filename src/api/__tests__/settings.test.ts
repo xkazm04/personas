@@ -1,12 +1,9 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
-// eslint-disable-next-line no-restricted-imports
-import { invoke } from "@tauri-apps/api/core";
-import { vi } from "vitest";
-import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import { getAppSetting, setAppSetting, deleteAppSetting } from "@/api/system/settings";
 
-const mockedInvoke = vi.mocked(invoke);
+const mockedInvoke = mockedTauriInvoke;
 
 describe("api/system/settings", () => {
   beforeEach(() => {
@@ -31,6 +28,7 @@ describe("api/system/settings", () => {
   it("setAppSetting resolves", async () => {
     mockInvoke("set_app_setting", undefined);
     await expect(setAppSetting("theme", "dark")).resolves.toBeUndefined();
+    expect(mockedInvoke.mock.calls.at(-1)?.[0]).toBe("set_app_setting");
   });
 
   it("deleteAppSetting returns boolean", async () => {

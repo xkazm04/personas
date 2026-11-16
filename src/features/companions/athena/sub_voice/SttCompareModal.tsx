@@ -121,7 +121,7 @@ export function SttCompareModal({ isOpen, onClose }: { isOpen: boolean; onClose:
 
         {canAdopt && (
           <div
-            className="flex items-center gap-3 rounded-card border border-emerald-500/30 bg-emerald-500/5 px-3 py-2"
+            className="flex items-center gap-3 rounded-card border border-status-success/30 bg-status-success/5 px-3 py-2"
             data-testid="stt-compare-adopt-band"
           >
             <p className="typo-caption text-foreground flex-1">{c.stt_compare_adopt_hint}</p>
@@ -189,7 +189,7 @@ function EngineColumn({
 
       <div className="flex-1 pt-2">
         {!take.supported ? (
-          <p className="typo-caption text-amber-300">{unsupportedNote}</p>
+          <p className="typo-caption text-status-warning">{unsupportedNote}</p>
         ) : take.error ? (
           <ErrorBanner message={take.error} variant="inline" />
         ) : body ? (

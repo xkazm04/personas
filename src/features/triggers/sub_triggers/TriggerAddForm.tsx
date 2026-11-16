@@ -6,6 +6,7 @@ import {
 } from '@/lib/utils/platform/triggerConstants';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { IntervalConfig, CronConfig } from './TriggerScheduleConfig';
 import { getDetectedTimezone } from './TimezoneSelect';
@@ -23,6 +24,7 @@ import { EventListenerConfig } from './configs/EventListenerConfig';
 import { PollingConfig } from './configs/PollingConfig';
 import { buildTriggerConfig } from './configs/buildTriggerConfig';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface TriggerAddFormProps {
   credentialEventsList: { id: string; name: string }[];
@@ -79,15 +81,28 @@ export function TriggerAddForm({
   const [isCreating, setIsCreating] = useState(false);
   const cronDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Latest-wins: a slower preview of an older expression must not overwrite
+  // (or clear the spinner of) the preview of the expression now in the field.
+  const cronPreviewWins = useRef(createLatestWins()).current;
+  // Which (expression, zone) the held preview answers. Submitting inside the
+  // debounce window must not validate against the preview of an older expression.
+  const previewKeyRef = useRef('');
   const fetchCronPreview = useCallback(async (expr: string, tz?: string) => {
-    if (!expr.trim()) { setCronPreview(null); return; }
+    const seq = cronPreviewWins.next();
+    if (!expr.trim()) { previewKeyRef.current = ''; setCronPreview(null); setCronLoading(false); return; }
     setCronLoading(true);
-    try { setCronPreview(await previewCronSchedule(expr.trim(), 5, tz)); }
-    catch (err) {
+    try {
+      const preview = await previewCronSchedule(expr.trim(), 5, tz);
+      if (cronPreviewWins.isCurrent(seq)) {
+        previewKeyRef.current = `${expr.trim()}|${tz ?? ''}`;
+        setCronPreview(preview);
+      }
+    } catch (err) {
       silentCatch('TriggerAddForm:previewCronSchedule')(err);
-      setCronPreview(null);
+      if (cronPreviewWins.isCurrent(seq)) { previewKeyRef.current = ''; setCronPreview(null); }
+    } finally {
+      if (cronPreviewWins.isCurrent(seq)) setCronLoading(false);
     }
-    finally { setCronLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -96,6 +111,9 @@ export function TriggerAddForm({
     cronDebounceRef.current = setTimeout(() => { fetchCronPreview(cronExpression, scheduleTimezone); }, 400);
     return () => { if (cronDebounceRef.current) clearTimeout(cronDebounceRef.current); };
   }, [cronExpression, scheduleMode, triggerType, scheduleTimezone, fetchCronPreview]);
+
+  // An error raised for one trigger type must not sit under another type's form.
+  useEffect(() => { setValidationError(null); }, [triggerType]);
 
   const handleCronPreset = (expr: string) => {
     setCronExpression(expr);
@@ -157,7 +175,8 @@ export function TriggerAddForm({
   const handleAddTrigger = async () => {
     if (isCreating) return;
     const result = buildTriggerConfig({
-      triggerType, scheduleMode, interval, cronExpression, cronPreview,
+      triggerType, scheduleMode, interval, cronExpression,
+      cronPreview: previewKeyRef.current === `${cronExpression.trim()}|${scheduleTimezone ?? ''}` ? cronPreview : null,
       scheduleTimezone, scheduleMaxBackfill,
       endpoint, selectedEventId, hmacSecret, listenEventType, sourceFilter,
       watchPaths, watchEvents, watchRecursive, globFilter,
@@ -188,16 +207,16 @@ export function TriggerAddForm({
 
   return (
     <div
-      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-4 space-y-4"
+      className="animate-fade-slide-in bg-surface-2 backdrop-blur-sm border border-hair rounded-modal p-4 space-y-4"
     >
       {!lockedTriggerType && (
         <>
           <NlTriggerInput onApplyResult={applyNlResult} />
 
           <div className="relative flex items-center gap-3 py-0.5">
-            <div className="flex-1 border-t border-border/20" />
-            <span className="typo-caption text-foreground shrink-0">{t.triggers.or_use_templates}</span>
-            <div className="flex-1 border-t border-border/20" />
+            <div className="flex-1 border-t border-hair" />
+            <span className="typo-caption text-ink-2 shrink-0">{t.triggers.or_use_templates}</span>
+            <div className="flex-1 border-t border-hair" />
           </div>
 
           <TriggerQuickTemplates onApplyTemplate={applyTemplate} />
@@ -209,16 +228,22 @@ export function TriggerAddForm({
       {triggerType === 'schedule' && (
         <div className="space-y-3">
           <div>
-            <label className="block typo-body text-foreground mb-1.5">{t.triggers.schedule_mode_label}</label>
+            <label className="block typo-body text-ink-1 mb-1.5">{t.triggers.schedule_mode_label}</label>
             <div className="flex gap-1.5">
-              <button type="button" onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
-                <Clock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_interval}
-              </button>
-              <button type="button" onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
-                <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_cron}
-              </button>
+              <Button
+                type="button"
+                onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
+                variant={scheduleMode === 'interval' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={<Clock className="w-3.5 h-3.5" />}
+              >{t.triggers.schedule.mode_interval}</Button>
+              <Button
+                type="button"
+                onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
+                variant={scheduleMode === 'cron' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={<CalendarClock className="w-3.5 h-3.5" />}
+              >{t.triggers.schedule.mode_cron}</Button>
             </div>
           </div>
           {scheduleMode === 'interval' && <IntervalConfig interval={interval} setInterval={setInterval} customInterval={customInterval} setCustomInterval={setCustomInterval} validationError={validationError} setValidationError={setValidationError} triggerType={triggerType} />}
@@ -236,21 +261,20 @@ export function TriggerAddForm({
       {triggerType === 'composite' && <CompositeConfig compositeConditions={compositeConditions} setCompositeConditions={setCompositeConditions} compositeOperator={compositeOperator} setCompositeOperator={setCompositeOperator} windowSeconds={windowSeconds} setWindowSeconds={setWindowSeconds} validationError={validationError} setValidationError={setValidationError} />}
 
       {validationError && (
-        <div role="alert" className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
+        <div role="alert" className="px-3 py-2 bg-status-error/10 border border-status-error/20 rounded-card typo-body text-status-error">
           {validationError}
         </div>
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
-        <button
+        <Button type="button" onClick={onCancel} variant="secondary" size="sm">{t.common.cancel}</Button>
+        <Button
           type="button"
           onClick={handleAddTrigger}
           disabled={isScheduleInvalid || isCreating}
-          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
-        >
-          {t.triggers.add.create_trigger}
-        </button>
+          variant="primary"
+          size="sm"
+        >{t.triggers.add.create_trigger}</Button>
       </div>
     </div>
   );

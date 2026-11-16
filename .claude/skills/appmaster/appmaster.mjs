@@ -12,7 +12,8 @@
 //   settle   --run <runId> [--retry]
 //   verify   --project p [--repo <key>] [--timeout-min N]   (the FULL gate on the base tip: every suite, before a push)
 //   await    --run <runId> | --project p [--timeout-min N]   (blocks until the builder exits, settles it, then promotes)
-//   release  --run <runId> --reason <text> [--kill]
+//   release  --run <runId> --reason <text> [--kill] [--discard] [--keep-build]
+//   sweep    [--days 7] [--dry]
 //   say      --project p --file <msg.md> | --text <message>
 //   asks     [--project p]
 //   answer   --ask <askId> --choice <label> --notes <text>
@@ -47,6 +48,7 @@ export const COMMANDS = {
   verify:   ['./lib/verify.mjs', 'cmdVerify'],      // the full gate (the merge gate tests only the changed area)
   await:    ['./lib/await.mjs', 'cmdAwait'],        // the exit watcher (watch + settle for one run)
   release:  ['./lib/worker.mjs', 'cmdRelease'],     // WP2
+  sweep:    ['./lib/worker.mjs', 'cmdSweep'],       // settled runs' worktrees: prune target/, discard when merged or old
   say:      ['./lib/asks.mjs', 'cmdSay'],           // WP1
   asks:     ['./lib/asks.mjs', 'cmdAsks'],          // WP1
   answer:   ['./lib/asks.mjs', 'cmdAnswer'],        // WP1

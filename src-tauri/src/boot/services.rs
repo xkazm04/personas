@@ -152,6 +152,12 @@ pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
     // token layer like every non-exempt prefix.
     #[cfg(feature = "p2p")]
     local_http::register_router("mesh", local_http::mesh::router(app.handle().clone()));
+    // Standup doors (spark app-standup): the terminal `/athena --standup` reads
+    // and arms the app's one plan here while the app runs.
+    local_http::register_router(
+        local_http::standup::PREFIX,
+        local_http::standup::router(app.handle().clone()),
+    );
     // Contest preview — read-only GET of a contest arena's files for the
     // sandboxed variant iframe. SECURITY-SENSITIVE: authenticates itself with
     // a per-boot path token (see `commands::contest::preview`), which is why

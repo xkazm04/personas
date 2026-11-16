@@ -39,7 +39,7 @@ export function ConnectorCapabilityNote({ serviceType }: ConnectorCapabilityNote
       <span
         data-testid="db-capability-note"
         data-capability={capability}
-        className="flex items-center gap-1 typo-body px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8 text-foreground"
+        className="flex items-center gap-1 typo-body px-2 py-0.5 rounded-card bg-surface-2 border border-primary/8 text-foreground"
       >
         <Info className="w-3 h-3" />
         {label}

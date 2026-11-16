@@ -53,9 +53,13 @@ export const resumeTeamAssignment = (id: string) =>
  * Advance a goal with its owning team: builds a goal-linked assignment (from the
  * goal's open to-dos, else LLM-decomposed) and runs it. Returns the new
  * assignment id, or `null` when an assignment already advances this goal.
+ * With no open to-dos it decomposes the goal inline under
+ * `DECOMPOSE_TIMEOUT_SECS` (120 s, engine/goal_advance.rs) BEFORE the
+ * assignment row exists, so the IPC outlives it: a false timeout there invites
+ * a retry the already-advancing guard cannot see.
  */
 export const advanceTeamGoal = (teamId: string, goalId: string) =>
-  invoke<string | null>("advance_team_goal", { teamId, goalId });
+  invoke<string | null>("advance_team_goal", { teamId, goalId }, { timeoutMs: 150_000 });
 
 export const resolveTeamAssignmentReview = (
   stepId: string,

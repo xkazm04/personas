@@ -1,0 +1,78 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c86596c8-7c1f-4e6a-ad8c-07a874e139d9",
+ "subject": "watch-cache-and-resync",
+ "evaluatedAt": "2026-11-02T22:32:09.128102+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "stores-slices-overview",
+   "subject": "watch-cache-and-resync",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/overview/personaHealthSlice.ts:275 computePersonaHealth fully re-reads a declared slice (getHealthBundle(7)), but a source that still fails after its one retry is written as [] or null over the last good values. healingFrequency then becomes 0, which inflates heartbeatScore, and the result is committed with a replica-wide healthLastRefreshedAt = now, so a failed read becomes a confident zero instead of unknown with the last good rows kept.",
+   "techniques": [
+    {
+     "technique": "read-phase-before-write-transaction",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/overview/personaHealthSlice.ts:275 A failed source falls back to empty and is scored and committed (set at :498-508). The technique requires a failed read to write nothing and to stay unknown. By contrast, overviewSlice runDashboardWave1/2 do conform: they use Promise.allSettled, then one set(), and a failed source's data is left untouched."
+    },
+    {
+     "technique": "per-source-freshness-rows",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/overview/personaHealthSlice.ts:506 There is one replica-wide refresh time, stamped even when dataSourceStatus marks sources failed, so a broken source looks freshly read. dataSourceStatus keeps a per-source failure reason but no per-source last-ok time. overviewSlice.ts:372 is the conformant counterpart in this same context: success clears the error and stamps fetchedAt[source], and failure leaves fetchedAt alone."
+    },
+    {
+     "technique": "one-stream-fanned-out",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/pipeline/channelSlice.ts:21 N surfaces share one refcounted subscription (subscribeChannel). When a key's refcount reaches 0 it is deleted (:296), so the shared poll stops refreshing it. That is the fan-out-plus-reaping shape. The backpressure clause is moot for a polled source."
+    },
+    {
+     "technique": "desync-is-a-state",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/slices/overview/healingSlice.ts:125 Tauri events invalidate and the slice re-reads through IPC. No cursor or position is kept, so there is no positional-failure family to model. A search of src/stores for resync, desync, resourceVersion and bookmark found nothing."
+    },
+    {
+     "technique": "atomic-swap-at-initial-sync",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/slices/overview/eventSlice.ts:30 The event list is a bounded window of 200 items that merges fetched rows with pushed events. It is not a full-slice re-read of a stream-maintained replica, so there is no begin/complete marker to swap at."
+    },
+    {
+     "technique": "completeness-barrier-with-a-warm-queue",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/slices/overview/memorySlice.ts:18 No convergence loop consumes these slices. The related concern, that an empty unfilled store must not read as an empty slice, is handled with a loading flag plus error fields (memoriesLoading/memoriesError, recentEventsError), not a one-shot barrier."
+    },
+    {
+     "technique": "per-cycle-read-budget",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/slices/pipeline/channelSlice.ts:34 Reads go to the app's own local backend over IPC, which has no rate limit shared with humans. Each refresh is already a bounded single page, with no per-item detail fan-out."
+    }
+   ],
+   "registryProposal": "The golden path frames the polled replica around 'hosted platforms a product integrates with'. In a desktop app, the same failure (a failed source written as empty and stamped fresh) occurs in a UI read model over the app's own local backend whose slice is declared rather than caller-keyed. The standard could say explicitly whether a declared, fully re-read derived bundle over a local source falls under the polled-replica techniques or under client-fetch-cache."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-02T22:32:09.128102+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "watch-cache-and-resync"
+   ],
+   "techniques": [
+    "atomic-swap-at-initial-sync",
+    "completeness-barrier-with-a-warm-queue",
+    "desync-is-a-state",
+    "one-stream-fanned-out",
+    "per-cycle-read-budget",
+    "per-source-freshness-rows",
+    "read-phase-before-write-transaction"
+   ],
+   "deviations": 1,
+   "context": "stores-slices-overview",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

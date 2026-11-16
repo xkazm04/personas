@@ -1,6 +1,7 @@
 import React from 'react';
 import { ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorMeta } from '@/lib/connectors/connectorMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConnectorIconButtonProps {
   connectorName: string;
@@ -22,9 +23,8 @@ export function ConnectorIconButton({
   };
 
   return (
-    <div
+    <Tooltip content={`${meta.label}${isReady ? '' : ' -- click to add credential'}`}><div
       className="relative flex-shrink-0"
-      title={`${meta.label}${isReady ? '' : ' -- click to add credential'}`}
       data-testid={`connector-readiness-dot-${connectorName}`}
     >
       <div
@@ -32,7 +32,7 @@ export function ConnectorIconButton({
         className={`w-7 h-7 rounded-card flex items-center justify-center transition-all ${
           isReady
             ? ''
-            : 'grayscale hover:grayscale-0 cursor-pointer hover:ring-2 hover:ring-amber-500/30'
+            : 'grayscale hover:grayscale-0 cursor-pointer hover:ring-2 hover:ring-status-warning/30'
         }`}
         style={{ backgroundColor: `${meta.color}18` }}
       >
@@ -41,10 +41,10 @@ export function ConnectorIconButton({
       <span
         className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
           isReady
-            ? 'bg-emerald-500'
-            : 'bg-amber-500/60 border border-dashed border-amber-500/30'
+            ? 'bg-status-success'
+            : 'bg-status-warning/60 border border-dashed border-status-warning/30'
         }`}
       />
-    </div>
+    </div></Tooltip>
   );
 }

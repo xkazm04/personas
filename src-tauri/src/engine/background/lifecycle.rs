@@ -367,6 +367,15 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Whole-machine sampler (spark app-standup, WP2) — CPU/RAM (the shared
+        // SystemMetricsSampler) + GPU (PDH) every 10 s, rolled up to one
+        // `host_utilization` row per minute, pruned past 14 days. Feeds the
+        // standup resource lane and the dead-spot backfill. Always-on; one
+        // cheap reading per tick, no process enumeration.
+        Box::new(crate::engine::resources::host_sampler::HostSamplerSubscription::new(app.clone())),
+        // Standup supervisor (spark app-standup, WP3): 20-min sweep + hourly
+        // drift check of the ARMED plan; one indexed query and out when none is armed.
+        Box::new(crate::companion::standup::supervisor::StandupSupervisor::new(app.clone())),
         // Queue drain watchdog — re-drains the execution queue after a
         // quota-aware admission cooldown lifts (the normal completion-driven
         // drain can't restart itself once all in-flight work has finished).

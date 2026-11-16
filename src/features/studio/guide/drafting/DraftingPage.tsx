@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { LETTERING, regionWeights } from './draftingModel';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 export type RegionState = 'pending' | 'drafting' | 'done';
 
 export interface DraftingRegion {
@@ -86,7 +87,7 @@ export default function DraftingPage({
           {num}
         </span>
         {!skeleton && <span style={{ ...LETTERING, color: 'var(--ink-strong)' }}>{title}</span>}
-        {!skeleton && route && <span className="typo-code text-foreground/90">{route}</span>}
+        {!skeleton && route && <span className="typo-code text-ink-2">{route}</span>}
       </motion.p>
       {!compact && (
         <div className={`relative mb-2 h-3 ${started ? '' : 'invisible'}`} aria-hidden>
@@ -112,24 +113,23 @@ export default function DraftingPage({
         style={{ border: proof ? '1px solid var(--ink)' : undefined }}
       >
         {proof && scale > 0 && (
-          <motion.iframe
-            key={proof.url}
-            src={proof.url}
-            title={title}
-            aria-hidden
-            tabIndex={-1}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.7 }}
-            className="pointer-events-none absolute left-0 top-0 origin-top-left border-0"
-            style={{
-              width: DESKTOP,
-              height: `${100 / scale}%`,
-              transform: `scale(${scale})`,
-              filter: proof.filter,
-              transition: 'filter 2400ms ease-out',
-            }}
-          />
+          <Tooltip content={title} key={proof.url}>
+            <motion.iframe
+              src={proof.url}
+              aria-hidden
+              tabIndex={-1}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7 }}
+              className="pointer-events-none absolute left-0 top-0 origin-top-left border-0"
+              style={{
+                width: DESKTOP,
+                height: `${100 / scale}%`,
+                transform: `scale(${scale})`,
+                filter: proof.filter,
+                transition: 'filter 2400ms ease-out',
+              }} />
+          </Tooltip>
         )}
         {proof ? (
           // The regions as a legend along the bottom edge, clear of the page's own top.

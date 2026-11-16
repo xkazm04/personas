@@ -398,7 +398,7 @@ The project supports multiple build configurations via Cargo profiles and Tauri 
 | Command | Features | Bundles | Build Time | Use Case |
 |---------|----------|---------|------------|----------|
 | `npm run tauri:build` | `desktop-full` (ml + p2p) | NSIS + MSI | ~27 min | CI / production release |
-| `npm run tauri:build:lite` | `desktop` (no ml/p2p) | NSIS only | ~20 min | Quick local testing, UI work |
+| `npm run tauri:build:lite` | `desktop` (p2p, no ml) | NSIS only | ~20 min | Quick local testing, UI work |
 | `npm run tauri:build:stable` | `desktop-full` | NSIS + MSI | ~30 min | Milestone builds (explicit config) |
 | `npx tauri build` | `desktop-full` (from tauri.conf.json) | NSIS + MSI | ~27 min | Default, same as CI |
 

@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import type { KbIngestProgressPayload } from '@/lib/eventRegistry';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface IngestProgressBarProps {
   kbId: string;
@@ -90,17 +91,17 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
     <div className="space-y-2">
       <div className="flex items-center gap-2 typo-body">
         {hasError ? (
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" aria-hidden />
+          <AlertCircle className="w-4 h-4 text-status-error shrink-0" aria-hidden />
         ) : done ? (
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden />
+          <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" aria-hidden />
         ) : (
-          <Loader className="w-4 h-4 text-violet-400/70 shrink-0" aria-hidden />
+          <Loader className="w-4 h-4 text-role-agent/70 shrink-0" aria-hidden />
         )}
 
         <span
           role="status"
           aria-live="polite"
-          className={`flex-1 truncate ${hasError ? 'text-red-400' : 'text-foreground'}`}
+          className={`flex-1 truncate ${hasError ? 'text-status-error' : 'text-foreground'}`}
         >
           {hasError
             ? (errorText || sh.ingestion_failed)
@@ -121,21 +122,23 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
 
         {/* The bar no longer clears itself on failure, so it needs a way out. */}
         {hasError && (
-          <button
+          <Button
             type="button"
             onClick={() => onCompleteRef.current()}
-            className="typo-caption shrink-0 px-2 py-0.5 rounded-card border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+            variant="danger"
+            size="xs"
+            className="shrink-0"
           >
             {t.common.dismiss}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Progress bar */}
-      <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-300 ${
-            hasError ? 'bg-red-500/60' : done ? 'bg-emerald-500/60' : 'bg-violet-500/60'
+            hasError ? 'bg-status-error/60' : done ? 'bg-status-success/60' : 'bg-role-agent/60'
           }`}
           style={{ width: `${pct}%` }}
         />

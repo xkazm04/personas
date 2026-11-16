@@ -20,7 +20,7 @@ interface FleetSettingsCardProps {
  */
 export function FleetSettingsCard({ icon, title, description, aside, children, 'data-testid': testId }: FleetSettingsCardProps) {
   return (
-    <section className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3" data-testid={testId}>
+    <section className="rounded-modal border border-hair bg-surface-1 px-4 py-3" data-testid={testId}>
       <div className="flex items-center gap-2 min-h-7">
         {icon && <span className="flex shrink-0" aria-hidden="true">{icon}</span>}
         <h3 className="typo-heading text-foreground">{title}</h3>

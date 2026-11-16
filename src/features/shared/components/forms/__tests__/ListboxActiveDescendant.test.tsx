@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { Listbox } from '../Listbox';
 
@@ -43,5 +43,28 @@ describe('Listbox announces the arrow-key highlight', () => {
     const id = input.getAttribute('aria-activedescendant');
     expect(id).toBeTruthy();
     expect(document.getElementById(id!)?.textContent).toBe('Alpha'); // type-ahead focuses the first match
+  });
+});
+
+describe('Listbox Enter', () => {
+  it('does not select (or close) when the filtered list is empty', async () => {
+    const onSelect = vi.fn();
+    render(
+      <Listbox
+        ariaLabel="Pick"
+        itemCount={0}
+        searchable
+        onSelectFocused={onSelect}
+        renderTrigger={({ toggle }) => <button type="button" onClick={toggle}>trigger</button>}
+      >
+        {() => <div>none</div>}
+      </Listbox>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'trigger' }));
+    await screen.findByRole('textbox');
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox')).not.toBeNull();
   });
 });

@@ -14,6 +14,10 @@ import { AthenaSidePanel } from '../AthenaSidePanel';
 import { useOperativeMemoryStore } from '../orchestration/operativeMemoryStore';
 import { parseDigest } from '../orchestration/parseDigest';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * Live "what Athena has running" content for the companion chat's inner
  * side-panel slot (see `AthenaSidePanel`).
@@ -151,15 +155,15 @@ export function FleetStatsSidePanel() {
         {chips.length > 0 && (
           <div className="flex flex-wrap gap-1 px-1 pb-1" data-testid="companion-fleet-side-panel-chips">
             {chips.map((m) => (
-              <span
-                key={m.id}
-                data-testid={`companion-fleet-side-panel-chip-${m.id}`}
-                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums ${m.chip} ${m.text}`}
-                title={t.plugins.fleet[m.labelKey]}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} aria-hidden="true" />
-                {counts[m.id]}
-              </span>
+              <Tooltip content={t.plugins.fleet[m.labelKey]} key={m.id}>
+                <span
+                  data-testid={`companion-fleet-side-panel-chip-${m.id}`}
+                  className={`inline-flex items-center gap-1 typo-data ${m.text}`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} aria-hidden="true" />
+                  {counts[m.id]}
+                </span>
+              </Tooltip>
             ))}
           </div>
         )}
@@ -258,15 +262,18 @@ export function FleetStatsSidePanel() {
         )}
       </PanelSection>
 
-      <button
+      <Button
         type="button"
         onClick={openFleetPage}
         data-testid="companion-fleet-side-panel-open-page"
-        className="mt-1 w-full flex items-center justify-center gap-1 px-1.5 py-1 rounded-input text-[10px] text-foreground hover:bg-secondary/40 transition-colors"
+        variant="ghost"
+        size="sm"
+        block
+        className="mt-1"
       >
         <ExternalLink className="w-3 h-3" />
         {t.plugins.fleet.footer_open_page}
-      </button>
+      </Button>
     </AthenaSidePanel>
   );
 }
@@ -339,16 +346,20 @@ function PanelRow({
     <>
       <div className="flex items-center gap-1.5 min-w-0">
         <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${dotClass}`} aria-hidden="true" />
-        <span className="flex-1 min-w-0 truncate typo-caption text-foreground" title={titleTooltip ?? title}>
-          {title}
-        </span>
+        <Tooltip content={titleTooltip ?? title}>
+          <span className="flex-1 min-w-0 truncate typo-caption text-foreground" >
+            {title}
+          </span>
+        </Tooltip>
       </div>
       <div className="flex items-center justify-between gap-1 pl-3">
-        <span className={`truncate text-[10px] ${statusClass ?? 'text-foreground'}`}>{status}</span>
+        <span className={`truncate typo-caption ${statusClass ?? 'text-foreground'}`}>{status}</span>
         {meta && (
-          <span className="shrink-0 text-[10px] text-foreground tabular-nums" title={metaTooltip}>
-            {meta}
-          </span>
+          <Tooltip content={metaTooltip}>
+            <span className="shrink-0 typo-caption text-foreground tabular-nums" >
+              {meta}
+            </span>
+          </Tooltip>
         )}
       </div>
     </>
@@ -357,16 +368,16 @@ function PanelRow({
   return (
     <li>
       {onClick ? (
-        <button
-          type="button"
-          onClick={onClick}
-          data-testid={testId}
-          title={actionLabel}
-          aria-label={actionLabel ? `${title} — ${actionLabel}` : title}
-          className="w-full text-left rounded-input bg-secondary/30 hover:bg-secondary/60 px-1.5 py-1 transition-colors focus-ring"
-        >
-          {body}
-        </button>
+        <Tooltip content={actionLabel}>
+          <PressSurface
+            onPress={onClick}
+            data-testid={testId}
+            aria-label={actionLabel ? `${title} — ${actionLabel}` : title}
+            className="w-full rounded-input px-1.5 py-1"
+          >
+            {body}
+          </PressSurface>
+        </Tooltip>
       ) : (
         <div data-testid={testId} className="rounded-input bg-secondary/20 px-1.5 py-1">
           {body}

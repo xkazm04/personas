@@ -3,6 +3,7 @@ import { Star, Trash2, Plus, X } from 'lucide-react';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AnnotationEditorProps {
   executionId: string;
@@ -116,41 +117,39 @@ export function AnnotationEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="typo-heading text-foreground uppercase">
+        <span className="typo-heading text-ink-1 uppercase">
           {a.annotation_section_title}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={() => setStarred((s) => !s)}
           aria-label={a.annotation_starred_aria}
-          aria-pressed={starred}
-          className={`p-1 rounded-interactive transition-colors ${
-            starred ? 'text-amber-400 hover:text-amber-300' : 'text-foreground hover:text-foreground/70'
-          }`}
+          pressed={starred}
         >
-          <Star className="w-4 h-4" fill={starred ? 'currentColor' : 'none'} />
-        </button>
+          <Star className={starred ? "w-4 h-4 text-status-warning" : "w-4 h-4"} fill={starred ? "currentColor" : "none"} />
+        </Button>
       </div>
 
       <div className="space-y-1.5">
-        <span className="typo-code text-foreground uppercase tracking-wider">
+        <span className="typo-eyebrow text-ink-1">
           {a.annotation_tags_label}
         </span>
         <div className="flex flex-wrap gap-1.5 items-center">
           {tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-card bg-primary/10 text-primary/90 border border-primary/20"
+              className="inline-flex items-center gap-1 typo-body text-primary/90"
             >
               {tag}
-              <button
+              <Button
                 type="button"
                 onClick={() => setTags((prev) => prev.filter((tt) => tt !== tag))}
-                className="text-primary/60 hover:text-primary"
                 aria-label={`Remove ${tag}`}
-              >
-                <X className="w-3 h-3" />
-              </button>
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-3 h-3" />}
+              />
             </span>
           ))}
           <input
@@ -167,36 +166,29 @@ export function AnnotationEditor({
             }}
             placeholder={a.annotation_tag_placeholder}
             aria-label={a.annotation_tags_label}
-            className="flex-1 min-w-[100px] px-2 py-0.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30"
+            className="flex-1 min-w-[100px] px-2 py-0.5 typo-body bg-surface-1 border border-hair rounded-card text-ink-1 outline-none focus:border-primary/30"
           />
-          <button
+          <Button
             type="button"
             onClick={() => commitTag(draftTag)}
             disabled={!draftTag.trim()}
             aria-label={t.common.add}
-            className="p-1 rounded-interactive text-foreground hover:text-foreground disabled:opacity-30"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
+          />
         </div>
         {tagSuggestions.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {tagSuggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => commitTag(s)}
-                className="px-2 py-0.5 typo-code rounded-card bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 border border-primary/10"
-              >
-                + {s}
-              </button>
+              <Button key={s} type="button" onClick={() => commitTag(s)} variant="secondary" size="xs">+ {s}</Button>
             ))}
           </div>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <span className="typo-code text-foreground uppercase tracking-wider">
+        <span className="typo-eyebrow text-ink-1">
           {a.annotation_note_label}
         </span>
         <textarea
@@ -205,29 +197,22 @@ export function AnnotationEditor({
           placeholder={a.annotation_note_placeholder}
           aria-label={a.annotation_note_label}
           rows={3}
-          className="w-full px-2 py-1.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30 resize-y"
+          className="w-full px-2 py-1.5 typo-body bg-surface-1 border border-hair rounded-card text-ink-1 outline-none focus:border-primary/30 resize-y"
         />
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !dirty}
-          className="px-3 py-1 typo-body rounded-interactive bg-primary/15 text-primary/90 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? a.annotation_saving : a.annotation_save}
-        </button>
+        <Button type="button" onClick={handleSave} disabled={saving || !dirty} variant="secondary" size="sm">{saving ? a.annotation_saving : a.annotation_save}</Button>
         {annotation && onDelete && (
-          <button
+          <Button
             type="button"
             onClick={handleDelete}
             disabled={saving}
             aria-label={a.annotation_delete}
-            className="p-1 text-foreground hover:text-rose-400 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<Trash2 className="w-3.5 h-3.5" />}
+          />
         )}
       </div>
     </div>

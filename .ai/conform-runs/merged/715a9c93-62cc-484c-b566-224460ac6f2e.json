@@ -1,0 +1,125 @@
+{
+ "schema": "conform-run/1",
+ "worker": "715a9c93-62cc-484c-b566-224460ac6f2e",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-10-31T22:10:54.502619+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "home-learning",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:9 The only persisted state in this context is a zustand store of operator onboarding flags (tried/done power moves). A case-insensitive search of sub_releases and sub_learning found no hits for episod, recall, evict, decay or memories. The only 'memory' hit is an illustration prompt string, and 'superseded' appears only in a spotlight-polling generation token, so no agent store, capture or recall exists here.",
+   "techniques": [],
+   "absenceTerms": [
+    "episod",
+    "recall",
+    "evict",
+    "decay",
+    "memories"
+   ]
+  },
+  {
+   "context": "display-data-formatters",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/RelativeTime.tsx:2 These are presentational formatters over timestamps and numbers the caller passes in. A search of the display, charts, modals and overlays directories found no hits for episod, recall, evict or decay. The 'memories' hits there are display-only: CategoryChip colour maps for memory categories and an execution-detail modal listing an execution's memories. They render data owned elsewhere and hold no store, capture, consolidation or recall logic.",
+   "techniques": [],
+   "absenceTerms": [
+    "episod",
+    "recall",
+    "evict",
+    "decay"
+   ]
+  },
+  {
+   "context": "vault-credentials-components-forms",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:40 'Capture' here means rows where the operator types credential fields, not an agent capturing episodes. A search of src/features/vault/sub_credentials/components found zero files mentioning memory, episod, recall, evict or decay, so the subject's precondition (an agent carrying state forward) does not hold.",
+   "techniques": [],
+   "absenceTerms": [
+    "memory",
+    "episod",
+    "recall",
+    "evict",
+    "decay"
+   ]
+  },
+  {
+   "context": "lib-personas",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/personas/parsers/workflowDetector.ts:2 This context parses and imports external workflows and seeds templates; it holds no agent-written store. A search of src/lib/personas found no hits for episod, recall, evict or decay. The 'consolidation' hit is platformDefinitions' credentialConsolidation rule. The 'memory' hits are capabilities.ts reading a charter's memory-lane on/off flag to build dimension labels: a capability flag, not a memory pipeline.",
+   "techniques": [],
+   "absenceTerms": [
+    "episod",
+    "recall",
+    "evict",
+    "decay"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-memory",
+   "context": "recipe-build-models",
+   "reason": "evidence leans on db/src/migrations/schema.rs, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-31T22:10:54.502619+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "home-learning",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-31T22:10:54.502619+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "display-data-formatters",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-31T22:10:54.502619+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "vault-credentials-components-forms",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-31T22:10:54.502619+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "lib-personas",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -7,6 +7,7 @@ import {
 } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface CapabilityApprovalCardProps {
   manifest: DesktopConnectorManifest;
@@ -24,9 +25,9 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
     <div
       className="animate-fade-slide-in overflow-hidden"
     >
-      <div className="p-4 rounded-modal border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-transparent space-y-3">
+      <div className="p-4 rounded-modal border border-status-warning/20 space-y-3 bg-surface-1">
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-orange-400" />
+          <Shield className="w-4 h-4 text-status-warning" />
           <h4 className="typo-heading text-foreground">
             {dd.permission_required}
           </h4>
@@ -42,15 +43,15 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
             return (
               <div
                 key={cap}
-                className="flex items-center gap-3 p-2 rounded-card bg-secondary/20"
+                className="flex items-center gap-3 p-2 rounded-card bg-surface-1"
               >
                 <div
                   className={`w-2 h-2 rounded-full ${
                     info.risk === 'high'
-                      ? 'bg-rose-400'
+                      ? 'bg-status-error'
                       : info.risk === 'medium'
-                        ? 'bg-amber-400'
-                        : 'bg-emerald-400'
+                        ? 'bg-status-warning'
+                        : 'bg-status-success'
                   }`}
                 />
                 <div className="flex-1 min-w-0">
@@ -58,12 +59,12 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
                   <p className="typo-caption text-foreground">{caps[info.descriptionKey]}</p>
                 </div>
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  className={`typo-label px-1.5 py-0.5 rounded-interactive ${
                     info.risk === 'high'
-                      ? 'bg-rose-500/10 text-rose-400'
+                      ? 'bg-status-error/10 text-status-error'
                       : info.risk === 'medium'
-                        ? 'bg-amber-500/10 text-amber-400'
-                        : 'bg-emerald-500/10 text-emerald-400'
+                        ? 'bg-status-warning/10 text-status-warning'
+                        : 'bg-status-success/10 text-status-success'
                   }`}
                 >
                   {tokenLabel(t, 'capability_risk', info.risk)}
@@ -81,30 +82,30 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
         )}
 
         <div className="flex items-center gap-2 pt-1">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="flex-1 px-3 py-1.5 typo-caption text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
+            variant="ghost"
+            size="sm"
+            className="flex-1"
           >
             {t.common.cancel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onApprove}
             disabled={approving}
-            // text-foreground is deliberate: bg-orange-500 is saturated and
-            // theme-stable, so contrast is uniform across light/dark. The
-            // theme-aware text-foreground would render dark-on-orange on
-            // light theme — passing WCAG but visually weaker. Keep until a
-            // text-foreground-on-primary token lands.
-            className="flex-1 px-3 py-1.5 typo-caption text-foreground bg-orange-500 rounded-card hover:bg-orange-600 transition-colors disabled:opacity-50"
+            variant="accent"
+            tone="warning"
+            size="sm"
+            className="flex-1"
           >
             {approving ? (
               <LoadingSpinner size="sm" className="mx-auto" />
             ) : (
               dd.approve_connect
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

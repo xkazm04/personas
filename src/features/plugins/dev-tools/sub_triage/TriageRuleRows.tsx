@@ -7,6 +7,7 @@ import type { TriageRule } from '@/lib/bindings/TriageRule';
 import type { RuleSuggestion } from './triageRuleSuggestions';
 import { ruleActionTone, TONE_CHIP } from './triageTones';
 import { PrimarySoftButton } from './PrimarySoftButton';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function ActionChip({ action }: { action: string }) {
   return (
@@ -30,35 +31,33 @@ export function RuleRow({ rule, onToggle, onDelete }: {
 }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-secondary/30 typo-caption">
+    <div className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-surface-1 typo-caption">
       {/* The switch keeps the theme primary for "on" (identity); AccessibleToggle's on-state is fixed success green. */}
-      <button
+      <Button variant="ghost" size="sm"
         type="button"
         role="switch"
         aria-checked={rule.enabled}
         aria-label={rule.name}
         onClick={() => onToggle(rule)}
-        className="flex-shrink-0 focus-ring rounded-interactive"
       >
         {rule.enabled
           ? <ToggleRight className="w-4 h-4 text-primary" />
           : <ToggleLeft className="w-4 h-4 text-foreground" />
         }
-      </button>
+      </Button>
       <div className="flex-1 min-w-0">
         <span className="font-medium text-foreground">{rule.name}</span>
         <span className="text-foreground ml-2">{summarizeConditions(rule.conditions)}</span>
         <ActionChip action={rule.action} />
       </div>
-      <span className="tabular-nums">{rule.times_fired}x</span>
-      <button
+      <span className="num">{rule.times_fired}x</span>
+      <Button variant="ghost" size="icon-sm"
         type="button"
         aria-label={t.common.delete}
         onClick={() => onDelete(rule.id)}
-        className="text-foreground hover:text-status-error transition-colors focus-ring rounded-interactive"
       >
         <Trash2 className="w-3 h-3" />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -71,7 +70,7 @@ export function SuggestionRow({ suggestion, name, onAdd }: {
   const { t, tx } = useTranslation();
   const s = suggestion;
   return (
-    <div className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-secondary/20 border border-dashed border-primary/15 typo-caption">
+    <div className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-surface-1 border border-dashed border-hair typo-caption">
       <div className="flex-1 min-w-0">
         <span className="font-medium text-foreground">{name}</span>
         <span className="text-foreground ml-2">
@@ -79,7 +78,7 @@ export function SuggestionRow({ suggestion, name, onAdd }: {
         </span>
         <ActionChip action={s.action} />
       </div>
-      <span className="shrink-0 tabular-nums">
+      <span className="shrink-0 num">
         {tx(t.plugins.dev_triage.suggestion_evidence, { matched: s.matched, total: s.total })}
       </span>
       <PrimarySoftButton size="xs" onClick={() => void onAdd(s)} icon={<Plus className="w-3 h-3" />} className="shrink-0">

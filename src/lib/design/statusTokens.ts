@@ -1,7 +1,8 @@
 /**
  * Unified semantic color token map for status indicators.
  *
- * Single source of truth for all status-related colors across the app.
+ * Single source of truth for all status-related colors across the app, bound to theme tokens
+ * (`status-*`, `role-*`, ink) so every theme paints its own; no raw palette hues.
  * Every status indicator (credentials, health, drift badges, use-case
  * categories, severity styles) should derive its palette from here.
  */
@@ -9,15 +10,15 @@
 // -- Token shape ---------------------------------------------------------
 
 export interface StatusToken {
-  /** Text color class, e.g. "text-emerald-400" */
+  /** Text color class, e.g. "text-status-success" */
   text: string;
-  /** Background color class, e.g. "bg-emerald-500/10" */
+  /** Background color class, e.g. "bg-status-success/10" */
   bg: string;
-  /** Border color class, e.g. "border-emerald-500/30" */
+  /** Border color class, e.g. "border-status-success/30" */
   border: string;
-  /** Focus ring class, e.g. "focus-visible:ring-emerald-500/40" */
+  /** Focus ring class, e.g. "focus-visible:ring-status-success/40" */
   ring: string;
-  /** Icon/dot color class (solid bg), e.g. "bg-emerald-400" */
+  /** Icon/dot color class (solid bg), e.g. "bg-status-success" */
   icon: string;
 }
 
@@ -25,39 +26,39 @@ export interface StatusToken {
 
 export const STATUS_PALETTE = {
   success: {
-    text: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/30',
-    ring: 'focus-visible:ring-emerald-500/40',
-    icon: 'bg-emerald-400',
+    text: 'text-status-success',
+    bg: 'bg-status-success/10',
+    border: 'border-status-success/30',
+    ring: 'focus-visible:ring-status-success/40',
+    icon: 'bg-status-success',
   },
   warning: {
-    text: 'text-amber-400',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
-    ring: 'focus-visible:ring-amber-500/40',
-    icon: 'bg-amber-400',
+    text: 'text-status-warning',
+    bg: 'bg-status-warning/10',
+    border: 'border-status-warning/30',
+    ring: 'focus-visible:ring-status-warning/40',
+    icon: 'bg-status-warning',
   },
   error: {
-    text: 'text-red-400',
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/30',
-    ring: 'focus-visible:ring-red-500/40',
-    icon: 'bg-red-400',
+    text: 'text-status-error',
+    bg: 'bg-status-error/10',
+    border: 'border-status-error/30',
+    ring: 'focus-visible:ring-status-error/40',
+    icon: 'bg-status-error',
   },
   info: {
-    text: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/20',
-    ring: 'focus-visible:ring-blue-500/40',
-    icon: 'bg-blue-400',
+    text: 'text-status-info',
+    bg: 'bg-status-info/10',
+    border: 'border-status-info/20',
+    ring: 'focus-visible:ring-status-info/40',
+    icon: 'bg-status-info',
   },
   neutral: {
-    text: 'text-foreground',
-    bg: 'bg-muted/10',
-    border: 'border-muted-foreground/15',
-    ring: 'focus-visible:ring-muted-foreground/30',
-    icon: 'bg-muted-foreground/30',
+    text: 'text-ink-1',
+    bg: 'bg-surface-2',
+    border: 'border-hair-2',
+    ring: 'focus-visible:ring-ink-3/30',
+    icon: 'bg-ink-3',
   },
 } as const satisfies Record<string, StatusToken>;
 
@@ -67,35 +68,35 @@ export const STATUS_PALETTE_EXTENDED = {
   ...STATUS_PALETTE,
   /** AI / violet accent (lab, design, AI-driven actions) */
   ai: {
-    text: 'text-violet-400',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/20',
-    ring: 'focus-visible:ring-violet-500/40',
-    icon: 'bg-violet-400',
+    text: 'text-role-agent',
+    bg: 'bg-role-agent/10',
+    border: 'border-role-agent/20',
+    ring: 'focus-visible:ring-role-agent/40',
+    icon: 'bg-role-agent',
   },
   /** Rotation / lifecycle (credential rotation, sync) */
   rotation: {
-    text: 'text-cyan-400',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/20',
-    ring: 'focus-visible:ring-cyan-500/40',
-    icon: 'bg-cyan-400',
+    text: 'text-role-external',
+    bg: 'bg-role-external/10',
+    border: 'border-role-external/20',
+    ring: 'focus-visible:ring-role-external/40',
+    icon: 'bg-role-external',
   },
   /** Critical / high-severity errors (rose variant) */
   critical: {
-    text: 'text-rose-400',
-    bg: 'bg-rose-500/10',
-    border: 'border-rose-500/20',
-    ring: 'focus-visible:ring-rose-500/40',
-    icon: 'bg-rose-400',
+    text: 'text-status-error',
+    bg: 'bg-status-error/10',
+    border: 'border-status-error/20',
+    ring: 'focus-visible:ring-status-error/40',
+    icon: 'bg-status-error',
   },
   /** Timeout / caution (orange variant) */
   caution: {
-    text: 'text-orange-400',
-    bg: 'bg-orange-500/10',
-    border: 'border-orange-500/20',
-    ring: 'focus-visible:ring-orange-500/40',
-    icon: 'bg-orange-400',
+    text: 'text-status-warning',
+    bg: 'bg-status-warning/10',
+    border: 'border-status-warning/20',
+    ring: 'focus-visible:ring-status-warning/40',
+    icon: 'bg-status-warning',
   },
 } as const satisfies Record<string, StatusToken>;
 
@@ -112,23 +113,23 @@ export type StatusKeyExtended = keyof typeof STATUS_PALETTE_EXTENDED;
 // sub-page is introduced in `getSettingsItems` (see sidebarData.ts).
 
 export interface SettingsIconAccent {
-  /** Icon stroke color, e.g. "text-violet-400" */
+  /** Icon stroke color, e.g. "text-role-agent" */
   text: string;
-  /** Active-state tinted background (10%), e.g. "bg-violet-500/10" */
+  /** Active-state tinted background (10%), e.g. "bg-role-agent/10" */
   bg: string;
-  /** Active-state border, e.g. "border-violet-500/30" */
+  /** Active-state border, e.g. "border-role-agent/30" */
   border: string;
 }
 
 export const SETTINGS_ICON_ACCENTS = {
-  appearance:      { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/30' },
-  notifications:   { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/30' },
-  engine:          { text: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/30' },
-  byom:            { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
-  portability:     { text: 'text-indigo-400',  bg: 'bg-indigo-500/10',  border: 'border-indigo-500/30' },
-  'api-keys':      { text: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/30' },
-  admin:           { text: 'text-rose-400',    bg: 'bg-rose-500/10',    border: 'border-rose-500/30' },
-  account:         { text: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/30' },
+  appearance:      { text: 'text-role-agent',  bg: 'bg-role-agent/10',  border: 'border-role-agent/30' },
+  notifications:   { text: 'text-status-warning',   bg: 'bg-status-warning/10',   border: 'border-status-warning/30' },
+  engine:          { text: 'text-role-external',    bg: 'bg-role-external/10',    border: 'border-role-external/30' },
+  byom:            { text: 'text-status-success', bg: 'bg-status-success/10', border: 'border-status-success/30' },
+  portability:     { text: 'text-role-human',  bg: 'bg-role-human/10',  border: 'border-role-human/30' },
+  'api-keys':      { text: 'text-role-highlight', bg: 'bg-role-highlight/10', border: 'border-role-highlight/30' },
+  admin:           { text: 'text-status-error',    bg: 'bg-status-error/10',    border: 'border-status-error/30' },
+  account:         { text: 'text-status-neutral',   bg: 'bg-status-neutral/10',   border: 'border-status-neutral/30' },
 } as const satisfies Record<string, SettingsIconAccent>;
 
 export type SettingsIconAccentKey = keyof typeof SETTINGS_ICON_ACCENTS;
@@ -147,10 +148,10 @@ export interface SeverityAccent {
 }
 
 export const SEVERITY_ACCENTS: Record<'error' | 'warning' | 'info' | 'success', SeverityAccent> = {
-  error:   { border: 'border-l-[3px] border-l-red-500',     bg: 'bg-red-500/5',     text: STATUS_PALETTE.error.text },
-  warning: { border: 'border-l-[3px] border-l-amber-500',   bg: 'bg-amber-500/5',   text: STATUS_PALETTE.warning.text },
-  info:    { border: 'border-l-[3px] border-l-blue-500',    bg: 'bg-blue-500/5',    text: STATUS_PALETTE.info.text },
-  success: { border: 'border-l-[3px] border-l-emerald-500', bg: 'bg-emerald-500/5', text: STATUS_PALETTE.success.text },
+  error:   { border: 'border-l-[3px] border-l-status-error',     bg: 'bg-status-error/5',     text: STATUS_PALETTE.error.text },
+  warning: { border: 'border-l-[3px] border-l-status-warning',   bg: 'bg-status-warning/5',   text: STATUS_PALETTE.warning.text },
+  info:    { border: 'border-l-[3px] border-l-status-info',    bg: 'bg-status-info/5',    text: STATUS_PALETTE.info.text },
+  success: { border: 'border-l-[3px] border-l-status-success', bg: 'bg-status-success/5', text: STATUS_PALETTE.success.text },
 };
 
 // -- StatusColorScale: unified health indicator colors --------------------

@@ -223,7 +223,7 @@ describe('FleetNode — the symbol row, persona', () => {
     wrap(<FleetNode kind="persona" card={card({ execState: 'failed' })} teamName={null} ariaLabel="x" tooltip="x" />);
     expect(screen.getByTestId('fleet-node-state').dataset.state).toBe('failed');
     expect(screen.getByTestId('fleet-node-state').className).toContain('text-background');
-    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-red-400');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-status-error');
     expect(screen.getByTestId('fleet-node-state').querySelector('svg')).not.toBeNull();
   });
 });
@@ -232,7 +232,7 @@ describe('FleetNode — the treatment', () => {
   it('washes the body in the state hue with a soft elevation and no border', () => {
     wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="shell" />);
     const cls = screen.getByTestId('shell').className;
-    expect(cls).toContain('bg-blue-500/[0.08]');
+    expect(cls).toContain('bg-status-info/[0.08]');
     expect(cls).toContain('shadow-elevation-1');
     expect(cls).not.toMatch(/\bborder(-|\b)/);
     expect(screen.getByTestId('shell').dataset.style).toBeUndefined();
@@ -247,14 +247,14 @@ describe('FleetNode — the treatment', () => {
     expect(strip.getAttribute('aria-label')).toMatch(/\S/);
     const bar = screen.getByTestId('fleet-node-elapsed-bar');
     expect(bar.style.width).toBe('50%');
-    expect(bar.className).toContain('bg-blue-400');
+    expect(bar.className).toContain('bg-status-info');
     expect(screen.getByTestId('fleet-node-symbols').contains(strip)).toBe(false);
   });
 
   it('paints every symbol as a hue circle with the glyph cut out', () => {
     wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-blue-400 text-background');
-    expect(screen.getByTestId('fleet-queue-origin').className).toContain('rounded-full bg-blue-400 text-background');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-status-info text-background');
+    expect(screen.getByTestId('fleet-queue-origin').className).toContain('rounded-full bg-status-info text-background');
   });
 
   it('over-admitted wears the warning hue on the body wash and the state symbol', () => {

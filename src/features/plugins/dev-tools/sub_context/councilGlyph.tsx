@@ -52,7 +52,7 @@ interface GlyphVisual {
 
 /** Kind → visual. Total over `CouncilGlyphKind`; the compiler enforces that. */
 const COUNCIL_VISUAL: Record<CouncilGlyphKind, GlyphVisual> = {
-  none: { icon: Circle, tone: 'text-foreground/60' },
+  none: { icon: Circle, tone: 'text-ink-2' },
   running: { icon: Activity, tone: 'text-primary' },
   fail: { icon: AlertTriangle, tone: 'text-status-error' },
   incomplete: { icon: AlertTriangle, tone: 'text-status-warning' },
@@ -60,7 +60,7 @@ const COUNCIL_VISUAL: Record<CouncilGlyphKind, GlyphVisual> = {
   // The strongest affordance in the set: this one is waiting on the human.
   ready: { icon: Gavel, tone: 'text-primary' },
   // Deliberately NOT a checkmark — a machine pass never reached the gate.
-  machine_pass: { icon: CircleDot, tone: 'text-foreground/70' },
+  machine_pass: { icon: CircleDot, tone: 'text-ink-2' },
   approved: { icon: CircleCheck, tone: 'text-status-success' },
   approved_drifted: {
     icon: CircleCheck,
@@ -72,7 +72,7 @@ const COUNCIL_VISUAL: Record<CouncilGlyphKind, GlyphVisual> = {
   rejected: { icon: CircleSlash, tone: 'text-status-error' },
 };
 
-const UNKNOWN_VISUAL: GlyphVisual = { icon: CircleHelp, tone: 'text-foreground/60' };
+const UNKNOWN_VISUAL: GlyphVisual = { icon: CircleHelp, tone: 'text-ink-2' };
 
 export function councilVisual(kind: CouncilGlyphKind | null): GlyphVisual {
   if (kind === null) return UNKNOWN_VISUAL;

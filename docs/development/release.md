@@ -49,6 +49,19 @@ publishes a GitHub release with a Tauri updater manifest (`latest.json`).
       updates reports the new version rather than an error).
 - [ ] `personas-desktop.exe --health-check` passes on the packaged build.
 
+## SBOM
+
+`node scripts/sbom.mjs` writes a CycloneDX 1.5 bill of materials per ecosystem from the committed lockfiles, with no
+npm dependency: `dist/sbom/personas-<version>.npm.cdx.json` (every `package-lock.json` entry that is not `dev: true`)
+and `dist/sbom/personas-<version>.cargo.cdx.json` (every `src-tauri/Cargo.lock` package with a registry or git
+`source`; the workspace's own crates are the product). It prints `{files, npm, cargo}` with the component counts
+(203 npm and 1014 cargo components at `312e3ecb2d`, 2026-11-05) and exits 2, writing nothing, when a lockfile is
+missing. Flags: `--root`, `--out`, `--version` (default: `package.json`'s). Its spec is `node scripts/sbom.test.mjs`.
+
+**Not wired into `release.yml` yet.** Until a release step runs it and uploads both files as release assets, a
+release carries no SBOM; run it by hand on the release tag and attach the two files. The `SBOM` item in
+`SECURITY.md` stays unchecked until the workflow does it.
+
 ## Known gaps (tracked in the ship-loop backlog)
 
 - **OS code signing** is not configured (`certificateThumbprint`/

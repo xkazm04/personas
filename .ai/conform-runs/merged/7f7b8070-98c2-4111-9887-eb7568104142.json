@@ -1,0 +1,141 @@
+{
+ "schema": "conform-run/1",
+ "worker": "7f7b8070-98c2-4111-9887-eb7568104142",
+ "subject": "supply-chain",
+ "evaluatedAt": "2026-11-04T03:00:22.786398+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "teams-goals",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/projects/development/goals/GoalsPage.tsx:19 This context is a React goal-tracking UI plus team-channel hooks that call the app's own IPC. It owns no dependency manifest, lockfile, archive unpack, deserializer, permission manifest or vendored code. A case-insensitive recursive search of goals/, teams/sub_collab/ and teams/sub_deliberations/ for lockfile|unzip|tarball|pickle|sbom|zip-slip|cargo-deny|npm audit|renovate found nothing. 'Dependency' appears only as the goal-to-goal DevGoalDependency domain type, and 'capability' only as deliberation actions.",
+   "techniques": [
+    {
+     "technique": "archive-extraction-safety",
+     "verdict": "not-applicable",
+     "evidence": "src/features/projects/development/goals/goalDetail/blocks/leadBlocks.tsx:34 Here 'archived' means a KPI's lifecycle state. No archive is ever unpacked."
+    },
+    {
+     "technique": "dependency-policy-gates",
+     "verdict": "not-applicable",
+     "evidence": "src/features/projects/development/goals/goalDetail/parts.tsx:43 'Dependency' here is a link between goals, not a third-party package. The context has no manifest or lockfile for a gate to read."
+    }
+   ],
+   "absenceTerms": [
+    "lockfile",
+    "unzip",
+    "tarball",
+    "pickle",
+    "sbom"
+   ]
+  },
+  {
+   "context": "dev-tools-shell",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/DevToolsPage.tsx:19 The shell is a lazy tab router plus constant catalogs and ledger UI. It owns none of the subject's crossings: no dependency resolution, archive extraction, deserialization of untrusted artifacts, permission manifest or secret scanning. A recursive search of src/features/plugins/dev-tools for lockfile|unzip|tarball|pickle|sbom|zip-slip|cargo-deny|npm audit|renovate found nothing.",
+   "techniques": [
+    {
+     "technique": "dependency-policy-gates",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/constants/scanAgents.ts:37 This is only a display catalog entry for an LLM scan agent aimed at other projects. It is not a policy gate on this repo's own dependency graph."
+    },
+    {
+     "technique": "permission-manifest-scoping",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:31 This is a runtime notification-permission prompt. The install-time capability grant lives in src-tauri capabilities, outside this context."
+    }
+   ],
+   "absenceTerms": [
+    "lockfile",
+    "unzip",
+    "tarball",
+    "pickle",
+    "sbom"
+   ]
+  },
+  {
+   "context": "notepad-tests",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/notepad/__tests__/notepadStore.test.ts:1 These are Vitest unit and component tests of the notepad store, text utilities and UI. Nothing in them crosses a supply-chain boundary. A recursive search of src/features/notepad for lockfile|unzip|tarball|pickle|sbom|zip-slip|cargo-deny|npm audit|renovate found nothing.",
+   "techniques": [
+    {
+     "technique": "archive-extraction-safety",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/__tests__/NoteArchiveModal.test.tsx:3 Here 'archive' means a note status (filed away). No archive file is unpacked."
+    }
+   ],
+   "absenceTerms": [
+    "lockfile",
+    "unzip",
+    "tarball",
+    "pickle",
+    "sbom"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "supply-chain",
+   "context": "plugins-artist-hooks",
+   "reason": "No files are listed, and none can be found: git ls-files has no artist hooks (no useArtist* and no plugins/artist dir). The only artist trace is the retirement migration src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs. There is no code to judge, so the context map entry is stale."
+  },
+  {
+   "subject": "supply-chain",
+   "context": "overview-patterns",
+   "reason": "No files are listed, and PracticeDetailLedger no longer exists as a component. It is named only in comments in src/features/overview/sub_manual-review/components/backlog/BacklogDetailLedger.tsx:2 and :120. There is no code to judge, so the context map entry is stale."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-04T03:00:22.786398+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "archive-extraction-safety",
+    "dependency-policy-gates"
+   ],
+   "deviations": 0,
+   "context": "teams-goals",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T03:00:22.786398+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "dependency-policy-gates",
+    "permission-manifest-scoping"
+   ],
+   "deviations": 0,
+   "context": "dev-tools-shell",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T03:00:22.786398+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "archive-extraction-safety"
+   ],
+   "deviations": 0,
+   "context": "notepad-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

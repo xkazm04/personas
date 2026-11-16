@@ -44,7 +44,7 @@ export function WorkspaceRegistrySection({
   const workspaceNameById = new Map(workspaces.map((w) => [w.id, w.name]));
 
   return (
-    <section className="flex flex-col gap-3 border-t border-primary/10 pt-4">
+    <section className="flex flex-col gap-3 border-t border-hair pt-4">
       <header className="flex flex-wrap items-center gap-3">
         <span className="inline-flex items-center gap-2 typo-title">
           <Library className="w-4 h-4 text-foreground" aria-hidden />

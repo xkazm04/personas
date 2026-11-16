@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { memo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -6,6 +7,7 @@ import type { DiscoveredPeer, ConnectionState } from '@/api/network/discovery';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolvePeerConnectionState } from './peerConnectionState';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PeerCardProps {
   peer: DiscoveredPeer;
@@ -18,9 +20,9 @@ interface PeerCardProps {
 }
 
 const STATE_DOT: Record<string, string> = {
-  Connected: 'bg-emerald-400',
-  Connecting: 'bg-amber-400 animate-pulse',
-  Failed: 'bg-red-400',
+  Connected: 'bg-status-success',
+  Connecting: 'bg-status-warning animate-pulse',
+  Failed: 'bg-status-error',
   Disconnected: 'bg-zinc-500',
 };
 
@@ -44,33 +46,29 @@ export const PeerCard = memo(function PeerCard({
     : peer.peer_id;
 
   return (
-    <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3">
+    <div className="rounded-modal border border-border bg-surface-1 p-3 flex items-center gap-3">
       {/* Status dot */}
       <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
 
       {/* Info */}
-      <button
-        type="button"
-        onClick={() => onSelect(peer.peer_id)}
-        className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
-      >
+      <PressSurface onPress={() => onSelect(peer.peer_id)} className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground truncate">
             {peer.display_name}
           </span>
           {isTrusted ? (
-            <TrustVerifiedIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <TrustVerifiedIcon className="w-3.5 h-3.5 text-status-success flex-shrink-0" />
           ) : (
-            <TrustUnknownIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            <TrustUnknownIcon className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="typo-code text-foreground">{truncatedId}</span>
-          <span className="text-[10px] text-foreground">
+          <span className="typo-caption text-foreground">
             <RelativeTime timestamp={peer.last_seen_at} showTooltip={false} />
           </span>
         </div>
-      </button>
+      </PressSurface>
 
       {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0">
@@ -79,32 +77,35 @@ export const PeerCard = memo(function PeerCard({
             <LoadingSpinner size="sm" className="text-foreground" />
           </span>
         ) : isConnected ? (
-          <button
+          <Button
             type="button"
             onClick={() => onDisconnect(peer.peer_id)}
-            title={st.disconnect}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
+            tooltip={st.disconnect} aria-label={st.disconnect}
+            variant="ghost"
+            size="icon-sm"
           >
             <NodeDisconnectedIcon className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={() => onConnect(peer.peer_id)}
-            title={st.connect}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-emerald-500 transition-colors"
+            tooltip={st.connect} aria-label={st.connect}
+            variant="ghost"
+            size="icon-sm"
           >
             <NodeConnectedIcon className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           onClick={() => onSelect(peer.peer_id)}
-          title={st.view_details}
-          className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
+          tooltip={st.view_details} aria-label={st.view_details}
+          variant="ghost"
+          size="icon-sm"
         >
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -32,13 +32,13 @@ export function N8nImportLedger({ ledger }: { ledger: ImportLedger }) {
     <div
       data-testid="n8n-import-ledger"
       className={`rounded-modal border px-3.5 py-2.5 ${
-        lossy ? 'border-amber-500/25 bg-amber-500/5' : 'border-primary/10 bg-secondary/20'
+        lossy ? 'border-status-warning/25 bg-status-warning/5' : 'border-hair bg-surface-1'
       }`}
     >
       <div className="flex items-center gap-2 mb-1.5">
         {lossy
-          ? <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" aria-hidden />
-          : <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" aria-hidden />}
+          ? <AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0" aria-hidden />
+          : <CheckCircle2 className="w-4 h-4 text-status-success flex-shrink-0" aria-hidden />}
         <span className="typo-label text-foreground">{n.ledger_title}</span>
       </div>
       <ul className="space-y-0.5 typo-body text-foreground">
@@ -50,7 +50,7 @@ export function N8nImportLedger({ ledger }: { ledger: ImportLedger }) {
           {tx(n.ledger_represented, { count: ledger.represented })}
         </li>
         {lossy && (
-          <li data-testid="n8n-ledger-unrepresented" className="pl-5 text-amber-300/90">
+          <li data-testid="n8n-ledger-unrepresented" className="pl-5 text-status-warning/90">
             {tx(n.ledger_unrepresented, { count: ledger.unrepresented })}
           </li>
         )}
@@ -60,7 +60,7 @@ export function N8nImportLedger({ ledger }: { ledger: ImportLedger }) {
           </li>
         )}
         {!lossy && ledger.deselected === 0 && (
-          <li data-testid="n8n-ledger-clean" className="pl-5 text-emerald-300/90">
+          <li data-testid="n8n-ledger-clean" className="pl-5 text-status-success/90">
             {n.ledger_clean}
           </li>
         )}

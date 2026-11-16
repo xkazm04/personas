@@ -27,6 +27,14 @@ function lastPayload(): unknown {
   return mockedTauriInvoke.mock.calls.at(-1)?.[1];
 }
 
+/**
+ * The command the wrapper actually sent. A void wrapper's test cannot pin it
+ * through the return: an unmatched command also resolves `undefined`.
+ */
+function lastCommand(): unknown {
+  return mockedTauriInvoke.mock.calls.at(-1)?.[0];
+}
+
 describe("api/system/system", () => {
   beforeEach(() => {
     resetInvokeMocks();
@@ -56,6 +64,7 @@ describe("api/system/system", () => {
   it("openExternalUrl calls open_external_url", async () => {
     mockInvoke("open_external_url", undefined);
     await expect(openExternalUrl("https://example.com")).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("open_external_url");
     expect(lastPayload()).toEqual({ url: "https://example.com" });
   });
 
@@ -67,6 +76,7 @@ describe("api/system/system", () => {
   it("clearCrashLogs resolves", async () => {
     mockInvoke("clear_crash_logs", undefined);
     await expect(clearCrashLogs()).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("clear_crash_logs");
   });
 
   it("reportFrontendCrash returns row", async () => {
@@ -87,6 +97,7 @@ describe("api/system/system", () => {
   it("clearFrontendCrashes resolves", async () => {
     mockInvoke("clear_frontend_crashes", undefined);
     await expect(clearFrontendCrashes()).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("clear_frontend_crashes");
   });
 
   it("startSetupInstall returns result", async () => {
@@ -98,11 +109,13 @@ describe("api/system/system", () => {
   it("cancelSetupInstall resolves", async () => {
     mockInvoke("cancel_setup_install", undefined);
     await expect(cancelSetupInstall()).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("cancel_setup_install");
   });
 
   it("sendAppNotification resolves", async () => {
     mockInvoke("send_app_notification", undefined);
     await expect(sendAppNotification("Title", "Body")).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("send_app_notification");
     expect(lastPayload()).toEqual({ title: "Title", body: "Body" });
   });
 

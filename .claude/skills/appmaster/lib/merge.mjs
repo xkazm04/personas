@@ -11,7 +11,7 @@ import { findCouncilRunDir, readCouncilResult, copyCouncilRun, reportPayload, bo
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder, finishedClean, readRunOutput } from './worker.mjs';
-import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree, linkNodeModules, nodeModulesDirs } from './worktree.mjs';
+import { git, gitTry, revParse, isAncestor, removeWorktree, pruneBuildOutput, withBaseWorktree, linkNodeModules, nodeModulesDirs } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
 import { recordCodexThread, lastMessageOf, commitCodexWork } from './codex.mjs';
 import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS, runTestFocus, focusedTestCommand } from './gate.mjs';
@@ -394,7 +394,12 @@ function settleCore({ flags = {} } = {}, slot) {
   const mark = finishedClean(readRunOutput(run).stream) ? null
     : run.limitSeenAt ? (standing?.runId === run.runId ? standing : { reason: 'seen by watch' })
     : markLimitFromRun(run) || (standing?.runId === run.runId ? standing : null);
-  if (mark) return updateRun(run, { state: 'released', heldReason: `usage limit: ${mark.reason}`, settledAt: nowIso() });
+  if (mark) {
+    // kept for a retry, but its build output is not: it rebuilds, and was 7-23 GB per released run
+    let cleanup = null;
+    if (run.worktree) { try { cleanup = { ...pruneBuildOutput(run.worktree), kept: 'worktree and branch' }; } catch (e) { cleanup = { error: e.message }; } }
+    return updateRun(run, { state: 'released', heldReason: `usage limit: ${mark.reason}`, settledAt: nowIso(), ...(cleanup ? { cleanup } : {}) });
+  }
 
   const { root } = repoOf(run);
   const brief = loadBrief(run.slug) || {};

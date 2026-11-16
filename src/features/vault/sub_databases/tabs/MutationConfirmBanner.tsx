@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface MutationConfirmBannerProps {
   /** The pending mutation query text (already known non-null by the caller). */
@@ -12,7 +13,7 @@ interface MutationConfirmBannerProps {
   className?: string;
 }
 
-const DEFAULT_CLASS_NAME = 'mx-4 mb-3 p-3 rounded-modal bg-amber-500/8 border border-amber-500/20 space-y-2.5';
+const DEFAULT_CLASS_NAME = 'mx-4 mb-3 p-3 rounded-modal bg-status-warning/8 border border-status-warning/20 space-y-2.5';
 
 /**
  * Confirmation banner shown when safe mode intercepts a mutating query
@@ -33,36 +34,39 @@ export function MutationConfirmBanner({
   return (
     <div data-testid="db-mutation-confirm" className={className ?? DEFAULT_CLASS_NAME}>
       <div className="flex items-start gap-2">
-        <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+        <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 shrink-0" />
         <div className="space-y-1 min-w-0">
-          <p className="typo-body text-amber-300/90">{db.modifies_data}</p>
+          <p className="typo-body text-status-warning/90">{db.modifies_data}</p>
           <p className="typo-body text-foreground">{hint}</p>
           {/* The whole statement stays readable (scroll), never truncated: the
               user is being asked to authorise exactly this text, and a cut at
               200 characters hides the WHERE clause of a long DELETE — the one
               part that decides how much it destroys. */}
-          <pre className="typo-code text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-auto max-h-20 border border-primary/5">
+          <pre className="typo-code text-foreground bg-surface-1 rounded-card px-2.5 py-1.5 overflow-auto max-h-20 border border-hair">
             {pendingMutation}
           </pre>
         </div>
       </div>
       <div className="flex items-center gap-2 pl-6">
-        <button
+        <Button
           type="button"
           data-testid="db-mutation-confirm-run"
           onClick={onConfirm}
-          className="px-3 py-1.5 rounded-modal typo-body bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+          variant="accent"
+          tone="warning"
+          size="sm"
         >
           {db.execute_anyway}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           data-testid="db-mutation-confirm-cancel"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-modal typo-body text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
+          variant="ghost"
+          size="sm"
         >
           {t.common.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );

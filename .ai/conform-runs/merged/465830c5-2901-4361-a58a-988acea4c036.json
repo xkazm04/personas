@@ -1,0 +1,9 @@
+{"schema":"conform-run/1","worker":"465830c5-2901-4361-a58a-988acea4c036","subject":"module-design",
+"evaluatedAt":"2026-11-03T00:00:00Z",
+"pairs":[],
+"declined":[
+{"subject":"module-design","context":"5ab49df3-3442-4ea6-a405-077dec64850d","reason":"weak context (persona-core-codex); match is doubtful, reported as a coverage question rather than judged"},
+{"subject":"module-design","context":"11fe7642-7a1a-47c5-8910-499850aa04fe","reason":"weak context (plugins-companion-inbox); match is doubtful, reported as a coverage question rather than judged"},
+{"subject":"module-design","context":"9b6cc17c-3add-4152-a349-c189b15a109f","reason":"weak context (template-design-preview); match is doubtful, reported as a coverage question rather than judged"},
+{"subject":"module-design","context":"e0563a39-fb7e-485f-a698-f9c4dc1004a7","reason":"weak context (triggers-test); match is doubtful, reported as a coverage question rather than judged"}],
+"consults":[]}

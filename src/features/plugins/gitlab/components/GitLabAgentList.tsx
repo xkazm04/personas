@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Clock, RotateCw } from 'lucide-react';
+import { Bot, Trash2, ExternalLink, RefreshCw, RotateCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { GitLabAgent } from '@/api/system/gitlab';
 import { useSystemStore } from "@/stores/systemStore";
@@ -7,6 +7,10 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { pipelineForAgent } from './pipelineHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
+import { StateMark } from '@/features/shared/components/display/StateMark';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface GitLabAgentListProps {
   projectId: number | null;
@@ -26,16 +30,26 @@ export function GitLabAgentList({
   redeployingAgentId,
 }: GitLabAgentListProps) {
   const { t } = useTranslation();
+  const pipelineCount = useSystemStore((s) => s.gitlabPipelines.length);
+  const fetchPipelines = useSystemStore((s) => s.gitlabFetchPipelines);
   useEffect(() => {
     if (projectId) {
       onFetchAgents(projectId);
     }
   }, [projectId, onFetchAgents]);
 
+  // One pipeline read for the whole list. Each row used to fire its own when the
+  // project had no pipelines, so N agents meant N identical concurrent requests.
+  useEffect(() => {
+    if (projectId && pipelineCount === 0) {
+      fetchPipelines(projectId);
+    }
+  }, [projectId, pipelineCount, fetchPipelines]);
+
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="typo-body text-foreground">{t.gitlab.select_project_to_view_agents}</p>
+        <p className="typo-body text-ink-1">{t.gitlab.select_project_to_view_agents}</p>
       </div>
     );
   }
@@ -55,65 +69,70 @@ export function GitLabAgentList({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="typo-body text-foreground">{t.gitlab.agents_deployed.replace('{count}', String(agents.length))}</p>
-        <button
+        <p className="typo-body text-ink-1">{t.gitlab.agents_deployed.replace('{count}', String(agents.length))}</p>
+        <Button
           type="button"
           onClick={() => onFetchAgents(projectId)}
-          className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"
+          variant="ghost"
+          size="sm"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.common.refresh}
-        </button>
+        </Button>
       </div>
 
       {agents.map((agent) => (
         <div
           key={agent.id}
-          className="p-3 rounded-modal border border-primary/10 bg-secondary/20 flex items-center gap-3"
+          className="p-3 rounded-modal border border-hair bg-surface-1 flex items-center gap-3"
         >
-          <div className="w-9 h-9 rounded-card bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
-            <Bot className="w-4 h-4 text-orange-400" />
+          <div className="w-9 h-9 rounded-card bg-status-warning/10 border border-status-warning/20 flex items-center justify-center flex-shrink-0">
+            <Bot className="w-4 h-4 text-status-warning" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="typo-body text-foreground/90 truncate">{agent.name}</p>
+            <p className="typo-body text-ink-2 truncate">{agent.name}</p>
             {agent.description && (
-              <p className="typo-body text-foreground truncate">{agent.description}</p>
+              <p className="typo-body text-ink-1 truncate">{agent.description}</p>
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <PipelineStatusBadge projectId={projectId} agentName={agent.name} />
-            <button
+            <PipelineStatusBadge agentName={agent.name} />
+            <Button
               type="button"
-              onClick={() => onRedeploy(agent.name)}
+              // The store sets the banner, then rethrows: uncaught here it was an unhandled rejection.
+              onClick={() => { void onRedeploy(agent.name).catch(silentCatch('GitLabAgentList:redeploy')); }}
               disabled={redeployingAgentId === agent.name}
-              className="p-1.5 rounded-card hover:bg-orange-500/10 text-foreground hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              title={t.gitlab.redeploy_agent}
+              tooltip={t.gitlab.redeploy_agent}
+              variant="ghost"
+              size="icon-sm"
             >
               {redeployingAgentId === agent.name ? (
                 <LoadingSpinner size="xs" />
               ) : (
                 <RotateCw className="w-4 h-4" />
               )}
-            </button>
+            </Button>
             {sanitizeExternalUrl(agent.webUrl) && (
-              <a
-                href={sanitizeExternalUrl(agent.webUrl)!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/80 transition-colors"
-                title={t.gitlab.open_in_gitlab}
-              >
-                <ExternalLink className="w-4 h-4" />
-              </a>
+              <Tooltip content={t.gitlab.open_in_gitlab}>
+                <a
+                  href={sanitizeExternalUrl(agent.webUrl)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-card hover:bg-surface-2 text-ink-1 hover:text-ink-2 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </Tooltip>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => onUndeploy(projectId, agent.id)}
-              className="p-1.5 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
-              title={t.gitlab.undeploy_agent}
+              tooltip={t.gitlab.undeploy_agent}
+              variant="ghost"
+              size="icon-sm"
             >
               <Trash2 className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
       ))}
@@ -125,16 +144,9 @@ export function GitLabAgentList({
 // Pipeline status badge (reads latest pipeline from store)
 // ---------------------------------------------------------------------------
 
-function PipelineStatusBadge({ projectId, agentName }: { projectId: number; agentName: string }) {
+function PipelineStatusBadge({ agentName }: { agentName: string }) {
   const { t, tx } = useTranslation();
   const pipelines = useSystemStore((s) => s.gitlabPipelines);
-  const fetchPipelines = useSystemStore((s) => s.gitlabFetchPipelines);
-
-  useEffect(() => {
-    if (pipelines.length === 0) {
-      fetchPipelines(projectId);
-    }
-  }, [projectId, pipelines.length, fetchPipelines]);
 
   // THIS agent's pipeline, or nothing. `pipelines[0]` is the project's latest
   // and was being painted on every row, so a sibling's failed build sat next to
@@ -142,43 +154,18 @@ function PipelineStatusBadge({ projectId, agentName }: { projectId: number; agen
   const latest = pipelineForAgent(pipelines, agentName);
   if (!latest) return null;
 
-  const cfg: Record<string, { icon: React.ReactNode; bg: string; text: string }> = {
-    success: {
-      icon: <CheckCircle2 className="w-3 h-3" />,
-      bg: 'bg-emerald-500/10 border-emerald-500/20',
-      text: 'text-emerald-400',
-    },
-    failed: {
-      icon: <XCircle className="w-3 h-3" />,
-      bg: 'bg-red-500/10 border-red-500/20',
-      text: 'text-red-400',
-    },
-    running: {
-      icon: <LoadingSpinner size="xs" />,
-      bg: 'bg-amber-500/10 border-amber-500/20',
-      text: 'text-amber-400',
-    },
-    pending: {
-      icon: <Clock className="w-3 h-3" />,
-      bg: 'bg-amber-500/10 border-amber-500/20',
-      text: 'text-amber-400',
-    },
-  };
-
-  const c = cfg[latest.status] ?? {
-    icon: <Clock className="w-3 h-3" />,
-    bg: 'bg-secondary/30 border-primary/10',
-    text: 'text-foreground',
+  const STATE: Record<string, 'success' | 'error' | 'running' | 'queued'> = {
+    success: 'success',
+    failed: 'error',
+    running: 'running',
+    pending: 'queued',
   };
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border typo-caption capitalize ${c.bg} ${c.text}`}
-      data-testid={`agent-pipeline-${agentName}`}
-      title={tx(t.gitlab.agent_pipeline_title, { agent: agentName, ref: latest.ref, status: latest.status })}
-    >
-      {c.icon}
-      {latest.status}
-    </span>
+    <Tooltip content={tx(t.gitlab.agent_pipeline_title, { agent: agentName, ref: latest.ref, status: latest.status })}>
+      <span data-testid={`agent-pipeline-${agentName}`} className="inline-flex">
+        <StateMark state={STATE[latest.status] ?? 'neutral'} label={latest.status} />
+      </span>
+    </Tooltip>
   );
 }

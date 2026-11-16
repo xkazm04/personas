@@ -1,8 +1,11 @@
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { useState } from 'react';
 import { AlertTriangle, ChevronDown, Upload } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { ImportConflict } from '@/lib/bindings/ImportConflict';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 type Resolution = 'replace' | 'skip' | 'duplicate';
 
@@ -64,9 +67,9 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
   return (
     <div
       data-testid="portability-conflict-panel"
-      className="rounded-card border border-amber-500/20 bg-amber-500/5 p-4 space-y-3"
+      className="rounded-card border border-status-warning/20 bg-status-warning/5 p-4 space-y-3"
     >
-      <div className="flex items-center gap-2 typo-body text-amber-400">
+      <div className="flex items-center gap-2 typo-body text-status-warning">
         <AlertTriangle className="w-4 h-4" />
         {tx(conflicts.length > 1 ? s.items_exist_plural : s.items_exist, { count: conflicts.length })}
       </div>
@@ -80,14 +83,14 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
             <div
               key={key}
               data-testid={`portability-conflict-row-${key}`}
-              className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20 border border-primary/10"
+              className="flex items-center gap-3 px-3 py-2 rounded-card bg-surface-1 border border-hair"
             >
               <div className="flex-1 min-w-0">
                 <span className="typo-body text-foreground truncate block">{c.name}</span>
                 {c.detail && (
-                  <span className="typo-caption text-foreground block" title={c.detail}>
+                  <Tooltip content={c.detail}><span className="typo-caption text-foreground block">
                     {truncateMiddle(c.detail)}
-                  </span>
+                  </span></Tooltip>
                 )}
                 <span className="typo-caption text-foreground">
                   {kindLabel(c.kind)} · {matchedLabel(c.matchedBy)}
@@ -102,38 +105,25 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
                 }}
                 className="w-36 flex-shrink-0"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button
+                  <Button
                     type="button"
                     data-testid={`portability-conflict-select-${key}`}
                     onClick={toggle}
-                    className="w-full inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-input typo-body
-                      bg-secondary/20 border border-primary/15 text-foreground hover:border-primary/30 transition-colors"
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    iconRight={<ChevronDown className={`w-4 h-4 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
                   >
                     {labels[current]}
-                    <ChevronDown className={`w-4 h-4 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                  </Button>
                 )}
               >
                 {({ close, focusIndex }) => (
                   <div className="py-1 bg-secondary/95">
                     {RESOLUTIONS.map((option, i) => (
-                      <button
-                        key={option}
-                        type="button"
-                        role="option"
-                        aria-selected={current === option}
-                        onClick={() => {
-                          setResolutions((prev) => ({ ...prev, [key]: option }));
-                          close();
-                        }}
-                        className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
-                          i === focusIndex || current === option
-                            ? 'bg-primary/10 text-foreground'
-                            : 'text-foreground/80 hover:bg-primary/5'
-                        }`}
-                      >
+                      <OptionRow key={option} role="option" selected={current === option} className={i === focusIndex && current !== option ? "bg-surface-1" : ""} onSelect={() => { setResolutions((prev) => ({ ...prev, [key]: option })); close(); }}>
                         {labels[option]}
-                      </button>
+                      </OptionRow>
                     ))}
                   </div>
                 )}
@@ -144,27 +134,28 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
       </div>
 
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
           data-testid="portability-conflict-confirm"
           onClick={handleConfirm}
           disabled={busy}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal typo-body
-            bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
-            transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          variant="accent"
+          tone="info"
+          size="md"
+          icon={<Upload className="w-4 h-4" />}
         >
-          <Upload className="w-4 h-4" />
           {s.import_with_resolutions}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           data-testid="portability-conflict-cancel"
           onClick={onDismiss}
           disabled={busy}
-          className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors disabled:opacity-40"
+          variant="ghost"
+          size="sm"
         >
           {s.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -154,7 +154,8 @@ watch    [--project p]
 settle   --run <runId> [--retry]
 verify   --project p [--repo <key>] [--timeout-min N]
 await    --run <runId> | --project p [--timeout-min N]
-release  --run <runId> --reason <text> [--kill]
+release  --run <runId> --reason <text> [--kill] [--discard] [--keep-build]
+sweep    [--days 7] [--dry]
 say      --project p --file <msg.md>
 asks     [--project p]
 answer   --ask <askId> --choice <label> --notes <text>
@@ -424,6 +425,16 @@ resumes where it stopped.
 `AM release --run <runId> --reason "<why>"` settles a run as released (the operator discarded
 it, or the usage limit stopped it). A quiet worker is flagged, not killed: add `--kill` ONLY
 when the operator has said to kill that run, and say so in the digest.
+
+A released run keeps its worktree and branch (a retry resumes there) but **loses its build output**
+(`target/`, `src-tauri/target`): it rebuilds on demand and was 7-23 GB per run, about 213 GB across
+the released runs of 2026-10-23..28. `--keep-build` opts out. Close a run the Director merged by hand
+or superseded with **`--discard`**: the worktree is removed too, unless it holds uncommitted work
+(then it is kept, pruned, and the run's `cleanup.kept` says why).
+
+`AM sweep [--days 7] [--dry]` cleans every settled run's worktree: `merged` and `reviewed` are
+discarded, `failed` and `released` are pruned at once and discarded after `--days`. Uncommitted work
+is never discarded. Run it any time; `--dry` lists what it would do.
 
 ## `limit`
 

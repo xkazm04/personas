@@ -11,6 +11,8 @@ import { PipelineRail } from './PipelineRail';
 import type { PipelineStage, SourceMode, PipelineFieldId } from './pipelineTypes';
 import { parseStandards, resolveBranchName } from './standardsConfig';
 import { silentCatch } from '@/lib/silentCatch';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface ProjectPipelineViewProps {
   name: string;
@@ -122,10 +124,10 @@ export function ProjectPipelineView({
 
 function StageCard({ icon: Icon, label, children }: { icon: typeof FolderKanban; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-card border border-primary/10 bg-card/30 p-3">
+    <div className="rounded-card border border-hair bg-surface-1 p-3">
       <div className="flex items-center gap-2 mb-2.5">
-        <span className="w-6 h-6 rounded-interactive bg-amber-500/12 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
-          <Icon className="w-3.5 h-3.5 text-amber-400" />
+        <span className="w-6 h-6 rounded-interactive bg-surface-2 border border-hair flex items-center justify-center flex-shrink-0">
+          <Icon className="w-3.5 h-3.5 text-ink-2" />
         </span>
         <span className="typo-card-label">{label}</span>
       </div>
@@ -152,12 +154,11 @@ function KvRow({
     <>
       <Icon className="w-3 h-3 text-foreground flex-shrink-0" />
       <span className="typo-caption text-foreground flex-shrink-0">{label}</span>
-      <span
-        className={`typo-caption truncate ml-auto text-right min-w-0 ${value ? 'text-foreground' : 'text-foreground/35 italic'} ${mono && value ? 'font-mono' : ''}`}
-        title={value ?? undefined}
+      <Tooltip content={value ?? undefined}><span
+        className={`typo-caption truncate ml-auto text-right min-w-0 ${value ? 'text-foreground' : 'text-ink-3 italic'} ${mono && value ? 'font-mono' : ''}`}
       >
         {value ?? dp.pipeline_not_set}
-      </span>
+      </span></Tooltip>
     </>
   );
 
@@ -165,16 +166,14 @@ function KvRow({
   // popover anchored to the row; a pencil affordance fades in on hover.
   if (onEdit && field) {
     return (
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onEdit(field, e.currentTarget.getBoundingClientRect()); }}
-        title={dp.pipeline_edit_field}
+      <Tooltip content={dp.pipeline_edit_field}><PressSurface
+        onPress={(e) => { e.stopPropagation(); onEdit(field, e.currentTarget.getBoundingClientRect()); }}
         aria-label={`${label} — ${dp.pipeline_edit_field}`}
-        className="group flex items-center gap-2 min-w-0 w-full text-left -mx-1 px-1 py-0.5 rounded-interactive hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors"
+        className="group flex items-center gap-2 min-w-0 w-full -mx-1 px-1 py-0.5 rounded-interactive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       >
         {body}
         <Pencil className="w-2.5 h-2.5 text-primary/60 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-      </button>
+      </PressSurface></Tooltip>
     );
   }
 

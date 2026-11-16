@@ -1,0 +1,111 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e531a341-2602-4975-a2c1-9f5124a71276",
+  "subject": "ci-execution-trust",
+  "evaluatedAt": "2026-11-08T01:24:43.861110+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "plugins-gitlab",
+      "subject": "ci-execution-trust",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/gitlab/components/GitLabAgentList.tsx:129 Deploying with 'provision credentials' copies decrypted vault secrets into long-lived GitLab project CI/CD variables, but undeploying (this button, through gitlabSlice.gitlabUndeployAgent) never calls gitlab_revoke_credentials. That command has no caller outside the store slice, so the pipeline secrets outlive the deployment and are never cleaned up.",
+      "techniques": [
+        {
+          "technique": "secret-materialization-discipline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:257 Vault secrets become stored project-level pipeline variables with no owner, expiry or rotation, and no cleanup is wired to undeploy. The standard asks for fetch-at-step, short-lived credentials and named cleanup."
+        },
+        {
+          "technique": "untrusted-contribution-lanes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/gitlab/converter.rs:116 Values that GitLab cannot mask are still pushed, just unmasked, so a job log can print them. This breaks 'assume every log line is disclosed'. The variables are protected:true (converter.rs:123), which keeps them out of unprotected merge-request pipelines and is a partial mitigation."
+        },
+        {
+          "technique": "evidence-pipeline-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/gitlab/hooks/usePipelineNotifications.ts:48 Pipeline statuses only feed notifications and a viewer for a person to read. No gate here merges or proves a change from a run, so 'latest run' is acceptable per the technique's when-not-to-use clause."
+        }
+      ],
+      "registryProposal": "secret-materialization-discipline could name the case where a desktop app copies a local vault secret into a CI platform's stored variables: that copy is a second credential-delivery mechanism whose cleanup must be tied to the deployment's lifecycle."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "ci-execution-trust",
+      "context": "engine-project-tracking",
+      "reason": "evidence leans on runner/env.rs, which is not a tracked file"
+    },
+    {
+      "subject": "ci-execution-trust",
+      "context": "api-pipeline",
+      "reason": "withdrawn after review: reviewer (sonnet): Each not-applicable is anchored on an incidental line (the listAllTriggers wrapper, the start_google_credential_oauth signature, the list_executions command) that doesn't show a CI-delivery precondition is absent; the keyword searches (buildkite, workflow_dispatch and so on) don't establish that the"
+    },
+    {
+      "subject": "ci-execution-trust",
+      "context": "commands-credentials",
+      "reason": "withdrawn after review: reviewer (sonnet): Each not-applicable is anchored on an incidental line (the listAllTriggers wrapper, the start_google_credential_oauth signature, the list_executions command) that doesn't show a CI-delivery precondition is absent; the keyword searches (buildkite, workflow_dispatch and so on) don't establish that the"
+    },
+    {
+      "subject": "ci-execution-trust",
+      "context": "commands-execution",
+      "reason": "withdrawn after review: reviewer (sonnet): Each not-applicable is anchored on an incidental line (the listAllTriggers wrapper, the start_google_credential_oauth signature, the list_executions command) that doesn't show a CI-delivery precondition is absent; the keyword searches (buildkite, workflow_dispatch and so on) don't establish that the"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-08T01:24:43.861110+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "ci-execution-trust"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "api-pipeline",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T01:24:43.861110+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "ci-execution-trust"
+      ],
+      "techniques": [
+        "evidence-pipeline-provenance",
+        "secret-materialization-discipline",
+        "untrusted-contribution-lanes"
+      ],
+      "deviations": 1,
+      "context": "plugins-gitlab",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T01:24:43.861110+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "ci-execution-trust"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "commands-credentials",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T01:24:43.861110+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "ci-execution-trust"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "commands-execution",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

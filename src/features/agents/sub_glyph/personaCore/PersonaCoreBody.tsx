@@ -33,10 +33,10 @@ function CodexGhost() {
     >
       {[0, 1, 2].map((col) => (
         <div key={col} className="flex-1 min-w-0 flex flex-col gap-3">
-          <span className="h-4 w-28 rounded-input bg-secondary/60" />
+          <span className="h-4 w-28 rounded-input bg-surface-2" />
           <div className="flex flex-col gap-1.5">
             {[0, 1, 2, 3, 4].map((row) => (
-              <span key={row} className="h-8 w-full rounded-input bg-secondary/30" />
+              <span key={row} className="h-8 w-full rounded-input bg-surface-1" />
             ))}
           </div>
         </div>
@@ -75,14 +75,15 @@ export function PersonaCoreBody({ core, onDone, onCrashReset, fill = false }: Pe
       )}
 
       <div className={`flex items-center justify-between gap-2 ${fill ? "pt-3" : "pt-1"} border-t border-card-border/50 flex-shrink-0`}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="xs"
           onClick={core.reset}
           disabled={!core.configured}
-          className={`inline-flex items-center gap-1.5 ${fill ? "typo-body" : "typo-caption"} text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:text-foreground/80`}
+          icon={<RotateCcw className="w-3.5 h-3.5" />}
         >
           <RotateCcw className="w-3.5 h-3.5" /> {t.agents.core_reset}
-        </button>
+        </Button>
         <Button variant="primary" size={fill ? "md" : "sm"} onClick={onDone} data-testid="persona-core-done">{t.common.done}</Button>
       </div>
     </div>

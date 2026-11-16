@@ -1,3 +1,4 @@
+import Button from '@/features/shared/components/buttons/Button';
 import { useMemo, useCallback } from 'react';
 import { RefreshCw, Bot, Plus, BookOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,8 +20,6 @@ import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 const EXEC_ROW_HEIGHT = 56;
 
-const HEADER_BTN = 'flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border';
-const HEADER_BTN_IDLE = 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border-primary/15';
 
 /**
  * Overview › Executions › Activity: every persona's runs as one ledger.
@@ -82,21 +81,21 @@ export default function GlobalExecutionList() {
         layoutIdPrefix="execution-filter"
         summary={tx(act.showing, { count: feed.rows.length, total: feed.total })}
         trailing={
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => { void feed.refresh(); }}
             disabled={feed.isRefreshing}
-            className={`${HEADER_BTN} ${HEADER_BTN_IDLE} disabled:opacity-60`}
-            title={t.common.refresh}
+            tooltip={t.common.refresh}
+            icon={<RefreshCw className={`w-4 h-4 ${feed.isRefreshing ? 'animate-spin' : ''}`} />}
           >
-            <RefreshCw className={`w-5 h-5 ${feed.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="typo-body">{t.common.refresh}</span>
-          </button>
+            {t.common.refresh}
+          </Button>
         }
       />
 
       {feed.warning && (
-        <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-amber-500/25 bg-amber-500/10 px-3 py-2 typo-body text-amber-300/90" role="status" aria-live="polite">
+        <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-status-warning/25 bg-status-warning/10 px-3 py-2 typo-body text-status-warning" role="status" aria-live="polite">
           {feed.warning}
         </div>
       )}
@@ -143,10 +142,10 @@ export default function GlobalExecutionList() {
               className="flex-1"
             />
             {feed.hasMore && (
-              <div className="flex-shrink-0 pt-3 pb-2 text-center border-t border-primary/5">
-                <button type="button" onClick={feed.loadMore} className={`px-4 py-2 typo-heading ${HEADER_BTN} ${HEADER_BTN_IDLE} mx-auto`}>
+              <div className="flex-shrink-0 pt-3 pb-2 text-center border-t border-hair">
+                <Button variant="secondary" size="sm" className="mx-auto" onClick={feed.loadMore}>
                   {act.load_more}
-                </button>
+                </Button>
               </div>
             )}
           </div>

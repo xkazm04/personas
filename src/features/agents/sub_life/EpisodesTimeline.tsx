@@ -84,7 +84,7 @@ export function EpisodesTimeline({ personaId, framed = true }: EpisodesTimelineP
           isLoading ? (
             <div className="space-y-1.5" aria-hidden>
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-10 rounded-input bg-secondary/30 animate-pulse" />
+                <div key={i} className="h-10 rounded-input bg-surface-1 animate-pulse" />
               ))}
             </div>
           ) : (
@@ -95,13 +95,13 @@ export function EpisodesTimeline({ personaId, framed = true }: EpisodesTimelineP
             <ul className="space-y-1">
               {episodes.map((e, i) => (
                 <RevealItem key={e.id} as="li" revealId={e.id} order={i} {...tracker}>
-                  <div className="px-2 py-1.5 rounded-input hover:bg-secondary/30 transition-colors">
+                  <div className="px-2 py-1.5 rounded-input hover:bg-surface-1 transition-colors">
                     <div className="flex items-center gap-2">
                       {/* role/source are wire identifiers — rendered as technical chips */}
-                      <span className="typo-code px-1.5 py-px rounded-pill bg-primary/10 text-primary/80 border border-primary/15">
+                      <span className="typo-code px-1.5 py-px rounded-pill bg-primary/10 text-primary/80 border border-hair">
                         {e.role}
                       </span>
-                      <span className="typo-code text-foreground/85">{e.source}</span>
+                      <span className="typo-code text-ink-1">{e.source}</span>
                       <span className="flex-1" />
                       <RelativeTime timestamp={e.createdAt} className="typo-caption" />
                     </div>

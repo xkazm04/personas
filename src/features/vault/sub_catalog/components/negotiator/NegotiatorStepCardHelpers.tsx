@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, ChevronDown, ChevronRight, Globe, Settings, UserPlus, KeyRound,
@@ -10,6 +11,7 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import Button from '@/features/shared/components/buttons/Button';
 
 const INFO_STATUS = STATUS_COLORS.info;
 const AI_STATUS = STATUS_COLORS.ai;
@@ -57,24 +59,24 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
 }) {
   const { t } = useTranslation();
   return (
-    <button type="button" id={id} onClick={onSelect} aria-expanded={isActive} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+    <PressSurface id={id} onPress={onSelect} aria-expanded={isActive} className="w-full flex items-center gap-3 px-4 py-3">
       <div
         className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 typo-heading border ${
           isCompleted
             ? `${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`
             : isActive
               ? `${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`
-              : 'bg-secondary/40 border-primary/15 text-foreground'
+              : 'bg-surface-2 border-hair text-foreground'
         }`}
       >
         {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepIndex + 1}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`typo-body ${isActive ? 'text-foreground' : 'text-foreground/90'}`}>
+          <span className={`typo-body ${isActive ? 'text-foreground' : 'text-ink-1'}`}>
             {step.title}
           </span>
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body border ${colorClasses}`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-body border ${colorClasses}`}>
             <Icon className="w-2.5 h-2.5" />
             {step.action_type.replace('_', ' ')}
           </span>
@@ -91,7 +93,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
       {isActive
         ? <ChevronDown className="w-4 h-4 text-foreground shrink-0" />
         : <ChevronRight className="w-4 h-4 text-foreground shrink-0" />}
-    </button>
+    </PressSurface>
   );
 }
 export function CaptureFieldRow({ fieldKey, hint, stepIndex, capturedValue, onCaptureValue }: {
@@ -143,15 +145,16 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
       className="pt-1"
       data-testid={`negotiator-step-${stepIndex}-help-section`}
     >
-      <button
+      <Button
         type="button"
         onClick={() => setShowHelp(!showHelp)}
-        className="inline-flex items-center gap-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors duration-snap"
+        variant="ghost"
+        size="sm"
         data-testid={`negotiator-step-${stepIndex}-help-toggle-btn`}
+        icon={<HelpCircle className="w-3 h-3" />}
       >
-        <HelpCircle className="w-3 h-3" />
         {showHelp ? t.vault.negotiator_extra.hide_help : t.vault.negotiator_extra.need_help}
-      </button>
+      </Button>
       <Collapse open={showHelp} unmountWhenClosed duration={250} className="mt-2 space-y-2">
         <div className="flex gap-2">
           <input
@@ -160,18 +163,20 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             onChange={(e) => setHelpQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAskHelp(); }}
             placeholder={t.vault.negotiator_extra.ask_question}
-            className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
+            className={`flex-1 px-3 py-1.5 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
             data-testid={`negotiator-step-${stepIndex}-help-input`}
           />
-          <button
+          <Button
             type="button"
             onClick={handleAskHelp}
             disabled={!helpQuestion.trim() || isLoadingHelp}
-            className={`px-3 py-1.5 rounded-modal typo-body transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
+            variant="accent"
+            tone="agent"
+            size="sm"
             data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
           >
             {isLoadingHelp ? <LoadingSpinner size="xs" /> : t.vault.negotiator_extra.ask_button}
-          </button>
+          </Button>
         </div>
         {stepHelp && stepHelp.stepIndex === stepIndex && !stepHelp.isError && (
           <div
@@ -185,12 +190,12 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
           const translated = resolveErrorTranslated(t, stepHelp.answer);
           return (
             <div
-              className="px-3 py-2 rounded-modal typo-body text-red-300 bg-red-500/10 border border-red-500/20 space-y-1"
+              className="px-3 py-2 rounded-modal typo-body text-status-error bg-status-error/10 border border-status-error/20 space-y-1"
               data-testid={`negotiator-step-${stepIndex}-help-error`}
             >
               <div>{translated.message}</div>
               {translated.suggestion && (
-                <div className="typo-body text-red-200/70">{translated.suggestion}</div>
+                <div className="typo-body text-status-error/70">{translated.suggestion}</div>
               )}
             </div>
           );

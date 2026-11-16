@@ -476,8 +476,9 @@ pub mod test_support {
     const V1: &str = include_str!("lens_scan_fixtures/store_v1.sql");
     const V2: &str = include_str!("lens_scan_fixtures/store_v2_extra.sql");
     const V3: &str = include_str!("lens_scan_fixtures/store_v3_extra.sql");
+    const V4: &str = include_str!("lens_scan_fixtures/store_v4_extra.sql");
 
-    /// A store of `version` (1..=3) at `root/.ai/lens-scan/scan.db`, in WAL
+    /// A store of `version` (1..=4) at `root/.ai/lens-scan/scan.db`, in WAL
     /// mode like the real one, holding one `done` measure run `r1`. The
     /// returned connection is the WRITER: keep it open to leave committed
     /// pages in the `-wal` file.
@@ -492,6 +493,9 @@ pub mod test_support {
         }
         if version >= 3 {
             conn.execute_batch(V3).expect("v3 ddl");
+        }
+        if version >= 4 {
+            conn.execute_batch(V4).expect("v4 ddl");
         }
         conn.execute(
             "INSERT INTO runs (id, started_at, updated_at, phase, status, lenses) \

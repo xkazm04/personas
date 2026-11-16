@@ -17,8 +17,8 @@ const BOX = {
 
 export function OverseerMark({ size = 'sm', on = true }: { size?: keyof typeof BOX; on?: boolean }) {
   const look = on
-    ? 'border border-role-agent/40 bg-role-agent/15 text-role-agent'
-    : 'border border-primary/20 text-foreground';
+    ? 'border border-hair bg-surface-1 text-role-agent'
+    : 'border border-hair text-foreground';
   return (
     <span aria-hidden className={`inline-flex shrink-0 items-center justify-center rounded-interactive ${BOX[size]} ${look}`} data-overseer-mark={on ? 'on' : 'off'}>
       <OverseerGlyph className={size === 'md' ? GLYPH.md : GLYPH.sm} />

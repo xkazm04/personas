@@ -92,7 +92,7 @@ function Rating({ value, onRate }: { value: number | null; onRate: (n: number) =
       <span className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((n) => (
           <Button key={n} variant="ghost" size="icon-sm" role="radio" aria-checked={value === n} aria-label={tx(t.monitor.dc_deck_rate_star, { count: n })} onClick={() => onRate(n)}>
-            <Star className={`h-4 w-4 ${value && n <= value ? 'fill-current text-status-warning' : 'text-muted-foreground'}`} aria-hidden />
+            <Star className={`h-4 w-4 ${value && n <= value ? 'fill-current text-status-warning' : 'text-ink-3'}`} aria-hidden />
           </Button>
         ))}
       </span>

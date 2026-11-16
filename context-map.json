@@ -835,7 +835,13 @@
         "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.test.tsx",
         "src/features/settings/sub_api_keys/components/ApiKeyRowRevoke.test.tsx",
         "src/features/settings/sub_api_keys/libs/gigPolicyDraft.test.ts",
-        "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts"
+        "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts",
+        "src/features/settings/sub_api_keys/components/ConnectedAppsSection.tsx",
+        "src/features/settings/sub_api_keys/components/GigPersonaPolicySection.tsx",
+        "src/features/settings/sub_api_keys/components/RetireKeysDialog.tsx",
+        "src/features/settings/sub_api_keys/components/RetireKeysDialog.test.tsx",
+        "src/features/settings/sub_api_keys/libs/keyLifecycle.ts",
+        "src/features/settings/sub_api_keys/libs/keyLifecycle.test.ts"
       ],
       "group": "Security & Credentials",
       "group_id": "0240e2ac-2a14-49a8-8795-a80bbddae535",

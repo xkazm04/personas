@@ -58,7 +58,7 @@ export function LogExcerptWidget({ config, title, span, actions, footer }: Cockp
                   className={`flex gap-2.5 px-2.5 border-l-2 ${hot ? 'border-l-[color:var(--tone)] bg-[color-mix(in_srgb,var(--tone)_12%,transparent)]' : 'border-l-transparent'}`}
                 >
                   <span className="select-none w-6 text-right shrink-0 k-quiet" aria-hidden>{i + 1}</span>
-                  <span className={`whitespace-pre-wrap break-words min-w-0 ${hot ? 'text-foreground' : ''}`}>
+                  <span className={`whitespace-pre-wrap break-words min-w-0 ${hot ? 'text-ink-1' : ''}`}>
                     {hot && <span className="sr-only">{toneLabel(t, tone)}: </span>}
                     {line || ' '}
                   </span>

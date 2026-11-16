@@ -8,6 +8,7 @@ import { QuickEditPopover } from "@/features/shared/components/overlays/QuickEdi
 
 import { TRASH_PATH } from "../sidebar/LocationsSection";
 import type { DriveApi } from "../types";
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   drive: DriveApi;
@@ -83,20 +84,19 @@ export function FinderMoveTo({ drive, anchor, onClose }: Props) {
           candidates.map((c) => {
             const active = picked === c.path;
             return (
-              <button
+              <PressSurface
                 key={c.path || "__root__"}
-                type="button"
                 role="radio"
                 aria-checked={active}
-                onClick={() => setPicked(c.path)}
+                onPress={() => setPicked(c.path)}
                 onDoubleClick={() => {
                   setPicked(c.path);
                   commit();
                 }}
-                className={`w-full flex items-center gap-2 py-1 pr-2 rounded-input text-left typo-body transition-colors duration-fast focus-ring ${
-                  active ? "bg-primary/15 ring-1 ring-primary/40 text-foreground" : "text-foreground hover:bg-secondary/50"
-                }`}
                 style={{ paddingLeft: `${8 + Math.max(0, c.depth) * 14}px` }}
+                className="w-full flex items-center gap-2 py-1 pr-2 rounded-input typo-body text-ink-1"
+                selected={active}
+                aria-pressed={undefined}
               >
                 {c.depth < 0 ? (
                   <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
@@ -104,7 +104,7 @@ export function FinderMoveTo({ drive, anchor, onClose }: Props) {
                   <Folder className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
                 )}
                 <span className="truncate">{c.label}</span>
-              </button>
+              </PressSurface>
             );
           })
         )}

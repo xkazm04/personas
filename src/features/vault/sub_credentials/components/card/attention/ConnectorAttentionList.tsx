@@ -65,9 +65,9 @@ export function ConnectorAttentionList({ onOpen }: { onOpen: (credentialId: stri
     <section
       aria-label={a.title}
       data-testid="connector-attention-list"
-      className="mb-3 rounded-card border border-amber-500/20 bg-secondary/20 overflow-hidden"
+      className="mb-3 rounded-card border border-status-warning/20 bg-surface-1 overflow-hidden"
     >
-      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10">
+      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-hair">
         <AlertTriangle className={`w-4 h-4 shrink-0 ${STATUS_PALETTE.warning.text}`} />
         <h3 className="typo-title">{a.title}</h3>
         <span className={`ml-1 px-1.5 rounded-full typo-label tabular-nums ${STATUS_PALETTE.warning.bg} ${STATUS_PALETTE.warning.text}`}>

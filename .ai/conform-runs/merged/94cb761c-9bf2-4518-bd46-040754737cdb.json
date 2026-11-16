@@ -1,0 +1,37 @@
+{
+ "schema": "conform-run/1",
+ "worker": "94cb761c-9bf2-4518-bd46-040754737cdb",
+ "subject": "mcp-tools",
+ "evaluatedAt": "2026-11-01T22:09:01.344800+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "mcp-tools",
+   "context": "plugins-companion-decision",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "companion-ui-controls",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "vault-catalog-picker",
+   "reason": "The only MCP mention found is an acronym-list entry (src/features/vault/sub_catalog/components/negotiator/NegotiatorStepCardHelpers.tsx:21), so 'mcp' cannot be an absence term. The user stopped the session before I could finish the search for absence terms that don't hit, so a not-applicable verdict cannot be supported yet."
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "byom-provider-settings",
+   "reason": "A grep for 'mcp'/'tool' in src/features/settings/sub_byom found only a 'tooltip' comment, but the user stopped the session before the full absence-term search ran, so not-applicable is not yet supported."
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "hooks-design",
+   "reason": "A grep for 'mcp|tool_use|toolcall|tool_call' in src/hooks/design returned no matches, but the user stopped the session before the full absence-term search ran, so not-applicable is not yet supported."
+  }
+ ],
+ "consults": []
+}

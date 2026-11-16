@@ -28,6 +28,7 @@ export const COMPANIONS_PAGES = [
   "athena:memory",
   "athena:voice",
   "athena:decisions",
+  "athena:standup",
   "overseer:reviews",
   "overseer:setup",
   "curator:council",

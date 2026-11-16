@@ -8,6 +8,9 @@ import { PlanGlyph } from '../PlanGlyph';
 import StudioChecklistStepper from '../StudioChecklistStepper';
 import type { BuildPhase } from '../studioBuildModel';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 export interface GuideGoalsRailHandle {
   /** Open the "add a goal" field and focus it (the G key). */
   startAdding: () => void;
@@ -93,14 +96,15 @@ const GuideGoalsRail = forwardRef<
                 </span>
               )}
               <div className="flex-1" />
-              <button
+              <Button
                 type="button"
                 onClick={onClose}
                 aria-label={g.goals_hide}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                variant="ghost"
+                size="icon-sm"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </header>
 
             {hasPlan && (
@@ -171,21 +175,20 @@ const GuideGoalsRail = forwardRef<
                   onBlur={() => !draft.trim() && setAdding(false)}
                   placeholder={g.add_goal_placeholder}
                   aria-label={g.add_goal}
-                  className="w-full rounded-input border border-primary/50 bg-background/60 px-3 py-2 typo-body text-foreground outline-none placeholder:text-foreground/90"
+                  className="w-full rounded-input border border-primary/50 bg-background/60 px-3 py-2 typo-body text-foreground outline-none placeholder:text-ink-2"
                 />
               ) : (
-                <button
-                  type="button"
+                <PressSurface
                   disabled={!canAdd}
-                  onClick={() => setAdding(true)}
-                  className="flex w-full items-center justify-between rounded-interactive border border-dashed border-border px-3 py-2 typo-body text-foreground/90 transition-colors hover:border-primary/60 hover:text-foreground disabled:is-disabled"
+                  onPress={() => setAdding(true)}
+                  className="flex w-full items-center justify-between rounded-interactive border border-dashed border-border px-3 py-2 typo-body text-ink-2 hover:text-foreground"
                 >
                   <span className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     {g.add_goal}
                   </span>
-                  <kbd className="rounded-interactive border border-border px-1.5 font-mono text-xs text-foreground/90">G</kbd>
-                </button>
+                  <kbd className="rounded-interactive border border-border px-1.5 font-mono typo-caption text-ink-2">G</kbd>
+                </PressSurface>
               )}
             </div>
           </div>

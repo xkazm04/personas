@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AlertCircle, CheckCircle2, AlertTriangle, Activity, ShieldCheck } from 'lucide-react';
 import type { AuditIncidentSummary } from '@/lib/bindings/AuditIncidentSummary';
@@ -158,21 +159,18 @@ interface TileProps {
 function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = false }: TileProps) {
   const accent = toneClass(tone);
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-3 rounded-card border p-3 text-left transition-colors focus-ring ${
+      className={`flex items-center gap-3 rounded-card border p-3    ${
         active
-          ? 'border-primary/40 bg-primary/10'
-          : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40'
+          ? 'border-primary bg-sel'
+          : 'border-hair bg-surface-1 hover:bg-surface-2'
       }`}
     >
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-card ${accent}`}>
-        <Icon className="h-5 w-5" />
-      </div>
+      <Icon className={`h-5 w-5 shrink-0 ${accent}`} />
       <div className="flex min-w-0 flex-col">
-        <span className="typo-caption text-foreground">{label}</span>
+        <span className="typo-eyebrow text-ink-3">{label}</span>
         {ghost ? (
           // Geometry-matched to the figure it replaces (typo-heading's line
           // box), calm, and delayed 120ms behind `animate-fade-in`'s
@@ -183,19 +181,19 @@ function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = fal
             style={{ animationDelay: '120ms' }}
           />
         ) : (
-          <span className="typo-heading text-foreground">{value ?? UNMEASURED}</span>
+          <span className="typo-data-lg text-ink-1">{value ?? UNMEASURED}</span>
         )}
-        {sublabel && <span className="typo-caption text-foreground truncate">{sublabel}</span>}
+        {sublabel && <span className="typo-caption text-ink-3 truncate">{sublabel}</span>}
       </div>
-    </button>
+    </PressSurface>
   );
 }
 
 function toneClass(tone: 'warning' | 'danger' | 'info' | 'success'): string {
   switch (tone) {
-    case 'warning': return 'bg-amber-500/15 text-amber-400';
-    case 'danger': return 'bg-red-500/15 text-red-400';
-    case 'info': return 'bg-blue-500/15 text-blue-400';
-    case 'success': return 'bg-emerald-500/15 text-emerald-400';
+    case 'warning': return 'text-status-warning';
+    case 'danger': return 'text-status-error';
+    case 'info': return 'text-status-info';
+    case 'success': return 'text-status-success';
   }
 }

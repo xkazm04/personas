@@ -42,17 +42,17 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
   };
 
   return (
-    <div className="rounded-modal bg-secondary/30 border border-indigo-500/15 p-4 space-y-3">
-      <h4 className="typo-body text-foreground/90">{dt.new_cloud_trigger}</h4>
+    <div className="rounded-modal bg-surface-1 border border-role-agent/15 p-4 space-y-3">
+      <h4 className="typo-body text-ink-1">{dt.new_cloud_trigger}</h4>
 
       {/* Persona selector */}
       <div className="space-y-1">
-        <label htmlFor="cloud-trigger-persona" className="typo-caption text-foreground">{dt.persona_must_be_deployed}</label>
+        <label htmlFor="cloud-trigger-persona" className="typo-caption text-ink-2">{dt.persona_must_be_deployed}</label>
         <select
           id="cloud-trigger-persona"
           value={createPersonaId}
           onChange={(e) => setCreatePersonaId(e.target.value)}
-          className="w-full px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="w-full px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
         >
           <option value="">{dt.select_persona}</option>
           {deployedPersonas.map((p) => (
@@ -63,41 +63,31 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Trigger type */}
       <div className="space-y-1">
-        <span id="cloud-trigger-type-label" className="typo-caption text-foreground">{dt.trigger_type}</span>
+        <span id="cloud-trigger-type-label" className="typo-caption text-ink-2">{dt.trigger_type}</span>
         <div role="group" aria-labelledby="cloud-trigger-type-label" className="flex gap-2">
-          <button
+          <Button
             type="button"
             aria-pressed={createType === 'schedule'}
             onClick={() => setCreateType('schedule')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
-              createType === 'schedule'
-                ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
-                : 'bg-secondary/40 text-foreground border-primary/15 hover:border-primary/25'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            {dt.schedule_cron}
-          </button>
-          <button
+            variant={createType === 'schedule' ? 'secondary' : 'ghost'}
+            size="sm"
+            icon={<Clock className="w-3.5 h-3.5" />}
+          >{dt.schedule_cron}</Button>
+          <Button
             type="button"
             aria-pressed={createType === 'webhook'}
             onClick={() => setCreateType('webhook')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
-              createType === 'webhook'
-                ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
-                : 'bg-secondary/40 text-foreground border-primary/15 hover:border-primary/25'
-            }`}
-          >
-            <Webhook className="w-3.5 h-3.5" />
-            {t.deployment.cloud_trigger_webhook}
-          </button>
+            variant={createType === 'webhook' ? 'secondary' : 'ghost'}
+            size="sm"
+            icon={<Webhook className="w-3.5 h-3.5" />}
+          >{t.deployment.cloud_trigger_webhook}</Button>
         </div>
       </div>
 
       {/* Cron config */}
       {createType === 'schedule' && (
         <div className="space-y-2">
-          <label htmlFor="cloud-trigger-cron" className="typo-caption text-foreground">{dt.cron_expression} <span className="text-amber-400/60 font-medium">{dt.utc_suffix}</span></label>
+          <label htmlFor="cloud-trigger-cron" className="typo-caption text-ink-2">{dt.cron_expression} <span className="text-status-warning font-medium">{dt.utc_suffix}</span></label>
           <input
             id="cloud-trigger-cron"
             type="text"
@@ -105,26 +95,21 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             onChange={(e) => setCreateCron(e.target.value)}
             placeholder="0 * * * *"
             aria-invalid={cronInvalid}
-            className="w-full px-3 py-1.5 typo-code rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-1.5 typo-code rounded-modal bg-surface-2 border border-hair text-ink-1 focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
           />
           {cronInvalid && (
             <p role="alert" className="typo-caption text-status-error">{t.triggers.build_validation.cron_invalid}</p>
           )}
           <div className="flex flex-wrap gap-1.5">
             {CLOUD_CRON_PRESETS.map((preset) => (
-              <button
+              <Button
                 key={preset.id}
                 type="button"
                 aria-pressed={createCron === preset.cron}
                 onClick={() => setCreateCron(preset.cron)}
-                className={`px-2 py-1 typo-caption rounded-card border transition-colors ${
-                  createCron === preset.cron
-                    ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25'
-                    : 'bg-secondary/30 text-foreground border-primary/10 hover:border-primary/20'
-                }`}
-              >
-                {cloudCronPresetLabel(t, preset)}
-              </button>
+                variant={createCron === preset.cron ? 'secondary' : 'ghost'}
+                size="xs"
+              >{cloudCronPresetLabel(t, preset)}</Button>
             ))}
           </div>
         </div>
@@ -132,7 +117,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Webhook info */}
       {createType === 'webhook' && (
-        <p className="typo-caption text-foreground">
+        <p className="typo-caption text-ink-2">
           {dt.webhook_info}
         </p>
       )}
@@ -151,13 +136,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
         >
           {dt.create_trigger}
         </Button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors"
-        >
-          {t.common.cancel}
-        </button>
+        <Button type="button" onClick={onCancel} variant="secondary" size="sm">{t.common.cancel}</Button>
       </div>
     </div>
   );

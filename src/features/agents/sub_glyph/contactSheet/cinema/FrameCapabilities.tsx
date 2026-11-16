@@ -25,20 +25,20 @@ export function FrameCapabilities({ dim, rows }: { dim: GlyphDimension; rows: Gl
   const color = DIM_META[dim].color;
   return (
     <div className="flex flex-col gap-2">
-      <span className="typo-caption uppercase tracking-[0.1em] text-foreground">{COPY.frame.perCapability}</span>
+      <span className="typo-eyebrow text-ink-1">{COPY.frame.perCapability}</span>
       <ol className="m-0 p-0 list-none flex flex-col">
         {rows.map((r, i) => {
           const presence = r.presence[dim];
           const detail = presence === "none" ? "" : rowDetail(dim, r);
           return (
             <li key={r.id} className="flex items-start gap-3 py-2 border-b border-card-border last:border-b-0">
-              <span className="font-mono typo-caption text-foreground pt-0.5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+              <span className="font-mono typo-caption text-ink-1 pt-0.5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
               <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                <span className="typo-body text-foreground">{r.title}</span>
-                {detail && <span className="typo-body text-foreground">{detail}</span>}
+                <span className="typo-body text-ink-1">{r.title}</span>
+                {detail && <span className="typo-body text-ink-1">{detail}</span>}
               </div>
               <span
-                className="typo-caption px-2 py-0.5 rounded-full border whitespace-nowrap"
+                className="inline-flex items-center typo-caption whitespace-nowrap"
                 style={presence === "linked" ? { color, borderColor: colorWithAlpha(color, 0.4) } : undefined}
               >
                 {PRESENCE[presence] ?? presence}

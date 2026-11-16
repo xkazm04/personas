@@ -4,7 +4,7 @@ Events and Triggers are the routing layer that lets personas react to schedules,
 
 ## Page host
 
-`src/features/triggers/TriggersPage.tsx` owns the Events section. It reads the active tab from `useSystemStore().eventBusTab`, loads all triggers through `listAllTriggers()`, reads trigger health through `getTriggerHealthMap()`, and lazily mounts heavier canvas tabs.
+`src/features/triggers/TriggersPage.tsx` owns the Events section. It reads the active tab from `useSystemStore().eventBusTab`, loads triggers through `listAllTriggers()` only while the rate-limits tab is open, and lazily mounts heavier canvas tabs. It does not read trigger health: the page deliberately makes no `getTriggerHealthMap()` call.
 
 The Live Stream header includes a shortcut into `Overview -> Events` for the full event log. On mount the stream's backfill snapshot is merged *under* any live rows already buffered (2026-09-02), so events that fire during the first fetch are no longer dropped.
 
@@ -13,13 +13,13 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | Tab | Behavior | Implementation |
 | --- | --- | --- |
 | Live Stream | Rolling 24h real-time event stream. The Type column shows the raw event type on a single line (e.g. `document.edited`); the Source column resolves `persona:<id-or-name>` values to the persona's icon + name (other sources keep their cloud/relay glyph). JSON highlighting + detail modal. **System operations surface here too** — e.g. `dev_tools.context_scan_started` / `dev_tools.context_scan_completed` are published to the bus by every context-map scan (manual or triggered) with no target persona, so they appear as observable lifecycle markers (icons in `sub_live_stream/eventTypeMeta.ts`). | `sub_live_stream` |
-| Speed Limits | Rate-limit dashboard over trigger/event activity | `sub_speed_limits/RateLimitDashboard.tsx` |
-| Test | Manual event test surface | `sub_test/TestTab.tsx` |
+| Speed Limits | Counts the triggers with a rate limit configured. Nothing records firings yet and the backend does not read these limits, so running, queued and throttled stay at zero and no run is limited | `sub_speed_limits/RateLimitDashboard.tsx` |
+| Test | Manual event test surface. Its Listeners panel names subscriptions and `event_listener` triggers for the chosen type (at most 500 of each are read), and omits its "no listener" sentence when either read failed | `sub_test/TestTab.tsx` |
 | Local Relay | Smee relay control and switch-back to live stream | `sub_smee_relay/SmeeRelayTab.tsx` |
 | Cloud Events | Dev-only cloud webhook relay status | `sub_cloud_webhooks/CloudWebhooksTab.tsx` |
 | Dead Letter Queue | Dev-only failed event review with checkbox multi-select, bulk retry/discard, event-type/source/error/age filters, and a Group-by-error view that clusters rows by Jaccard similarity so an operator can retry-or-discard an entire failure mode at once | `sub_dead_letter/DeadLetterTab.tsx` |
 | Chain Studio | Switchboard for composing trigger chains without a canvas: a sources rail (9 signal types + persona completions), a targets rail, and a routes ledger in between. Both rails are **hidden-by-default overlay drawers** — each has its own edge toggle button (`aria-expanded`/`aria-label`) and opens independently, overlaying the ledger rather than reflowing it, so opening a rail never resizes the canvas underneath; Escape closes an open rail. The ledger column is the sole flex child and always owns the full width. The targets rail has two tabs: **Personas** (compact name + description cards — persona routes stage into a localStorage draft) and **System events** (built-in operations: **Context Scan Update** and **Memory Reflection**). Arm a Schedule or Event Listener source + a System event target and a commit modal captures the op params (project for context scan; an agent-or-team scope for memory reflection) + trigger config (cadence cron, or the event type to listen for) and persists a real **`SystemOpAutomation`** — a trigger → built-in-op binding the backend scheduler runs (no persona involved). Committed automations show in an "Active system events" panel with enable / run-now / delete. Persona→persona routes carry a cyclable run condition and, via a per-route **Save** (or **Save all**), commit to a real `chain` trigger on the target persona (condition any / success / failure / output-match). Picking the **output match** condition reveals inline JSONPath + expected-value fields and commits as the backend `jsonpath` chain condition. Signal-source routes (schedule / webhook / polling / event listener / file watcher / clipboard / app focus / composite) save through a **configure-&-commit modal** that hosts the full trigger form locked to the source's type — same per-type config and validation as the classic form (cron preview, timezone, secrets) — and creates the trigger on the route's target persona. **Save all** covers direct-committable routes only (signal-source routes need the interactive config step). Below the switchboard, a collapsible **Existing routes** section embeds the live, event-centric inventory of all current routing with inline management (add-listener, disconnect, rename event) — the routing view under `sub_studio/routing/` (formerly the standalone Builder tab, then a "Routes" sub-tab; both retired). It's **one surface** now — no Compose/Routes sub-tab switcher — and committing a route in the switchboard refreshes the inventory immediately, with a live route-count shown in the section header. | `sub_studio/TriggerStudioCanvas.tsx`, `sub_studio/StudioPatchbay.tsx`, `sub_studio/StudioTriggerCommitModal.tsx`, `sub_studio/routing/`, `sub_studio/system_ops/`, `sub_studio/libs/` |
-| — System operations | A `SystemOpAutomation` (`system_op_automations` table) binds a trigger to a registered backend op that is **not** a persona execution. The catalog + runner live in `engine/system_ops.rs` (`run_op`, `run_due_schedule_automations`, `dispatch_event_automations`); the background event-bus tick runs due **schedule** rows (cron) and matches **event** rows against live bus events. IPC: `system_ops_list_kinds` / `_list_automations` / `_create_automation` / `_set_enabled` / `_delete_automation` / `_run_now`. The first op, `context_scan`, calls the existing `launch_context_scan` (incremental). The second, `memory_reflection`, enqueues a `memory_reflection_run` / `team_memory_reflection_run` background job (params `personaId` or `teamId`) — the up-to-8-minute CLI pipeline runs asynchronously and its output is a proposal reviewed in Overview → Memories, so a scheduled reflection can never mutate memories unattended. The third, **`health_ingest`** (params `projectId`), drives the findings loop (`docs/plans/dev-findings-loop.md`): it sweeps every sensor for new findings **and verifies the ones already shipped** — did the number actually move? Unlike its siblings it does NOT reimplement its work in Rust: the five emitters, the telemetry adapters, the verdict engine and the passport derive are all TypeScript, so the op emits a `health-ingest-requested` event and the app runs the sweep it already owns. Maintaining a second Rust implementation of the same thresholds could let the two silently diverge — precisely the bug class the findings loop exists to catch. The cost of that choice, stated plainly: **the sweep only runs while the app is open** — which is already true of the whole scheduler (an in-app tick, not a daemon), so a schedule that comes due while the app is closed fires on next launch. | `commands/infrastructure/system_ops.rs`, `db/repos/system_ops.rs` |
+| — System operations | A `SystemOpAutomation` (`system_op_automations` table) binds a trigger to a registered backend op that is **not** a persona execution. The catalog + runner live in `engine/system_ops.rs` (`run_op`, `run_due_schedule_automations`, `dispatch_event_automations`); the background event-bus tick runs due **schedule** rows (cron) and matches **event** rows against live bus events. IPC: `system_ops_list_kinds` / `_list_automations` / `_create_automation` / `_set_enabled` / `_delete_automation` / `_run_now`. The first op, `context_scan`, calls the existing `launch_context_scan` (incremental). The second, `memory_reflection`, enqueues a `memory_reflection_run` / `team_memory_reflection_run` background job (params `personaId` or `teamId`) — the up-to-8-minute CLI pipeline runs asynchronously and its output is a proposal reviewed in Overview → Memories, so a scheduled reflection can never mutate memories unattended. The third, **`health_ingest`** (params `projectId`), drives the findings loop (`docs/features/plugins/dev tools/findings-loop.md`): it sweeps every sensor for new findings **and verifies the ones already shipped** — did the number actually move? Unlike its siblings it does NOT reimplement its work in Rust: the five emitters, the telemetry adapters, the verdict engine and the passport derive are all TypeScript, so the op emits a `health-ingest-requested` event and the app runs the sweep it already owns. Maintaining a second Rust implementation of the same thresholds could let the two silently diverge — precisely the bug class the findings loop exists to catch. The cost of that choice, stated plainly: **the sweep only runs while the app is open** — which is already true of the whole scheduler (an in-app tick, not a daemon), so a schedule that comes due while the app is closed fires on next launch. | `commands/infrastructure/system_ops.rs`, `db/repos/system_ops.rs` |
 > **Findings-loop dispatch (`signal_dispatch_runner` / `signal_dispatch_fleet`).** Two
 > system ops that get work started on a finding. They differ ONLY in who does the work:
 > **runner** hands it to the Dev Task Runner (autonomous — it builds and PRs; *"let the
@@ -38,7 +38,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 > ops; an approval-mode run records `held` and the human acts from Idea Triage.)
 
 > **Findings-loop signals (`signal.raised` / `signal.verified`).** The findings loop
-> (`docs/plans/dev-findings-loop.md`) publishes onto the bus like any other source, so
+> (`docs/features/plugins/dev tools/findings-loop.md`) publishes onto the bus like any other source, so
 > findings are routable in Chain Studio exactly like a webhook or a schedule.
 > `signal.raised` fires when a sensor raises a finding; `signal.verified` fires when a
 > shipped finding is re-measured and gets its verdict (`cleared` / `moved` /
@@ -64,17 +64,17 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 > NOT cover `event_listener` triggers (internal chain steps reacting to persona
 > events), where surfacing a control the run-gate can't honor would be a worse,
 > lying signal. **`dry_run`:** at the event-bus execution-creation point
-> (`engine/background.rs`) the launched run is flagged `is_simulation`, so
+> (`src-tauri/src/engine/background/event_bus.rs`) the launched run is flagged `is_simulation`, so
 > dispatch suppresses real outbound notification/connector delivery — the run is
 > observable but inert (both scheduler and webhook fires). **`approval`:** a
 > scheduler trigger holds at its tick (the event is never published); a webhook
 > trigger publishes its event directly, so its hold happens at dispatch
-> (`engine/background.rs`, once per event before any match). Either way a
+> (`src-tauri/src/engine/background/event_bus.rs`, once per event before any match). Either way a
 > `pending_trigger_fires` row is recorded and the fire is held until a human
 > resolves it (`resolve_pending_trigger_fire` republishes the held event on
 > approve, discards on reject). The trigger detail drawer exposes the mode
 > (`UnattendedModeSection`, shown for schedule/polling/webhook), the trigger list
-> surfaces held fires (`PendingTriggerApprovals`) + a per-row mode badge.
+> surfaces held fires (`PendingTriggerApprovals`, where a discard asks first and both outcomes toast) + a per-row mode badge.
 > Commands: `set_trigger_unattended_mode` / `list_pending_trigger_fires` /
 > `resolve_pending_trigger_fire`.
 
@@ -121,10 +121,10 @@ distributed inside each release with **no cloud dependency**. Three stages:
    emits the watch-list manifest (`scripts/events/connector-docs.manifest.json`,
    copied into `pumper/catalog/connector-docs.json`), merges detected changes
    into the durable ledger `scripts/events/connector-events.ledger.json`, and
-   code-generates `src-tauri/src/db/builtin_shared_events.rs` (one catalog feed
+   code-generates `src-tauri/db/src/builtin_shared_events.rs` (one catalog feed
    per public-docs connector + the baked firings). The dev reviews the ledger +
    `.rs` diff and commits → it ships in the next release.
-3. **Consumption (shipped app).** On startup `db/mod.rs::seed_builtin_shared_events`
+3. **Consumption (shipped app).** On startup `src-tauri/db/src/lib.rs::seed_builtin_shared_events`
    seeds `shared_event_catalog` (feeds) + `shared_event_firings` (baked changes).
    A user subscribes to *"ElevenLabs API updates"* in the Marketplace;
    `engine/shared_event_local_relay.rs` delivers unseen firings (`seq` >
@@ -135,7 +135,7 @@ distributed inside each release with **no cloud dependency**. Three stages:
 The firing payload is `{ connector, label, docs_url, detected_at, summary,
 tags[], severity, release_version }`. This is independent of the cloud relay
 (`engine/shared_event_relay.rs`), which remains as a secondary path for
-cloud-fed feeds. Full design: [`docs/plans/curated-connector-events.md`](../../plans/curated-connector-events.md).
+cloud-fed feeds.
 
 ### Feed → project routing + autonomous impact sessions
 
@@ -182,7 +182,6 @@ feed + target persona and the commit path writes an `event_listener` trigger on
 `reconcile_signal_feeds` re-registers feeds for any pre-existing/seeded pipeline at
 startup. A persona reacting to a scrape Signal pulls the records with the
 `query_dataset` MCP tool (the one scraper tool kept after the connector pivot).
-Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-feasibility.md) (Phase 1c).
 
 ## Trigger editor mechanics
 
@@ -223,7 +222,7 @@ Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-
   dispatch predicates (`get_due`, `get_enabled_by_type`) read — rather than
   `enabled`, which neither reads.
 - `NlTriggerInput` and `nlTriggerParser.ts` translate natural-language schedule text into structured trigger config.
-- `TriggerSchedulePreview`, `RadialCountdownRing`, and `TriggerCountdown` make schedule timing visible before and after save.
+- `TriggerSchedulePreview` makes schedule timing visible before save.
 - `TriggerExecutionHistory` links a trigger back to executions it caused.
 - `DryRunResultView` displays backend dry-run feedback.
 
@@ -240,7 +239,7 @@ Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-
 
 Every event that reaches the bus and does *not* start an execution now records **why**, as a machine token in
 `persona_events.error_message` (an existing column — no migration). The dispatch loop accumulates tokens per event
-(`EventGateReason` / `EventGateLedger` in `engine/background.rs`) and writes them comma-joined at the terminal status
+(`EventGateReason` / `EventGateLedger` in `src-tauri/src/engine/background/event_bus.rs`) and writes them comma-joined at the terminal status
 write. Tokens are language-agnostic and resolved for display through `tokenLabel(t, 'event_reason', …)`; Rust never
 emits display English.
 

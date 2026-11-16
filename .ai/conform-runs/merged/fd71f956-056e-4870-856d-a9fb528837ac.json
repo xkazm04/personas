@@ -1,0 +1,140 @@
+{
+  "schema": "conform-run/1",
+  "worker": "fd71f956-056e-4870-856d-a9fb528837ac",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-11-09T01:04:12.260835+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "companions-page",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/curator/council/verdict/verdictModel.ts:26 An unparseable must_address blob becomes an empty list, and the verdict card then states that the council asks for nothing, so a hole in the instrument reads as a clean result.",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/curator/council/verdict/verdictModel.ts:26 parseArray returns [] on a parse failure, and MustPreview.tsx:27 renders en.json must_none, 'The council asks for nothing before a decision.' Not fabricating items is right, but the unreadable state needs its own outcome. Elsewhere the context does this correctly: watchedModel.ts:34 reads stale or unmeasured as 'open', never green."
+        },
+        {
+          "technique": "advancement-evidence-fields",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/curator/council/queue/laneModel.ts:51 A rubric member with no record gets an explicit not_run state rather than a blank, and line 54 maps an unrecognised state to unmeasured, so each subject's row uses a closed vocabulary."
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/curator/council/verdict/MustPreview.tsx:51 The two-card cap at line 36 is display only: the full count renders at line 32 and the remainder is stated here, so the cap is not consumed as data."
+        }
+      ]
+    },
+    {
+      "context": "agents-connectors",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:96 The connector tab projects a weaker policy than the run gate enforces: it says an unhealthy connector will attempt execution and evaluates only link and probe outcome, while the gate refuses a non-simulation run for a last-failed, empty or edited-since-success credential unless a CLI fallback is authenticated.",
+      "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:96 executions.rs:265-292 refuses via persona_live_blockers, which reaches credential_is_usable (connector_readiness.rs:1022-1092) with three conditions. deriveReadiness (line 107) reads only credentialId and probe outcome, so a success older than a field edit still shows healthy, and field edits do not clear the ledger. isExecutionReady (line 135) returns true for unhealthy and has only test callers."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:122 A probe that never reached the service is displayed and counted as its own state, and summarizeTestAll (line 188) keeps it out of the regressed and failing counts. This judges the surface only; how the backend gate treats an unreachable probe was not traced."
+        }
+      ]
+    },
+    {
+      "context": "glyph-persona-card",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 The dial offers an override that advances an agent past a failed or skipped screening, but the advancing act records nothing about the override, so the agent's record cannot show that it went live over a failed obligation.",
+      "techniques": [
+        {
+          "technique": "advancement-evidence-fields",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout.tsx:143 Force is a client-only bypass (useLifecycle.ts:310): build_sessions.rs has no force parameter and the promote path writes no override marker. personas.last_test_report keeps a report from the test step (build_sessions.rs:854-867), but that is not written by the advancing act and does not exist for a skipped test. Line 128 stamps premiere as issued whether or not the screening passed."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "agents-components-allpersonas",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "shared-components-layout",
+      "reason": "withdrawn after review: reviewer (sonnet): The not-applicable anchor, DecisionRow.tsx:2, is a catalog docstring in the decisions directory (it isn't among the listed layout files) and does not show that nothing in the context can refuse a change. The second anchor, useSectionScrollSpy.ts:163, is an eslint-disable comment, which shows no abse"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-09T01:04:12.260835+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "advancement-evidence-fields",
+        "policy-projection",
+        "unmeasurable-criteria"
+      ],
+      "deviations": 1,
+      "context": "companions-page",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T01:04:12.260835+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "policy-projection",
+        "unmeasurable-criteria"
+      ],
+      "deviations": 1,
+      "context": "agents-connectors",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T01:04:12.260835+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "waiver-names-its-finding"
+      ],
+      "deviations": 0,
+      "context": "shared-components-layout",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T01:04:12.260835+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "advancement-evidence-fields"
+      ],
+      "deviations": 1,
+      "context": "glyph-persona-card",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

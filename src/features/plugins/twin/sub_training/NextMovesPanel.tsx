@@ -8,6 +8,7 @@ import { TRAINING_TOPIC_PRESETS, TRAINING_TOPIC_WINDOW } from './useTrainingSess
 import { scoreTopicCoverage, topicByCommunication, type PresetId } from './topicCoverage';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /**
  * "Where to go next" panel rendered on the training completion screen.
@@ -31,12 +32,12 @@ const TOPIC_ICONS: Record<string, LucideIcon> = {
 };
 
 const TOPIC_TINTS: Record<string, string> = {
-  background: 'border-violet-500/25 bg-violet-500/10 text-violet-300',
-  opinions: 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-  communication: 'border-cyan-500/25 bg-cyan-500/10 text-cyan-300',
-  values: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-  expertise: 'border-indigo-500/25 bg-indigo-500/10 text-indigo-300',
-  personal: 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+  background: 'border-hair-2 bg-surface-2 text-ink-2',
+  opinions: 'border-status-warning/25 bg-status-warning/10 text-status-warning',
+  communication: 'border-hair-2 bg-surface-2 text-ink-2',
+  values: 'border-status-success/25 bg-status-success/10 text-status-success',
+  expertise: 'border-hair-2 bg-surface-2 text-ink-2',
+  personal: 'border-status-error/25 bg-status-error/10 text-status-error',
 };
 
 interface Scored {
@@ -108,8 +109,8 @@ export function NextMovesPanel({ onPick }: Props) {
   return (
     <section className="mt-8 rounded-card border border-primary/15 bg-card/40 overflow-hidden">
       <div className="px-5 py-3 border-b border-primary/10 flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-violet-300" />
-        <span className="text-[10px] uppercase tracking-[0.2em] text-violet-300 font-medium">
+        <Sparkles className="w-4 h-4 text-ink-2" />
+        <span className="typo-eyebrow text-ink-2">
           {t.training.nextMovesHeading}
         </span>
       </div>
@@ -120,23 +121,22 @@ export function NextMovesPanel({ onPick }: Props) {
             const Icon = r.icon;
             const label = t.training[r.labelKey];
             return (
-              <button
+              <PressSurface
                 key={r.id}
-                type="button"
-                onClick={() => onPick(r.id)}
-                className={`group flex items-center gap-3 p-3 rounded-card border transition-all hover:shadow-elevation-1 text-left ${r.tint}`}
+                onPress={() => onPick(r.id)}
+                className="group flex items-center gap-3 p-3 rounded-card border border-hair"
               >
                 <span className="w-9 h-9 rounded-interactive bg-card/60 border border-primary/15 flex items-center justify-center flex-shrink-0">
                   <Icon className="w-4 h-4" />
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block typo-card-label truncate">{label}</span>
-                  <span className="block text-[11px] text-foreground mt-0.5">
+                  <span className="block typo-caption text-foreground mt-0.5">
                     {tx(t.training.nextMovesCoverage, { count: r.count })}
                   </span>
                 </span>
                 <ArrowRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
-              </button>
+              </PressSurface>
             );
           })}
         </div>

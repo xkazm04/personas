@@ -30,15 +30,15 @@ export default function ScanOverlay({
     <div
       className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 surface-blur-modal"
     >
-      <div className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-lg shadow-elevation-4">
+      <div className="bg-background border border-hair rounded-card p-6 w-full max-w-lg shadow-elevation-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-modal bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-              <LoadingSpinner size="lg" className="text-amber-400" />
+            <div className="w-10 h-10 rounded-modal bg-surface-2 border border-hair flex items-center justify-center">
+              <LoadingSpinner size="lg" className="text-status-warning" />
             </div>
             <div>
               <h3 className="typo-section-title">{t.plugins.dev_tools.scanning_codebase}</h3>
-              <p className="text-md text-foreground">{t.plugins.dev_tools.analyzing_codebase}</p>
+              <p className="typo-body text-foreground">{t.plugins.dev_tools.analyzing_codebase}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon-sm" onClick={onCancel} title={t.plugins.dev_tools.cancel_scan}>
@@ -49,7 +49,7 @@ export default function ScanOverlay({
         {/* Terminal output */}
         <div
           ref={scrollRef}
-          className="bg-black/40 border border-primary/10 rounded-modal p-3 h-56 overflow-y-auto font-mono text-[11px] leading-relaxed"
+          className="bg-black/40 border border-hair rounded-modal p-3 h-56 overflow-y-auto typo-caption"
         >
           {lines.length === 0 ? (
             <p className="text-foreground">{t.plugins.dev_tools.waiting_for_output}</p>
@@ -62,15 +62,15 @@ export default function ScanOverlay({
                 key={i}
                 className={`${
                   line.startsWith('[Milestone]')
-                    ? 'text-amber-400'
+                    ? 'text-status-warning'
                     : line.startsWith('[Created]')
-                    ? 'text-emerald-400'
+                    ? 'text-status-success'
                     : line.startsWith('[Tool]')
-                    ? 'text-blue-400/60'
+                    ? 'text-status-info'
                     : line.startsWith('[Error]')
-                    ? 'text-red-400'
+                    ? 'text-status-error'
                     : line.startsWith('[Complete]')
-                    ? 'text-emerald-300 font-medium'
+                    ? 'text-status-success font-medium'
                     : 'text-foreground'
                 }`}
               >
@@ -80,7 +80,7 @@ export default function ScanOverlay({
           )}
         </div>
 
-        <div className="flex items-center gap-2 mt-3 text-[10px] text-foreground">
+        <div className="flex items-center gap-2 mt-3 typo-caption text-foreground">
           <Terminal className="w-3 h-3" />
           <span>{lines.length} lines</span>
         </div>

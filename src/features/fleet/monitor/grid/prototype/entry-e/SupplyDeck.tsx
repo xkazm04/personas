@@ -60,7 +60,7 @@ function CapRack({
       </header>
       <div className="flex items-end gap-2">
         <Tooltip content={hint}>
-          <span className={`typo-data-lg tabular-nums ${over ? 'text-status-warning' : 'text-foreground'}`} data-testid="fleet-max-parallel-readout">
+          <span className={`typo-data-lg num ${over ? 'text-status-warning' : 'text-foreground'}`} data-testid="fleet-max-parallel-readout">
             <Numeric value={running} /><span className="typo-data"> / <Numeric value={cap.cap} /></span>
           </span>
         </Tooltip>
@@ -159,7 +159,7 @@ function StewardsPlate({ onOpenOrchestration, stewards }: {
           </AsyncButton>
         </span>
       </Tooltip>
-      {verdict && <p className="typo-caption tabular-nums" data-testid="entry-e-autopilot-phrase">{verdict}</p>}
+      {verdict && <p className="typo-caption num" data-testid="entry-e-autopilot-phrase">{verdict}</p>}
       <StewardsList doors={stewards} />
     </section>
   );

@@ -32,6 +32,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { listCredentials } from '@/api/vault/credentials';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 type ModalPhase = 'form' | 'created';
 
@@ -278,7 +279,7 @@ export function ProjectModal({
       onClose={handleClose}
       titleId="dev-tools-project-modal-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
+      panelClassName="bg-background border border-hair rounded-card p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
     >
       <div>
         {phase === 'form' ? (
@@ -341,28 +342,26 @@ export function ProjectModal({
 
             {/* Codebase connector opt-in (create mode, last step only) */}
             {!isEdit && isLastStep && (
-              <button
-                type="button"
-                onClick={() => setCreateConnector((v) => !v)}
+              <PressSurface
+                onPress={() => setCreateConnector((v) => !v)}
                 aria-pressed={createConnector}
-                className={`mt-4 w-full flex items-start gap-3 px-3 py-3 text-left border rounded-input transition-colors ${
-                  createConnector ? 'bg-amber-500/5 border-amber-500/25' : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
-                }`}
+                className="mt-4 w-full flex items-start gap-3 px-3 py-3 border border-hair rounded-input"
+                selected={createConnector}
               >
                 {createConnector
-                  ? <CheckCircle2 className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                  : <span className="w-4 h-4 rounded border border-primary/30 flex-shrink-0 mt-0.5" />}
+                  ? <CheckCircle2 className="w-4 h-4 text-ink-2 flex-shrink-0 mt-0.5" />
+                  : <span className="w-4 h-4 rounded-interactive border border-primary/30 flex-shrink-0 mt-0.5" />}
                 <span className="min-w-0">
                   <span className="typo-caption text-foreground">{dp.create_codebase_connector_label}</span>
                   <span className="block typo-caption text-foreground mt-0.5">
                     {dp.create_codebase_connector_desc.replace('{name}', name.trim() || dp.project_name)}
                   </span>
                 </span>
-              </button>
+              </PressSurface>
             )}
 
             {/* Footer */}
-            <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-primary/10">
+            <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-hair">
               <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
               <div className="flex items-center gap-2">
                 {stepIndex > 0 && (
@@ -372,8 +371,7 @@ export function ProjectModal({
                 )}
                 {!isLastStep ? (
                   <Button
-                    variant="accent"
-                    tone="warning"
+                    variant="secondary"
                     size="sm"
                     iconRight={<ArrowRight className="w-3.5 h-3.5" />}
                     disabled={stepIndex === 0 && !stage0Complete}
@@ -383,8 +381,7 @@ export function ProjectModal({
                   </Button>
                 ) : (
                   <Button
-                    variant="accent"
-                    tone="warning"
+                    variant="secondary"
                     size="sm"
                     icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     disabled={!canSubmit}
@@ -399,17 +396,17 @@ export function ProjectModal({
         ) : (
           /* Post-creation step: offer context scan */
           <div className="text-center py-2">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+            <div className="w-14 h-14 rounded-card bg-surface-1 border border-hair flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-status-success" />
             </div>
             <h2 className="typo-section-title mb-1">{dp.project_created}</h2>
             <p className="typo-caption text-foreground mb-6">
               <span className="font-medium text-foreground">{createdProject?.name}</span> {dp.project_ready_desc}
             </p>
 
-            <div className="bg-primary/5 border border-primary/10 rounded-modal p-4 mb-6 text-left">
+            <div className="bg-surface-1 border border-hair rounded-modal p-4 mb-6 text-left">
               <div className="flex items-start gap-3">
-                <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <Search className="w-5 h-5 text-ink-2 flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="typo-card-label mb-1">{dp.generate_context_map}</h4>
                   <p className="typo-caption text-foreground">{dp.generate_context_map_desc}</p>
@@ -419,7 +416,7 @@ export function ProjectModal({
 
             <div className="flex justify-center gap-2">
               <Button variant="ghost" size="sm" onClick={handleClose}>{dp.skip_for_now}</Button>
-              <Button variant="accent" tone="warning" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={handleScanNow} data-testid="dev-project-scan-now">
+              <Button variant="secondary" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={handleScanNow} data-testid="dev-project-scan-now">
                 {dp.scan_codebase}
               </Button>
             </div>

@@ -7,6 +7,7 @@ import { Check, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS, type Workspace } from './workspaceStore';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
   ws: Workspace;
@@ -47,7 +48,7 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
   return (
     <div
       ref={ref}
-      className={`z-40 w-[236px] p-2.5 rounded-card border border-primary/20 bg-secondary/95 backdrop-blur-sm shadow-elevation-4 space-y-2 ${className}`}
+      className={`z-40 w-[236px] p-2.5 rounded-card border border-hair bg-surface-1 backdrop-blur-sm shadow-elevation-4 space-y-2 ${className}`}
       onClick={(e) => e.stopPropagation()}
       data-testid={`workspace-edit-${ws.id}`}
     >
@@ -60,45 +61,42 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
           if (e.key === 'Enter') { commitName(); onClose(); }
         }}
         placeholder={COPY.namePlaceholder}
-        className="w-full px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40"
+        className="w-full px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-hair text-foreground outline-none focus:border-primary/40"
       />
       <div className="flex items-center gap-1.5 flex-wrap">
         {WORKSPACE_COLORS.map((c) => (
-          <button
+          <Button variant="secondary" size="xs"
             key={c}
             type="button"
             onClick={() => recolorWorkspace(ws.id, c)}
             aria-label={`Colour ${c}`}
-            className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 focus-ring"
+            className="w-5"
             style={{ background: c, borderColor: ws.color === c ? 'var(--foreground)' : 'transparent' }}
           />
         ))}
       </div>
       <div className="flex items-center gap-1">
-        <button
-          type="button"
+        <Button
+          variant="danger"
+          size="xs"
           onClick={() => {
             if (!confirming) { setConfirming(true); return; }
             deleteWorkspace(ws.id);
             onClose();
           }}
-          className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive typo-caption transition-colors focus-ring ${
-            confirming
-              ? 'bg-status-error/15 text-status-error'
-              : 'text-status-error/80 hover:bg-status-error/10 hover:text-status-error'
-          }`}
+          className={confirming ? 'bg-status-error/15' : ''}
         >
           <Trash2 className="w-3.5 h-3.5" aria-hidden />
           {confirming ? COPY.deleteConfirm : COPY.delete}
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="icon-sm"
           type="button"
           onClick={() => { commitName(); onClose(); }}
           aria-label={COPY.done}
-          className="ml-auto p-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring"
+          className="ml-auto"
         >
           <Check className="w-4 h-4" aria-hidden />
-        </button>
+        </Button>
       </div>
     </div>
   );

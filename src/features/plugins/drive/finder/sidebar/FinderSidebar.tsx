@@ -41,10 +41,10 @@ export function FinderSidebar({
     >
       <div className="relative flex-1 min-h-0">
         {topShadow && (
-          <div aria-hidden className="absolute inset-x-0 top-0 h-4 z-10 bg-gradient-to-b from-background to-transparent pointer-events-none" />
+          <div aria-hidden className="absolute inset-x-0 top-0 h-4 z-10 bg-surface-1 from-background to-transparent pointer-events-none" />
         )}
         {bottomShadow && (
-          <div aria-hidden className="absolute inset-x-0 bottom-0 h-4 z-10 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+          <div aria-hidden className="absolute inset-x-0 bottom-0 h-4 z-10 bg-surface-1 from-background to-transparent pointer-events-none" />
         )}
         <div ref={ref} className="h-full overflow-y-auto pb-3">
           <LocationsSection drive={drive} />
@@ -68,7 +68,7 @@ export function FinderSidebar({
               {tx(f.storage_used, { used: driveFormatBytes(drive.storage.usedBytes) })}
             </span>
             {drive.storage.isDev && (
-              <span className="typo-caption px-1.5 rounded-full bg-status-warning/15 text-status-warning">
+              <span className="typo-caption px-1.5 rounded-interactive bg-status-warning/15 text-status-warning">
                 {f.storage_dev}
               </span>
             )}

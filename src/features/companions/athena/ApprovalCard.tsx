@@ -6,6 +6,7 @@ import type { ApprovalOutcome, PendingApproval } from '@/api/companion';
 import { actionLabel } from './athenaLabels';
 import { useApprovalCard } from './useApprovalCard';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Inline card rendered in the chat for each `propose_action` op Athena
  * emits. Approving runs the underlying action; rejecting just closes the
@@ -24,7 +25,7 @@ export function ApprovalCard({
 
   return (
     <div
-      className="rounded-card border border-primary/40 bg-background/60 [[data-theme^='light']_&]:bg-primary/[0.06] p-3.5 space-y-3 typo-body shadow-elevation-1"
+      className="rounded-card border border-primary/40 bg-background/60 [[data-theme^='light']_&]:bg-surface-2 p-3.5 space-y-3 typo-body shadow-elevation-1"
       data-companion-approval
       data-companion-approval-id={approval.id}
       data-companion-approval-action={approval.action}
@@ -33,12 +34,13 @@ export function ApprovalCard({
         <span className="inline-flex items-center gap-1.5 typo-caption text-primary">
           {t.athena.proposed_action}
         </span>
-        <span
-          className="typo-caption text-foreground/85 px-2 py-0.5 rounded-input bg-foreground/5"
-          title={approval.action}
-        >
-          {actionLabel(t, approval.action)}
-        </span>
+        <Tooltip content={approval.action}>
+          <span
+            className="typo-caption text-ink-2 px-2 py-0.5 rounded-input bg-foreground/5"
+          >
+            {actionLabel(t, approval.action)}
+          </span>
+        </Tooltip>
       </div>
 
       {approval.rationale && (
@@ -59,13 +61,13 @@ export function ApprovalCard({
       </details>
 
       {error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 typo-caption text-rose-400">
+        <div className="rounded-card border border-status-error/30 bg-status-error/10 px-2.5 py-1.5 typo-caption text-status-error">
           {error}
         </div>
       )}
 
       {failedOutcome && (
-        <div className="rounded-card border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 typo-caption text-amber-300">
+        <div className="rounded-card border border-status-warning/30 bg-status-warning/10 px-2.5 py-1.5 typo-caption text-status-warning">
           {t.athena.approved_failed.replace(
             '{message}',
             failedOutcome,

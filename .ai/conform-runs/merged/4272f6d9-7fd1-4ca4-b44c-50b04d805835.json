@@ -1,0 +1,75 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4272f6d9-7fd1-4ca4-b44c-50b04d805835",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T01:51:29.882489+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "commands-design",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:1372 Arm B claims a slow-but-producing stream survives the shipped ceiling, using real tokio sleeps (8 x 60 ms gaps against a 200 ms lease and a 600 ms ceiling, no paused clock, no tokio test-util), so timer stretch on a loaded or coarse-timer Windows runner can turn it red with no defect present: a stopwatch, not a schedule assertion.",
+   "techniques": [
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:1372 The cutoff and survival verdicts come from wall-clock sleeps with only ~120 ms total headroom. tokio::time::pause or start_paused would make them about the schedule. prompt_sanitizer.rs:343 (`elapsed.as_millis() < 250`) is a further wall-clock bound, a perf guard on an uncontrolled host."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:1361 Arm A re-runs the replaced behaviour and asserts that it kills the healthy stream, so the test is proved able to fail."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:781 Each DB-touching test builds its own private test pool, so nothing is inherited from a sibling test."
+    }
+   ],
+   "registryProposal": "assert-the-schedule-not-the-stopwatch could name the async-runtime remedy explicitly (a paused/virtual runtime clock such as tokio start_paused or vitest fake timers) as the default for lease/ceiling tests, before span recording."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "triggers-triggers",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "shared-components-layout",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "lib-utils-sanitizers",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "stores-slices-overview",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T01:51:29.882489+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "isolation-lanes",
+    "negative-control-tests"
+   ],
+   "deviations": 1,
+   "context": "commands-design",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

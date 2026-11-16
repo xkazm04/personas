@@ -53,6 +53,7 @@ function renderPage(page: CompanionsPageId) {
     case 'athena:memory':
     case 'athena:voice':
     case 'athena:decisions':
+    case 'athena:standup':
       return <Route name="Athena"><AthenaPage /></Route>;
     case 'overseer:reviews':
       return <Route name="Overseer"><DirectorCoachingTab /></Route>;

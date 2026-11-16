@@ -48,6 +48,7 @@ import {
   useWorkspaceName, WorkspaceBadge, WorkspaceFrame, WorkspaceGroupMenu, WorkspaceInvitation,
   type ColumnMenuAnchor,
 } from './WorkspaceGroup';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export function TeamColumn({
   column, scoped, onToggleScope, width, renderRow, focusKey, staged, reducedMotion,
@@ -115,29 +116,27 @@ export function TeamColumn({
                 ? tx(t.plugins.dev_projects.project_off_hint, { project: name })
                 : tx(t.monitor.grid_column_scope, { project: name })}
           >
-            <button
-              type="button"
-              onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
+            <PressSurface
+              onPress={() => onToggleScope(column.teamId, column.teamName, column.cards)}
               onContextMenu={onContextMenu}
               aria-pressed={scoped}
               data-project-off={projectOff || undefined}
               data-testid="fleet-grid-column-header"
-              className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
-                scoped ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
-              }`}
+              className="flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5"
+              selected={scoped}
             >
               <span className={`min-w-0 flex-1 truncate typo-label ${projectOff ? 'opacity-55' : ''}`}>{name}</span>
               {workspaceId !== null && <WorkspaceBadge label={t.monitor.grid_column_workspace_badge} />}
               {projectOff && (
-                <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-status-warning/30 bg-status-warning/10 px-1.5 typo-caption text-status-warning">
+                <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-interactive border border-hair bg-surface-2 px-1.5 typo-caption text-status-warning">
                   <PowerOff className="h-2.5 w-2.5" aria-hidden />
                   {t.plugins.dev_projects.project_state_off}
                 </span>
               )}
-              <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
+              <span className="flex-shrink-0 typo-caption num opacity-50">
                 {column.cards.length}
               </span>
-            </button>
+            </PressSurface>
           </Tooltip>
         )}
         <span

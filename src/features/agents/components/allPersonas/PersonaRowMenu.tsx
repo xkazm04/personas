@@ -5,6 +5,7 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useMenuKeyboard } from '@/hooks/utility/interaction/useMenuKeyboard';
 import type { Persona } from '@/lib/bindings/Persona';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PersonaRowMenuProps {
   persona: Persona;
@@ -36,7 +37,7 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
 
   return (
     <div ref={ref} className="relative flex items-center justify-center w-full h-full">
-      <button
+      <Button
         ref={triggerRef}
         type="button"
         data-testid={`persona-row-menu-${persona.id}`}
@@ -47,16 +48,16 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="p-1 rounded-interactive text-foreground hover:bg-primary/[0.06] transition-colors focus-ring cursor-pointer"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
+        variant="ghost"
+        size="icon-sm"
+        icon={<MoreHorizontal className="w-4 h-4" />}
+      />
       {open && (
         <div
           ref={menuRef}
           role="menu"
           aria-label={t.agents.persona_list.more_actions}
-          className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card border border-primary/15 bg-background shadow-elevation-3 p-1"
+          className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card border border-hair bg-background shadow-elevation-3 p-1"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={onKeyDown}
         >

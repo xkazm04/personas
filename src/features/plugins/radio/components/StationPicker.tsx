@@ -8,6 +8,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { StationSourceKind } from '@/stores/slices/system/radioSlice';
 import type { Station } from '@/lib/bindings/Station';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 interface StationPickerProps {
   stations: Station[];
   currentStationId: string | null | undefined;
@@ -90,13 +93,11 @@ export default function StationPicker({
       station.source.kind === 'youtubeTracks' ? station.source.tracks.length : null;
     return (
       <li key={station.id}>
-        <button
-          type="button"
-          onClick={() => onPick(station.id)}
+        <PressSurface
+          onPress={() => onPick(station.id)}
           onContextMenu={(e) => onRowContextMenu(e, station.id)}
-          className={`w-full flex items-center gap-3 px-3 py-2 typo-body text-left transition-colors ${
-            active ? 'bg-secondary/40' : 'hover:bg-secondary/20'
-          }`}
+          className="w-full flex items-center gap-3 px-3 py-2 typo-body"
+          selected={active}
         >
           <span
             aria-hidden
@@ -107,7 +108,7 @@ export default function StationPicker({
             <div className="flex items-center gap-2 min-w-0">
               <p className="typo-body truncate">{station.name}</p>
               {station.sourceLabel && (
-                <span className="ml-auto shrink-0 typo-caption text-foreground px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
+                <span className="ml-auto shrink-0 typo-caption text-foreground px-1.5 py-0.5 rounded-interactive bg-secondary/30 flex items-center gap-1">
                   {isYt ? (
                     <Music className="w-3 h-3 text-foreground" />
                   ) : (
@@ -125,7 +126,7 @@ export default function StationPicker({
             </p>
           </div>
           {active && <Check className="w-4 h-4 text-foreground shrink-0" />}
-        </button>
+        </PressSurface>
       </li>
     );
   };
@@ -140,12 +141,14 @@ export default function StationPicker({
     const collapsed = collapsedSet.has(kind);
     return (
       <div key={kind}>
-        <button
+        <Button
           type="button"
           onClick={() => setSourceKindCollapsed(kind, !collapsed)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground hover:text-foreground/90 hover:bg-secondary/15 transition-colors"
           aria-label={t.radio.group_toggle_label}
           aria-expanded={!collapsed}
+          variant="ghost"
+          size="sm"
+          block
         >
           {collapsed ? (
             <ChevronRight className="w-3 h-3 shrink-0" />
@@ -153,11 +156,11 @@ export default function StationPicker({
             <ChevronDown className="w-3 h-3 shrink-0" />
           )}
           <Icon className="w-3 h-3 shrink-0 text-foreground" />
-          <span className="font-medium uppercase tracking-wide">{label}</span>
+          <span className="typo-eyebrow">{label}</span>
           <span className="ml-auto text-foreground tabular-nums">
             {tx(t.radio.group_count, { count: list.length })}
           </span>
-        </button>
+        </Button>
         {!collapsed && <ul className="py-1">{list.map(renderStation)}</ul>}
       </div>
     );
@@ -172,7 +175,7 @@ export default function StationPicker({
     >
       <div className="px-3 py-2 border-b border-primary/8 flex items-center gap-2">
         <Radio className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-caption text-foreground/85">
+        <span className="typo-caption text-ink-2">
           {t.radio.stations_label}
         </span>
       </div>
@@ -201,35 +204,25 @@ export default function StationPicker({
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            role="menuitem"
-            className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-foreground/85 hover:bg-secondary/30 transition-colors"
-            onClick={() => {
+          <PressSurface role="menuitem" onPress={() => {
               setStationDisabled(contextStation.id, true);
               setContextMenu(null);
-            }}
-          >
+            }} className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-ink-2">
             <EyeOff className="w-3.5 h-3.5 text-foreground" />
             {t.radio.row_menu_hide}
-          </button>
+          </PressSurface>
           {contextStation.sourceUrl && (
-            <button
-              type="button"
-              role="menuitem"
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-foreground/85 hover:bg-secondary/30 transition-colors"
-              onClick={() => {
+            <PressSurface role="menuitem" onPress={() => {
                 if (contextStation.sourceUrl) {
                   openExternalUrl(contextStation.sourceUrl).catch(
                     silentCatch('radio:open-source'),
                   );
                 }
                 setContextMenu(null);
-              }}
-            >
+              }} className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-ink-2">
               <ExternalLink className="w-3.5 h-3.5 text-foreground" />
               {t.radio.row_menu_open_source}
-            </button>
+            </PressSurface>
           )}
         </div>
       )}

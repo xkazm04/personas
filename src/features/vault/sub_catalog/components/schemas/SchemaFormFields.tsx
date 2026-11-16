@@ -1,7 +1,9 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useId } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SchemaFormConfig, SchemaSubType } from './schemaFormTypes';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface SchemaFormHeaderProps {
   config: SchemaFormConfig;
@@ -12,14 +14,15 @@ export function SchemaFormHeader({ config, onBack }: SchemaFormHeaderProps) {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3">
-      <button
+      <Button
         type="button"
         onClick={onBack}
         aria-label={t.common.back}
-        className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+        variant="ghost"
+        size="icon-sm"
       >
         <ArrowLeft className="w-4 h-4" />
-      </button>
+      </Button>
       {config.headerIcon}
       <div>
         <h3 className="typo-heading text-foreground">{config.title}</h3>
@@ -42,7 +45,7 @@ export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder
   return (
     <div>
       <label htmlFor={inputId} className="block typo-body text-foreground mb-1.5">
-        {nameLabel} <span className="text-red-400 ml-1">*</span>
+        {nameLabel} <span className="text-status-error ml-1">*</span>
       </label>
       <input
         id={inputId}
@@ -53,7 +56,7 @@ export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder
         aria-invalid={!!error}
         aria-describedby={error ? 'schema-form-error' : undefined}
         data-testid="vault-schema-name"
-        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-body focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-body focus-ring focus-visible:border-primary/40 transition-all placeholder:text-ink-3"
       />
     </div>
   );
@@ -71,7 +74,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
 
   return (
     <div data-testid="vault-schema-subtype">
-      <label className="block typo-heading uppercase text-foreground mb-3">
+      <label className="block typo-eyebrow text-foreground mb-3">
         {config.subTypeLabel}
       </label>
 
@@ -79,19 +82,18 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
         <>
           <div className="flex gap-2">
             {config.subTypes.map((st) => (
-              <button
+              <Button
                 key={st.id}
                 type="button"
-                aria-pressed={subTypeId === st.id}
+                pressed={subTypeId === st.id}
                 onClick={() => onSubTypeChange(st.id)}
-                className={`flex-1 px-4 py-2.5 rounded-modal typo-body border transition-all ${
-                  subTypeId === st.id
-                    ? config.subTypeActiveClass
-                    : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
-                }`}
+                variant={subTypeId === st.id ? 'accent' : 'secondary'}
+                tone={subTypeId === st.id ? 'highlight' : undefined}
+                size="md"
+                className="flex-1"
               >
                 {st.displayLabel ?? st.label}
-              </button>
+              </Button>
             ))}
           </div>
           <p className="mt-1.5 typo-body text-foreground">{activeSubType.description}</p>
@@ -99,23 +101,13 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
       ) : (
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
           {config.subTypes.map((st) => (
-            <button
-              key={st.id}
-              type="button"
-              aria-pressed={subTypeId === st.id}
-              onClick={() => onSubTypeChange(st.id)}
-              className={`text-left px-3 py-2.5 rounded-modal typo-body border transition-all ${
-                subTypeId === st.id
-                  ? config.subTypeActiveClass
-                  : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
-              }`}
-            >
+            <PressSurface key={st.id} selected={subTypeId === st.id} onPress={() => onSubTypeChange(st.id)} className={`px-3 py-2.5 rounded-modal typo-body text-foreground border ${subTypeId === st.id ? 'border-hair-2' : 'border-hair'}`}>
               <div className="typo-body flex items-center gap-2">
                 {st.color && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color }} />}
                 {st.label}
               </div>
               <div className="typo-body text-foreground mt-0.5">{st.description}</div>
-            </button>
+            </PressSurface>
           ))}
         </div>
       )}

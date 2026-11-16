@@ -14,6 +14,11 @@ export function useSharedEvents() {
   const [subscriptions, setSubscriptions] = useState<SharedEventSubscription[]>([]);
   const [activity, setActivity] = useState<SharedEventFeedActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  // The raw rejection of a failed catalog read, and of a failed subscriptions
+  // read: either makes the table say something false (no feeds; nothing watched).
+  // A failed activity read only blanks a cell, so it does not count.
+  const [catalogError, setCatalogError] = useState<unknown>(null);
+  const [subscriptionsError, setSubscriptionsError] = useState<unknown>(null);
 
   // Stale-response guard: a refresh re-runs `load` while the mount load may
   // still be in flight; the slower response must not clobber the newer one.
@@ -24,6 +29,8 @@ export function useSharedEvents() {
   const load = useCallback(async () => {
     const seq = ++loadSeqRef.current;
     setLoading(true);
+    setCatalogError(null);
+    setSubscriptionsError(null);
     // Catalog, watch-toggles, and last-change cells are independent lists.
     // Paint rows as soon as browseCatalog returns; merge subs/activity later.
     const catP = api
@@ -39,7 +46,10 @@ export function useSharedEvents() {
         if (seq !== loadSeqRef.current) return;
         setSubscriptions(subs);
       })
-      .catch(silentCatch('features/triggers/sub_shared/useSharedEvents:subs'));
+      .catch((err) => {
+        silentCatch('features/triggers/sub_shared/useSharedEvents:subs')(err);
+        if (seq === loadSeqRef.current) setSubscriptionsError(err);
+      });
     api
       .changeActivity()
       .then((act) => {
@@ -52,6 +62,7 @@ export function useSharedEvents() {
     } catch (err) {
       if (seq === loadSeqRef.current) {
         silentCatch('features/triggers/sub_shared/useSharedEvents:load')(err);
+        setCatalogError(err);
         setLoading(false);
       }
     }
@@ -77,12 +88,18 @@ export function useSharedEvents() {
     await load();
   }, [load]);
 
+  const subscribingRef = useRef(new Set<string>());
   const subscribe = useCallback(async (entryId: string) => {
+    // A double-click must not fire two subscribeFeed calls for one entry.
+    if (subscribingRef.current.has(entryId)) return;
+    subscribingRef.current.add(entryId);
     try {
       const sub = await api.subscribeFeed(entryId);
       setSubscriptions((prev) => [sub, ...prev]);
     } catch (e) {
       toastCatch('features/triggers/sub_shared/useSharedEvents:subscribe')(e);
+    } finally {
+      subscribingRef.current.delete(entryId);
     }
   }, []);
 
@@ -117,6 +134,10 @@ export function useSharedEvents() {
   return {
     catalog,
     loading,
+    /** The catalog's rejection wins whichever landed first; null when both read. */
+    loadError: catalogError ?? subscriptionsError,
+    /** Re-read the local catalog. Not `refresh`: the feeds are local, no cloud detour. */
+    reload: load,
     categories,
     refresh,
     subscribe,

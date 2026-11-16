@@ -51,7 +51,7 @@ export function BrowserBridgePanel() {
   return (
     <div data-testid="companion-browser-bridge-panel">
       <SectionCard title={c.browser_bridge_title} titleClassName="text-primary">
-      <p className="typo-caption text-foreground/70">{c.browser_bridge_desc}</p>
+      <p className="typo-caption text-ink-2">{c.browser_bridge_desc}</p>
 
       <div className="mt-3 flex items-center gap-2" data-testid="browser-bridge-status">
         <span
@@ -97,7 +97,7 @@ export function BrowserBridgePanel() {
           {c.browser_bridge_env_override}
         </p>
       )}
-      <p className="mt-3 typo-caption text-foreground/60">{c.browser_bridge_hint}</p>
+      <p className="mt-3 typo-caption text-ink-2">{c.browser_bridge_hint}</p>
       </SectionCard>
     </div>
   );

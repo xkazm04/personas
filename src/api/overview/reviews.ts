@@ -23,15 +23,6 @@ export const getDesignReview = (id: string) =>
 export const deleteDesignReview = (id: string) =>
   invoke<boolean>("delete_design_review", { id });
 
-export const startDesignReviewRun = (personaId: string, testCases: object[]) =>
-  invoke<{ run_id: string; total: number }>("start_design_review_run", {
-    personaId,
-    testCases,
-  });
-
-export const cancelDesignReviewRun = (runId: string) =>
-  invoke<void>("cancel_design_review_run", { runId });
-
 export const rebuildDesignReview = (id: string, userInstruction?: string) =>
   invoke<{ rebuild_id: string }>("rebuild_design_review", {
     id,

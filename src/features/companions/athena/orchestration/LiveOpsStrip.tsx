@@ -13,6 +13,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useOperativeMemoryStore } from './operativeMemoryStore';
 import { parseDigest, type ParsedOp, type ParsedSession } from './parseDigest';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 /**
  * D7 — Live ops view in the chat panel. Renders the operative-memory
  * digest (the same text Athena sees in her prompt every turn) as a
@@ -52,10 +56,12 @@ export function LiveOpsStrip() {
 
   return (
     <div className="border-b border-border/40 bg-secondary/10">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground hover:bg-secondary/30 transition-colors"
+        variant="ghost"
+        size="sm"
+        block
       >
         {expanded ? (
           <ChevronDown className="size-3.5 shrink-0" />
@@ -74,7 +80,7 @@ export function LiveOpsStrip() {
                 String(opCount),
               )}
         </span>
-      </button>
+      </Button>
       {expanded && (
         <div className="max-h-[40vh] overflow-y-auto px-3 py-2 space-y-1.5">
           {parsed.length > 0 ? (
@@ -111,23 +117,23 @@ function OpCard({
   const statusTone = toneForStatus(op.status);
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02]">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-start gap-1.5 px-2 py-1.5 typo-caption text-foreground hover:bg-foreground/[0.04] transition-colors rounded-interactive text-left"
+      <PressSurface
+        onPress={onToggle}
         aria-expanded={expanded}
         data-testid="companion-live-ops-op"
         data-op-id={op.id8}
+        className="w-full flex items-start gap-1.5 px-2 py-1.5 typo-caption text-foreground rounded-interactive"
       >
         <Chevron className="size-3 shrink-0 mt-0.5" />
-        <span
-          className={`shrink-0 rounded-interactive px-1.5 py-0 typo-caption ${statusTone}`}
-          title={op.status}
-        >
-          {op.status}
-        </span>
+        <Tooltip content={op.status}>
+          <span
+            className={`shrink-0 rounded-interactive px-1.5 py-0 typo-caption ${statusTone}`}
+          >
+            {op.status}
+          </span>
+        </Tooltip>
         <div className="flex-1 min-w-0">
-          <div className="truncate text-foreground/90">{op.intent}</div>
+          <div className="truncate text-ink-2">{op.intent}</div>
           <div className="flex items-baseline gap-1.5 text-foreground typo-caption">
             <code className="font-mono">{op.id8}</code>
             <span>·</span>
@@ -143,7 +149,7 @@ function OpCard({
             </span>
           </div>
         </div>
-      </button>
+      </PressSurface>
       {expanded && op.sessions.length > 0 && (
         <ol className="space-y-1.5 px-2 pb-2 pl-7">
           {op.sessions.map((sess) => (
@@ -159,7 +165,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
   const { t } = useTranslation();
   return (
     <li
-      className="space-y-0.5 typo-caption text-foreground/85"
+      className="space-y-0.5 typo-caption text-ink-2"
       data-testid="companion-live-ops-session"
       data-session-id={sess.id8}
     >
@@ -226,7 +232,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
           label={t.athena.orchestration.live_view_failure_label}
           text={sess.failure}
           tone="error"
-          icon={<AlertTriangle className="size-3 text-rose-400" />}
+          icon={<AlertTriangle className="size-3 text-status-error" />}
         />
       )}
       {sess.summary && (
@@ -252,10 +258,10 @@ function DetailLine({
 }) {
   const toneClass =
     tone === 'error'
-      ? 'text-rose-400'
+      ? 'text-status-error'
       : tone === 'warn'
-        ? 'text-amber-400'
-        : 'text-foreground/85';
+        ? 'text-status-warning'
+        : 'text-ink-2';
   return (
     <div className={`flex items-baseline gap-1 ${toneClass}`}>
       {icon ?? null}
@@ -268,13 +274,13 @@ function DetailLine({
 function toneForStatus(status: string): string {
   const norm = status.toLowerCase();
   if (norm.includes('fail') || norm.includes('error')) {
-    return 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+    return 'bg-status-error/10 text-status-error border border-status-error/20';
   }
   if (norm.includes('complete') || norm.includes('finished')) {
-    return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+    return 'bg-status-success/10 text-status-success border border-status-success/20';
   }
   if (norm.includes('block') || norm.includes('wait')) {
-    return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+    return 'bg-status-warning/10 text-status-warning border border-status-warning/20';
   }
   // Active / running / dispatched / queued — neutral primary tint.
   return 'bg-primary/10 text-primary border border-primary/20';

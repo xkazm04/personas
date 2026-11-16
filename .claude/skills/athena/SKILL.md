@@ -1,6 +1,6 @@
 ---
 name: athena
-description: Open a terminal channel to Athena — load her identity, constitution and memory from the local companion brain, converse AS her with Claude Code's tools at hand, and write every exchange back as first-class episodes her sleep cycle will consolidate. The supplementary channel for while Personas app development makes the in-app chat unstable. Invoke with `/athena` (optionally `/athena <first message>`), or `/athena --standup` to plan and then direct an unattended day of headless App Masters (`--standup resume|end|--plan-only`).
+description: Open a terminal channel to Athena — load her identity, constitution and memory from the local companion brain, converse AS her with Claude Code's tools at hand, and write every exchange back as first-class episodes her sleep cycle will consolidate. The supplementary channel for while Personas app development makes the in-app chat unstable. Invoke with `/athena` (optionally `/athena <first message>`), or `/athena --standup` to plan the day (a client of the app's Standup while the app runs; otherwise file mode directing headless App Masters) (`--standup resume|end|--plan-only`).
 ---
 
 # Athena — the terminal channel
@@ -79,9 +79,40 @@ description: Open a terminal channel to Athena — load her identity, constituti
 > directions, the topics resolve, the resolved App Masters are armed, and this same session becomes the
 > Director of `/appmaster run` (read `.claude/skills/appmaster/SKILL.md`; below, `AM` is
 > `node .claude/skills/appmaster/appmaster.mjs`). Boot ritual and memory protocol above apply unchanged.
-> Design and decisions: Spark vault `Spark/ideas/athena-standup.md`.
+> Design and decisions: Spark vault `Spark/ideas/athena-standup.md`; the in-app standup that this
+> section is now a client of: `Spark/ideas/app-standup.md` and `docs/features/companions/athena/README.md` (Standup).
 
-**Files** (home `~/.personas/standup/<YYYY-MM-DD>/`): `PLAN.json`, `PLAN.md`, `AWAY-LOG.md`, `MORNING.md`.
+### First: client of the app, or file mode
+Before phase A run `node .claude/skills/athena/standup-client.mjs ping` (`SC` below; it reads the
+app's handshake `~/.personas/local-http.json` and calls the `/companion/standup/*` doors with the
+bridge token).
+
+- **Exit 0: client mode** (the app runs). The app holds the ONE plan; this session never writes
+  `PLAN.json`, never arms masters with `AM`, and runs no away loop: the armed plan drives the app's
+  charters, attention loop and fleet queue, and the app's supervisor does the sweeps, drift checks
+  and away rules. The phases become:
+  - A. `SC current`. None live, or an armed one: `SC open` (on an armed plan this writes revision
+    n+1 as a draft, every card copied with its decision). Recall = the plan's `report` and the
+    cards' current `chosen` (defaults: keep / change / drop). There is one card per registered,
+    switched-on project; a project with no card is not registered: offer to register it.
+  - B. Scout as below; each card already carries the app's `evidence` line, put both in the question.
+  - C. One `AskUserQuestion` per card as below, then write the answer:
+    `SC item <standupId> '{"id":"<itemId>","chosen":"<direction>","window":"day|night|any"}'`;
+    skip = `'{"id":"<itemId>","state":"skipped"}'`. Agent-change cards (`create_agent`,
+    `retune_agent`): `"state":"accepted"` or `"skipped"`.
+  - D. Show the plan's `awayRules` once. The doors do not edit them: an amendment is made on the
+    Standup page before the go-gate (say so).
+  - E. Go-gate as below. `Arm and run` = `SC arm <standupId>`. Read the answer back to the operator:
+    a project whose headless App Master is live is refused (the card stays; the reason is an event
+    on the page). The app banks the decision round as an Athena episode itself: do not append a
+    second one. Tell the operator "armed in the app, you can go".
+  - `--standup end` = `SC end <standupId>` and print its `report`; `--standup resume` has nothing
+    to resume (the app runs the plan): print `SC current`.
+- **Exit 3: file mode** (the app is closed). Everything below applies unchanged. The app imports
+  the newest `PLAN.json` the next time it reads its standup, as a DRAFT revision (never armed):
+  tell the operator to arm it on the page once the app is back.
+
+**Files** (file mode only; home `~/.personas/standup/<YYYY-MM-DD>/`): `PLAN.json`, `PLAN.md`, `AWAY-LOG.md`, `MORNING.md`.
 Pointer `AM standup show`. `PLAN.json`: `{date, armed:[{slug, direction, say, briefEdits?, push:{remote,branch}|null}], off:[{slug, why}], awayRules}`.
 
 ### Phases (interactive part: this is the only time `AskUserQuestion` is used)

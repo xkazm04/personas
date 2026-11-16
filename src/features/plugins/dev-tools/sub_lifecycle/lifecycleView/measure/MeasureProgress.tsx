@@ -34,7 +34,7 @@ export function MeasureProgress({ cancel }: { cancel: CancelMeasure }) {
   const { done, total } = tally(progress);
   const count = phase === 'preparing' ? dl.lcx4_preparing : phase === 'cancelling' ? dl.lcx4_cancelling : tx(dl.lcx4_count, { done, total });
   return (
-    <span className="flex h-full w-full items-center gap-1.5 rounded-interactive border border-primary/20 bg-secondary/40 pl-2.5 pr-1" data-testid="lc-measure-progress" data-phase={phase}>
+    <span className="flex h-full w-full items-center gap-1.5 rounded-interactive border border-hair bg-surface-1 pl-2.5 pr-1" data-testid="lc-measure-progress" data-phase={phase}>
       <span
         role="progressbar"
         aria-label={dl.lcx4_progress_label}

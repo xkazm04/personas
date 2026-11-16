@@ -1867,6 +1867,50 @@ pub fn dispatch_with_sys(
                     }
                 }
             }
+            // ─────────────────────────────────────────────────────────────
+            // `standup_decide` (app-standup): Athena writes the decision he
+            // agreed in this conversation onto ONE card of a DRAFT standup.
+            // Auto-fire: it edits his own draft while he decides it, it is
+            // reversible on the page, and the go-gate (a press on the Standup
+            // page) still stands between it and any dispatch; the op can
+            // never open, arm or end a standup. The outcome lands as a System
+            // episode like `comment_on_note`'s, so a refusal (non-draft,
+            // unknown card) is an answer she reads, not a silent drop.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "standup_decide" => {
+                let item_id = env
+                    .params
+                    .get("item_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                match crate::companion::standup::decide::decide(pool, &env.params) {
+                    crate::companion::standup::decide::StandupDecide::Applied {
+                        standup_id,
+                        item,
+                    } => {
+                        // Name the project for her answer; without the
+                        // registry the card's project id stands in.
+                        let project_name = item.project_id.as_deref().and_then(|pid| {
+                            sys_db.and_then(|db| {
+                                crate::db::repos::dev_tools::get_project_by_id(db, pid).ok()
+                            })
+                        });
+                        let summary = crate::companion::standup::decide::summary(
+                            project_name.as_ref().map(|p| p.name.as_str()),
+                            &item,
+                        );
+                        note_read_op_result(pool, session_id, "standup_decide", &item_id, &summary);
+                        if !out.standup_updates.contains(&standup_id) {
+                            out.standup_updates.push(standup_id);
+                        }
+                    }
+                    crate::companion::standup::decide::StandupDecide::Refused(why) => {
+                        note_read_op_result(pool, session_id, "standup_decide", &item_id, &why);
+                        out.warnings.push(format!("standup_decide refused: {why}"));
+                    }
+                }
+            }
             Ok(env)
                 if env.op == "propose_action" && env.action == "show_persona_creation_offer" =>
             {

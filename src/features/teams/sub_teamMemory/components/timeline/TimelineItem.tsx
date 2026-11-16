@@ -3,15 +3,15 @@ import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 const CATEGORY_DOT: Record<string, string> = {
-  observation: 'bg-cyan-500',
-  decision: 'bg-amber-500',
-  context: 'bg-violet-500',
-  learning: 'bg-emerald-500',
+  observation: 'bg-role-highlight',
+  decision: 'bg-status-warning',
+  context: 'bg-role-agent',
+  learning: 'bg-status-success',
 };
 
 export function MemoryEntry({ memory, isManual }: { memory: TeamMemory; isManual?: boolean }) {
   return (
-    <div className="flex items-start gap-2 px-2 py-1 rounded-card hover:bg-primary/5 transition-colors">
+    <div className="flex items-start gap-2 px-2 py-1 rounded-card hover:bg-surface-2 transition-colors">
       <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${CATEGORY_DOT[memory.category] ?? 'bg-gray-400'}`} />
       <div className="flex-1 min-w-0">
         <p className="typo-body text-foreground truncate">{memory.title}</p>
@@ -19,7 +19,7 @@ export function MemoryEntry({ memory, isManual }: { memory: TeamMemory; isManual
           {isManual ? (
             <Brain className="w-2.5 h-2.5 text-foreground" />
           ) : (
-            <Zap className="w-2.5 h-2.5 text-amber-400/50" />
+            <Zap className="w-2.5 h-2.5 text-status-warning" />
           )}
           <RelativeTime timestamp={memory.created_at} className="typo-body text-foreground" />
         </div>

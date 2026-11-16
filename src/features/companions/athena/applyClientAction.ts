@@ -34,7 +34,7 @@ const VALID_ROUTES: SidebarSection[] = [
   'settings',
 ];
 
-const VALID_ATHENA_TABS = ['create-athena', 'setup', 'memory', 'voice', 'decisions'] as const;
+const VALID_ATHENA_TABS = ['create-athena', 'setup', 'memory', 'voice', 'decisions', 'standup'] as const;
 
 /**
  * The backend still spells this action `open_companion_tab` and can still emit

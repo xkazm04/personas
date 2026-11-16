@@ -28,7 +28,23 @@ export function useTemplateCompare() {
 
   const clear = useCallback(() => setSelected([]), []);
 
+  /** Swap in the freshly loaded objects for selected ids (a refresh or rebuild
+   *  changes a review in place). Ids absent from `items` are kept: `items` is
+   *  only the loaded, filtered page, so a miss does not mean deleted. */
+  const refreshFrom = useCallback((items: readonly PersonaDesignReview[]) => {
+    setSelected((prev) => {
+      const byId = new Map(items.map((r) => [r.id, r]));
+      let changed = false;
+      const next = prev.map((r) => {
+        const fresh = byId.get(r.id);
+        if (fresh && fresh !== r) { changed = true; return fresh; }
+        return r;
+      });
+      return changed ? next : prev;
+    });
+  }, []);
+
   const canAdd = selected.length < MAX_COMPARE;
 
-  return { selected, selectedIds, toggle, remove, clear, canAdd };
+  return { selected, selectedIds, toggle, remove, clear, refreshFrom, canAdd };
 }

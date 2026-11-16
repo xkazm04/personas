@@ -84,7 +84,7 @@ export function MemberReading({
               : tbl.kind_mixed}
         </span>
         <span className="inline-flex items-center gap-2">
-          <i aria-hidden="true" className="relative block h-[7px] w-[46px] overflow-hidden rounded bg-border">
+          <i aria-hidden="true" className="relative block h-[7px] w-[46px] overflow-hidden rounded-interactive bg-border">
             <i className="absolute inset-y-0 left-0 bg-muted-foreground" style={{ width: percent(seat.weight) }} />
           </i>
           {tx(tbl.weight_line, { percent: percent(seat.weight) })}

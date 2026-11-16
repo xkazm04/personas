@@ -7,6 +7,8 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 const LOG_PAINT_LINES = 200;
 
 function tailLines(text: string, n: number): string {
@@ -45,7 +47,7 @@ function JobLogViewer({ log }: { log: string | null }) {
         {[0, 1, 2, 3, 4].map((i) => (
           <span
             key={i}
-            className="block h-3 rounded bg-primary/[0.06]"
+            className="block h-3 rounded-interactive bg-surface-2"
             style={{ width: `${72 - i * 8}%` }}
           />
         ))}
@@ -62,7 +64,7 @@ function JobLogViewer({ log }: { log: string | null }) {
   return (
     <pre
       ref={scrollRef}
-      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 typo-code text-foreground whitespace-pre-wrap break-all scrollbar-thin"
+      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 typo-code text-ink-1 whitespace-pre-wrap break-all scrollbar-thin"
     >
       {painted}
     </pre>
@@ -94,37 +96,34 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
 
   return (
     <div className={`rounded-modal border ${statusBg(job.status)}`}>
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="w-full text-left p-2.5 flex items-center gap-2.5"
-      >
+      <PressSurface onPress={handleToggle} className="w-full p-2.5 flex items-center gap-2.5">
         {isExpanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-1" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
+          <ChevronRight className="w-3.5 h-3.5 text-ink-1" />
         )}
         <StatusIcon status={job.status} />
-        <div className="flex-1 min-w-0">
-          <span className="typo-body text-foreground/85">{job.name}</span>
-          <span className="typo-caption text-foreground ml-2">{job.stage}</span>
+        <div className="flex-1 min-w-0 truncate">
+          <span className="typo-body text-ink-2">{job.name}</span>
+          <span className="typo-caption text-ink-2 ml-2">{job.stage}</span>
         </div>
         {job.duration != null && (
-          <span className="typo-caption text-foreground">{formatDuration(job.duration)}</span>
+          <span className="typo-caption text-ink-2">{formatDuration(job.duration)}</span>
         )}
         {sanitizeExternalUrl(job.webUrl) && (
-          <a
-            href={sanitizeExternalUrl(job.webUrl)!}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
-            title={t.gitlab.open_in_gitlab}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <Tooltip content={t.gitlab.open_in_gitlab}>
+            <a
+              href={sanitizeExternalUrl(job.webUrl)!}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-1 rounded-interactive hover:bg-surface-2 text-ink-1 hover:text-ink-2 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </Tooltip>
         )}
-      </button>
+      </PressSurface>
 
       {isExpanded && (
         <div className="px-3 pb-3">

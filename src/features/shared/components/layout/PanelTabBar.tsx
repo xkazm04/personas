@@ -70,7 +70,7 @@ export function PanelTabBar<T extends string>({
   };
 
   return (
-    <div ref={tablistRef} role="tablist" className="flex gap-0 mt-4 -mb-4 -mx-4 md:-mx-6 border-t border-primary/10">
+    <div ref={tablistRef} role="tablist" className="flex gap-0 mt-4 -mb-4 -mx-4 md:-mx-6 border-t border-hair">
       {tabs.map((tab, index) => {
         const active = activeTab === tab.id;
         return (
@@ -88,18 +88,18 @@ export function PanelTabBar<T extends string>({
             onClick={() => onTabChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={[
-              'px-4 py-2.5 typo-heading transition-colors relative focus-ring',
+              'px-4 h-[var(--control-h)] typo-label transition-colors relative focus-ring',
               active
-                ? 'text-foreground'
-                : 'text-foreground hover:text-foreground/80',
-              tab.disabled ? 'text-foreground cursor-not-allowed' : 'cursor-pointer',
+                ? 'text-ink-1 bg-surface-2'
+                : 'text-ink-2 hover:text-ink-1 hover:bg-surface-1',
+              tab.disabled ? 'text-ink-4 cursor-not-allowed' : 'cursor-pointer',
             ].join(' ')}
           >
             {tab.label}
             {active && (
               <motion.div
                 layoutId={underlineLayoutId}
-                className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full ${underlineClass}`}
+                className={`absolute bottom-0 left-0 right-0 h-0.5 ${underlineClass}`}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}

@@ -55,9 +55,9 @@ describe('SimulationToggle', () => {
     expect(simulationEnabled()).toBe(true);
     expect(button).toHaveAttribute('aria-pressed', 'true');
     expect(button.getAttribute('data-simulating')).toBe('true');
-    // The highlighted state is a filled gold chip, not a border change — the
+    // The highlighted state is the shared pressed look (selected wash, primary foot) — the
     // two states have to be tellable apart in a screenshot.
-    expect(button.className).toContain('bg-status-warning');
+    expect(button.className).toContain('bg-sel');
 
     fireEvent.click(button);
     expect(simulationEnabled()).toBe(false);

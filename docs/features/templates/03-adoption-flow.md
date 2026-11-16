@@ -391,7 +391,18 @@ the wizard mid-questionnaire left orphan personas. The current flow:
 If you touch this effect, preserve the
 `if (hasAdoptionQuestions && !questionsComplete) return` early-exit.
 
+## When the answers fail to save
+
+`save_adoption_answers` is the only writer of `build_sessions.adoption_answers`, and test
+and promote read that column. A rejected save would run them on template placeholders, so
+`ChronologyAdoptionView` shows the rejection with Retry and holds the adjustment pass, the
+auto-test and the Test button until the save lands.
+
 ## Adoption draft (resume flow)
+
+Resume looks in the gallery's loaded rows, then asks the backend with `getDesignReview`,
+because those rows are one filtered page. Only a not-found answer clears the draft, with a
+message; a failed read keeps it and says it could not open the template.
 
 When a questionnaire hits a blocked question (no credential for
 `vault_category`), the user clicks **Add credential**. That handler:
@@ -431,7 +442,7 @@ adoption:
 | `testing` | Test run in flight | Spinner; streaming tool results |
 | `test_complete` | Tests finished, awaiting approval | "Approve to promote" CTA |
 | `promoted` | Agent lives in production | Fade out + navigate |
-| `failed`, `cancelled` | Terminal | Red dot; "Delete Draft" button |
+| `failed`, `cancelled` | Terminal | Red dot; "Delete Draft" button, which asks first and reports a failed delete |
 
 `SAFE_CLOSE_PHASES` in `AdoptionWizardModal` = `{'initializing',
 'promoted', 'cancelled', 'failed'}` — these don't trigger the discard

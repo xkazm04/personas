@@ -44,7 +44,7 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, s
         <div
           role="status"
           aria-label={e.chain_loading}
-          className="rounded-modal border border-primary/20 bg-secondary/30 divide-y divide-primary/10 overflow-hidden"
+          className="rounded-modal border border-hair bg-surface-1 divide-y divide-primary/10 overflow-hidden"
         >
           {CHAIN_GHOST_ROWS.map((i) => (
             <div
@@ -76,10 +76,10 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, s
   if (traces.length === 0) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
-          <Link2 className="w-6 h-6 text-foreground" />
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-surface-2 border border-hair flex items-center justify-center">
+          <Link2 className="w-6 h-6 text-ink-1" />
         </div>
-        <p className="typo-body text-foreground">{e.chain_empty}</p>
+        <p className="typo-body text-ink-1">{e.chain_empty}</p>
       </div>
     );
   }
@@ -94,19 +94,19 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, s
             chain that genuinely cost nothing. When only some runs are priced
             the figure is labelled as covering part of the chain. */}
         <div className="text-right flex-shrink-0">
-          <p className="typo-caption text-foreground">{e.chain_total_cost}</p>
-          <p data-testid="chain-total-cost" className="typo-code text-foreground tabular-nums">
+          <p className="typo-caption text-ink-2">{e.chain_total_cost}</p>
+          <p data-testid="chain-total-cost" className="typo-code text-ink-1 tabular-nums">
             {chainPricedTraces > 0 ? formatCost(chainCostUsd, { precision: 4, language }) : '-'}
           </p>
           {chainPricedTraces > 0 && chainPricedTraces < traces.length && (
-            <p data-testid="chain-cost-partial" className="typo-caption text-foreground">
+            <p data-testid="chain-cost-partial" className="typo-caption text-ink-2">
               {tx(e.chain_cost_partial, { priced: chainPricedTraces, total: traces.length })}
             </p>
           )}
         </div>
       </div>
 
-      <div className="rounded-modal border border-primary/20 bg-secondary/30 divide-y divide-primary/10 overflow-hidden">
+      <div className="rounded-modal border border-hair bg-surface-1 divide-y divide-primary/10 overflow-hidden">
         {traces.map((trace, idx) => (
           <ChainSpanRow
             key={trace.trace_id}
@@ -119,17 +119,17 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, s
       </div>
 
       {stopReasons.length > 0 && (
-        <div className="rounded-modal border border-primary/15 bg-secondary/20 p-3 space-y-2">
-          <p className="typo-caption text-foreground flex items-center gap-1.5">
+        <div className="rounded-modal border border-hair bg-surface-1 p-3 space-y-2">
+          <p className="typo-caption text-ink-2 flex items-center gap-1.5">
             <CircleSlash className="w-3.5 h-3.5" />{e.chain_ended_because}
           </p>
           <ul className="space-y-1.5">
             {stopReasons.map((reason) => (
-              <li key={reason.id} className="flex items-start gap-2 typo-body text-foreground">
-                <span className="typo-code px-1.5 py-0.5 rounded-card bg-primary/10 text-foreground/90 border border-primary/15 whitespace-nowrap flex-shrink-0">
+              <li key={reason.id} className="flex items-start gap-2 typo-body text-ink-1">
+                <span className="typo-code text-ink-1 whitespace-nowrap flex-shrink-0">
                   {tokenLabel(t, 'chain_stop', reason.reason_token)}
                 </span>
-                {reason.detail && <span className="text-foreground/90">{reason.detail}</span>}
+                {reason.detail && <span className="text-ink-1">{reason.detail}</span>}
               </li>
             ))}
           </ul>
@@ -155,17 +155,17 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, s
 }
 
 /** Ghost row geometry mirrors ChainSpanRow's `px-3 py-2.5` chain rows. */
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 const CHAIN_GHOST_ROWS = [0, 1, 2];
 
 /** The chain heading, rendered identically while loading and once settled. */
 function ChainHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div>
-      <p className="typo-heading text-foreground/90 flex items-center gap-2">
+      <p className="typo-heading text-ink-1 flex items-center gap-2">
         <Link2 className="w-4 h-4" />{title}
       </p>
-      <p className="typo-body text-foreground mt-0.5">{subtitle}</p>
+      <p className="typo-body text-ink-2 mt-0.5">{subtitle}</p>
     </div>
   );
 }

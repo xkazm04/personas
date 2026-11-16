@@ -19,11 +19,10 @@ export function StartBrief({ card, projectId }: { card: MilestoneCard; projectId
     if (note) await linkMilestone(note.id, card.lane.id);
   };
   return (
-    <div className="rounded-card border border-dashed border-primary/20 px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="rounded-card border border-dashed border-hair px-4 py-4 flex flex-wrap items-center justify-between gap-3">
       <p className="typo-body text-foreground">{dl.layers_no_brief}</p>
       <AsyncButton
-        variant="accent"
-        tone="highlight"
+        variant="secondary"
         size="sm"
         icon={<Plus className="w-3.5 h-3.5" />}
         disabled={full}

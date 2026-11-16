@@ -1,0 +1,203 @@
+{
+ "schema": "conform-run/1",
+ "worker": "967d004d-d36d-4adf-9777-760532d8c107",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-11-03T22:36:54.467584+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "fleet-monitor-channels",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:28 A pinned channel row becomes a team memory whose only provenance is the channel name, with no source row id, row kind or pinning actor. It is then injected into scanner prompts as a bare '- [category] title: content' line (src-tauri/src/commands/infrastructure/idea_scanner.rs:628), so 'why does the team believe this' cannot be traced back to the event.",
+   "techniques": [
+    {
+     "technique": "consolidation",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:28 No pointer to the source TeamChannelItem (item.id/kind are dropped), so the stored belief has no trail back to the episode it came from. The first human edit then erases even this tag: team_memories.rs:250 resets an object-shaped tag's source to an empty string."
+    },
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:21 run_id null puts every pin in the manual tier, and evict_excess exempts that whole tier from retirement (src-tauri/db/src/repos/resources/team_memories.rs:437). Pins never age out, yet they count toward the cap that evicts auto memories."
+    }
+   ]
+  },
+  {
+   "context": "agents-quick-answer",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:868 Each idea's verdict memory is keyed one row per idea through INSERT OR IGNORE, so when a human reverses a machine verdict (scan_contract.rs:306 names this flow) the project store the task executor reads keeps the first, machine verdict. The team ledger meanwhile overwrites its row in place (dev_tools.rs:922), so the two stores disagree and neither records supersedence.",
+   "techniques": [
+    {
+     "technique": "consolidation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/dev_memories.rs:80 An operator correction should supersede immediately and keep the lineage. Here a later verdict on the same idea is silently dropped from project memory, and in the team ledger it replaces the earlier row with no link to it."
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:832 Only a human triage ruling becomes a standing constraint. A machine decline is an advisory decision at importance 5 (:833) whose text says it is not a ruling. The earlier stale deviation is fixed: the reviewer's rejection_reason now reaches the memory body (dev_tools.rs:852 and :784)."
+    },
+    {
+     "technique": "rejected-revision-leaves-its-evidence",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:215 A rejected evolution promotion still sends the reviewer's note to the backend as the decision_note, so the diagnosis survives when the artifact is not installed."
+    },
+    {
+     "technique": "durable-store-failure-posture",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/triage/triageJournal.ts:115 The triage journal is a reviewer-telemetry ring in localStorage that no model reads, so the agent-memory precondition is weak. Even so, it reads a corrupt store as empty, and recordDecision (:167) then rewrites over it, which is the very failure this technique names. Flagged for the reviewer rather than judged."
+    }
+   ]
+  },
+  {
+   "context": "team-memory",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:478 After every pipeline run that created memories (pipeline_executor.rs:1144), evict_excess hard-DELETEs the lowest-importance auto memories, with no demotion tier and only a tracing count left behind. A scoring mistake therefore becomes permanent loss, and nothing records what was forgotten.",
+   "techniques": [
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:478 Hard delete instead of demote, with no audit trail. The manual tier as a whole is exempt from retirement (:437)."
+    },
+    {
+     "technique": "consolidation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/pipeline_executor.rs:289 Each node's raw output, cut at 500 bytes, is written straight into the injected team store as an 'observation'. No distillation pass runs, so transcript text is served as team memory."
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:250 The human-edit path rewrites tags into a revisions object, and for JSON-object tags without revisions (e.g. the conversation pin's {source:'conversation-pin'}) it resets source to an empty string. The marker of who authored the evidence is erased on the first edit."
+    },
+    {
+     "technique": "recall-injection",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/pipeline_executor.rs:1210 A failed read collapses into an empty one: the memory block is omitted and the model cannot tell 'store failed' from 'nothing stored'."
+    },
+    {
+     "technique": "loss-site-inventory",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/pipeline_executor.rs:1219 Runs inject 20 of up to 200 rows (the scanner injects 12), with no in-band notice of how many were left out or why. Meanwhile the operator's panel pages through every row, so the operator and the agent see different stores."
+    },
+    {
+     "technique": "memory-value-model",
+     "verdict": "conformant",
+     "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:129 Recall order is the exact mirror of the eviction order (:481 importance ASC, created_at ASC), so remembering and forgetting share one ordering. There is no usage term."
+    }
+   ]
+  },
+  {
+   "context": "overview-memories",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 Resolving a duplicate by merge calls memories::merge, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1662/1666) with no superseded-by link. The members cannot be audited or restored, even though the keep_a/keep_b path in the same component was changed to archive instead.",
+   "techniques": [
+    {
+     "technique": "rollup-compaction",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 A rollup should leave its members linked, auditable and out of default reads. Here they are deleted."
+    },
+    {
+     "technique": "consolidation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1631 Only one source_execution_id survives the merge, so the other original's provenance is dropped, and no supersedence lineage is recorded."
+    },
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:131 Keeping one side retires the other to the archive tier (never injected, still searchable) rather than deleting it."
+    },
+    {
+     "technique": "scope-before-similarity",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:148 A similarity-detected pair from two personas is refused a merge, and the backend enforces the same rule (memories.rs:1581)."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-memory",
+   "context": "companion-brain",
+   "reason": "evidence leans on sleep_cycle/prompts.rs, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T22:36:54.467584+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "consolidation",
+    "decay-and-forgetting"
+   ],
+   "deviations": 1,
+   "context": "fleet-monitor-channels",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-03T22:36:54.467584+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "consolidation",
+    "durable-store-failure-posture",
+    "memory-governance",
+    "rejected-revision-leaves-its-evidence"
+   ],
+   "deviations": 1,
+   "context": "agents-quick-answer",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-03T22:36:54.467584+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "consolidation",
+    "decay-and-forgetting",
+    "loss-site-inventory",
+    "memory-governance",
+    "memory-value-model",
+    "recall-injection"
+   ],
+   "deviations": 1,
+   "context": "team-memory",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-03T22:36:54.467584+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "consolidation",
+    "decay-and-forgetting",
+    "rollup-compaction",
+    "scope-before-similarity"
+   ],
+   "deviations": 1,
+   "context": "overview-memories",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -18,12 +18,13 @@ import {
 } from '../display/AutoCredLogEntries';
 import { BrowserStatusBanner } from './BrowserDetail';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const DIVIDER_COLORS: Record<SessionState, { text: string; line: string }> = {
   connecting: { text: 'text-foreground', line: 'bg-primary/8' },
-  working: { text: 'text-cyan-400/30', line: 'bg-cyan-500/10' },
-  action_required: { text: 'text-amber-400/30', line: 'bg-amber-500/10' },
-  opening_url: { text: 'text-blue-400/30', line: 'bg-blue-500/10' },
+  working: { text: 'text-role-highlight/30', line: 'bg-role-highlight/10' },
+  action_required: { text: 'text-status-warning/30', line: 'bg-status-warning/10' },
+  opening_url: { text: 'text-status-info/30', line: 'bg-status-info/10' },
 };
 
 interface AutoCredBrowserProps {
@@ -110,7 +111,7 @@ export function AutoCredBrowser({ logs, startedAt, onCancel, mode = 'playwright'
       {/* Full scrollable log */}
       <div
         ref={scrollRef}
-        className="max-h-[40rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/20 p-3 space-y-2"
+        className="max-h-[40rem] overflow-y-auto rounded-modal border border-hair bg-black/20 p-3 space-y-2"
       >
         {annotatedItems.map((item) => {
           if (item.kind === 'divider') {
@@ -121,7 +122,7 @@ export function AutoCredBrowser({ logs, startedAt, onCancel, mode = 'playwright'
                 className="animate-fade-slide-in flex items-center gap-2 py-1.5"
               >
                 <div className={`flex-1 h-px ${colors.line}`} />
-                <span className={`text-[10px] uppercase tracking-widest font-medium shrink-0 ${colors.text}`}>
+                <span className={`typo-eyebrow shrink-0 ${colors.text}`}>
                   {item.label}
                 </span>
                 <div className={`flex-1 h-px ${colors.line}`} />
@@ -161,14 +162,15 @@ export function AutoCredBrowser({ logs, startedAt, onCancel, mode = 'playwright'
       {/* Actions */}
       <div className="flex justify-between">
         {import.meta.env.DEV ? <CopyLogButton logs={logs} /> : <div />}
-        <button
+        <Button
           type="button"
           onClick={onCancel}
           data-testid="vault-autocred-cancel"
-          className="px-4 py-2 typo-body text-red-400/80 hover:text-red-400 rounded-modal border border-red-500/15 hover:bg-red-500/10 transition-colors"
+          variant="danger"
+          size="md"
         >
           {t.vault.auto_cred.cancel_session}
-        </button>
+        </Button>
       </div>
     </div>
   );

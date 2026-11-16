@@ -303,7 +303,7 @@ export function DataGrid<T>({
         // The transparent 2px left border mirrors the rows' accent gutter, so
         // header labels sit exactly above their cell content instead of 2px to
         // the left of it.
-        className="grid gap-0 border-b border-primary/10 border-l-2 border-l-transparent bg-background sticky top-0 z-20"
+        className="grid gap-0 border-b border-hair border-l-2 border-l-transparent bg-background sticky top-0 z-20"
         style={{ gridTemplateColumns: gridTemplate }}
       >
         {columns.map((col) => {
@@ -427,12 +427,12 @@ export function DataGrid<T>({
             {Array.from({ length: 6 }).map((_, r) => (
               <div
                 key={r}
-                className={`grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent animate-fade-in ${r % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                className={`grid gap-0 border-b border-hair border-l-2 border-l-transparent animate-fade-in`}
                 style={{ gridTemplateColumns: gridTemplate, animationDelay: `${120 + r * 35}ms` }}
               >
                 {columns.map((col, ci) => (
                   <div key={col.key} className={`${rowPadCls} flex items-center min-w-0 ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''}`}>
-                    <span className={`inline-block h-3.5 rounded bg-primary/[0.06] ${['w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'][(r + ci) % 4]}`} />
+                    <span className={`inline-block h-3.5 rounded bg-surface-2 ${['w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'][(r + ci) % 4]}`} />
                   </div>
                 ))}
               </div>
@@ -469,7 +469,7 @@ export function DataGrid<T>({
           // takes precedence over status accents from getRowAccent — the user's
           // current selection should be the dominant visual signal.
           const accent = selected
-            ? 'border-l-primary bg-primary/[0.06]'
+            ? 'border-l-primary bg-sel'
             : (getRowAccent?.(row) ?? '');
           const rowCls = getRowClassName?.(row) ?? '';
           const extraRowProps = getRowProps?.(row);
@@ -494,9 +494,9 @@ export function DataGrid<T>({
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               onAnimationEnd={entrance?.onAnimationEnd}
               data-selected={selected || undefined}
-              className={`row-hover-lift grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.12] transition-[transform,opacity,box-shadow] duration-150 ${accent} ${rowCls} ${dragCls} ${
+              className={`row-hover-lift grid gap-0 border-b border-hair border-l-2 border-l-transparent hover:bg-surface-1 transition-[transform,opacity,box-shadow] duration-150 ${accent} ${rowCls} ${dragCls} ${
                 onRowClick ? 'cursor-pointer' : ''
-              } ${idx % 2 === 0 && !selected ? 'bg-primary/[0.03]' : ''} ${entrance?.className ?? ''}`}
+              } ${entrance?.className ?? ''}`}
               style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style', ...entrance?.style }}
             >
               {columns.map((col) => (

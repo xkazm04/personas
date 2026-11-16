@@ -50,7 +50,7 @@ export function ProviderSparkline({
 
   if (data.length < 2) {
     return (
-      <span className="text-[10px] text-foreground italic">
+      <span className="typo-caption text-foreground italic">
         {t.settings.byom.no_trend_data}
       </span>
     );
@@ -59,7 +59,7 @@ export function ProviderSparkline({
   return (
     <div className="inline-flex flex-col items-start gap-0.5">
       {label && (
-        <span className="text-[10px] text-foreground leading-none">{label}</span>
+        <span className="typo-caption text-foreground leading-none">{label}</span>
       )}
       <svg
         width={width}

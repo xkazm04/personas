@@ -1,0 +1,122 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ee638268-030d-4ac4-ac92-122782c7e45b",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-11-10T23:10:55.870209+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "lib-utils-sanitizers",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:15 The only eval-flavoured file here ('GOLDEN EVAL') runs recorded attack fixtures through the deterministic function maskSensitiveJson and says that the model is out of scope, so no non-deterministic system is scored and the subject's precondition does not hold (the deterministic suite falls under test-harness); a case-insensitive grep of src/lib/utils for judge, rubric, trials, holdout and pairwise found no hits.",
+   "techniques": [
+    {
+     "technique": "assertion-vs-judgment",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts:94 Pure deterministic assertions on a non-model function; no judge is possible or needed, and no model output is scored."
+    }
+   ],
+   "absenceTerms": [
+    "judge",
+    "rubric",
+    "trials",
+    "holdout",
+    "pairwise"
+   ],
+   "registryProposal": "A fixture-driven deterministic test that calls itself a 'golden eval' sits on the boundary with test-harness. The golden path could say plainly that the subject begins only when the thing being scored is non-deterministic, so a self-label does not pull a deterministic suite in."
+  },
+  {
+   "context": "overview-shared-libs",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/libs/fleetOptimizer.ts:4 fleetOptimizer makes production recommendations (for example, downgrading a model) from live execution success rates and costs; it runs no declared scenarios against candidates and scores nothing repeatably, so it has no eval harness; a case-insensitive grep of src/features/overview/libs and src/features/overview/components/shared for judge, rubric, trials, holdout, pairwise and scenario found no hits.",
+   "techniques": [
+    {
+     "technique": "outcome-conditioned-cost",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/libs/fleetOptimizer.ts:235 Compares cost against success on production telemetry for one persona, not between eval arms, so the precondition (arms that can fail) does not hold."
+    }
+   ],
+   "absenceTerms": [
+    "judge",
+    "rubric",
+    "trials",
+    "holdout",
+    "pairwise"
+   ]
+  },
+  {
+   "context": "overview-director",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx:110 The mission-control card only navigates to the agent Lab, which is outside this context and is where models would be compared, so no scenario, trial, judge or aggregation lives in these files; a case-insensitive grep of src/features/overview/sub_missionControl for rubric, trials, holdout, pairwise and temperature found no hits.",
+   "techniques": [],
+   "absenceTerms": [
+    "rubric",
+    "trials",
+    "holdout",
+    "pairwise",
+    "temperature"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "eval-harness",
+   "context": "overview-patterns",
+   "reason": "context-map.json lists no file_paths for this context, and its declared entry points (src/features/overview/sub_patterns/PracticeDetailModal.tsx etc.) do not exist; the directory src/features/overview/sub_patterns is missing, so there is no code to judge."
+  },
+  {
+   "subject": "eval-harness",
+   "context": "recipes-playground",
+   "reason": "context-map.json lists no file_paths for this context, and its declared entry points (src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx, libs/useRecipeTestRunner.ts) do not exist; git ls-files src/features/recipes returns nothing, so there is no code to judge."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-10T23:10:55.870209+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "assertion-vs-judgment"
+   ],
+   "deviations": 0,
+   "context": "lib-utils-sanitizers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:10:55.870209+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "outcome-conditioned-cost"
+   ],
+   "deviations": 0,
+   "context": "overview-shared-libs",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-10T23:10:55.870209+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "overview-director",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

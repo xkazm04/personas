@@ -3,6 +3,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { PHASE_META, dotColor, type PhaseEntry } from '../../runnerTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RunnerPhaseTimelineProps {
   phases: PhaseEntry[];
@@ -24,15 +25,15 @@ export function RunnerPhaseTimeline({
   if (phases.length === 0) return null;
 
   return (
-    <div className="border-b border-border/20">
-      <button
+    <div className="border-b border-hair">
+      <Button
         type="button"
         onClick={() => setShowPhases(!showPhases)}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-code text-foreground hover:text-muted-foreground transition-colors uppercase tracking-wider"
-      >
-        {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-        {e.phases}
-      </button>
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        icon={showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+      >{e.phases}</Button>
       {showPhases && (
           <div
             className="animate-fade-slide-in overflow-hidden"
@@ -61,8 +62,8 @@ export function RunnerPhaseTimeline({
                               isActive
                                 ? 'bg-primary/20 text-primary/90'
                                 : phase.id === 'error'
-                                  ? 'bg-red-500/15 text-red-400/80'
-                                  : 'bg-secondary/40 text-foreground'
+                                  ? 'bg-status-error/15 text-status-error'
+                                  : 'bg-surface-2 text-ink-1'
                             }`}
                             style={{ flexGrow: Math.max(duration, minGrow) }}
                           >

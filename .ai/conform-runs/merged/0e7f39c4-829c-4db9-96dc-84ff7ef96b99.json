@@ -1,0 +1,103 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0e7f39c4-829c-4db9-96dc-84ff7ef96b99",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-11-03T22:52:59.665884+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "teams-goals",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/projects/development/goals/progressShared.tsx:145 The goals surface counts every goal that isn't done as active, with no last-touched predicate. A goal nobody has touched in a year reads exactly like one worked yesterday, even though DevGoal carries updated_at to derive it from.",
+   "techniques": [
+    {
+     "technique": "item-liveness",
+     "verdict": "deviation",
+     "evidence": "src/features/projects/development/goals/progressShared.tsx:145 The active count's predicate is 'admitted and not done'. A grep of the goals directory for stale/last-touched/updated_at found no staleness rendering, even though updated_at exists on the DevGoal binding."
+    },
+    {
+     "technique": "advancement-evidence-fields",
+     "verdict": "deviation",
+     "evidence": "src/features/projects/development/goals/goalStatus.ts:49 'skipped' is normalised to 'done', so a waived obligation is filed as satisfied. Unknown statuses fall back to 'open' (line 28, asserted in goalStatus.test.ts:39), so an unknown state is rendered as a definite value."
+    },
+    {
+     "technique": "unmeasurable-criteria",
+     "verdict": "deviation",
+     "evidence": "src/features/projects/development/goals/goalStatus.ts:28 An unrecognised status is silently mapped to a real state instead of an explicit unknown."
+    }
+   ]
+  },
+  {
+   "context": "vault-shared-playground",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:60 Missing anomaly data (and, at line 65, a missing rotation policy) scores 100, so absence reads as compliance. An unreachable or unverifiable probe therefore still produces a composite of 80 and tier 'healthy'; the threestate test asserts tier 'healthy' for unreachable. That defeats the neutral-50 fix the comment above it claims.",
+   "techniques": [
+    {
+     "technique": "unmeasurable-criteria",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:60 Unmeasured sub-scores are folded in at full marks instead of being skipped or announced. Only the all-null case refuses, with tier 'unknown' (line 137)."
+    },
+    {
+     "technique": "false-positive-economics",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:50 A known false alarm (unreachable scored 0, critical) was fixed by narrowing the mapping rather than dropping the signal."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "quality-gates",
+   "context": "agents-connectors",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "companions-page",
+   "reason": "The listed files are presentational (page, glyphs, navigation, chat frame variants) with no refusal or verdict machinery I could find. Not-applicable cannot be cleanly claimed because the companions directory contains gate vocabulary elsewhere (exitCode in useAthenaFleetBridge.ts, 'baseline'), so the driver's absence search would hit."
+  },
+  {
+   "subject": "quality-gates",
+   "context": "shared-components-layout",
+   "reason": "Layout primitives and buttons contain no gating machinery. A search of layout/kanban/buttons for process.exit, exitCode, max-warnings, lefthook, baseline and waiver found nothing, but no manifest or config line exists to anchor a not-applicable verdict, and a component's first line does not prove absence."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T22:52:59.665884+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "advancement-evidence-fields",
+    "item-liveness",
+    "unmeasurable-criteria"
+   ],
+   "deviations": 1,
+   "context": "teams-goals",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-03T22:52:59.665884+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "false-positive-economics",
+    "unmeasurable-criteria"
+   ],
+   "deviations": 1,
+   "context": "vault-shared-playground",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

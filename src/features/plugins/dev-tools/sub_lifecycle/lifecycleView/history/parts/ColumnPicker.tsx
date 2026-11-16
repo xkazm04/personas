@@ -110,7 +110,7 @@ export function ColumnPicker({ columns, at, onPick, onClear, label, stepIds, tes
             {i === at && (
               <motion.span
                 layoutId={`${testId}-playhead`}
-                className={`absolute -inset-y-1 inset-x-0 ${lcShape('card')} ${travelling ? 'bg-primary/15 ring-2 ring-primary/55' : 'bg-primary/8'}`}
+                className={`absolute -inset-y-1 inset-x-0 ${lcShape('card')} ${travelling ? 'bg-primary/15 ring-2 ring-primary/55' : 'bg-surface-1'}`}
                 transition={{ type: 'spring', stiffness: 520, damping: 40 }}
                 data-playhead={travelling ? 'past' : 'now'}
               />

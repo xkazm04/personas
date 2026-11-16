@@ -7,6 +7,7 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const MAX_RECENT = 5;
 
@@ -52,20 +53,20 @@ export function EditorEmptyState() {
         >
           {recent.length > 0 && (
             <div className="flex flex-col items-center gap-2">
-              <span className="typo-caption text-foreground">{labels.resume_label}</span>
+              <span className="typo-caption text-ink-2">{labels.resume_label}</span>
               <div className="flex flex-wrap items-center justify-center gap-2 max-w-[36rem]">
                 {recent.map((p) => (
-                  <button
+                  <Button
                     key={p.id}
                     type="button"
                     data-testid={`editor-empty-resume-${p.id}`}
                     onClick={() => selectPersona(p.id)}
-                    title={p.name}
-                    className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border border-primary/15 bg-secondary/40 hover:bg-primary/10 hover:border-primary/30 transition-colors focus-ring max-w-[12rem]"
-                  >
-                    <PersonaIcon icon={p.icon} color={p.color} size="w-4 h-4" />
-                    <span className="typo-body text-foreground truncate">{p.name}</span>
-                  </button>
+                    tooltip={p.name}
+                    variant="secondary"
+                    size="sm"
+                    className="max-w-[12rem]"
+                    icon={<PersonaIcon icon={p.icon} color={p.color} size="w-4 h-4" />}
+                  ><span className="typo-body text-ink-1 truncate">{p.name}</span></Button>
                 ))}
               </div>
             </div>

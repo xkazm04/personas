@@ -45,7 +45,12 @@ function driveMockBuildStoreActions() {
 }
 
 describe('getting-started mock-build seam', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
+    // storeBusWiring fires `import('@/lib/analytics')` without awaiting it. Load
+    // the module first so that import resolves from cache: on a loaded CI shard
+    // the first load of its chunk outlived the file and failed the whole shard
+    // with EnvironmentTeardownError although every test passed.
+    await import('@/lib/analytics');
     // Wire the real cross-store subscriptions (build:phase-changed →
     // tour:persona-promoted, execution:completed → tour:execution-complete).
     initStoreBus();

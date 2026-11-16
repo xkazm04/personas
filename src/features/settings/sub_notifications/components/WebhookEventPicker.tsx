@@ -11,6 +11,7 @@ import {
   previewMatches,
   type MatchableEvent,
 } from '../libs/webhookMatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 500;
@@ -115,14 +116,15 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
             >
               {unknownOf(p) && <AlertTriangle className="w-3 h-3" />}
               {p}
-              <button
+              <Button
                 type="button"
                 onClick={() => setPatterns(patterns.filter((x) => x !== p))}
                 aria-label={interpolate(s.webhook_events_remove_aria, { pattern: p })}
-                className="rounded-interactive hover:bg-primary/15"
+                variant="ghost"
+                size="icon-sm"
               >
                 <X className="w-3 h-3" />
-              </button>
+              </Button>
             </span>
           ))}
         </div>
@@ -131,13 +133,14 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
         <div key={pattern} className="typo-caption text-status-warning flex flex-wrap items-center gap-1.5">
           <span>{interpolate(s.webhook_pattern_unknown, { pattern })}</span>
           {suggestion && (
-            <button
+            <Button
               type="button"
               onClick={() => setPatterns(patterns.map((x) => (x === pattern ? suggestion : x)))}
-              className="rounded-interactive px-1.5 underline underline-offset-2 hover:bg-status-warning/10"
+              variant="ghost"
+              size="xs"
             >
               {interpolate(s.webhook_pattern_suggest, { suggestion })}
-            </button>
+            </Button>
           )}
         </div>
       ))}
@@ -148,19 +151,20 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
-          className="w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground font-mono"
+          className="w-full rounded-input border border-hair bg-surface-2 px-2 py-1 typo-body text-foreground font-mono"
           placeholder={s.webhook_events_custom_placeholder}
           data-testid="webhook-draft-custom-pattern"
         />
-        <button
+        <Button
           type="button"
           onClick={addCustom}
           disabled={parseEventTypes(custom).length === 0}
-          className="inline-flex items-center gap-1 rounded-interactive px-2 py-1 typo-caption text-foreground hover:bg-primary/10 disabled:opacity-40"
+          variant="ghost"
+          size="xs"
+          icon={<Plus className="w-3.5 h-3.5" />}
         >
-          <Plus className="w-3.5 h-3.5" />
           {s.webhook_events_add}
-        </button>
+        </Button>
       </div>
       <span className="typo-caption text-foreground block">{s.webhook_subscriptions_events_hint}</span>
       {choices.length > 0 && (
@@ -168,19 +172,13 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
           <span className="typo-caption text-foreground">{s.webhook_events_known}</span>
           <div className="mt-1 max-h-40 overflow-y-auto flex flex-wrap gap-1.5">
             {choices.map((v) => (
-              <button
-                key={v.eventType}
-                type="button"
-                onClick={() => setPatterns([...patterns, v.eventType])}
-                className={`${CHIP} border-primary/15 bg-secondary/40 text-foreground hover:bg-primary/10`}
-              >
-                <Plus className="w-3 h-3 text-primary/60" />
+              <Button key={v.eventType} variant="secondary" size="xs" onClick={() => setPatterns([...patterns, v.eventType])} icon={<Plus className="w-3 h-3" />}>
                 {v.eventType}
                 <span className="font-sans text-foreground">
                   {v.source === 'observed' ? s.webhook_events_source_observed : s.webhook_events_source_builtin}
                   {weeklyCount(v.eventType) ? ` · ${interpolate(s.webhook_events_count_7d, { count: weeklyCount(v.eventType) ?? '' })}` : ''}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>

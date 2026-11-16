@@ -23,11 +23,11 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
 
   const isUntrusted = trustLevel === 'untrusted';
   const Icon = isUntrusted ? ShieldX : ShieldAlert;
-  const bgColor = isUntrusted ? 'bg-red-500/8' : 'bg-amber-500/8';
-  const borderColor = isUntrusted ? 'border-red-500/20' : 'border-amber-500/20';
-  const iconColor = isUntrusted ? 'text-red-400' : 'text-amber-400';
-  const textColor = isUntrusted ? 'text-red-300/80' : 'text-amber-300/80';
-  const titleColor = isUntrusted ? 'text-red-300' : 'text-amber-300';
+  const bgColor = isUntrusted ? 'bg-status-error/8' : 'bg-status-warning/8';
+  const borderColor = isUntrusted ? 'border-status-error/20' : 'border-status-warning/20';
+  const iconColor = isUntrusted ? 'text-status-error' : 'text-status-warning';
+  const textColor = isUntrusted ? 'text-status-error/80' : 'text-status-warning/80';
+  const titleColor = isUntrusted ? 'text-status-error' : 'text-status-warning';
 
   const restrictions: string[] = [];
   if (sandboxPolicy) {
@@ -43,7 +43,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
   return (
     <div className={`rounded-modal border ${borderColor} ${bgColor} p-4 ${className}`}>
       <div className="flex items-start gap-3">
-        <div className={`mt-0.5 p-1.5 rounded-card ${isUntrusted ? 'bg-red-500/15' : 'bg-amber-500/15'}`}>
+        <div className={`mt-0.5 p-1.5 rounded-card ${isUntrusted ? 'bg-status-error/15' : 'bg-status-warning/15'}`}>
           <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
         </div>
         <div className="flex-1 min-w-0">
@@ -51,7 +51,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
             <h4 className={`typo-heading ${titleColor}`}>
               {isUntrusted ? t.templates.sandbox.title_unverified : t.templates.sandbox_banner.community_sandbox}
             </h4>
-            <span className={`typo-body px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
+            <span className={`typo-body px-1.5 py-0.5 rounded-interactive ${isUntrusted ? 'bg-status-error/15 text-status-error/80' : 'bg-status-warning/15 text-status-warning/80'}`}>
               {ORIGIN_LABELS[origin]}
             </span>
           </div>
@@ -68,8 +68,8 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
                   key={r}
                   className={`inline-flex items-center gap-1 px-2 py-1 typo-body rounded-card ${
                     isUntrusted
-                      ? 'bg-red-500/10 text-red-400/70 border border-red-500/15'
-                      : 'bg-amber-500/10 text-amber-400/70 border border-amber-500/15'
+                      ? 'bg-status-error/10 text-status-error/70 border border-status-error/15'
+                      : 'bg-status-warning/10 text-status-warning/70 border border-status-warning/15'
                   }`}
                 >
                   <Lock className="w-2.5 h-2.5" />
@@ -96,8 +96,8 @@ export function SandboxInlineWarning({ verification }: { verification: TemplateV
   return (
     <div className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-body ${
       isUntrusted
-        ? 'bg-red-500/8 text-red-400/70 border border-red-500/15'
-        : 'bg-amber-500/8 text-amber-400/70 border border-amber-500/15'
+        ? 'bg-status-error/8 text-status-error/70 border border-status-error/15'
+        : 'bg-status-warning/8 text-status-warning/70 border border-status-warning/15'
     }`}>
       <AlertTriangle className="w-3 h-3" />
       {isUntrusted ? t.templates.sandbox.badge_unverified : t.templates.sandbox.badge_sandbox}

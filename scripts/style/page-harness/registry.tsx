@@ -40,12 +40,19 @@ import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
 import { MANDATE_LANES_MODULES } from './mandateLanesSurfaces';
 import { DECISION_DECK_MODULES } from './decisionDeckSurfaces';
 import { BLUEPRINT_MODULES } from './blueprintSurfaces';
+import { BP_LIVE_MODULES } from './bpLiveSurfaces';
 import { MANDATE_CARDS_MODULES } from './mandateCardsSurfaces';
 import { MANDATE_WP6_MODULES } from './mandateWp6Surfaces';
 import { BREACH_STATES_MODULES } from './breachStatesSurfaces';
 import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
 import { CONVERSATION_VARIANTS_MODULES } from './conversationVariantsSurfaces';
 import { PERSONA_CARD_MODULES } from './personaCardVariants';
+import { CONSOLE_STYLE_MODULES } from './consoleStyleSurfaces';
+import { FANOUT_A_MODULES } from './fanoutASurfaces';
+import { FANOUT_B_MODULES } from './fanoutBSurfaces';
+import { FANOUT_C_MODULES } from './fanoutCSurfaces';
+import { FANOUT_D_MODULES } from './fanoutDSurfaces';
+import { FANOUT_E_MODULES } from './fanoutESurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -101,6 +108,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...DECISION_DECK_MODULES,
   // The product blueprint drawing set on the Kettle fixture (blueprintSurfaces.tsx, blueprintTapes.mjs).
   ...BLUEPRINT_MODULES,
+  // Personas against a running bp demo: the follower, the Morning tab (bpLiveSurfaces.tsx, driven by bpLiveDrive.mjs).
+  ...BP_LIVE_MODULES,
   // The mandate-lane card shapes in the live deck (mandateCardsSurfaces.tsx, mandateCardsTapes.mjs).
   ...MANDATE_CARDS_MODULES,
   ...MANDATE_WP6_MODULES, // Re-read, met-when, Scopes and the Orphanage (mandateWp6Surfaces.tsx, WP6).
@@ -143,6 +152,14 @@ export const MODULES: Record<string, HarnessModule> = {
   ...MISSION_CONTROL_MODULES,
   // The Athena chat overlay, open, per scenario; variant and background are URL params (athenaChatSurfaces.tsx, athenaChatTapes.mjs).
   ...ATHENA_CHAT_MODULES,
+  // Console-style WP0: the six routed pages of the BEFORE/AFTER pair (consoleStyleSurfaces.tsx, consoleStyleTapes.mjs).
+  ...CONSOLE_STYLE_MODULES,
+  // console-style fan-out partitions A..E (fanout<X>Surfaces.tsx, one owner each).
+  ...FANOUT_A_MODULES,
+  ...FANOUT_B_MODULES,
+  ...FANOUT_C_MODULES,
+  ...FANOUT_D_MODULES,
+  ...FANOUT_E_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),

@@ -280,41 +280,34 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           const label = { default: r.backlog_sort_default, value: r.backlog_sort_value, quick: r.backlog_sort_quick, newest: r.backlog_sort_newest }[mode];
           const tip = { default: r.backlog_sort_default_tip, value: r.backlog_sort_value_tip, quick: r.backlog_sort_quick_tip, newest: undefined }[mode];
           return (
-            <button
+            <Button
               key={mode}
-              type="button"
+              variant={active ? 'secondary' : 'ghost'}
+              size="xs"
               onClick={() => setSortMode(mode)}
-              title={tip}
+              tooltip={tip}
               aria-pressed={active}
-              className={`typo-label rounded-card px-2 py-1 border transition-colors ${
-                active
-                  ? 'bg-primary/10 text-foreground border-primary/25'
-                  : 'text-muted-foreground border-transparent hover:bg-primary/5'
-              }`}
             >
               {label}
-            </button>
+            </Button>
           );
         })}
       </div>
       <div className="relative" ref={levelsRef}>
-        <button
-          type="button"
+        <Button
+          variant={levelFilterActive ? 'accent' : 'secondary'}
+          tone={levelFilterActive ? 'warning' : undefined}
+          size="xs"
           onClick={() => setLevelsOpen((o) => !o)}
           aria-expanded={levelsOpen}
-          title={r.backlog_levels_filter}
+          tooltip={r.backlog_levels_filter}
           aria-label={r.backlog_levels_filter}
-          className={`flex items-center gap-1 typo-label rounded-card px-2 py-1 border transition-colors ${
-            levelFilterActive
-              ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-              : 'text-muted-foreground border-primary/15 hover:bg-primary/5'
-          }`}
+          icon={<SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />}
         >
-          <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
           {r.backlog_levels_filter}
-        </button>
+        </Button>
         {levelsOpen && (
-          <div className="absolute right-0 top-full mt-1 z-30 w-64 p-3 rounded-card border border-primary/15 bg-background shadow-elevation-3">
+          <div className="absolute right-0 top-full mt-1 z-30 w-64 p-3 rounded-card border border-hair bg-background shadow-elevation-3">
             <EffortRiskFilter
               effortRange={effortRange}
               riskRange={riskRange}
@@ -340,40 +333,32 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           const count = queue.counts?.[s] ?? 0;
           const active = queue.status === s;
           return (
-            <button
+            <Button
               key={s}
-              type="button"
+              variant={active ? 'secondary' : 'ghost'}
+              size="sm"
               onClick={() => setStatus(s)}
               aria-pressed={active}
-              className={`typo-label rounded-full px-2.5 py-1 border transition-colors ${
-                active
-                  ? 'bg-primary/15 text-foreground border-primary/30'
-                  : 'bg-primary/5 text-muted-foreground border-primary/10 hover:bg-primary/10'
-              }`}
             >
               {statusLabel[s]}
-              <span className="ml-1.5 tabular-nums opacity-70">{count}</span>
-            </button>
+              <span className="num ml-1.5 text-ink-3">{count}</span>
+            </Button>
           );
         })}
         <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={sendToAthena}
-            className="flex items-center gap-1.5 typo-label rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 transition-colors"
-          >
-            <Bot className="w-3.5 h-3.5" aria-hidden />
+          <Button variant="secondary" size="sm" onClick={sendToAthena} icon={<Bot className="w-3.5 h-3.5" aria-hidden />}>
             {r.backlog_athena_send}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="accent"
+            tone="success"
+            size="sm"
             onClick={() => void executeAccepted()}
             disabled={dispatching}
-            className="flex items-center gap-1.5 typo-label rounded-interactive border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-emerald-300 hover:bg-emerald-500/15 disabled:opacity-40 transition-colors"
+            icon={<Play className="w-3.5 h-3.5" aria-hidden />}
           >
-            <Play className="w-3.5 h-3.5" aria-hidden />
             {r.backlog_execute_accepted}
-          </button>
+          </Button>
           <SweepButton projectId={activeProjectId} onSwept={queue.reload} />
           {activeProjectId && <ScanTrustPopover projectId={activeProjectId} />}
           <SegmentedTabs<BacklogView>
@@ -396,14 +381,9 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             idPrefix="backlog-view"
           />
           {queue.hasMore && (
-            <button
-              type="button"
-              onClick={queue.loadMore}
-              disabled={queue.loadingMore}
-              className="typo-label rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
-            >
+            <Button variant="secondary" size="sm" onClick={queue.loadMore} disabled={queue.loadingMore}>
               {tx(r.backlog_load_more, { count: queue.rows.length })}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -504,13 +484,13 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
 // paints one.
 // ---------------------------------------------------------------------------
 
-const BACKLOG_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const BACKLOG_GHOST_BAR = 'rounded-interactive bg-surface-2';
 const BACKLOG_GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-44', 'w-40'];
 
 function BacklogGhostRows() {
   return (
     <div className="flex h-full min-h-0 gap-4" aria-hidden="true">
-      <div className="w-60 shrink-0 rounded-card border border-primary/10 p-2 space-y-2">
+      <div className="w-60 shrink-0 rounded-card border border-hair p-2 space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <span
             key={i}
@@ -519,18 +499,18 @@ function BacklogGhostRows() {
           />
         ))}
       </div>
-      <ul className="flex-1 min-w-0 overflow-hidden rounded-card border border-primary/10">
+      <ul className="flex-1 min-w-0 overflow-hidden rounded-card border border-hair">
         {Array.from({ length: 8 }).map((_, i) => {
           const titleW = BACKLOG_GHOST_TITLE_WIDTHS[i % BACKLOG_GHOST_TITLE_WIDTHS.length];
           return (
             <li
               key={i}
-              className="flex items-center gap-3 px-4 border-b border-primary/[0.06] animate-fade-in"
+              className="flex items-center gap-3 px-4 border-b border-hair animate-fade-in"
               style={{ height: 44, animationDelay: `${120 + i * 35}ms` }}
             >
               <span className="h-2.5 w-16 rounded-full bg-primary/[0.06] shrink-0" />
               <span className={`block h-3 ${titleW} max-w-full ${BACKLOG_GHOST_BAR}`} />
-              <span className="ml-auto h-2.5 w-20 rounded bg-primary/[0.06] shrink-0" />
+              <span className="ml-auto h-2.5 w-20 rounded-interactive bg-surface-2 shrink-0" />
             </li>
           );
         })}

@@ -11,7 +11,7 @@
 // authority now, wired per workspace in the registry section below.
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Landmark, Plus, Trash2, Wand2 } from 'lucide-react';
+import { Plus, Trash2, Wand2 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -24,6 +24,9 @@ import {
 import { WorkspaceRegistrySection } from './registry/WorkspaceRegistrySection';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export default function WorkspacesAtlas() {
   const { t, tx } = useTranslation();
@@ -46,10 +49,9 @@ export default function WorkspacesAtlas() {
             .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
           const isOpen = openId === ws.id;
           return (
-            <button
+            <PressSurface
               key={ws.id}
-              type="button"
-              onClick={() => {
+              onPress={() => {
                 // Opening a territory on the map IS entering it: the footer
                 // breadcrumb and every scoped project list read `activeId`
                 // from the store, so a local-only `openId` would leave the
@@ -59,25 +61,19 @@ export default function WorkspacesAtlas() {
                 if (!isOpen) switchWorkspace(ws.id);
               }}
               aria-pressed={isOpen}
-              className={`relative overflow-hidden rounded-card border p-4 text-left transition-colors ${
-                isOpen ? 'border-primary/40 bg-primary/5' : 'border-primary/10 hover:bg-secondary/40'
-              }`}
+              className="relative overflow-hidden rounded-card border border-hair p-4"
+              selected={isOpen}
             >
-              <Landmark
-                className="absolute -right-4 -bottom-4 w-24 h-24 opacity-[0.06]"
-                style={{ color: ws.color }}
-              />
               <div className="flex items-center gap-2 mb-3">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ws.color }} />
                 <span className="typo-title truncate">{ws.name}</span>
                 {ws.adoptDefaultSkills && (
-                  <span
-                    className="ml-auto inline-flex items-center gap-1 typo-label text-primary/80 border border-primary/25 bg-primary/10 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
-                    title={tw.adopt_skills_badge_tip}
+                  <Tooltip content={tw.adopt_skills_badge_tip}><span
+                    className="ml-auto inline-flex items-center gap-1 typo-label text-ink-2 border border-hair bg-surface-1 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
                   >
                     <Wand2 className="w-3 h-3" aria-hidden />
                     {tw.adopt_skills_badge}
-                  </span>
+                  </span></Tooltip>
                 )}
               </div>
               <div className="flex items-baseline gap-4 mb-3">
@@ -87,35 +83,34 @@ export default function WorkspacesAtlas() {
                 {members.slice(0, 4).map((name) => (
                   <span
                     key={name}
-                    className="typo-caption rounded-interactive bg-secondary/50 border border-primary/10 px-1.5 py-0.5 text-foreground"
+                    className="typo-caption rounded-interactive bg-surface-1 border border-hair px-1.5 py-0.5 text-foreground"
                   >
                     {name}
                   </span>
                 ))}
                 {members.length > 4 && (
-                  <span className="typo-caption text-muted-foreground">+{members.length - 4}</span>
+                  <span className="typo-caption text-ink-3">+{members.length - 4}</span>
                 )}
                 {members.length === 0 && (
-                  <span className="typo-caption text-muted-foreground">{tw.no_projects_yet}</span>
+                  <span className="typo-caption text-ink-3">{tw.no_projects_yet}</span>
                 )}
               </div>
-            </button>
+            </PressSurface>
           );
         })}
 
         {creating ? (
-          <div className="rounded-card border border-dashed border-primary/25 p-4 flex items-center">
+          <div className="rounded-card border border-dashed border-hair p-4 flex items-center">
             <CreateWorkspaceInline autoFocus />
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setCreating(true)}
-            className="rounded-card border border-dashed border-primary/25 p-4 flex flex-col items-center justify-center gap-2 text-foreground/80 hover:text-foreground hover:bg-secondary/30 transition-colors min-h-32"
+          <PressSurface
+            onPress={() => setCreating(true)}
+            className="rounded-card border border-dashed border-hair p-4 flex flex-col items-center justify-center gap-2 text-ink-2 hover:text-foreground min-h-32"
           >
             <Plus className="w-5 h-5" />
             <span className="typo-body">{tw.new_workspace}</span>
-          </button>
+          </PressSurface>
         )}
       </div>
 
@@ -127,7 +122,7 @@ export default function WorkspacesAtlas() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
-            className="mt-6 rounded-card border border-primary/15 p-5 flex flex-col gap-5"
+            className="mt-6 rounded-card border border-hair p-5 flex flex-col gap-5"
           >
             <header className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -155,14 +150,14 @@ export default function WorkspacesAtlas() {
                   ))}
                 </div>
               </div>
-              <button
+              <Button variant="ghost" size="icon-sm"
                 type="button"
                 onClick={() => setConfirmDelete(open.id)}
                 aria-label={tw.delete_workspace}
-                className="shrink-0 rounded-interactive p-2 text-foreground/70 hover:text-status-error hover:bg-status-error/10 transition-colors"
+                className="shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
-              </button>
+              </Button>
             </header>
 
             <MembershipPanel workspace={open} projects={center.projects} />
@@ -200,7 +195,7 @@ function Tally({ value, label }: { value: number; label: string }) {
   return (
     <span className="flex items-baseline gap-1">
       <span className="typo-data text-foreground">{value}</span>
-      <span className="typo-caption text-muted-foreground">{label}</span>
+      <span className="typo-caption text-ink-3">{label}</span>
     </span>
   );
 }

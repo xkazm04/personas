@@ -127,7 +127,7 @@ const ARROW_DEPTH = 6;
 // triangle's colour from the box it is supposed to continue.
 const ARROW_FILL = 'color-mix(in srgb, var(--tooltip-bg) 96%, transparent)';
 // Keep the arrow's center this far from the box corners so it never collides
-// with the `rounded-lg` (8px) radius even after the box is clamped to the
+// with the `rounded-interactive` (4px) radius even after the box is clamped to the
 // viewport edge.
 const ARROW_EDGE_INSET = 14;
 
@@ -345,7 +345,7 @@ export function Tooltip({
             // ringed in the accent colour. `typo-caption` replaces the raw
             // `text-md` — a tip is caption-weight copy, and the semantic token
             // is what the density scale actually reads.
-            className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[480px] typo-caption text-foreground tooltip-surface surface-blur-tooltip rounded-lg px-2.5 py-1.5 shadow-elevation-2"
+            className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[480px] [--tooltip-bg:var(--surface-2)] bg-surface-2 border border-hair-2 typo-caption text-ink-1 rounded-interactive px-2.5 py-1.5 shadow-elevation-2"
             style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
           >
             {content}
@@ -410,7 +410,7 @@ export function AnchoredTooltip({
       ref={tooltipRef}
       id={tooltipId}
       role="tooltip"
-      className="fixed z-[9999] pointer-events-none max-w-[480px] typo-caption text-foreground tooltip-surface surface-blur-tooltip rounded-lg px-2.5 py-1.5 shadow-elevation-2"
+      className="fixed z-[9999] pointer-events-none max-w-[480px] [--tooltip-bg:var(--surface-2)] bg-surface-2 border border-hair-2 typo-caption text-ink-1 rounded-interactive px-2.5 py-1.5 shadow-elevation-2"
       style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
     >
       {content}

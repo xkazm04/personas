@@ -44,14 +44,14 @@ function RailGroupHeader({ label, count, first }: { label: string; count: number
     <div
       data-rail-group
       style={{ height: railItemHeight({ kind: 'header', key: '', label, count, first }) }}
-      className={`flex items-end gap-1.5 border-b border-primary/10 bg-secondary/25 px-3 pb-1 ${
+      className={`flex items-end gap-1.5 border-b border-hair bg-secondary/25 px-3 pb-1 ${
         first ? '' : 'pt-2'
       }`}
     >
-      <span data-rail-group-name className="typo-label truncate text-foreground">
+      <span data-rail-group-name className="typo-label truncate text-ink-2">
         {label}
       </span>
-      <span className="typo-code shrink-0 text-foreground">{count}</span>
+      <span className="typo-code shrink-0 text-ink-2">{count}</span>
     </div>
   );
 }

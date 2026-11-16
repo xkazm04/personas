@@ -38,17 +38,17 @@ export function CharterMeasuredRow({
   return (
     <div
       className={`rounded-card border px-3 py-2 flex flex-col gap-1.5 ${
-        mismatch ? 'border-status-warning/40 bg-status-warning/10' : 'border-primary/10 bg-secondary/20'
+        mismatch ? 'border-status-warning/40 bg-status-warning/10' : 'border-hair bg-surface-1'
       }`}
       data-testid="resp-profile-measured"
       data-mismatch={mismatch ? 'true' : 'false'}
     >
-      <span className="typo-label text-foreground">{c.profile_measured_label}</span>
+      <span className="typo-label text-ink-1">{c.profile_measured_label}</span>
       {isLoading ? (
-        <div className="h-4 w-2/3 rounded-interactive bg-secondary/40" aria-hidden="true" data-testid="resp-profile-measured-ghost" />
+        <div className="h-4 w-2/3 rounded-interactive bg-surface-2" aria-hidden="true" data-testid="resp-profile-measured-ghost" />
       ) : band == null || !measured ? (
         <Tooltip content={c.profile_not_measured_tooltip}>
-          <span className="typo-caption text-foreground" data-testid="resp-profile-not-measured">
+          <span className="typo-caption text-ink-2" data-testid="resp-profile-not-measured">
             {measured && measured.passes > 0
               ? tx(c.profile_not_measured_passes, { passes: formatNumeric(measured.passes, 'count', { language }) })
               : c.profile_not_measured}
@@ -56,21 +56,21 @@ export function CharterMeasuredRow({
         </Tooltip>
       ) : (
         <>
-          <dl className="flex flex-wrap gap-x-5 gap-y-1 typo-caption text-foreground">
+          <dl className="flex flex-wrap gap-x-5 gap-y-1 typo-caption text-ink-1">
             <div className="flex gap-1.5">
-              <dt className="text-foreground">{c.profile_measured_passes}</dt>
+              <dt className="text-ink-1">{c.profile_measured_passes}</dt>
               <dd><Numeric value={measured.passes} unit="count" /></dd>
             </div>
             <div className="flex gap-1.5">
-              <dt className="text-foreground">{c.profile_measured_cost}</dt>
+              <dt className="text-ink-1">{c.profile_measured_cost}</dt>
               <dd><Numeric value={measured.avgCostUsd} unit="usd" /></dd>
             </div>
             <div className="flex gap-1.5">
-              <dt className="text-foreground">{c.profile_measured_tokens}</dt>
+              <dt className="text-ink-1">{c.profile_measured_tokens}</dt>
               <dd><Numeric value={measured.avgTokens} unit="compact" /></dd>
             </div>
             <div className="flex gap-1.5">
-              <dt className="text-foreground">{c.profile_measured_band}</dt>
+              <dt className="text-ink-1">{c.profile_measured_band}</dt>
               <dd className={mismatch ? 'text-status-warning' : undefined} data-testid="resp-profile-measured-band">
                 {EFFORT_BAND_CODES[band]}
               </dd>

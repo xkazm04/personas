@@ -136,7 +136,7 @@ export default function EditServerModal({ server, onClose }: EditServerModalProp
               inputMode="numeric"
               value={port}
               onChange={(e) => setPort(e.target.value)}
-              className={`${INPUT_FIELD} w-36 font-mono tabular-nums`}
+              className={`${INPUT_FIELD} w-36 font-mono num`}
               data-testid="server-edit-port"
             />
           )}

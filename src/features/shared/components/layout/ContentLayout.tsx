@@ -15,23 +15,12 @@ interface ContentLayoutContextValue {
 const ContentLayoutContext = createContext<ContentLayoutContextValue | null>(null);
 
 // ---------------------------------------------------------------------------
-// Icon color palette
+// Icon colour. The Console header spends no colour on the icon: it sits in ink-2 at 16px.
+// The names stay so call sites keep typechecking; a tint is no longer painted.
 // ---------------------------------------------------------------------------
 
-const ICON_COLOR_MAP = {
-  violet: { bg: 'bg-violet-500/15', border: 'border-violet-500/25' },
-  blue: { bg: 'bg-blue-500/15', border: 'border-blue-500/25' },
-  emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  indigo: { bg: 'bg-indigo-500/15', border: 'border-indigo-500/25' },
-  amber: { bg: 'bg-amber-500/15', border: 'border-amber-500/25' },
-  cyan: { bg: 'bg-cyan-500/15', border: 'border-cyan-500/25' },
-  orange: { bg: 'bg-orange-500/15', border: 'border-orange-500/25' },
-  sky: { bg: 'bg-sky-500/15', border: 'border-sky-500/25' },
-  red: { bg: 'bg-red-500/15', border: 'border-red-500/25' },
-  primary: { bg: 'bg-primary/10', border: 'border-primary/20' },
-} as const;
-
-type IconColor = keyof typeof ICON_COLOR_MAP;
+type IconColor =
+  | 'violet' | 'blue' | 'emerald' | 'indigo' | 'amber' | 'cyan' | 'orange' | 'sky' | 'red' | 'primary';
 
 // ---------------------------------------------------------------------------
 // ContentBox -- outer page wrapper
@@ -83,51 +72,41 @@ export function ContentBox({ children, minWidth, 'data-testid': testId }: Conten
 // ---------------------------------------------------------------------------
 
 interface ContentHeaderProps {
-  /** Optional icon (left of title). Renders inside a small colored chip when
-   *  `iconColor` is supplied; rendered raw otherwise. May be omitted entirely
-   *  for headers that lead with text only. */
+  /** Optional icon (left of title), drawn at 16px in ink. May be omitted for text-only headers. */
   icon?: ReactNode;
+  /** Accepted for compatibility; the header no longer tints its icon. */
   iconColor?: IconColor;
-  /** Page identifier — rendered SMALL as a mono-uppercase caption (the
-   *  "Mission Control" treatment from the Home dashboard). This is the
-   *  context line, not the most visually prominent text. Keep to 1–4 words. */
+  /** The page name, rendered as the bar's title (`typo-heading-lg`, ink). Keep to 1-4 words. */
   title: string;
-  /** Primary informational line — rendered LARGE as the dominant heading
-   *  (the "Good Evening, Operator" treatment). This is what the user reads
-   *  first. May be a dynamic count, status phrase, greeting, etc. */
+  /** The one quiet line beside the title (`typo-caption`): a count, a status phrase, a greeting. */
   subtitle?: ReactNode;
-  /** Right-aligned controls on the SAME row as the title/subtitle. Use for one
-   *  or two compact actions; when the controls are many (switches + picker +
-   *  button) prefer `toolbar`, which drops them to their own row so they don't
-   *  collide with a long title. */
+  /** A mono meta slot after the title (`typo-code`, ink-3): a count, a timestamp, a key. */
+  meta?: ReactNode;
+  /** Right-aligned controls on the SAME row as the title. Use for one or two compact actions;
+   *  when the controls are many prefer `toolbar`, which drops them to their own row. */
   actions?: ReactNode;
-  /** Controls rendered as a thin bar on the row BELOW the title/subtitle,
-   *  separated by a divider. The collision-free home for a page's switches,
-   *  primary action, and selectors. */
+  /** Controls rendered as a thin bar on the row BELOW the title, separated by a hairline. */
   toolbar?: ReactNode;
-  /** Constrain the header to its container width (`w-full`) instead of the
-   *  default `min-w-[80vw]` floor. Use for single-row module headers whose
-   *  right-aligned actions must never spill past the page's right edge on
-   *  narrower windows (the 80vw floor otherwise pushes them beyond the visible
-   *  content area and they get clipped). Opt-in so app-wide headers are
-   *  unchanged. */
+  /** Constrain the header to its container width (`w-full`) instead of the default
+   *  `min-w-[80vw]` floor, so right-aligned actions never spill past the page's right edge. */
   fitWidth?: boolean;
-  /** A single 60px row for dense tool pages (the Contest ledger): `title` is
-   *  the <h1> at section size and `subtitle` a one-line meta under it, with
-   *  the actions on the same row. The default two-tier band (caption over a
-   *  large heading) is unchanged for every other page. */
+  /** Dense tool pages: the subtitle stacks under the title as a second line of the same bar. */
   compact?: boolean;
   children?: ReactNode;
-  /** Inline style applied to the header root — used to thread CSS custom
-   *  properties (e.g. `--persona-accent`) into descendant components. */
+  /** Inline style applied to the header root, used to thread CSS custom properties into descendants. */
   style?: CSSProperties;
 }
 
+/**
+ * ContentHeader: ONE instrument bar. Icon, title, quiet summary line, mono meta, actions right,
+ * `--head-h` tall, a hairline under it. No tinted band, no uppercase tracked caption.
+ * @catalog ContentHeader - the page's one-line instrument bar (icon, title, quiet subtitle, mono meta, actions, optional toolbar row). Layout.
+ */
 export function ContentHeader({
   icon,
-  iconColor,
   title,
   subtitle,
+  meta,
   actions,
   toolbar,
   fitWidth = false,
@@ -136,84 +115,53 @@ export function ContentHeader({
   style,
 }: ContentHeaderProps) {
   const iconElement = icon ? (
-    iconColor ? (
-      <div
-        className={`${IS_MOBILE ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg ${ICON_COLOR_MAP[iconColor].bg} border ${ICON_COLOR_MAP[iconColor].border} flex items-center justify-center flex-shrink-0`}
-      >
-        {icon}
-      </div>
-    ) : (
-      icon
-    )
+    <span className="flex-shrink-0 flex items-center text-ink-2 [&>svg]:w-4 [&>svg]:h-4">{icon}</span>
   ) : null;
 
   const layoutCtx = useContext(ContentLayoutContext);
   const scrolled = layoutCtx?.scrolled ?? false;
 
-  if (compact) {
-    return (
-      <div style={style} className="w-full min-w-0 flex-shrink-0 border-b border-primary/10 bg-primary/5" data-testid="content-header-compact">
-        <div className={`flex items-center gap-3 min-w-0 ${IS_MOBILE ? 'px-3 py-2.5' : 'h-[60px] px-5'}`}>
-          {iconElement}
-          <div className="flex-1 min-w-0">
-            <h1 className="typo-section-title text-foreground truncate">{title}</h1>
-            {subtitle && <p className="typo-caption truncate">{subtitle}</p>}
-          </div>
-          {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
-        </div>
-        {children}
+  const titleBlock = compact ? (
+    <div className="flex-1 min-w-0">
+      <h1 className="typo-heading-lg truncate">{title}</h1>
+      {subtitle && <p className="typo-caption truncate">{subtitle}</p>}
+    </div>
+  ) : (
+    <>
+      <h1 className="typo-heading-lg truncate min-w-0 max-w-[60%] flex-shrink-0">{title}</h1>
+      {meta && <span className="typo-code text-ink-3 flex-shrink-0 whitespace-nowrap">{meta}</span>}
+      <div className="flex-1 min-w-0">
+        {subtitle && <p className="typo-caption truncate">{subtitle}</p>}
       </div>
-    );
-  }
+    </>
+  );
 
   return (
     <div
       style={style}
+      data-testid={compact ? 'content-header-compact' : undefined}
+      data-scrolled={scrolled || undefined}
       className={[
-        IS_MOBILE ? 'px-3 py-2.5' : 'px-4 md:px-6 xl:px-8 py-4',
-        // Mission-Control treatment: subtle brand tint + matching border.
-        // bg-primary/5 + border-primary/10 give every header the same
-        // "operator console" feel as the Home dashboard. Themes derive
-        // these from --color-primary, so each theme paints its own accent.
-        // `fitWidth` clamps the header to its container so single-row module
-        // headers never push right-aligned actions past the visible edge; the
-        // default keeps the app-wide 80vw floor.
-        fitWidth ? 'w-full min-w-0 overflow-x-clip' : 'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
-        fitWidth ? 'border-b border-primary/10 bg-primary/5 flex-shrink-0' : '',
-        // No `backdrop-blur` here. backdrop-filter re-samples its backdrop on
-        // every compositor frame — and pointer movement / hover repaints
-        // generate those frames — so in WebView2 the frosted layer flickers
-        // as a blinking white band across every module header. The same
-        // lesson was already learned for the page background (see the "blur
-        // removed (causes WebView2 compositor freeze)" note in PersonasPage).
-        // Nothing scrolls *under* this header (ContentBody is a separate
-        // sibling that scrolls in its own clipped box), so the blur was purely
-        // decorative over the static background — dropping it costs nothing.
-        'sticky top-0 z-10',
-        'transition-shadow duration-150',
-        scrolled ? 'shadow-elevation-2' : 'shadow-none',
+        'flex-shrink-0 border-b border-hair bg-background sticky top-0 z-10',
+        // `fitWidth` clamps the header to its container; the default keeps the app-wide 80vw floor.
+        fitWidth ? 'w-full min-w-0 overflow-x-clip' : 'w-full min-w-[80vw]',
       ].join(' ')}
     >
-      <div className={`flex items-center gap-3 min-w-0 ${actions && !fitWidth ? 'pr-20' : ''}`}>
+      {/* No backdrop-blur: it flickers as a white band in WebView2 (see PersonasPage). */}
+      <div
+        className={`flex items-center gap-3 min-w-0 ${IS_MOBILE ? 'px-3 py-2' : 'px-[var(--gutter-page)]'} ${actions && !fitWidth ? 'pr-20' : ''}`}
+        style={{ minHeight: 'var(--head-h)' }}
+      >
         {iconElement}
-        <div className="flex-1 min-w-0">
-          {/* Title = small mono-uppercase context label (Mission Control style). */}
-          <div className="typo-caption uppercase tracking-[0.3em] text-foreground font-mono truncate">
-            {title}
-          </div>
-          {/* Subtitle = the visually dominant line (Good Evening, Operator style). */}
-          {subtitle && (
-            <h1 className="typo-heading-lg text-foreground mt-0.5">{subtitle}</h1>
-          )}
-        </div>
+        {titleBlock}
+        {compact && meta && <span className="typo-code text-ink-3 flex-shrink-0 whitespace-nowrap">{meta}</span>}
         {actions && (fitWidth
           ? <div className="shrink min-w-0 flex items-center gap-2 justify-end">{actions}</div>
-          : actions)}
+          : <div className="shrink-0 flex items-center gap-2 ml-auto">{actions}</div>)}
       </div>
-      {/* Toolbar — a thin controls bar on its own row below the title, so a long
-          title and a cluster of switches/actions never fight for the same space. */}
+      {/* Toolbar: a thin controls bar on its own row below the title. */}
       {toolbar && (
-        <div className="mt-3 pt-3 border-t border-primary/10 flex items-center flex-wrap gap-2">
+        <div className="px-[var(--gutter-page)] py-2 border-t border-hair flex items-center flex-wrap gap-2">
           {toolbar}
         </div>
       )}
@@ -294,12 +242,9 @@ export function ContentBody({
         <div
           className={[
             'min-h-full w-full',
-            // Horizontal padding is deliberately tighter than vertical:
-            // the vertical rhythm separates a page from its header, but
-            // every x pixel here is taken from content width, which
-            // multi-column pages spend better than the gutter does.
+            // Horizontal padding is the page gutter (the density axis owns it); 1rem top and bottom.
             !noPadding &&
-              (IS_MOBILE ? 'p-2.5' : 'py-4 md:py-6 xl:py-8 px-3 md:px-4 xl:px-5'),
+              (IS_MOBILE ? 'p-2.5' : 'py-4 px-[var(--gutter-page)]'),
             centered && 'mx-auto',
           ]
             .filter(Boolean)

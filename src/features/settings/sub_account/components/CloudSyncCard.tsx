@@ -132,7 +132,7 @@ export default function CloudSyncCard() {
       aria-hidden
     />
   ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption text-foreground">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-1 border border-hair px-2.5 py-1 typo-caption text-foreground">
       <LiveStatusDot tone={state} />
       {stateLabel}
     </span>
@@ -141,8 +141,8 @@ export default function CloudSyncCard() {
   return (
     <SectionCard
       title={s.cloud_sync_title}
-      icon={<CloudUpload className="w-4 h-4 text-sky-400" />}
-      titleClassName="text-primary"
+      icon={<CloudUpload className="w-4 h-4 text-ink-2" />}
+      titleClassName="text-ink-1"
       action={statusBadge}
     >
       <div className="space-y-4">
@@ -151,7 +151,7 @@ export default function CloudSyncCard() {
       {/* Toggle */}
       {loading ? (
         <div
-          className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4"
+          className="flex items-center justify-between gap-4 rounded-card bg-surface-1 border border-primary/8 p-4"
           aria-hidden
         >
           <div className="min-w-0 space-y-2">
@@ -161,7 +161,7 @@ export default function CloudSyncCard() {
           <span className="h-6 w-10 flex-shrink-0 rounded-full bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">
+        <div className="flex items-center justify-between gap-4 rounded-card bg-surface-1 border border-primary/8 p-4">
           <div className="min-w-0">
             <p className="typo-title">{s.cloud_sync_toggle}</p>
             <p className="typo-caption text-foreground mt-0.5">
@@ -238,11 +238,13 @@ export default function CloudSyncCard() {
           {/* Per-table breakdown (collapsible) */}
           {tables.length > 0 && (
             <div className="rounded-card border border-primary/8 bg-secondary/10 overflow-hidden">
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowDetails((v) => !v)}
                 aria-expanded={showDetails}
-                className="flex w-full items-center justify-between px-4 py-2.5 typo-caption text-foreground hover:bg-secondary/20 transition-colors"
+                variant="ghost"
+                size="md"
+                className="w-full"
               >
                 <span>{s.cloud_sync_tables_title}</span>
                 <span className="inline-flex items-center gap-1.5 text-foreground">
@@ -251,7 +253,7 @@ export default function CloudSyncCard() {
                     className={`w-3.5 h-3.5 transition-transform ${showDetails ? 'rotate-180' : ''}`}
                   />
                 </span>
-              </button>
+              </Button>
 
               <Collapse open={showDetails} unmountWhenClosed duration={200}>
                     <ul className="divide-y divide-primary/8 border-t border-primary/8">
@@ -264,7 +266,7 @@ export default function CloudSyncCard() {
                             {tableLabels[tbl.table] ?? tbl.table}
                           </span>
                           {tbl.error ? (
-                            <span className="inline-flex items-center gap-1.5 typo-caption text-red-400/90 min-w-0">
+                            <span className="inline-flex items-center gap-1.5 typo-caption text-status-error/90 min-w-0">
                               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                               <span className="truncate max-w-[14rem]">{tbl.error}</span>
                             </span>
@@ -290,10 +292,10 @@ export default function CloudSyncCard() {
 
           {/* Pass-level error + retry */}
           {hasError && (
-            <div className="flex items-start gap-2.5 rounded-card border border-red-500/20 bg-red-500/5 p-3">
-              <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-2.5 rounded-card border border-status-error/20 bg-status-error/5 p-3">
+              <AlertCircle className="w-4 h-4 text-status-error mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0 space-y-1.5">
-                <p className="typo-caption text-red-300/90">
+                <p className="typo-caption text-status-error/90">
                   {interpolate(s.cloud_sync_error, { error: status?.lastError ?? '' })}
                 </p>
                 <Button

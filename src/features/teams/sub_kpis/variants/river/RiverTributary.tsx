@@ -6,6 +6,7 @@
 // sentences are eleven things a reader already knows. The bed takes whatever
 // width is left, and the row closes on the bare denominator: the headline's
 // stat cards already say what the figures mean.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { KpiTally } from '../../estate/kpiEstate';
@@ -40,11 +41,10 @@ export function RiverTributary({
   }[flow.kind]();
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
+    <PressSurface
+      onPress={onOpen}
       data-testid={`kpi-river-tributary-${label}`}
-      className="flex w-full items-center gap-4 px-2 py-2.5 text-left transition-colors hover:bg-secondary/15 focus-ring"
+      className="flex w-full items-center gap-4 px-2 py-2.5"
     >
       <span aria-hidden="true" className={`w-5 shrink-0 ${KT.metaFigure}`}>
         {rank}
@@ -57,6 +57,6 @@ export function RiverTributary({
         <RiverbedChart bed={bed} height={34} />
       </span>
       <span className={`w-16 shrink-0 text-right ${KT.figure}`}>{`${tally.measured}/${tally.total}`}</span>
-    </button>
+    </PressSurface>
   );
 }

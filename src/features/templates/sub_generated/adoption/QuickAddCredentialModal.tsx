@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useId, useState, useMemo } from 'react';
 import { X, ArrowLeft, Loader2, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -9,6 +9,7 @@ import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/t
 import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from '@/lib/log';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const logger = createLogger('quick-add-credential');
@@ -140,21 +141,22 @@ export function QuickAddCredentialModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-background border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
+        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-background border border-hair rounded-modal shadow-elevation-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-hair">
           <div className="flex items-center gap-3 min-w-0">
             {phase === 'form' && (
-              <button
+              <Button
                 type="button"
                 onClick={handleBackToPicker}
-                className="p-1 rounded-card hover:bg-secondary/60 transition-colors"
+                variant="ghost"
+                size="icon-sm"
                 aria-label={debtText("auto_back_to_picker_2d203d04")}
               >
                 <ArrowLeft className="w-4 h-4 text-foreground" />
-              </button>
+              </Button>
             )}
             <div className="min-w-0">
               <h2 className="typo-body-lg text-foreground truncate">
@@ -169,14 +171,15 @@ export function QuickAddCredentialModal({
               </p>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-card hover:bg-secondary/60 transition-colors"
+            variant="ghost"
+            size="icon-sm"
             aria-label="Close"
           >
             <X className="w-4 h-4 text-foreground" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
@@ -196,19 +199,20 @@ export function QuickAddCredentialModal({
             ) : (
               <div className="text-center py-10 space-y-3">
                 <p className="typo-body text-foreground">
-                  <DebtText k="auto_no_connectors_declare_the_6bf34e6e" /> <code className="px-1 py-0.5 rounded bg-secondary/40 text-foreground">{category}</code> <DebtText k="auto_category_yet_58439dd0" />
+                  <DebtText k="auto_no_connectors_declare_the_6bf34e6e" /> <code className="px-1 py-0.5 rounded-interactive bg-surface-2 text-foreground">{category}</code> <DebtText k="auto_category_yet_58439dd0" />
                 </p>
                 <p className="typo-body text-foreground">
                   <DebtText k="auto_you_can_still_add_one_from_the_vault_catal_ac9cc338" />
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={handleOpenVaultCatalog}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 hover:bg-primary/10 transition-colors typo-body text-foreground"
+                  variant="secondary"
+                  size="sm"
+                  icon={<ExternalLink className="w-3.5 h-3.5" />}
+                  iconRight={<DebtText k="auto_open_vault_catalog_6e8c24e5" />}
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <DebtText k="auto_open_vault_catalog_6e8c24e5" />
-                </button>
+                </Button>
               </div>
             )
           )}
@@ -235,14 +239,16 @@ export function QuickAddCredentialModal({
                 <p className="typo-body text-foreground">
                   <DebtText k="auto_once_the_credential_is_healthy_close_this__e541af46" />
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={handleOpenVaultCatalog}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-card bg-primary/15 hover:bg-primary/25 border border-primary/30 transition-colors typo-body text-foreground"
+                  variant="accent"
+                  tone="highlight"
+                  size="md"
+                  icon={<ExternalLink className="w-4 h-4" />}
+                  iconRight={<DebtText k="auto_open_vault_catalog_efc2651a" />}
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  <DebtText k="auto_open_vault_catalog_efc2651a" />
-                </button>
+                </Button>
               </div>
             )
           )}
@@ -273,6 +279,7 @@ function InlineCredentialForm({
   saving,
   onSubmit,
 }: InlineCredentialFormProps) {
+  const nameId = useId();
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   const summary = typeof metadata.summary === 'string' ? metadata.summary : null;
   const setupGuide = typeof metadata.setup_guide === 'string' ? metadata.setup_guide : null;
@@ -284,8 +291,9 @@ function InlineCredentialForm({
       )}
 
       <div className="space-y-1.5">
-        <label className="typo-body text-foreground">Name</label>
+        <label htmlFor={nameId} className="typo-body text-foreground">Name</label>
         <input
+          id={nameId}
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
@@ -303,11 +311,11 @@ function InlineCredentialForm({
       ))}
 
       {setupGuide && (
-        <details className="rounded-card border border-primary/10 bg-secondary/20">
+        <details className="rounded-card border border-hair bg-surface-1">
           <summary className="cursor-pointer px-3 py-2 typo-body text-foreground hover:text-foreground">
             <DebtText k="auto_setup_guide_6b2f076c" />
           </summary>
-          <pre className="whitespace-pre-wrap px-3 py-2 typo-body text-foreground font-sans border-t border-primary/10">
+          <pre className="whitespace-pre-wrap px-3 py-2 typo-body text-foreground font-sans border-t border-hair">
             {setupGuide}
           </pre>
         </details>
@@ -331,15 +339,17 @@ function InlineCredentialForm({
       )}
 
       <div className="flex justify-end gap-2 pt-1">
-        <button
+        <Button
           type="button"
           disabled={saving}
           onClick={onSubmit}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-card bg-primary/20 hover:bg-primary/30 border border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed typo-body text-foreground transition-colors"
+          variant="accent"
+          tone="highlight"
+          size="md"
+          icon={saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
         >
-          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {saving ? 'Testing & saving…' : 'Healthcheck & save'}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -384,7 +394,7 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder ?? ''}
           autoComplete="off"
-          className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
+          className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
         />
       )}
       {field.helpText && (

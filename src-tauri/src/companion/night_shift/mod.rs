@@ -1,46 +1,35 @@
-//! Night Shift v1 — Athena as the JUDGMENT layer over unattended overnight
-//! work (moonshot batch-2, `ai-companion.md` #2, steps 1-3 + 5).
+//! Night Shift — Athena as the JUDGMENT layer over unattended overnight
+//! work (moonshot batch-2, `ai-companion.md` #2).
 //!
-//! The loop:
-//!   1. **Plan** (`jobs/night_plan.rs` + [`planner`]): in the evening, one
-//!      CLI call reads goals + backlog + registered projects + dev memories
-//!      and emits a bounded plan (≤ N sessions, per-repo scope, stop
-//!      conditions). The plan lands as a `companion_approval` card
-//!      (`night_shift_execute_plan`) — NO plan runs unapproved.
-//!   2. **Unattended guidance** ([`unattended`]): while an approved plan's
-//!      night window is open, a fleet worker's blocking
-//!      `athena.request_guidance` that no human resolves within T minutes is
-//!      answered by Athena from dev-memories + decision precedent; every
-//!      answer is episode- AND decision-logged. Destructive
-//!      `athena.request_approval` is ALWAYS parked (denied with a park note),
-//!      never auto-approved.
-//!   3. **Review station** (`jobs/session_review.rs` + [`review`]): when a
-//!      dispatched session exits, a job diffs its branch and classifies
-//!      ship-to-branch / park-for-human / retry-with-feedback. Branch-only
-//!      writes are verified — a session that committed to the default branch
-//!      is parked and flagged.
-//!   5. **Morning report** (`proactive::rollup::compose_night_report`): the
-//!      first proactive message at wake rolls up dispatched / reviewed /
-//!      parked / answered. It deliberately references (not duplicates) the
-//!      batch-1 Morning Director (`brain/briefing.rs`) — this is a rollup
-//!      card, not a second briefing composer.
+//! **Standup absorbed the planning half on 2026-11-06** (spark app-standup,
+//! `companion::standup`). The evening `night_plan` job, its
+//! `night_shift_execute_plan` approval card and the morning report are gone:
+//! the operator plans day AND night on the Standup page, an armed standup
+//! queues night work with `not_before_ms` at the night start, and the
+//! "since last standup" report replaces the morning report. Nothing creates a
+//! `companion_night_plan` row any more.
 //!
-//! Autonomy grammar: every act is *attributed* (plan id + fleet session id on
-//! each `companion_night_event` row), *audited* (the event ledger is
-//! append-only), *bounded* (plan bounding + registered-project allowlist +
-//! session cap refuse BEFORE dispatch), and *reversible or parked* (workers
-//! write to branches only; anything destructive parks for a human).
-//!
-//! Trust ledger + multi-night campaigns are deferred by design.
+//! What remains here, all reading the legacy ledger:
+//!   - **Unattended guidance** ([`unattended`]): while an approved plan's
+//!     night window is open, a fleet worker's blocking
+//!     `athena.request_guidance` that no human resolves within T minutes is
+//!     answered by Athena; destructive `athena.request_approval` is ALWAYS
+//!     parked. With no new plans this is inert; the standup supervisor owns
+//!     away asks now.
+//!   - **Review station** (`jobs/session_review.rs` + [`review`]): a dispatched
+//!     session of a still-open legacy window gets a branch review.
+//!   - **The sleep-cycle heartbeat** ([`tick`]), which is memory maintenance,
+//!     not night-shift autonomy, and runs regardless of the night-shift flag.
+//!   - [`record_event`]: the `companion_night_event` writer, which the memory
+//!     lifecycle sweep (`brain::consolidation`) also uses.
 
-pub mod planner;
 pub mod review;
 pub mod unattended;
 
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use chrono::{Duration as ChronoDuration, Local, TimeZone, Timelike, Utc};
+use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 
@@ -49,14 +38,6 @@ use crate::db::repos::core::settings;
 use crate::db::settings_keys as keys;
 use crate::db::{DbPool, UserDbPool};
 use crate::error::AppError;
-
-/// Hard ceiling on sessions per night regardless of settings — the bound the
-/// pre-check refuses past, never apologizes after.
-pub const MAX_SESSIONS_CEILING: usize = 6;
-
-/// A proposed plan that was never approved expires after this many hours so a
-/// slept-through card can't be approved days later against a stale backlog.
-const PROPOSED_EXPIRY_HOURS: i64 = 18;
 
 /// Event kinds on the `companion_night_event` audit ledger.
 pub const EVENT_DISPATCH: &str = "dispatch";
@@ -98,45 +79,6 @@ fn map_plan(row: &rusqlite::Row<'_>) -> rusqlite::Result<NightPlan> {
 
 const PLAN_COLUMNS: &str = "id, status, summary, plan_json, window_end, max_sessions, created_at, approved_at, completed_at";
 
-pub fn insert_plan(
-    pool: &UserDbPool,
-    summary: &str,
-    plan_json: &str,
-    max_sessions: usize,
-) -> Result<NightPlan, AppError> {
-    let id = format!("nplan_{}", crate::companion::util::short_id(10));
-    let now = Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO companion_night_plan (id, status, summary, plan_json, max_sessions, created_at)
-         VALUES (?1, 'proposed', ?2, ?3, ?4, ?5)",
-        params![id, summary, plan_json, max_sessions as i64, now],
-    )?;
-    Ok(NightPlan {
-        id,
-        status: "proposed".into(),
-        summary: summary.to_string(),
-        plan_json: plan_json.to_string(),
-        window_end: None,
-        max_sessions: max_sessions as i64,
-        created_at: now,
-        approved_at: None,
-        completed_at: None,
-    })
-}
-
-pub fn get_plan(pool: &UserDbPool, id: &str) -> Result<Option<NightPlan>, AppError> {
-    let conn = pool.get()?;
-    let row = conn
-        .query_row(
-            &format!("SELECT {PLAN_COLUMNS} FROM companion_night_plan WHERE id = ?1"),
-            params![id],
-            map_plan,
-        )
-        .optional()?;
-    Ok(row)
-}
-
 /// The plan whose night window is currently open (approved or running, window
 /// not yet ended). At most one is expected; newest wins if data drifts.
 pub fn active_plan(pool: &UserDbPool) -> Result<Option<NightPlan>, AppError> {
@@ -155,34 +97,6 @@ pub fn active_plan(pool: &UserDbPool) -> Result<Option<NightPlan>, AppError> {
         )
         .optional()?;
     Ok(row)
-}
-
-pub fn set_plan_status(pool: &UserDbPool, id: &str, status: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    let (approved_at, completed_at): (Option<&str>, Option<&str>) = match status {
-        "approved" | "running" => (Some(now.as_str()), None),
-        "completed" | "declined" | "expired" => (None, Some(now.as_str())),
-        _ => (None, None),
-    };
-    conn.execute(
-        "UPDATE companion_night_plan
-         SET status = ?1,
-             approved_at = COALESCE(approved_at, ?2),
-             completed_at = COALESCE(completed_at, ?3)
-         WHERE id = ?4",
-        params![status, approved_at, completed_at, id],
-    )?;
-    Ok(())
-}
-
-pub fn set_window_end(pool: &UserDbPool, id: &str, window_end_iso: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE companion_night_plan SET window_end = ?1 WHERE id = ?2",
-        params![window_end_iso, id],
-    )?;
-    Ok(())
 }
 
 /// Append one row to the night audit ledger. Best-effort by design at most
@@ -270,24 +184,6 @@ fn setting_u32(sys_db: &DbPool, key: &str, default: u32) -> u32 {
         .unwrap_or(default)
 }
 
-pub fn plan_hour(sys_db: &DbPool) -> u32 {
-    setting_u32(
-        sys_db,
-        keys::COMPANION_NIGHT_SHIFT_PLAN_HOUR,
-        keys::COMPANION_NIGHT_SHIFT_PLAN_HOUR_DEFAULT,
-    )
-    .min(23)
-}
-
-pub fn wake_hour(sys_db: &DbPool) -> u32 {
-    setting_u32(
-        sys_db,
-        keys::COMPANION_NIGHT_SHIFT_WAKE_HOUR,
-        keys::COMPANION_NIGHT_SHIFT_WAKE_HOUR_DEFAULT,
-    )
-    .min(23)
-}
-
 /// Minutes an unresolved `request_guidance` waits for a human before the
 /// unattended policy answers. Clamped 1..=8 so it always undershoots the
 /// 10-minute MCP request TTL.
@@ -300,38 +196,14 @@ pub fn guidance_minutes(sys_db: &DbPool) -> u64 {
         .clamp(1, 8)
 }
 
-pub fn max_sessions(sys_db: &DbPool) -> usize {
-    (setting_u32(
-        sys_db,
-        keys::COMPANION_NIGHT_SHIFT_MAX_SESSIONS,
-        keys::COMPANION_NIGHT_SHIFT_MAX_SESSIONS_DEFAULT,
-    ) as usize)
-        .clamp(1, MAX_SESSIONS_CEILING)
-}
-
-/// Next occurrence of `hour:00` local time, returned as RFC3339 UTC.
-pub fn next_local_hour_utc(hour: u32) -> String {
-    let now = Local::now();
-    let mut day = now.date_naive();
-    if now.hour() >= hour {
-        day += ChronoDuration::days(1);
-    }
-    let naive = day
-        .and_hms_opt(hour, 0, 0)
-        .unwrap_or_else(|| day.and_hms_opt(0, 0, 0).expect("midnight is always valid"));
-    match Local.from_local_datetime(&naive) {
-        chrono::LocalResult::Single(dt) | chrono::LocalResult::Ambiguous(dt, _) => {
-            dt.with_timezone(&Utc).to_rfc3339()
-        }
-        chrono::LocalResult::None => (Utc::now() + ChronoDuration::hours(8)).to_rfc3339(),
-    }
-}
-
 // ── Scheduler tick ─────────────────────────────────────────────────────────
 
 /// One night-shift tick, called from the proactive scheduler. Best-effort:
 /// every leg logs-and-continues so one failure can't stall the others.
-pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, app: &tauri::AppHandle) {
+///
+/// `_app` is kept for the caller's signature: it fed the morning report, which
+/// the standup report replaced (spark app-standup).
+pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, _app: &tauri::AppHandle) {
     // The sleep cycle runs BEFORE the night-shift enable gate, deliberately.
     // It is memory maintenance, not autonomy — the operator's 2026-08-08
     // ruling decoupled it from night-shift consent, and its spend is governed
@@ -348,17 +220,11 @@ pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, app: &tauri::AppHandle) {
     if !enabled(sys_db) {
         return;
     }
-    if let Err(e) = expire_stale_proposed(user_db) {
-        tracing::warn!(error = %e, "night_shift: proposed-plan expiry failed");
-    }
-    if let Err(e) = maybe_enqueue_plan_job(user_db, sys_db) {
-        tracing::warn!(error = %e, "night_shift: plan-job enqueue failed");
-    }
+    // No plan job is enqueued here any more: the standup plans the night
+    // (spark app-standup). The review sweep still serves a legacy window that
+    // was open when the app updated.
     if let Err(e) = review_sweep(user_db) {
         tracing::warn!(error = %e, "night_shift: review sweep failed");
-    }
-    if let Err(e) = maybe_emit_morning_report(user_db, app) {
-        tracing::warn!(error = %e, "night_shift: morning report failed");
     }
 }
 
@@ -453,63 +319,6 @@ fn maybe_run_sleep_cycle(user_db: &UserDbPool) -> Result<(), AppError> {
     Ok(())
 }
 
-/// A proposed plan the user never approved goes stale rather than lingering
-/// as an approvable card against yesterday's backlog.
-fn expire_stale_proposed(pool: &UserDbPool) -> Result<(), AppError> {
-    let cutoff = (Utc::now() - ChronoDuration::hours(PROPOSED_EXPIRY_HOURS)).to_rfc3339();
-    let now = Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE companion_night_plan
-         SET status = 'expired', completed_at = ?2
-         WHERE status = 'proposed' AND created_at < ?1",
-        params![cutoff, now],
-    )?;
-    Ok(())
-}
-
-/// Enqueue tonight's `night_plan` job once per local day at/after the plan
-/// hour — unless a plan for tonight already exists in any live status.
-fn maybe_enqueue_plan_job(user_db: &UserDbPool, sys_db: &DbPool) -> Result<(), AppError> {
-    let now = Local::now();
-    if now.hour() < plan_hour(sys_db) {
-        return Ok(());
-    }
-    let today = now.format("%Y-%m-%d").to_string();
-    let last = settings::get(sys_db, keys::COMPANION_NIGHT_SHIFT_PLAN_LAST)?.unwrap_or_default();
-    if last == today {
-        return Ok(());
-    }
-    // A live plan (tonight's proposal still pending, or a window still open)
-    // blocks a new proposal.
-    {
-        let conn = user_db.get()?;
-        let live: Option<i64> = conn
-            .query_row(
-                "SELECT 1 FROM companion_night_plan
-                 WHERE status IN ('proposed', 'approved', 'running') LIMIT 1",
-                [],
-                |r| r.get(0),
-            )
-            .optional()?;
-        if live.is_some() {
-            return Ok(());
-        }
-    }
-    crate::companion::jobs::enqueue_task(
-        user_db,
-        crate::companion::jobs::night_plan::KIND,
-        &serde_json::json!({}),
-        None,
-        Some("Planning tonight's night shift"),
-        None,
-        None,
-    )?;
-    settings::set(sys_db, keys::COMPANION_NIGHT_SHIFT_PLAN_LAST, &today)?;
-    tracing::info!("night_shift: night-plan job enqueued for {today}");
-    Ok(())
-}
-
 /// For the running plan: any dispatched session that has reached a terminal
 /// state (exited/finished, or vanished from the registry) and has no review
 /// yet gets a `session_review` job. `review_enqueued` events dedupe the sweep.
@@ -563,41 +372,5 @@ fn review_sweep(user_db: &UserDbPool) -> Result<(), AppError> {
             &serde_json::json!({}),
         )?;
     }
-    Ok(())
-}
-
-/// Once the window has ended, roll the night up into the first proactive
-/// message at wake and close the plan. The report references the batch-1
-/// Morning Director rather than composing a second briefing.
-fn maybe_emit_morning_report(user_db: &UserDbPool, app: &tauri::AppHandle) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
-    let conn = user_db.get()?;
-    let plan = conn
-        .query_row(
-            &format!(
-                "SELECT {PLAN_COLUMNS} FROM companion_night_plan
-                 WHERE status IN ('approved', 'running')
-                   AND window_end IS NOT NULL AND window_end <= ?1
-                 ORDER BY created_at DESC LIMIT 1"
-            ),
-            params![now],
-            map_plan,
-        )
-        .optional()?;
-    drop(conn);
-    let Some(plan) = plan else { return Ok(()) };
-
-    let body = crate::companion::proactive::rollup::compose_night_report(user_db, &plan)?;
-    let nudge = crate::companion::proactive::Nudge {
-        trigger_kind: "night_shift_report".to_string(),
-        trigger_ref: Some(plan.id.clone()),
-        message: body,
-    };
-    match crate::companion::proactive::enqueue_external(user_db, &nudge) {
-        Ok(Some(msg)) => crate::companion::proactive::deliver_now(user_db, app, msg),
-        Ok(None) => {}
-        Err(e) => tracing::warn!(error = %e, "night_shift: report enqueue failed"),
-    }
-    set_plan_status(user_db, &plan.id, "completed")?;
     Ok(())
 }

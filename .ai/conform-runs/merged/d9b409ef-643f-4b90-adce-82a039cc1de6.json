@@ -1,0 +1,72 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d9b409ef-643f-4b90-adce-82a039cc1de6",
+ "subject": "native-shell-integration",
+ "evaluatedAt": "2026-11-03T08:34:10.635Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "native-shell-integration",
+   "context": "capability-config-view (511ca12f-50df-4941-84e1-e2d74a3dff85)",
+   "reason": "weak governance row and no paths in the map: the match itself is doubtful, reported as a coverage question, not judged"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "hooks-execution (a6843b83-43a1-4eab-ae40-26f23b949a0d)",
+   "reason": "conformant verdict judged at rev 4 stands: rev 5 adds only host-forwarded-key-contract (remote-key wrapper around an embedded page), whose precondition this repo lacks (no such wrapper; src-tauri/Cargo.toml is a desktop Tauri app). Map pair digest lags the registry (0ab230f2... vs 9034ad02...), so it is not flagged stale; not re-stamped here because the evidence floor was not re-read for it"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "mastermind-popovers (ca705961-f138-494a-b0fe-f882c674d25a)",
+   "reason": "conformant verdict judged at rev 4 stands: rev 5 adds only host-forwarded-key-contract (remote-key wrapper around an embedded page), whose precondition this repo lacks (no such wrapper; src-tauri/Cargo.toml is a desktop Tauri app). Map pair digest lags the registry (0ab230f2... vs 9034ad02...), so it is not flagged stale; not re-stamped here because the evidence floor was not re-read for it"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "plugins-dev-tools-context (b0cf3902-0739-40a8-8c76-ae594f41421b)",
+   "reason": "conformant verdict judged at rev 4 stands: rev 5 adds only host-forwarded-key-contract (remote-key wrapper around an embedded page), whose precondition this repo lacks (no such wrapper; src-tauri/Cargo.toml is a desktop Tauri app). Map pair digest lags the registry (0ab230f2... vs 9034ad02...), so it is not flagged stale; not re-stamped here because the evidence floor was not re-read for it"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "teams-teamworkspace (a576c14f-1edd-4da4-8d11-527161a3b5b3)",
+   "reason": "conformant verdict judged at rev 4 stands: rev 5 adds only host-forwarded-key-contract (remote-key wrapper around an embedded page), whose precondition this repo lacks (no such wrapper; src-tauri/Cargo.toml is a desktop Tauri app). Map pair digest lags the registry (0ab230f2... vs 9034ad02...), so it is not flagged stale; not re-stamped here because the evidence floor was not re-read for it"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "triggers-studio (ff513ec2-b52d-403b-b3e3-b94e45a8c2dc)",
+   "reason": "conformant verdict judged at rev 4 stands: rev 5 adds only host-forwarded-key-contract (remote-key wrapper around an embedded page), whose precondition this repo lacks (no such wrapper; src-tauri/Cargo.toml is a desktop Tauri app). Map pair digest lags the registry (0ab230f2... vs 9034ad02...), so it is not flagged stale; not re-stamped here because the evidence floor was not re-read for it"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "fleet-session-grid (67c91bb4-f3ee-4aa0-91ca-e7097ac6b394)",
+   "reason": "deviation already re-confirmed against rev 5 (evaluatedRevision 5); nothing to re-judge"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "hooks-utility-data (107445f8-c266-4671-8160-f854bd79319e)",
+   "reason": "deviation already re-confirmed against rev 5 (evaluatedRevision 5); nothing to re-judge"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "notepad-core (35c52f59-9612-47c4-8662-0ebb3c821771)",
+   "reason": "deviation already re-confirmed against rev 5 (evaluatedRevision 5); nothing to re-judge"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "vault-shared-vector (876c0b4e-6472-4544-a21b-56e7529fb6b3)",
+   "reason": "deviation already re-confirmed against rev 5 (evaluatedRevision 5); nothing to re-judge"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:34:10.636Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "host-forwarded-key-contract"
+   ],
+   "deviations": 0
+  }
+ ]
+}

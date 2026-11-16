@@ -1,0 +1,166 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e6d93c46-39df-46bd-9764-2b406ae4e523",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-31T22:27:58.716307+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "studio",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/studio/studioStore.ts:669 The autonomous build chain stops as finished when the worker's own BUILD_PLAN phases all say 'done' (AUTO_INSTRUCTION tells it to 'mark all phases done'), so the run's completion rests on the worker's self-report and nothing parent-side reads the artifact.",
+   "techniques": [
+    {
+     "technique": "completion-claim-verification",
+     "verdict": "deviation",
+     "evidence": "src/features/studio/studioStore.ts:669 The stop condition is the model-authored phase list. No receipt, no decidable leaf and no UNVERIFIED outcome exist."
+    },
+    {
+     "technique": "soft-budget-under-the-hard-cap",
+     "verdict": "deviation",
+     "evidence": "src/features/studio/studioStore.ts:111 There is only the enforced cap. AUTO_INSTRUCTION (line 135) carries no turn budget derived from it, and nothing counts how often the cap fired versus an elected stop."
+    },
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "deviation",
+     "evidence": "src/features/studio/studioStore.ts:586 An empty reply is replaced with a fabricated 'Done.' bubble, a completion statement the session never sent. This is a reply text, not a registry status, so it is a borderline application of the technique."
+    },
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/features/studio/studioStore.ts:242 A runtime is keyed by project id, but its state is split across phase, busy, autonomous and resumeAuto. Writers poke those fields through a generic patch, with no transition door and no edge rules."
+    },
+    {
+     "technique": "durable-fleet-state",
+     "verdict": "deviation",
+     "evidence": "src/features/studio/studioStore.ts:310 Open tabs are mirrored and rehydrate re-attaches dev servers (line 772). An in-flight build turn is not mirrored, though, so after a mid-turn WebView reload the tab comes back idle while the backend turn may still be running."
+    },
+    {
+     "technique": "substrate-reconciliation",
+     "verdict": "deviation",
+     "evidence": "src/features/studio/studioStore.ts:809 Closing a tab is a one-shot, fire-and-forget stop. The adjacent comment admits a server that refuses to die keeps its port with nothing in Studio pointing at it, and no convergence pass reaps it."
+    },
+    {
+     "technique": "lifecycle-signals",
+     "verdict": "conformant",
+     "evidence": "src/features/studio/studioStore.ts:722 Tier one comes from session stream events. Tier two is a liveness heartbeat with a two-miss rule (lines 487-513) plus a bounded boot poll."
+    },
+    {
+     "technique": "worker-trajectory-anatomy",
+     "verdict": "conformant",
+     "evidence": "src/features/studio/studioStore.ts:635 A failed turn turns autonomy off and records the cause, so the chain stops and escalates instead of retrying."
+    },
+    {
+     "technique": "result-harvest",
+     "verdict": "not-applicable",
+     "evidence": "src/features/studio/studioStore.ts:46 The tabs are independent projects. Nothing fans out into a run roster that would need harvesting."
+    },
+    {
+     "technique": "heterogeneous-model-panels",
+     "verdict": "not-applicable",
+     "evidence": "src/features/studio/studioStore.ts:584 Each turn goes to one build session. No panel of models is convened."
+    },
+    {
+     "technique": "outbound-compute-plane",
+     "verdict": "not-applicable",
+     "evidence": "src/features/studio/studioStore.ts:48 Executors are local Rust-managed processes. There is no remote executor plane."
+    }
+   ]
+  },
+  {
+   "context": "agents-connectors",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:17 The only parallelism here is credential healthcheck probes ('Test all', capped at 4 in flight). A case-insensitive grep of src/features/agents/sub_connectors for fleet, hibernat, sweeper, harvest and worktree found no hits, so this context dispatches no agent sessions.",
+   "techniques": [],
+   "absenceTerms": [
+    "fleet",
+    "hibernat",
+    "sweeper",
+    "harvest",
+    "worktree"
+   ]
+  },
+  {
+   "context": "onboarding-components",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/onboarding/components/tourConstants.ts:20 These are guided-tour UI components (rail geometry, step progress, narration). A case-insensitive grep of src/features/onboarding/components for fleet, hibernat, sweeper, harvest, dispatch and worktree found no hits, so nothing here registers, dispatches or harvests agent sessions.",
+   "techniques": [],
+   "absenceTerms": [
+    "fleet",
+    "hibernat",
+    "sweeper",
+    "harvest",
+    "dispatch"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "observability-audit-models",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "overview-patterns",
+   "reason": "The context lists no files. Its description (a practice review modal with keyboard queue navigation) names no code I could open, so there is nothing to anchor a verdict to."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-31T22:27:58.716307+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "absent-status-passthrough",
+    "completion-claim-verification",
+    "durable-fleet-state",
+    "heterogeneous-model-panels",
+    "lifecycle-signals",
+    "outbound-compute-plane",
+    "result-harvest",
+    "session-registry",
+    "soft-budget-under-the-hard-cap",
+    "substrate-reconciliation",
+    "worker-trajectory-anatomy"
+   ],
+   "deviations": 1,
+   "context": "studio",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-31T22:27:58.716307+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "agents-connectors",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-31T22:27:58.716307+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "onboarding-components",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

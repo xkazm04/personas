@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import { Eye, EyeOff, Trash2, Check, X, Loader2, Copy } from 'lucide-react';
 import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } from '@/api/system/settings';
 import { getQwenStatus, setQwenCredentials, clearQwenCredentials } from '@/api/system/qwen';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
+import Button from '@/features/shared/components/buttons/Button';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
@@ -233,7 +234,7 @@ export function ByomApiKeyManager() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-hair bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.api_key_title} />
         <p className="typo-body text-foreground">
           {s.api_key_hint}
@@ -283,6 +284,7 @@ function QwenKeyRow() {
   // logged, so a refused key left the editor open with no signal and the user
   // could believe Qwen was configured. Same badge the settings-key rows use.
   const [failed, setFailed] = useState(false);
+  const labelId = useId();
 
   useEffect(() => {
     let cancelled = false;
@@ -333,28 +335,29 @@ function QwenKeyRow() {
   const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
+    <div className="rounded-card border border-hair bg-surface-1 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="typo-body text-foreground">{s.provider_qwen_label}</span>
+          <span id={labelId} className="typo-body text-foreground">{s.provider_qwen_label}</span>
           {failed && <ConnectionBadge state="error" />}
           {configured && (
-            <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
+            <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-surface-2 border border-hair text-foreground">
               <Check className="w-3 h-3" />
               {s.stored}
             </span>
           )}
         </div>
         {configured && !editing && (
-          <button
+          <Button
             type="button"
             onClick={() => setConfirmingRemove(true)}
             disabled={busy}
-            className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
-            title={s.remove_key}
+            variant="danger"
+            size="icon-sm"
+            tooltip={s.remove_key} aria-label={s.remove_key}
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -365,33 +368,47 @@ function QwenKeyRow() {
           <PasswordToggleField
             className="flex-1"
             inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-              text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40"
+              text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="sk-..."
             autoComplete="off"
+            // Only when the person opened the editor, never on first render
+            // (an unconfigured row shows the editor without being asked).
+            autoFocus={editing}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && value.trim()) void save();
               if (e.key === 'Escape') { setEditing(false); setValue(''); }
             }}
           />
-          <button
+          <Button
             type="button"
             onClick={() => void save()}
             disabled={!value.trim() || busy}
-            className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
-            title={s.save_key_title}
+            variant="ghost"
+            size="sm"
+            tooltip={s.save_key_title}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          </button>
+          </Button>
         </div>
       ) : (
-        <div onClick={() => setEditing(true)} className="flex items-center gap-2 cursor-pointer group">
-          <div className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
+        // A real button (DW-55): the masked key was a click-only div, so the keyboard and
+        // screen readers could never replace a stored key.
+        <Button
+          variant="ghost"
+          size="sm"
+          block
+          onClick={() => setEditing(true)}
+          aria-label={t.common.edit}
+          aria-describedby={labelId}
+          className="group p-0 hover:bg-transparent active:bg-transparent"
+        >
+          <span aria-hidden="true" className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
             group-hover:border-primary/20 transition-all min-h-[32px] flex items-center">
             <span className="text-foreground">{'•'.repeat(16)}</span>
-          </div>
-        </div>
+          </span>
+        </Button>
       )}
       {confirmingRemove && (
         <ConfirmDialog
@@ -441,7 +458,7 @@ function KeyEntryRow({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
+    <div className="rounded-card border border-hair bg-surface-1 p-3 space-y-2">
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -450,12 +467,12 @@ function KeyEntryRow({
         </div>
         <div className="flex items-center gap-1.5">
           {hasValue && !entry.editing && (
-            <button
+            <Button
               type="button"
               onClick={onTest}
               disabled={entry.connectionState === 'testing'}
-              className="typo-caption px-2.5 py-1 rounded-input border border-primary/15 text-foreground
-                hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
+              variant="secondary"
+              size="xs"
             >
               {entry.connectionState === 'testing' ? (
                 <span className="flex items-center gap-1">
@@ -465,17 +482,18 @@ function KeyEntryRow({
               ) : (
                 s.verify
               )}
-            </button>
+            </Button>
           )}
           {hasValue && !entry.editing && (
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
-              title={s.remove_key}
+              variant="danger"
+              size="icon-sm"
+              tooltip={s.remove_key} aria-label={s.remove_key}
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -492,7 +510,7 @@ function KeyEntryRow({
               onChange={(e) => onChange(e.target.value)}
               placeholder={entry.def.placeholder}
               className="flex-1 px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-                text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
+                text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40
                 "
               autoFocus
               onKeyDown={(e) => {
@@ -504,7 +522,7 @@ function KeyEntryRow({
             <PasswordToggleField
               className="flex-1"
               inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-                text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
+                text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40
                 "
               value={entry.value}
               onChange={(e) => onChange(e.target.value)}
@@ -517,23 +535,25 @@ function KeyEntryRow({
               }}
             />
           )}
-          <button
+          <Button
             type="button"
             onClick={onSave}
             disabled={!isDirty}
-            className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
-            title={s.save_key_title}
+            variant="ghost"
+            size="icon-sm"
+            tooltip={s.save_key_title} aria-label={s.save_key_title}
           >
             <Check className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
-            title={s.cancel_key_title}
+            variant="ghost"
+            size="icon-sm"
+            tooltip={s.cancel_key_title} aria-label={s.cancel_key_title}
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       ) : (
         <div
@@ -551,32 +571,34 @@ function KeyEntryRow({
             )}
           </div>
           {hasValue && !entry.def.isUrl && (
-            <button
+            <Button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleReveal();
               }}
               aria-label={entry.revealed ? s.hide_key : s.reveal_key}
-              aria-pressed={entry.revealed}
-              className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
-              title={entry.revealed ? s.hide_key : s.reveal_key}
+              pressed={entry.revealed}
+              variant="ghost"
+              size="sm"
+              tooltip={entry.revealed ? s.hide_key : s.reveal_key}
             >
               {entry.revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
+            </Button>
           )}
           {hasValue && (
-            <button
+            <Button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 copy('value', entry.savedValue);
               }}
               aria-label={copiedKey === 'value' ? t.common.copied : t.common.copy}
-              className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
+              variant="ghost"
+              size="sm"
             >
-              {copiedKey === 'value' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            </button>
+              {copiedKey === 'value' ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
+            </Button>
           )}
         </div>
       )}
@@ -608,7 +630,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
 
   if (state === 'testing') {
     return (
-      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-amber-500/10 border border-amber-500/20 text-amber-300">
+      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input text-status-warning">
         <Loader2 className="w-3 h-3 animate-spin" />
       </span>
     );
@@ -619,7 +641,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
     // green 'connected' check — we did NOT contact the API. Previously this
     // used emerald visuals that misled users into thinking auth was verified.
     return (
-      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
+      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-surface-2 border border-hair text-foreground">
         <Check className="w-3 h-3" />
         {s.stored}
       </span>
@@ -629,7 +651,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
   return (
     <StatusBadge
       variant="error"
-      icon={<span className="w-1.5 h-1.5 rounded-full bg-red-400" />}
+      icon={<span className="w-1.5 h-1.5 rounded-full bg-status-error" />}
       className="typo-caption px-1.5 py-0.5 rounded-input"
     >
       {s.error}
@@ -650,11 +672,11 @@ function ByomKeyGhostRows() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2 animate-fade-in"
+          className="rounded-card border border-hair bg-surface-1 p-3 space-y-2 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="block h-3.5 w-40 rounded bg-primary/[0.06]" />
-          <span className="block h-2.5 w-56 rounded bg-primary/[0.06]" />
+          <span className="block h-3.5 w-40 rounded-interactive bg-primary/[0.06]" />
+          <span className="block h-2.5 w-56 rounded-interactive bg-primary/[0.06]" />
           <span className="block h-8 w-full rounded-card bg-primary/[0.06]" />
         </div>
       ))}

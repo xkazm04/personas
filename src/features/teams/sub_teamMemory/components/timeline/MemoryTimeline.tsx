@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { GitCommitVertical } from 'lucide-react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -104,7 +105,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
     <div className="space-y-1">
       {totalRuns > 0 && (
         <div className="flex items-center gap-2 px-2 py-1">
-          <GitCommitVertical className="w-3 h-3 text-violet-400/60" />
+          <GitCommitVertical className="w-3 h-3 text-role-agent" />
           <span className="typo-body text-foreground">
             {tx(totalRuns === 1 ? pt.timeline_runs_one : pt.timeline_runs_other, { count: totalRuns })}
           </span>
@@ -113,14 +114,14 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
               reach every run, saying "12 runs" above three markers asserts
               nine runs contributed nothing. Disclose the cut where it happens. */}
           {renderedRuns < totalRuns && (
-            <span className="typo-caption text-foreground">
+            <span className="typo-caption text-ink-2">
               {tx(t.pipeline.showing_count, { shown: renderedRuns, total: totalRuns })}
             </span>
           )}
           {activeRunFilter && (
-            <button type="button" onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => onFilterRun(null)}>
               {pt.clear_filter}
-            </button>
+            </Button>
           )}
         </div>
       )}

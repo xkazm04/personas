@@ -11,6 +11,9 @@ import {
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 import { DEFAULT_CONVERSATION_ID, useAthenaStore } from './athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 type ThreadStatus = 'awaiting' | 'working' | 'idle';
 
 function statusOf(c: ConversationRow, active: boolean, streaming: boolean): ThreadStatus {
@@ -23,7 +26,7 @@ function statusOf(c: ConversationRow, active: boolean, streaming: boolean): Thre
 function StatusDot({ status }: { status: ThreadStatus }) {
   if (status === 'awaiting') return <span className="text-status-success" aria-hidden>●</span>;
   if (status === 'working') return <span className="text-status-warning" aria-hidden>◐</span>;
-  return <span className="text-foreground opacity-40" aria-hidden>○</span>;
+  return <span className="text-ink-3" aria-hidden>○</span>;
 }
 
 /**
@@ -121,14 +124,16 @@ export function ConversationSwitcher() {
 
   return (
     <div className="relative min-w-0" ref={wrapRef}>
-      <button
+      <Button
         type="button"
         onClick={() => setOpen((v) => !v)}
         data-testid="companion-conversation-switcher"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t.athena.switch_conversation}
-        className="flex items-center gap-1.5 max-w-[210px] px-1.5 py-0.5 -mx-1 rounded-interactive hover:bg-foreground/5 transition-colors focus-ring"
+        variant="ghost"
+        size="sm"
+        className="-mx-1"
       >
         <StatusDot status={activeStatus} />
         <span className="typo-body truncate">{activeTitle}</span>
@@ -138,10 +143,10 @@ export function ConversationSwitcher() {
           </span>
         )}
         <ChevronDown
-          className={`w-3.5 h-3.5 text-foreground opacity-60 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`}
           aria-hidden
         />
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -180,14 +185,12 @@ export function ConversationSwitcher() {
               }
               return (
                 <div key={c.id} className="group relative flex items-center">
-                  <button
-                    type="button"
+                  <PressSurface
                     role="menuitem"
-                    onClick={() => switchTo(c)}
+                    onPress={() => switchTo(c)}
                     data-testid={`companion-conversation-${c.id}`}
-                    className={`flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left transition-colors focus-ring ${
-                      c.id === activeId ? 'bg-primary/15' : 'hover:bg-foreground/5'
-                    }`}
+                    className="flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-interactive"
+                    selected={c.id === activeId} aria-pressed={undefined}
                   >
                     <StatusDot status={status} />
                     <span className="flex-1 min-w-0 typo-body truncate">{c.title ?? '—'}</span>
@@ -196,27 +199,29 @@ export function ConversationSwitcher() {
                         {c.unreadCount}
                       </span>
                     )}
-                  </button>
+                  </PressSurface>
                   <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                    <Button
                       type="button"
                       onClick={(e) => startRename(e, c)}
                       aria-label={t.athena.rename_conversation}
-                      title={t.athena.rename_conversation}
-                      className="p-1 rounded-interactive text-foreground hover:bg-foreground/10 focus-ring"
+                      tooltip={t.athena.rename_conversation}
+                      variant="ghost"
+                      size="icon-sm"
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                     {canArchive && (
-                      <button
+                      <Button
                         type="button"
                         onClick={(e) => archive(e, c)}
                         aria-label={t.athena.archive_conversation}
-                        title={t.athena.archive_conversation}
-                        className="p-1 rounded-interactive text-foreground hover:bg-foreground/10 focus-ring"
+                        tooltip={t.athena.archive_conversation}
+                        variant="ghost"
+                        size="icon-sm"
                       >
                         <Archive className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -224,15 +229,17 @@ export function ConversationSwitcher() {
             })}
           </div>
           <div className="my-1.5 mx-1 h-px bg-foreground/10" aria-hidden />
-          <button
+          <Button
             type="button"
             onClick={createNew}
             data-testid="companion-conversation-new"
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring typo-body"
+            variant="ghost"
+            size="sm"
+            block
           >
             <Plus className="w-4 h-4" aria-hidden />
             {t.athena.new_conversation}
-          </button>
+          </Button>
         </div>
       )}
     </div>

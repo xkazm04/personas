@@ -10,6 +10,7 @@
 // gates), not what the lane is in the abstract. "Context map: 12 groups and
 // current, will be left alone" is the sentence that lets someone uncheck it
 // with confidence.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Check } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -41,7 +42,7 @@ export function PopulateScopePicker({ gates, lanes, onChange }: {
 
   return (
     <section data-testid="populate-scope-picker">
-      <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground mb-2">
+      <h3 className="typo-eyebrow mb-2">
         {t.kpis.populate_scope_heading}
       </h3>
       <div className="grid sm:grid-cols-2 gap-2" role="group" aria-label={t.kpis.populate_scope_heading}>
@@ -49,13 +50,12 @@ export function PopulateScopePicker({ gates, lanes, onChange }: {
           const on = lanes.includes(lane);
           const m = meta[lane];
           return (
-            <button
+            <PressSurface
               key={lane}
-              type="button"
               role="checkbox"
               aria-checked={on}
-              onClick={() => toggle(lane)}
-              className={`flex items-start gap-2.5 rounded-card border px-3 py-2 text-left transition-colors focus-ring ${
+              onPress={() => toggle(lane)}
+              className={`flex items-start gap-2.5 rounded-card border px-3 py-2    ${
                 on ? 'border-primary/50 bg-primary/[0.07]' : 'border-foreground/[0.1] hover:bg-foreground/[0.03]'
               }`}
               data-testid={`populate-lane-${lane}`}
@@ -69,12 +69,12 @@ export function PopulateScopePicker({ gates, lanes, onChange }: {
                 {on ? <Check className="w-3.5 h-3.5 text-primary" /> : null}
               </span>
               <span className="min-w-0">
-                <span className={`typo-body-lg block ${on ? 'text-foreground' : 'text-foreground/75'}`}>
+                <span className={`typo-body-lg block ${on ? 'text-foreground' : 'text-ink-2'}`}>
                   {m.label}
                 </span>
-                <span className="typo-caption block text-foreground">{m.detail}</span>
+                <span className="typo-caption block text-ink-2">{m.detail}</span>
               </span>
-            </button>
+            </PressSurface>
           );
         })}
       </div>

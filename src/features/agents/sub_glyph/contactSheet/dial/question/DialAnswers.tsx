@@ -41,7 +41,7 @@ export function DialQuestionsSummary({ qs, note = true }: { qs: BuildQuestion[];
           );
         })}
       </ul>
-      {note && <span className="typo-body text-foreground">{CINEMA.questionsNote}</span>}
+      {note && <span className="typo-body text-ink-1">{CINEMA.questionsNote}</span>}
     </>
   );
 }
@@ -74,7 +74,7 @@ export function DialAnswersList({ stage, qs, draftOf, onOpen }: DialAnswersListP
               <span className="flex w-full min-w-0 items-center gap-2.5">
                 <InkBadge num={r.num} ink="done" color={r.color} populated size={18} />
                 <span className="w-[92px] shrink-0 truncate" style={{ ...LETTERING, color: r.color }}>{r.name}</span>
-                <span className="min-w-0 typo-body text-foreground truncate">{draftOf(q)}</span>
+                <span className="min-w-0 typo-body text-ink-1 truncate">{draftOf(q)}</span>
               </span>
             </Button>
           </li>

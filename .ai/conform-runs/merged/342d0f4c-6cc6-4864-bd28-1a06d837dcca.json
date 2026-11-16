@@ -1,0 +1,105 @@
+{
+  "schema": "conform-run/1",
+  "worker": "342d0f4c-6cc6-4864-bd28-1a06d837dcca",
+  "subject": "browser-credential-boundary",
+  "evaluatedAt": "2026-11-08T00:57:18.990243+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "commands-credentials",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret/refresh material through the unguarded SHARED_HTTP client to a token URL that may come from an OIDC discovery response, and the only private-address guard (validate_issuer_url, oauth.rs:1205) checks IP literals in the string, so a hostname that resolves to loopback or private space passes; the repo's SSRF_SAFE_HTTP is used in the same context (openapi_autopilot.rs:70) but not here.",
+      "techniques": [
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 The discovered token_endpoint is checked only by host-string suffix (validate_endpoint_domain) and the issuer only for IP literals (oauth.rs:1205 `if let Ok(ip) = host.parse::<std::net::IpAddr>() {`). No resolved-address judgement or connection binding happens, and both discover_oidc (oauth.rs:1295) and the token POST use SHARED_HTTP. This is exactly the string-check failure the technique names."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:267 The OAuth state the browser echoes back is checked against both the per-session value and an instance HMAC (verify_oauth_state, oauth.rs:1466, nonce.timestamp.hmac). A forged state is refused and does not consume the flow."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/foraging.rs:725 The webview submits only a foraged id. The backend re-reads the raw values from the source, and the scan result shown to the UI carries only mask_value output (foraging.rs:169)."
+        },
+        {
+          "technique": "loopback-addressed-request-gate",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:639 The only listener in this context is a one-shot OAuth callback bound to loopback and gated by the HMAC'd state. It does not serve requests that spend the person's ambient login, so the Host/Origin gate's precondition does not hold. There is no Host check, for the record."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:86 The upstream status and body (secret-sanitized at oauth.rs:84) are relayed in the error message, but the only caller is the local operator over IPC, not an anonymous browser caller mapping topology. Under a multi-tenant broker this would be a deviation."
+        }
+      ],
+      "registryProposal": "The subject's techniques assume a web origin serving anonymous visitors. A desktop app whose 'browser' is its own webview (IPC instead of a same-origin route, a user-typed upstream instead of deployment config) needs a stated precondition for opaque-upstream-errors and loopback-addressed-request-gate. Right now a judge has to infer whether 'the caller is the operator' voids them."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "browser-credential-boundary",
+      "context": "api-vault",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "vault-shared-playground",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "vault-credentials-components-forms",
+      "reason": "These are input forms for the user's own secrets. The save/encryption path lives in hooks outside the listed files, and nothing in them is a bundle-held credential, a store grant, a broker route or a round-tripped server result. I couldn't anchor five techniques, and couldn't prove absence well enough for a not-applicable verdict to survive the term re-search."
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "supabase-sync-pipeline",
+      "reason": "withdrawn after review: reviewer (sonnet): rows.rs:505 selects `payload, payload_iv` and rows.rs:403-412 decrypts and scrubs them (project_event_payload), so the claims that the writer \"never selects encrypted columns\" and never reads payload_iv are contradicted by the code; the RLS half was also not verified, since supabase/ has no policies"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-08T00:57:18.990243+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "loopback-addressed-request-gate",
+        "opaque-upstream-errors",
+        "outbound-fetch-destination-validation",
+        "server-sealed-client-roundtrip"
+      ],
+      "deviations": 1,
+      "context": "commands-credentials",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-08T00:57:18.990243+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "default-deny-plus-defaulted-owner",
+        "omit-the-column-not-the-value",
+        "outbound-fetch-destination-validation",
+        "public-vs-server-env-split"
+      ],
+      "deviations": 0,
+      "context": "supabase-sync-pipeline",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

@@ -144,7 +144,7 @@ describe('FleetFooterIcon — needs-you escalation', () => {
   it('turns violet and announces the blocked count when a session awaits input', () => {
     mount([session('awaiting_input'), session('awaiting_input'), session('idle')]);
     const button = screen.getByTestId('footer-fleet-toggle');
-    expect(button.className).toContain('text-violet-300');
+    expect(button.className).toContain('text-role-agent');
     expect(button).toHaveAccessibleName('2 sessions need you');
   });
 

@@ -30,7 +30,7 @@ export function useKpiSetupOptions() {
   }, [w]);
 }
 
-export const INPUT = 'w-full px-3 py-2 typo-body bg-background/50 border border-primary/15 rounded-xl text-foreground focus-ring';
+export const INPUT = 'w-full px-3 py-2 typo-body bg-background/50 border border-hair rounded-card text-foreground focus-ring';
 
 export function num(s: string): number | undefined {
   const n = parseFloat(s);
@@ -70,7 +70,7 @@ export function MeasurementFields({
   const k = t.kpis;
   const o = useKpiSetupOptions();
   return (
-    <div className="rounded-card border border-primary/15 bg-secondary/10 p-4">
+    <div className="rounded-card border border-hair bg-surface-1 p-4">
       <p className="typo-label text-primary/80 mb-3">{k.setup_how_measured}</p>
       <div className="grid grid-cols-3 gap-4">
         <div>
@@ -80,7 +80,7 @@ export function MeasurementFields({
         <div>
           <Label>{k.setup_measurement}</Label>
           {isManual ? (
-            <div className={`${INPUT} flex items-center gap-1.5 text-foreground/70`}><Hand className="w-3.5 h-3.5" /> {k.setup_manual_entry}</div>
+            <div className={`${INPUT} flex items-center gap-1.5 text-ink-2`}><Hand className="w-3.5 h-3.5" /> {k.setup_manual_entry}</div>
           ) : (
             <ThemedSelect filterable hideSearch options={o.autoKind} value={autoKind} onValueChange={(v) => setAutoKind(v as MeasureKind)} aria-label={k.setup_mechanism_aria} />
           )}
@@ -100,7 +100,7 @@ export function MeasurementFields({
               placeholder={connectorOpts.length ? k.setup_connector_ph : k.setup_connector_none}
               aria-label={k.setup_connector}
             />
-            <p className="typo-caption text-foreground/50 mt-1">{k.setup_connector_hint}</p>
+            <p className="typo-caption text-ink-3 mt-1">{k.setup_connector_hint}</p>
           </div>
         )}
         {!isManual && autoKind === 'derived' && (
@@ -118,7 +118,7 @@ export function MeasurementFields({
           </div>
         )}
       </div>
-      <p className="typo-caption text-foreground/60 mt-3">
+      <p className="typo-caption text-ink-3 mt-3">
         {isManual ? k.setup_manual_help : k.setup_auto_help}
       </p>
     </div>

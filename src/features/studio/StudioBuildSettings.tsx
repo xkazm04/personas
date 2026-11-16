@@ -5,6 +5,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 import StudioDesignKnobs from './StudioDesignKnobs';
 import type { BuildEffort, BuildStyle } from '@/api/webbuild';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 // C1 effort knob + C4 voice/style picker — per-project build controls in a small
 // popover off the chat input. Writes to the active runtime so every turn (manual,
@@ -57,21 +59,18 @@ export default function StudioBuildSettings({ id }: { id: string }) {
 
   return (
     <div ref={wrapRef} className="relative shrink-0">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         data-testid="studio-settings"
         onClick={() => setOpen((v) => !v)}
         aria-label={t.studio.build_settings}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
-          open
-            ? 'bg-secondary/60 text-primary'
-            : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
-        }`}
+        pressed={open}
       >
         <Settings2 className="h-4 w-4" />
-      </button>
+      </Button>
       {/* Click-away dismissal. The panel floats over the live preview and every
           other Studio popover (the tab picker) already closes this way; without
           it the only exit was hitting the gear again. */}
@@ -113,8 +112,8 @@ export default function StudioBuildSettings({ id }: { id: string }) {
           </Row>
           <div className="my-2 border-t border-border/60" />
           <div className="mb-1.5 flex items-baseline justify-between">
-            <span className="typo-caption text-foreground/90">{t.studio.nudge_the_design}</span>
-            <span className="text-[10px] text-foreground/90">{t.studio.applies_now}</span>
+            <span className="typo-caption text-ink-2">{t.studio.nudge_the_design}</span>
+            <span className="typo-caption text-ink-2">{t.studio.applies_now}</span>
           </div>
           <StudioDesignKnobs id={id} onApply={() => setOpen(false)} />
           <div className="my-2 border-t border-border/60" />
@@ -146,8 +145,8 @@ function Row({ label, hint, children }: { label: string; hint: string; children:
   return (
     <div className="mb-3 last:mb-0">
       <div className="mb-1 flex items-baseline justify-between">
-        <span className="typo-caption text-foreground/90">{label}</span>
-        <span className="text-[10px] text-foreground/90">{hint}</span>
+        <span className="typo-caption text-ink-2">{label}</span>
+        <span className="typo-caption text-ink-2">{hint}</span>
       </div>
       <div className="flex flex-wrap gap-1">{children}</div>
     </div>
@@ -164,14 +163,8 @@ function Seg({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-interactive px-2 py-0.5 typo-label transition-colors ${
-        active ? 'bg-primary/20 text-primary' : 'bg-secondary/40 text-foreground/60 hover:text-foreground'
-      }`}
-    >
+    <OptionChip onSelect={onClick} selected={active}>
       {children}
-    </button>
+    </OptionChip>
   );
 }

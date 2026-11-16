@@ -24,6 +24,7 @@ import { ExplodedFan } from "./ExplodedFan";
 import { ExplodedLeader, useLeaderGeometry } from "./ExplodedLeader";
 import { FlyingSector } from "./FlyingSector";
 import { COPY } from "../copy";
+import { Kbd } from '@/features/shared/components/display/Kbd';
 
 export interface ExplodedHead {
   label: string;
@@ -88,14 +89,14 @@ export function ExplodedLayer({ dim, head, layout, stage, ink, populated, parts,
       {dim && <FlyingSector dim={dim} c={layout.c} R={layout.R} stage={stage} ink={ink} populated={populated} />}
       <motion.header className="relative flex flex-shrink-0 items-center gap-3 px-3 pt-2 pb-1" {...enter(0.3)}>
         <Button variant="secondary" size="sm" icon={<ArrowLeft className="w-4 h-4" />} onClick={onClose} aria-label={COPY.fan.back} autoFocus={!!dim}>
-          <kbd className="font-mono typo-caption px-1.5 rounded-interactive border border-card-border text-foreground">{COPY.fan.esc}</kbd>
+          <Kbd>{COPY.fan.esc}</Kbd>
         </Button>
         <span style={{ ...LETTERING, color }} aria-hidden>{`▸ ${dim ? frameNumber(dim) : "00"}`}</span>
         <h2 className="m-0 min-w-0 truncate typo-heading-lg uppercase tracking-[0.08em]" style={{ color }}>{head.label}</h2>
-        <span className="typo-caption px-2 py-0.5 rounded-full border whitespace-nowrap" style={{ borderColor: head.status.strong ? color : "var(--ink-dim)", color: head.status.strong ? color : undefined }}>
+        <span className="inline-flex items-center typo-caption whitespace-nowrap" style={{ borderColor: head.status.strong ? color : "var(--ink-dim)", color: head.status.strong ? color : undefined }}>
           {head.status.label}
         </span>
-        {head.caption && <span className="hidden lg:inline min-w-0 truncate typo-body text-foreground">{head.caption}</span>}
+        {head.caption && <span className="hidden lg:inline min-w-0 truncate typo-body text-ink-1">{head.caption}</span>}
         <span className="ml-auto hidden md:inline whitespace-nowrap" style={{ ...LETTERING, color: "var(--ink-dim)" }}>{head.context}</span>
       </motion.header>
       <div className={`relative flex-1 min-h-0 px-4 pb-3 ${dim ? "grid grid-cols-[minmax(0,1fr)_minmax(320px,460px)] gap-8" : "flex justify-center"}`}>

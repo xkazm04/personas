@@ -4,6 +4,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useAthenaStore } from './athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 /**
  * Durable, in-chat ledger of everything Athena did WITHOUT asking this session
  * (today: fleet auto-decisions — `athena://fleet/auto-decided`).
@@ -36,10 +39,9 @@ export function AthenaActionsStrip() {
       data-action-count={actions.length}
     >
       <div className="flex items-center gap-2 px-2.5 py-1.5">
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center gap-2 flex-1 min-w-0 typo-caption text-foreground focus-ring rounded-card text-left"
+        <PressSurface
+          onPress={() => setCollapsed((v) => !v)}
+          className="flex items-center gap-2 flex-1 min-w-0 typo-caption text-foreground rounded-card"
         >
           <Chevron className="w-3.5 h-3.5 shrink-0 text-foreground" />
           <Zap className="w-3.5 h-3.5 shrink-0 text-primary" aria-hidden />
@@ -47,15 +49,17 @@ export function AthenaActionsStrip() {
             {t.athena.athena_actions_title}
           </span>
           <span className="shrink-0 tabular-nums text-foreground">{actions.length}</span>
-        </button>
-        <button
+        </PressSurface>
+        <Button
           type="button"
           onClick={clearAthenaActions}
           data-testid="athena-actions-clear"
-          className="shrink-0 typo-caption text-foreground hover:text-primary focus-ring rounded-interactive px-1.5 py-0.5"
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
         >
           {t.athena.athena_actions_clear}
-        </button>
+        </Button>
       </div>
       {!collapsed && (
         <ul className="px-2.5 pb-2 space-y-1.5">
@@ -74,7 +78,7 @@ export function AthenaActionsStrip() {
                   className="ml-auto shrink-0 typo-caption text-foreground"
                 />
               </div>
-              <p className="mt-0.5 typo-caption text-foreground/90 whitespace-pre-wrap break-words">
+              <p className="mt-0.5 typo-caption text-ink-2 whitespace-pre-wrap break-words">
                 {a.text}
               </p>
             </li>

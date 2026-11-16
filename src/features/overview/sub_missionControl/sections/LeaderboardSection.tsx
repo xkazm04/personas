@@ -46,7 +46,7 @@ export function LeaderboardSection() {
   if (!loading && leaderboard.length < 2) return null;
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
       <PaneHeader
         label={t.overview.leaderboard.title}
         subtitle={leaderboard.length > 1

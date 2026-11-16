@@ -1,0 +1,180 @@
+{
+ "schema": "conform-run/1",
+ "worker": "31cabb29-5580-4124-94b8-71f56f9a97e2",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-09T05:33:04.162262+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "fleet-monitor-channels",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/fleet/monitor/channels/map/mapModel.test.ts:121 The name claims both ends of a route are guarded, but every event in the file has a member source, so deleting the source check at mapModel.ts:178 leaves the suite green.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/map/mapModel.test.ts:121 Only the consumer side is driven (event from member 'a', consumers ['a','zz']); the `!memberPersonaIds.has(i.personaId)` decision at mapModel.ts:178 is never reached by any test in this file. Reasoned from the code, mutation not run."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/fleet/monitor/channels/__tests__/conversationInstant.test.tsx:30 The shim is justified by a recorded with/without measurement, and the comment names the vacuous pass it prevents."
+    },
+    {
+     "technique": "a-test-helper-is-a-fork-of-the-driver",
+     "verdict": "conformant",
+     "evidence": "src/features/fleet/monitor/channels/__tests__/deliberationRail.test.tsx:18 The cheaper i18n fake states what it leaves out, which is rule 2 of the technique."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/fleet/monitor/channels/__tests__/useConversationHandoff.test.tsx:54 The ordering claim (hook runs only after the post) is held at a barrier the test opens, not measured by a timer."
+    },
+    {
+     "technique": "proved-off-the-path",
+     "verdict": "conformant",
+     "evidence": "src/features/fleet/monitor/channels/__tests__/conversationInstant.test.tsx:20 The driven host ships (ConversationBriefing.tsx:133). The undriven team host is declared, and its branch at ConversationPane.tsx:32 matches PersonaConversation.tsx:154."
+    }
+   ]
+  },
+  {
+   "context": "vault-credentials-components-forms",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_credentials/components/forms/__tests__/CredentialEditForm.test.tsx:52 The name claims a surfaced error but the only assertion is that onSave was not called, so removing the error display behind setErrors at CredentialEditForm.tsx:130 leaves the test green.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_credentials/components/forms/__tests__/CredentialEditForm.test.tsx:52 An overstated name, the case the technique names: the 'surfaces' half has no assertion. Reasoned from the code, mutation not run."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_credentials/components/import/__tests__/ImportInputPhase.parseError.test.tsx:44 The needle is a JSX prop binding read after comments are stripped, and it matches CredentialDesignModalBody.tsx:94. The assertion does not label itself an interim."
+    },
+    {
+     "technique": "proved-off-the-path",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_credentials/components/import/__tests__/ImportInputPhase.parseError.test.tsx:38 The first test composes the hook and component in its own Harness; this test ties that composition to the production caller."
+    },
+    {
+     "technique": "gate-scope-is-not-report-scope",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_credentials/components/forms/__tests__/OAuthSection.ringPhase.test.ts:12 The case population is enumerated from its source at run time and its count is asserted at line 20; the directory holds exactly 14 matching files."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_credentials/components/forms/__tests__/ConnectorCredentialModal.saveGate.test.tsx:68 The case targets the repaired branch: restoring the old expression quoted in the file header would gate an undefined definition and turn this red. Read, not run."
+    },
+    {
+     "technique": "a-test-helper-is-a-fork-of-the-driver",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_credentials/components/forms/__tests__/OAuthSection.ringPhase.test.ts:15 The test reads the shipped locale catalogs rather than restating their strings."
+    }
+   ]
+  },
+  {
+   "context": "lab-shared-primitives",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/components/shared/__tests__/UserRating.a11y.test.tsx:13 The test starts with nothing pressed and clicks one thumb, so a widget that never cleared the previous selection would pass a test named for moving it.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/shared/__tests__/UserRating.a11y.test.tsx:13 No prior selection exists, so the 'moves' decision is never exercised. Second instance: LabEventStream.error.test.tsx:12 says 'resolved' but only asserts the text lacks [object Object]. Reasoned from the code, mutation not run."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_lab/components/shared/__tests__/ExportReportButton.copy.test.tsx:37 Shows the .text-status-success selector is live, so the refused-write absence assertion at line 34 cannot pass merely because a restyle removed the class. Read, not run."
+    },
+    {
+     "technique": "a-test-helper-is-a-fork-of-the-driver",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_lab/components/shared/__tests__/improvePromptWeakest.test.ts:3 The mock states its scope, and the claim is limited to what it kept."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_lab/components/shared/__tests__/LabEventStream.error.test.tsx:36 The claim is a call count holding still, not overlap, a cap or a cutoff. The fixed window would miss a loop slower than 100 ms."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "teams-teamworkspace",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "template-adoption-support",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-09T05:33:04.162262+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "a-test-helper-is-a-fork-of-the-driver",
+    "assert-the-schedule-not-the-stopwatch",
+    "negative-control-tests",
+    "proved-off-the-path",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "fleet-monitor-channels",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-09T05:33:04.162262+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "a-test-helper-is-a-fork-of-the-driver",
+    "gate-scope-is-not-report-scope",
+    "negative-control-tests",
+    "pin-the-call-not-the-name",
+    "proved-off-the-path",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "vault-credentials-components-forms",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-09T05:33:04.162262+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "a-test-helper-is-a-fork-of-the-driver",
+    "assert-the-schedule-not-the-stopwatch",
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "lab-shared-primitives",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

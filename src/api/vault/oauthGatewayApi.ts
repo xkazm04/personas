@@ -1,12 +1,10 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { GoogleCredentialOAuthStartResult } from "@/lib/bindings/GoogleCredentialOAuthStartResult";
-import type { OAuthProvider } from "@/lib/bindings/OAuthProvider";
-import type { OAuthProviderListResult } from "@/lib/bindings/OAuthProviderListResult";
 import type { OAuthStartResult } from "@/lib/bindings/OAuthStartResult";
 import type { OAuthStatusResult } from "@/lib/bindings/OAuthStatusResult";
 import type { StartOAuthParams } from "@/lib/bindings/StartOAuthParams";
-export type { GoogleCredentialOAuthStartResult, OAuthProvider, OAuthProviderListResult, OAuthStartResult, OAuthStatusResult, StartOAuthParams };
+export type { GoogleCredentialOAuthStartResult, OAuthStartResult, OAuthStatusResult, StartOAuthParams };
 
 // ============================================================================
 // Google OAuth
@@ -48,9 +46,6 @@ export const getGoogleCredentialOAuthStatus = (sessionId: string) =>
 // Universal OAuth Gateway
 // ============================================================================
 
-export const listOAuthProviders = () =>
-  invoke<OAuthProviderListResult>("list_oauth_providers");
-
 export const startOAuth = (params: StartOAuthParams) =>
   invoke<OAuthStartResult>("start_oauth", {
     providerId: params.providerId,
@@ -71,5 +66,7 @@ export const getOAuthStatus = (sessionId: string) =>
 // command were retired — the command was the only OAuth IPC surface that
 // accepted a raw refresh_token (and returned raw tokens), and it had no caller.
 // OAuth token refresh happens entirely server-side in the runtime credential
-// path (engine/runner). If a UI-driven refresh is ever needed, add a
-// credential-id-based command that loads the token backend-side.
+// path (engine/runner). The UI-driven refresh is the credential-id-based
+// `refreshCredentialOAuthNow` in ./rotation.ts (`refresh_credential_oauth_now`,
+// src-tauri/src/commands/credentials/rotation.rs), which loads the token
+// backend-side and audits the outcome; use it rather than adding another door.

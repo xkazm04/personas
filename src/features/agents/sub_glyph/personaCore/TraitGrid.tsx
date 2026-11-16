@@ -33,10 +33,10 @@ export function AxisTraitGrid({ core }: { core: PersonaCore }) {
                   <Tooltip key={trait.id} content={t.agents[trait.blurbKey]}>
                     <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={() => core.toggleTrait(trait.id)}
                       data-testid={`core-trait-${trait.id}`} aria-pressed={on}
-                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-input border transition-colors cursor-pointer ${on ? "text-foreground" : "text-foreground/85 border-card-border hover:border-foreground/30"}`}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-input border transition-colors cursor-pointer ${on ? "text-ink-1" : "text-ink-1 border-card-border hover:border-hair-2"}`}
                       style={on ? { borderColor: colorWithAlpha(axis.color, 0.55), background: colorWithAlpha(axis.color, 0.14) } : undefined}>
                       <TIcon className="w-3.5 h-3.5 shrink-0" style={{ color: on ? axis.color : undefined }} />
-                      <span className="typo-body text-foreground truncate">{t.agents[trait.labelKey]}</span>
+                      <span className="typo-body text-ink-1 truncate">{t.agents[trait.labelKey]}</span>
                     </motion.button>
                   </Tooltip>
                 );

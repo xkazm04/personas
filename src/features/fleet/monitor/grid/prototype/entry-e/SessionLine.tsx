@@ -114,7 +114,7 @@ export const SessionLine = memo(function SessionLine({
         <SessionHead label={f.label} State={sessionStateIcon(session.state)} tail={tail} stateLabel={f.stateLabel} project={project} />
         <span className="ml-auto flex flex-shrink-0 items-center gap-2 pl-1">
           <SessionResource sessionId={session.id} />
-          <span data-testid="session-line-age" className={`flex-shrink-0 typo-data tabular-nums ${tail.kind === 'working' ? 'ae-tone-text' : 'text-foreground'}`}>{tail.age}</span>
+          <span data-testid="session-line-age" className={`flex-shrink-0 typo-data num ${tail.kind === 'working' ? 'ae-tone-text' : 'text-foreground'}`}>{tail.age}</span>
           <Lamp lamp={tail.lamp} />
         </span>
         <span className="ae-reveal ae-float" onClick={(e) => e.stopPropagation()}>

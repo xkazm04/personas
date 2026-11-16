@@ -32,7 +32,7 @@ export function DimListPopover({ title, icon, ink, items, x, y, testId, onClose 
       onClose={onClose}
     >
       {items.map((name) => (
-        <li key={name} className="flex items-center gap-2.5 px-3 py-2 typo-body text-foreground/70">
+        <li key={name} className="flex items-center gap-2.5 px-3 py-2 typo-body text-ink-2">
           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: mix(ink, 85) }} aria-hidden />
           <span className="truncate">{name}</span>
         </li>

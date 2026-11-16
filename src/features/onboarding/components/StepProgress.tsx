@@ -1,7 +1,9 @@
 import { Check } from 'lucide-react';
 import type { TourStepDef, TourStepId } from '@/stores/slices/system/tourSlice';
 import { getStepColors } from './tourConstants';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
+import { PressSurface } from '@/features/shared/components/buttons';
 interface StepProgressProps {
   steps: TourStepDef[];
   currentIndex: number;
@@ -38,24 +40,14 @@ export function StepProgress({
           isCurrent && !isCompleted && subStepIndex != null && step.subSteps.length > 0;
 
         return (
-          <button
-            type="button"
-            key={step.id}
-            onClick={() => onJump(i)}
-            data-testid={`tour-step-${step.id}`}
-            className={`group flex items-center gap-2.5 px-1 py-1.5 text-left rounded-card transition-colors ${
-              i > 0 ? 'border-t border-primary/5' : ''
-            } ${isCurrent ? '' : 'hover:bg-secondary/20'}`}
-            aria-current={isCurrent ? 'step' : undefined}
-            title={step.title}
-          >
+          <Tooltip content={step.title}><PressSurface key={step.id} onPress={() => onJump(i)} data-testid={`tour-step-${step.id}`} className={`group flex items-center gap-2.5 px-1 py-1.5 rounded-card ${i > 0 ? 'border-t border-hair' : ''}`} aria-current={isCurrent ? 'step' : undefined}>
             <span
               className={`flex items-center justify-center w-5 h-5 rounded-full typo-caption flex-shrink-0 border ${
                 isCompleted
-                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  ? 'bg-status-success/15 border-status-success/30 text-status-success'
                   : isCurrent
                     ? `${colors.subtle} ${colors.accent} ${colors.text}`
-                    : 'bg-secondary/30 border-primary/10 text-foreground'
+                    : 'bg-surface-1 border-hair text-ink-1'
               }`}
             >
               {isCompleted ? <Check className="w-3 h-3" /> : i + 1}
@@ -65,8 +57,8 @@ export function StepProgress({
                 isCurrent
                   ? `${colors.text}`
                   : isCompleted
-                    ? 'text-foreground/80'
-                    : 'text-foreground'
+                    ? 'text-ink-1'
+                    : 'text-ink-1'
               }`}
             >
               {step.title}
@@ -76,7 +68,7 @@ export function StepProgress({
                 {subStepIndex}/{step.subSteps.length}
               </span>
             )}
-          </button>
+          </PressSurface></Tooltip>
         );
       })}
     </div>

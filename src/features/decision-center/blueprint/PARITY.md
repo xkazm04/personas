@@ -130,7 +130,19 @@ Reference shots: bp itself on :3010 (Kettle sample and live products), compared 
 | Lives in (surfaces, contexts) | present | |
 | Revisions table | present | from the events log |
 | Illustration of the feature | dropped | the live stores carry no art; a key plan stands in |
-| Blast radius (B) | dropped | outside the brief; the map's dependency edges are loaded and can feed it later |
+| Blast radius (B) | present (2026-10-30) | the decision brief's blast line: the feature, its room, the features that depend on it (it opens their list) |
+| The decision brief on a waiting card (bp 51e193e, "one morning, with memory") | present | `model/brief.ts` is bp's `brief.ts`, held byte for byte by bp's golden (`standard/decision-brief.golden.json`, `__tests__/brief.golden.test.ts`); the card shows the advice chip and at most five fact lines, the declined line in amber, each fact opening its evidence. On a repeat (`withdraw`) Decline is the first answer, "You declined this before", Approve stays as "Approve anyway", and X opens the reason pre-filled with the note naming the decision it repeats (`repeatNote`), sent through `lens_scan_decide`. A like idea declined elsewhere (`ask`) keeps Approve first. bp's Enter-takes-the-recommended-option is not ported: Enter on an open feature says the enter hint, as before. No key is bound (Y stays triage accept) |
+
+## Follow bp's shared focus (spark roadmap S6, first half, 2026-10-30)
+
+| Element in bp | Verdict | Here |
+|---|---|---|
+| The follow chip ("Following Web, 2 s ago") | present | `ui/header/FollowChip.tsx`, a live product only: Follow bp / Following <who moved> / bp offline |
+| Reader presence (hello every 15 s, forget on close) | present | as `personas:main`; bp's own chip lists Personas while the sheet is open |
+| Following whoever moves, applying a new place (`toApply`) | present | `model/focus.ts` is bp's `session/focus.ts` @ c16732c, held by bp's golden `packages/schema/golden/shared-focus.json` (`__tests__/focus.golden.test.ts`); `model/focusPlace.ts` maps a place: site -> level 0, wing `0:<domain>` -> the wing, room (a capability since bp 57ee810) -> the same Personas bay (the fixture map) or room (a v3 map, measured on bp's demo 2026-10-31), a bp bay -> the same bay or its capability's, a bp domain-group wing (`0:FND`) -> holds still (no node in this layout), feature -> its L4 sheet with `lens=` from the hash; an id the plan does not draw holds still and says so |
+| The transport | improved | Rust reads bp over loopback (`bp_link`: the webview cannot reach bp); the sheet asks once a second and Rust holds an offline answer for 5 s |
+| A place on another product | present (S6, 2026-10-31) | the sheet reopens on that product at the place (`place` on `LensSheetRequest`); a product Personas has not got holds still and says "Not in Personas: <slug>" |
+| Publishing the shared focus | dropped | G7, the owner's decision: Personas follows, never publishes |
 
 ## Dropped for the whole sheet
 
@@ -228,3 +240,16 @@ Module map (bp -> here): `ComparePanel.tsx` -> `ui/compare/ComparePanel.tsx` + `
 | Release package pill (Package v... · n accepted, Release ->) | dropped | release composition is bp's (out of scope); WP3 shows it read-only |
 | Next waiting item after a decision | dropped | the panel stays on the item so its new state and the console answer read together; J walks on |
 | Keys sheet (?) | present | one more group, Triage |
+
+## Follow bp from the Monitor, the Morning deck, and Enter (spark roadmap S6, 2026-10-31)
+
+| Element in bp | Verdict | Here |
+|---|---|---|
+| One reader per surface (web, phone, table) | adapted | one reader per window (`personas:main`, `lens/bpFollower.ts`), shared by the Monitor's Blueprint and Morning tabs and the sheet: hello every 15 s while one of them is on screen, nothing while hidden (bp drops the reader 45 s later), forget 1 s after the last one closes |
+| The product a place names | improved | bp's product table matched on the canonical root (`bp_products`), never the folder name; the Release link uses it too (the folder name only while bp does not answer) |
+| The Morning deck (`MorningWatch`, `GET /api/companion/morning`) | present, read-only | `lens/morning/MorningDeck.tsx`, the Monitor's **Morning** tab, read through Rust `bp_morning`; the cards in bp's order with their briefs; **O** opens a card's place in the drawing |
+| Approve on a decision card | adapted | through Personas' own `lens_scan_decide` into the store (never bp's `POST /api/companion/morning`, which needs bp's human token); bp's deck drops the card on its next read and the tab re-reads at once |
+| Decline on a repeat (the brief's `recommend`) | present | offered on a repeat only, with the brief's note; Enter takes it, as in bp |
+| Enter | extended | owner decision D14: Enter takes the recommended answer on every decision, Decline on a repeat, else Approve (bp's deck binds Enter on a repeat only); the same on the sheet's waiting items |
+| Defer and Hold | dropped | G8: they write bp's steering log; a link opens the card in bp (`?product=<slug>&morning=<card id>`) |
+| Publishing the shared focus | dropped | G7, the owner's decision |

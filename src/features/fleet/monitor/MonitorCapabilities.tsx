@@ -31,6 +31,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from '@/lib/log';
 import { MonitorRunSheet } from './MonitorRunSheet';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const logger = createLogger('monitor-capabilities');
 
@@ -117,19 +119,11 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
         const runnable = uc.mode !== 'non_executable' && uc.health !== 'disabled';
         const disabled = isExecuting || !runnable;
         return (
-          <button
-            key={uc.id}
-            type="button"
+          <Tooltip content={uc.title} key={uc.id}><PressSurface
             disabled={disabled}
-            onClick={() => setPrompting(uc)}
-            title={uc.title}
-            className={`group relative flex flex-col items-center gap-2 rounded-card border px-3 py-3 transition-colors ${
-              isExecuting
-                ? 'border-primary/40 bg-primary/[0.07]'
-                : runnable
-                  ? 'border-primary/12 bg-secondary/20 hover:bg-secondary/40 cursor-pointer'
-                  : 'border-primary/8 bg-secondary/10 cursor-default'
-            }`}
+            onPress={() => setPrompting(uc)}
+            className="group relative flex flex-col items-center gap-2 rounded-card border border-hair px-3 py-3"
+            selected={isExecuting}
           >
             <div className="relative w-[68px] h-[68px] flex items-center justify-center">
               <div className={isExecuting ? 'opacity-40 transition-opacity' : 'transition-opacity'}>
@@ -164,13 +158,13 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
                 </span>
               ) : null}
             </div>
-            <span className="typo-caption text-foreground/90 text-center line-clamp-2">
+            <span className="typo-caption text-ink-2 text-center line-clamp-2">
               {uc.title}
             </span>
-            <span className={`typo-caption ${isExecuting ? 'text-primary' : runnable ? 'text-foreground/55' : 'text-foreground/35'}`}>
+            <span className={`typo-caption ${isExecuting ? 'text-primary' : runnable ? 'text-ink-3' : 'text-ink-3'}`}>
               {isExecuting ? t.monitor.executing : runnable ? t.monitor.run : uc.connector}
             </span>
-          </button>
+          </PressSurface></Tooltip>
         );
       })}
     </div>

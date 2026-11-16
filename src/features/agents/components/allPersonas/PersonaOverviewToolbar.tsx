@@ -3,6 +3,9 @@ import { Archive, Search, Star, X } from 'lucide-react';
 import { HEALTH_STYLES } from './PersonaOverviewBadges';
 import type { AgentListViewConfig } from './viewConfig';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface PersonaOverviewToolbarProps {
   search: string;
@@ -46,7 +49,9 @@ export function PersonaOverviewToolbar({
     const handler = (e: KeyboardEvent) => {
       if (e.key !== '/') return;
       const target = e.target as HTMLElement | null;
-      if (target?.matches('input, textarea, [contenteditable="true"]')) return;
+      if (target?.matches('input, textarea, select, [role="combobox"], [contenteditable="true"]')) return;
+      // A modal owns the keyboard: do not pull focus out from behind it.
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
       e.preventDefault();
       inputRef.current?.focus();
       inputRef.current?.select();
@@ -117,7 +122,7 @@ export function PersonaOverviewToolbar({
     <div className="flex items-center gap-2 flex-wrap">
       {/* Search input */}
       <div className="relative">
-        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground pointer-events-none" />
+        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-1 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -128,58 +133,47 @@ export function PersonaOverviewToolbar({
           // search box in PersonaConfigPanel already carries an aria-label.
           aria-label={t.agents.persona_list.search_personas}
           placeholder={t.agents.persona_list.search_personas}
-          className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-foreground focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
+          className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card typo-caption bg-surface-1 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:bg-surface-2 focus:border-primary/30 transition-all"
         />
         {search ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            tooltip={t.agents.persona_list.clear_search}
+            aria-label={t.agents.persona_list.clear_search}
             onClick={() => onSearchChange('')}
-            title={t.agents.persona_list.clear_search}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-          >
-            <X className="w-3 h-3" />
-          </button>
+            className="absolute right-1.5 top-1/2 -translate-y-1/2"
+            icon={<X className="w-3 h-3" />}
+          />
         ) : (
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1 py-0.5 rounded border border-primary/15 bg-background/60 typo-code text-[9px] text-foreground pointer-events-none">
-            /
-          </kbd>
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"><Kbd>/</Kbd></span>
         )}
       </div>
 
       {/* Favorites quick-toggle (icon-only) */}
-      <button
-        type="button"
-        onClick={() => onViewChange({ ...view, favoriteOnly: !view.favoriteOnly })}
-        title={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
-        aria-label={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
-        aria-pressed={view.favoriteOnly}
-        className={`flex items-center justify-center p-1.5 rounded-card border transition-all ${
-          view.favoriteOnly
-            ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-            : 'border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:text-amber-400'
-        }`}
-      >
-        <Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />
-      </button>
+      <Tooltip content={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}><Button
+  type="button"
+  onClick={() => onViewChange({ ...view, favoriteOnly: !view.favoriteOnly })}
+  aria-label={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
+  aria-pressed={view.favoriteOnly}
+  variant={view.favoriteOnly ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={<Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />}
+/></Tooltip>
 
       {/* Archived quick-toggle (icon-only) — flips between the default roster
           and the Archived view. */}
-      <button
-        type="button"
-        onClick={() =>
+      <Tooltip content={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}><Button
+  type="button"
+  onClick={() =>
           onViewChange({ ...view, statusFilter: view.statusFilter === 'archived' ? 'all' : 'archived' })
         }
-        title={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
-        aria-label={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
-        aria-pressed={view.statusFilter === 'archived'}
-        className={`flex items-center justify-center p-1.5 rounded-card border transition-all ${
-          view.statusFilter === 'archived'
-            ? 'border-zinc-500/40 bg-zinc-500/15 text-zinc-300'
-            : 'border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50'
-        }`}
-      >
-        <Archive className="w-3.5 h-3.5" />
-      </button>
+  aria-label={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
+  aria-pressed={view.statusFilter === 'archived'}
+  variant={view.statusFilter === 'archived' ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={<Archive className="w-3.5 h-3.5" />}
+/></Tooltip>
 
       {/* Active filter chips */}
       {chips.length > 0 && (
@@ -187,21 +181,21 @@ export function PersonaOverviewToolbar({
           {chips.map((chip) => (
             <span
               key={chip.key}
-              className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-md border ${
+              className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full typo-caption border ${
                 chip.tone === 'amber'
-                  ? 'border-amber-500/25 bg-amber-500/10 text-amber-400'
-                  : 'border-primary/20 bg-primary/10 text-primary'
+                  ? 'border-status-warning/25 bg-status-warning/10 text-status-warning'
+                  : 'border-hair bg-primary/10 text-primary'
               }`}
             >
               <span className="truncate max-w-[140px]">{chip.label}</span>
-              <button
+              <Button aria-label={t.agents.tools.clear_filter}
                 type="button"
                 onClick={chip.onClear}
-                title={t.agents.tools.clear_filter}
-                className="p-0.5 rounded-full hover:bg-current/10 transition-colors"
-              >
-                <X className="w-2.5 h-2.5" />
-              </button>
+                tooltip={t.agents.tools.clear_filter}
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-2.5 h-2.5" />}
+              />
             </span>
           ))}
         </div>

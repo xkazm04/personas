@@ -4,6 +4,7 @@ import type { RadioState } from '@/lib/bindings/RadioState';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Shared building blocks for the Radio management surface (the Settings → Radio
  * "Console" layout). Kept separate so the page + any future variant share one
@@ -71,8 +72,8 @@ export function trackCount(s: Station): number | null {
 export function YouTubePremiumNote() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-start gap-2 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-      <Info className="w-4 h-4 text-amber-400 mt-px shrink-0" />
+    <div className="flex items-start gap-2 rounded-card border border-status-warning/20 bg-status-warning/5 px-3 py-2">
+      <Info className="w-4 h-4 text-status-warning mt-px shrink-0" />
       <p className="typo-caption text-foreground" style={DESC_STYLE}>{t.radio.youtube_premium_note}</p>
     </div>
   );
@@ -90,7 +91,7 @@ export function RadioMasterControls({
     <div className="grid sm:grid-cols-2 gap-3">
       <div className="flex items-center justify-between gap-3 rounded-card border border-primary/10 bg-secondary/10 px-3 py-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
-          <Power className={`w-4 h-4 shrink-0 ${radioEnabled ? 'text-emerald-400' : 'text-foreground/50'}`} />
+          <Power className={`w-4 h-4 shrink-0 ${radioEnabled ? 'text-status-success' : 'text-ink-2'}`} />
           <div className="min-w-0">
             <p className="typo-body text-foreground" style={TITLE_STYLE}>{t.radio.master_footer_title}</p>
             <p className="typo-caption text-foreground" style={DESC_STYLE}>{t.radio.master_footer_desc}</p>
@@ -135,25 +136,26 @@ export function PreviewButton({
   const dim = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
   const icon = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className={`${dim} rounded-full flex items-center justify-center shrink-0 border transition-colors`}
-      style={{
-        borderColor: isPreviewing ? accentColor : 'transparent',
-        background: isPreviewing ? `${accentColor}22` : 'rgba(255,255,255,0.06)',
-        color: isPreviewing ? accentColor : undefined,
-      }}
-    >
-      {isBuffering ? (
-        <Loader2 className={`${icon} animate-spin`} style={{ color: accentColor }} />
-      ) : isPreviewing ? (
-        <Pause className={icon} />
-      ) : (
-        <Play className={icon} />
-      )}
-    </button>
+    <Tooltip content={label}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className={`${dim} rounded-full flex items-center justify-center shrink-0 border transition-colors`}
+        style={{
+          borderColor: isPreviewing ? accentColor : 'transparent',
+          background: isPreviewing ? `${accentColor}22` : 'rgba(255,255,255,0.06)',
+          color: isPreviewing ? accentColor : undefined,
+        }}
+      >
+        {isBuffering ? (
+          <Loader2 className={`${icon} animate-spin`} style={{ color: accentColor }} />
+        ) : isPreviewing ? (
+          <Pause className={icon} />
+        ) : (
+          <Play className={icon} />
+        )}
+      </button>
+    </Tooltip>
   );
 }

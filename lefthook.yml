@@ -32,9 +32,9 @@ pre-commit:
       run: npx eslint --cache --cache-location node_modules/.cache/eslint/staged/ --quiet --no-warn-ignored --max-warnings 99999 {staged_files}
 
     # Secret scan on staged changes — the shift-left D9 control: a leaked key is blocked BEFORE it
-    # leaves the machine (CI catching it is already a leak). Runs gitleaks if installed, else skips
-    # with an install hint (the wrapper never breaks a commit). Read-only; never mutates the tree.
-    # Install gitleaks to enable: https://github.com/gitleaks/gitleaks
+    # leaves the machine (CI catching it is already a leak). Runs gitleaks if installed, else says so
+    # and scans the staged lines for key shapes, which blocks only on a hit. Read-only; never mutates
+    # the tree. Install gitleaks for the full control: https://github.com/gitleaks/gitleaks
     - name: gitleaks-staged
       run: node scripts/secret-scan.mjs
 

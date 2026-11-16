@@ -7,11 +7,14 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ScoreSparkline } from '../ScoreSparkline';
-import { scoreTone, toneFill } from '../directorScore';
+import { scoreTone } from '../directorScore';
 import { attentionFlags, attentionRank, primaryFlag, FLAG_TONE, type AttentionFlag } from '../attention';
 import { rosterRowMatches, toggleFilter, type RosterFilter } from '../rosterFilter';
 import { rosterScoreDelta, rosterMomentum, MOMENTUM_TONE, type Momentum } from '../momentum';
 import type { DirectorRosterEntry } from '@/api/director';
+
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 // Shared column template so the header and every row line up.
 const ROW_GRID = 'grid grid-cols-[1.6fr_52px_60px_72px_1.4fr_auto_auto] items-center gap-3';
@@ -92,27 +95,26 @@ export function PersonaCoachingTable({
         <span className="text-right">{t.director.roster_col_value}</span>
         <span>{t.director.col_flags}</span>
         <span className="text-right">{t.director.roster_col_last}</span>
-        <button
-          type="button"
-          onClick={() => onFilterChange(toggleFilter(filter, { type: 'flagged' }))}
-          disabled={flaggedCount === 0}
-          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill normal-case tracking-normal transition-colors disabled:opacity-40 focus-ring ${
-            onlyFlagged ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground border border-transparent hover:bg-secondary/40'
-          }`}
-          title={t.director.only_flagged}
-        >
-          <ListFilter className="w-3 h-3" />
-          <span className="tabular-nums">{flaggedCount}</span>
-        </button>
+        <Tooltip content={t.director.only_flagged}>
+          <OptionChip
+            onSelect={() => onFilterChange(toggleFilter(filter, { type: 'flagged' }))}
+            disabled={flaggedCount === 0}
+            selected={onlyFlagged}
+          ><span className="inline-flex items-center gap-1.5">
+            <ListFilter className="w-3 h-3" />
+            <span className="tabular-nums">{flaggedCount}</span></span></OptionChip>
+        </Tooltip>
       </div>
 
       {/* Active non-flagged facet (from a triage chip or score band) — show what's
           filtering and a one-click clear, since its trigger lives elsewhere. */}
       {filter && filter.type !== 'flagged' && (
-        <button
+        <Button
           type="button"
           onClick={() => onFilterChange(null)}
-          className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-pill typo-caption text-foreground bg-secondary/40 hover:bg-secondary/60 transition-colors focus-ring"
+          variant="ghost"
+          size="sm"
+          className="mt-2"
         >
           {filter.type === 'flag'
             ? FLAG_LABEL[filter.flag]
@@ -120,7 +122,7 @@ export function PersonaCoachingTable({
               ? tx(t.director.distribution_band_short, { score: filter.score })
               : MOMENTUM_LABEL[filter.momentum]}
           <X className="w-3 h-3" />
-        </button>
+        </Button>
       )}
 
       <div className="mt-1 space-y-0.5">
@@ -142,7 +144,7 @@ export function PersonaCoachingTable({
               // per-row delay) so rows render at their final state instantly.
               // `focus-ring` gives keyboard focus a visible, themed outline —
               // the role=button row was previously focus-invisible (WCAG 2.4.7).
-              className={`${ROW_GRID} row-hover-lift ${reduceMotion ? '' : 'animate-fade-slide-in'} pl-2.5 pr-1.5 py-2 rounded cursor-pointer focus-ring`}
+              className={`${ROW_GRID} row-hover-lift ${reduceMotion ? '' : 'animate-fade-slide-in'} pl-2.5 pr-1.5 py-2 rounded-interactive cursor-pointer focus-ring`}
               style={{ ['--row-accent' as string]: accent, ...(reduceMotion ? {} : { animationDelay: `${Math.min(i, 12) * 25}ms` }) }}
             >
               {/* agent */}
@@ -154,8 +156,8 @@ export function PersonaCoachingTable({
               <span className="flex flex-col items-center gap-0.5">
                 {r.latestScore != null && tone ? (
                   <span
-                    className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded text-[11px] tabular-nums font-medium"
-                    style={{ color: tone.color, backgroundColor: toneFill(tone.color, 14) }}
+                    className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded-interactive typo-caption tabular-nums"
+                    style={{ color: tone.color }}
                   >
                     {r.latestScore}
                   </span>
@@ -164,8 +166,8 @@ export function PersonaCoachingTable({
                   // double-failed) — surface it explicitly, never as a bare "—".
                   <Tooltip content={t.director.roster_unscored_hint}>
                     <span
-                      className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium"
-                      style={{ color: 'var(--status-warning)', backgroundColor: toneFill('var(--status-warning)', 14) }}
+                      className="inline-flex items-center justify-center typo-eyebrow"
+                      style={{ color: 'var(--status-warning)' }}
                     >
                       {t.director.roster_unscored}
                     </span>
@@ -180,7 +182,7 @@ export function PersonaCoachingTable({
                   const Arrow = up ? TrendingUp : TrendingDown;
                   return (
                     <span
-                      className="inline-flex items-center gap-0.5 text-[10px] tabular-nums leading-none font-medium"
+                      className="inline-flex items-center gap-0.5 typo-caption tabular-nums leading-none"
                       style={{ color: up ? MOMENTUM_TONE.improving : MOMENTUM_TONE.declining }}
                     >
                       <Arrow aria-hidden className="w-2.5 h-2.5" />
@@ -212,8 +214,8 @@ export function PersonaCoachingTable({
                   flags.map((f) => (
                     <Tooltip key={f} content={FLAG_HINT[f]}>
                       <span
-                        className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium"
-                        style={{ color: FLAG_TONE[f], backgroundColor: toneFill(FLAG_TONE[f], 14) }}
+                        className="typo-eyebrow"
+                        style={{ color: FLAG_TONE[f] }}
                       >
                         {FLAG_LABEL[f]}
                       </span>
@@ -232,14 +234,15 @@ export function PersonaCoachingTable({
               {/* actions */}
               <span className="flex items-center justify-end gap-0.5">
                 <Tooltip content={t.director.roster_remove}>
-                  <button
+                  <Button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onRemove(r.personaId); }}
-                    className="p-1 rounded text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
                     aria-label={t.director.roster_remove}
+                    variant="ghost"
+                    size="icon-sm"
                   >
                     <X className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </Tooltip>
                 <ChevronRight className="w-3.5 h-3.5 text-foreground" />
               </span>
@@ -247,13 +250,15 @@ export function PersonaCoachingTable({
           );
         })}
         {rows.length > visibleCount && (
-          <button
+          <Button
             type="button"
             onClick={() => setVisibleCount((n) => n + VISIBLE_CAP)}
-            className="w-full py-2 typo-caption text-primary/80 hover:text-primary transition-colors focus-ring rounded-interactive"
+            variant="ghost"
+            size="sm"
+            block
           >
             {t.overview.activity.load_more}
-          </button>
+          </Button>
         )}
       </div>
     </div>

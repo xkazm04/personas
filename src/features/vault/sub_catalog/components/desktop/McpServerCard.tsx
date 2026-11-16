@@ -2,6 +2,7 @@ import { Monitor, CheckCircle2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ImportedMcpServer } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface McpServerCardProps {
   server: ImportedMcpServer;
@@ -15,9 +16,9 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
   const dd = t.vault.desktop_discovery;
   const envCount = Object.keys(server.env).length;
   return (
-    <div className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20">
-      <div className="w-8 h-8 rounded-card flex items-center justify-center border bg-cyan-500/10 border-cyan-500/20">
-        <Monitor className="w-4 h-4 text-cyan-400" />
+    <div className="flex items-center gap-3 p-3 rounded-modal border border-hair bg-surface-1">
+      <div className="w-8 h-8 rounded-card flex items-center justify-center border bg-role-highlight/10 border-role-highlight/20">
+        <Monitor className="w-4 h-4 text-role-highlight" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="typo-body text-foreground">{server.label}</p>
@@ -29,23 +30,25 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
         )}
       </div>
       {imported ? (
-        <span className="flex items-center gap-1 typo-caption text-emerald-400">
+        <span className="flex items-center gap-1 typo-caption text-status-success">
           <CheckCircle2 className="w-3.5 h-3.5" />
           {t.common.imported}
         </span>
       ) : (
-        <button
+        <Button
           type="button"
           onClick={onImport}
           disabled={importing}
-          className="px-3 py-1.5 typo-caption text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-card hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+          variant="accent"
+          tone="highlight"
+          size="sm"
         >
           {importing ? (
             <LoadingSpinner size="sm" />
           ) : (
             t.common.import_action
           )}
-        </button>
+        </Button>
       )}
     </div>
   );

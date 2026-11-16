@@ -1,3 +1,4 @@
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useCallback } from 'react';
 import { X, Plug, Key, Plus, Pencil, Check } from 'lucide-react';
@@ -9,6 +10,7 @@ import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { toastCatch } from '@/lib/silentCatch';
 import { useCredentialRename } from '@/features/vault/shared/hooks/useCredentialRename';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface PlaygroundHeaderProps {
@@ -69,9 +71,9 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
   );
 
   return (
-    <div className="flex items-center gap-3 px-6 py-3 border-b border-primary/10 bg-secondary/20 shrink-0">
+    <div className="flex items-center gap-3 px-6 py-3 border-b border-hair bg-surface-1 shrink-0">
       <div
-        className="w-9 h-9 rounded-card flex items-center justify-center border border-primary/15 shrink-0"
+        className="w-9 h-9 rounded-card flex items-center justify-center border border-hair shrink-0"
         style={{ backgroundColor: `${color}15` }}
       >
         {iconUrl ? (
@@ -79,7 +81,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         ) : connector ? (
           <Plug className="w-5 h-5" style={{ color }} />
         ) : (
-          <Key className="w-5 h-5 text-emerald-400/80" />
+          <Key className="w-5 h-5 text-status-success/80" />
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -94,34 +96,38 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 onKeyDown={handleKeyDown}
                 onBlur={saveName}
                 autoFocus
-                className="flex-1 min-w-0 typo-heading text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                className="flex-1 min-w-0 typo-heading text-ink-1 bg-background/50 border border-hair rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
               />
-              <button
+              <Button
                 onMouseDown={(e) => { e.preventDefault(); saveName(); }}
-                className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
-                title={t.vault.ingest.save_name}
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0"
+                tooltip={t.vault.ingest.save_name} aria-label={t.vault.ingest.save_name}
               >
                 <Check className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           ) : (
             <>
-              <h2 id="credential-playground-title" className="typo-heading text-foreground/90 truncate">
+              <h2 id="credential-playground-title" className="typo-heading text-ink-1 truncate">
                 {credential.name}
               </h2>
-              <button
+              <Button
                 onClick={startEditing}
-                className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
-                title={t.vault.ingest.rename_credential}
+                variant="ghost"
+                size="icon-sm"
+                className="opacity-0 group-hover/name:opacity-100 focus-visible:opacity-100 shrink-0"
+                tooltip={t.vault.ingest.rename_credential} aria-label={t.vault.ingest.rename_credential}
               >
                 <Pencil className="w-3 h-3" />
-              </button>
+              </Button>
             </>
           )}
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {fieldKeys.map((key) => (
-            <span key={key} className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground">
+            <span key={key} className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-2 border border-primary/8 text-foreground">
               {key}
             </span>
           ))}
@@ -130,16 +136,17 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
             return (
               <span
                 key={tag}
-                className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
+                className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border ${style.bg} ${style.text} ${style.border}`}
               >
                 {tag}
-                <button
+                <Button
                   onClick={() => removeTag(tag)}
-                  className="hover:opacity-70 transition-opacity"
+                  variant="ghost"
+                  size="icon-sm"
                   aria-label={tx(t.vault.credential_card.remove_tag, { tag })}
                 >
                   <X className="w-2.5 h-2.5" />
-                </button>
+                </Button>
               </span>
             );
           })}
@@ -151,45 +158,45 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 value={tagInput}
                 onChange={(e) => { setTagInput(e.target.value); setShowSuggestions(true); }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && tagInput.trim()) addTag(tagInput);
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing && tagInput.trim()) addTag(tagInput);
                   if (e.key === 'Escape') { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }
                 }}
                 onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
                 autoFocus
                 placeholder={vt.add_tag}
-                className="w-24 typo-caption px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+                className="w-24 typo-caption px-1.5 py-0.5 rounded-interactive border border-hair bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
               />
               {showSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[100px]">
+                <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-hair rounded-card shadow-elevation-3 py-1 min-w-[100px]">
                   {filteredSuggestions.map((s) => (
-                    <button
-                      key={s}
-                      onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                      className="w-full text-left px-2.5 py-1 typo-caption hover:bg-secondary/50 transition-colors text-foreground"
-                    >
+                    <OptionRow key={s} onMouseDown={(e) => e.preventDefault()} onSelect={() => addTag(s)}>
                       {s}
-                    </button>
+                    </OptionRow>
                   ))}
                 </div>
               )}
             </div>
           ) : (
-            <button
+            <Button
               onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
-              className="inline-flex items-center gap-0.5 typo-caption text-foreground hover:text-muted-foreground/70 transition-colors"
-              title={t.vault.shared.add_tag_title}
+              variant="ghost"
+              size="sm"
+              tooltip={t.vault.shared.add_tag_title}
+              icon={<Plus className="w-2.5 h-2.5" />}
             >
-              <Plus className="w-2.5 h-2.5" /> {t.vault.shared.add_tag_title}
-            </button>
+               {t.vault.shared.add_tag_title}
+            </Button>
           )}
         </div>
       </div>
-      <button
+      <Button
         onClick={onClose}
-        className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80 shrink-0"
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
       >
         <X className="w-4 h-4" />
-      </button>
+      </Button>
     </div>
   );
 }

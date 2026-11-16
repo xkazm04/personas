@@ -12,6 +12,7 @@ import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { PresetPreviewModal } from './PresetPreviewModal';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 /** Preset ids that ship a symbolic Leonardo illustration (dark + light). Other
  *  presets fall back to a color-gradient tile. */
@@ -76,7 +77,7 @@ export default function PresetLibraryPage() {
     <div className="flex-1 min-h-0 overflow-y-auto p-6" data-testid="preset-library-page">
       <div className="max-w-5xl mx-auto">
         <header className="mb-5">
-          <h1 className="typo-heading-lg text-foreground/90">{t.templates.presets.page_title}</h1>
+          <h1 className="typo-heading-lg text-ink-1">{t.templates.presets.page_title}</h1>
           <p className="typo-body text-foreground mt-1">{t.templates.presets.page_subtitle}</p>
         </header>
 
@@ -127,11 +128,10 @@ function PresetTile({ preset, art, big, memberLabel, onOpen }: {
 }) {
   const color = preset.color || '#6366f1';
   return (
-    <button
-      type="button"
-      onClick={onOpen}
+    <PressSurface
+      onPress={onOpen}
       data-testid={`preset-card-${preset.id}`}
-      className="group relative w-full h-full overflow-hidden rounded-2xl border border-primary/10 hover:border-primary/30 text-left transition-all"
+      className="group relative w-full h-full overflow-hidden rounded-card border border-hair"
     >
       {art ? (
         <img src={art} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
@@ -141,12 +141,12 @@ function PresetTile({ preset, art, big, memberLabel, onOpen }: {
       <div className="absolute inset-0" style={{ background: `linear-gradient(to top, var(--background) 16%, transparent 62%), radial-gradient(120% 80% at 70% 20%, ${colorWithAlpha(color, 0.13)}, transparent)` }} />
       <div className="relative h-full flex flex-col justify-end p-3.5 gap-0.5">
         <span className={`text-foreground drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)] ${big ? 'typo-heading-lg' : 'typo-heading'}`}>{preset.name}</span>
-        <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-80">
+        <span className="inline-flex items-center gap-1 typo-caption text-ink-2">
           <Users className="w-3.5 h-3.5" style={{ color }} />
           {memberLabel}
         </span>
       </div>
-    </button>
+    </PressSurface>
   );
 }
 
@@ -164,12 +164,12 @@ function PresetGhostTiles() {
       {GHOST_SPANS.map((span, i) => (
         <div
           key={i}
-          className={`rounded-2xl border border-primary/10 bg-primary/[0.04] animate-fade-in ${span}`}
+          className={`rounded-card border border-hair bg-primary/[0.04] animate-fade-in ${span}`}
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <div className="h-full flex flex-col justify-end p-3.5 gap-1.5">
-            <span className="block h-3.5 w-2/3 max-w-[9rem] rounded bg-primary/[0.08]" />
-            <span className="block h-2.5 w-1/3 max-w-[5rem] rounded bg-primary/[0.08]" />
+            <span className="block h-3.5 w-2/3 max-w-[9rem] rounded-interactive bg-primary/[0.08]" />
+            <span className="block h-2.5 w-1/3 max-w-[5rem] rounded-interactive bg-primary/[0.08]" />
           </div>
         </div>
       ))}

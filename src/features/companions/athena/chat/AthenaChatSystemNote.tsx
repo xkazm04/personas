@@ -22,6 +22,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { classifySystemNote, type SystemNote } from './athenaChatSystemKind';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /** Bodies longer than this collapse behind a "show more". */
 const CLAMP_CHARS = 260;
 
@@ -35,7 +37,7 @@ const ICONS = {
 /** Accent + label colour per kind. A blocked action is the only warm one. */
 function toneOf(kind: SystemNote['kind']): { rail: string; label: string } {
   if (kind === 'dispatcher') {
-    return { rail: 'bg-amber-400/40', label: 'text-amber-300' };
+    return { rail: 'bg-status-warning/20', label: 'text-status-warning' };
   }
   return { rail: 'bg-primary/30', label: 'text-primary' };
 }
@@ -84,7 +86,7 @@ export function AthenaChatSystemNote({
           <Icon className={`w-3 h-3 shrink-0 ${tone.label}`} aria-hidden />
           <span className={`typo-caption ${tone.label}`}>{note.label}</span>
           {note.meta && (
-            <span className="typo-caption text-foreground opacity-60 truncate tabular-nums">
+            <span className="typo-data text-ink-3 truncate">
               {note.meta}
             </span>
           )}
@@ -102,24 +104,26 @@ export function AthenaChatSystemNote({
             // control below says what to do about it.
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-b from-transparent to-background"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-surface-1 from-transparent to-background"
             />
           )}
         </div>
         {longBody && (
-          <button
+          <Button
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
             data-testid="companion-system-note-toggle"
-            className="mt-0.5 inline-flex items-center gap-1 rounded-interactive px-1 py-0.5 typo-caption text-foreground opacity-70 hover:opacity-100 hover:bg-foreground/[0.06] transition focus-ring"
+            variant="ghost"
+            size="icon-sm"
+            className="mt-0.5"
           >
             <ChevronDown
               className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`}
               aria-hidden
             />
             {expanded ? c.system_note_less : c.system_note_more}
-          </button>
+          </Button>
         )}
       </div>
     </div>

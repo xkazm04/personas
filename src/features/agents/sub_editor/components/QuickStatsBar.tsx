@@ -6,6 +6,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface QuickStatsBarProps {
   personaId: string;
@@ -49,10 +50,10 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
+      <div className="flex items-center gap-x-4 gap-y-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
         <div className="flex items-center gap-2 animate-pulse">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-6 w-20 rounded-card bg-primary/5" />
+            <div key={i} className="h-6 w-20 rounded-card bg-surface-1" />
           ))}
         </div>
         {trailingNode}
@@ -62,7 +63,7 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
 
   if (isEmpty || !stats) {
     return trailingNode || budgetChip ? (
-      <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
+      <div className="flex items-center gap-x-4 gap-y-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
         {budgetChip}
         {trailingNode}
       </div>
@@ -70,7 +71,7 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
   }
 
   return (
-    <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
+    <div className="flex items-center gap-x-4 gap-y-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
       {stats.successRate != null && (
         <StatChip
           icon={<CheckCircle2 className="w-3 h-3" />}
@@ -104,7 +105,7 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
         value={stats.hasCostData
           ? `$${stats.avgCostPerRun < 0.01 ? stats.avgCostPerRun.toFixed(4) : stats.avgCostPerRun.toFixed(3)}`
           : '—'}
-        color={!stats.hasCostData || stats.avgCostPerRun === 0 ? 'slate' : 'violet'}
+        color="slate"
       />
       {budgetChip}
       {stats.lastRunAt && (
@@ -142,12 +143,12 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
 type ChipColor = 'emerald' | 'amber' | 'red' | 'blue' | 'violet' | 'slate';
 
 const CHIP_COLORS: Record<ChipColor, string> = {
-  emerald: 'text-emerald-400/80 bg-emerald-500/8 border-emerald-500/15',
-  amber:   'text-amber-400/80 bg-amber-500/8 border-amber-500/15',
-  red:     'text-red-400/80 bg-red-500/8 border-red-500/15',
-  blue:    'text-blue-400/80 bg-blue-500/8 border-blue-500/15',
-  violet:  'text-violet-400/80 bg-violet-500/8 border-violet-500/15',
-  slate:   'text-foreground bg-secondary/20 border-primary/[0.08]',
+  emerald: 'text-status-success',
+  amber:   'text-status-warning',
+  red:     'text-status-error',
+  blue:    'text-status-info',
+  violet:  'text-role-agent',
+  slate:   'text-ink-2',
 };
 
 function StatChip({
@@ -166,11 +167,11 @@ function StatChip({
   onClick?: () => void;
   testId?: string;
 }) {
-  const className = `inline-flex items-center gap-1.5 px-2 py-1 rounded-card border text-[11px] ${CHIP_COLORS[color]}`;
+  const className = `inline-flex items-center gap-1.5 typo-data ${CHIP_COLORS[color]}`;
   const body = (
     <>
       {icon}
-      <span className="font-medium">{value}</span>
+      <span>{value}</span>
     </>
   );
   if (onClick) {
@@ -179,21 +180,20 @@ function StatChip({
     // hover AND keyboard focus (golden path: tooltip.md).
     return (
       <Tooltip content={`${label}: ${value}`}>
-        <button
-          type="button"
-          onClick={onClick}
+        <PressSurface
+          onPress={onClick}
           data-testid={testId}
           aria-label={`${label}: ${value}`}
-          className={`${className} hover:brightness-125 transition-[filter] focus-ring cursor-pointer`}
+          className="rounded-interactive -mx-1 px-1"
         >
-          {body}
-        </button>
+          <span className={className}>{body}</span>
+        </PressSurface>
       </Tooltip>
     );
   }
   return (
-    <div className={className} data-testid={testId} title={`${label}: ${value}`}>
+    <Tooltip content={`${label}: ${value}`}><div className={className} data-testid={testId}>
       {body}
-    </div>
+    </div></Tooltip>
   );
 }

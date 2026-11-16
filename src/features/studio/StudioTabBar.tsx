@@ -12,6 +12,10 @@ import { useStudioHistory } from './studioHistory';
 import { phaseProgress, tabDotClass } from './studioBuildModel';
 import { silentCatch } from '@/lib/silentCatch';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 // Browser-style tab strip. Each open project is a tab carrying its own live
 // status dot (so you can see which projects are building while you're on
 // another). The "+" opens a picker: new build, import an existing project, or
@@ -140,45 +144,47 @@ export default function StudioTabBar({
               active ? 'border-primary bg-secondary/50' : 'border-transparent hover:bg-secondary/30'
             }`}
           >
-            <button
-              type="button"
-              onClick={() => setActive(id)}
+            <PressSurface
+              onPress={() => setActive(id)}
               // Which tab is active was carried by colour alone — a distinction
               // no screen-reader user and no high-contrast setting can see.
               aria-current={active ? 'true' : undefined}
               className={`flex items-center gap-1.5 py-1 pl-2.5 pr-1 text-md ${
-                active ? 'text-foreground' : 'text-foreground/60 group-hover:text-foreground'
+                active ? 'text-foreground' : 'text-ink-2 group-hover:text-foreground'
               }`}
             >
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
               <span className="max-w-[10rem] truncate">{name}</span>
-            </button>
-            <button
-              type="button"
+            </PressSurface>
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => closeTab(id)}
               aria-label={tx(t.studio.close_tab, { name })}
               // `opacity-0` + `group-hover:opacity-100` alone makes this a
               // control you can Tab to but cannot see — the focus ring lands on
               // a fully transparent button. Reveal it on focus too.
-              className="mr-1 shrink-0 rounded-interactive p-0.5 text-foreground/90 opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              className="mr-1 shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
             >
               <X className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         );
       })}
 
-      <button
+      <Button
         ref={plusRef}
         type="button"
         onClick={togglePicker}
         aria-label={t.studio.open_or_create}
         aria-haspopup="menu"
         aria-expanded={pickerOpen}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-interactive text-foreground/90 hover:bg-secondary/40 hover:text-foreground"
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
       >
         <Plus className="h-4 w-4" />
-      </button>
+      </Button>
 
       {pickerOpen &&
         createPortal(
@@ -189,52 +195,56 @@ export default function StudioTabBar({
               className="fixed z-[121] w-64 overflow-hidden rounded-card border border-border bg-background/95 py-1 shadow-elevation-4 backdrop-blur"
               style={{ top: menuPos.top, left: menuPos.left }}
             >
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setPickerOpen(false);
                   onNew();
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+                variant="ghost"
+                size="sm"
+                block
               >
                 <Plus className="h-3.5 w-3.5 text-primary" /> {t.studio.new_project}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => void addExisting()}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+                variant="ghost"
+                size="sm"
+                block
               >
                 <FolderInput className="h-3.5 w-3.5 text-primary" /> {t.studio.add_existing_project}
-              </button>
+              </Button>
               {(recent.length > 0 || importable.length > 0) && (
                 <div className="max-h-72 overflow-y-auto">
                   {recent.length > 0 && (
                     <>
                       <div className="my-1 h-px bg-border" />
-                      <div className="px-3 py-1 typo-caption text-foreground/90">
+                      <div className="px-3 py-1 typo-caption text-ink-2">
                         {t.studio.resume}
                       </div>
                       {recent.map((p) => {
                         const prog = phaseProgress(history[p.id]?.phases ?? []);
                         return (
-                          <button
+                          <PressSurface
                             key={p.id}
-                            type="button"
-                            onClick={() => {
+                            onPress={() => {
                               setPickerOpen(false);
                               void startExisting(p.id, p.name);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-foreground/90 hover:bg-secondary/50 hover:text-foreground"
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-ink-2 hover:text-foreground"
                           >
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                            <span
-                              className="flex shrink-0 items-center gap-1 typo-caption text-foreground/90"
-                              title={t.studio.saved_progress_hint}
-                            >
-                              <ListChecks className="h-3 w-3" />
-                              {prog.done}/{prog.total}
-                            </span>
-                          </button>
+                            <Tooltip content={t.studio.saved_progress_hint}>
+                              <span
+                                className="flex shrink-0 items-center gap-1 typo-caption text-ink-2"
+                              >
+                                <ListChecks className="h-3 w-3" />
+                                {prog.done}/{prog.total}
+                              </span>
+                            </Tooltip>
+                          </PressSurface>
                         );
                       })}
                     </>
@@ -242,43 +252,38 @@ export default function StudioTabBar({
                   {importable.length > 0 && (
                     <>
                       <div className="my-1 h-px bg-border" />
-                      <div className="px-3 py-1 typo-caption text-foreground/90">
+                      <div className="px-3 py-1 typo-caption text-ink-2">
                         {t.studio.dev_tools_projects}
                       </div>
                       {importable.map((p) => {
                         const blocked = nextReady[p.id] === false;
                         return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            disabled={blocked}
-                            // `blocked` is the ADVISORY hint from the probe
-                            // above, and the probe can fail — in which case
-                            // every row here reads as openable. The authority is
-                            // the store's own guard, which re-checks and refuses
-                            // with an explanation exactly like the browse path.
-                            onClick={() => {
-                              if (blocked) return;
-                              setPickerOpen(false);
-                              void openImportable(p.id, p.name);
-                            }}
-                            title={
+                          <Tooltip key={p.id} content={
                               blocked ? t.studio.not_next_js_hint : p.root_path
-                            }
-                            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
-                              blocked
-                                ? 'cursor-not-allowed text-foreground/35'
-                                : 'text-foreground/80 hover:bg-secondary/50 hover:text-foreground'
-                            }`}
-                          >
-                            <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-foreground/90" />
-                            <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                            {blocked && (
-                              <span className="shrink-0 typo-caption text-status-warning/80">
-                                {t.studio.not_next_js}
-                              </span>
-                            )}
-                          </button>
+                            }>
+                            <PressSurface
+                              disabled={blocked}
+                              // `blocked` is the ADVISORY hint from the probe
+                              // above, and the probe can fail — in which case
+                              // every row here reads as openable. The authority is
+                              // the store's own guard, which re-checks and refuses
+                              // with an explanation exactly like the browse path.
+                              onPress={() => {
+                                if (blocked) return;
+                                setPickerOpen(false);
+                                void openImportable(p.id, p.name);
+                              }}
+                              className={`flex w-full items-center gap-2 px-3 py-1.5 text-md ${blocked ? 'text-ink-3' : 'text-ink-2'}`}
+                            >
+                              <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-ink-2" />
+                              <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                              {blocked && (
+                                <span className="shrink-0 typo-caption text-status-warning/80">
+                                  {t.studio.not_next_js}
+                                </span>
+                              )}
+                            </PressSurface>
+                          </Tooltip>
                         );
                       })}
                     </>

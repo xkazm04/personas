@@ -5,6 +5,9 @@ import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { getAllModels } from '@/lib/models/modelCatalog';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 interface QuickEditPanelProps {
   persona: Persona;
@@ -93,15 +96,15 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
       {/* Header */}
       <div className="flex items-center gap-2">
         <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" className="shrink-0" frameSize={"lg"} />
-        <span className="typo-body text-foreground truncate">{persona.name}</span>
-        <span className="typo-caption text-foreground">{t.common.quick_edit}</span>
+        <span className="typo-body text-ink-1 truncate">{persona.name}</span>
+        <span className="typo-caption text-ink-2">{t.common.quick_edit}</span>
       </div>
 
       {/* Description */}
       <div className="space-y-1">
         <label
           htmlFor={`quick-edit-description-${persona.id}`}
-          className="text-[11px] font-medium uppercase tracking-wider text-foreground"
+          className="typo-eyebrow text-ink-1"
         >
           {t.common.description_label}
         </label>
@@ -111,7 +114,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
           value={description}
           onChange={e => setDescription(e.target.value)}
           rows={3}
-          className="w-full rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground placeholder:text-foreground outline-none focus:border-violet-400/50 resize-none transition-colors"
+          className="w-full rounded-card bg-surface-1 border border-hair px-3 py-2 typo-body text-ink-1 placeholder:text-ink-3 outline-none focus:border-role-agent/50 resize-none transition-colors"
           placeholder={t.common.agent_description_placeholder}
         />
       </div>
@@ -120,7 +123,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
       <div className="space-y-1">
         <span
           id={`quick-edit-model-label-${persona.id}`}
-          className="text-[11px] font-medium uppercase tracking-wider text-foreground block"
+          className="typo-eyebrow text-ink-1 block"
         >
           {t.common.model_label}
         </span>
@@ -133,20 +136,22 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
             if (next) setModel(next.model ?? next.id);
           }}
           renderTrigger={({ isOpen, toggle }) => (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="md"
+              pressed={isOpen}
               onClick={toggle}
               aria-expanded={isOpen}
               aria-labelledby={`quick-edit-model-label-${persona.id}`}
               data-testid="quick-edit-model-trigger"
-              className="flex items-center gap-2 w-full rounded-card bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground outline-none focus:border-violet-400/50 transition-colors"
+              className="w-full"
             >
-              {unrecognized && <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+              {unrecognized && <AlertTriangle className="w-3.5 h-3.5 text-status-warning shrink-0" />}
               <span className="flex-1 text-left truncate">
                 {selected?.label ?? (model || t.shared.use_cases_extra.model_placeholder)}
               </span>
               <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            </Button>
           )}
         >
           {({ close }) => (
@@ -155,30 +160,26 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
                 const value = option.model ?? option.id;
                 const active = value === model || option.id === model;
                 return (
-                  <button
-                    type="button"
+                  <OptionRow
                     key={option.id}
                     role="option"
-                    aria-selected={active}
+                    selected={active}
                     data-testid={`quick-edit-model-option-${option.id}`}
-                    onClick={() => {
+                    onSelect={() => {
                       setModel(value);
                       close();
                     }}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 typo-body transition-colors hover:bg-secondary/40 ${
-                      active ? 'text-primary' : 'text-foreground'
-                    }`}
+                    meta={active ? <Check className="w-3.5 h-3.5 text-primary" /> : undefined}
                   >
-                    <span className="flex-1 text-left truncate">{option.label}</span>
-                    {active && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                  </button>
+                    <span className="block truncate">{option.label}</span>
+                  </OptionRow>
                 );
               })}
             </div>
           )}
         </Listbox>
         {unrecognized && (
-          <p className="typo-caption text-amber-400" data-testid="quick-edit-model-unrecognized">
+          <p className="typo-caption text-status-warning" data-testid="quick-edit-model-unrecognized">
             {t.common.model_not_in_catalog}
           </p>
         )}
@@ -186,30 +187,28 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-1">
-        <span className="typo-caption text-foreground">
-          <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">{t.shared.use_cases_extra.ctrl_enter}</kbd>
+        <span className="typo-caption text-ink-2">
+          <Kbd>{t.shared.use_cases_extra.ctrl_enter}</Kbd>
           {' '}{t.common.save}
           <span className="mx-2">·</span>
-          <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">Esc</kbd>
+          <Kbd>Esc</Kbd>
           {' '}{t.common.cancel}
         </span>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-foreground hover:bg-secondary/40 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-            {t.common.cancel}
-          </button>
-          <button
+            variant="ghost"
+            size="sm"
+            icon={<X className="w-3.5 h-3.5" />}
+          >{t.common.cancel}</Button>
+          <Button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-foreground bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/30 transition-colors"
-          >
-            <Save className="w-3.5 h-3.5" />
-            {t.common.save}
-          </button>
+            variant="secondary"
+            size="sm"
+            icon={<Save className="w-3.5 h-3.5" />}
+          >{t.common.save}</Button>
         </div>
       </div>
     </div>

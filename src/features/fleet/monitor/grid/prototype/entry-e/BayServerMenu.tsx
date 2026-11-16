@@ -46,7 +46,7 @@ export function BayServerChip({ server, hint }: { server: DevServerView | null; 
   if (!server || !lamp || !hint) return null;
   return (
     <span
-      className={`ae-port ${toneClass(lamp.tone)} ${server.state === 'starting' ? 'is-dim' : ''} inline-flex flex-shrink-0 items-center gap-1.5 typo-data tabular-nums ${lamp.tone === 'info' ? 'text-status-info' : 'text-primary'}`}
+      className={`ae-port ${toneClass(lamp.tone)} ${server.state === 'starting' ? 'is-dim' : ''} inline-flex flex-shrink-0 items-center gap-1.5 typo-data num ${lamp.tone === 'info' ? 'text-status-info' : 'text-primary'}`}
       data-testid="fleet-grid-column-server"
       data-server-state={server.state}
     >

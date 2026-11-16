@@ -437,6 +437,7 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
                 );
                 clear_pending_assessment(&sid);
             }
+            ASSESSMENT_TURN_STARTED_MS.store(0, Ordering::SeqCst);
             ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
             ACTIVE_GENERATION.store(0, Ordering::SeqCst);
         } else {
@@ -731,6 +732,10 @@ pub fn finish_assessment_turn(
         .compare_exchange(generation, 0, Ordering::SeqCst, Ordering::SeqCst)
         .is_ok();
     if released {
+        // Clear the start time first. The next claim sets the flag before it
+        // stores a new time, and in that gap the wedge check above must read 0,
+        // not this turn's old time, or it force-releases the new live turn.
+        ASSESSMENT_TURN_STARTED_MS.store(0, Ordering::SeqCst);
         ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
     } else {
         tracing::warn!(

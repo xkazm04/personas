@@ -141,7 +141,8 @@ pub mod leg {
     #[cfg_attr(not(feature = "ml"), allow(dead_code))]
     pub const RECALL_SYNTHESIS: &str = "recall_synthesis";
     pub const BRIEFING: &str = "briefing";
-    pub const NIGHT_PLANNER: &str = "night_planner";
+    /// The standup proposal job (`companion::standup::propose`).
+    pub const STANDUP_PROPOSE: &str = "standup_propose";
     pub const NIGHT_UNATTENDED: &str = "night_unattended";
     pub const TOURS: &str = "tours";
     /// Phase A of the sleep cycle: conversation → candidate facts/procedurals.

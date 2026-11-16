@@ -37,6 +37,7 @@ pub mod external;
 pub mod headless;
 pub mod hook_install;
 pub mod hooks;
+pub mod host_utilization;
 pub mod keys;
 pub mod lanes;
 pub mod monitor_stats;

@@ -1,3 +1,4 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -217,11 +218,11 @@ export function IncidentDetailModal({
             </span>
           </StatusBadge>
           <StatusBadge variant="neutral">{statusLabel(t, incident.status)}</StatusBadge>
-          <span className="typo-caption text-foreground">{severityUrgencyLabel(t, incident.severity)}</span>
+          <span className="typo-caption text-ink-2">{severityUrgencyLabel(t, incident.severity)}</span>
         </div>
 
-        <div className="flex items-start gap-2.5 rounded-card border border-primary/15 bg-primary/5 px-3.5 py-3">
-          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+        <div className="flex items-start gap-2.5 rounded-card border border-hair bg-surface-1 px-3.5 py-3">
+          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" aria-hidden="true" />
           <div className="min-w-0">
             <span className="typo-eyebrow text-foreground mb-0.5 block">
               {t.overview.incidents.guidance_label}
@@ -234,7 +235,7 @@ export function IncidentDetailModal({
             server evaluator, or run on demand from here). */}
         <IncidentDiagnosisCard incidentId={incident.id} />
 
-        <div className="rounded-card border border-primary/10 bg-secondary/20 p-4">
+        <div className="rounded-card border border-hair bg-surface-1 p-4">
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
             <Field label={t.overview.incidents.detail_label_status}>
               {statusLabel(t, incident.status)}
@@ -270,38 +271,32 @@ export function IncidentDetailModal({
             {siblingsFailed ? (
               <p className="typo-caption text-status-warning">{t.overview.incidents.load_failed}</p>
             ) : siblings.length === 0 ? (
-              <p className="typo-caption text-foreground">{t.overview.incidents.siblings_none}</p>
+              <p className="typo-caption text-ink-2">{t.overview.incidents.siblings_none}</p>
             ) : (
               <ul className="flex flex-col gap-1">
                 {siblings.map((sib) => (
                   <li key={sib.id}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenIncident?.(sib)}
-                      className="flex w-full items-center gap-2 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 text-left hover:bg-secondary/40 transition-colors focus-ring"
+                    <PressSurface
+                      onPress={() => onOpenIncident?.(sib)}
+                      className="flex w-full items-center gap-2 rounded-card border border-hair bg-surface-1 px-3 py-2"
                     >
                       <StatusShape status={severityShapeStatus(sib.severity)} size="sm" />
                       <span className="typo-body text-foreground truncate flex-1 min-w-0">{sib.title}</span>
-                      <span className="typo-caption text-foreground shrink-0">
+                      <span className="typo-caption text-ink-2 shrink-0">
                         {sourceTableLabel(t, sib.sourceTable)} · {relativeTime(t, sib.createdAt)}
                       </span>
-                    </button>
+                    </PressSurface>
                   </li>
                 ))}
               </ul>
             )}
             {onFilterPersona && (
-              <button
-                type="button"
-                onClick={() => {
+              <Button variant="ghost" size="xs" className="mt-2" onClick={() => {
                   onFilterPersona(personaId);
                   onClose();
-                }}
-                className="mt-2 inline-flex items-center gap-1 typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-secondary/40 transition-colors focus-ring"
-              >
-                {t.overview.incidents.view_all_from_agent}
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
+                }} iconRight={<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />}>
+{t.overview.incidents.view_all_from_agent}
+</Button>
             )}
           </div>
         )}
@@ -334,14 +329,9 @@ export function IncidentDetailModal({
             </label>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {RESOLUTION_PRESETS.map((presetKey) => (
-                <button
-                  key={presetKey}
-                  type="button"
-                  onClick={() => setNote(t.overview.incidents[presetKey])}
-                  className="px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
-                >
+                <Button variant="secondary" size="xs" key={presetKey} onClick={() => setNote(t.overview.incidents[presetKey])}>
                   {t.overview.incidents[presetKey]}
-                </button>
+                </Button>
               ))}
             </div>
             <textarea
@@ -350,7 +340,7 @@ export function IncidentDetailModal({
               onChange={(e) => setNote(e.target.value)}
               placeholder={t.overview.incidents.resolution_note_placeholder}
               rows={3}
-              className="w-full rounded-input border border-border bg-secondary/30 px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus-ring"
+              className="w-full rounded-input border border-border bg-surface-1 px-3 py-2 typo-body text-foreground placeholder:text-ink-3 focus-ring"
             />
           </div>
         )}

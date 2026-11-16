@@ -26,7 +26,7 @@ export const DEFAULT_RULE_FORM: RuleFormData = { name: '', metric: 'error_rate',
 const OPERATORS: AlertOperator[] = ['>', '<', '>=', '<='];
 const OP_LABEL: Record<AlertOperator, string> = { '>': '>', '<': '<', '>=': '≥', '<=': '≤' };
 const GLOBAL = '__global__';
-const FIELD = 'h-9 px-3 typo-body rounded-input bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-primary/40';
+const FIELD = 'h-9 px-3 typo-body rounded-input bg-surface-1 border border-hair text-foreground focus-visible:outline-none focus-visible:border-primary/40';
 
 export function AlertRuleForm({ initial, personas, onSubmit, onCancel }: {
   initial?: RuleFormData;

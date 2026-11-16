@@ -6,11 +6,12 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ChronologyAdoptionView } from './ChronologyAdoptionView';
 import { BaseModal } from '../shared/BaseModal';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   ConfirmDestructiveModal,
   type ConfirmDestructiveConfig,
 } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AdoptionWizardModalProps {
   isOpen: boolean;
@@ -41,8 +42,6 @@ export default function AdoptionWizardModal({
 }: AdoptionWizardModalProps) {
   const { t } = useTranslation();
   const [confirmConfig, setConfirmConfig] = useState<ConfirmDestructiveConfig | null>(null);
-  const buildPhase = useAgentStore((s) => s.buildPhase);
-  const buildSessionId = useAgentStore((s) => s.buildSessionId);
 
   // Reset any stale build-session state when the adoption modal opens. Without
   // this, a leftover buildSessionId from a previous adoption would trigger the
@@ -56,7 +55,10 @@ export default function AdoptionWizardModal({
   }, [isOpen]);
 
   const handleCloseAttempt = useCallback(() => {
-    // No active build session or phase is safe to close — skip confirmation
+    // No active build session or phase is safe to close — skip confirmation.
+    // Read at call time: a confirmed Delete Draft resets the session and calls
+    // this in the same tick, when the render's values would still ask again.
+    const { buildSessionId, buildPhase } = useAgentStore.getState();
     if (!buildSessionId || SAFE_CLOSE_PHASES.has(buildPhase)) {
       onClose();
       return;
@@ -75,7 +77,7 @@ export default function AdoptionWizardModal({
         const sys = useSystemStore.getState();
         const pid = agent.buildPersonaId;
         if (pid) {
-          void agent.deletePersona(pid).catch(silentCatch('AdoptionWizardModal:deletePersona'));
+          void agent.deletePersona(pid).catch(toastCatch('AdoptionWizardModal:deletePersona'));
         }
         agent.resetBuildSession();
         void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
@@ -89,7 +91,7 @@ export default function AdoptionWizardModal({
         setConfirmConfig(null);
       },
     });
-  }, [buildPhase, buildSessionId, onClose, t]);
+  }, [onClose, t]);
 
   if (!isOpen || !review) return null;
 
@@ -99,25 +101,27 @@ export default function AdoptionWizardModal({
   const content = (
     <>
       <div className="relative h-full overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-hair flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-modal bg-brand-purple/15 border border-brand-purple/25 flex items-center justify-center">
               <Grid3X3 className="w-4.5 h-4.5 text-brand-purple" />
             </div>
             <div>
-              <h2 id="adoption-matrix-title" className="typo-heading text-foreground/90">
+              <h2 id="adoption-matrix-title" className="typo-heading text-ink-1">
                 {t.templates.adopt_modal.adopt_template}
               </h2>
-              <p className="text-[11px] text-foreground">{review.test_case_name}</p>
+              <p className="typo-caption text-foreground">{review.test_case_name}</p>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={handleCloseAttempt}
-            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
+            aria-label={t.common.close}
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
         <ChronologyAdoptionView
           review={review}
@@ -150,7 +154,7 @@ export default function AdoptionWizardModal({
       onClose={handleCloseAttempt}
       titleId="adoption-matrix-title"
       maxWidthClass="max-w-[1750px]"
-      panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
+      panelClassName="h-[92vh] bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col"
       // Required for the flex-column header + scrollable body layout below:
       // BaseModal's default `staggerChildren=true` wraps each child in a
       // block-level `motion.div`, which breaks the parent `flex flex-col`

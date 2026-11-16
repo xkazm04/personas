@@ -9,6 +9,7 @@ use crate::SHARED_HTTP;
 use super::super::claude_usage::{
     as_epoch_ms, parse_windows, ClaudeUsageWindow, OAUTH_BETA, USAGE_URL,
 };
+use super::refresh_failure::{error_code, is_dead_grant};
 
 /// Claude Code's public OAuth client id — the value the CLI itself sends and
 /// the one claude-swap / ccusage refresh with. Public by design (PKCE flow).
@@ -53,26 +54,20 @@ pub(super) async fn refresh(refresh_token: &str) -> Result<TokenSet, OauthFailur
         .await
         .map_err(|e| OauthFailure::Other(format!("token response: {e}")))?;
     if !status.is_success() {
-        let err = json
-            .get("error")
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string();
+        let err = error_code(&json);
         let desc = json
             .get("error_description")
+            .or_else(|| json.pointer("/error/message"))
             .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string();
+            .unwrap_or("");
         let msg = format!("{} {} {}", status.as_u16(), err, desc)
             .trim()
             .to_string();
-        return Err(
-            if err == "invalid_grant" || status.as_u16() == 400 || status.as_u16() == 401 {
-                OauthFailure::InvalidGrant(msg)
-            } else {
-                OauthFailure::Other(msg)
-            },
-        );
+        return Err(if is_dead_grant(status.as_u16(), err) {
+            OauthFailure::InvalidGrant(msg)
+        } else {
+            OauthFailure::Other(msg)
+        });
     }
     let access_token = json
         .get("access_token")

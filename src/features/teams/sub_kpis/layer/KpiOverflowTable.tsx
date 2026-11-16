@@ -1,6 +1,7 @@
 // The KPIs past the twelfth panel. They keep the SAME window and the same
 // [-15, 115] band as the panels above — a compact row is a smaller drawing of
 // the same fact, never a differently-scaled one. Under three readings: dots.
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { TRACK_COLOR } from '../kpiMeta';
@@ -42,20 +43,21 @@ export function KpiOverflowTable({
   return (
     <div className="space-y-1.5" data-testid="kpi-layer-overflow">
       {/* muted-ok: section micro-label over the overflow rows, not body text */}
-      <h4 className="typo-label text-muted-foreground">{title}</h4>
+      <h4 className="typo-label text-ink-3">{title}</h4>
       <ul className="divide-y divide-border/40">
         {series.map((s) => (
           <li key={s.kpi.id} className="flex items-center gap-2 py-1.5">
-            <button
-              type="button"
+            <Button
+              variant="link"
+              size="inline"
               onClick={() => onOpen(s.kpi.id)}
               aria-label={s.kpi.name}
-              className="typo-caption text-foreground truncate flex-1 min-w-0 text-left hover:text-primary focus-ring rounded-interactive"
+              className="truncate flex-1 min-w-0 text-left"
             >
               {s.kpi.name}
-            </button>
+            </Button>
             <span
-              className="rounded-pill px-2 py-0.5 typo-label text-foreground shrink-0"
+              className="typo-label text-ink-2 shrink-0"
               style={{ background: bandFill(TRACK_COLOR[s.track], 1) }}
             >
               {trackLabel(s.track, t)}

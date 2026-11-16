@@ -6,6 +6,7 @@ import type { CategoryWithCount } from '@/api/overview/reviews';
 import { categoryLabel, getCategoryMeta } from '../filters/searchConstants';
 import { DIFFICULTY_OPTIONS, SETUP_OPTIONS, DIFFICULTY_META, SETUP_META } from '../../../shared/templateComplexity';
 import type { QueryChip } from './useStructuredQuery';
+import { OptionRow } from '@/features/shared/components/forms/OptionRow';
 
 type ChipType = QueryChip['type'];
 interface SuggestionItem { chip: QueryChip; icon: LucideIcon; color: string }
@@ -150,7 +151,7 @@ export function SearchAutocomplete({
   return (
     <div ref={containerRef} className="absolute top-full left-0 right-0 z-50 mt-1">
       <div
-        className="animate-fade-slide-in bg-background border border-primary/15 rounded-modal shadow-elevation-3 overflow-hidden"
+        className="animate-fade-slide-in bg-background border border-hair rounded-modal shadow-elevation-3 overflow-hidden"
         role="listbox"
         id="search-suggestions-listbox"
         aria-label={t.templates.search.search_suggestions_aria}
@@ -158,7 +159,7 @@ export function SearchAutocomplete({
         <div className="max-h-64 overflow-y-auto py-1">
           {groups.map((group) => (
             <div key={group.type} role="group" aria-label={groupLabel(group.type)}>
-              <div className="px-3 py-1.5 typo-body uppercase tracking-wider text-foreground border-b border-primary/10">
+              <div className="px-3 py-1.5 typo-eyebrow text-foreground border-b border-hair">
                 {groupLabel(group.type)}
               </div>
               {group.items.map((suggestion) => {
@@ -167,22 +168,17 @@ export function SearchAutocomplete({
                 const Icon = suggestion.icon;
                 const isFocused = focusIndex === idx;
                 return (
-                  <button
+                  <OptionRow
                     key={`${suggestion.chip.type}-${suggestion.chip.value}`}
                     id={`search-suggestion-${idx}`}
                     role="option"
-                    aria-selected={isFocused}
-                    type="button"
-                    onClick={() => onSelect(suggestion.chip)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-card outline-none ${
-                      isFocused
-                        ? 'bg-violet-500/10 text-foreground/90'
-                        : 'text-foreground hover:bg-primary/5'
-                    }`}
+                    onSelect={() => onSelect(suggestion.chip)}
+                    selected={isFocused}
+                    className="gap-2.5 px-3 py-2"
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" style={{ color: suggestion.color }} />
                     <span className="flex-1 text-left">{suggestion.chip.label}</span>
-                  </button>
+                  </OptionRow>
                 );
               })}
             </div>

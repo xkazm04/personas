@@ -1,0 +1,199 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5ec1b579-1cff-4d91-b808-ac49490a5320",
+ "subject": "native-shell-integration",
+ "evaluatedAt": "2026-11-04T04:08:58.879909+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-studio",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/triggers/sub_studio/libs/triggerStudioConstants.ts:34 The Chain Studio rail offers the app_focus trigger on every host. Its rail filter (StudioRails.tsx:64) filters only by search text, while the native side returns None on every non-Windows host (src-tauri/engine/src/app_focus.rs:61, 'not yet implemented'), so a macOS or Linux user can commit a route that silently never fires.",
+   "techniques": [
+    {
+     "technique": "capability-presence-contract",
+     "verdict": "deviation",
+     "evidence": "src/features/triggers/sub_studio/libs/triggerStudioConstants.ts:34 This is a class-4 capability (absent on non-Windows) that is rendered unconditionally. No per-host presence matrix or predicate exists, and the backend's non-Windows branch is a silent no-op that returns None (app_focus.rs:61-64). That is the 'no-op that returns a lie' the technique names."
+    },
+    {
+     "technique": "native-side-owns-the-target-set",
+     "verdict": "conformant",
+     "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:122 The destructive rollback sends a native-issued trigger id, not a target list."
+    },
+    {
+     "technique": "native-owned-stream",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/engine/subscription/desktop.rs:57 The watchers behind the studio's trigger types (clipboard, app focus) run as native subscriptions, not in the view, so they keep firing while the window is hidden. This anchor is the native half of this context's trigger types."
+    }
+   ]
+  },
+  {
+   "context": "shared-components-layout",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 The only overlay is an in-document dialog inside the app window, and a search of layout/, kanban/ and buttons/ for @tauri-apps, invokeWithTimeout, setAlwaysOnTop and setIgnoreCursorEvents found no hits, so no host capability, foreign-window surface or native command is reached from this context.",
+   "techniques": [
+    {
+     "technique": "non-stealing-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 This is a document surface within the product's own window, not an always-on-top window over another application."
+    }
+   ],
+   "absenceTerms": [
+    "@tauri-apps",
+    "invokeWithTimeout",
+    "setAlwaysOnTop",
+    "setIgnoreCursorEvents"
+   ]
+  },
+  {
+   "context": "glyph-command-panel",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 The pickers are in-document modals. A search of commandPanel/ for @tauri-apps, invokeWithTimeout, setAlwaysOnTop and setIgnoreCursorEvents found nothing, and a search for app_focus, clipboard and listen( also came back empty, so no host-specific capability, destructive native command, overlay or stream crosses here.",
+   "techniques": [
+    {
+     "technique": "non-stealing-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 This is an in-app modal, not a surface placed over a foreign application."
+    }
+   ],
+   "absenceTerms": [
+    "@tauri-apps",
+    "invokeWithTimeout",
+    "setAlwaysOnTop",
+    "setIgnoreCursorEvents"
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-context",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:362 The scan job is owned natively (BackgroundJobManager plus events), and the view holds no connection state: it resyncs from native job status on mount. The renderer-sent root path is confined component-wise to the project's registered root before a permission-disabled agent runs there.",
+   "techniques": [
+    {
+     "technique": "native-owned-stream",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:362 The view re-reads native job status after being away, so a completion it missed while unmounted still lands."
+    },
+    {
+     "technique": "native-side-owns-the-target-set",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:735 The path is canonicalized, then compared with a component-wise Path::starts_with against the native-held project root (an allow-list that matches whole segments). Two small gaps: the UI still re-sends root_path, which native already holds (ContextMapPage.tsx:410), and line 740 returns the requested spelling rather than the canonical path."
+    },
+    {
+     "technique": "non-stealing-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:31 ScanOverlay is a fixed div inside the app document, not a host window over another application."
+    },
+    {
+     "technique": "query-transparent-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:684 The overlay is rendered inside the page and no point-under-cursor query runs against foreign apps."
+    },
+    {
+     "technique": "observer-perturbation",
+     "verdict": "not-applicable",
+     "evidence": "src/api/devTools/devTools.ts:597 The scan reads files through an agent. It makes no structural query over another application's UI tree."
+    }
+   ]
+  },
+  {
+   "context": "overview-patterns",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 The Practice Detail surface was removed (commits 6ea91dd77b and bec576bc8f): git ls-files under src/features/overview/sub_patterns returns 0 files, and git grep for PracticeDetailModal, decidePractice and practice_decide over src and src-tauri finds nothing, so there is no native capability, command target, overlay or stream left to judge.",
+   "techniques": [],
+   "absenceTerms": [
+    "PracticeDetailModal",
+    "decidePractice",
+    "practice_decide",
+    "sub_patterns"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T04:08:58.879909+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "capability-presence-contract",
+    "native-owned-stream",
+    "native-side-owns-the-target-set"
+   ],
+   "deviations": 1,
+   "context": "triggers-studio",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:08:58.879909+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "non-stealing-overlay"
+   ],
+   "deviations": 0,
+   "context": "shared-components-layout",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:08:58.879909+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "non-stealing-overlay"
+   ],
+   "deviations": 0,
+   "context": "glyph-command-panel",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:08:58.879909+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "native-owned-stream",
+    "native-side-owns-the-target-set",
+    "non-stealing-overlay",
+    "observer-perturbation",
+    "query-transparent-overlay"
+   ],
+   "deviations": 0,
+   "context": "plugins-dev-tools-context",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:08:58.879909+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "overview-patterns",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

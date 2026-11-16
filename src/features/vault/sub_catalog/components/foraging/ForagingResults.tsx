@@ -67,7 +67,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
                   size="sm"
                   onClick={forage.selectAllHighConfidence}
                   data-testid="vault-foraging-select-high-confidence"
-                  className="text-emerald-400/80 hover:text-emerald-400"
+                  className="text-status-success/80 hover:text-status-success"
                 >
                   {fg.select_high_confidence}
                 </Button>
@@ -78,7 +78,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
               variant="link"
               size="sm"
               onClick={forage.selectAll}
-              className="text-violet-400/80 hover:text-violet-400"
+              className="text-role-agent/80 hover:text-role-agent"
             >
               {t.vault.import.select_all}
             </Button>
@@ -87,7 +87,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
               variant="link"
               size="sm"
               onClick={forage.selectNone}
-              className="text-foreground hover:text-foreground/70"
+              className="text-foreground hover:text-ink-2"
             >
               {t.vault.import.deselect_all}
             </Button>
@@ -99,18 +99,18 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
       {readErrors.length > 0 && (
         <div
           data-testid="vault-foraging-read-errors"
-          className="rounded-modal border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 space-y-1"
+          className="rounded-modal border border-status-warning/20 bg-status-warning/5 px-3 py-2.5 space-y-1"
         >
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="typo-body text-amber-300/80">{fg.read_errors_title}</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-status-warning shrink-0" />
+            <span className="typo-body text-status-warning/80">{fg.read_errors_title}</span>
           </div>
           <ul className="space-y-0.5 pl-5">
             {readErrors.map((token) => {
               const labelKey = READ_ERROR_LABEL[token];
               const source = labelKey ? fg[labelKey] : token;
               return (
-                <li key={token} className="typo-body text-amber-200/70">
+                <li key={token} className="typo-body text-status-warning/70">
                   {tx(fg.read_error_item, { source })}
                 </li>
               );
@@ -121,7 +121,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
 
       {/* Empty state */}
       {forage.scanResult.credentials.length === 0 && (
-        <div className="rounded-modal border border-primary/15 bg-secondary/25 p-6">
+        <div className="rounded-modal border border-hair bg-surface-1 p-6">
           <EmptyIllustration
             icon={Radar}
             heading={fg.no_credentials_found}
@@ -153,7 +153,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
           block
           onClick={onImport}
           tone="agent"
-          className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
+          className="bg-role-agent/15 text-role-agent border-role-agent/25 hover:bg-role-agent/25"
         >
           {tx(forage.selected.size !== 1 ? fg.import_to_vault_other : fg.import_to_vault_one, { count: forage.selected.size })}
         </Button>

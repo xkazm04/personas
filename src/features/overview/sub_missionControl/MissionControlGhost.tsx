@@ -41,7 +41,7 @@ export function MissionControlGhost() {
   return (
     // Same frame, same header, same body geometry as `VitalsConsole`.
     <div
-      className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col"
+      className="rounded-modal border border-hair bg-surface-1 overflow-hidden flex flex-col"
       aria-hidden="true"
     >
       <PaneHeader
@@ -50,14 +50,14 @@ export function MissionControlGhost() {
       />
       <div className="flex-1 flex flex-col items-center gap-5 px-4 py-6">
         <span
-          className="block rounded-full border-[10px] border-primary/[0.06] animate-fade-in"
+          className="block rounded-full border-[10px] border-hair animate-fade-in"
           style={{ width: RING_SIZE, height: RING_SIZE, animationDelay: '120ms' }}
         />
         <div className="w-full grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="rounded-card border border-primary/10 px-2.5 py-2 space-y-2 animate-fade-in"
+              className="rounded-card border border-hair px-2.5 py-2 space-y-2 animate-fade-in"
               style={{ animationDelay: `${155 + i * 35}ms` }}
             >
               <Bar className="h-2.5 w-14" delay={155 + i * 35} />
@@ -65,7 +65,7 @@ export function MissionControlGhost() {
             </div>
           ))}
         </div>
-        <div className="w-full pt-3 border-t border-primary/10 space-y-1.5">
+        <div className="w-full pt-3 border-t border-hair space-y-1.5">
           <Bar className="h-2.5 w-28" delay={295} />
           <Bar className="h-10 w-full" delay={295} />
         </div>

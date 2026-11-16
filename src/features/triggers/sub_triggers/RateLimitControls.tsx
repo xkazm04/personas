@@ -9,6 +9,7 @@ import {
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RateLimitControlsProps {
   rateLimit: TriggerRateLimitConfig;
@@ -30,30 +31,32 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 w-full typo-body text-foreground hover:text-muted-foreground transition-colors"
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        icon={expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
       >
-        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Shield className="w-3 h-3" />
         {t.triggers.rate_limiting}
         {active && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-amber-500/15 text-amber-400">
-            Active
-          </span>
+        <span className="inline-flex items-center ml-1 typo-body text-status-warning">
+        Active
+        </span>
         )}
         {runtimeState?.isThrottled && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-red-500/15 text-red-400 animate-pulse">
-            Throttled
-          </span>
+        <span className="inline-flex items-center ml-1 typo-body text-status-error">
+        Throttled
+        </span>
         )}
         {runtimeState && runtimeState.queueDepth > 0 && (
-          <span className="ml-auto typo-body text-amber-400/70">
-            {runtimeState.queueDepth} queued
-          </span>
+        <span className="ml-auto typo-body text-status-warning">
+        {runtimeState.queueDepth} queued
+        </span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
           <div
@@ -62,7 +65,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
             <div className="space-y-3 pl-5 pt-1">
               {/* Max per window */}
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 typo-body text-foreground">
+                <label className="flex items-center gap-1.5 typo-body text-ink-1">
                   <Gauge className="w-3 h-3" />
                   {t.triggers.max_executions}
                 </label>
@@ -78,19 +81,19 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   <select
                     value={rateLimit.window_seconds}
                     onChange={(e) => update({ window_seconds: parseInt(e.target.value) })}
-                    className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
+                    className="px-2 py-1 typo-body bg-background/50 border border-hair rounded-card text-ink-1 focus-ring"
                   >
                     {windowOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
-                <p className="typo-body text-foreground">{t.triggers.unlimited_hint}</p>
+                <p className="typo-body text-ink-1">{t.triggers.unlimited_hint}</p>
               </div>
 
               {/* Cooldown */}
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 typo-body text-foreground">
+                <label className="flex items-center gap-1.5 typo-body text-ink-1">
                   <Clock className="w-3 h-3" />
                   {t.triggers.cooldown_label}
                 </label>
@@ -107,7 +110,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
 
               {/* Max concurrent */}
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 typo-body text-foreground">
+                <label className="flex items-center gap-1.5 typo-body text-ink-1">
                   <Layers className="w-3 h-3" />
                   {t.triggers.max_concurrent_label}
                 </label>
@@ -119,20 +122,20 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   ariaLabel={t.triggers.max_concurrent_label}
                   className="w-24"
                 />
-                <p className="typo-body text-foreground">{t.triggers.zero_unlimited}</p>
+                <p className="typo-body text-ink-1">{t.triggers.zero_unlimited}</p>
               </div>
 
               {/* Runtime stats when active */}
               {runtimeState && active && (
                 <div className="rounded-card border border-primary/8 bg-background/30 p-2 space-y-1 typo-body">
-                  <div className="flex items-center justify-between text-foreground">
+                  <div className="flex items-center justify-between text-ink-1">
                     <span>{t.triggers.window_usage}</span>
                     <span className="font-mono">
                       {runtimeState.firingTimestamps.length}
                       {rateLimit.max_per_window > 0 ? ` / ${rateLimit.max_per_window}` : ''}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-foreground">
+                  <div className="flex items-center justify-between text-ink-1">
                     <span>{t.triggers.concurrent_label}</span>
                     <span className="font-mono">
                       {runtimeState.concurrentCount}
@@ -140,13 +143,13 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                     </span>
                   </div>
                   {runtimeState.queueDepth > 0 && (
-                    <div className="flex items-center justify-between text-amber-400/80">
+                    <div className="flex items-center justify-between text-status-warning">
                       <span>{t.triggers.queued_stat}</span>
                       <span className="font-mono">{runtimeState.queueDepth}</span>
                     </div>
                   )}
                   {runtimeState.cooldownUntil > Date.now() && (
-                    <div className="flex items-center justify-between text-amber-400/80">
+                    <div className="flex items-center justify-between text-status-warning">
                       <span>{t.triggers.cooldown_stat}</span>
                       <span className="font-mono">
                         {Math.ceil((runtimeState.cooldownUntil - Date.now()) / 1000)}s
@@ -158,13 +161,12 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
 
               {/* Reset button */}
               {active && (
-                <button
+                <Button
                   type="button"
                   onClick={() => onChange({ ...DEFAULT_RATE_LIMIT })}
-                  className="typo-body text-foreground hover:text-muted-foreground/70 transition-colors"
-                >
-                  {t.triggers.clear_all_limits}
-                </button>
+                  variant="ghost"
+                  size="sm"
+                >{t.triggers.clear_all_limits}</Button>
               )}
             </div>
           </div>

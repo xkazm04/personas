@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionLogLines } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** First stdout page — same size session recovery and replay use. */
 const LOG_PAGE_SIZE = 500;
@@ -57,7 +58,7 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
     if (logContent === null) return null;
     return logContent.split('\n').map((line) => ({
       line,
-      cls: TERMINAL_STYLE_MAP[classifyLine(line)] || 'text-foreground/90',
+      cls: TERMINAL_STYLE_MAP[classifyLine(line)] || 'text-ink-1',
     }));
   }, [logContent]);
 
@@ -88,23 +89,24 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <button
+        <Button
           type="button"
           onClick={handleToggleLog}
           aria-expanded={showLog}
-          className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors"
+          variant="ghost"
+          size="sm"
+          icon={showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         >
-          {showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           <FileText className="w-4 h-4" />
           {t.agents.executions.execution_log}
-        </button>
+        </Button>
         <CopyButton copied={copied} onCopy={handleCopyLog} tooltip={t.agents.executions.copy_log_tooltip} />
       </div>
       {/* Outside the disclosure: a Copy that fails while the log is COLLAPSED
           used to set this message into a branch that was not rendered, so the
           action failed in silence. */}
       {logError && (
-        <div className="mb-2 p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80">
+        <div className="mb-2 p-4 bg-status-error/10 border border-status-error/20 rounded-modal typo-code text-status-error">
           {logError}
         </div>
       )}
@@ -118,12 +120,12 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
             )}
             {logLoading && <LogGhostLines label={t.agents.executions.loading_log} />}
             {logContent === '' && !logLoading && !logError && (
-              <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
+              <div className="p-4 bg-background/50 border border-hair rounded-modal typo-body text-ink-1">
                 {t.agents.executions.log_empty}
               </div>
             )}
             {styledLines !== null && logContent !== '' && !logLoading && (
-              <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+              <div className="p-4 bg-background/50 border border-hair rounded-modal typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
                 {styledLines.map((entry, i) => (
                   <div key={i} className={entry.cls}>
                     {entry.line}
@@ -161,13 +163,13 @@ function LogGhostLines({ label }: { label: string }) {
     <div
       role="status"
       aria-label={label}
-      className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code space-y-2"
+      className="p-4 bg-background/50 border border-hair rounded-modal typo-code space-y-2"
     >
       {LOG_GHOST_WIDTHS.map((width, i) => (
         <div
           key={i}
           aria-hidden="true"
-          className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${width}`}
+          className={`h-3 rounded-interactive bg-primary/[0.06] animate-fade-in ${width}`}
           style={{ animationDelay: `${120 + i * 35}ms` }}
         />
       ))}

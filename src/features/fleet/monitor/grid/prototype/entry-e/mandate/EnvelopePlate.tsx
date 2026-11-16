@@ -38,7 +38,7 @@ export function EnvelopePlate({ mandate, held, testId = 'mandate-envelope' }: {
     <section className="ae-plate ml-plate flex flex-col gap-3 rounded-card p-3" aria-label={m.ml_envelope} data-testid={testId}>
       <header className="flex items-center gap-2">
         <Engraved>{m.ml_envelope}</Engraved>
-        <span className="ml-auto typo-caption tabular-nums">
+        <span className="ml-auto typo-caption num">
           {env.envelopeVersion === 0 ? m.ml_envelope_unsigned : tx(m.ml_act_version, { version: env.envelopeVersion })}
         </span>
       </header>
@@ -47,7 +47,7 @@ export function EnvelopePlate({ mandate, held, testId = 'mandate-envelope' }: {
         {cap === null || used === null ? (
           <span className="typo-body text-foreground">{cap === null ? m.ml_steward_no_cap : m.ml_steward_spend_unknown}</span>
         ) : (
-          <span className={`typo-data-lg tabular-nums ${share !== null && share >= 1 ? 'text-status-error' : 'text-foreground'}`}>
+          <span className={`typo-data-lg num ${share !== null && share >= 1 ? 'text-status-error' : 'text-foreground'}`}>
             <Numeric value={used} unit="usd" /><span className="typo-data"> / <Numeric value={cap} unit="usd" /></span>
           </span>
         )}

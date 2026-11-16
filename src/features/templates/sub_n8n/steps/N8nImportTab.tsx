@@ -78,7 +78,7 @@ export default function N8nImportTab() {
     <div className="flex flex-col h-full">
       {/* Step indicator -- hidden on upload */}
       {state.step !== 'upload' && (
-        <div className="px-6 pt-4 pb-1 border-b border-primary/5">
+        <div className="px-6 pt-4 pb-1 border-b border-hair">
           <N8nStepIndicator currentStep={state.step} processing={analyzing || state.transforming} />
         </div>
       )}
@@ -88,18 +88,18 @@ export default function N8nImportTab() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-modal bg-red-500/10 border border-red-500/20"
+          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-modal bg-status-error/10 border border-status-error/20"
         >
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="typo-body text-red-400">{t.templates.n8n.import_error}</p>
-            <p className="typo-body text-red-400/70 mt-0.5">{state.error}</p>
+            <p className="typo-body text-status-error">{t.templates.n8n.import_error}</p>
+            <p className="typo-body text-status-error/70 mt-0.5">{state.error}</p>
           </div>
           <Button
             onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
             variant="ghost"
             size="xs"
-            className="text-red-400/50 hover:text-red-400"
+            className="text-status-error/50 hover:text-status-error"
           >
             {t.templates.n8n.dismiss}
           </Button>
@@ -110,19 +110,19 @@ export default function N8nImportTab() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-modal bg-amber-500/10 border border-amber-500/20"
+          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-modal bg-status-warning/10 border border-status-warning/20"
           aria-live="polite"
         >
-          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-status-warning flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="typo-body text-amber-300">{t.templates.n8n.partial_session_restore}</p>
-            <p className="typo-body text-amber-200/90 mt-0.5">{state.sessionWarning}</p>
+            <p className="typo-body text-status-warning">{t.templates.n8n.partial_session_restore}</p>
+            <p className="typo-body text-status-warning/90 mt-0.5">{state.sessionWarning}</p>
           </div>
           <Button
             onClick={() => dispatch({ type: 'CLEAR_SESSION_WARNING' })}
             variant="ghost"
             size="xs"
-            className="text-amber-300/70 hover:text-amber-200"
+            className="text-status-warning/70 hover:text-status-warning"
           >
             {t.templates.n8n.dismiss}
           </Button>

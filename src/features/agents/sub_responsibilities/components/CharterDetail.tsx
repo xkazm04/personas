@@ -67,7 +67,7 @@ export function CharterDetail({
           >
             {t.common.back}
           </Button>
-          <h2 className="typo-heading text-foreground truncate flex-1 min-w-0">
+          <h2 className="typo-heading text-ink-1 truncate flex-1 min-w-0">
             {charter.title}
           </h2>
           <StatusBadge size="sm" accent="slate">{charter.domain}</StatusBadge>
@@ -87,7 +87,7 @@ export function CharterDetail({
 
         <div className="flex flex-col lg:flex-row gap-4 items-start">
           <aside className="w-full lg:w-[260px] shrink-0 flex flex-col gap-2" data-testid="resp-detail-petals">
-            <span className="typo-label text-foreground px-0.5">{c.dimensions_label}</span>
+            <span className="typo-label text-ink-1 px-0.5">{c.dimensions_label}</span>
             {GLYPH_DIMENSIONS.map((dim) => (
               <PetalRow
                 key={dim}

@@ -5,6 +5,8 @@
 // off, and the boundaries that hold regardless. Content lives in
 // actionConfirmCatalog so the copy stays next to the flows it describes.
 import { Check, ShieldCheck } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 import { BaseModal } from '@/features/shared/components/modals';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -65,8 +67,8 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
                 className="rounded-card px-2.5 py-1.5 min-w-0"
                 style={{ background: 'rgba(148,163,184,.05)', border: '1px solid rgba(148,163,184,.12)' }}
               >
-                <dt className="typo-caption uppercase tracking-[0.08em] text-foreground/45 truncate">{f.label}</dt>
-                <dd className="typo-body-lg text-foreground truncate" title={f.value}>{f.value}</dd>
+                <dt className="typo-eyebrow truncate">{f.label}</dt>
+                <Tooltip content={f.value}><dd className="typo-body-lg text-foreground truncate">{f.value}</dd></Tooltip>
               </div>
             ))}
           </dl>
@@ -79,12 +81,12 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
           <div className="mt-4 grid md:grid-cols-2 gap-4">
             {/* what happens, in order */}
             <section className="min-w-0">
-              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">{t.kpis.setup_confirm_what_happens}</h3>
+              <h3 className="typo-eyebrow mb-2">{t.kpis.setup_confirm_what_happens}</h3>
               <ol className="space-y-2">
                 {spec.steps.map((step, i) => (
                   <li key={step} className="flex items-start gap-2.5 min-w-0">
                     <span
-                      className="inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0 typo-caption tabular-nums mt-px"
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0 typo-data mt-px"
                       style={{ background: `${impact.hue}1a`, color: impact.hue, border: `1px solid ${impact.hue}3d` }}
                       aria-hidden
                     >
@@ -98,7 +100,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
 
             {/* what holds regardless */}
             <section className="min-w-0">
-              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">{t.kpis.setup_confirm_will_not}</h3>
+              <h3 className="typo-eyebrow mb-2">{t.kpis.setup_confirm_will_not}</h3>
               <ul className="space-y-2">
                 {spec.boundaries.map((b) => (
                   <li key={b} className="flex items-start gap-2.5 min-w-0">
@@ -111,26 +113,13 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-primary/10 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3.5 py-1.5 rounded-interactive typo-body-lg text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors focus-ring"
-            data-testid="passport-action-confirm-cancel"
-          >
+        <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-hair shrink-0">
+          <Button variant="secondary" size="sm" onClick={onClose} data-testid="passport-action-confirm-cancel">
             {t.common.cancel}
-          </button>
-          <button
-            type="button"
-            disabled={confirmDisabled}
-            onClick={() => { onClose(); onConfirm(); }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-interactive typo-body-lg transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ color: impact.hue, background: `${impact.hue}22`, border: `1px solid ${impact.hue}55` }}
-            data-testid="passport-action-confirm-yes"
-          >
-            <Icon className="w-5 h-5" aria-hidden />
-            {spec.confirmLabel}
-          </button>
+          </Button>
+          <Button variant="ghost" size="sm" disabled={confirmDisabled} onClick={() => { onClose(); onConfirm(); }} style={{ color: impact.hue, background: `${impact.hue}22`, border: `1px solid ${impact.hue}55` }} data-testid="passport-action-confirm-yes" icon={<Icon className="w-5 h-5" aria-hidden />}>
+{spec.confirmLabel}
+</Button>
         </div>
       </div>
     </BaseModal>

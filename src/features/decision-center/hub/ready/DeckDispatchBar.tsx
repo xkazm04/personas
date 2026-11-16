@@ -55,6 +55,7 @@
  * Dispatch: the two acts are not peers, and a destructive control the same size
  * and shape as the primary one is how the wrong one gets pressed.
  */
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { Rocket, Trash2 } from 'lucide-react';
 
@@ -83,7 +84,7 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
   return (
     <div className="shrink-0 space-y-1.5 border-b border-border px-2.5 py-2">
       <div className="flex items-center gap-2">
-        <label className="inline-flex cursor-pointer items-center gap-2 typo-label text-foreground">
+        <label className="inline-flex cursor-pointer items-center gap-2 typo-label text-ink-2">
           <input
             type="checkbox"
             checked={allSelected}
@@ -93,11 +94,11 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
             // without this ref.
             ref={(el) => { if (el) el.indeterminate = chosen > 0 && !allSelected; }}
             onChange={ctl.toggleAll}
-            className="h-3.5 w-3.5 cursor-pointer rounded border-primary/30 bg-secondary/30 accent-primary"
+            className="h-3.5 w-3.5 cursor-pointer rounded-interactive border-hair bg-surface-1 accent-primary"
           />
           {m.triage_accepted_select_all}
         </label>
-        <span className="ml-auto typo-label tabular-nums text-foreground">
+        <span className="ml-auto typo-data text-ink-2">
           {tx(m.triage_accepted_selected, { count: chosen })}
         </span>
         {/* Not an `AsyncButton`: pressing this opens a DIALOG, it does not start
@@ -167,10 +168,9 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
           never folded into it — an act that half worked must not read as one
           that worked. */}
       {ctl.report && (
-        <button
-          type="button"
-          onClick={ctl.dismissReport}
-          className={`focus-ring block w-full rounded-interactive px-2 py-1 text-left typo-caption ${
+        <PressSurface
+          onPress={ctl.dismissReport}
+          className={` block w-full rounded-interactive px-2 py-1  typo-caption ${
             ctl.report.error
               ? 'bg-status-error/10 text-status-error'
               : 'bg-status-success/10 text-status-success'
@@ -203,7 +203,7 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
                 )}
               </>
             ))}
-        </button>
+        </PressSurface>
       )}
     </div>
   );

@@ -1,0 +1,38 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f2e084b1-2044-4bd1-a282-ba91d5690557",
+ "subject": "module-design",
+ "evaluatedAt": "2026-10-31T22:31:23.619795+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "recipes-playground",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "docs/features/recipes/README.md:242 There is no code left in this context to judge for boundary placement. Its three entry points (RecipePlaygroundModal.tsx, useRecipeTestRunner.ts, RecipeVersionsTab.tsx) and all of src/features/recipes/sub_playground were deleted in 450f1c9e5c (2026-09-25, 'delete the never-mounted recipe manager tree'), src/features/recipes no longer exists, and searching src/ for RecipePlaygroundModal, useRecipeTestRunner and recipes/sub_playground found zero files.",
+   "techniques": [],
+   "absenceTerms": [
+    "RecipePlaygroundModal",
+    "useRecipeTestRunner",
+    "recipes/sub_playground"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-31T22:31:23.619795+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "recipes-playground",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

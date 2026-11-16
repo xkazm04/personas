@@ -117,7 +117,7 @@ function IssueBody({ issue, w, resolving, onResolve, onClose }: {
           </Section>
         </Surface>
       </div>
-      <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-primary/10" style={{ padding: '12px 16px' }}>
+      <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-hair" style={{ padding: '12px 16px' }}>
         <span className="typo-caption mr-auto flex items-center gap-2" style={{ flex: '1 1 240px' }}>
           {s === 'retrying' && <><Dot glyph="live" />{m.retry_in_progress}</>}
           {s === 'fixed' && <><Dot tone="success" glyph="hollow" />{m.auto_resolved}</>}

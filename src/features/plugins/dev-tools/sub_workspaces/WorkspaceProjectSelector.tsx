@@ -21,6 +21,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { createWorkspace, setActiveWorkspace } from './workspaceStore';
 import { WorkspaceEditMenu } from './WorkspaceEditMenu';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const byName = <T extends { name: string }>(a: T, b: T) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
@@ -164,43 +165,40 @@ export function WorkspaceProjectSelector({
   const wsLabel = activeWorkspace?.name ?? c.workspace_all_projects;
   const wsColor = activeWorkspace?.color ?? 'var(--muted-foreground)';
   const header = variant === 'header';
-  const row = 'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors';
-  const idle = 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground';
+  const row = 'w-full flex items-center gap-2 px-3 py-1.5 text-ink-2';
 
   return (
     <div ref={ref} className="relative min-w-0">
       <Tooltip content={activeProject?.root_path ?? wsLabel}>
-        <button
-          type="button"
+        <Button
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           data-testid={testId}
-          className={header
-            ? 'flex items-center gap-2 h-9 px-3 rounded-interactive max-w-[320px] min-w-0 text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-colors'
-            : 'flex items-center gap-1.5 h-7 px-2 rounded-lg max-w-[260px] text-foreground hover:bg-secondary/50 transition-colors'}
+          className={header ? 'max-w-[320px] min-w-0' : 'max-w-[260px] min-w-0'}
+          variant={header ? 'secondary' : 'ghost'} size={header ? 'md' : 'sm'}
         >
           <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: wsColor }} aria-hidden />
-          <span className={`${header ? 'typo-body max-w-[120px]' : 'text-[11px] font-medium max-w-[90px]'} truncate min-w-0`}>{wsLabel}</span>
-          <span className="text-foreground/40 flex-shrink-0" aria-hidden>/</span>
-          <span className={`${header ? 'typo-body' : 'text-[11px] font-medium'} truncate min-w-0 ${activeProject ? 'text-indigo-300/90' : 'text-foreground/60'}`}>
+          <span className={`${header ? 'typo-body max-w-[120px]' : ' font-medium max-w-[90px]'} truncate min-w-0`}>{wsLabel}</span>
+          <span className="text-ink-3 flex-shrink-0" aria-hidden>/</span>
+          <span className={`${header ? 'typo-body' : ' font-medium'} truncate min-w-0 ${activeProject ? 'text-ink-1' : 'text-ink-2'}`}>
             {activeProject?.name ?? noneLabel ?? c.workspace_pick_project}
           </span>
           <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${(placement === 'up') !== open ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       </Tooltip>
 
       {open && createPortal(
         <div
           ref={panelRef}
-          className="animate-fade-slide-in fixed rounded-xl border border-primary/15 bg-background shadow-elevation-3 z-[9000] overflow-hidden"
+          className="animate-fade-slide-in fixed rounded-card border border-hair bg-background shadow-elevation-3 z-[9000] overflow-hidden"
           style={pos ? { top: pos.top, left: pos.left, width: pos.width } : { top: 0, left: 0, width: PANEL_W, visibility: 'hidden' }}
         >
           <div className="grid grid-cols-[196px_1fr]">
             {/* LEFT — workspaces */}
-            <div className="border-r border-primary/10 bg-secondary/20">
-              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10">
-                <Layers className="w-3.5 h-3.5 text-foreground/60" aria-hidden />
-                <span className="typo-label text-foreground/90">{c.workspace_workspaces}</span>
+            <div className="border-r border-hair bg-surface-1">
+              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair">
+                <Layers className="w-3.5 h-3.5 text-ink-2" aria-hidden />
+                <span className="typo-label text-ink-2">{c.workspace_workspaces}</span>
               </div>
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {[{ id: null, name: c.workspace_all_projects, color: null, count: null }, ...sortedWorkspaces.map((w) => ({ id: w.id, name: w.name, color: w.color, count: w.projectIds.length }))].map((w) => (
@@ -209,16 +207,16 @@ export function WorkspaceProjectSelector({
                   // own control beside it. Nesting the second one inside the
                   // first would be invalid markup and unreachable by keyboard.
                   <div key={w.id ?? 'all'} className="group/ws flex items-stretch">
-                    <button
-                      type="button"
-                      onClick={() => switchWorkspace(w.id)}
-                      className={`${row} typo-caption min-w-0 flex-1 ${activeId === w.id ? 'bg-primary/10 text-foreground' : idle}`}
+                    <PressSurface
+                      onPress={() => switchWorkspace(w.id)}
+                      className={`${row} typo-caption min-w-0 flex-1`}
+                      selected={activeId === w.id}
                     >
                       <span className={`w-2 h-2 rounded-sm flex-shrink-0 ${w.color ? '' : 'bg-muted-foreground/50'}`} style={w.color ? { background: w.color } : undefined} aria-hidden />
                       <span className="flex-1 truncate">{w.name}</span>
-                      {w.count !== null && <span className="text-foreground/40 tabular-nums text-[10px]">{w.count}</span>}
+                      {w.count !== null && <span className="text-ink-3 typo-caption">{w.count}</span>}
                       {activeId === w.id && <Check className="w-3 h-3 flex-shrink-0" />}
-                    </button>
+                    </PressSurface>
                     {w.id !== null && (
                       <Button
                         variant="ghost"
@@ -234,63 +232,61 @@ export function WorkspaceProjectSelector({
                   </div>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={() => createWorkspace(c.workspace_new)}
-                className="w-full flex items-center gap-1.5 px-3 py-2 border-t border-primary/10 typo-caption text-primary hover:bg-primary/5 transition-colors"
+              <PressSurface
+                onPress={() => createWorkspace(c.workspace_new)}
                 data-testid={newWorkspaceTestId}
+                className="w-full flex items-center gap-1.5 px-3 py-2 border-t border-hair typo-caption text-primary"
               >
                 <Plus className="w-3.5 h-3.5" aria-hidden />
                 {c.workspace_new}
-              </button>
+              </PressSurface>
             </div>
 
             {/* RIGHT — projects in the active workspace */}
             <div>
-              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10">
-                <FolderGit2 className="w-3.5 h-3.5 text-foreground/60" aria-hidden />
-                <span className="typo-label text-foreground/90">{c.workspace_projects}</span>
-                <span className="ml-auto typo-caption text-foreground/45 tabular-nums">{sortedProjects.length}</span>
+              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair">
+                <FolderGit2 className="w-3.5 h-3.5 text-ink-2" aria-hidden />
+                <span className="typo-label text-ink-2">{c.workspace_projects}</span>
+                <span className="ml-auto typo-caption text-ink-3 num">{sortedProjects.length}</span>
               </div>
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {allowNone && (
-                  <button
-                    type="button"
-                    onClick={() => { void setActiveProject(null); setOpen(false); }}
-                    className={`${row} typo-caption ${activeProjectId === null ? 'bg-indigo-500/10 text-indigo-300' : idle}`}
+                  <PressSurface
+                    onPress={() => { void setActiveProject(null); setOpen(false); }}
+                    className={`${row} typo-caption`}
+                    selected={activeProjectId === null}
                   >
                     <X className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                     <span className="flex-1 truncate">{noneLabel ?? c.workspace_no_active_project}</span>
-                  </button>
+                  </PressSurface>
                 )}
                 {sortedProjects.length === 0 ? (
-                  <p className="px-3 py-4 typo-caption text-foreground/45">{c.workspace_empty_in_workspace}</p>
+                  <p className="px-3 py-4 typo-caption text-ink-3">{c.workspace_empty_in_workspace}</p>
                 ) : sortedProjects.map((p) => {
                   const isActive = p.id === activeProjectId;
                   return (
-                    <button
-                      type="button"
+                    <PressSurface
                       key={p.id}
-                      onClick={() => { void setActiveProject(p.id); setOpen(false); }}
-                      className={`${row} ${isActive ? 'bg-indigo-500/10 text-indigo-300' : idle}`}
+                      onPress={() => { void setActiveProject(p.id); setOpen(false); }}
+                      className={`${row}`}
+                      selected={isActive}
                     >
                       <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                       <span className="flex-1 min-w-0">
                         <span className="block typo-caption truncate">{p.name}</span>
-                        {p.root_path && <span className="block text-[10px] text-foreground/45 truncate">{p.root_path}</span>}
+                        {p.root_path && <span className="block typo-caption text-ink-3 truncate">{p.root_path}</span>}
                       </span>
                       {isActive && <Check className="w-3 h-3 flex-shrink-0" />}
-                    </button>
+                    </PressSurface>
                   );
                 })}
               </div>
-              <button
-                type="button"
-                onClick={() => { setSidebarSection('teams'); setOpen(false); }}
-                className="w-full px-3 py-2 border-t border-primary/10 typo-caption text-foreground/60 hover:bg-secondary/40 hover:text-foreground transition-colors"
+              <PressSurface
+                onPress={() => { setSidebarSection('teams'); setOpen(false); }}
+                className="w-full px-3 py-2 border-t border-hair typo-caption text-ink-2 hover:text-foreground"
               >
                 {c.workspace_manage_projects}
-              </button>
+              </PressSurface>
             </div>
           </div>
 

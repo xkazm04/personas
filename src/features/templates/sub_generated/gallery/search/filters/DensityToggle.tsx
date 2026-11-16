@@ -1,4 +1,5 @@
 import { useId, useRef, type KeyboardEvent } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { LayoutList, AlignJustify } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -59,13 +60,13 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
       role="radiogroup"
       aria-label={t.templates.search.density_filter_aria}
       onKeyDown={handleKeyDown}
-      className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0"
+      className="inline-flex items-center rounded-card border border-hair overflow-hidden flex-shrink-0"
     >
       {options.map(({ value, label, Icon }) => {
         const isActive = density === value;
         return (
+          <Tooltip key={value} content={label}>
           <button
-            key={value}
             type="button"
             role="radio"
             aria-checked={isActive}
@@ -74,16 +75,15 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
             onClick={() => onChange(value)}
             className={`relative p-1.5 transition-colors ${
               isActive
-                ? 'text-violet-300'
-                : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
+                ? 'text-role-agent'
+                : 'text-foreground hover:text-ink-2 hover:bg-surface-2'
             }`}
-            title={label}
             aria-label={label}
           >
             {isActive && (
               <motion.span
                 layoutId={layoutId}
-                className="absolute inset-0 bg-violet-500/20"
+                className="absolute inset-0 bg-role-agent/20"
                 style={{ zIndex: 0 }}
                 transition={
                   shouldAnimate
@@ -94,6 +94,7 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
             )}
             <Icon className="relative z-10 w-3.5 h-3.5" />
           </button>
+          </Tooltip>
         );
       })}
     </div>

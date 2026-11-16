@@ -5,6 +5,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { formatTimestamp } from '@/lib/utils/formatters';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface CloudOAuthPanelProps {
   oauthStatus: { connected: boolean; scopes: string[] | null; expiresAt: string | null; isExpired: boolean | null } | null;
@@ -38,8 +39,8 @@ export function CloudOAuthPanel({
   if (pendingOAuthState) {
     return (
       <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
-        <div className="p-4 rounded-card bg-indigo-500/5 border border-indigo-500/15">
-          <p className="typo-body text-foreground">
+        <div className="p-4 rounded-card bg-role-agent/5 border border-role-agent/15">
+          <p className="typo-body text-ink-1">
             {dt.open_auth_instruction}
           </p>
           {sanitizeExternalUrl(oauthStartUrl) && (
@@ -47,7 +48,7 @@ export function CloudOAuthPanel({
               href={sanitizeExternalUrl(oauthStartUrl)!}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 typo-body text-indigo-300 hover:text-indigo-200"
+              className="mt-3 inline-flex items-center gap-1.5 typo-body text-role-agent hover:text-role-agent"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               {dt.open_auth_window}
@@ -56,33 +57,26 @@ export function CloudOAuthPanel({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="oauth-code" className="typo-body text-foreground">{t.deployment.auth_code}</label>
+          <label htmlFor="oauth-code" className="typo-body text-ink-1">{t.deployment.auth_code}</label>
           <input
             id="oauth-code"
             type="text"
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
             placeholder={dt.paste_code}
-            className="w-full px-3 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-2 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 placeholder:text-ink-3 focus-visible:outline-none focus-visible:border-role-agent/40 transition-colors"
           />
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
             onClick={onCompleteOAuth}
             disabled={!oauthCode.trim()}
-            className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-          >
-            {dt.complete_authorization}
-          </button>
-          <button
-            type="button"
-            onClick={onCancelOAuth}
-            className="px-4 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
-          >
-            {t.common.cancel}
-          </button>
+            variant="secondary"
+            size="md"
+          >{dt.complete_authorization}</Button>
+          <Button type="button" onClick={onCancelOAuth} variant="secondary" size="md">{t.common.cancel}</Button>
         </div>
       </div>
     );
@@ -96,12 +90,12 @@ export function CloudOAuthPanel({
 
     const StatusIcon = isExpired ? ShieldX : isUnknown ? ShieldAlert : ShieldCheck;
     const statusBg = isExpired
-      ? 'bg-amber-500/10 border border-amber-500/25'
+      ? 'bg-status-warning/10 border border-status-warning/25'
       : isUnknown
-        ? 'bg-slate-500/10 border border-slate-500/25'
+        ? 'bg-surface-2 border border-hair'
         : `${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`;
-    const statusColor = isExpired ? 'text-amber-400' : isUnknown ? 'text-slate-400' : 'text-emerald-400';
-    const statusTextColor = isExpired ? 'text-amber-300' : isUnknown ? 'text-slate-300' : 'text-emerald-400';
+    const statusColor = isExpired ? 'text-status-warning' : isUnknown ? 'text-ink-3' : 'text-status-success';
+    const statusTextColor = isExpired ? 'text-status-warning' : isUnknown ? 'text-ink-3' : 'text-status-success';
     const statusLabel = isExpired
       ? dt.token_expired
       : isUnknown
@@ -120,16 +114,16 @@ export function CloudOAuthPanel({
         </div>
 
         {isExpired && (
-          <div className="p-4 rounded-card bg-amber-500/10 border border-amber-500/25">
-            <p className="typo-body text-amber-200/90">
+          <div className="p-4 rounded-card bg-status-warning/10 border border-status-warning/25">
+            <p className="typo-body text-status-warning">
               {`${dt.token_expired_msg_prefix}${oauthStatus.expiresAt ? ` ${tx(dt.expired_at, { time: formatTimestamp(oauthStatus.expiresAt) })}` : ''}`}
             </p>
           </div>
         )}
 
         {isUnknown && (
-          <div className="p-4 rounded-card bg-slate-500/10 border border-slate-500/25">
-            <p className="typo-body text-slate-300/90">
+          <div className="p-4 rounded-card bg-surface-2 border border-hair">
+            <p className="typo-body text-ink-3">
               {dt.token_unknown_msg}
             </p>
           </div>
@@ -143,7 +137,7 @@ export function CloudOAuthPanel({
               {oauthStatus.scopes.map((scope) => (
                 <span
                   key={scope}
-                  className="typo-body px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/15 text-foreground"
+                  className="inline-flex items-center typo-body text-ink-1"
                 >
                   {scope}
                 </span>
@@ -156,7 +150,7 @@ export function CloudOAuthPanel({
         {oauthStatus.expiresAt && (
           <div>
             <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{dt.expires}</SectionHeading>
-            <p className="typo-body text-foreground/90">
+            <p className="typo-body text-ink-1">
               <AbsoluteTime timestamp={oauthStatus.expiresAt} />
             </p>
           </div>
@@ -164,22 +158,20 @@ export function CloudOAuthPanel({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <button
+          <Button
             type="button"
             onClick={onRefreshOAuth}
-            className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            {dt.refresh_token}
-          </button>
-          <button
+            variant="secondary"
+            size="md"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+          >{dt.refresh_token}</Button>
+          <Button
             type="button"
             onClick={onDisconnectOAuth}
-            className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
-          >
-            <ShieldX className="w-3.5 h-3.5" />
-            {t.deployment.connection.disconnect}
-          </button>
+            variant="danger"
+            size="md"
+            icon={<ShieldX className="w-3.5 h-3.5" />}
+          >{t.deployment.connection.disconnect}</Button>
         </div>
       </div>
     );
@@ -189,26 +181,26 @@ export function CloudOAuthPanel({
   return (
     <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
       <div className="flex flex-col items-center text-center py-8">
-        <Shield className="w-10 h-10 text-foreground mb-4" />
-        <p className="typo-body text-foreground">
+        <Shield className="w-10 h-10 text-ink-1 mb-4" />
+        <p className="typo-body text-ink-1">
           {dt.connect_anthropic_msg}
         </p>
       </div>
 
-      <button
+      <Button
         type="button"
         onClick={onStartOAuth}
-        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-body rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 transition-colors cursor-pointer"
-      >
-        <ExternalLink className="w-4 h-4" />
-        {oauthStartUrl ? dt.refresh_auth_link : dt.connect_anthropic}
-      </button>
+        variant="secondary"
+        size="md"
+        className="w-full"
+        icon={<ExternalLink className="w-4 h-4" />}
+      >{oauthStartUrl ? dt.refresh_auth_link : dt.connect_anthropic}</Button>
       {sanitizeExternalUrl(oauthStartUrl) && (
         <a
           href={sanitizeExternalUrl(oauthStartUrl)!}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-body rounded-modal bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/15 transition-colors"
+          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-body rounded-modal bg-role-agent/10 border border-role-agent/25 text-role-agent hover:bg-role-agent/15 transition-colors"
         >
           <ExternalLink className="w-4 h-4" />
           {dt.open_authorization_window}

@@ -80,9 +80,9 @@ const PLAN_TAB_LABEL: Record<PlanTab, (t: Translations) => string> = {
  *  loading its data (docs/design/overview-loading.md). */
 function TabStripGhost() {
   return (
-    <div className="flex items-center gap-1 px-3 h-11 border-b border-primary/10" aria-hidden>
+    <div className="flex items-center gap-1 px-3 h-11 border-b border-hair" aria-hidden>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-8 w-32 rounded-interactive bg-secondary/25" />
+        <div key={i} className="h-8 w-32 rounded-interactive bg-surface-1" />
       ))}
     </div>
   );
@@ -423,21 +423,21 @@ export default function NotepadOverlayHost() {
       // agree instead of each carrying its own guess.
       className="fixed inset-x-0 bottom-8 top-[var(--titlebar-height,40px)] z-[200] flex flex-col bg-background"
     >
-      <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-primary/10">
+      <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-hair">
         <div className="flex items-center gap-3 min-w-0">
           {/* The overlay's OWN exit, at the far left. In editor view it sits
               outside the breadcrumb on purpose: the two arrows then read as two
               distances — this one leaves the pad, the crumb inside it goes back
               to the desk. */}
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             onClick={close}
             aria-label={t.notepad.close}
             data-testid="notepad-close"
-            className="w-7 h-7 -ml-1 shrink-0 rounded-input flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
+            className="-ml-1 shrink-0"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden />
-          </button>
+          </Button>
           {view === 'editor' && (
             // ONE control, two readings. On an ordinary note it is the back
             // button it has always been; on a PLAN note it is the first crumb of
@@ -449,22 +449,22 @@ export default function NotepadOverlayHost() {
               aria-label={t.notepad.crumb_desk}
               className="flex items-center gap-1.5 min-w-0 typo-caption"
             >
-              <button
+              <Button variant="ghost" size="sm"
                 type="button"
                 onClick={backToOverview}
                 data-testid="notepad-back-overview"
-                className="h-7 px-2 -ml-2 rounded-input flex items-center gap-1.5 text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
+                className="-ml-2"
               >
                 <ArrowLeft className="w-4 h-4" aria-hidden />
                 {planNote ? t.notepad.crumb_desk : t.notepad.overview_back}
-              </button>
+              </Button>
               {planNote && active && (
                 <>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground opacity-50" aria-hidden />
-                  <span className="truncate max-w-[24ch] text-foreground/85" data-testid="notepad-crumb-note">
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-3 " aria-hidden />
+                  <span className="truncate max-w-[24ch] text-ink-2" data-testid="notepad-crumb-note">
                     {active.title}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground opacity-50" aria-hidden />
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-ink-3 " aria-hidden />
                   <span aria-current="page" className="text-foreground" data-testid="notepad-crumb-tab">
                     {PLAN_TAB_LABEL[planTab](t)}
                   </span>
@@ -472,7 +472,7 @@ export default function NotepadOverlayHost() {
               )}
             </nav>
           )}
-          <span className="flex items-center gap-2 typo-caption text-foreground/60">
+          <span className="flex items-center gap-2 typo-caption text-ink-2">
             <NotepadText className="w-4 h-4" aria-hidden />
             {t.notepad.title}
           </span>

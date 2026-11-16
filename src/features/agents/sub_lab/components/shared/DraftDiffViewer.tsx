@@ -39,20 +39,20 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
   return (
     <div className="space-y-3">
       {changeSummary && (
-        <div className="px-3 py-2 rounded-modal bg-violet-500/10 border border-violet-500/20 typo-body text-violet-300">
+        <div className="px-3 py-2 rounded-modal bg-role-agent/10 border border-role-agent/20 typo-body text-role-agent">
           {changeSummary}
         </div>
       )}
 
       {!hasChanges ? (
-        <p className="typo-body text-foreground text-center py-4">{t.agents.lab.no_structural_diff}</p>
+        <p className="typo-body text-ink-1 text-center py-4">{t.agents.lab.no_structural_diff}</p>
       ) : (
         diffs.map((d) => (
-          <div key={d.key} className="rounded-card border border-primary/10 bg-secondary/20 p-3">
+          <div key={d.key} className="rounded-card border border-hair bg-surface-1 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <h4 className="typo-body text-foreground uppercase tracking-wider">{d.label}</h4>
+              <h4 className="typo-eyebrow text-ink-1">{d.label}</h4>
               {!d.changed && (
-                <span className="typo-body text-foreground">{t.agents.lab.no_changes_diff}</span>
+                <span className="typo-body text-ink-1">{t.agents.lab.no_changes_diff}</span>
               )}
             </div>
             {d.changed && (
@@ -62,10 +62,10 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
                     key={i}
                     className={
                       seg.type === 'added'
-                        ? 'bg-emerald-500/20 text-emerald-300'
+                        ? 'bg-status-success/20 text-status-success'
                         : seg.type === 'removed'
-                          ? 'bg-red-500/20 text-red-300 line-through'
-                          : 'text-foreground'
+                          ? 'bg-status-error/20 text-status-error line-through'
+                          : 'text-ink-1'
                     }
                   >
                     {seg.text}

@@ -8,6 +8,7 @@
 // popover itself marks `unmeasured` stay inert — there is no reading to inspect,
 // so a jump would only trade one dead end for another. Same shape as
 // PersonaListPopover's `navigable` split. Chrome + dismissal come from ListPopover.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { Gauge } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -69,26 +70,25 @@ export function KpiListPopover({ items, x, y, onOpen, onClose }: {
           <>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: mix(STATUS_INK[k.status], 85) }} aria-hidden />
             <span className="truncate flex-1">{k.name}</span>
-            <span className="typo-caption text-foreground/50 tabular-nums shrink-0">
+            <span className="typo-data text-ink-3 shrink-0">
               {k.current == null ? t.mastermind.kpi_unmeasured : `${k.current} / ${k.target}${k.unit ? ` ${k.unit}` : ''}`}
             </span>
           </>
         );
-        const layout = 'w-full flex items-center gap-2.5 px-3 py-2 text-left typo-body text-foreground/70';
+        const layout = 'w-full flex items-center gap-2.5 px-3 py-2 text-left typo-body text-ink-2';
         return (
           <li key={k.id}>
             {k.status === 'unmeasured' ? (
               <div className={`${layout} cursor-default`} data-testid={`mm-kpi-row-${k.id}`}>{body}</div>
             ) : (
-              <button
-                type="button"
-                className={`${layout} rounded-input transition-colors hover:bg-secondary/40 hover:text-foreground focus-ring`}
-                onClick={() => { onOpen(k.id); onClose(); }}
+              <PressSurface
+                className={`${layout} rounded-input  hover:bg-surface-2 hover:text-foreground `}
+                onPress={() => { onOpen(k.id); onClose(); }}
                 aria-label={t.mastermind.open_in_factory}
                 data-testid={`mm-kpi-row-${k.id}`}
               >
                 {body}
-              </button>
+              </PressSurface>
             )}
           </li>
         );

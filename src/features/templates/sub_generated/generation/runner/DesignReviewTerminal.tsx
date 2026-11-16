@@ -77,20 +77,20 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
                     {(index + 1).toString().padStart(3, ' ')}
                   </span>
                   <span className={`break-all ${
-                    line.includes('PASSED') ? 'text-emerald-400/80' :
-                    line.includes('FAILED') ? 'text-red-400/80' :
-                    line.includes('ERROR') ? 'text-amber-400/80' :
-                    line.includes('Generating:') ? 'text-violet-400/60' :
-                    line.includes('Cancelled') ? 'text-orange-400/80' :
-                    line.includes('[TestRunner]') ? 'text-violet-400/80' :
-                    'text-blue-400/80'
+                    line.includes('PASSED') ? 'text-status-success/80' :
+                    line.includes('FAILED') ? 'text-status-error/80' :
+                    line.includes('ERROR') ? 'text-status-warning/80' :
+                    line.includes('Generating:') ? 'text-role-agent/60' :
+                    line.includes('Cancelled') ? 'text-status-warning/80' :
+                    line.includes('[TestRunner]') ? 'text-role-agent/80' :
+                    'text-status-info/80'
                   }`}>{line}</span>
                 </div>
               );
             })}
             {isRunning && (
-              <div className="flex items-center gap-2 py-1 text-blue-400/60">
-                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              <div className="flex items-center gap-2 py-1 text-status-info/60">
+                <span className="w-2 h-2 rounded-full bg-status-info animate-pulse" />
                 <span>{t.templates.generation.terminal_running}</span>
               </div>
             )}
@@ -106,17 +106,17 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
 export function ResultSummary({ result }: { result: TestRunResult }) {
   const { t } = useTranslation();
   return (
-    <div className="px-4 py-3 border-t border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
+    <div className="px-4 py-3 border-t border-hair bg-primary/5" aria-live="polite" aria-atomic="true">
       <div className="flex items-center gap-4 typo-body">
-        <span className="flex items-center gap-1.5 text-emerald-400">
+        <span className="flex items-center gap-1.5 text-status-success">
           <CheckCircle2 className="w-4 h-4" />
           {result.passed} passed
         </span>
-        <span className="flex items-center gap-1.5 text-red-400">
+        <span className="flex items-center gap-1.5 text-status-error">
           <XCircle className="w-4 h-4" />
           {result.failed} failed
         </span>
-        <span className="flex items-center gap-1.5 text-amber-400">
+        <span className="flex items-center gap-1.5 text-status-warning">
           <AlertTriangle className="w-4 h-4" />
           {result.errored} errors
         </span>

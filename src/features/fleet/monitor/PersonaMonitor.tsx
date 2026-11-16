@@ -127,7 +127,7 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
           {/* Live fleet pulse — the same executions bar shown under the titlebar
               (reused), so running/queued executions are visible right in the header
               instead of static count badges. */}
-          <div className="relative flex-shrink-0 h-2.5 border-b border-primary/10">
+          <div className="relative flex-shrink-0 h-2.5 border-b border-hair">
             <MemoFleetActivityStrip />
           </div>
 

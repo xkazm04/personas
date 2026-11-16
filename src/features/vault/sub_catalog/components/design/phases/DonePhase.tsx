@@ -35,8 +35,8 @@ export function DonePhase({
       key="done"
       className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-4"
     >
-      <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center">
-        <CheckCircle className="w-6 h-6 text-emerald-400" />
+      <div className="w-12 h-12 rounded-full bg-status-success/15 flex items-center justify-center">
+        <CheckCircle className="w-6 h-6 text-status-success" />
       </div>
       <div className="text-center">
         <h3 className="typo-heading text-foreground">{dp.credential_created}</h3>
@@ -49,11 +49,11 @@ export function DonePhase({
       </div>
       {registeredConnectorName && (
         <div
-          className="animate-fade-slide-in flex items-center gap-2.5 px-4 py-2.5 rounded-modal bg-violet-500/10 border border-violet-500/20 max-w-md"
+          className="animate-fade-slide-in flex items-center gap-2.5 px-4 py-2.5 rounded-modal bg-role-agent/10 border border-role-agent/20 max-w-md"
         >
-          <PackagePlus className="w-4 h-4 shrink-0 text-violet-400" />
+          <PackagePlus className="w-4 h-4 shrink-0 text-role-agent" />
           <p className="typo-body text-foreground">
-            <span className="text-violet-400 font-medium">{registeredConnectorName}</span>
+            <span className="text-role-agent font-medium">{registeredConnectorName}</span>
             {' '}{dp.connector_added_to_catalog}
           </p>
         </div>
@@ -64,20 +64,21 @@ export function DonePhase({
           {t.common.done}
         </Button>
         {onViewCredential && (
-          <button
+          <Button
             type="button"
             onClick={onViewCredential}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all"
+            variant="primary"
+            size="md"
+            iconRight={<ArrowRight className="w-3.5 h-3.5" />}
           >
             {dp.view_credential}
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Additive refinement input */}
       {onRefine && (
-        <div className="w-full max-w-md mt-4 pt-4 border-t border-primary/10">
+        <div className="w-full max-w-md mt-4 pt-4 border-t border-hair">
           <p className="typo-body text-foreground text-center mb-2">
             {dp.refine_hint}
           </p>
@@ -87,13 +88,13 @@ export function DonePhase({
               value={refinementText}
               onChange={(e) => setRefinementText(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   handleRefineSubmit();
                 }
               }}
               placeholder={dp.refine_placeholder}
-              className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-modal typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+              className="flex-1 px-3 py-2 bg-surface-2 border border-hair rounded-modal typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             />
             <Button
               variant="secondary"

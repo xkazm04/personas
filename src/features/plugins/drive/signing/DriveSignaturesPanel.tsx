@@ -22,6 +22,9 @@ import type { DocumentSignature, VerifyDocumentResult } from "@/api/signing";
 
 import type { useSigning } from "./useSigning";
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 const TITLE_ID = "drive-signatures-panel-title";
 
 // Width override — BaseModal's right-drawer default is 480px; this panel
@@ -81,18 +84,19 @@ export function DriveSignaturesPanel({
     >
       <div className="contents">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/15">
-          <FileSignature className="w-4 h-4 text-rose-300" />
+          <FileSignature className="w-4 h-4 text-status-error" />
           <div id={TITLE_ID} className="typo-section-title flex-1">
             {t.plugins.doc_signing.history_heading}
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             aria-label={t.plugins.drive.cancel}
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -150,8 +154,8 @@ function SignatureRowGhosts() {
           className="px-4 py-3 border-b border-primary/10 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="block h-3.5 w-40 max-w-full rounded bg-primary/[0.06]" />
-          <span className="mt-2.5 block h-3 w-28 rounded bg-primary/[0.06]" />
+          <span className="block h-3.5 w-40 max-w-full rounded-interactive bg-surface-2" />
+          <span className="mt-2.5 block h-3 w-28 rounded-interactive bg-surface-2" />
         </div>
       ))}
     </div>
@@ -214,13 +218,9 @@ function SignatureRow({
     <div className="px-4 py-3 border-b border-primary/10 hover:bg-secondary/30 group transition-colors">
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <button
-            type="button"
-            onClick={onReveal}
-            className="typo-body typo-card-label truncate text-left transition-colors focus-ring"
-          >
+          <PressSurface onPress={onReveal} className="typo-body typo-card-label truncate">
             {sig.file_name}
-          </button>
+          </PressSurface>
           <div className="mt-1.5 flex items-center gap-3 typo-caption text-foreground">
             <span className="flex items-center gap-1">
               <User className="w-3 h-3" />
@@ -243,33 +243,36 @@ function SignatureRow({
         </div>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           {canVerify && (
-            <button
+            <Button
               type="button"
               onClick={handleVerify}
               disabled={verify.status === "verifying"}
-              title={t.plugins.doc_signing.verify_signature}
+              tooltip={t.plugins.doc_signing.verify_signature}
               aria-label={t.plugins.doc_signing.verify_signature}
-              className="p-1.5 rounded-input text-foreground hover:text-emerald-200 hover:bg-emerald-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+              variant="ghost"
+              size="icon-sm"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
             onClick={onExport}
-            title={t.plugins.doc_signing.export_sig}
-            className="p-1.5 rounded-input text-foreground hover:text-sky-200 hover:bg-sky-500/15 transition-colors focus-ring"
+            tooltip={t.plugins.doc_signing.export_sig}
+            variant="ghost"
+            size="icon-sm"
           >
             <Download className="w-3.5 h-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onDelete}
-            title={t.plugins.doc_signing.delete_signature}
-            className="p-1.5 rounded-input text-foreground hover:text-rose-200 hover:bg-rose-500/15 transition-colors focus-ring"
+            tooltip={t.plugins.doc_signing.delete_signature}
+            variant="ghost"
+            size="icon-sm"
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -295,8 +298,8 @@ function VerifyChip({ result }: { result: VerifyDocumentResult }) {
     <div
       className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full typo-caption border ${
         valid
-          ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-100"
-          : "border-rose-500/35 bg-rose-500/10 text-rose-100"
+          ? "border-status-success/35 bg-status-success/10 text-status-success"
+          : "border-status-error/35 bg-status-error/10 text-status-error"
       }`}
     >
       <Icon className="w-3 h-3 flex-shrink-0" />

@@ -22,6 +22,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { ArgsField, DialogFooter, PreviewLine, SkillDescription } from './UseSkillShared';
 import { ContextPickerModal } from './contextPicker/ContextPickerModal';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 export type DispatchTarget = 'fleet' | 'cmd';
 export type ContextMode = 'specific' | 'recommended' | 'all';
@@ -39,7 +40,7 @@ export interface UseSkillChoice {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="typo-label text-foreground/55 w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
+      <span className="typo-label text-ink-3 w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
       {children}
     </div>
   );
@@ -101,15 +102,20 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
   const preview = skillCommand(skill.name, previewArgs);
   const batchCount = tracked ? chosenContexts.length : 0;
 
-  const confirm = () => onConfirm({ args: args.trim(), target, contexts: chosenContexts });
+  // Ctrl/Cmd+Enter in the args box calls this directly, bypassing the footer button's
+  // disabled state, so a dispatch already in flight must be refused here too.
+  const confirm = () => {
+    if (busy) return;
+    onConfirm({ args: args.trim(), target, contexts: chosenContexts });
+  };
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="use-skill-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid="use-skill-dialog">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-2">
           <Wand2 className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="use-skill-title" className="typo-title truncate">{skill.name}</span>
-          <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{d.skills_kind_use}</span>
+          <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{d.skills_kind_use}</span>
         </div>
 
         <div className="px-5 py-4 space-y-4">
@@ -181,11 +187,10 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
               </Row>
               {mode === 'specific' && (
                 <div className="pl-24">
-                  <button
-                    type="button"
-                    onClick={() => setPickerOpen(true)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-primary/20 bg-secondary/[0.12] hover:border-primary/40 transition-colors text-left"
+                  <PressSurface
+                    onPress={() => setPickerOpen(true)}
                     data-testid="use-skill-open-picker"
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair bg-surface-1 hover:border-primary/40"
                   >
                     <span className="typo-caption text-foreground truncate flex-1 min-w-0">
                       {picked.length === 0
@@ -195,7 +200,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
                           : tx(d.ctx_picker_summary, { first: picked[0]!, n: picked.length - 1 })}
                     </span>
                     <SlidersHorizontal className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-                  </button>
+                  </PressSurface>
                 </div>
               )}
             </>

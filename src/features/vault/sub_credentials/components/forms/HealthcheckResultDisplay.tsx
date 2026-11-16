@@ -3,6 +3,7 @@ import { CheckCircle, PlugZap, ShieldQuestion, XCircle, ChevronDown } from 'luci
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveProbeOutcome } from '@/lib/credentials/healthState';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * A probe has four outcomes and this display had two.
@@ -38,7 +39,7 @@ export function HealthcheckResultDisplay({
       <div
         data-testid="healthcheck-result"
         data-state={outcome}
-        className="animate-fade-slide-in mt-2 flex items-start gap-2 px-3 py-2 rounded-modal typo-body bg-secondary/40 border border-border/40 text-foreground"
+        className="animate-fade-slide-in mt-2 flex items-start gap-2 px-3 py-2 rounded-modal typo-body bg-surface-2 border border-border/40 text-foreground"
       >
         <Icon className="w-4 h-4 mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0 space-y-1">
@@ -84,15 +85,17 @@ export function HealthcheckResultDisplay({
 
       {hasDifferentRaw && (
         <div className="border-t border-status-error/10">
-          <button
+          <Button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
             aria-expanded={showDetails}
-            className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-body text-status-error/40 hover:text-status-error/60 transition-colors"
+            variant="danger"
+            size="sm"
+            className="w-full"
+            icon={<ChevronDown className={`w-3 h-3 transition-transform ${showDetails ? 'rotate-180' : ''}`} />}
           >
-            <ChevronDown className={`w-3 h-3 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
             {t.vault.forms.technical_details}
-          </button>
+          </Button>
           {showDetails && (
             <p className="px-3 pb-2 typo-code text-status-error/30 break-all">
               {translated.raw}

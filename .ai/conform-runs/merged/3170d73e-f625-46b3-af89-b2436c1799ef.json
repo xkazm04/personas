@@ -1,0 +1,114 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
+ "subject": "translation-pipeline-topology",
+ "evaluatedAt": "2026-11-03T08:36:53.007Z",
+ "pairs": [
+  {
+   "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/api/pipeline/triggers.ts:3 IPC wrappers for persona triggers/scheduler/teams; pipeline here is agent automation, no translated content stored or moved",
+   "techniques": []
+  },
+  {
+   "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/design/mod.rs:10 design commands are n8n workflow transformation, not a localization pipeline",
+   "techniques": []
+  },
+  {
+   "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/mod.rs:28 engine root re-exports agent execution infrastructure; no translation store, locale registry or MT request",
+   "techniques": []
+  },
+  {
+   "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/lib/credentials/builtinConnectors.ts:2 catalog is connector definitions, not a string catalog; no locale registry or translation store",
+   "techniques": []
+  },
+  {
+   "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/matrix/useBuild.ts:2 matrix means the persona build session UI, not a translation matrix",
+   "techniques": []
+  },
+  {
+   "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/prompt/mod.rs:1 assembles persona runtime prompts; no locale registry, translation store or MT request is built here",
+   "techniques": []
+  },
+  {
+   "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 renders template adoption layout views; no translation pipeline code",
+   "techniques": []
+  },
+  {
+   "context": "8a57c65c-06fd-45c9-9d32-d50c89c4c705",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 runs design reviews over template sources; neither generates nor serves translated content",
+   "techniques": []
+  },
+  {
+   "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 still hand-lists 11 of the 14 manifest locales (no bn/id/vi); picker hidden behind UI_LANGUAGE_PICKER_ENABLED but the revive procedure (src/i18n/locales.manifest.ts:63) re-shows it, and src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second shadow list",
+   "techniques": [
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "deviation",
+     "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 hand-written language list duplicates the manifest; adding a language needs more than the one-line manifest diff"
+    }
+   ]
+  },
+  {
+   "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "src/lib/personas/templates/templateOverlays.ts:273 overlay import.meta.glob still hand-lists per-language patterns; code set is derived at line 270 and a test asserts coverage, but adding a manifest language still requires editing this file",
+   "techniques": [
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "deviation",
+     "evidence": "src/lib/personas/templates/templateOverlays.ts:273 hand-listed glob patterns break the one-line-diff test"
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:36:53.007Z",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "language-registry-single-source"
+   ],
+   "deviations": 2
+  }
+ ]
+}

@@ -6,6 +6,7 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getBrandTokens } from '@/lib/connectors/brandTokens';
 import { TwinGlyph } from './TwinGlyph';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 /** `name · role`, or the name alone when the twin has no role. */
 export function twinTooltipLabel(name: string, role: string | null | undefined): string {
@@ -79,20 +80,19 @@ export default function TwinFooterIcon() {
             return (
               <li key={p.id}>
                 <Tooltip content={twinTooltipLabel(p.name, p.role)} placement="left">
-                  <button
-                    type="button"
+                  <PressSurface
                     role="option"
                     aria-selected={isActive}
-                    onClick={() => { void setActiveTwin(p.id); setOpen(false); }}
+                    onPress={() => { void setActiveTwin(p.id); setOpen(false); }}
                     data-testid={`footer-twin-option-${p.id}`}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
-                      isActive ? brand.badgeBg : 'hover:bg-secondary/40'
-                    }`}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5"
+                    selected={isActive}
+                    aria-pressed={undefined}
                   >
                     <TwinGlyph className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? brand.accent : 'text-foreground'}`} />
                     <span className="flex-1 min-w-0 typo-caption text-foreground truncate">{p.name}</span>
                     {isActive && <Check className={`w-3.5 h-3.5 flex-shrink-0 ${brand.accent}`} />}
-                  </button>
+                  </PressSurface>
                 </Tooltip>
               </li>
             );

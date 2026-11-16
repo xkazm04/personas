@@ -49,7 +49,7 @@ export function SetupProposalRow({ proposal, resolution, onAccept, onEdit, onDis
       }`}
     >
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/10 bg-secondary/25">
-        <span className="typo-caption uppercase tracking-[0.18em]">{label}</span>
+        <span className="typo-eyebrow">{label}</span>
         {proposal.lengthHint && (
           <span className="typo-caption tabular-nums">{proposal.lengthHint}</span>
         )}

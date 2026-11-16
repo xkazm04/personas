@@ -30,7 +30,11 @@ function rust(rel: string): string {
 function fnBody(src: string, name: string): string {
   const start = src.indexOf(`fn ${name}(`);
   expect(start, `fn ${name} not found`).toBeGreaterThanOrEqual(0);
-  return src.slice(start, src.indexOf('\n}\n', start));
+  // An unmatched end needle (-1) would slice to end of file and let a later
+  // fn's timeout answer for this one; fail loudly instead.
+  const end = src.indexOf('\n}\n', start);
+  expect(end, `end of fn ${name} not found`).toBeGreaterThan(start);
+  return src.slice(start, end);
 }
 
 function secs(re: RegExp, text: string, what: string): number {

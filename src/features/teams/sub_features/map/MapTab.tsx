@@ -64,11 +64,11 @@ export function MapTab({
           </span>
         ))}
         <span className="inline-flex items-center gap-1.5 typo-caption">
-          <i aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-violet-400" />
+          <i aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-role-agent" />
           {t.map_legend_shared}
         </span>
         {hasSelection ? (
-          <span className="typo-caption text-foreground" data-testid="features-map-dimmed">
+          <span className="typo-caption text-ink-2" data-testid="features-map-dimmed">
             {tx(t.map_dimmed, { count: dimmed })}
           </span>
         ) : null}

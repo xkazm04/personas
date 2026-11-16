@@ -167,7 +167,7 @@ export function ProjectsLayer({
             eyebrow={w.eyebrow}
             title={w.L.readiness}
             count={passports.length > 0 ? passports.length : undefined}
-            meta={generatedAt ? <Meta parts={[<span key="s">{w.L.scanned} <RelativeTime timestamp={generatedAt} className="tabular-nums" /></span>]} /> : undefined}
+            meta={generatedAt ? <Meta parts={[<span key="s">{w.L.scanned} <RelativeTime timestamp={generatedAt} className="num" /></span>]} /> : undefined}
             actions={passports.length > 0 ? (
               <Segmented
                 label={ATLAS_WORDS.tabsLabel}

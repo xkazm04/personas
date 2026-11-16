@@ -178,7 +178,9 @@ export function Listbox({
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setFocusIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Enter' && focusIndex >= 0) {
+      } else if (e.key === 'Enter' && focusIndex >= 0 && focusIndex < itemCount) {
+        // `focusIndex < itemCount`: a searchable list that filtered down to nothing
+        // keeps focusIndex 0, and Enter used to "select" row 0 of an empty list.
         e.preventDefault();
         onSelectFocused?.(focusIndex);
         setOpen(false);

@@ -19,7 +19,7 @@ export function TourNarrationButton({
   accentTextClass,
 }: {
   control: TourNarrationControl;
-  /** Tailwind text-color class matching the tour's accent (e.g. `text-violet-400`). */
+  /** Tailwind text-color class matching the tour's accent (e.g. `text-role-agent`). */
   accentTextClass: string;
 }) {
   const { t } = useTranslation();

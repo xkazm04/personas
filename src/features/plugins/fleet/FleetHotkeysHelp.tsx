@@ -1,3 +1,4 @@
+import { Kbd } from '@/features/shared/components/display/Kbd';
 import { X, Keyboard } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -15,14 +16,6 @@ const SHORTCUTS: ReadonlyArray<{ keys: string[]; labelKey: FleetKeys }> = [
   { keys: ['?'], labelKey: 'hotkey_show_help' },
 ];
 
-function Kbd({ children }: { children: string }) {
-  return (
-    <kbd className="inline-flex min-w-[22px] items-center justify-center rounded border border-primary/15 bg-secondary/50 px-1.5 py-0.5 text-[11px] font-medium text-foreground">
-      {children}
-    </kbd>
-  );
-}
-
 /**
  * Shortcuts reference for the Sessions-tab triage hotkey layer
  * (`useFleetHotkeys`). Opened by the `?` key or the keyboard button in the
@@ -36,7 +29,7 @@ export function FleetHotkeysHelp({ open, onClose }: { open: boolean; onClose: ()
       onClose={onClose}
       titleId="fleet-hotkeys-title"
       size="sm"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-5 shadow-elevation-4"
+      panelClassName="bg-background border border-hair rounded-card p-5 shadow-elevation-4"
     >
       <div data-testid="fleet-hotkeys-help">
         <div className="flex items-center justify-between mb-4">
@@ -51,7 +44,7 @@ export function FleetHotkeysHelp({ open, onClose }: { open: boolean; onClose: ()
         <ul className="space-y-2">
           {SHORTCUTS.map((s) => (
             <li key={s.labelKey} className="flex items-center justify-between gap-3">
-              <span className="text-[13px] text-foreground">{t.plugins.fleet[s.labelKey]}</span>
+              <span className="typo-caption text-foreground">{t.plugins.fleet[s.labelKey]}</span>
               <span className="flex items-center gap-1">
                 {s.keys.map((k) => (
                   <Kbd key={k}>{k}</Kbd>
@@ -60,7 +53,7 @@ export function FleetHotkeysHelp({ open, onClose }: { open: boolean; onClose: ()
             </li>
           ))}
         </ul>
-        <p className="mt-4 text-[12px] text-foreground">{t.plugins.fleet.hotkeys_typing_note}</p>
+        <p className="mt-4 typo-caption text-foreground">{t.plugins.fleet.hotkeys_typing_note}</p>
       </div>
     </BaseModal>
   );

@@ -1,0 +1,7 @@
+{"schema":"conform-run/1","worker":"5deaffe5-b04f-425e-bf86-ff1e30a791e4","subject":"multi-provider-gateway-plane",
+"evaluatedAt":"2026-11-03T00:00:00Z",
+"pairs":[{"context":"89d44c76-ec4c-4388-843e-503cf6ca2507","subject":"multi-provider-gateway-plane","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/shared/components/progress/ContentLoader.tsx:33 and src/features/shared/components/progress/EstimatedProgressBar.tsx:40 are presentational loaders/progress bars - no request path and no candidate set of interchangeable upstreams, so the plane's precondition is unmet",
+"techniques":[]}],
+"declined":[{"subject":"multi-provider-gateway-plane","context":"742be60e-3ddf-4160-b7cb-4c5cac5965a0","reason":"context-map.json lists empty file_paths for plugins-research-lab-shared, so there is no code to anchor a verdict; left unknown"}],
+"consults":[{"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["multi-provider-gateway-plane"],"techniques":[],"deviations":0}]}

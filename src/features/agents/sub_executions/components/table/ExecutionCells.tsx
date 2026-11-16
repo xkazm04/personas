@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
+import { formatDuration, formatRelativeTime, getStatusEntry } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { isInFlightExecutionStatus } from '../../libs/executionStatus';
 
@@ -17,7 +18,7 @@ import { isInFlightExecutionStatus } from '../../libs/executionStatus';
  * `font-mono` while the persona name and a known cost were sans, so four of a
  * ledger's six columns rendered in a different family from the other two — and
  * the cost column alone switched family on the value ($0.18 sans, "—" mono).
- * Every value cell is now `typo-body text-foreground`, matching the surface the
+ * Every value cell is now `typo-body text-ink-1`, matching the surface the
  * owner named as the model (`overview/sub_events/eventLogColumns.tsx`).
  *
  * The row's ONE emphasis (Gate 3b) is the status pill, and it is carried by
@@ -31,26 +32,24 @@ const EM_DASH = '—';
 
 /** Per-status left accent for `UnifiedTable`'s `rowAccent`. */
 export function executionRowAccent(status: string): string {
-  if (isInFlightExecutionStatus(status)) return 'border-l-blue-400';
-  if (status === 'completed') return 'border-l-emerald-400';
-  if (status === 'failed') return 'border-l-red-400';
-  return 'border-l-amber-400';
+  if (isInFlightExecutionStatus(status)) return 'border-l-status-info';
+  if (status === 'completed') return 'border-l-transparent';
+  if (status === 'failed') return 'border-l-status-error';
+  return 'border-l-status-warning';
 }
 
-/** Status pill with a live ping dot while the run is in flight. */
+function executionMarkState(status: string): StateMarkState {
+  if (isInFlightExecutionStatus(status)) return 'running';
+  if (status === 'completed') return 'success';
+  if (status === 'failed') return 'error';
+  if (status === 'cancelled') return 'skipped';
+  return 'warning';
+}
+
+/** Status mark: glyph + mono word (no pill). The running glyph is the hatched bar. */
 export function ExecutionStatusPill({ status }: { status: string }) {
   const entry = getStatusEntry(status);
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-title whitespace-nowrap ${badgeClass(entry)}`}>
-      {entry.pulse && (
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
-        </span>
-      )}
-      {entry.label}
-    </span>
-  );
+  return <StateMark state={executionMarkState(status)} label={entry.label} />;
 }
 
 /** A value cell: the ledger's one type scale, never wrapping (Gate 2b — row
@@ -60,7 +59,7 @@ export function ExecutionStatusPill({ status }: { status: string }) {
  *  vertical axis, which is why `Numeric` already carries it. */
 function Cell({ children, figures = false }: { children: ReactNode; figures?: boolean }) {
   return (
-    <span className={`typo-body text-foreground whitespace-nowrap${figures ? ' font-data' : ''}`}>
+    <span className={`${figures ? 'typo-data' : 'typo-body'} text-ink-1 whitespace-nowrap`}>
       {children}
     </span>
   );
@@ -75,7 +74,7 @@ export function ExecutionCostCell({ cost }: { cost: number | null | undefined })
   // Both branches are the same family and size; only the figures differ, so the
   // column does not change typeface when a run never recorded its cost.
   if (cost == null || cost <= 0) return <Cell figures>{EM_DASH}</Cell>;
-  return <Numeric value={cost} unit="usd" language={language} align="right" className="typo-body text-foreground" />;
+  return <Numeric value={cost} unit="usd" language={language} align="right" className="typo-data text-ink-1" />;
 }
 
 export function ExecutionDurationCell({ ms }: { ms: number | null | undefined }) {
@@ -83,7 +82,7 @@ export function ExecutionDurationCell({ ms }: { ms: number | null | undefined })
 }
 
 export function ExecutionStartedCell({ startedAt, createdAt }: { startedAt: string | null; createdAt: string }) {
-  return <Cell>{formatRelativeTime(startedAt || createdAt)}</Cell>;
+  return <Cell figures>{formatRelativeTime(startedAt || createdAt)}</Cell>;
 }
 
 /** Input / output token pair, compact. */

@@ -30,14 +30,14 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
   return (
     <div
       data-testid={`remote-job-detail-${job.id}`}
-      className="mt-3 rounded-card border border-primary/15 bg-secondary/20 p-3.5 space-y-3.5"
+      className="mt-3 rounded-card border border-hair bg-surface-1 p-3.5 space-y-3.5"
     >
-      <p className="typo-body text-foreground/90" data-testid="remote-job-detail-instruction">
+      <p className="typo-body text-ink-1" data-testid="remote-job-detail-instruction">
         {job.instruction}
       </p>
 
       <section aria-label={st.job_notes_title}>
-        <h4 className="typo-label text-primary flex items-center gap-1.5">
+        <h4 className="typo-label text-ink-1 flex items-center gap-1.5">
           <ScrollText className="w-3.5 h-3.5" aria-hidden />
           {st.job_notes_title}
         </h4>
@@ -70,7 +70,7 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
                   {note.seq}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="typo-caption text-foreground/90 block break-words">
+                  <span className="typo-caption text-ink-1 block break-words">
                     {note.text}
                   </span>
                   <RelativeTime timestamp={note.createdAt} className="typo-label text-foreground" />
@@ -83,13 +83,13 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
 
       {job.receipt && (
         <section aria-label={st.job_receipt_title} data-testid="remote-job-receipt">
-          <h4 className="typo-label text-primary">{st.job_receipt_title}</h4>
+          <h4 className="typo-label text-ink-1">{st.job_receipt_title}</h4>
           <RemoteReceiptLine receipt={job.receipt} className="mt-1.5 typo-caption" />
         </section>
       )}
 
       <section aria-label={job.refusalReason ? st.job_refusal_title : st.job_summary_title}>
-        <h4 className="typo-label text-primary">
+        <h4 className="typo-label text-ink-1">
           {job.refusalReason ? st.job_refusal_title : st.job_summary_title}
         </h4>
         {job.refusalReason ? (
@@ -103,7 +103,7 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
         ) : job.summary ? (
           <p
             data-testid="remote-job-summary"
-            className="mt-1.5 typo-caption text-foreground/90 break-words whitespace-pre-wrap"
+            className="mt-1.5 typo-caption text-ink-1 break-words whitespace-pre-wrap"
           >
             {job.summary}
           </p>

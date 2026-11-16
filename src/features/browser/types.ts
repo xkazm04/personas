@@ -224,7 +224,13 @@ export function browserOriginProblem(raw: string): BrowserOriginProblem | null {
     return 'not_an_origin';
   }
   if (!parsed.hostname) return 'not_an_origin';
-  return parsed.origin.toLowerCase() === value.toLowerCase() ? null : 'not_an_origin';
+  // A scheme's DEFAULT port is dropped by the WHATWG serializer and by Rust's
+  // `normalize_site_origin` alike, so `https://example.com:443` is accepted
+  // there and stored as `https://example.com`. Compare with it stripped, or
+  // the form refuses what the server would take.
+  const defaultPort = parsed.protocol === 'https:' ? '443' : '80';
+  const typed = value.toLowerCase().replace(new RegExp(`:${defaultPort}$`), '');
+  return parsed.origin.toLowerCase() === typed ? null : 'not_an_origin';
 }
 
 /**

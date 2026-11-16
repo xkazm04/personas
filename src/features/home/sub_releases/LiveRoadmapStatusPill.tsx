@@ -103,7 +103,7 @@ export function LiveRoadmapStatusPill({
     // 'unavailable': bundled snapshot, nothing to refresh against.
     source = (
       <span className="flex items-center gap-2">
-        <Package aria-hidden className="h-3.5 w-3.5 text-foreground" />
+        <Package aria-hidden className="h-3.5 w-3.5 text-ink-1" />
         <span className="typo-caption">{t.live.sourceFallback}</span>
       </span>
     );
@@ -111,7 +111,7 @@ export function LiveRoadmapStatusPill({
 
   const canRefresh = !!onRefresh && status !== 'unavailable';
   return (
-    <div className={`flex items-center gap-2 rounded-full border border-primary/10 bg-primary/5 py-0.5 pl-3 ${canRefresh ? 'pr-1' : 'pr-3'}`}>
+    <div className={`flex items-center gap-2 rounded-full border border-hair bg-surface-1 py-0.5 pl-3 ${canRefresh ? 'pr-1' : 'pr-3'}`}>
       {source}
       {canRefresh && (
         // The shared icon button is 28x28, above the 24x24 floor WCAG 2.2

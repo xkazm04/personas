@@ -7,6 +7,7 @@ import { categoryLabel, getCategoryMeta } from '../search/filters/searchConstant
 import { DIFFICULTY_META } from '../../shared/templateComplexity';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CompareColumn } from '../cards/buildComparison';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface CompareModalProps {
   isOpen: boolean;
@@ -115,10 +116,10 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
         if (!col.feasibility) return none;
         const cls =
           col.feasibility === 'ready'
-            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25'
+            ? 'bg-status-success/10 text-status-success border-status-success/25'
             : col.feasibility === 'partial'
-              ? 'bg-amber-500/10 text-amber-300 border-amber-500/25'
-              : 'bg-red-500/10 text-red-300 border-red-500/25';
+              ? 'bg-status-warning/10 text-status-warning border-status-warning/25'
+              : 'bg-status-error/10 text-status-error border-status-error/25';
         return (
           <span className={`inline-flex items-center px-2 py-0.5 typo-caption rounded-card border ${cls}`}>
             {t.templates.compare[`feasibility_${col.feasibility}`]}
@@ -137,7 +138,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
             {col.credentialGaps.map((name) => (
               <span
                 key={name}
-                className="inline-flex items-center px-1.5 py-0.5 typo-caption rounded-card border border-red-500/25 bg-red-500/10 text-red-300"
+                className="inline-flex items-center px-1.5 py-0.5 typo-caption text-status-error"
               >
                 {getConnectorMeta(name).label}
               </span>
@@ -155,7 +156,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId={TITLE_ID} size="6xl" portal staggerChildren={false}>
       <div className="flex flex-col max-h-[85vh]">
-        <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-primary/10 flex-shrink-0">
+        <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-hair flex-shrink-0">
           <div>
             <h2 id={TITLE_ID} className="typo-heading text-foreground">
               {t.templates.compare.title}
@@ -164,14 +165,15 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
               {tx(t.templates.compare.subtitle, { count: columns.length })}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label={t.common.close}
-            className="p-1.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors flex-shrink-0"
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="overflow-auto px-6 py-4">
@@ -185,26 +187,28 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                     {(onAdopt || onTryIt) && (
                       <div className="flex items-center gap-1.5 mt-2">
                         {onAdopt && (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => onAdopt(col.id)}
                             data-testid={`compare-adopt-${col.id}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-interactive bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+                            variant="ghost"
+                            size="xs"
+                            icon={<Download className="w-3 h-3" />}
                           >
-                            <Download className="w-3 h-3" />
                             {t.templates.actions.adopt}
-                          </button>
+                          </Button>
                         )}
                         {onTryIt && col.hasDesign && (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => onTryIt(col.id)}
                             data-testid={`compare-tryit-${col.id}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-interactive bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                            variant="ghost"
+                            size="xs"
+                            icon={<Play className="w-3 h-3" />}
                           >
-                            <Play className="w-3 h-3" />
                             {t.templates.actions.try_it}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     )}
@@ -216,12 +220,12 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
               {dimensions.map((dim) => {
                 const differs = columns.length >= 2 && new Set(columns.map(dim.signature)).size > 1;
                 return (
-                  <tr key={dim.label} className={`border-t border-primary/5 ${differs ? 'bg-amber-500/[0.05]' : ''}`}>
-                    <th scope="row" className="text-left align-top py-3 pr-3 typo-caption text-foreground uppercase tracking-wide">
+                  <tr key={dim.label} className={`border-t border-hair ${differs ? 'bg-amber-500/[0.05]' : ''}`}>
+                    <th scope="row" className="text-left align-top py-3 pr-3 typo-eyebrow text-foreground">
                       <span className="inline-flex items-center gap-1.5">
                         {differs && (
                           <Tooltip content={t.templates.compare.differs} placement="right">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-status-warning flex-shrink-0" />
                           </Tooltip>
                         )}
                         {dim.label}

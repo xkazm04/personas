@@ -18,14 +18,14 @@ const RoadmapLaneEmptyGlyph = lazyRetry(() => import('./RoadmapLaneEmptyGlyph'))
 const HORIZON_MARK: Record<ReleaseItemPriority, string> = {
   now: 'bg-role-highlight',
   next: 'border-2 border-role-highlight',
-  later: 'border-2 border-dashed border-foreground/40',
+  later: 'border-2 border-dashed border-hair-2',
 };
 
 export function RoadmapLane({ priority, items, enter, t }: { priority: ReleaseItemPriority; items: DisplayItem[]; enter: RevealTracker; t: ReleasesTranslation }) {
   const tone = PRIORITY_TONE[priority];
   return (
     <div className="flex flex-col gap-3">
-      <header className="flex items-center justify-between border-b border-primary/10 pb-2">
+      <header className="flex items-center justify-between border-b border-hair pb-2">
         <span className="flex items-center gap-2.5">
           <span aria-hidden className={`h-3 w-3 rounded-full ${HORIZON_MARK[priority]}`} />
           <h2 className={`typo-heading ${TONE_TEXT[tone]}`}>{t.priority[priority]}</h2>
@@ -33,7 +33,7 @@ export function RoadmapLane({ priority, items, enter, t }: { priority: ReleaseIt
         <span className={`rounded-full border px-2.5 typo-data ${TONE_CHIP[tone]}`}>{items.length}</span>
       </header>
       {items.length === 0 ? (
-        <div className="flex min-h-24 flex-col items-center justify-center gap-1 rounded-modal border border-dashed border-primary/10 p-3">
+        <div className="flex min-h-24 flex-col items-center justify-center gap-1 rounded-modal border border-dashed border-hair p-3">
           <Suspense fallback={<div className="h-12 w-12" />}>
             <RoadmapLaneEmptyGlyph />
           </Suspense>
@@ -43,10 +43,10 @@ export function RoadmapLane({ priority, items, enter, t }: { priority: ReleaseIt
         <div className="space-y-3">
           {items.map((item, index) => (
             <RevealItem key={item.id} revealId={item.id} order={index} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
-              <div className="relative overflow-hidden rounded-modal border border-primary/8 bg-gradient-to-br from-primary/3 to-transparent p-4 pl-5">
+              <div className="relative overflow-hidden rounded-modal border border-primary/8 bg-surface-1 p-4 pl-5">
                 <div aria-hidden className={`absolute inset-y-3 left-1.5 w-0.75 rounded-full ${ITEM_STATUS_RAIL[item.status]}`} />
                 <h3 className="typo-title">{item.title}</h3>
-                {item.description && <p className="typo-body mt-2 text-foreground">{item.description}</p>}
+                {item.description && <p className="typo-body mt-2 text-ink-2">{item.description}</p>}
               </div>
             </RevealItem>
           ))}

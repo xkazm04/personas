@@ -102,6 +102,6 @@
     "src-tauri/src/engine/process_session.rs": {"count":1,"sections":[6],"contexts":["integration through `engine/process_session.rs` is real and used."],"resolvedFrom":"suffix","verbatim":"engine/process_session.rs"},
     "src-tauri/src/engine/team_assignment_orchestrator.rs": {"count":3,"sections":[0,5],"lines":["538","1084"],"contexts":["(`engine/team_assignment_orchestrator.rs:538`) calls"],"resolvedFrom":"suffix","verbatim":"engine/team_assignment_orchestrator.rs"},
     "src/app/db/drivers/sqlite.driver.ts": {"count":1,"sections":[6],"lines":["112-118"],"contexts":["(`src/app/db/drivers/sqlite.driver.ts:112-118`); this repo does not. Not a"],"resolved":false},
-    "src/lib/bindings/TeamAssignmentStatus.ts": {"count":1,"sections":[0],"contexts":["to TypeScript (`src/lib/bindings/TeamAssignmentStatus.ts`). **Neither is"]}
+    "src/lib/bindings/TeamAssignmentStatus.ts": {"count":1,"sections":[0],"contexts":["to TypeScript (`src/lib/bindings/TeamAssignmentStatus.ts`). **Neither is"],"resolved":false}
   }
 }

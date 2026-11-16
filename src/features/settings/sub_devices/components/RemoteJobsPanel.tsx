@@ -8,6 +8,7 @@
  * running on the other machine advances here without the operator touching
  * anything.
  */
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 import { useMemo } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Radio } from 'lucide-react';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -22,6 +23,7 @@ import type { RemoteJobStatus } from '@/lib/bindings/RemoteJobStatus';
 import { useRemoteJobs } from '../lib/useRemoteJobs';
 import { RemoteJobDetail } from './RemoteJobDetail';
 import { RemoteInstructionComposer } from './RemoteInstructionComposer';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Status → StatusDot severity. `refused` and `cancelled` are warnings rather
@@ -38,10 +40,14 @@ const STATUS_STATE: Record<RemoteJobStatus, 'live' | 'paused' | 'offline'> = {
   cancelled: 'offline',
 };
 
-export function RemoteJobsPanel() {
+/**
+ * `peerId` = one paired PC's view (the device drawer): the history narrows to its jobs, the
+ * composer targets it, and the device column and cross-PC direction filter are hidden.
+ */
+export function RemoteJobsPanel({ peerId }: { peerId?: string } = {}) {
   const { t } = useTranslation();
   const st = t.sharing;
-  const jobs = useRemoteJobs();
+  const jobs = useRemoteJobs(peerId);
   const { selectedId, selectedJob, toggleSelected } = jobs;
 
   const columns: TableColumn<RemoteJob>[] = useMemo(
@@ -68,7 +74,7 @@ export function RemoteJobsPanel() {
             {row.direction === 'outbound' ? (
               <ArrowUpRight className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
             ) : (
-              <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400 shrink-0" aria-hidden />
+              <ArrowDownLeft className="w-3.5 h-3.5 text-role-highlight shrink-0" aria-hidden />
             )}
             {row.direction === 'outbound' ? st.direction_outbound : st.direction_inbound}
           </span>
@@ -83,7 +89,7 @@ export function RemoteJobsPanel() {
             <Badge variant={row.kind === 'fleet_session' ? 'sky' : 'neutral'} size="xs" className="flex-shrink-0">
               {row.kind === 'fleet_session' ? st.job_kind_fleet_session : st.job_kind_instruction}
             </Badge>
-            <span className="typo-caption text-foreground/90 truncate" title={row.instruction}>{row.instruction}</span>
+            <Tooltip content={row.instruction}><span className="typo-caption text-ink-1 truncate">{row.instruction}</span></Tooltip>
           </span>
         ),
       },
@@ -111,22 +117,23 @@ export function RemoteJobsPanel() {
     ],
     [t, st],
   );
+  const shownColumns = peerId ? columns.filter((c) => c.key !== 'device') : columns;
 
   return (
     <SectionCard
-      title={st.remote_jobs_title}
-      subtitle={st.remote_jobs_subtitle}
-      icon={<Radio className="w-4 h-4 text-cyan-400" />}
-      titleClassName="text-primary"
+      title={peerId ? st.remote_jobs_for_pc_title : st.remote_jobs_title}
+      subtitle={peerId ? st.remote_jobs_for_pc_subtitle : st.remote_jobs_subtitle}
+      icon={<Radio className="w-4 h-4 text-ink-2" />}
+      titleClassName="text-ink-1"
       action={
-        <RemoteJobDirectionFilter value={jobs.direction} onChange={jobs.setDirection} />
+        peerId ? undefined : <RemoteJobDirectionFilter value={jobs.direction} onChange={jobs.setDirection} />
       }
     >
-      <RemoteInstructionComposer />
+      <RemoteInstructionComposer peerId={peerId} />
 
       <div data-testid="remote-jobs" className="mt-3">
         <UnifiedTable
-          columns={columns}
+          columns={shownColumns}
           data={jobs.jobs}
           getRowKey={(row) => row.id}
           isLoading={jobs.isLoading}
@@ -170,24 +177,12 @@ function RemoteJobDirectionFilter({
       role="radiogroup"
       aria-label={st.col_job_direction}
       data-testid="remote-jobs-direction-filter"
-      className="inline-flex rounded-interactive border border-primary/15 overflow-hidden"
+      className="inline-flex rounded-interactive border border-hair overflow-hidden"
     >
       {options.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          role="radio"
-          aria-checked={value === opt.id}
-          data-testid={`remote-jobs-direction-${opt.id}`}
-          onClick={() => onChange(opt.id)}
-          className={`px-2.5 py-1 typo-caption transition-colors focus-ring ${
-            value === opt.id
-              ? 'bg-primary/15 text-primary'
-              : 'text-foreground hover:bg-secondary/50'
-          }`}
-        >
+        <OptionChip key={opt.id} role="radio" selected={value === opt.id} data-testid={`remote-jobs-direction-${opt.id}`} onSelect={() => onChange(opt.id)}>
           {opt.label}
-        </button>
+        </OptionChip>
       ))}
     </div>
   );

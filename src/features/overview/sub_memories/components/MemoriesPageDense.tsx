@@ -5,6 +5,7 @@
 // is biased toward information density per pixel — minimal vertical
 // padding, mono-font numerics, persistent column sort affordance.
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -88,8 +89,8 @@ const SORT_HEADER_PADDING = 'px-2 py-2';
 const UNMEASURED = '—';
 
 const TIER_TONE: Record<string, string> = {
-  core: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
-  active: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25',
+  core: 'bg-status-warning/15 text-status-warning border-status-warning/25',
+  active: 'bg-role-highlight/15 text-role-highlight border-role-highlight/25',
   archive: 'bg-foreground/10 text-foreground border-foreground/15',
 };
 
@@ -308,29 +309,32 @@ export default function MemoriesPageDense() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Brain className="w-5 h-5 text-violet-400" />}
+        icon={<Brain className="w-5 h-5 text-role-agent" />}
         iconColor="violet"
         title={t.overview.memories.title}
         subtitle={tx(memoriesTotal === 1 ? mui.stored_subtitle_one : mui.stored_subtitle, { count: memoriesTotal })}
         actions={
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant={viewTab === 'memories' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={viewTab === 'memories'}
               onClick={() => setViewTab('memories')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'memories' ? 'bg-primary/10 text-foreground border border-primary/20' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
+              icon={<Brain className="w-4 h-4" />}
             >
-              <Brain className="w-4 h-4" />
-              <span className="typo-body">{mui.tab_memories}</span>
-            </button>
-            <button
-              type="button"
+              {mui.tab_memories}
+            </Button>
+            <Button
+              variant={viewTab === 'conflicts' ? 'accent' : 'ghost'}
+              tone={viewTab === 'conflicts' ? 'warning' : undefined}
+              size="sm"
+              aria-pressed={viewTab === 'conflicts'}
               onClick={() => setViewTab('conflicts')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'conflicts' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
+              icon={<Shield className="w-4 h-4" />}
             >
-              <Shield className="w-4 h-4" />
-              <span className="typo-body">{mui.tab_conflicts}</span>
-            </button>
-            <div className="w-px h-6 bg-primary/10" />
+              {mui.tab_conflicts}
+            </Button>
+            <div className="w-px h-6 bg-hair" />
             {/* `Button loading` renders a REAL spinner and sets aria-busy.
                 What stood here rendered the null-returning feedback spinner in
                 place of the icon, so pressing Review deleted the icon and put
@@ -362,39 +366,44 @@ export default function MemoriesPageDense() {
                 onClick={() => setReflectMenuOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={reflectMenuOpen}
-                title={t.overview.memories.reflect_hint}
+                tooltip={t.overview.memories.reflect_hint}
               >
                 {t.overview.memories.reflect}
               </Button>
               {reflectMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-primary/20 bg-background shadow-elevation-3 p-1">
-                  <p className="px-2 py-1.5 typo-caption text-foreground">{t.overview.memories.reflect_pick_persona}</p>
+                <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-hair bg-background shadow-elevation-3 p-1">
+                  <p className="px-2 py-1.5 typo-eyebrow text-ink-3">{t.overview.memories.reflect_pick_persona}</p>
                   {reflectablePersonas.map((p) => (
-                    <button
-                      type="button"
-                      key={p.id}
-                      onClick={() => handleReflect(p.id)}
-                      className="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded-card typo-body text-foreground/90 hover:bg-secondary/50 transition-colors"
-                    >
+                    <PressSurface className="w-full flex items-center justify-between gap-3 px-2 min-h-[var(--row-h)] rounded-interactive typo-body text-ink-2" key={p.id} onPress={() => handleReflect(p.id)}>
                       <span className="truncate">{p.name}</span>
-                      <span className="typo-caption text-foreground flex-shrink-0">{p.count}</span>
-                    </button>
+                      <span className="typo-data text-ink-3 flex-shrink-0">{p.count}</span>
+                    </PressSurface>
                   ))}
                 </div>
               )}
             </div>
-            <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
-              <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
+            <Button
+              variant={showAddForm ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={() => setShowAddForm((v) => !v)}
+              icon={<Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />}
+            >
               {t.common.add}
-            </button>
+            </Button>
             {memories.length > 0 && (
-              <button type="button" onClick={() => {
-                countDeletableMemories()
-                  .then((n) => { setDeleteAllCount(n); setConfirmingDeleteAll(true); })
-                  .catch(toastCatch('MemoriesPageDense:deleteAllCount', mui.delete_all_error));
-              }} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
+              <Button
+                variant="danger"
+                size="icon-sm"
+                tooltip={t.overview.memories.delete_all}
+                aria-label={t.overview.memories.delete_all}
+                onClick={() => {
+                  countDeletableMemories()
+                    .then((n) => { setDeleteAllCount(n); setConfirmingDeleteAll(true); })
+                    .catch(toastCatch('MemoriesPageDense:deleteAllCount', mui.delete_all_error));
+                }}
+              >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             )}
           </div>
         }
@@ -413,12 +422,12 @@ export default function MemoriesPageDense() {
       ) : (
       <ContentBody flex>
         {/* Numeric KPI strip — borrows the personas-web "TopMetric | Divider" pattern */}
-        <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-hair flex-shrink-0">
           {stats && (
             <div className="flex items-center gap-3 typo-body flex-wrap">
               <KpiMetric label={mui.kpi_total} value={stats.total} />
               <KpiDivider />
-              <KpiMetric label={mui.kpi_avg_importance} value={stats.avgImportance.toFixed(1)} tone="text-amber-300" />
+              <KpiMetric label={mui.kpi_avg_importance} value={stats.avgImportance.toFixed(1)} tone="text-status-warning" />
               <KpiDivider />
               {/* An "Archive" tile stood here and could only ever read 0: the
                   list was fetched with the store's default `!archive` tier
@@ -427,11 +436,11 @@ export default function MemoriesPageDense() {
                   incapable of a non-zero value is not a measurement. The tier
                   select below now reaches the archive; the tile stays gone
                   because these counts are page-scoped, not store-scoped. */}
-              <KpiMetric label={tokenLabel(t, 'memory_tier', 'core')} value={stats.complete ? stats.core : UNMEASURED} tone="text-amber-300" />
+              <KpiMetric label={tokenLabel(t, 'memory_tier', 'core')} value={stats.complete ? stats.core : UNMEASURED} tone="text-status-warning" />
               <KpiDivider />
-              <KpiMetric label={tokenLabel(t, 'memory_tier', 'active')} value={stats.complete ? stats.active : UNMEASURED} tone="text-cyan-300" />
+              <KpiMetric label={tokenLabel(t, 'memory_tier', 'active')} value={stats.complete ? stats.active : UNMEASURED} tone="text-role-highlight" />
               <KpiDivider />
-              <KpiMetric label={mui.kpi_total_access} value={stats.complete ? stats.totalAccess.toLocaleString() : UNMEASURED} tone="text-emerald-300" />
+              <KpiMetric label={mui.kpi_total_access} value={stats.complete ? stats.totalAccess.toLocaleString() : UNMEASURED} tone="text-status-success" />
             </div>
           )}
 
@@ -443,13 +452,13 @@ export default function MemoriesPageDense() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={debtText("auto_filter_ac323104")}
-              className="w-44 pl-8 pr-2.5 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30"
+              className="w-44 pl-8 pr-2.5 py-1.5 typo-body rounded-card bg-surface-1 border border-hair text-foreground placeholder:text-ink-3 focus:outline-none focus:border-hair"
             />
           </div>
         </div>
 
         {/* Category pill bar — toggle filters */}
-        <div className="flex items-center gap-1.5 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap px-4 md:px-6 py-2 border-b border-hair flex-shrink-0">
           <ThemedSelect
             value={personaFilter ?? ''}
             onChange={(e) => setPersonaFilter(e.target.value || null)}
@@ -471,33 +480,30 @@ export default function MemoriesPageDense() {
             <option value="working">{t.overview.memory_filter.tier_working}</option>
             <option value="archive">{t.overview.memory_filter.tier_archived}</option>
           </ThemedSelect>
-          <span className="typo-label text-foreground mr-1">{mui.category_label}</span>
+          <span className="typo-eyebrow text-ink-3 mr-1">{mui.category_label}</span>
           {ALL_MEMORY_CATEGORIES.map((cat) => {
             const colors = MEMORY_CATEGORY_COLORS[cat]!;
             const active = categoryFilters.has(cat);
             return (
-              <button
-                type="button"
+              <Button
                 key={cat}
+                variant={active ? 'secondary' : 'ghost'}
+                size="xs"
+                aria-pressed={active}
                 onClick={() => toggleCategory(cat)}
-                className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body transition-all border ${
-                  active
-                    ? `${colors.bg} ${colors.text} border-current/30`
-                    : 'text-foreground hover:text-foreground hover:bg-secondary/30 border-transparent'
-                }`}
               >
                 {colors.label}
-              </button>
+              </Button>
             );
           })}
           {hasActiveFilters && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={() => { setCategoryFilters(new Set()); setPersonaFilter(null); setTierFilter(null); setSearch(''); }}
-              className="typo-body text-foreground hover:text-foreground px-2 py-1"
             >
               {t.common.clear}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -515,8 +521,8 @@ export default function MemoriesPageDense() {
               this one) and gives the button a "Sorted by X, ascending. Activate
               to sort descending." label. role="row" on the container mirrors the
               sibling faux tables (GlobalExecutionList, ReportList). */}
-          <div role="row" className="flex items-center border-b border-primary/10 bg-background/80 flex-shrink-0 relative z-10">
-            <div role="columnheader" className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-caption font-mono uppercase tracking-widest text-foreground`}>{mui.col_type}</div>
+          <div role="row" className="flex items-center border-b border-hair bg-background/80 flex-shrink-0 relative z-10">
+            <div role="columnheader" className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-eyebrow text-ink-2`}>{mui.col_type}</div>
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.title} label={t.overview.memory_detail.title_label} active={sortField === 'title'} dir={sortDir} onSort={() => handleSort('title')} align="left" />
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.persona} label={t.overview.reports.columns.persona} active={sortField === 'persona'} dir={sortDir} onSort={() => handleSort('persona')} align="left" />
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.importance} label={t.overview.memory_detail.importance_label} active={sortField === 'importance'} dir={sortDir} onSort={() => handleSort('importance')} align="left" />
@@ -569,14 +575,15 @@ export default function MemoriesPageDense() {
                 />
               ))}
               {hasMore && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  block
                   onClick={() => void handleLoadMore()}
                   disabled={loadingMore}
-                  className="w-full py-2 typo-caption text-primary/80 hover:text-primary transition-colors disabled:opacity-50 focus-ring rounded-interactive"
                 >
                   {loadingMore ? t.common.loading : t.overview.activity.load_more}
-                </button>
+                </Button>
               )}
               </>
             )}
@@ -630,7 +637,7 @@ export default function MemoriesPageDense() {
 
 // -- Cells & helpers -------------------------------------------------------
 
-const DENSE_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const DENSE_GHOST_BAR = 'rounded-interactive bg-surface-2';
 /** Deterministic width variation so ghosts read as rows, not a barcode. */
 const DENSE_GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 const DENSE_ROW_HEIGHT = 40;
@@ -649,7 +656,7 @@ function DenseGhostRows() {
         return (
           <div
             key={i}
-            className="flex items-center border-b border-primary/5 animate-fade-in"
+            className="flex items-center border-b border-hair animate-fade-in"
             style={{ height: DENSE_ROW_HEIGHT, animationDelay: delay }}
           >
             <div className={`${COL_WIDTHS.type} flex justify-center px-2`}>
@@ -719,9 +726,9 @@ function DenseRow({
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
-      className={`group flex items-center w-full text-left cursor-pointer transition-colors duration-150 border-b border-primary/5 ${
-        index % 2 === 0 ? 'bg-transparent' : 'bg-secondary/[0.03]'
-      } ${isSelected ? 'bg-primary/[0.08] ring-1 ring-primary/25 ring-inset' : 'hover:bg-secondary/[0.06]'}`}
+      className={`group flex items-center w-full text-left cursor-pointer transition-colors duration-150 border-b border-hair ${
+        index % 2 === 0 ? 'bg-transparent' : 'bg-surface-1'
+      } ${isSelected ? 'bg-primary/[0.08] ring-1 ring-primary/25 ring-inset' : 'hover:bg-surface-2'}`}
     >
       <div className={`${COL_WIDTHS.type} flex justify-center px-2 py-2`}>
         <CategoryChip category={memory.category} className="!px-1.5" label="" />
@@ -738,7 +745,7 @@ function DenseRow({
           <div className="flex-1 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${importancePct}%`, backgroundColor: importanceHex }} />
           </div>
-          <span className="typo-code tabular-nums text-foreground w-7 text-right">{memory.importance}/5</span>
+          <span className="typo-data text-ink-2 w-7 text-right">{memory.importance}/5</span>
         </div>
       </div>
       <div className={`${COL_WIDTHS.tier} px-2 py-2`}>
@@ -751,7 +758,7 @@ function DenseRow({
         </span>
       </div>
       <div className={`${COL_WIDTHS.access} px-2 py-2 text-right`}>
-        <span className="typo-code tabular-nums text-emerald-300">{memory.access_count}</span>
+        <span className="typo-data text-status-success">{memory.access_count}</span>
       </div>
       {/* A hand-rolled " ago" strip stood here to squeeze the label into a
           w-20 track, and it trimmed inconsistently: "5m ago" became "5m" but
@@ -762,10 +769,10 @@ function DenseRow({
           live-updates on the shared ticker and puts the absolute timestamp in
           a tooltip, neither of which the raw call did. */}
       <div className={`${COL_WIDTHS.lastSeen} px-2 py-2 text-right`}>
-        <RelativeTime timestamp={lastSeen} className="typo-code tabular-nums text-foreground whitespace-nowrap" />
+        <RelativeTime timestamp={lastSeen} className="typo-data text-ink-2 whitespace-nowrap" />
       </div>
       <div className={`${COL_WIDTHS.created} px-2 py-2 text-right`}>
-        <RelativeTime timestamp={memory.created_at} className="typo-code tabular-nums text-foreground whitespace-nowrap" />
+        <RelativeTime timestamp={memory.created_at} className="typo-data text-ink-2 whitespace-nowrap" />
       </div>
     </RevealItem>
   );

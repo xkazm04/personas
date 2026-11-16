@@ -10,7 +10,9 @@
 // the width buys the title room it was losing to truncation. Header cells
 // align over the same grid so columns scan top-to-bottom.
 
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
 import { severityBadgeClass, sourceTableIcon, sourceTableLabel } from '../../libs/incidentTaxonomy';
@@ -23,7 +25,7 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
   const { t } = useTranslation();
   const l = t.overview.incidents.ledger;
   const H = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
-    <span className={`typo-caption font-mono uppercase tracking-widest text-foreground ${right ? 'text-right' : ''}`}>{children}</span>
+    <span className={`typo-eyebrow text-ink-2 ${right ? 'text-right' : ''}`}>{children}</span>
   );
   return (
     <AutonomousLogFrame
@@ -32,12 +34,12 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
       rowHeight={40}
       header={
         <>
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10">
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-hair">
             <ShieldCheck className="h-4 w-4 text-status-success" aria-hidden="true" />
             <h3 className="typo-heading text-foreground">{t.overview.incidents.noc_handled_title}</h3>
             <AthenaComposedBadge variant="handled" label={t.overview.incidents.noc_handled_by} />
           </div>
-          <div className="sticky top-0 z-10 grid items-center gap-3 border-b border-primary/10 bg-background/95 px-4 py-1.5" style={{ gridTemplateColumns: GRID }} role="row">
+          <div className="sticky top-0 z-10 grid items-center gap-3 border-b border-hair bg-background/95 px-4 py-1.5" style={{ gridTemplateColumns: GRID }} role="row">
             <H right>{l.col_resumed}</H><span /><H>{t.overview.incidents.col_incident}</H><H>{t.overview.incidents.filter_persona_label}</H><span />
           </div>
         </>
@@ -46,16 +48,16 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
         const SourceIcon = sourceTableIcon(inc.sourceTable);
         const latency = resumeLatencyLabel(inc);
         return (
-          <button type="button" onClick={() => props.onOpenIncident(inc)} style={{ gridTemplateColumns: GRID }}
-            className={`group grid w-full items-center gap-3 border-b border-b-primary/[0.06] px-4 py-2 text-left transition-colors hover:bg-secondary/25 focus-ring ${index % 2 === 1 ? 'bg-primary/[0.02]' : ''}`}>
+          <PressSurface onPress={() => props.onOpenIncident(inc)} style={{ gridTemplateColumns: GRID }}
+            className={`group grid w-full items-center gap-3 border-b border-b-primary/[0.06] px-4 py-2   hover:bg-secondary/25  ${index % 2 === 1 ? 'bg-primary/[0.02]' : ''}`}>
             <span className="text-right typo-data text-status-success">{latency ?? '—'}</span>
-            <span className={`flex h-7 w-7 items-center justify-center rounded-card border ${severityBadgeClass(inc.severity)}`} title={sourceTableLabel(t, inc.sourceTable)}>
+            <Tooltip content={sourceTableLabel(t, inc.sourceTable)}><span className={`flex h-7 w-7 items-center justify-center rounded-card border ${severityBadgeClass(inc.severity)}`}>
               <SourceIcon className="h-3.5 w-3.5" />
-            </span>
-            <span className="truncate typo-body text-foreground" title={inc.title}>{inc.title}</span>
+            </span></Tooltip>
+            <Tooltip content={inc.title}><span className="truncate typo-body text-foreground">{inc.title}</span></Tooltip>
             <span className="truncate typo-body text-foreground">{inc.personaName ?? '—'}</span>
-            <ArrowUpRight className="h-3.5 w-3.5 justify-self-end text-foreground/40 transition-colors group-hover:text-primary" aria-label={l.open_incident} />
-          </button>
+            <ArrowUpRight className="h-3.5 w-3.5 justify-self-end text-ink-3 transition-colors group-hover:text-primary" aria-label={l.open_incident} />
+          </PressSurface>
         );
       }}
     />

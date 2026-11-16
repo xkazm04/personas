@@ -11,7 +11,7 @@
  * The outcome is said inline (`result`, read by an always-mounted live line);
  * a failure keeps the field open with what was typed.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { setLifecycleStepParams } from '@/api/devTools/lifecycle';
 import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
@@ -44,6 +44,8 @@ export function useBudgetEdit(step: LifecycleStep, runs: LifecycleRun[]) {
   const [text, setText] = useState('');
   const [invalid, setInvalid] = useState(false);
   const [saving, setSaving] = useState(false);
+  // In-flight guard: a second Enter/click while the save is pending would append a duplicate practice version.
+  const savingRef = useRef(false);
   const [result, setResult] = useState<EditorResult | null>(null);
   const base = step.params.commands ?? seenInRuns(runs);
 
@@ -60,6 +62,7 @@ export function useBudgetEdit(step: LifecycleStep, runs: LifecycleRun[]) {
   const cancel = useCallback(() => { setEditing(null); setInvalid(false); }, []);
 
   const save = async (commandId: string, command: string) => {
+    if (savingRef.current) return;
     const budgetMs = parseBudgetSeconds(text);
     if (budgetMs === undefined) {
       setInvalid(true);
@@ -67,6 +70,7 @@ export function useBudgetEdit(step: LifecycleStep, runs: LifecycleRun[]) {
     }
     const commands = withBudget(base, commandId, budgetMs);
     if (!projectId || !commands) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       await setLifecycleStepParams(projectId, step.id, { ...step.params, commands });
@@ -81,6 +85,7 @@ export function useBudgetEdit(step: LifecycleStep, runs: LifecycleRun[]) {
       silentCatch('lifecycle:setBudget')(err);
       setResult({ tone: 'error', text: errorText(err) });
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };

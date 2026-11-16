@@ -1,5 +1,6 @@
 // Declaring or editing one branch. The floor only appears for `must_hold`,
 // because it is the only scope a floor can fail.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 
@@ -67,7 +68,7 @@ export function ScenarioForm({ useCaseId, scenario, onSubmit, onClose, t, tCommo
               {...input}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-input border border-border bg-secondary/40 px-2.5 py-1.5 typo-body text-foreground outline-none focus-ring"
+              className="w-full rounded-input border border-border bg-surface-1 px-2.5 py-1.5 typo-body text-foreground outline-none focus-ring"
             />
           )}
         </FormField>
@@ -83,14 +84,14 @@ export function ScenarioForm({ useCaseId, scenario, onSubmit, onClose, t, tCommo
                   aria-label={t.field_axis_name}
                   placeholder={t.field_axis_name}
                   onChange={(e) => setAxes((prev) => prev.map((r, k) => (k === i ? { ...r, key: e.target.value } : r)))}
-                  className="min-w-0 flex-1 rounded-input border border-border bg-secondary/40 px-2 py-1 typo-body text-foreground outline-none focus-ring"
+                  className="min-w-0 flex-1 rounded-input border border-border bg-surface-1 px-2 py-1 typo-body text-foreground outline-none focus-ring"
                 />
                 <input
                   value={row.value}
                   aria-label={t.field_axis_value}
                   placeholder={t.field_axis_value}
                   onChange={(e) => setAxes((prev) => prev.map((r, k) => (k === i ? { ...r, value: e.target.value } : r)))}
-                  className="min-w-0 flex-1 rounded-input border border-border bg-secondary/40 px-2 py-1 typo-body text-foreground outline-none focus-ring"
+                  className="min-w-0 flex-1 rounded-input border border-border bg-surface-1 px-2 py-1 typo-body text-foreground outline-none focus-ring"
                 />
                 <Button
                   variant="ghost"
@@ -127,15 +128,14 @@ export function ScenarioForm({ useCaseId, scenario, onSubmit, onClose, t, tCommo
               <ul role="presentation">
                 {SCENARIO_SCOPES.map((option) => (
                   <li key={option} role="presentation">
-                    <button
-                      type="button"
+                    <PressSurface
                       role="option"
                       aria-selected={option === scope}
-                      onClick={() => { setScope(option); close(); }}
-                      className="w-full rounded-interactive px-2 py-1.5 text-left typo-body text-foreground hover:bg-secondary/60 focus-ring"
+                      onPress={() => { setScope(option); close(); }}
+                      className="w-full rounded-interactive px-2 py-1.5 typo-body text-foreground"
                     >
                       {scopeLabel(option, t)}
-                    </button>
+                    </PressSurface>
                   </li>
                 ))}
               </ul>
@@ -154,7 +154,7 @@ export function ScenarioForm({ useCaseId, scenario, onSubmit, onClose, t, tCommo
                 max="1"
                 value={floor}
                 onChange={(e) => setFloor(e.target.value)}
-                className="w-28 rounded-input border border-border bg-secondary/40 px-2.5 py-1.5 typo-body text-foreground outline-none focus-ring"
+                className="w-28 rounded-input border border-border bg-surface-1 px-2.5 py-1.5 typo-body text-foreground outline-none focus-ring"
               />
             )}
           </FormField>

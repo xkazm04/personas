@@ -117,7 +117,7 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
         {/* header — with a sigil preview built from the recipe's own icon/color */}
         <div className="flex items-start gap-3">
           <span
-            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-lg"
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 typo-heading-lg"
             style={{ background: `radial-gradient(circle at 50% 35%, ${colorWithAlpha(sigilColor, 0.32)}, transparent 72%)`, border: `1px solid ${colorWithAlpha(sigilColor, 0.5)}` }}
             aria-hidden
           >
@@ -132,7 +132,7 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
 
         {error ? (
           <div className="py-8 flex flex-col items-center gap-3 text-center" data-testid="recipe-alternative-error">
-            <span className="typo-body text-foreground">{ga.glyph_recipe_alt_load_failed}</span>
+            <span className="typo-body text-ink-1">{ga.glyph_recipe_alt_load_failed}</span>
             <Button variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)} data-testid="recipe-alternative-retry">
               {t.common.retry}
             </Button>
@@ -144,18 +144,18 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
           </div>
         ) : (
           <>
-            {recipe.description && <p className="typo-body text-foreground">{recipe.description}</p>}
+            {recipe.description && <p className="typo-body text-ink-1">{recipe.description}</p>}
 
             {connectors.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <span className="typo-label text-foreground">{ga.glyph_recipe_alt_connections}</span>
+                <span className="typo-label text-ink-1">{ga.glyph_recipe_alt_connections}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {connectors.map((name) => {
                     const meta = getConnectorMeta(name);
                     return (
                       <span key={name} className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border" style={{ borderColor: colorWithAlpha(meta.color, 0.4), background: colorWithAlpha(meta.color, 0.12) }}>
                         <span className="w-4 h-4 rounded-full flex items-center justify-center"><ConnectorIcon meta={meta} /></span>
-                        <span className="typo-caption text-foreground">{meta.label}</span>
+                        <span className="typo-caption text-ink-2">{meta.label}</span>
                       </span>
                     );
                   })}
@@ -170,13 +170,13 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
                 </span>
               )}
               {tags.map((tag) => (
-                <span key={tag} className="typo-caption px-2 py-0.5 rounded-full bg-foreground/[0.06]">{tag}</span>
+                <span key={tag} className="inline-flex items-center typo-caption">{tag}</span>
               ))}
             </div>
 
             {dimensions.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <span className="typo-label text-foreground">{tx(ga.glyph_recipe_alt_dimensions, { count: dimensions.length })}</span>
+                <span className="typo-label text-ink-1">{tx(ga.glyph_recipe_alt_dimensions, { count: dimensions.length })}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {dimensions.map((d) => (
                     <span key={d} className="typo-caption px-2.5 py-1 rounded-full border capitalize" style={{ borderColor: colorWithAlpha(sigilColor, 0.3), background: colorWithAlpha(sigilColor, 0.08), color: "var(--color-foreground)" }}>{d}</span>

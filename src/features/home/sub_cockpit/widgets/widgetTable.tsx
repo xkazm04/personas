@@ -67,7 +67,7 @@ const TONE_TEXT: Record<Tone, string> = {
   error: 'text-status-error',
   info: 'text-status-info',
   pending: 'text-status-warning',
-  neutral: 'text-foreground',
+  neutral: 'text-ink-1',
   agent: 'text-role-agent',
   human: 'text-role-human',
   external: 'text-role-external',
@@ -93,7 +93,7 @@ export function Cell({ value, hint, tone, data, strong }: {
   strong?: boolean;
 }) {
   if (value == null || value === '') return null;
-  const ink = tone ? TONE_TEXT[tone] : 'text-foreground';
+  const ink = tone ? TONE_TEXT[tone] : 'text-ink-1';
   const adds = hint && hint !== (typeof value === 'string' ? value : null) ? hint : null;
   const node = (
     // A kit weight class, not `font-medium`: `typo-token-overpainted` does not count the kit's own

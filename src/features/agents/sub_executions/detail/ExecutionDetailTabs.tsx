@@ -2,6 +2,7 @@ import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { ListTree, Search, Activity, Zap, Play, Compass, Link2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { isTerminalState } from '@/lib/execution/executionState';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 export type DetailTab = 'detail' | 'director' | 'inspector' | 'trace' | 'pipeline' | 'replay' | 'chain';
 
@@ -39,15 +40,6 @@ interface TabDescriptor {
 export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, hasDirectorReview, hasPipeline, hasChain, executionStatus, idScope }: ExecutionDetailTabsProps) {
   const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
-
-  const tabClass = (tab: DetailTab, special?: boolean) =>
-    `flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${
-      activeTab === tab
-        ? special
-          ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
-          : 'bg-primary/15 text-foreground/90 border border-primary/30'
-        : 'text-foreground hover:text-foreground/95 border border-transparent'
-    }`;
 
   // Only the tabs that are actually rendered take part in arrow-key navigation.
   const tabs: TabDescriptor[] = [
@@ -95,12 +87,11 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
       ref={listRef}
       role="tablist"
       onKeyDown={handleKeyDown}
-      className="flex gap-1 p-1 rounded-modal bg-secondary/40 border border-primary/10 w-fit"
+      className="flex gap-1 p-1 rounded-modal bg-surface-2 border border-hair w-fit"
     >
       {tabs.map((tab) => (
-        <button
+        <OptionChip
           key={tab.id}
-          type="button"
           role="tab"
           id={tabButtonId(idScope, tab.id)}
           // A tablist whose tabs control nothing is an incomplete widget: a
@@ -108,15 +99,16 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
           // selected. The panel carries the matching id + aria-labelledby.
           aria-controls={tabPanelId(idScope)}
           data-tab-id={tab.id}
-          aria-selected={activeTab === tab.id}
+          selected={activeTab === tab.id}
           // Roving tabindex: the tab strip is a single tab stop, arrows move within it.
           tabIndex={activeTab === tab.id ? 0 : -1}
-          onClick={() => setActiveTab(tab.id)}
-          className={tabClass(tab.id, tab.special)}
+          onSelect={() => setActiveTab(tab.id)}
+          icon={tab.icon}
+          tone={tab.special ? 'info' : 'neutral'}
         >
           {tab.icon}
           {tab.label}
-        </button>
+        </OptionChip>
       ))}
     </div>
   );

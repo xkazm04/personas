@@ -30,6 +30,9 @@ import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 export default function SetupPanel() {
   const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
@@ -212,62 +215,55 @@ export default function SetupPanel() {
           {obsidianConnected && activeVaultPath && (
             <div
               data-testid="obsidian-active-vault"
-              className="flex items-start gap-3 px-4 py-3 rounded-modal border bg-emerald-500/5 border-emerald-500/20"
+              className="flex items-start gap-3 px-4 py-3 rounded-modal border bg-status-success/5 border-status-success/20"
             >
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-status-success flex-shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <p className="typo-heading text-emerald-400">
+                <p className="typo-heading text-status-success">
                   {tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${activeVaultName ?? activeVaultPath}”` })}
                 </p>
-                <p className="typo-caption text-foreground truncate">{activeVaultPath}</p>
+                <p className="typo-caption text-ink-2 truncate">{activeVaultPath}</p>
               </div>
             </div>
           )}
 
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={detectVaults}
               disabled={detecting}
               data-testid="obsidian-detect-vaults"
-              className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 focus-ring"
+              variant="secondary"
+              size="sm"
             >
               {detecting ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
               {detecting ? t.plugins.obsidian_brain.detecting : t.plugins.obsidian_brain.auto_detect}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={browseFolder}
-              className="flex items-center gap-2 px-4 py-2 rounded-card bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+              variant="ghost"
+              size="sm"
             >
               <FolderOpen className="w-4 h-4" />
               {t.plugins.obsidian_brain.browse_button}
-            </button>
+            </Button>
           </div>
 
           {/* Detected vaults */}
           {visibleDetectedVaults.length > 0 && (
             <div className="space-y-1.5">
-              <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.detected_vaults}</p>
+              <p className="typo-label text-ink-2">{t.plugins.obsidian_brain.detected_vaults}</p>
               {visibleDetectedVaults.map((v) => (
-                <button
-                  type="button"
-                  key={v.path}
-                  onClick={() => { setVaultPath(v.path); setConnectionResult(null); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-modal border transition-colors focus-ring ${
-                    vaultPath === v.path
-                      ? 'border-violet-500/30 bg-violet-500/5'
-                      : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
-                  }`}
-                >
+                <PressSurface key={v.path} onPress={() => { setVaultPath(v.path); setConnectionResult(null); }} className="w-full px-3 py-2.5 rounded-modal border border-hair" selected={vaultPath === v.path}>
                   <div className="flex items-center gap-2.5">
                     <ActivityDot tone={vaultPath === v.path ? 'active' : 'off'} />
                     <div className="min-w-0">
                       <p className="typo-heading typo-card-label truncate">{v.name}</p>
-                      <p className="typo-caption text-foreground truncate">{v.path}</p>
+                      <p className="typo-caption text-ink-2 truncate">{v.path}</p>
                     </div>
                   </div>
-                </button>
+                </PressSurface>
               ))}
             </div>
           )}
@@ -281,40 +277,41 @@ export default function SetupPanel() {
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
               aria-label={t.plugins.obsidian_brain.vault_path_placeholder}
               data-testid="obsidian-vault-path-input"
-              className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
+              className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all"
             />
-            <button
+            <Button
               type="button"
               onClick={testConnection}
               disabled={!vaultPath || testing}
               data-testid="obsidian-test-connection"
-              className="flex items-center gap-2 px-4 py-2 rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 focus-ring"
+              variant="secondary"
+              size="sm"
             >
               {testing ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="w-4 h-4" />}
               {t.plugins.obsidian_brain.test}
-            </button>
+            </Button>
           </div>
 
           {/* Connection result */}
           {connectionResult && (
             <div className={`flex items-start gap-3 px-4 py-3 rounded-modal border ${
               connectionResult.valid
-                ? 'bg-emerald-500/5 border-emerald-500/20'
-                : 'bg-red-500/5 border-red-500/20'
+                ? 'bg-status-success/5 border-status-success/20'
+                : 'bg-status-error/5 border-status-error/20'
             }`}>
               {connectionResult.valid ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-status-success flex-shrink-0 mt-0.5" />
               ) : (
-                <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <XCircle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
               )}
               <div>
                 {connectionResult.valid ? (
                   <>
-                    <p className="typo-heading text-emerald-400">{tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${connectionResult.vaultName}”` })}</p>
-                    <p className="typo-caption text-foreground">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
+                    <p className="typo-heading text-status-success">{tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${connectionResult.vaultName}”` })}</p>
+                    <p className="typo-caption text-ink-2">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
                   </>
                 ) : (
-                  <p className="typo-heading text-red-400">{connectionResult.error}</p>
+                  <p className="typo-heading text-status-error">{connectionResult.error}</p>
                 )}
               </div>
             </div>
@@ -326,10 +323,10 @@ export default function SetupPanel() {
       <SectionCard collapsible title={t.plugins.obsidian_brain.sync_options} subtitle={t.plugins.obsidian_brain.sync_options_subtitle} storageKey="obsidian-setup-sync" titleClassName="text-primary">
         <div className="space-y-3">
           {[
-            { icon: <Brain className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.memories, desc: t.plugins.obsidian_brain.memories_desc, checked: syncMemories, onChange: () => setSyncMemories(!syncMemories) },
-            { icon: <Users className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.persona_profiles, desc: t.plugins.obsidian_brain.persona_profiles_desc, checked: syncPersonas, onChange: () => setSyncPersonas(!syncPersonas) },
-            { icon: <Plug className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.connectors, desc: t.plugins.obsidian_brain.connectors_desc, checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
-            { icon: <RefreshCw className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.auto_sync, desc: t.plugins.obsidian_brain.auto_sync_desc, checked: autoSync, onChange: () => setAutoSync(!autoSync) },
+            { icon: <Brain className="w-4 h-4 text-ink-2" />, label: t.plugins.obsidian_brain.memories, desc: t.plugins.obsidian_brain.memories_desc, checked: syncMemories, onChange: () => setSyncMemories(!syncMemories) },
+            { icon: <Users className="w-4 h-4 text-ink-2" />, label: t.plugins.obsidian_brain.persona_profiles, desc: t.plugins.obsidian_brain.persona_profiles_desc, checked: syncPersonas, onChange: () => setSyncPersonas(!syncPersonas) },
+            { icon: <Plug className="w-4 h-4 text-ink-2" />, label: t.plugins.obsidian_brain.connectors, desc: t.plugins.obsidian_brain.connectors_desc, checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
+            { icon: <RefreshCw className="w-4 h-4 text-ink-2" />, label: t.plugins.obsidian_brain.auto_sync, desc: t.plugins.obsidian_brain.auto_sync_desc, checked: autoSync, onChange: () => setAutoSync(!autoSync) },
           ].map((opt) => (
             <SettingRow
               key={opt.label}
@@ -346,11 +343,11 @@ export default function SetupPanel() {
           {/* Knowledge mirror — opt-in, only when Obsidian is available. Saves
               immediately (independent of the Save Configuration button). */}
           {availability?.available && mirrorConfig && (
-            <div className="pt-3 mt-1 border-t border-primary/10 space-y-3" data-testid="obsidian-knowledge-mirror">
-              <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.knowledge_mirror}</p>
+            <div className="pt-3 mt-1 border-t border-hair space-y-3" data-testid="obsidian-knowledge-mirror">
+              <p className="typo-label text-ink-2">{t.plugins.obsidian_brain.knowledge_mirror}</p>
               {[
-                { key: 'executionKnowledge' as const, icon: <Network className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_execution_knowledge, desc: t.plugins.obsidian_brain.mirror_execution_knowledge_desc },
-                { key: 'athena' as const, icon: <Sparkles className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_athena, desc: t.plugins.obsidian_brain.mirror_athena_desc },
+                { key: 'executionKnowledge' as const, icon: <Network className="w-4 h-4 text-ink-2" />, label: t.plugins.obsidian_brain.mirror_execution_knowledge, desc: t.plugins.obsidian_brain.mirror_execution_knowledge_desc },
+                { key: 'athena' as const, icon: <Sparkles className="w-4 h-4 text-ink-2" />, label: t.plugins.obsidian_brain.mirror_athena, desc: t.plugins.obsidian_brain.mirror_athena_desc },
               ].map((m) => (
                 <SettingRow
                   key={m.key}
@@ -379,38 +376,39 @@ export default function SetupPanel() {
               { label: t.plugins.obsidian_brain.connectors_folder, value: connectorsFolder, onChange: setConnectorsFolder },
             ].map((field, i) => (
               <div key={field.label} className="space-y-1.5">
-                <label className="typo-label text-foreground/90" htmlFor={`${folderFieldId}-${i}`}>{field.label}</label>
+                <label className="typo-label text-ink-2" htmlFor={`${folderFieldId}-${i}`}>{field.label}</label>
                 <input
                   id={`${folderFieldId}-${i}`}
                   type="text"
                   value={field.value}
                   onChange={(e) => field.onChange(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body focus-ring transition-all"
+                  className="w-full px-3 py-1.5 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body focus-ring transition-all"
                 />
               </div>
             ))}
           </div>
-          <div className="space-y-1.5 typo-caption text-foreground">
+          <div className="space-y-1.5 typo-caption text-ink-2">
             <p><DebtText k="auto_preview_4bf30626" /></p>
-            <code className="block text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
+            <code className="block text-ink-2">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
             {syncConnectors && (
-              <code className="block text-violet-400/60">{`${connectorsFolder}/`}</code>
+              <code className="block text-ink-2">{`${connectorsFolder}/`}</code>
             )}
           </div>
         </div>
       </SectionCard>
 
       {/* Save */}
-      <button
+      <Button
         type="button"
         onClick={saveConfig}
         disabled={saving || !connectionResult?.valid}
         data-testid="obsidian-save-config"
-        className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors disabled:opacity-40 focus-ring"
+        variant="secondary"
+        size="sm"
       >
         {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}
         {saving ? t.plugins.obsidian_brain.saving : t.plugins.obsidian_brain.save_configuration}
-      </button>
+      </Button>
       </div>
 
       <SavedConfigsSidebar

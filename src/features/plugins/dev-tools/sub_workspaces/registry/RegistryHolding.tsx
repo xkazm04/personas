@@ -78,11 +78,11 @@ export function RegistryHolding({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-card border border-primary/15 bg-secondary/20 p-3 flex flex-col gap-2">
+      <div className="rounded-card border border-hair bg-surface-1 p-3 flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <GitBranch className="w-4 h-4 text-foreground" aria-hidden />
           <span className="typo-body text-foreground">{registry.fullName}</span>
-          <span className="typo-caption text-foreground/70">{registry.defaultBranch}</span>
+          <span className="typo-caption text-ink-2">{registry.defaultBranch}</span>
           {registry.state === 'pairing' && (
             <Loader2 className="w-3.5 h-3.5 animate-spin text-primary ml-auto" aria-hidden />
           )}
@@ -93,7 +93,7 @@ export function RegistryHolding({
 
         {/* The working copy is half the wiring, so it is shown at rest, not
             hidden behind a detail toggle — a scan runs against this path. */}
-        <p className="typo-caption text-foreground/70 truncate">{registry.clonePath}</p>
+        <p className="typo-caption text-ink-2 truncate">{registry.clonePath}</p>
 
         {registry.state === 'error' && registry.error && (
           <p className="typo-caption text-status-error">{registry.error}</p>
@@ -102,7 +102,7 @@ export function RegistryHolding({
         {registry.state === 'paired' && (
           <>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/70">
+              <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
                 <Boxes className="w-3.5 h-3.5" aria-hidden />
                 {tr.publishes}
               </span>
@@ -112,15 +112,15 @@ export function RegistryHolding({
                 </span>
               ))}
               {registry.lanes.length === 0 && (
-                <span className="typo-caption text-foreground/70">{tr.no_lanes}</span>
+                <span className="typo-caption text-ink-2">{tr.no_lanes}</span>
               )}
             </div>
             {registry.domains.length > 0 && (
-              <p className="typo-caption text-foreground/70">
+              <p className="typo-caption text-ink-2">
                 {tr.domains_label} <span className="text-foreground">{registry.domains.join(', ')}</span>
               </p>
             )}
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 typo-caption text-foreground/70">
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 typo-caption text-ink-2">
               {registry.sha && (
                 <span>
                   {tr.at_commit} <span className="text-foreground font-mono">{registry.sha.slice(0, 9)}</span>
@@ -137,18 +137,18 @@ export function RegistryHolding({
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="inline-flex items-center gap-1.5 typo-label text-foreground/70">
+        <span className="inline-flex items-center gap-1.5 typo-label text-ink-2">
           <Users className="w-3.5 h-3.5" aria-hidden />
           {tx(holders.length === 1 ? tr.held_by_one : tr.held_by_other, { count: holders.length })}
         </span>
         <div className="flex flex-wrap gap-1.5">
-          <span className="typo-caption rounded-interactive border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-foreground">
+          <span className="typo-caption rounded-interactive border border-hair bg-surface-1 px-1.5 py-0.5 text-foreground">
             {workspaceNameById.get(workspaceId) ?? tr.this_workspace}
           </span>
           {others.map((id) => (
             <span
               key={id}
-              className="typo-caption rounded-interactive border border-primary/10 bg-secondary/40 px-1.5 py-0.5 text-foreground/70"
+              className="typo-caption rounded-interactive border border-hair bg-surface-1 px-1.5 py-0.5 text-ink-2"
             >
               {workspaceNameById.get(id) ?? id}
             </span>
@@ -178,7 +178,7 @@ export function RegistryHolding({
         >
           {tr.leave}
         </AsyncButton>
-        <span className="typo-caption text-foreground/70">
+        <span className="typo-caption text-ink-2">
           {others.length > 0
             ? tx(others.length === 1 ? tr.others_keep_one : tr.others_keep_other, { count: others.length })
             : tr.no_other_holder}

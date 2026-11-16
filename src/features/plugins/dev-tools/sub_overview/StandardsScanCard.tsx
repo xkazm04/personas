@@ -82,12 +82,12 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
   }, [standards]);
 
   return (
-    <div className="mt-4 rounded-card border border-primary/10 bg-card/20">
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/8">
-        <ShieldCheck className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
+    <div className="mt-4 rounded-card border border-hair bg-surface-1">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-hair">
+        <ShieldCheck className="w-3.5 h-3.5 text-ink-2 flex-shrink-0" />
         <span className="typo-card-label">{dp.standards_scan_title}</span>
         {compliancePct !== null && (
-          <span className="typo-caption text-foreground tabular-nums">
+          <span className="typo-caption text-foreground num">
             {compliancePct}% {dp.standards_compliance}
           </span>
         )}
@@ -109,7 +109,7 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
           {scanning ? dp.standards_scan_running : dp.standards_scan_empty}
         </p>
       ) : (
-        <ul className="divide-y divide-primary/5 max-h-72 overflow-y-auto">
+        <ul className="divide-y divide-hair max-h-72 overflow-y-auto">
           {standards.map((s) => (
             <li key={s.id} className="flex items-center gap-2.5 px-4 py-2">
               <StatusBadge variant={STATUS_VARIANT[s.status] ?? 'neutral'} pill>{s.status}</StatusBadge>

@@ -58,7 +58,7 @@ export function LinkedTeams() {
       <ul className="space-y-1.5">
         {assignments.map((asgn) => (
           <li key={asgn.id} className="group flex items-center gap-2.5 typo-body">
-            <span className={`typo-caption px-1.5 py-0.5 rounded-full border ${TEAM_CHIP}`}>
+            <span className={`typo-caption px-1.5 py-0.5 rounded-interactive border ${TEAM_CHIP}`}>
               {tokenLabel(t, 'execution', asgn.status)}
             </span>
             <span className="flex-1 text-foreground truncate">{asgn.title}</span>

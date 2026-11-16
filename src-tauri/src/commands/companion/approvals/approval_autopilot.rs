@@ -69,6 +69,42 @@ pub async fn auto_resolve_if_allowed(
     app: &tauri::AppHandle,
     approval: &crate::companion::dispatcher::CreatedApproval,
 ) -> Result<bool, AppError> {
+    // Standup away rules (spark app-standup, WP3). While a standup is ARMED
+    // the operator is away and the plan's away rules are his standing answer:
+    // a parked class (money / data / schema / secrets / a push to a target he
+    // did not name) never auto-fires here - it stays a pending card and the
+    // gate records an `ask_parked` event the standup report lists with its
+    // options. A delegated class records `ask_delegated` and falls through to
+    // every rule below, unchanged. With no armed standup the gate writes
+    // nothing and answers `NotArmed`, so this function is what it was. Runs
+    // FIRST so no other arm (the device rule included) can fire around it.
+    // Fail-closed: if the gate cannot tell whether a standup is armed, the
+    // approval waits for a click rather than firing past a park check.
+    {
+        let gate_state = app.state::<Arc<AppState>>();
+        let gate = crate::companion::standup::away_rules::gate_autopilot(
+            &gate_state.user_db,
+            &gate_state.db,
+            &approval.id,
+            &approval.action,
+            &approval.params_json,
+            &approval.rationale,
+            chrono::Utc::now().timestamp_millis(),
+        );
+        match gate {
+            Ok(crate::companion::standup::away_rules::ApprovalGate::Parked) => return Ok(false),
+            Ok(_) => {}
+            Err(e) => {
+                tracing::warn!(
+                    approval_id = %approval.id,
+                    action = %approval.action,
+                    error = %e,
+                    "autonomous autoapprove deferred: standup away-rule check failed - left pending for a user click"
+                );
+                return Ok(false);
+            }
+        }
+    }
     // The device ops (`remote_instruct`, `remote_fleet_dispatch`) carry a rule
     // the generic path cannot express: with the mode off they reach only the
     // HOME device, and refuse otherwise. Their own arm runs that rule and

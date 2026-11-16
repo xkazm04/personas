@@ -1,0 +1,8 @@
+{"schema":"conform-run/1","worker":"3df01507-3aa3-4114-9901-00c8afad5e86","subject":"multi-project",
+"evaluatedAt":"2026-11-03T00:00:00Z",
+"pairs":[{"context":"19e4120b-6020-4103-8a3d-a9fd0e13640b","subject":"multi-project","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires the Research Lab plugin and drops research_reports (:20); git ls-files finds no src/features/plugins/research-lab code, so the context has no code (map paths: []) and no portfolio surface to judge",
+"techniques":[]}],
+"declined":[],
+"consults":[{"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":[],"deviations":0}],
+"registryProposal":"Context plugins-research-lab-reports is a dead context (plugin retired, paths empty); the other 9 multi-project pairs were already judged with revisionsBehind 0, so only this one was unjudged."}

@@ -1,7 +1,9 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { ArrowLeft, Radar, Globe } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
+import Button from '@/features/shared/components/buttons/Button';
 
 type TypePickerLabelKey = keyof Translations['vault']['type_picker'];
 
@@ -88,15 +90,16 @@ export function CredentialTypePicker({
       data-testid="vault-type-picker"
     >
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
           onClick={onBack}
           data-testid="vault-back-btn"
           aria-label={t.common.back}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          size="icon-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <div>
           <h3 className="typo-heading text-foreground">{t.vault.type_picker.title}</h3>
           <p className="typo-body text-foreground">{t.vault.type_picker.subtitle}</p>
@@ -108,14 +111,7 @@ export function CredentialTypePicker({
           const isDev = type.devOnly === true;
           const label = t.vault.type_picker[type.labelKey];
           return (
-            <button
-              key={type.id}
-              type="button"
-              data-testid={type.testId}
-              onClick={handlers[type.id]}
-              className={`group relative text-left border rounded-modal hover:border-primary/25 transition-all overflow-hidden ${isDev ? 'border-amber-400/50 ring-1 ring-amber-400/20' : 'border-primary/15'}`}
-              style={{ borderTopColor: type.color, borderTopWidth: 3 }}
-            >
+            <PressSurface key={type.id} data-testid={type.testId} onPress={() => handlers[type.id]?.()} className={`group relative border rounded-modal overflow-hidden ${isDev ? 'border-status-warning/50' : 'border-hair'}`} style={{ borderTopColor: type.color, borderTopWidth: 3 }}>
               <div className="flex flex-col items-center py-4 px-3 gap-2">
                 <img
                   src={type.illustration}
@@ -125,24 +121,19 @@ export function CredentialTypePicker({
                 />
                 <div className="flex items-center gap-1.5">
                   <h4 className="typo-body text-foreground">{label}</h4>
-                  {isDev && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-400 border border-amber-400/25 font-medium">{t.vault.type_picker.dev_badge}</span>}
+                  {isDev && <span className="typo-label px-1.5 py-0.5 text-status-warning">{t.vault.type_picker.dev_badge}</span>}
                 </div>
               </div>
-            </button>
+            </PressSurface>
           );
         })}
       </div>
 
       {/* Workspace Connect -- full width */}
-      <button
-        type="button"
-        onClick={onWorkspaceConnect}
-        data-testid="vault-pick-workspace"
-        className="w-full text-left p-4 bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 rounded-modal hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
-      >
+      <PressSurface onPress={onWorkspaceConnect} data-testid="vault-pick-workspace" className="w-full p-4 border border-hair rounded-modal">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-blue-500/10 border-blue-500/20">
-            <Globe className="w-[1.125rem] h-[1.125rem] text-blue-400" />
+          <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-status-info/10 border-status-info/20">
+            <Globe className="w-[1.125rem] h-[1.125rem] text-status-info" />
           </div>
           <div>
             <h4 className="typo-body text-foreground">{t.vault.type_picker.workspace_connect}</h4>
@@ -151,19 +142,14 @@ export function CredentialTypePicker({
             </p>
           </div>
         </div>
-      </button>
+      </PressSurface>
 
       {/* Foraging -- full width at bottom (desktop only -- requires filesystem scan) */}
       {!IS_MOBILE && (
-        <button
-          type="button"
-          onClick={onForage}
-          data-testid="vault-pick-foraging"
-          className="w-full text-left p-4 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 border border-violet-500/15 rounded-modal hover:from-violet-500/10 hover:to-cyan-500/10 hover:border-violet-500/25 transition-all"
-        >
+        <PressSurface onPress={onForage} data-testid="vault-pick-foraging" className="w-full p-4 border border-hair rounded-modal">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-violet-500/10 border-violet-500/20">
-              <Radar className="w-[1.125rem] h-[1.125rem] text-violet-400" />
+            <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-role-agent/10 border-role-agent/20">
+              <Radar className="w-[1.125rem] h-[1.125rem] text-role-agent" />
             </div>
             <div>
               <h4 className="typo-body text-foreground">{t.vault.type_picker.auto_discover}</h4>
@@ -172,7 +158,7 @@ export function CredentialTypePicker({
               </p>
             </div>
           </div>
-        </button>
+        </PressSurface>
       )}
     </div>
   );

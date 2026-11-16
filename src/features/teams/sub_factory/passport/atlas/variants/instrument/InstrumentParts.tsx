@@ -42,7 +42,7 @@ export function ScoreDial({ score, label, unknown, delay }: { score: number; lab
           transition={{ duration: 0.7, delay, ease: [0.2, 0.7, 0.2, 1] }}
         />
       </svg>
-      <span className="atlas-dial__num typo-caption k-strong tabular-nums">{unknown ? '?' : score}</span>
+      <span className="atlas-dial__num typo-data k-strong">{unknown ? '?' : score}</span>
     </span>
   );
 }

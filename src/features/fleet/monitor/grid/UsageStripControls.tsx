@@ -73,7 +73,7 @@ export function UsageStripControls({
               setDraft(null);
               if (pct !== autoRotate.thresholdPct) onSave(autoRotate.enabled, pct);
             }}
-            className="w-12 rounded-input border border-border bg-background px-1 py-0 text-right typo-caption tabular-nums text-foreground"
+            className="w-12 rounded-input border border-border bg-background px-1 py-0 text-right typo-caption num text-foreground"
             data-testid="fleet-usage-rotate-threshold"
           />
           <span className="opacity-60">%</span>

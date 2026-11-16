@@ -26,6 +26,8 @@ interface Deps {
   writes: Writes;
   current: WorkItem | null;
   onClose: () => void;
+  /** Enter on an open L4 sheet: take the current item's recommended answer (D14); false when it has none. */
+  takeRecommended: () => boolean;
   sayEnterHint: () => void;
 }
 
@@ -110,7 +112,8 @@ function handle(d: Deps, e: KeyboardEvent, tabbed: boolean): boolean {
     case 'timeline': dispatch({ type: 'timeline' }); break;
     case 'select': if (d.current) dispatch({ type: 'select', id: d.current.id }); break;
     case 'enter': {
-      if (ui.sheet) { d.sayEnterHint(); break; }
+      // on the L4 sheet, Enter takes the current item's recommended answer (owner decision D14), else says the keys
+      if (ui.sheet) { if (!d.takeRecommended()) d.sayEnterHint(); break; }
       const n = d.levelNow();
       nav.toLevel(n >= 3 ? 4 : n + 1);
       break;

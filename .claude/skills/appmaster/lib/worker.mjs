@@ -15,7 +15,7 @@ import {
 import { seedCouncil } from './council.mjs';
 import { loadBrief, listRuns, listSlugs, findRun, updateRun } from './store.mjs';
 import { readLimit, setLimit, detectLimit, limitSurface, limitSnippet } from './limits.mjs';
-import { createWorktree, removeWorktree } from './worktree.mjs';
+import { createWorktree, removeWorktree, pruneBuildOutput, discardWorktree } from './worktree.mjs';
 import { memoryState } from './memory.mjs';
 import { resolveRunGates, splitBoundaries, GATE_NAMES } from './gate.mjs';
 import { overlappingPairs } from './paths.mjs';
@@ -548,10 +548,43 @@ function killTree(pid) {
   return !pidAlive(pid);
 }
 
+/** A cleanup failure is recorded on the run, never thrown: it must not turn a release into an error. */
+const guarded = (fn) => { try { return fn(); } catch (e) { return { error: e.message }; } };
+
 /**
- * (args) => Run   // --run id --reason t [--kill]
+ * (args) => rows   // [--days 7] [--dry]
+ * Clean the worktrees of settled runs. merged/reviewed: discard (the work is in the base). failed and
+ * released: build output pruned at once, the worktree discarded once the run is older than --days.
+ * A worktree with uncommitted work is never discarded. Safe to run any time and as often as wanted.
+ */
+export function cmdSweep({ flags = {} } = {}) {
+  const days = flags.days === undefined || flags.days === true ? 7 : Number(flags.days);
+  if (!Number.isFinite(days) || days < 0) throw new Error('sweep --days must be a non-negative number');
+  const rows = [];
+  for (const slug of listSlugs()) {
+    for (const run of listRuns(slug, { states: ['merged', 'reviewed', 'failed', 'released'] })) {
+      if (!run.worktree || !fs.existsSync(run.worktree)) continue;
+      const ageDays = (Date.now() - (Date.parse(run.settledAt || run.endedAt || '') || Date.now())) / 864e5;
+      const discard = run.state === 'merged' || run.state === 'reviewed' || ageDays >= days;
+      const row = { slug, runId: shortId(run.runId), state: run.state, ageDays: +ageDays.toFixed(1), action: discard ? 'discard' : 'prune' };
+      if (!flags.dry) {
+        row.result = guarded(() => (discard ? discardWorktree(run) : pruneBuildOutput(run.worktree)));
+        if (row.result?.error) row.error = row.result.error;
+        else if (discard && row.result?.discarded) updateRun(run, { cleanup: row.result });
+      }
+      rows.push(row);
+    }
+  }
+  return rows;
+}
+
+/**
+ * (args) => Run   // --run id --reason t [--kill] [--discard] [--keep-build]
  * released + heldReason. The process is terminated ONLY with --kill (the operator said so). The
  * worktree and branch are kept, unless the run never started (planned), whose worktree is removed.
+ * A kept worktree loses its build output (target/): it rebuilds on demand and was 7-23 GB per run,
+ * ~213 GB across the released runs of 2026-10-23..28 (`--keep-build` opts out). `--discard` is the
+ * terminal release (merged by hand, superseded): the worktree goes too, unless it holds uncommitted work.
  */
 export function cmdRelease({ flags = {} } = {}) {
   const run = requireRun(flags.run);
@@ -565,6 +598,8 @@ export function cmdRelease({ flags = {} } = {}) {
     patch.killed = true;
   }
   if (run.state === 'planned' && run.worktree) patch.cleanup = removeWorktree(run);
+  else if (run.worktree && flags.discard) patch.cleanup = guarded(() => discardWorktree(run));
+  else if (run.worktree && !flags['keep-build']) patch.cleanup = guarded(() => ({ ...pruneBuildOutput(run.worktree), kept: 'worktree and branch' }));
   const out = updateRun(run, patch);
   // a released run owes the queue nothing more: its promise ends in this explicit refusal
   if (queuedEntry(run.runId)) markQueue(run.runId, 'dropped', { droppedAt: nowIso(), droppedReason: String(flags.reason) });

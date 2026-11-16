@@ -24,7 +24,7 @@ export const TONE_TEXT: Record<ReleaseTone, string> = {
   success: 'text-status-success',
   warning: 'text-status-warning',
   error: 'text-status-error',
-  neutral: 'text-foreground',
+  neutral: 'text-ink-1',
 };
 
 export const TONE_CHIP: Record<ReleaseTone, string> = {
@@ -33,7 +33,7 @@ export const TONE_CHIP: Record<ReleaseTone, string> = {
   success: 'border-status-success/30 bg-status-success/10 text-status-success',
   warning: 'border-status-warning/30 bg-status-warning/10 text-status-warning',
   error: 'border-status-error/30 bg-status-error/10 text-status-error',
-  neutral: 'border-primary/10 bg-secondary/40 text-foreground',
+  neutral: 'border-hair bg-surface-2 text-ink-1',
 };
 
 /**
@@ -44,8 +44,8 @@ export const TONE_CHIP: Record<ReleaseTone, string> = {
  */
 // style-deviation: the rail glow is the theme glow the operator asked back at Gate 1; no shadow token draws a coloured glow, so it is color-mix over the theme variable.
 export const ITEM_STATUS_RAIL: Record<ReleaseItemStatus, string> = {
-  in_progress: 'bg-primary shadow-[0_0_10px_color-mix(in_oklab,var(--primary)_60%,transparent)]',
-  completed: 'bg-status-success shadow-[0_0_10px_color-mix(in_oklab,var(--status-success)_60%,transparent)]',
+  in_progress: 'bg-primary',
+  completed: 'bg-status-success',
   planned: 'bg-foreground/30',
 };
 
@@ -53,7 +53,7 @@ export const ITEM_STATUS_RAIL: Record<ReleaseItemStatus, string> = {
 export const ITEM_STATUS_HEAD: Record<ReleaseItemStatus, string> = {
   in_progress: 'text-primary',
   completed: 'text-status-success',
-  planned: 'text-foreground',
+  planned: 'text-ink-1',
 };
 
 /** The current horizon is where to look; later horizons say nothing more. */

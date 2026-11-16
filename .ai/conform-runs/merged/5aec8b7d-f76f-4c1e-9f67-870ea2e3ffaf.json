@@ -1,0 +1,62 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5aec8b7d-f76f-4c1e-9f67-870ea2e3ffaf",
+ "subject": "supply-chain",
+ "evaluatedAt": "2026-11-03T08:30:52.396Z",
+ "pairs": [
+  {
+   "context": "aebcd52a-07a3-4305-bf42-d961b4f37a62",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:174 the only run of project code is dev_tools_run_tests (:161), an auth-gated, operator-invoked test run in the operator's own project root (reading-is-not-running's knowingly-armed exclusion); the context fetches, unpacks and resolves no dependencies",
+   "techniques": [
+    {
+     "technique": "reading-is-not-running",
+     "verdict": "not-applicable: the run verb is the explicit request, not a silent upgrade of a read",
+     "evidence": "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:174 cargo test chosen only when the operator asks to run tests"
+    }
+   ]
+  },
+  {
+   "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/progress/ContentLoader.tsx:19 pure presentational progress/skeleton UI (imports only a ghost component; EstimatedProgressBar.tsx:1 only React hooks); no dependency, archive, secret, install or manifest crossing; match came from import/loader vocabulary",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "supply-chain",
+   "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+   "reason": "context-map.json lists no file_paths for this context, so there is no code to read; left unknown rather than guessed. Registry map paths are also empty."
+  },
+  {
+   "subject": "supply-chain",
+   "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+   "reason": "context-map.json lists no file_paths for this context, so there is no code to read; left unknown rather than guessed. Registry map paths are also empty."
+  },
+  {
+   "subject": "supply-chain",
+   "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+   "reason": "context-map.json lists no file_paths for this context, so there is no code to read; left unknown rather than guessed. Registry map paths are also empty."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:30:52.396Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "reading-is-not-running",
+    "archive-extraction-safety",
+    "permission-manifest-scoping"
+   ],
+   "deviations": 0
+  }
+ ]
+}

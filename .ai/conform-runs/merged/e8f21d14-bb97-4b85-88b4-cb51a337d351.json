@@ -1,0 +1,77 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e8f21d14-bb97-4b85-88b4-cb51a337d351",
+ "subject": "declarative-object-graph-configs",
+ "evaluatedAt": "2026-11-10T22:14:27.906210+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "trigger-config",
+   "subject": "declarative-object-graph-configs",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:43 buildTriggerConfig fills a flat settings dictionary of leaf values (cron, url, watch_paths, conditions), one fixed branch per trigger type, so the file never describes a graph of live objects. Searches of the context directories for _requires_, _disabled_, instantiate, new Function and eval( found nothing, so none of the four object-graph obligations apply.",
+   "techniques": [
+    {
+     "technique": "directive-key-namespace",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:46 Each trigger type has its own branch and a fixed set of keys. The technique's 'when not to use' clause excludes this case, and no loader directives are mixed with constructor arguments."
+    },
+    {
+     "technique": "sigil-grammar-over-schema",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:80 Values are plain leaves (a URL string). No value can be read as a reference, so there is no sigil to define."
+    },
+    {
+     "technique": "reference-resolution-with-cycle-detection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:122 Composite conditions are literal event_type strings matched at runtime, not config ids that resolve to instances. There is no resolver and no graph that could contain a cycle."
+    },
+    {
+     "technique": "escape-hatch-expressions",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:89 Computed values come from TypeScript code in the form builder, not from expressions the config evaluates. No eval or new Function appears in the context."
+    },
+    {
+     "technique": "merge-vs-override-marking",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:127 One form state produces one config. There is no base/override layering, so there are no repeated-key semantics to mark."
+    },
+    {
+     "technique": "textual-macro-prepass",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:39 The config is built in memory from form fields. There is no cross-file include and no relative id to expand."
+    }
+   ],
+   "absenceTerms": [
+    "_requires_",
+    "_disabled_",
+    "instantiate",
+    "new Function"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-10T22:14:27.906210+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "declarative-object-graph-configs"
+   ],
+   "techniques": [
+    "directive-key-namespace",
+    "escape-hatch-expressions",
+    "merge-vs-override-marking",
+    "reference-resolution-with-cycle-detection",
+    "sigil-grammar-over-schema",
+    "textual-macro-prepass"
+   ],
+   "deviations": 0,
+   "context": "trigger-config",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

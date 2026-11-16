@@ -24,6 +24,7 @@ import {
   ContentHeader,
   ContentBody,
 } from '@/features/shared/components/layout/ContentLayout';
+import Button from '@/features/shared/components/buttons/Button';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import {
   createExternalApiKey,
@@ -36,7 +37,7 @@ import {
 import { revokePairing } from '@/api/auth/pairing';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -56,6 +57,7 @@ import {
   runRetire,
   type PairingGroup,
 } from '../libs/keyLifecycle';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
 
@@ -70,7 +72,7 @@ let keysCache: ExternalApiKey[] | null = null;
 /** Rows in the first viewport that play the one-shot entrance cascade. */
 const CASCADE_ROWS = 12;
 const KEY_ROW_H = 68;
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-52', 'w-32'];
 
 export default function ApiKeysSettings() {
@@ -85,7 +87,18 @@ export default function ApiKeysSettings() {
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(null);
-  const [actioning, setActioning] = useState<string | null>(null);
+  // Every row action in flight, by key id: a single slot let a second revoke
+  // re-enable the first row mid-call and let whichever finished first clear both.
+  const [actioning, setActioning] = useState<ReadonlySet<string>>(() => new Set());
+  const markActioning = useCallback((id: string | null, on: boolean) => {
+    if (id === null) return;
+    setActioning((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
   const [auditTarget, setAuditTarget] = useState<ExternalApiKey | null>(null);
   const enter = useRevealTracker('api-keys');
 
@@ -120,32 +133,34 @@ export default function ApiKeysSettings() {
 
   const handleRevoke = useCallback(
     async (id: string) => {
-      setActioning(id);
+      markActioning(id, true);
       try {
         await revokeExternalApiKey(id);
         await load();
       } catch (e) {
+        silentCatch('ApiKeysSettings:revoke')(e);
         setError(extractMessage(e));
       } finally {
-        setActioning(null);
+        markActioning(id, false);
       }
     },
-    [load],
+    [load, markActioning],
   );
 
   const handleDelete = useCallback(
     async (id: string) => {
-      setActioning(id);
+      markActioning(id, true);
       try {
         await deleteExternalApiKey(id);
         await load();
       } catch (e) {
+        silentCatch('ApiKeysSettings:delete')(e);
         setError(extractMessage(e));
       } finally {
-        setActioning(null);
+        markActioning(id, false);
       }
     },
-    [load],
+    [load, markActioning],
   );
 
   const visibleKeys = keys ?? [];
@@ -163,54 +178,64 @@ export default function ApiKeysSettings() {
   // re-derives that allowlist.
   const handleDisconnect = useCallback(
     async (group: PairingGroup) => {
-      setActioning(group.current?.id ?? null);
+      const actingId = group.current?.id ?? null;
+      markActioning(actingId, true);
       try {
         const out = await runRetire(disconnectIds(group), revokePairing);
-        if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
+        for (const f of out.failed) silentCatch('ApiKeysSettings:disconnect')(new Error(f.message));
+        // Reload first: load() clears the error banner, which would erase a
+        // failed-revoke message set before it.
         await load();
+        if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
       } catch (e) {
+        silentCatch('ApiKeysSettings:disconnect')(e);
         setError(extractMessage(e));
       } finally {
-        setActioning(null);
+        markActioning(actingId, false);
       }
     },
-    [load],
+    [load, markActioning],
   );
 
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Key className="w-5 h-5 text-fuchsia-400" />}
+        icon={<Key className="w-5 h-5 text-role-agent" />}
         title={s.title}
-        subtitle={keys === null ? s.loading : tx(s.live_of_total, { live: liveKeys, total: unrevokedCount })}
+        // keys === null with no fetch in flight means the first load failed: the
+        // error banner speaks, so neither "Loading" nor "no keys" is claimed.
+        subtitle={keys === null ? (loading ? s.loading : undefined) : tx(s.live_of_total, { live: liveKeys, total: unrevokedCount })}
         actions={
           <div className="flex items-center gap-2">
             <RecentChangeChip category="api_keys" />
-            <button
+            <Button
               type="button"
               onClick={() => setShowCreate(true)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 transition-opacity disabled:opacity-50"
+              variant="primary"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
               {s.create_key}
-            </button>
+            </Button>
           </div>
         }
       />
       <ContentBody>
         {error && (
-          <div className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2 mb-3">
+          <div className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-interactive p-2 mb-3">
             <AlertTriangle size={14} />
             {error}
-            <button
+            <Button
               type="button"
               onClick={() => void load()}
-              className="ml-auto inline-flex items-center gap-1 hover:text-red-300"
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+              icon={<RefreshCw size={12} />}
             >
-              <RefreshCw size={12} />
               {s.retry}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -219,16 +244,22 @@ export default function ApiKeysSettings() {
         <McpServerInfoPanel />
 
         <div className="mt-6">
-          <SectionCard title={s.your_keys} icon={<Key className="w-4 h-4 text-fuchsia-400" />} titleClassName="text-primary">
+          <SectionCard title={s.your_keys} icon={<Key className="w-4 h-4 text-role-agent" />} titleClassName="text-ink-1">
             <div className="space-y-2">
               {loading && keys === null ? (
                 <>
                   <span className="sr-only" role="status">{s.loading_keys}</span>
                   <ApiKeyGhostRows />
                 </>
-              ) : regularKeys.length === 0 ? (
-                <div className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded">
+              ) : keys === null ? null : regularKeys.length === 0 ? (
+                <div
+                  data-testid="keys-empty"
+                  className="typo-caption text-foreground py-6 text-center bg-surface-1 rounded-interactive flex flex-col items-center gap-3"
+                >
                   {s.empty}
+                  <Button variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowCreate(true)}>
+                    {s.create_key}
+                  </Button>
                 </div>
               ) : (
                 regularKeys.map((key, index) => (
@@ -241,7 +272,7 @@ export default function ApiKeysSettings() {
                   >
                     <ApiKeyRow
                       apiKey={key}
-                      actioning={actioning === key.id}
+                      actioning={actioning.has(key.id)}
                       onRevoke={() => handleRevoke(key.id)}
                       onDelete={() => handleDelete(key.id)}
                       onAudit={() => setAuditTarget(key)}
@@ -255,7 +286,7 @@ export default function ApiKeysSettings() {
 
         <ConnectedAppsSection
           keys={visibleKeys}
-          actioningId={actioning}
+          actioningIds={actioning}
           onDisconnect={(id) => void handleDisconnect(id)}
           onAudit={setAuditTarget}
           onRetired={() => void load()}
@@ -319,7 +350,8 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
     : null;
   const createdRelative = formatRelativeTime(apiKey.created_at, '', { dateFallbackDays: 60 });
   const createdAbsolute = formatTimestamp(apiKey.created_at);
-  const stale = !isRevoked && isStaleKey(apiKey);
+  // Stale only applies to a key that can still authenticate: an expired key is dead, not forgotten.
+  const stale = keyState(apiKey) === 'live' && isStaleKey(apiKey);
 
   return (
     <div
@@ -327,39 +359,37 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
         isRevoked
           ? 'border-border/20 bg-secondary/10 opacity-60'
           : stale
-          ? 'border-amber-400/30 bg-amber-400/5'
-          : 'border-border/30 bg-secondary/20'
+          ? 'border-status-warning/30 bg-status-warning/5'
+          : 'border-border/30 bg-surface-1'
       }`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground truncate">{apiKey.name}</span>
           {isRevoked && (
-            <span className="typo-caption text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
+            <span className="typo-caption text-status-warning px-1.5 py-0.5">
               {s.revoked}
             </span>
           )}
           {stale && (
-            <span
-              className="typo-caption text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded inline-flex items-center gap-1"
-              title={s.stale_tooltip}
+            <Tooltip content={s.stale_tooltip}><span
+              className="typo-caption text-status-warning px-1.5 py-0.5 inline-flex items-center gap-1"
             >
               <Clock3 size={10} />
               {s.stale_chip}
-            </span>
+            </span></Tooltip>
           )}
           {!isRevoked && expiry && (
-            <span
-              className={`typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${
+            <Tooltip content={apiKey.expires_at ? formatTimestamp(apiKey.expires_at) : undefined}><span
+              className={`typo-caption px-1.5 py-0.5 rounded-interactive inline-flex items-center gap-1 ${
                 expiry.expired
-                  ? 'text-red-400 bg-red-400/10 border border-red-400/30'
-                  : 'text-foreground bg-secondary/40'
+                  ? 'text-status-error bg-status-error/10 border border-status-error/30'
+                  : 'text-foreground bg-surface-2'
               }`}
-              title={apiKey.expires_at ? formatTimestamp(apiKey.expires_at) : undefined}
             >
               <CalendarClock size={10} />
               {expiry.expired ? s.expired_chip : tx(s.expires_in, { days: expiry.days })}
-            </span>
+            </span></Tooltip>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1">
@@ -369,39 +399,37 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
             {scopes.length > 0 ? scopes.join(', ') : s.no_scopes}
           </span>
           <span className="typo-caption text-foreground">·</span>
-          <span
-            className={`typo-caption ${stale ? 'text-amber-400/80' : 'text-foreground'}`}
-            title={lastUsedAbsolute ?? undefined}
+          <Tooltip content={lastUsedAbsolute ?? undefined}><span
+            className={`typo-caption ${stale ? 'text-status-warning/80' : 'text-foreground'}`}
           >
             {s.last_used}: {lastUsedRelative}
-          </span>
+          </span></Tooltip>
           <span className="typo-caption text-foreground">·</span>
-          <span className="typo-caption text-foreground" title={createdAbsolute}>
+          <Tooltip content={createdAbsolute}><span className="typo-caption text-foreground">
             {s.created_label}: {createdRelative}
-          </span>
+          </span></Tooltip>
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <button
+        <Button
           type="button"
           onClick={onAudit}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-          title={s.audit_tooltip}
+          variant="ghost"
+          size="xs"
+          tooltip={s.audit_tooltip}
+          icon={<History size={12} />}
         >
-          <History size={12} />
           {s.audit}
-        </button>
+        </Button>
         {!isRevoked && (
-          <button
+          <Button
             type="button"
             onClick={triggerRevoke}
             disabled={actioning}
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
-              confirmRevoke
-                ? 'text-status-warning bg-status-warning/10 hover:bg-status-warning/20'
-                : 'text-foreground hover:text-amber-400 hover:bg-amber-400/10'
-            }`}
-            title={s.revoke_tooltip}
+            variant={confirmRevoke ? 'accent' : 'ghost'}
+            tone={confirmRevoke ? 'warning' : undefined}
+            size="xs"
+            tooltip={s.revoke_tooltip}
           >
             {confirmRevoke ? (
               <>
@@ -414,18 +442,15 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
                 {s.revoke}
               </>
             )}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           onClick={triggerDelete}
           disabled={actioning}
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
-            confirmDelete
-              ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
-              : 'text-foreground hover:text-red-400 hover:bg-red-400/10'
-          }`}
-          title={s.delete_tooltip}
+          variant={confirmDelete ? 'danger' : 'ghost'}
+          size="xs"
+          tooltip={s.delete_tooltip}
         >
           {confirmDelete ? (
             <>
@@ -438,7 +463,7 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
               {s.delete}
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -460,7 +485,7 @@ function ApiKeyGhostRows() {
         return (
           <div
             key={i}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-card border border-border/30 bg-secondary/20 animate-fade-in"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-card border border-border/30 bg-surface-1 animate-fade-in"
             style={{ height: KEY_ROW_H, animationDelay: delay }}
           >
             <div className="flex-1 min-w-0 space-y-2">

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { computeHealthScore, getTierStyle } from '@/features/vault/shared/utils/credentialHealthScore';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface CompositeHealthDotProps {
   healthResult: HealthResult | null;
@@ -21,9 +22,8 @@ export function CompositeHealthDot({
   const staleNote = healthResult?.isStale ? ' (from previous session)' : '';
 
   return (
-    <span
+    <Tooltip content={`${style.label} (${composite.score}/100) -- ${composite.reason}${staleNote}`}><span
       className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dotColor} ${healthResult?.isStale ? 'opacity-60' : ''}`}
-      title={`${style.label} (${composite.score}/100) -- ${composite.reason}${staleNote}`}
-    />
+    /></Tooltip>
   );
 }

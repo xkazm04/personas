@@ -3,6 +3,7 @@ import { Power, FlaskConical, GitCompareArrows, Sparkles, Target, Archive, Archi
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { VersionRow } from '../../libs/versionMatrixRows';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface RowActionHandlers {
   onActivate: (row: VersionRow) => void;
@@ -27,22 +28,18 @@ function IconBtn({
 }) {
   return (
     <Tooltip content={label}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         data-testid={testid}
         aria-label={label}
         onClick={onClick}
         disabled={disabled}
-        className={`p-1.5 rounded-input transition-colors focus-ring disabled:opacity-30 disabled:cursor-not-allowed ${
-          active
-            ? 'text-primary bg-primary/10'
-            : danger
-              ? 'text-foreground hover:text-red-400 hover:bg-red-500/10'
-              : 'text-foreground hover:text-primary hover:bg-secondary/40'
-        }`}
+        pressed={active || undefined}
+        className={danger ? 'hover:text-status-error hover:bg-status-error/10' : ''}
       >
         {children}
-      </button>
+      </Button>
     </Tooltip>
   );
 }

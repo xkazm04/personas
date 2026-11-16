@@ -3,7 +3,9 @@
 // KPIs. Click → an anchored popover (portalled, so the matrix's overflow-x-auto
 // never clips it) listing each off-track signal; clicking one deep-links into that
 // KPI's console. Mirrors QuickEditPopover's positioning, minus the edit footer.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowUpRight } from 'lucide-react';
 
@@ -39,20 +41,13 @@ export function WarningBadge({
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={(e) => {
+      <Button variant="danger" size="xs" className="flex-shrink-0" ref={triggerRef} onClick={(e) => {
           e.stopPropagation();
           setAnchor(e.currentTarget.getBoundingClientRect());
           setOpen((o) => !o);
-        }}
-        aria-label={`${items.length} off-track signals need attention`}
-        className="inline-flex items-center gap-1 rounded-input border border-red-500/40 bg-red-500/12 hover:bg-red-500/20 px-1.5 py-0.5 transition-colors flex-shrink-0"
-      >
-        <AlertTriangle className="w-5 h-5 text-red-400" aria-hidden />
-        <span className="typo-body-lg tabular-nums text-red-400">{items.length}</span>
-      </button>
+        }} aria-label={`${items.length} off-track signals need attention`} icon={<AlertTriangle className="w-5 h-5 text-status-error" aria-hidden />}>
+<span className="typo-data-lg text-status-error">{items.length}</span>
+</Button>
       <WarningPopover
         open={open}
         anchor={anchor}
@@ -104,26 +99,25 @@ function WarningPopover({
       role="dialog"
       aria-label={`${projectName} needs attention`}
       style={{ top: pos?.top ?? anchor.bottom + 6, left: pos?.left ?? anchor.left, width: WIDTH, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed z-[9995] rounded-modal border border-hair bg-background shadow-elevation-4 overflow-hidden"
     >
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-red-500/[0.06]">
-        <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-400" aria-hidden />
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-status-error/[0.06]">
+        <AlertTriangle className="w-5 h-5 flex-shrink-0 text-status-error" aria-hidden />
         <span className="typo-body-lg text-foreground truncate">{projectName}</span>
-        <span className="typo-body-lg text-foreground/55 ml-auto whitespace-nowrap">{items.length} off track</span>
+        <span className="typo-body-lg text-ink-3 ml-auto whitespace-nowrap">{items.length} off track</span>
       </div>
       <ul className="max-h-64 overflow-y-auto p-1.5 space-y-0.5">
         {items.map((it) => (
           <li key={it.kpiId}>
-            <button
-              type="button"
-              onClick={() => onJump(it.groupId, it.kpiId)}
-              className="group/w w-full text-left rounded-interactive px-2 py-1.5 flex items-center gap-2 transition-colors hover:bg-red-500/10"
+            <PressSurface
+              onPress={() => onJump(it.groupId, it.kpiId)}
+              className="group/w w-full rounded-interactive px-2 py-1.5 flex items-center gap-2"
             >
-              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-red-400" aria-hidden />
+              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-status-error" aria-hidden />
               <span className="typo-body-lg text-foreground min-w-0 flex-1 truncate">{it.name}</span>
-              <span className="typo-body-lg tabular-nums text-foreground/60 flex-shrink-0">{it.current ?? '—'}/{it.target}{it.unit}</span>
+              <span className="typo-data-lg text-ink-3 flex-shrink-0">{it.current ?? '—'}/{it.target}{it.unit}</span>
               <ArrowUpRight className="w-4 h-4 flex-shrink-0 opacity-0 group-hover/w:opacity-100 text-primary/70 transition-opacity" aria-hidden />
-            </button>
+            </PressSurface>
           </li>
         ))}
       </ul>

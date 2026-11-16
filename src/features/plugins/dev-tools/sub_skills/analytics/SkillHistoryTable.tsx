@@ -9,6 +9,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS } from '../../constants/scanAgents';
 import { presetVisual } from '../../constants/presetSkills';
 import type { SkillRunRow } from './useSkillsAnalytics';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const GRID = 'grid grid-cols-[minmax(0,1.6fr)_5.5rem_4rem_6rem_4.5rem_5rem_2.5rem] items-center gap-3';
 
@@ -31,7 +34,7 @@ function formatDuration(row: SkillRunRow): string {
 const STATUS_TONE: Record<string, string> = {
   finished: 'text-status-success', complete: 'text-status-success', completed: 'text-status-success',
   running: 'text-status-info', spawning: 'text-status-info', awaiting_input: 'text-status-warning',
-  error: 'text-status-error', failed: 'text-status-error', exited: 'text-foreground/60',
+  error: 'text-status-error', failed: 'text-status-error', exited: 'text-ink-2',
 };
 
 /** Skill cell: preset icon chip / legacy emoji strip + name. Fleet-run names
@@ -47,7 +50,7 @@ function SkillCell({ row, onOpenInfo }: { row: SkillRunRow; onOpenInfo: (skill: 
     return (
       <span className="flex items-center gap-1.5 min-w-0">
         <span className="flex-shrink-0">{emojis.join(' ') || '💡'}</span>
-        <span className="typo-caption text-foreground/70 truncate">{keys.length > 1 ? `${keys.length}×` : keys[0]}</span>
+        <span className="typo-caption text-ink-2 truncate">{keys.length > 1 ? `${keys.length}×` : keys[0]}</span>
       </span>
     );
   }
@@ -63,8 +66,12 @@ function SkillCell({ row, onOpenInfo }: { row: SkillRunRow; onOpenInfo: (skill: 
         </span>
       )}
       <span className="min-w-0">
-        <button type="button" onClick={() => onOpenInfo(row.skill)} className="typo-caption text-foreground truncate block text-left hover:text-primary transition-colors" data-testid={`skill-history-name-${row.skill}`}>{row.skill}</button>
-        {row.args && <span className="typo-label text-foreground/45 truncate block">{row.args}</span>}
+        <PressSurface
+          onPress={() => onOpenInfo(row.skill)}
+          data-testid={`skill-history-name-${row.skill}`}
+          className="typo-caption text-foreground truncate block hover:text-primary"
+        >{row.skill}</PressSurface>
+        {row.args && <span className="typo-label text-ink-3 truncate block">{row.args}</span>}
       </span>
     </span>
   );
@@ -89,16 +96,16 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
   const reveal = useProgressiveReveal(runs.length, { initialCount: 12 });
 
   const H = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
-    <span className={`text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 ${right ? 'text-right' : ''}`}>{children}</span>
+    <span className={`typo-eyebrow text-ink-3 ${right ? 'text-right' : ''}`}>{children}</span>
   );
 
   return (
-    <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="skill-history">
-      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
+    <section className="rounded-card border border-hair bg-surface-1" data-testid="skill-history">
+      <div className="flex items-baseline gap-2 px-3 py-2 bg-surface-2 border-b border-hair rounded-t-card">
         <span className="typo-body text-foreground">{d.skills_history_title}</span>
-        <span className="typo-label text-foreground/40 tabular-nums">{runs.length}</span>
+        <span className="typo-label text-ink-3 num">{runs.length}</span>
       </div>
-      <div className={`${GRID} px-3 py-1.5 border-b border-primary/10`}>
+      <div className={`${GRID} px-3 py-1.5 border-b border-hair`}>
         <H>{d.skills_history_col_skill}</H>
         <H>{d.skills_history_col_status}</H>
         <H right>{d.skills_history_col_output}</H>
@@ -109,40 +116,38 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
       </div>
       <div className="max-h-80 overflow-y-auto px-3">
         {runs.length === 0 && (
-          <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_history_empty}</p>
+          <p className="typo-caption text-ink-3 py-8 text-center">{d.skills_history_empty}</p>
         )}
         <ul>
           {runs.slice(0, reveal.count).map((row) => (
             <li key={`${row.kind}-${row.id}`} className={`${GRID} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
               <SkillCell row={row} onOpenInfo={onOpenInfo} />
-              <span
-                className={`typo-label truncate ${STATUS_TONE[row.status] ?? 'text-foreground/60'}`}
-                title={row.statusReason ?? undefined}
+              <Tooltip content={row.statusReason ?? undefined}><span
+                className={`typo-label truncate ${STATUS_TONE[row.status] ?? 'text-ink-2'}`}
               >
                 {statusLabel(row.status)}
-              </span>
-              <span className="typo-caption text-foreground/70 tabular-nums text-right">
+              </span></Tooltip>
+              <span className="typo-caption text-ink-2 num text-right">
                 {row.ideaCount != null ? row.ideaCount : '—'}
               </span>
-              <span className="typo-caption text-foreground/70 tabular-nums text-right">
+              <span className="typo-caption text-ink-2 num text-right">
                 {formatTokens(row.inputTokens, row.outputTokens)}
               </span>
-              <span className="typo-caption text-foreground/70 tabular-nums text-right">{formatDuration(row)}</span>
-              <span className="typo-caption text-foreground/70 text-right">
+              <span className="typo-caption text-ink-2 num text-right">{formatDuration(row)}</span>
+              <span className="typo-caption text-ink-2 text-right">
                 <RelativeTime timestamp={new Date(row.startedAt).toISOString()} />
               </span>
               <span className="flex justify-end">
                 {row.kind === 'fleet' && onRerun && (
-                  <button
+                  <Button variant="secondary" size="icon-sm"
                     type="button"
                     onClick={() => onRerun(row.skill, row.args)}
-                    title={d.skills_history_rerun}
+                    tooltip={d.skills_history_rerun}
                     aria-label={d.skills_history_rerun}
-                    className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-primary/20 transition-colors"
                     data-testid={`skill-history-rerun-${row.skill}`}
                   >
                     <RotateCcw className="w-3 h-3" aria-hidden />
-                  </button>
+                  </Button>
                 )}
               </span>
             </li>

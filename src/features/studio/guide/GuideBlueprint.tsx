@@ -43,8 +43,8 @@ export default function GuideBlueprint({
     <div className="absolute inset-0 overflow-hidden bg-background" style={BLUEPRINT_GRID}>
       <div className="flex h-full gap-6 p-6">
         <section className="flex min-w-0 flex-1 flex-col">
-          <p className="typo-label uppercase tracking-wider text-primary/80">{tx(g.sheet_title, { name })}</p>
-          {booting && <p className="mt-2 typo-body text-foreground/90">{g.preview_booting_plan}</p>}
+          <p className="typo-eyebrow text-ink-3">{tx(g.sheet_title, { name })}</p>
+          {booting && <p className="mt-2 typo-body text-ink-2">{g.preview_booting_plan}</p>}
           <ol className="mt-4 grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-4 overflow-y-auto pr-1">
             {phases.map((p, i) => {
               const status = p.status === 'done' ? 'done' : p.status === 'active' ? 'active' : 'pending';
@@ -61,12 +61,12 @@ export default function GuideBlueprint({
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/50 font-mono text-xs text-primary">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/50 font-mono typo-caption text-primary">
                       {status === 'done' ? <Check className="h-3.5 w-3.5" /> : i + 1}
                     </span>
                     <p className="typo-title text-foreground">{p.title}</p>
                   </div>
-                  <p className="mt-2 typo-body text-foreground/90">
+                  <p className="mt-2 typo-body text-ink-2">
                     {p.note || (status === 'active' ? g.goal_now : g.frame_pending)}
                   </p>
                 </motion.li>
@@ -82,9 +82,9 @@ export default function GuideBlueprint({
                 initial={shouldAnimate ? { opacity: 0, y: -8, rotate: -1.5 } : false}
                 animate={{ opacity: 1, y: 0, rotate: i % 2 ? 0.8 : -0.6 }}
                 transition={{ duration: 0.35, delay: 0.1 * i }}
-                className="rounded-card border border-status-warning/30 bg-gradient-to-br from-secondary/90 to-secondary/60 p-3 shadow-elevation-2"
+                className="rounded-card border border-status-warning/30 bg-surface-1 from-secondary/90 to-secondary/60 p-3 shadow-elevation-2"
               >
-                <p className="typo-label uppercase tracking-wider text-status-warning/90">
+                <p className="typo-eyebrow text-status-warning">
                   {i === 0 && notes.length > 1 ? g.note_found : g.note_athena}
                 </p>
                 <p className="mt-1 line-clamp-5 typo-body text-foreground">{m.text}</p>

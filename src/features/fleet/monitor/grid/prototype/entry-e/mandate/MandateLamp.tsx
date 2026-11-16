@@ -44,7 +44,7 @@ export function MandateLamp({ projectId }: { projectId: string | null }) {
       aria-label={hint ?? undefined}
       data-testid="fleet-bay-mandate-lamp"
       data-cards={n}
-      className={`inline-flex flex-shrink-0 ${n > 0 ? 'text-status-warning' : 'text-muted-foreground'}`}
+      className={`inline-flex flex-shrink-0 ${n > 0 ? 'text-status-warning' : 'text-ink-3'}`}
     >
       <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
     </span>

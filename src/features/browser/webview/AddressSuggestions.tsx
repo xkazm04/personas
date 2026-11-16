@@ -49,14 +49,14 @@ export default function AddressSuggestions({
       role="listbox"
       aria-label={v.suggestions_aria}
       data-testid="webview-suggestions"
-      className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-card border border-primary/15 bg-background shadow-elevation-3 py-1"
+      className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-card border border-hair bg-background shadow-elevation-3 py-1"
     >
       {suggestions.length === 0 ? (
         <li
           role="option"
           aria-selected={false}
           aria-disabled
-          className="px-3 py-2 typo-caption text-foreground"
+          className="px-3 py-2 typo-caption text-ink-2"
           data-testid="webview-suggestion-none"
         >
           {emptyLabel ?? v.suggestions_none}
@@ -82,11 +82,11 @@ export default function AddressSuggestions({
               index === activeIndex ? 'bg-primary/10' : '',
             ].join(' ')}
           >
-            <span className="typo-caption font-mono text-foreground truncate">
+            <span className="typo-code text-ink-2 truncate">
               {suggestion.target}
             </span>
             {suggestion.site.label ? (
-              <span className="typo-caption text-foreground truncate">
+              <span className="typo-caption text-ink-2 truncate">
                 {suggestion.site.label}
               </span>
             ) : null}

@@ -1,0 +1,194 @@
+{
+  "schema": "conform-run/1",
+  "worker": "302c293a-ee3e-4c56-9494-2f04e0ba6e06",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-11-06T02:24:35.731442+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "lib-execution",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/execution/knowledgeMiddleware.ts:41 The 'Known failure patterns to avoid' tier can never fire. Failure patterns are written with success=false, so their confidence is seeded at 0.0 and stays there (knowledge.rs:131, :117), while the injection query admits only confidence >= 0.5 (knowledge.rs:450), so this filter always gets an empty list.",
+      "techniques": [
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:450 one 'confidence' column means success rate for every knowledge type, so the gate shuts out the failure_pattern type entirely"
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:114 a failed recall returns the payload unchanged, so the model sees the same thing as an empty recall; the shared LIMIT 20 pool ranked only by confidence also lets one type crowd out the others before the per-type slices run"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:92 input that is not JSON drops all guidance with no notice and no log; the slice(0,80) cut at :47 and the top-3 cuts are also unmarked"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:452 no age or last-use term, and no demotion path; the EMA only moves when the pattern is seen again, so a pattern that stopped recurring keeps its rank forever"
+        }
+      ]
+    },
+    {
+      "context": "companion-narration-ops",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/RecallStrip.tsx:68 The recall strip hides itself whenever nothing came back, and the CompanionRecallPreview payload has no failure field. A retrieval error that Rust turned into an empty Recall therefore looks exactly like 'nothing relevant': the user is shown amnesia as novelty.",
+      "techniques": [
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 empty recall and failed recall render the same way (both hidden); the preview type at src/api/companion.ts:2354 carries no status"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:98 FloorNote (:186) reports hits dropped by the relevance floor, but it only renders inside this block; when every hit was dropped, the one notice meant to tell thin recall apart from an empty brain cannot show"
+        },
+        {
+          "technique": "durable-store-failure-posture",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:50 the recall path behind this strip turns any retrieval error into an empty Recall (also :27 in the ml arm), so a broken store reads as an empty one"
+        }
+      ]
+    },
+    {
+      "context": "plugins-dev-tools-projects",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_projects/projectManagerTypes.tsx:4 This surface does create/edit/organise work over DevProject bindings (name, path, repo, standards config). A search of src/features/plugins/dev-tools/sub_projects found no hits for episode, decay, distill, embedding or provenance. The only near-misses are a 'recall' label in a list of pipeline step names and the word 'consolidation' in a style comment, so nothing an agent remembers is captured, ranked or recalled here.",
+      "techniques": [],
+      "absenceTerms": [
+        "episode",
+        "decay",
+        "distill",
+        "embedding",
+        "provenance"
+      ]
+    },
+    {
+      "context": "companion-proactive",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:128 When a project's memories fail to load, the triage silently continues without them: no log and no line in the prompt. The headless pass then judges ideas without the recorded rejections it was grounded on, which re-litigates exactly what the module's header says this grounding prevents.",
+      "techniques": [
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:128 a failed recall and an empty one give the model the same prompt, with nothing saying memory was unavailable"
+        },
+        {
+          "technique": "container-carries-decision-status",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:187 the rows have a category field, but get_for_injection admits every category (ELSE 2 at src-tauri/db/src/repos/dev_memories.rs:120, default 'learned' / task_outcome), and this header promotes all of them to settled decisions"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:131 pack_by_decay skips entries over the 1000-char budget and re-ranks by decay score, undoing the constraint-first SQL order, and no count of the omitted rows reaches the prompt"
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/proactive/execution_review.rs:10 the review triage mints episodes only for deep_dive turns, replacing a design that wrote two append-only episodes per candidate even on 'nothing to add'"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "stores-slices-agents",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor chatSlice.ts:174 is a comment about the Rust turn path and never mentions workingMemory. A grep finds no workingMemory in chatSlice.ts or any non-test file under src/stores, so the technique claim that the slice only refetches it for display could not be confirmed. The one hit is a test f"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T02:24:35.731442+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "loss-site-inventory",
+        "procedure-promotion",
+        "working-memory"
+      ],
+      "deviations": 0,
+      "context": "stores-slices-agents",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T02:24:35.731442+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "decay-and-forgetting",
+        "loss-site-inventory",
+        "memory-value-model",
+        "recall-injection"
+      ],
+      "deviations": 1,
+      "context": "lib-execution",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T02:24:35.731442+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "durable-store-failure-posture",
+        "loss-site-inventory",
+        "recall-injection"
+      ],
+      "deviations": 1,
+      "context": "companion-narration-ops",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T02:24:35.731442+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "plugins-dev-tools-projects",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T02:24:35.731442+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "container-carries-decision-status",
+        "episodic-capture",
+        "loss-site-inventory",
+        "recall-injection"
+      ],
+      "deviations": 1,
+      "context": "companion-proactive",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

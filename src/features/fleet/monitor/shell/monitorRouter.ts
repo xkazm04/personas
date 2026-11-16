@@ -5,9 +5,10 @@ import { useCallback, useEffect, useState, startTransition } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useMandateDrawerRequest } from '../grid/prototype/entry-e/mandate/mandateDrawerRequest';
 
-/** The four top-level Monitor destinations. Blueprint (spark one-control) is
- *  the lens-scan products' door that does not wait for a Decision Center card. */
-export type MonitorView = 'activity' | 'blueprint' | 'conversations' | 'map';
+/** The top-level Monitor destinations. Blueprint (spark one-control) is
+ *  the lens-scan products' door that does not wait for a Decision Center card;
+ *  Morning (spark roadmap S6) is bp's Morning deck beside it, read-only. */
+export type MonitorView = 'activity' | 'blueprint' | 'morning' | 'conversations' | 'map';
 
 /**
  * Last-selected tab, remembered for the life of the session.

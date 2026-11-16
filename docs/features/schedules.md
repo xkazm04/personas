@@ -2,7 +2,7 @@
 
 Schedules is the user-facing surface for cron- and interval-driven personas: a week/month **calendar** of upcoming fire times and real past outcomes, with the scheduler engine's on/off switch and the active/paused counts in its header.
 
-> **Consolidated 2026-09-17.** The overlay used to carry three tabs — a grouped "timeline" list, the calendar, and the Autopilot orchestration ledger. The grouped list (with its per-row run-now, frequency editor, skip-next-fire, delayed run, backfill modal, run-history peek and "last 24 hours" section) was retired in favour of the calendar, and the orchestration ledger moved to the Monitor (see [Orchestration moved to the Monitor](#orchestration-moved-to-the-monitor)). Per-schedule actions live in the Triggers UI.
+> **Consolidated 2026-09-17.** The overlay used to carry three tabs — a grouped "timeline" list, the calendar, and the Autopilot orchestration ledger. The grouped list (with its per-row run-now, frequency editor, skip-next-fire, delayed run, backfill modal, run-history peek and "last 24 hours" section) was retired in favour of the calendar, and the orchestration ledger moved to the Monitor (see [Orchestration moved to the Monitor](#orchestration-moved-to-the-monitor)). Creating, pausing and re-timing a schedule live in the Triggers UI; no screen offers backfill any more.
 
 ## Page host
 
@@ -14,7 +14,7 @@ Schedules is the user-facing surface for cron- and interval-driven personas: a w
 | --- | --- | --- |
 | Header | The scheduler engine badge (green *running* / red *stopped*, click to toggle via `start_scheduler` / `stop_scheduler`), the **active** count badge and — when any exist — the **paused** count, and a refresh button. | `SchedulesOverlay.tsx` |
 | Sidebar filter | Clicking a team (or the "No team" bucket) in the sidebar filters the calendar to those personas; a blue indicator names the filter with a *Clear* action. Delivered as a `window` `CustomEvent('schedules:filter')` rather than store state, since the filter is sidebar-scoped UI. | `SchedulesOverlay.tsx`, `chrome/sidebar/SidebarLevel2.tsx` |
-| Calendar | Week/Month calendar of fire times with conflict detection. The legend (`Projected` / `Success` / `Failed` / `Unverified` / `Overlap`) doubles as click-to-toggle filters: clicking dims the chip and hides events of that kind from the grid; `Overlap` off additionally hides events in conflict groups so the user can isolate non-overlapping fires. A "Show all" reset chip appears whenever any filter is off. Conflict detection runs on the **unfiltered** event set so badge counts stay honest. Hover an event for the persona, its trigger config and the next fire. | `ScheduleCalendar.tsx`, `WeekView.tsx`, `MonthView.tsx`, `EventBlock.tsx`, `EventTooltip.tsx` |
+| Calendar | Week/Month calendar of fire times with conflict detection. The legend (`Projected` / `Success` / `Failed` / `Unverified` / `Overlap`) doubles as click-to-toggle filters: clicking dims the chip and hides events of that kind from the grid; `Overlap` off additionally hides events in conflict groups so the user can isolate non-overlapping fires. A "Show all" reset chip appears whenever any filter is off. Conflict detection runs on the **unfiltered** event set so badge counts stay honest. Hover an event for the persona's name, the slot's time and status, and the agents it overlaps. Click an event to open it: a resolved past slot opens its run in Activity, a projected or unverified slot opens its agent, and the overlay steps aside. | `ScheduleCalendar.tsx`, `WeekView.tsx`, `MonthView.tsx`, `EventBlock.tsx`, `EventTooltip.tsx` |
 | Loading / empty | While the first cron-agent read is in flight the header stays and a delayed ghost sits under it (never a spinner — loading pattern v2); with no scheduled agents at all, a `ScenarioEmptyState` explains where schedules come from. | `SchedulesOverlay.tsx` |
 
 ## State and helpers
@@ -41,19 +41,19 @@ This view does not own a dedicated backend module — it composes existing engin
 
 | API wrapper | Backend |
 | --- | --- |
-| `@/api/pipeline/scheduler` (`getSchedulerStatus`, `startScheduler`, `stopScheduler`) | `engine/scheduler.rs` |
-| Calendar fire times | `cron_fire_times_in_range` IPC backed by `engine/cron.rs` |
-| Past-run history | `list_recent_schedule_runs` IPC (168h / 200-row cap) — grounds past calendar slots in real executions |
+| `@/api/pipeline/scheduler` (`getSchedulerStatus`, `startScheduler`, `stopScheduler`) | `src-tauri/core/src/scheduler.rs` |
+| Calendar fire times | `cron_fire_times_in_range` IPC backed by `src-tauri/core/src/cron.rs` |
+| Past-run history | `list_recent_schedule_runs` IPC (168h; at most 2100 rows per trigger and 5000 overall) — grounds past calendar slots in real executions |
 | Cron agent list | `useOverviewStore().fetchCronAgents()` (overview store fetches the full cron-agent set used both here and in Overview) |
 
-For cron parsing, DST handling, scheduler tick semantics, and incident-driven regression tests, see [execution/README.md](execution/README.md) and `engine/cron.rs`.
+For cron parsing, DST handling, scheduler tick semantics, and incident-driven regression tests, see [execution/README.md](execution/README.md) and `src-tauri/core/src/cron.rs`.
 
 ## Truthful preview & honest history
 
 The calendar is engineered to show the minute the engine will *actually* fire, and to never assert a past outcome it can't back with a record:
 
 - **Seeded preview.** Cron `H`-token spread is seeded on `seed_hash(trigger.id)` in the engine, so the calendar (`useCalendarEvents`) passes the trigger id as the seed — the previewed minute equals the fired minute. Without the seed the backend defaults to `0`, previewing a spread the engine never uses.
-- **Engine-anchored intervals.** Interval fire times are projected from `next_trigger_at` (the same field `engine/scheduler.rs` anchors interval re-schedules on), not the drifting `last_triggered_at` tick stamp.
+- **Engine-anchored intervals.** Interval fire times are projected from `next_trigger_at` (the same field `src-tauri/core/src/scheduler.rs` anchors interval re-schedules on), not the drifting `last_triggered_at` tick stamp.
 - **Real past outcomes.** Past cron slots are matched to real `list_recent_schedule_runs` records within a tolerance window (`matchPastSlotsToRuns` in `calendarHelpers.ts`); a slot with no matching run renders as a distinct **Unverified** kind (`past-unknown`) rather than a fabricated success — revealing skips, rate-limits, out-of-window, over-budget, or app-closed gaps. Interval triggers contribute their real runs directly (their past cadence can't be reconstructed after downtime drift).
 
 ## Live updates
@@ -82,5 +82,6 @@ persona's failing schedule had no bound at all.
 
 ## Known gaps
 
-- The calendar is read-only; creating, pausing, re-timing or backfilling a schedule happens in the Triggers UI under `src/features/triggers/sub_triggers/` (see [events/README.md](events/README.md)).
+- The calendar is read-only; creating, pausing or re-timing a schedule happens in the Triggers UI under `src/features/triggers/sub_triggers/` (see [events/README.md](events/README.md)).
+- No screen offers backfill. `backfillSchedule` and `backfillAllMissedRuns` (`src/api/pipeline/scheduler.ts`) have no UI caller since the grouped list was retired, so missed runs cannot be recovered from the app.
 - Conflict detection in `calendarHelpers.detectConflicts` is purely visual; the scheduler does not gate firing on a UI-detected conflict.

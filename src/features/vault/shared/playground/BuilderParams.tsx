@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { queryParamDefault } from './scopeParamSeed';
+import Button from '@/features/shared/components/buttons/Button';
 
 // -- Types --------------------------------------------------------
 
@@ -14,7 +15,7 @@ export interface KeyValue {
 export function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <span className="typo-heading uppercase text-cyan-400/70">
+      <span className="typo-eyebrow text-role-highlight/70">
         {label}
       </span>
       {children}
@@ -54,21 +55,22 @@ export function KeyValueEditor({
             value={entry.key}
             onChange={(e) => update(i, 'key', e.target.value)}
             placeholder="key"
-            className="flex-1 px-2 py-1.5 rounded typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded-interactive typo-code bg-surface-1 border border-hair text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
           <input
             type="text"
             value={entry.value}
             onChange={(e) => update(i, 'value', e.target.value)}
             placeholder="value"
-            className="flex-1 px-2 py-1.5 rounded typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded-interactive typo-code bg-surface-1 border border-hair text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
-          <button
+          <Button
             onClick={() => remove(i)}
-            className="p-1 rounded text-foreground hover:text-red-400/60 transition-colors"
+            variant="ghost"
+            size="icon-sm"
           >
             <Trash2 className="w-3 h-3" />
-          </button>
+          </Button>
         </div>
       ))}
       <AddButton onClick={add} />
@@ -79,13 +81,14 @@ export function KeyValueEditor({
 function AddButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation();
   return (
-    <button
+    <Button
       onClick={onClick}
-      className="flex items-center gap-1 px-2 py-1 rounded typo-body text-foreground hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
+      variant="ghost"
+      size="xs"
+      icon={<Plus className="w-3 h-3" />}
     >
-      <Plus className="w-3 h-3" />
       {t.vault.shared.add}
-    </button>
+    </Button>
   );
 }
 

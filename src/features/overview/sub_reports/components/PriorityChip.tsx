@@ -17,14 +17,11 @@ interface PriorityChipProps {
  */
 export function PriorityChip({ priority, size = 'md', label }: PriorityChipProps) {
   const Icon = priority.icon;
-  const sizing = size === 'sm'
-    ? 'px-1.5 py-0.5 rounded typo-caption'
-    : 'px-2 py-0.5 rounded-card typo-heading';
+  // Priority is a signal word, not a pill: mono eyebrow in the tier's signal ink, glyph for shape.
+  const sizing = size === 'sm' ? 'gap-0.5' : 'gap-1';
   return (
-    <span
-      className={`inline-flex items-center gap-0.5 border ${sizing} ${priority.bgColor} ${priority.color} ${priority.borderColor} ${priority.chipClass ?? ''}`}
-    >
-      {Icon && <Icon className="w-3 h-3 -ml-0.5" aria-hidden="true" />}
+    <span className={`inline-flex items-center typo-eyebrow ${sizing} ${priority.color}`}>
+      {Icon && <Icon className="w-3 h-3" aria-hidden="true" />}
       {label ?? priority.label ?? ''}
     </span>
   );

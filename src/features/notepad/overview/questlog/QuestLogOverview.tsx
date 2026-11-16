@@ -316,14 +316,14 @@ export function QuestLogOverview({
       <div className="px-8 pt-4 pb-3 flex items-center gap-3 shrink-0">
         <div className="flex items-baseline gap-2 min-w-0 shrink-0">
           <h2 className="typo-heading-lg text-foreground">{t.notepad.tabs_label}</h2>
-          <span className="typo-caption text-foreground/85 whitespace-nowrap">
+          <span className="typo-caption text-ink-2 whitespace-nowrap">
             {tx(t.notepad.overview_count, { count: slotCount, cap: NOTE_CAP })}
             {query.trim() ? ` · ${tx(t.notepad.desk_matching, { count: matches.size })}` : ''}
           </span>
         </div>
         <form
           onSubmit={(e) => { e.preventDefault(); submitCapture(); }}
-          className="flex-1 min-w-0 flex items-center gap-2 px-3 rounded-input border border-primary/15 bg-secondary/15 focus-within:border-primary/35 transition-colors"
+          className="flex-1 min-w-0 flex items-center gap-2 px-3 rounded-input border border-hair bg-surface-1 focus-within:border-primary/35 transition-colors"
         >
           {searchOpen ? <Search className="w-4 h-4 text-primary shrink-0" aria-hidden />
             : <Sparkles className="w-4 h-4 text-primary/70 shrink-0" aria-hidden />}
@@ -336,7 +336,7 @@ export function QuestLogOverview({
               placeholder={t.notepad.desk_search_placeholder}
               aria-label={t.notepad.desk_search_label}
               data-testid="notepad-questlog-search"
-              className="flex-1 min-w-0 h-9 bg-transparent typo-body text-foreground placeholder:text-foreground/85 outline-none"
+              className="flex-1 min-w-0 h-9 bg-transparent typo-body text-foreground placeholder:text-ink-2 outline-none"
             />
           ) : (
             <input
@@ -347,10 +347,10 @@ export function QuestLogOverview({
               placeholder={atCap ? tx(t.notepad.cap_reached, { count: slotCount }) : t.notepad.overview_capture_placeholder}
               aria-label={t.notepad.overview_capture_placeholder}
               data-testid="notepad-questlog-capture"
-              className="flex-1 min-w-0 h-9 bg-transparent typo-body text-foreground placeholder:text-foreground/85 outline-none disabled:is-disabled"
+              className="flex-1 min-w-0 h-9 bg-transparent typo-body text-foreground placeholder:text-ink-2 outline-none disabled:is-disabled"
             />
           )}
-          <span className="hidden sm:inline-flex items-center gap-1.5 shrink-0 text-foreground/85">
+          <span className="hidden sm:inline-flex items-center gap-1.5 shrink-0 text-ink-2">
             <Keycap>{searchOpen ? DESK_KEY.find : DESK_KEY.enter}</Keycap>
             {!searchOpen && <CornerDownLeft className="w-4 h-4 opacity-40" aria-hidden />}
           </span>
@@ -373,7 +373,7 @@ export function QuestLogOverview({
       ) : zones.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-1 text-center px-8">
           <p className="typo-title text-foreground">{t.notepad.empty_title}</p>
-          <p className="typo-caption text-foreground/85">{t.notepad.empty_subtitle}</p>
+          <p className="typo-caption text-ink-2">{t.notepad.empty_subtitle}</p>
         </div>
       ) : (
         <div
@@ -421,7 +421,7 @@ export function QuestLogOverview({
         </div>
       )}
 
-      <div className="px-8 py-2 flex items-center gap-4 flex-wrap shrink-0 border-t border-primary/10">
+      <div className="px-8 py-2 flex items-center gap-4 flex-wrap shrink-0 border-t border-hair">
         <Hint keycap={DESK_KEY.arrows} label={t.notepad.desk_key_column} />
         <Hint keycap={`${DESK_KEY.bracketOpen} ${DESK_KEY.bracketClose}`} label={t.notepad.desk_key_alphabetical} />
         <Hint keycap={DESK_KEY.enterGlyph} label={t.notepad.overview_open} />
@@ -464,7 +464,7 @@ export function QuestLogOverview({
 
 function Hint({ keycap, label }: { keycap: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/85">
+    <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
       <Keycap>{keycap}</Keycap>
       {label}
     </span>

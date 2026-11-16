@@ -13,7 +13,11 @@
 import '@/styles/globals.css';
 import { Component, StrictMode, Suspense, lazy, useEffect, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MotionConfig } from 'framer-motion';
+// The app wraps everything in <LazyMotion> (App.tsx, since 2780138fd6 loads its features after first paint); the
+// shared `m` components (BaseModal's panel among them) animate nothing outside one and stay at their `initial` style,
+// opacity 0. The harness has no startup budget, so it hands the same feature bundle over synchronously.
+import { LazyMotion, MotionConfig } from 'framer-motion';
+import motionFeatures from '@/lib/motion/motionFeatures';
 import { installTape, type ReplayLog, type Tape } from './tapePlayer';
 
 interface HarnessState extends ReplayLog {
@@ -161,6 +165,7 @@ async function boot(): Promise<void> {
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
+      <LazyMotion features={motionFeatures}>
       <MotionConfig reducedMotion="user">
       <Frame>
         <Boundary>
@@ -174,6 +179,7 @@ async function boot(): Promise<void> {
         </Boundary>
       </Frame>
       </MotionConfig>
+      </LazyMotion>
     </StrictMode>,
   );
 }

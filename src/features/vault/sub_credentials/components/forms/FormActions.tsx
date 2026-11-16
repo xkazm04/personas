@@ -5,6 +5,7 @@ import type { VaultStatus } from "@/api/vault/credentials";
 
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface FormActionsProps {
   vault: VaultStatus | null;
@@ -40,7 +41,7 @@ export function FormActions({
               placement="top"
               delay={200}
             >
-              <div className="flex items-center gap-1.5 typo-body text-emerald-400/70 cursor-help">
+              <div className="flex items-center gap-1.5 typo-body text-status-success/70 cursor-help">
                 <Lock className="w-3 h-3" />
                 <span>
                   {vault.keySource === 'keychain'
@@ -52,35 +53,37 @@ export function FormActions({
           )}
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             data-testid="vault-schema-cancel"
-            className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
+            variant="ghost"
+            size="md"
           >
             {t.common.cancel}
-          </button>
+          </Button>
           <Tooltip content={saveDisabled && saveDisabledReason ? saveDisabledReason : ''} placement="top" delay={200}>
-            <button
+            <Button
               type="button"
               onClick={onSave}
               disabled={saveDisabled}
               data-testid="vault-schema-save"
-              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed brightness-lock"
-            >
-              {isSaving ? (
+              variant="primary"
+              size="md"
+              icon={isSaving ? (
                 <LoadingSpinner />
               ) : (
                 <Save className="w-4 h-4" />
               )}
+            >
               {isSaving ? t.common.saving : t.vault.auto_cred.save_credential}
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>
 
       {saveDisabled && saveDisabledReason && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 typo-body text-amber-300">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-status-warning/10 border border-status-warning/20 typo-body text-status-warning">
           <Info className="w-3.5 h-3.5 shrink-0" />
           <span>{saveDisabledReason}</span>
         </div>

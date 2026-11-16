@@ -76,12 +76,12 @@ export const STEP_TONE: Record<string, string> = {
   step_running: 'text-status-info',
   step_done: 'text-status-success',
   step_failed: 'text-status-error',
-  step_skipped: 'text-foreground/45',
+  step_skipped: 'text-ink-3',
   status_awaiting_review: 'text-status-warning',
   status_done: 'text-status-success',
   qa_changes_requested_rework: 'text-status-warning',
   paused: 'text-status-warning',
-  created: 'text-foreground/60',
+  created: 'text-ink-3',
 };
 
 export interface AuthorMeta {
@@ -109,23 +109,23 @@ export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
   persona: {
     Icon: MessageSquare,
     accent: 'rgb(148 163 184)',
-    iconColor: 'text-foreground/60',
-    bubble: 'border-primary/15 bg-secondary/20',
-    tag: 'text-foreground/45',
+    iconColor: 'text-ink-3',
+    bubble: 'border-hair bg-surface-1',
+    tag: 'text-ink-3',
   },
   athena: {
     Icon: Sparkles,
     accent: 'rgb(167 139 250)',
-    iconColor: 'text-violet-300',
-    bubble: 'border-violet-500/25 bg-violet-500/5',
-    tag: 'text-violet-300',
+    iconColor: 'text-role-agent',
+    bubble: 'border-role-agent/25 bg-role-agent/5',
+    tag: 'text-role-agent',
   },
   director: {
     Icon: Compass,
     accent: 'rgb(56 189 248)',
-    iconColor: 'text-sky-300',
-    bubble: 'border-sky-500/25 bg-sky-500/5',
-    tag: 'text-sky-300',
+    iconColor: 'text-role-external',
+    bubble: 'border-role-external/25 bg-role-external/5',
+    tag: 'text-role-external',
   },
   // An EXTERNAL human, arriving over the team's Slack bridge. Deliberately its
   // own voice: a bridged message is neither the operator ("You") nor one of the
@@ -133,9 +133,9 @@ export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
   slack: {
     Icon: Hash,
     accent: 'rgb(45 212 191)',
-    iconColor: 'text-teal-300',
-    bubble: 'border-teal-500/25 bg-teal-500/5',
-    tag: 'text-teal-300',
+    iconColor: 'text-status-success',
+    bubble: 'border-status-success/25 bg-status-success/5',
+    tag: 'text-status-success',
   },
 };
 
@@ -144,10 +144,10 @@ export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
  *  (liveModel) so the same author looks identical in both surfaces. */
 export function avatarBgFor(kind: string): string {
   switch (kind) {
-    case 'athena': return 'bg-violet-500/15';
-    case 'director': return 'bg-sky-500/15';
-    case 'directive': return 'bg-emerald-500/15';
-    case 'slack': return 'bg-teal-500/15';
+    case 'athena': return 'bg-role-agent/15';
+    case 'director': return 'bg-role-external/15';
+    case 'directive': return 'bg-status-success/15';
+    case 'slack': return 'bg-status-success/15';
     default: return 'bg-secondary/60';
   }
 }

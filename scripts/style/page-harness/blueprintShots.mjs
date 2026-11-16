@@ -128,7 +128,30 @@ const STATES = {
   // send them): the chip, the one-shot mark on the plan and the queue rows; and the chip's list open on its 3 entries
   'live-changed': async (p) => { await feedChanges(p); },
   'live-changed-open': async (p) => { await feedChanges(p); await p.click('[data-testid="blueprint-changes-chip"]'); await p.waitForTimeout(200); },
+  // spark roadmap S3: the decision brief on a waiting card. The repeat (fixture/briefDemo.ts, ?brief=demo): Decline
+  // first, Approve anyway; its decline prompt pre-filled with the note naming the decision it repeats. The ask (Kettle's
+  // own kf-001): the decline of a like idea elsewhere in amber, its evidence open, Approve first.
+  'brief-repeat': async (p) => { await briefCard(p, 'kf-010'); },
+  'brief-repeat-options': async (p) => { await briefCard(p, 'kf-010', 'end'); },
+  'brief-repeat-prompt': async (p) => { await briefCard(p, 'kf-010'); await p.click('article[data-item="kf-010"] [data-testid="blueprint-decline"]'); },
+  'brief-ask-options': async (p) => { await briefCard(p, 'kf-001', 'end'); },
+  'brief-ask': async (p) => { await briefCard(p, 'kf-001'); await p.click('article[data-item="kf-001"] [data-fact="declined"] button'); },
 };
+
+/** Bring a waiting card's brief (or with `end`, its answers) into view on its feature's L4 sheet: scroll the sheet's
+ *  own pane only (scrolling every ancestor, as scrollIntoView does, moves the page under the fixed sheet). */
+async function briefCard(p, id, end = false) {
+  await p.waitForSelector(`article[data-item="${id}"]`, { timeout: 10_000 });
+  await p.evaluate(([sel, toEnd]) => {
+    const el = document.querySelector(sel);
+    let pane = el?.parentElement;
+    while (pane && !(pane.scrollHeight > pane.clientHeight && /(auto|scroll)/.test(getComputedStyle(pane).overflowY))) pane = pane.parentElement;
+    if (!el || !pane) return;
+    const r = el.getBoundingClientRect(), q = pane.getBoundingClientRect();
+    pane.scrollTop += toEnd ? r.bottom - q.bottom + 24 : r.top - q.top - 24;
+  }, [`article[data-item="${id}"]`, end]);
+  await p.waitForTimeout(200);
+}
 
 /**
  * Select the first waiting item (the camera flies to it), decide it and two others straight on the fixture store (not
@@ -171,7 +194,18 @@ const FEATURE = {
   'state-compare': 'book-a-class', 'state-compare-perf': 'drag-and-drop-timetable-editor', 'state-rework-prompt': 'book-a-class',
   'state-reopen-refused': 'studio-kpi-dashboard', 'state-in-release': 'revenue-reports',
   'page-general': 'tax-handling', 'page-lens-good': 'tax-handling', 'page-lens-bad': 'tax-handling',
+  'brief-repeat': 'book-for-friends-family', 'brief-repeat-options': 'book-for-friends-family', 'brief-repeat-prompt': 'book-for-friends-family',
+  'brief-ask': 'member-mobile-app', 'brief-ask-options': 'member-mobile-app',
 };
+/** Extra harness query per state. */
+const QUERY = { 'brief-repeat': 'brief=demo', 'brief-repeat-options': 'brief=demo', 'brief-repeat-prompt': 'brief=demo' };
+/**
+ * States shot on the real clock. A fixed page clock also fixes performance.now, so framer-motion's entrance never
+ * advances and BaseModal's panel (the whole sheet) stays at its initial opacity 0: measured 2026-10-30, every state
+ * shot blank. The brief reads no clock, so its states skip the fixed time; the others still need it (an open question
+ * for whoever owns this harness).
+ */
+const REAL_CLOCK = new Set(['brief-repeat', 'brief-repeat-options', 'brief-repeat-prompt', 'brief-ask', 'brief-ask-options']);
 /** Frames taken at every size: the levels and the compare panel. */
 const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'live-started-running', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'live-changed', 'live-changed-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release']);
 
@@ -207,10 +241,10 @@ try {
       const errors = [];
       page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 800)); });
       page.on('pageerror', (e) => errors.push('pageerror: ' + String(e?.message ?? e).slice(0, 800)));
-      await page.clock.setFixedTime(new Date(NOW));
+      if (!REAL_CLOCK.has(name)) await page.clock.setFixedTime(new Date(NOW));
       await page.addInitScript((t) => { window.__PAGE_HARNESS_TAPE__ = t; }, tape);
       await page.addInitScript(CANVAS_PROBE);
-      const url = `${server.url}${HARNESS}?module=decision-center/blueprint&theme=${theme}${FEATURE[name] ? '&feature=' + FEATURE[name] : ''}`;
+      const url = `${server.url}${HARNESS}?module=decision-center/blueprint&theme=${theme}${FEATURE[name] ? '&feature=' + FEATURE[name] : ''}${QUERY[name] ? '&' + QUERY[name] : ''}`;
       await page.goto(url, { waitUntil: 'commit' });
       await page.waitForFunction(() => { const s = window.__PAGE_HARNESS__; return !!s && (s.mounted || !!s.error); }, null, { timeout: 180_000 });
       await page.waitForSelector('[data-testid="blueprint-sheet"]', { timeout: 60_000 });

@@ -11,12 +11,12 @@ function DiscoveryCardGhost({ rows = 4 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="w-full p-3 rounded-modal border border-primary/10 bg-secondary/20 animate-fade-in"
+          className="w-full p-3 rounded-modal border border-hair bg-surface-1 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <div className="flex items-center gap-3">
             <span className="w-8 h-8 rounded-card bg-primary/[0.06] shrink-0" />
-            <span className={`h-3.5 rounded bg-primary/[0.06] ${GHOST_WIDTHS[i % GHOST_WIDTHS.length]}`} />
+            <span className={`h-3.5 rounded-interactive bg-primary/[0.06] ${GHOST_WIDTHS[i % GHOST_WIDTHS.length]}`} />
           </div>
         </div>
       ))}

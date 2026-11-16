@@ -4,24 +4,24 @@ The Cockpit is the **Home → Cockpit** 2nd-level surface. Its content is not st
 
 This file documents the moving parts so a future developer can extend it, debug it, or repurpose the pattern for another surface.
 
-> **Status (verified 2026-09-06).** The surface is live and has grown well past what the body below describes. What changed since this file was last accurate:
+> **Status (first written 2026-09-06; every path and line reference in this file re-verified 2026-11-05).** The surface is live and has grown well past what the body below describes. What changed since this file was last accurate:
 >
-> - **The dedicated Dashboard tab was retired. Cockpit IS the dynamic dashboard surface**. `compose_dashboard` now navigates to Home → Cockpit like `compose_cockpit` does (`src/features/plugins/companion/chat/athenaChatNavigation.ts:150-155`). `HomeTab` is `welcome | cockpit | roadmap | system-check | learning` (`src/lib/types/types.ts:412`), and three of those five are DEV-only (`HomePage.tsx:70-95`).
-> - **`companion/dispatcher.rs` and `companion/session.rs` are now DIRECTORIES.** The `compose_cockpit` match arm is `src-tauri/src/companion/dispatcher/dispatch.rs:959`; the persist+emit loop is `src-tauri/src/companion/session/turn.rs:798-816`; `COMPOSE_COCKPIT_EVENT` is declared in `src-tauri/src/companion/session/events.rs:50`.
-> - **There is no `CompanionPanel.tsx`.** The chat panel was split into `src/features/plugins/companion/chat/`; the compose listener is `athenaChatNavigation.ts:161` and the `explain_in_cockpit` listener is `athenaChatShell.ts:54`.
+> - **The dedicated Dashboard tab was retired. Cockpit IS the dynamic dashboard surface**. `compose_dashboard` now navigates to Home → Cockpit like `compose_cockpit` does (`src/features/companions/athena/chat/athenaChatNavigation.ts:150-156`). `HomeTab` is `welcome | cockpit | roadmap | system-check | learning` (`src/lib/types/types.ts:440`), and three of those five are DEV-only (`devOnly` in `homeItems`, `src/features/shared/chrome/sidebar/sidebarData.ts:58-63`; mounted only under `import.meta.env.DEV` in `HomePage.tsx:100-124`).
+> - **`companion/dispatcher.rs` and `companion/session.rs` are now DIRECTORIES.** The `compose_cockpit` match arm is `src-tauri/src/companion/dispatcher/dispatch.rs:968`; the persist+emit loop is `src-tauri/src/companion/session/turn.rs:870-880`; `COMPOSE_COCKPIT_EVENT` is declared in `src-tauri/src/companion/session/events.rs:54`.
+> - **There is no `CompanionPanel.tsx`.** The chat panel was split into `src/features/companions/athena/chat/` (it has since moved out of the companion plugin folder); the compose listener is `athenaChatNavigation.ts:161` and the `explain_in_cockpit` listener is `athenaChatShell.ts:54`.
 > - **Pin-to-cockpit shipped.** See the new section below.
 > - **A deterministic default board shipped** (`src/features/home/sub_cockpit/defaultCockpit.ts`), so the "renders nothing until Athena has composed" gap is closed for any install that has at least one persona.
 > - **A morning-briefing overlay shipped** (`src/features/home/sub_cockpit/briefing/`, sanitizer in `src-tauri/src/companion/brain/briefing.rs`).
-> - **The registry is 29 widget kinds**, not the 3 + 6 the tables below list (`src/features/home/sub_cockpit/widgetRegistry.ts`).
-> - **Widget labels ARE localized now**: 87 keys under `overview.cockpit.*` in `src/i18n/locales/en.json`. The `cockpit.*` section noted at the bottom of this file is only the two legacy families.
+> - **The registry is 30 widget kinds**, not the 3 + 6 the tables below list (`src/features/home/sub_cockpit/widgetRegistry.ts`). One of them, `council_media`, is app-composed only and never emitted by Athena (see the family list below).
+> - **Widget labels ARE localized now**: 119 keys under `overview.cockpit.*` in `src/i18n/locales/en.json`. The `cockpit.*` section noted at the bottom of this file is only the two legacy families.
 >
-> Still true as written: there is no telemetry anywhere in `sub_cockpit/`; `companionUnpinWidgetFromCockpit` (`src/api/companion.ts:1812`) still has no caller; `useCockpitSummary` still has no production consumer (only `inbox/hooks/useCockpitSummary.test.ts`); and the persistent `compose_cockpit` path still validates only that `widgets` is a non-empty array (`dispatch.rs:960-967`) while `explain_in_cockpit` validates kinds against a 9-kind allow-list (`dispatch.rs:986-996`).
+> Still true as written: there is no telemetry anywhere in `sub_cockpit/`; `companionUnpinWidgetFromCockpit` (`src/api/companion.ts:1948`) still has no caller; and the persistent `compose_cockpit` path still validates only that `widgets` is a non-empty array (`dispatch.rs:969-976`) while `explain_in_cockpit` validates kinds against a 9-kind allow-list (`dispatch.rs:996-1006`). `useCockpitSummary` no longer exists: it went with the inbox library (`f5a1c27d2b`).
 
-> **Status (2026-08-04): the Cockpit is unchanged and still works, but its *ability* now has a second, better-validated home.** A design pass over "why did the free plate never earn its keep" found six independent reasons, all in the code rather than in taste: the constitution actively steers Athena toward inline chat cards and treats composing a board as the fallback branch; the default board is four widgets and renders nothing at all until at least one persona exists (`CockpitPanel.tsx:185` gates on `personas?.length > 0`; the four widgets are computed from live fleet state, not static, `defaultCockpit.ts:68-146`); the widget registry's real consumer is the chat transcript, since `InlineChatCard` renders from the same registry and the persona-design family is only ever emitted as chat cards; the one flow that reliably opens the tab is an *overlay* (`explain_in_cockpit`, the morning briefing) which deliberately skips fetching the persistent board; there is no telemetry anywhere in the surface; and two of its own affordances are dead (`companionUnpinWidgetFromCockpit` has no caller, `useCockpitSummary` has no production consumer).
+> **Status (2026-08-04): the Cockpit is unchanged and still works, but its *ability* now has a second, better-validated home.** A design pass over "why did the free plate never earn its keep" found six independent reasons, all in the code rather than in taste: the constitution actively steers Athena toward inline chat cards and treats composing a board as the fallback branch; the default board is four widgets and renders nothing at all until at least one persona exists (the gate on `personas?.length > 0` is now `panel/useCockpitSource.ts:148`; the four widgets are computed from live fleet state, not static, `defaultCockpit.ts:67-147`); the widget registry's real consumer is the chat transcript, since `InlineChatCard` renders from the same registry and the persona-design family is only ever emitted as chat cards; the one flow that reliably opens the tab is an *overlay* (`explain_in_cockpit`, the morning briefing) which deliberately skips fetching the persistent board; there is no telemetry anywhere in the surface; and two of its own affordances are dead (`companionUnpinWidgetFromCockpit` has no caller, `useCockpitSummary` has no production consumer).
 >
-> Two validation asymmetries are worth knowing before extending anything here. `explain_in_cockpit` validates widget kinds against a 9-kind allow-list and drops the rest; the **persistent** `compose_cockpit` path validates only that `widgets` is a non-empty array, so a hallucinated kind is written to disk and renders a red error box on every open, with no reset path. The strongest validation in the feature (kind allow-list, caps, and a per-widget-kind action cross-check) lives in the morning-briefing sanitizer (`sanitize_briefing_spec`, `src-tauri/src/companion/brain/briefing.rs:232`), outside the dispatcher entirely.
+> Two validation asymmetries are worth knowing before extending anything here. `explain_in_cockpit` validates widget kinds against a 9-kind allow-list and drops the rest; the **persistent** `compose_cockpit` path validates only that `widgets` is a non-empty array, so a hallucinated kind is written to disk and renders a red error box on every open, with no reset path. The strongest validation in the feature (kind allow-list, caps, and a per-widget-kind action cross-check) lives in the morning-briefing sanitizer (`sanitize_briefing_spec`, `src-tauri/src/companion/brain/briefing.rs:233`), outside the dispatcher entirely.
 >
-> **Where the ability went.** [`SurfaceRenderer`](../../../src/features/shared/components/surface/) — zod schema, salvage-instead-of-reject parsing, clamping, a frozen block catalog and consent-gated actions — is the newer engine, and it is what now renders Athena's composed panels on the [Mastermind canvas](../plugins/dev%20tools/mastermind.md). Those panels persist per project, carry a spec version, drop an unreadable spec rather than retaining it, and have a per-project reset — the specific failure this surface still has.
+> **Where the ability went.** [`SurfaceRenderer`](../../../../src/features/shared/components/surface/) — zod schema, salvage-instead-of-reject parsing, clamping, a frozen block catalog and consent-gated actions — is the newer engine, and it is what now renders Athena's composed panels on the [Mastermind canvas](../../plugins/dev%20tools/mastermind.md). Those panels persist per project, carry a spec version, drop an unreadable spec rather than retaining it, and have a per-project reset — the specific failure this surface still has.
 >
 > Nothing here was deleted: the decision was to prove the replacement before touching the original. If you are adding a new dynamic surface, start from `SurfaceRenderer`, not from `cockpitWidgetRegistry`. Note also that widget kind strings are currently duplicated across five places with no shared source of truth (registry, dispatcher allow-list, briefing sanitizer, `InlineChatCard`, and the constitution), so adding a widget means editing all five.
 
@@ -36,21 +36,22 @@ user chat → Athena emits an OP envelope:
   OP: {"op": "propose_action", "action": "compose_cockpit",
        "params": {"title": "...", "widgets": [...]}, "rationale": "..."}
   ↓
-src-tauri/src/companion/dispatcher/dispatch.rs:959, match arm checks
+src-tauri/src/companion/dispatcher/dispatch.rs:968, match arm checks
   `widgets` is a non-empty array, builds a spec JSON, queues it on
   Dispatched.cockpits
   ↓
-src-tauri/src/companion/session/turn.rs:798, auto-fire loop persists each
+src-tauri/src/companion/session/turn.rs:870, auto-fire loop persists each
   spec via brain::cockpit::save_cockpit_preserving_pinned(...) and emits
   COMPOSE_COCKPIT_EVENT
   ↓
-src/features/plugins/companion/chat/athenaChatNavigation.ts:161, listener
+src/features/companions/athena/chat/athenaChatNavigation.ts:161, listener
   fires goToCockpit(true): setSidebarSection('home') + setHomeTab('cockpit')
   ↓
 src/features/home/components/HomePage.tsx: routes to CockpitPanel
   ↓
-CockpitPanel calls companionGetCockpit(), parses spec_json,
-  renders widgets in a 12-col CSS grid
+CockpitPanel's useCockpitSource (panel/useCockpitSource.ts:79) calls
+  companionGetCockpit(), parses spec_json; panel/CockpitGrid.tsx renders
+  the widgets in the kit's 12-column Tiles grid
 ```
 
 ## Backend
@@ -58,27 +59,27 @@ CockpitPanel calls companionGetCockpit(), parses spec_json,
 | File | Role |
 | --- | --- |
 | `src-tauri/src/companion/brain/cockpit.rs` | Singleton storage. `companion_node` row (`kind='cockpit'`, `id='cockpit'`) + on-disk file `~/.personas/companion-brain/cockpit.md`. `save_cockpit` / `load_cockpit` pair, plus `save_cockpit_preserving_pinned` (the compose path) and a `COCKPIT_WRITE_LOCK` serializing the load-modify-save cycle the pin flow shares. |
-| `src-tauri/src/companion/dispatcher/dispatch.rs` | `compose_cockpit` match arm (`:959`) and `explain_in_cockpit` (`:980`). `Dispatched.cockpits: Vec<String>` is declared in `dispatcher/types.rs:32`. |
-| `src-tauri/src/companion/session/turn.rs` | The persist+emit auto-fire loops (`:798` cockpit, `:853` explain). `COMPOSE_COCKPIT_EVENT` / `EXPLAIN_COCKPIT_EVENT` live in `session/events.rs:50`. |
+| `src-tauri/src/companion/dispatcher/dispatch.rs` | `compose_cockpit` match arm (`:968`) and `explain_in_cockpit` (`:990`). `Dispatched.cockpits: Vec<String>` is declared in `dispatcher/types.rs:36`. |
+| `src-tauri/src/companion/session/turn.rs` | The persist+emit auto-fire loops (`:870` cockpit, `:922` explain). `COMPOSE_COCKPIT_EVENT` / `EXPLAIN_COCKPIT_EVENT` live in `session/events.rs:54` / `:61`. |
 | `src-tauri/src/commands/companion/consolidate.rs` | `companion_get_cockpit` (`:336`), `companion_pin_widget_to_cockpit` (`:355`), `companion_unpin_widget_from_cockpit` (`:451`). |
-| `src-tauri/src/companion/brain/briefing.rs` | Morning-briefing composition + `sanitize_briefing_spec` (`:232`), which holds the kind allow-list, widget cap, and per-kind action cross-check. Emits a cockpit-spec body rendered as an overlay, never persisted. |
+| `src-tauri/src/companion/brain/briefing.rs` | Morning-briefing composition + `sanitize_briefing_spec` (`:233`), which holds the kind allow-list, widget cap, and per-kind action cross-check. Emits a cockpit-spec body rendered as an overlay, never persisted. |
 | `src-tauri/src/companion/templates/constitution.md` | Athena's doctrine. Documents the op grammar, the widget kinds available, and *when* to use the cockpit vs the dashboard vs prose. |
 
 ## Frontend
 
 | File | Role |
 | --- | --- |
-| `src/features/home/sub_cockpit/CockpitPanel.tsx` | Reads spec, parses JSON, renders widgets in 12-col grid. Auto-reloads on window focus. Empty state renders the Athena portrait (`/athena/athena_baseline.jpg`) as an atmospheric background; its "Talk to Athena" CTA presets a "compose a persona-overview cockpit" prompt with `autoSend: true` and opens the chat panel (same `setPendingPrompt` pattern as `ReportDetailModal`, `CockpitPanel.tsx:87-96`; `MessageDetailModal` was renamed in the Messages-to-Reports rebrand). |
+| `src/features/home/sub_cockpit/CockpitPanel.tsx` | The panel shell: header, `ResumeBanner`, the first-run `WelcomeGetStarted` band, then the loading / error / empty state or the widget grid. The data side lives in `panel/useCockpitSource.ts`: it fetches the spec (`:79`), reloads on window focus (`:91-99`), parses it, and picks the overlay, Athena's spec or the default board; the grid is `panel/CockpitGrid.tsx`. The empty state (`panel/CockpitStates.tsx`) renders the Athena portrait (`/athena/athena_baseline.jpg`) as an atmospheric background; its "Talk to Athena" CTA presets a "compose a persona-overview cockpit" prompt with `autoSend: true` and opens the chat panel (same `setPendingPrompt` pattern as `ReportDetailModal`, `CockpitPanel.tsx:32-38`, the call itself at `:33`; `MessageDetailModal` was renamed in the Messages-to-Reports rebrand). |
 | `src/features/home/sub_cockpit/defaultCockpit.ts` | `composeDefaultCockpit(personas, metrics, labels)` builds the deterministic starter board (orientation callout · fleet vitals stat grid · persona roster · needs-attention issue list), composed in TS with **no LLM call** from data already client-side. Athena's persisted spec always wins; this fills the never-composed gap, and only when at least one persona exists. Pure and framework-free (labels are injected already-localized) so it unit-tests. |
-| `src/features/home/sub_cockpit/briefing/` | Morning Director overlay: `useMorningBriefing` (once per app session, delta-gated so no LLM call when nothing happened; called from `HomePage.tsx:34`), `actions.ts` / `actionTypes.ts` (the `WidgetActionBar` action grammar), `sessionDelta.ts`. |
-| `src/features/home/sub_cockpit/widgetRegistry.ts` | Map from widget `kind` string → React component. **29 kinds** as of 2026-09-06. |
+| `src/features/home/sub_cockpit/briefing/` | Morning Director overlay: `useMorningBriefing` (once per app session, delta-gated so no LLM call when nothing happened; called from `HomePage.tsx:51`), `actions.ts` / `actionTypes.ts` (the `WidgetActionBar` action grammar), `sessionDelta.ts`. |
+| `src/features/home/sub_cockpit/widgetRegistry.ts` | Map from widget `kind` string → React component. **30 kinds** as of 2026-11-05. |
 | `src/features/home/sub_cockpit/widgets/PersonaOverviewWidget.tsx` | Illustrated persona card grid. Click → Agents → that persona. Config: `{limit, filter}`. |
 | `src/features/home/sub_cockpit/widgets/ConnectedServicesWidget.tsx` | Credentials + per-cred persona usage counts + health pill. Click → Connections page. Config: `{limit}`. |
 | `src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx` | Top-N items of the Decision Center roster (`useDecisionRoster`, the same counts as the title-bar badge). Click row → opens `DecisionDrawer`. Config: `{limit}`. |
 | `src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx` | Modal drawer with full body + per-kind actions, deciding through the roster's `decide` (one write door per row type, `rowWrites`). |
-| `src/api/companion.ts` | `CompanionCockpitSpec`, `CompanionCockpitWidget`, `companionGetCockpit()` (`:1782`), `companionPinWidgetToCockpit()` (`:1791`), `companionUnpinWidgetFromCockpit()` (`:1812`), `COMPANION_COMPOSE_COCKPIT_EVENT`, `COMPANION_EXPLAIN_COCKPIT_EVENT`. |
+| `src/api/companion.ts` | `CompanionCockpitSpec`, `CompanionCockpitWidget`, `companionGetCockpit()` (`:1918`), `companionPinWidgetToCockpit()` (`:1927`), `companionUnpinWidgetFromCockpit()` (`:1948`), `COMPANION_COMPOSE_COCKPIT_EVENT`, `COMPANION_EXPLAIN_COCKPIT_EVENT`. |
 
-The 29 registered kinds fall into six families: the three data-fetching originals (`persona_overview`, `connected_services`, `decisions_panel`); four contextual ones composed programmatically by other surfaces rather than by Athena (`message_summary`, `execution_facts`, `linked_decisions`, `linked_memories`); three generic ones (`metric_spark`, `issue_list`, `text_callout`); the six explainers below; the eleven persona-design cards (`persona_walkthrough`, `template_suggestions`, `use_case_set`, `trigger_set`, `model_tier_choice`, `observability_plan`, `decision_log`, `persona_ready`, `design_capabilities`, `persona_creation_offer`, `walkthrough_offer`); and `browser_test_report` / `recent_decisions`.
+The 30 registered kinds fall into seven families: the three data-fetching originals (`persona_overview`, `connected_services`, `decisions_panel`); four contextual ones composed programmatically by other surfaces rather than by Athena (`message_summary`, `execution_facts`, `linked_decisions`, `linked_memories`); three generic ones (`metric_spark`, `issue_list`, `text_callout`); the six explainers below; the eleven persona-design cards (`persona_walkthrough`, `template_suggestions`, `use_case_set`, `trigger_set`, `model_tier_choice`, `observability_plan`, `decision_log`, `persona_ready`, `design_capabilities`, `persona_creation_offer`, `walkthrough_offer`); `browser_test_report` / `recent_decisions`; and `council_media`, a screenshot or recording a council member staged as evidence. `council_media` is **app-composed only** (`widgets/CouncilMediaWidget.tsx:13`): it is deliberately absent from Athena's constitution and from every Rust op allow-list, and its only composer is `composeEvidence` (`src/features/companions/curator/council/table/composeEvidence.ts:96`), which builds it from a council verdict's own `evidence[]`. Do not add it to either allow-list.
 
 ## Explainer widgets + `explain_in_cockpit` (2026-06-10)
 
@@ -103,7 +104,7 @@ synthetic `decision-explain` turn (`companion_send_message` with
 prior recommendation, and the underlying approval/incident/review payload).
 Athena replies with one `explain_in_cockpit` op. Unlike `compose_cockpit`,
 the spec **rides in the event payload (`EXPLAIN_COCKPIT_EVENT`) and is never
-persisted** — the CompanionPanel listener sets it as the `contextualCockpit`
+persisted** — the `athenaChatShell.ts` listener sets it as the `contextualCockpit`
 overlay (source kind `'explain'`), navigates Home → Cockpit, and dismissal
 restores the user's persistent board untouched. The dispatcher validates
 widget kinds against the explainer set (plus `text_callout` / `metric_spark`
@@ -118,17 +119,17 @@ flow synthetically.
 
 ## Pin to cockpit
 
-A widget rendered as an inline chat card can be **pinned** onto the persistent board. `InlineChatCard.tsx:119` calls `companionPinWidgetToCockpit({...})` for the six kinds in its `PINNABLE_KINDS` set (`persona_overview`, `connected_services`, `decisions_panel`, `metric_spark`, `issue_list`, `text_callout`: dashboard-shaped surfaces only; advisory one-shots are deliberately not pinnable, `InlineChatCard.tsx:39-46`); the command (`consolidate.rs:355`) loads the spec, stamps the widget with a top-level `"pinned": true`, and saves it back.
+A widget rendered as an inline chat card can be **pinned** onto the persistent board. `InlineChatCard.tsx:116` calls `companionPinWidgetToCockpit({...})` for the six kinds in its `PINNABLE_KINDS` set (`persona_overview`, `connected_services`, `decisions_panel`, `metric_spark`, `issue_list`, `text_callout`: dashboard-shaped surfaces only; advisory one-shots are deliberately not pinnable, `InlineChatCard.tsx:17-30`); the command (`consolidate.rs:355`) loads the spec, stamps the widget with a top-level `"pinned": true`, and saves it back.
 
-The compose path then has to respect that. `session/turn.rs:806` calls **`save_cockpit_preserving_pinned`** rather than `save_cockpit`, which extracts pinned widgets from the previous spec and **appends** them after Athena's freshly-composed ones (deduped on same `kind` + same `config`), so Athena's layout reads first and the user's pins follow as a tail section. Without it a pin would vanish the next time Athena composed anything (`brain/cockpit.rs:64-93`).
+The compose path then has to respect that. `session/turn.rs:872` calls **`save_cockpit_preserving_pinned`** rather than `save_cockpit`, which extracts pinned widgets from the previous spec and **appends** them after Athena's freshly-composed ones (deduped on same `kind` + same `config`), so Athena's layout reads first and the user's pins follow as a tail section. Without it a pin would vanish the next time Athena composed anything (`brain/cockpit.rs:63-93`).
 
 Both flows do load-modify-save over one JSON blob with no DB transaction or version check, so they share `COCKPIT_WRITE_LOCK` (`brain/cockpit.rs:32`) for the whole critical section.
 
-`companion_unpin_widget_from_cockpit` exists, is registered (`src-tauri/src/lib.rs:1371`) and is wrapped in `src/api/companion.ts:1812`, but **nothing in the UI calls it**. There is no way to remove a pin from inside the app.
+`companion_unpin_widget_from_cockpit` exists, is registered (`src-tauri/src/ipc_shards/shard_4.rs:186`) and is wrapped in `src/api/companion.ts:1948`, but **nothing in the UI calls it**. There is no way to remove a pin from inside the app.
 
 ## Inline chat cards (related but separate)
 
-Athena can also surface the same widgets *inside* the chat transcript without composing a full cockpit. Three additional ops (`show_persona_overview`, `show_connected_services`, `show_decisions`) auto-fire (no approval) per turn and emit `COMPANION_CHAT_CARDS_EVENT` carrying a `ChatCard[]` payload. The `InlineChatCard` component (`src/features/plugins/companion/InlineChatCard.tsx`) renders each card by looking up the kind in the cockpit widget registry — same component, compact size. One-shot: cleared on the next send.
+Athena can also surface the same widgets *inside* the chat transcript without composing a full cockpit. Three additional ops (`show_persona_overview`, `show_connected_services`, `show_decisions`) auto-fire (no approval) per turn and emit `COMPANION_CHAT_CARDS_EVENT` carrying a `ChatCard[]` payload. The `InlineChatCard` component (`src/features/companions/athena/InlineChatCard.tsx`) renders each card by looking up the kind in the cockpit widget registry — same component, compact size. One-shot: cleared on the next send.
 
 Use inline cards when a UI snippet beats prose for *this turn*; compose the cockpit when the user is landing on the app or wants a persistent overview.
 
@@ -143,7 +144,7 @@ The legacy `simple_mode` translation section was renamed to `cockpit` in Phase 5
 - `cockpit.unknown_assistant` — fallback persona name
 - `cockpit.inbox.relative_just_now`, `relative_minutes_{one,other}`, `relative_hours_{one,other}`, `relative_days_{one,other}` — relative-time labels used by `formatRelativeTime`.
 
-**The extraction has since happened.** The Cockpit's own user-visible strings live under **`overview.cockpit.*`**: 87 keys in `src/i18n/locales/en.json` covering the panel chrome (`title_default`, `subtitle_*`, `error_*`, `empty_*`, `unknown_widget`), the explainer widgets (`verdict_*`, `flow_title`, `timeline_title`, `log_title`, `comparison_recommended`), the default board (`default_*`, consumed via `DefaultCockpitLabels` at `CockpitPanel.tsx:162-183`), and the morning briefing (`briefing_*`, `action_*`).
+**The extraction has since happened.** The Cockpit's own user-visible strings live under **`overview.cockpit.*`**: 119 keys in `src/i18n/locales/en.json` covering the panel chrome (`title_default`, `subtitle_*`, `error_*`, `empty_*`, `unknown_widget`), the explainer widgets (`verdict_*`, `flow_title`, `timeline_title`, `log_title`, `comparison_recommended`), the default board (`default_*`, consumed via the `DefaultCockpitLabels` memo at `panel/useCockpitSource.ts:126-146`), and the morning briefing (`briefing_*`, `action_*`).
 
 ## Adding a new widget kind
 
@@ -151,10 +152,10 @@ The legacy `simple_mode` translation section was renamed to `cockpit` in Phase 5
 2. Register it in `widgetRegistry.ts` under a stable string key.
 3. Document the kind + its config schema in `constitution.md`'s "Cockpit composition" section so Athena knows it exists.
 4. Optionally allow it as an inline chat card by mapping a new `show_*` action to the kind in `dispatcher/dispatch.rs`'s show-card match arms.
-5. If it is dashboard-shaped, add it to `PINNABLE_KINDS` in `InlineChatCard.tsx:39`.
+5. If it is dashboard-shaped, add it to `PINNABLE_KINDS` in `InlineChatCard.tsx:23`.
 
-(There is still no shared source of truth for kind strings: the registry, the `explain_in_cockpit` allow-list in `dispatch.rs:980`, the briefing sanitizer in `brain/briefing.rs`, `InlineChatCard`'s two sets, and the constitution each carry their own copy.)
+(There is still no shared source of truth for kind strings: the registry, the `explain_in_cockpit` allow-list in `dispatch.rs:996`, the briefing sanitizer in `brain/briefing.rs`, `InlineChatCard`'s `PINNABLE_KINDS`, and the constitution each carry their own copy.)
 
 ## Why not just hardcode the cockpit?
 
-Letting Athena compose it lets the user say "show me my email assistants and what's pending" or "I'm launching a new project, give me the overview" and get a tailored canvas without anyone shipping a new screen. The 29 registered kinds are the vocabulary; Athena chooses which subset, at what span, with what config, per request.
+Letting Athena compose it lets the user say "show me my email assistants and what's pending" or "I'm launching a new project, give me the overview" and get a tailored canvas without anyone shipping a new screen. The 30 registered kinds are the vocabulary (`council_media` aside, which only the app composes); Athena chooses which subset, at what span, with what config, per request.

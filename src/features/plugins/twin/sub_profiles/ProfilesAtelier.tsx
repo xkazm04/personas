@@ -153,7 +153,7 @@ export default function ProfilesAtelier() {
  * (docs/design/overview-loading.md laws 2 and 3).
  */
 function TwinCardGhost({ index }: { index: number }) {
-  const bar = 'bg-primary/[0.06]';
+  const bar = 'bg-surface-2';
   return (
     <div
       aria-hidden

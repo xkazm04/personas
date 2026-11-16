@@ -29,6 +29,7 @@
  * palette and clears the draft.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Mic, MicOff, Send } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -41,6 +42,7 @@ import {
   filterSlashPresets,
   type SlashPreset,
 } from './SlashPalette';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function Composer({
   disabled,
@@ -318,44 +320,37 @@ export function Composer({
           disabled={disabled}
           rows={1}
           data-testid="companion-composer"
-          className="flex-1 bg-transparent border-0 outline-none resize-none typo-body text-foreground placeholder:text-foreground/40 disabled:opacity-50"
+          className="flex-1 bg-transparent border-0 outline-none resize-none typo-body text-foreground placeholder:text-ink-3 disabled:is-disabled"
           aria-label={placeholder}
         />
         {dictation.supported && (
-          <button
-            type="button"
-            data-testid="companion-mic"
-            onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
-            disabled={disabled}
-            className={`rounded-interactive transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
-              compact ? 'p-1.5' : 'p-2'
-            } ${
-              dictation.listening
-                ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
-                : dictation.error
-                  ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                  : 'bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground'
-            }`}
-            aria-label={
-              dictation.listening
-                ? t.athena.dictate_stop
-                : t.athena.dictate_start
-            }
-            title={
+          <Tooltip content={
               dictation.error
                 ? t.athena.dictate_error
                 : dictation.listening
                   ? t.athena.dictate_listening_hint
                   : t.athena.dictate_start_hint
-            }
-            aria-pressed={dictation.listening}
-          >
-            {dictation.listening ? (
-              <MicOff className="w-4 h-4" />
-            ) : (
-              <Mic className="w-4 h-4" />
-            )}
-          </button>
+            }>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              data-testid="companion-mic"
+              onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
+              disabled={disabled}
+              aria-label={
+                dictation.listening
+                  ? t.athena.dictate_stop
+                  : t.athena.dictate_start
+              }
+              pressed={dictation.listening}
+            >
+              {dictation.listening ? (
+                <MicOff className="w-4 h-4" />
+              ) : (
+                <Mic className="w-4 h-4" />
+              )}
+            </Button>
+          </Tooltip>
         )}
         {/* a11y — announce when the mic goes hot; the visual cue is color-only. */}
         {dictation.supported && (
@@ -363,18 +358,16 @@ export function Composer({
             {dictation.listening ? t.athena.dictate_listening_hint : ''}
           </span>
         )}
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="icon-sm"
           onClick={submit}
           disabled={disabled || !draft.trim() || paletteOpen}
           data-testid="companion-send"
-          className={`rounded-interactive bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring ${
-            compact ? 'p-1.5' : 'p-2'
-          }`}
           aria-label={t.athena.send}
         >
           <Send className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

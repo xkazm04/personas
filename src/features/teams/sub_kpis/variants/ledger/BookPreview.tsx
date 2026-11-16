@@ -28,7 +28,7 @@ export function BookPreviewTip({ row, below }: { row: BookRow; below: BookRow[] 
       <span className={`block ${KT.meta}`}>{nextMoveText(nextMoveOf(row.tally), t, tx)}</span>
 
       {below.length > 0 && (
-        <span className="block border-t border-primary/10 pt-1.5">
+        <span className="block border-t border-hair pt-1.5">
           <span className={`mb-1 block ${KT.eyebrow}`}>{o.preview_below}</span>
           {below.map((child) => (
             <span key={child.id} className="flex items-baseline gap-2">

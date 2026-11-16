@@ -12,7 +12,7 @@ import { decidePolicyProposalRow } from '@/lib/decisions/rowWrites';
 import { toastCatch } from '@/lib/silentCatch';
 
 const INPUT_CLS =
-  'rounded-input border border-primary/10 bg-secondary/40 px-2 py-1 typo-body text-foreground';
+  'rounded-input border border-hair bg-surface-2 px-2 py-1 typo-body text-foreground';
 
 const pct = (v: number) => Math.round(v * 100);
 const signedPct = (v: number) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}`;
@@ -168,7 +168,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
         ? p.evidence.cells.filter((c) => c.category === (p.routing?.category ?? c.category))
         : p.evidence.cells;
     return (
-      <div className="mt-2 space-y-2 rounded-card border border-primary/10 bg-secondary/30 p-3">
+      <div className="mt-2 space-y-2 rounded-card border border-hair bg-surface-1 p-3">
         <p className="typo-caption text-foreground">
           {tx(s.tuning_evidence_snapshot, {
             id: p.evidenceSnapshotId,
@@ -181,16 +181,16 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
             <table className="min-w-full typo-caption text-foreground">
               <thead>
                 <tr className="text-left text-foreground">
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_model}</th>
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_runs}</th>
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_success}</th>
-                  <th className="pr-4 py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_cost}</th>
-                  <th className="py-1 typo-caption font-mono uppercase tracking-widest text-foreground">{s.tuning_evidence_lab}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_model}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_runs}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_success}</th>
+                  <th className="pr-4 py-1 typo-eyebrow text-foreground">{s.tuning_evidence_cost}</th>
+                  <th className="py-1 typo-eyebrow text-foreground">{s.tuning_evidence_lab}</th>
                 </tr>
               </thead>
               <tbody>
                 {cells.map((c) => (
-                  <tr key={`${c.category}:${c.model}`} className="border-t border-primary/5">
+                  <tr key={`${c.category}:${c.model}`} className="border-t border-hair">
                     <td className="pr-4 py-1 font-mono">{c.model}</td>
                     <td className="pr-4 py-1">{c.runs}</td>
                     <td className="pr-4 py-1">{pct(c.successRate)}%</td>
@@ -227,7 +227,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
   const renderProposal = (p: PolicyProposal) => {
     const isOpen = !!expanded[p.id];
     return (
-      <div key={p.id} className="rounded-card border border-primary/10 bg-secondary/20 p-3">
+      <div key={p.id} className="rounded-card border border-hair bg-surface-1 p-3">
         <div className="flex flex-wrap items-center gap-2">
           <AthenaComposedBadge
             variant="composed"
@@ -255,8 +255,8 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
           <Button
             variant="ghost"
             onClick={() => setExpanded((e) => ({ ...e, [p.id]: !isOpen }))}
+            icon={isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           >
-            {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             {isOpen ? s.tuning_evidence_hide : s.tuning_evidence_show}
           </Button>
           {p.status === 'pending' && decliningId !== p.id && (
@@ -265,8 +265,9 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
                 <Check className="w-4 h-4" />
                 {s.tuning_apply}
               </AsyncButton>
-              <Button variant="secondary" onClick={() => setDecliningId(p.id)}>
-                <X className="w-4 h-4" />
+              <Button variant="secondary" onClick={() => setDecliningId(p.id)}
+                icon={<X className="w-4 h-4" />}>
+                
                 {s.tuning_decline}
               </Button>
             </>

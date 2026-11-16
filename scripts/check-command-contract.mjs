@@ -26,6 +26,13 @@
  *    all 3 hand-verified as real. It is not an approximation that mostly
  *    works; payloads built from a variable or containing a spread are counted
  *    as unanalyzable and skipped rather than guessed at.
+ * 5. Every key an invoke payload sends must be a parameter the Rust command
+ *    declares. Tauri drops unknown keys silently, so a misnamed Option<T>
+ *    argument arrives as None with every other rule green. Params are parsed
+ *    after stripping comments, `#[..]` attributes and `r#`, and a `Channel<..>`
+ *    param counts as declared. Known sent-but-ignored pairs sit in
+ *    UNDECLARED_ARG_BASELINE, two-sided: a new pair fails, and so does an entry
+ *    that stops being one. Commands using `rename_all` are skipped.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -164,17 +171,30 @@ function extractCommandParams() {
         i++;
       }
       const required = new Set();
-      for (const raw of splitTopLevel(src.slice(re.lastIndex, i - 1))) {
+      const all = new Set();
+      // Strip line comments, `#[..]` attributes and the `r#` raw-identifier prefix first, so
+      // `#[allow(unused_variables)] scenario_count: i32` and `r#ref: String` are seen as the
+      // params they are (they were invisible while the name test saw `#[allow(..)] scenario_count`).
+      const body = src
+        .slice(re.lastIndex, i - 1)
+        .replace(/\/\/[^\n]*/g, "")
+        .replace(/#\[[^\]]*\]/g, "")
+        .replace(/\br#/g, "");
+      for (const raw of splitTopLevel(body)) {
         const param = raw.trim();
         const colon = param.indexOf(":");
         if (colon < 0) continue;
         const pname = param.slice(0, colon).trim().replace(/^mut\s+/, "");
         const ptype = param.slice(colon + 1).trim();
         if (!/^\w+$/.test(pname) || pname.startsWith("_")) continue;
-        if (INJECTED_PARAM_TYPE.test(ptype) || ptype.startsWith("Option<")) continue;
+        // A Channel<..> is injected by Tauri but the JS caller DOES send it, so it is declared.
+        if (/\bChannel\s*</.test(ptype)) all.add(snakeToCamel(pname));
+        if (INJECTED_PARAM_TYPE.test(ptype)) continue;
+        all.add(snakeToCamel(pname));
+        if (ptype.startsWith("Option<")) continue;
         required.add(snakeToCamel(pname));
       }
-      params.set(match[1], { required, file: file.replace(`${ROOT}\\`, "").replaceAll("\\", "/") });
+      params.set(match[1], { required, all, renamed: /rename_all/.test(match[0]), file: file.replace(`${ROOT}\\`, "").replaceAll("\\", "/") });
     }
   }
   return params;
@@ -285,11 +305,44 @@ if (implementedButUnregisteredOverrides.length) {
 
 const commandParams = extractCommandParams();
 const missingArgs = [];
+const undeclaredArgs = [];
 for (const site of extractInvokePayloads()) {
   const decl = commandParams.get(site.command);
   if (!decl) continue; // rules 1-3 own unknown command names
   const missing = [...decl.required].filter((p) => !site.keys.has(p));
   if (missing.length) missingArgs.push({ ...site, missing, declares: [...decl.required] });
+  // Rule 5: a key the command does not declare is silently DROPPED by Tauri (a misnamed
+  // Option arg arrives as None). `rename_all` commands rename keys, so they are skipped.
+  if (decl.renamed) continue;
+  for (const key of site.keys) {
+    if (!decl.all.has(key)) undeclaredArgs.push({ ...site, key, declares: [...decl.all] });
+  }
+}
+
+// Two-sided baseline for rule 5: "<command> <key>" pairs known to be sent and ignored.
+// A NEW undeclared key fails; so does an entry here that stops being one (fixed or gone),
+// so the list can only shrink. Each is a real silent no-op awaiting a caller/command fix.
+const UNDECLARED_ARG_BASELINE = new Set([
+  "dev_tools_update_context groupId",
+  "preview_execution useCaseId",
+]);
+const undeclaredKeys = new Set(undeclaredArgs.map((a) => `${a.command} ${a.key}`));
+const newUndeclared = undeclaredArgs.filter((a) => !UNDECLARED_ARG_BASELINE.has(`${a.command} ${a.key}`));
+const staleBaseline = [...UNDECLARED_ARG_BASELINE].filter((k) => !undeclaredKeys.has(k));
+if (newUndeclared.length) {
+  errors.push(
+    "invoke payloads send keys the Rust command does not declare. Tauri drops unknown keys\n" +
+    "silently, so a misnamed optional argument arrives as None:\n" +
+    newUndeclared
+      .map((a) => `  - ${a.file}:${a.line} → ${a.command}\n      undeclared: ${a.key}   (declares: ${a.declares.join(", ") || "<none>"})`)
+      .join("\n"),
+  );
+}
+if (staleBaseline.length) {
+  errors.push(
+    "UNDECLARED_ARG_BASELINE lists pairs that are no longer sent-but-undeclared. Remove them:\n" +
+    staleBaseline.map((k) => `  - ${k}`).join("\n"),
+  );
 }
 if (missingArgs.length) {
   errors.push(

@@ -1,0 +1,205 @@
+{
+ "schema": "conform-run/1",
+ "worker": "faa8a94e-800a-417f-b054-7eea09fbf115",
+ "subject": "cross-provider-benchmark-operations",
+ "evaluatedAt": "2026-11-07T00:16:56.749062+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-leaderboard",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:20 The leaderboard ranks personas doing different jobs on live production health signals, with no shared case set and no provider/model/prompt-variant targets; searches of sub_leaderboard for provider, prompt_variant, promptVariant and reasoningEffort found nothing, and its 'benchmark' hits are only a fleet-average reference row (useLeaderboardData.ts:6), so the subject's precondition does not hold.",
+   "techniques": [
+    {
+     "technique": "target-matrix-runs",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:20 Rows are personas measured on their own traffic, not declared targets run over identical cases."
+    },
+    {
+     "technique": "cheapest-sufficient-configuration",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:8 Cost is a persona's daily burn folded into a weighted composite, not a cost axis across alternative configurations for one workload."
+    },
+    {
+     "technique": "dataset-sampling-anonymize-freeze",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/useLeaderboardData.ts:6 Here 'benchmark' means a fleet-average reference row, not a frozen eval dataset."
+    }
+   ],
+   "absenceTerms": [
+    "provider",
+    "prompt_variant",
+    "promptVariant",
+    "reasoningEffort"
+   ]
+  },
+  {
+   "context": "teams-factory",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:77 The Factory matrix's columns are project KPI categories over code contexts, not provider \u00d7 model \u00d7 prompt-variant targets; searches of sub_factory for benchmark, prompt_variant, promptVariant, reasoningEffort and dataset_version found nothing (its 'provider' hits are React context providers and one CI provider), so no benchmark evidence for a model choice is produced here.",
+   "techniques": [
+    {
+     "technique": "target-matrix-runs",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:77 The matrix is KPI category \u00d7 context, not a declared target matrix."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "prompt_variant",
+    "promptVariant",
+    "reasoningEffort",
+    "dataset_version"
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-context",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:86 The ledger's columns are use-cases and its cells are context membership, a codebase map rather than a model comparison; searches of sub_context for benchmark, provider, prompt_variant, promptVariant and reasoningEffort returned zero files.",
+   "techniques": [
+    {
+     "technique": "target-matrix-runs",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:86 The use-case \u00d7 context membership grid is not a target matrix over shared cases."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "provider",
+    "prompt_variant",
+    "promptVariant",
+    "reasoningEffort"
+   ]
+  },
+  {
+   "context": "persona-build-matrix",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:4 The simulate panel dry-runs one selected capability of one draft persona (simulateBuildDraft at :152) with its configured model, not the same cases across competing targets; searches of components/matrix for benchmark, prompt_variant, promptVariant, reasoningEffort and dataset_version returned zero files.",
+   "techniques": [
+    {
+     "technique": "target-matrix-runs",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:4 A single-target preview, not a matrix."
+    },
+    {
+     "technique": "async-run-queue-with-cancel",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:152 This is a one-off draft preview, not a long paid benchmark run."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "prompt_variant",
+    "promptVariant",
+    "reasoningEffort",
+    "dataset_version"
+   ]
+  },
+  {
+   "context": "overview-components",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 This context is the Overview routing shell, dashboard widgets and the system-health/install panel; searches of overview/components for benchmark, prompt_variant, promptVariant, reasoningEffort and dataset_version returned zero files, so no cross-provider benchmark operation lives here.",
+   "techniques": [
+    {
+     "technique": "target-matrix-runs",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:14 The shell routes to dashboard subtabs. It declares no benchmark targets."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "prompt_variant",
+    "promptVariant",
+    "reasoningEffort",
+    "dataset_version"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-07T00:16:56.749062+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "cheapest-sufficient-configuration",
+    "dataset-sampling-anonymize-freeze",
+    "target-matrix-runs"
+   ],
+   "deviations": 0,
+   "context": "overview-leaderboard",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T00:16:56.749062+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "target-matrix-runs"
+   ],
+   "deviations": 0,
+   "context": "teams-factory",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T00:16:56.749062+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "target-matrix-runs"
+   ],
+   "deviations": 0,
+   "context": "plugins-dev-tools-context",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T00:16:56.749062+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "async-run-queue-with-cancel",
+    "target-matrix-runs"
+   ],
+   "deviations": 0,
+   "context": "persona-build-matrix",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-07T00:16:56.749062+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "target-matrix-runs"
+   ],
+   "deviations": 0,
+   "context": "overview-components",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

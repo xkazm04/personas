@@ -620,7 +620,15 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// shows each device's load and what its agents mostly consume, that "load
 /// unknown" is said rather than guessed, and that a mesh op's outcome lands on
 /// the Monitor plate, not as a note back to her.
-pub const CONSTITUTION_VERSION: u32 = 71;
+///
+/// v72 (app-standup): the `## The Standup` section teaches `standup_decide`,
+/// the auto-fire op that writes the decision he agreed in chat onto ONE card
+/// of a DRAFT standup (`chosen` + `window`, or `state: skipped`). The ids come
+/// from the "Talk it through" thread's closing `(card … of standup …)` line;
+/// one op is one card; an armed standup or an unknown card is refused; and she
+/// never opens, arms or ends a standup, because the go-gate is his press on
+/// the Standup page.
+pub const CONSTITUTION_VERSION: u32 = 72;
 
 #[cfg(test)]
 mod tests {
@@ -657,12 +665,21 @@ mod tests {
 
     #[test]
     fn the_constitution_teaches_the_mesh_ops_at_v71() {
-        assert_eq!(CONSTITUTION_VERSION, 71);
+        const _: () = assert!(CONSTITUTION_VERSION >= 71);
         assert!(CONSTITUTION_MD.contains("\"action\": \"mesh_set_agent_enabled\""));
         assert!(CONSTITUTION_MD.contains("\"action\": \"mesh_queue_move\""));
         assert!(
             CONSTITUTION_MD.contains("only when that device ACCEPTS is the entry here cancelled")
         );
         assert!(CONSTITUTION_MD.contains("exactly `remote_instruct`'s consent rule"));
+    }
+
+    #[test]
+    fn the_constitution_teaches_standup_decide_at_v72() {
+        assert_eq!(CONSTITUTION_VERSION, 72);
+        assert!(CONSTITUTION_MD.contains("\n## The Standup (`standup_decide`)\n"));
+        assert!(CONSTITUTION_MD.contains("\"action\": \"standup_decide\""));
+        assert!(CONSTITUTION_MD.contains("One op is one card"));
+        assert!(CONSTITUTION_MD.contains("You never open, arm or end a standup"));
     }
 }

@@ -8,6 +8,7 @@ import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 // Re-export cards so existing imports from AutoCredBrowser still work
@@ -23,10 +24,10 @@ export function ActionBlock({
   onUrlClick: (url: string) => void;
 }) {
   return (
-    <div className="rounded-card bg-secondary/10 border border-primary/5 px-3 py-2 space-y-1">
+    <div className="rounded-card bg-secondary/10 border border-hair px-3 py-2 space-y-1">
       {entries.map((entry, i) => (
         <div key={i} className="flex items-start gap-2 typo-body text-foreground">
-          <MousePointerClick className="w-3 h-3 mt-1 shrink-0 text-cyan-400/60" />
+          <MousePointerClick className="w-3 h-3 mt-1 shrink-0 text-role-highlight/60" />
           <span className="leading-relaxed">
             <RichMessage message={entry.message} onUrlClick={onUrlClick} />
           </span>
@@ -53,20 +54,22 @@ export function UrlCard({
   }
 
   return (
-    <div data-testid="vault-autocred-url" data-url={safeUrl ?? ''} className="flex items-center gap-3 p-2.5 rounded-card border border-blue-500/20 bg-blue-500/5">
-      <ExternalLink className="w-4 h-4 text-blue-400 shrink-0" />
+    <div data-testid="vault-autocred-url" data-url={safeUrl ?? ''} className="flex items-center gap-3 p-2.5 rounded-card border border-status-info/20 bg-status-info/5">
+      <ExternalLink className="w-4 h-4 text-status-info shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="typo-body text-foreground">{entry.message.replace(/^Opening:\s*/, '')}</p>
         {hostname && <p className="typo-body text-foreground truncate">{hostname}</p>}
       </div>
       {safeUrl && (
-        <button
+        <Button
           type="button"
           onClick={() => onUrlClick(safeUrl)}
-          className="px-3 py-1 typo-body text-blue-400 hover:text-blue-300 rounded-card border border-blue-500/20 hover:bg-blue-500/10 transition-colors shrink-0"
+          variant="secondary"
+          size="xs"
+          className="shrink-0"
         >
           {t.vault.auto_cred_extra.open_url}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -76,7 +79,7 @@ export function UrlCard({
 
 export function ErrorLine({ entry }: { entry: BrowserLogEntry }) {
   return (
-    <div className="flex items-start gap-2 typo-body text-red-400 px-1">
+    <div className="flex items-start gap-2 typo-body text-status-error px-1">
       <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
       <span>{entry.message}</span>
     </div>
@@ -103,16 +106,17 @@ export function RichMessage({
         const safe = sanitizeExternalUrl(part.text);
         if (!safe) return <span key={i}>{part.text}</span>;
         return (
-          <button
+          <Button
             type="button"
             key={i}
             onClick={() => onUrlClick(safe)}
-            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer transition-colors"
-            title={tx(t.vault.auto_cred_extra.open_url_title, { url: safe })}
+            variant="ghost"
+            size="sm"
+            tooltip={tx(t.vault.auto_cred_extra.open_url_title, { url: safe })}
+            iconRight={<ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5" />}
           >
             {part.text}
-            <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5" />
-          </button>
+          </Button>
         );
       })}
     </>
@@ -133,15 +137,16 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
   if (logs.length === 0) return <div />;
 
   return (
-    <button
+    <Button
       type="button"
       onClick={handleCopy}
-      className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-muted-foreground rounded-card hover:bg-secondary/30 transition-colors"
+      variant="ghost"
+      size="sm"
     >
       {copied ? (
         <>
-          <Check className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-emerald-400">{t.vault.auto_cred_extra.copied}</span>
+          <Check className="w-3.5 h-3.5 text-status-success" />
+          <span className="text-status-success">{t.vault.auto_cred_extra.copied}</span>
         </>
       ) : (
         <>
@@ -149,6 +154,6 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
           <span>{t.vault.auto_cred_extra.copy_log}</span>
         </>
       )}
-    </button>
+    </Button>
   );
 }

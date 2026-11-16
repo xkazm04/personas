@@ -143,7 +143,7 @@ function UnifiedTableRowImpl<T>({
         if (e.target === e.currentTarget) onRevealEnd(rowKey);
       } : undefined}
       style={style}
-      className={`row-hover-lift grid items-center ${virtual ? '' : `px-0 ${padY}`} border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focused ? 'ring-1 ring-inset ring-primary/40 z-[1]' : ''} ${clickable ? 'cursor-pointer' : ''} ${index > 0 ? 'border-t border-t-primary/10' : ''} ${index % 2 === 0 ? 'bg-primary/[0.03]' : ''} ${entering ? 'animate-fade-in' : ''}`}
+      className={`row-hover-lift grid items-center ${virtual ? '' : `px-0 ${padY}`} border-l-2 ${accent ?? 'border-transparent'} ${focused ? 'bg-sel ring-1 ring-inset ring-hair-2 shadow-[inset_2px_0_0_var(--primary)] z-[1]' : 'hover:bg-surface-1'} ${clickable ? 'cursor-pointer' : ''} ${index > 0 ? 'border-t border-t-hair' : ''} ${entering ? 'animate-fade-in' : ''}`}
     >
       {columns.map((col) => (
         <div key={col.key} role={semantic ? 'cell' : undefined} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>

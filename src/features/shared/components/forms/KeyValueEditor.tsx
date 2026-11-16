@@ -183,6 +183,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                   <button
                     type="button"
                     onClick={() => removeRow(i)}
+                    aria-label={t.common.delete}
                     className="p-1.5 rounded-lg text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

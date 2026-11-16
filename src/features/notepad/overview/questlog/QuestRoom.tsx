@@ -13,6 +13,7 @@ import type { NoteOverviewProps } from '../types';
 import type { GoalSignals } from './goalSignals';
 import { railOf, type QuestZone } from './questlogModel';
 import { QuestRoomBands, type QuestMilestoneGroup } from './QuestRoomBands';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** One rung above the desk: the room is the surface in front of the operator. */
 const QUESTLOG_ROOM_KEY_PRIORITY = NOTEPAD_LAYER_PRIORITY + 2;
@@ -126,10 +127,10 @@ export function QuestRoom({
   );
   const renderLane = (lane: (typeof lanes)[number]) => (
     <section key={lane.key}>
-      <p className="flex items-center gap-1.5 typo-label text-foreground/85 mb-2">
+      <p className="flex items-center gap-1.5 typo-label text-ink-2 mb-2">
         <lane.Icon className="w-3.5 h-3.5" aria-hidden />
         {lane.label}
-        <span className="tabular-nums">· {lane.notes.length}</span>
+        <span className="num">· {lane.notes.length}</span>
       </p>
       <div className="grid grid-cols-3 gap-4">{lane.notes.map(renderCard)}</div>
     </section>
@@ -138,15 +139,11 @@ export function QuestRoom({
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="notepad-questlog-room">
       <div className="shrink-0 px-8 pt-2 pb-3 flex items-center gap-4 flex-wrap">
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-8 px-2.5 rounded-interactive inline-flex items-center gap-2 typo-caption text-foreground hover:bg-secondary/50 focus-ring"
-        >
+        <Button variant="ghost" size="sm" onClick={onClose}>
           <ArrowLeft className="w-4 h-4" aria-hidden />
           {t.notepad.desk_room_back}
           <Keycap>{DESK_KEY.escape}</Keycap>
-        </button>
+        </Button>
         <h2 className="typo-heading-lg text-foreground m-0 truncate min-w-0">{zone.name}</h2>
         <div className="flex items-center gap-1.5 flex-wrap">
           {counts.map(([status, count]) => {
@@ -162,7 +159,7 @@ export function QuestRoom({
             );
           })}
         </div>
-        <span className="ml-auto inline-flex items-center gap-1.5 typo-label text-foreground/85">
+        <span className="ml-auto inline-flex items-center gap-1.5 typo-label text-ink-2">
           <Keycap>{DESK_KEY.bracketOpen}</Keycap>
           <Keycap>{DESK_KEY.bracketClose}</Keycap>
           {t.notepad.desk_key_alphabetical}
@@ -174,7 +171,7 @@ export function QuestRoom({
         {milestoneGroups && <QuestRoomBands groups={milestoneGroups} renderCard={renderCard} />}
         {lanes.filter((l) => l.key !== 'waiting').map(renderLane)}
         {lanes.length === 0 && !milestoneGroups?.length && (
-          <p className="typo-caption text-foreground/85 italic">{t.notepad.desk_zone_none_live}</p>
+          <p className="typo-caption text-ink-2 italic">{t.notepad.desk_zone_none_live}</p>
         )}
       </div>
     </div>

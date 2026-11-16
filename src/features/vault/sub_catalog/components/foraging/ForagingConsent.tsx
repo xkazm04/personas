@@ -34,9 +34,9 @@ export function ForagingConsent({ onScan }: ForagingConsentProps) {
   return (
     <div data-testid="vault-foraging-consent" className="animate-fade-slide-in space-y-4">
       {/* Header */}
-      <div className="flex items-start gap-4 p-4 rounded-modal border border-violet-500/20 bg-violet-500/5">
-        <div className="w-12 h-12 rounded-modal border border-violet-500/30 bg-violet-500/10 flex items-center justify-center shrink-0">
-          <Radar className="w-6 h-6 text-violet-400" />
+      <div className="flex items-start gap-4 p-4 rounded-modal border border-hair bg-surface-1">
+        <div className="w-12 h-12 rounded-modal border border-role-agent/30 bg-role-agent/10 flex items-center justify-center shrink-0">
+          <Radar className="w-6 h-6 text-role-agent" />
         </div>
         <div>
           <h3 className="typo-body-lg text-foreground">{fg.consent_heading}</h3>
@@ -46,11 +46,11 @@ export function ForagingConsent({ onScan }: ForagingConsentProps) {
 
       {/* What gets scanned */}
       <div className="space-y-2.5">
-        <p className="typo-body text-foreground/90">{fg.consent_what_scanned}</p>
+        <p className="typo-body text-ink-1">{fg.consent_what_scanned}</p>
         <div className="space-y-1.5">
           {SOURCE_KEYS.map((key) => (
             <div key={key} className="flex items-center gap-2.5">
-              <Check className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+              <Check className="w-3.5 h-3.5 text-role-agent shrink-0" />
               <span className="typo-body text-foreground">{fg[key]}</span>
             </div>
           ))}
@@ -58,16 +58,16 @@ export function ForagingConsent({ onScan }: ForagingConsentProps) {
       </div>
 
       {/* Read-only notice */}
-      <div className="flex items-start gap-2.5 p-3 rounded-card border border-blue-500/20 bg-blue-500/5">
-        <Shield className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+      <div className="flex items-start gap-2.5 p-3 rounded-card border border-hair bg-surface-1">
+        <Shield className="w-4 h-4 text-status-info mt-0.5 shrink-0" />
         <span className="typo-body text-foreground">{fg.consent_readonly}</span>
       </div>
 
       {/* Privacy notice */}
-      <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
-        <Lock className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+      <div className="flex items-start gap-2.5 p-3 rounded-card border border-status-warning/20 bg-status-warning/5">
+        <Lock className="w-4 h-4 text-status-warning mt-0.5 shrink-0" />
         <div className="typo-body text-foreground">
-          <span className="font-medium text-amber-400/90">{fg.consent_privacy_title}</span>{' '}
+          <span className="font-medium text-status-warning/90">{fg.consent_privacy_title}</span>{' '}
           {fg.consent_privacy_body}
         </div>
       </div>
@@ -81,7 +81,7 @@ export function ForagingConsent({ onScan }: ForagingConsentProps) {
           onClick={onScan}
           tone="agent"
           data-testid="vault-foraging-scan"
-          className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
+          className="bg-role-agent/15 text-role-agent border-role-agent/25 hover:bg-role-agent/25"
         >
           {fg.start_scan}
         </Button>

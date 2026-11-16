@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 export type ValidationGlow = 'none' | 'valid' | 'warning';
@@ -37,8 +38,8 @@ export function computeValidationGlow(value: string, inputType: FieldInputType):
 
 export const GLOW_CLASSES: Record<ValidationGlow, string> = {
   none: '',
-  valid: 'border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.15)]',
-  warning: 'border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.12)]',
+  valid: 'border-status-success/40',
+  warning: 'border-status-warning/30',
 };
 
 interface FieldActionButtonsProps {
@@ -126,36 +127,30 @@ export function FieldActionButtons({
         </StatusBadge>
       )}
       {isSecret && (
-        <button
+        <Button
           type="button"
           onClick={() => setIsVisible((v) => !v)}
-          className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
+          variant="ghost"
+          size="sm"
           data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
           aria-label={isVisible ? t.vault.schemas.kv_hide_value : t.vault.schemas.kv_show_value}
-          aria-pressed={isVisible}
+          pressed={isVisible}
         >
           {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-        </button>
+        </Button>
       )}
       {allowCopy && (
         <div className="relative flex flex-col items-center">
           <Tooltip content={t.vault.credential_forms.copy_value}>
-          <button
-            type="button"
-            onClick={handleCopy}
-            disabled={!value}
-            className="p-0.5 text-foreground hover:text-foreground/80 disabled:opacity-30 transition-colors"
-            aria-label={t.vault.credential_forms.copy_value}
-            data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
-          >
+          <Button variant="ghost" size="icon-xs" onClick={handleCopy} disabled={!value} aria-label={t.vault.credential_forms.copy_value} data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}>
             {copied ? (
               <div className="animate-fade-scale-in">
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-status-success" />
               </div>
             ) : (
               <Copy className="w-3.5 h-3.5" />
             )}
-          </button>
+          </Button>
           </Tooltip>
           {isSecret && copied && (
             <span className="absolute top-full mt-0.5 typo-body text-foreground whitespace-nowrap">
@@ -166,15 +161,16 @@ export function FieldActionButtons({
       )}
       {allowPaste && isEditable && (
         <Tooltip content={t.vault.credential_forms.paste_from_clipboard}>
-        <button
+        <Button
           type="button"
           onClick={handlePaste}
-          className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
+          variant="ghost"
+          size="icon-sm"
           aria-label={t.vault.credential_forms.paste_from_clipboard}
           data-testid={testIdBase ? `${testIdBase}-paste-btn` : undefined}
         >
           <ClipboardPaste className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         </Tooltip>
       )}
     </div>

@@ -398,7 +398,6 @@ struct ImpactResult {
 /// wave-complete notification by the sweeper.
 #[derive(Debug, Default, serde::Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
 pub struct FeedImpactIngestSummary {
     pub ingested: u32,
     /// The verdicts recorded, in ingest order (drives the notification body).

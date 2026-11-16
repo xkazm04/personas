@@ -49,6 +49,7 @@ export function LensSheetHost() {
         name={product?.name ?? ''}
         eyebrow={eyebrow}
         focus={request.kind === 'evidence' ? 'evidence' : 'product'}
+        place={request.place}
         onClose={closeLensSheet}
       />
     </Suspense>

@@ -10,11 +10,11 @@ export type PatternColor = 'red' | 'orange' | 'amber' | 'violet' | 'primary';
 // `text-${color}-400` template strings are invisible to the JIT and silently
 // produce no styles, so the failure-row icons stayed unstyled.
 export const PATTERN_ICON_CLASSES: Record<PatternColor, string> = {
-  red: 'text-red-400',
-  orange: 'text-orange-400',
-  amber: 'text-amber-400',
-  violet: 'text-violet-400',
-  primary: 'text-primary',
+  red: 'text-status-error',
+  orange: 'text-status-warning',
+  amber: 'text-status-warning',
+  violet: 'text-ink-2',
+  primary: 'text-ink-2',
 };
 
 export type PatternLabelKey =

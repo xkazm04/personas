@@ -1,0 +1,94 @@
+{
+ "schema": "conform-run/1",
+ "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-11-03T08:35:47.995Z",
+ "pairs": [
+  {
+   "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/companion-header-controls.spec.ts:1 the context is 32 Playwright specs for chat panel controls (autonomous toggle, stop button, stream phase); a speech/audio/dictation regex over all 32 files hits only an elevenlabs connector-catalog fixture (template-marathon-fixtures.ts:249), so no capture, synthesis or playback precondition holds",
+   "techniques": []
+  },
+  {
+   "context": "fbfcd99a-a333-42da-b85e-2ec1f560b4be",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab.tsx:1 persona connector status and credential binding UI; an audio/speech regex over all 34 context files is empty",
+   "techniques": []
+  },
+  {
+   "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:1 fleet conversation channels are text session briefings, not audio; an audio/speech regex over all 170 context files is empty",
+   "techniques": []
+  },
+  {
+   "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/credentials/connectorRoles.ts:127 elevenlabs and deepgram appear only as credential role catalog entries (ai_platform), binding a key and moving no audio; the 11 files hold no capture or synthesis pipeline",
+   "techniques": []
+  },
+  {
+   "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/webbuild/bun.rs:1 web-build Bun sidecar locator; the only audio word is a comment citing the Whisper-STT resolution convention (bun.rs:6), no speech is captured or synthesized in the 9 files",
+   "techniques": []
+  },
+  {
+   "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/mcp_server/vault.rs:1 standalone MCP sidecar for Obsidian vault search; an audio/speech regex over all 8 context files is empty",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "voice-io",
+   "context": "09cf4f1d-dc6f-4c3d-b15f-6686c6ce1eb7",
+   "reason": "plugins-artist-media-studio lists zero file paths in context-map.json (src/features/plugins/artist does not exist), so there is no code to read; left unknown"
+  },
+  {
+   "subject": "voice-io",
+   "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e",
+   "reason": "plugins-artist-media-studio-hooks lists zero file paths in context-map.json (src/features/plugins/artist does not exist), so there is no code to read; left unknown"
+  },
+  {
+   "subject": "voice-io",
+   "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+   "reason": "plugins-artist-hooks lists zero file paths in context-map.json (src/features/plugins/artist does not exist), so there is no code to read; left unknown"
+  },
+  {
+   "subject": "voice-io",
+   "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+   "reason": "fleet-triage-columns lists zero file paths in context-map.json (src/features/plugins/artist does not exist), so there is no code to read; left unknown"
+  },
+  {
+   "subject": "voice-io",
+   "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+   "reason": "plugins-research-lab-reports lists zero file paths in context-map.json (src/features/plugins/artist does not exist), so there is no code to read; left unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:35:47.996Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

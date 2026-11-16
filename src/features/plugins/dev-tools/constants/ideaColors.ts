@@ -12,18 +12,18 @@ export interface CategoryTw {
 
 /** Default Tailwind classes when a category key is unknown */
 export const DEFAULT_CATEGORY_TW: CategoryTw = {
-  bg: 'bg-blue-500/15',
-  text: 'text-blue-400',
-  dot: 'bg-blue-400',
-  border: 'border-blue-500/25',
+  bg: 'bg-status-info/15',
+  text: 'text-status-info',
+  dot: 'bg-status-info',
+  border: 'border-status-info/25',
 };
 
 /** Per-category Tailwind class bundles */
 export const CATEGORY_TW: Record<string, CategoryTw> = {
-  technical: { bg: 'bg-blue-500/15', text: 'text-blue-400', dot: 'bg-blue-400', border: 'border-blue-500/25' },
-  user: { bg: 'bg-pink-500/15', text: 'text-pink-400', dot: 'bg-pink-400', border: 'border-pink-500/25' },
-  business: { bg: 'bg-amber-500/15', text: 'text-amber-400', dot: 'bg-amber-400', border: 'border-amber-500/25' },
-  mastermind: { bg: 'bg-violet-500/15', text: 'text-violet-400', dot: 'bg-violet-400', border: 'border-violet-500/25' },
+  technical: { bg: 'bg-status-info/15', text: 'text-status-info', dot: 'bg-status-info', border: 'border-status-info/25' },
+  user: { bg: 'bg-role-human/15', text: 'text-role-human', dot: 'bg-role-human', border: 'border-role-human/25' },
+  business: { bg: 'bg-status-warning/15', text: 'text-status-warning', dot: 'bg-status-warning', border: 'border-status-warning/25' },
+  mastermind: { bg: 'bg-role-agent/15', text: 'text-role-agent', dot: 'bg-role-agent', border: 'border-role-agent/25' },
 };
 
 // ---------------------------------------------------------------------------
@@ -32,9 +32,9 @@ export const CATEGORY_TW: Record<string, CategoryTw> = {
 
 /** Returns combined bg/text/border classes based on a 1-10 level value */
 export function levelColor(value: number): string {
-  if (value <= 3) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
-  if (value <= 6) return 'bg-amber-500/15 text-amber-400 border-amber-500/25';
-  return 'bg-red-500/15 text-red-400 border-red-500/25';
+  if (value <= 3) return 'bg-status-success/15 text-status-success border-status-success/25';
+  if (value <= 6) return 'bg-status-warning/15 text-status-warning border-status-warning/25';
+  return 'bg-status-error/15 text-status-error border-status-error/25';
 }
 
 /** Non-color severity tier for a 1-10 level value — pairs with levelColor so

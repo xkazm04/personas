@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { savePlaywrightProcedure } from '@/api/vault/autoCredBrowser';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ReviewHealthcheckProps {
   onHealthcheck: () => void;
@@ -16,7 +17,7 @@ export function ReviewHealthcheck({ onHealthcheck, healthResult }: ReviewHealthc
 
   return (
     <div className="flex items-center gap-3">
-      <button
+      <Button
         type="button"
         onClick={async () => {
           setIsHealthchecking(true);
@@ -27,13 +28,14 @@ export function ReviewHealthcheck({ onHealthcheck, healthResult }: ReviewHealthc
           }
         }}
         disabled={isHealthchecking}
-        className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/40 text-foreground hover:text-foreground transition-colors"
+        variant="secondary"
+        size="sm"
+        icon={isHealthchecking ? <LoadingSpinner size="sm" /> : <RefreshCw className="w-3.5 h-3.5" />}
       >
-        {isHealthchecking ? <LoadingSpinner size="sm" /> : <RefreshCw className="w-3.5 h-3.5" />}
         {isHealthchecking ? t.vault.auto_cred.testing : t.vault.auto_cred.test_connection}
-      </button>
+      </Button>
       {healthResult && (
-        <div className={`flex items-center gap-1.5 typo-body ${healthResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
+        <div className={`flex items-center gap-1.5 typo-body ${healthResult.success ? 'text-status-success' : 'text-status-error'}`}>
           {healthResult.success ? (
             <CheckCircle2 className="w-3.5 h-3.5" />
           ) : (
@@ -93,21 +95,24 @@ export function ReviewActionButtons({
   return (
     <div className="flex items-center justify-between pt-1">
       <div className="flex gap-2">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          variant="ghost"
+          size="md"
         >
           {t.vault.auto_cred.discard}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onRetry}
-          className="flex items-center gap-1.5 px-4 py-2 typo-body text-cyan-400/80 hover:text-cyan-400 rounded-modal border border-cyan-500/15 hover:bg-cyan-500/10 transition-colors"
+          variant="accent"
+          tone="highlight"
+          size="md"
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
         >
-          <RefreshCw className="w-3.5 h-3.5" />
           {t.vault.auto_cred.re_run_browser}
-        </button>
+        </Button>
       </div>
       <div className="flex items-center gap-2">
         {!healthResult?.success && (
@@ -120,40 +125,40 @@ export function ReviewActionButtons({
             button was `import.meta.env.DEV` only and nothing in a production
             build ever wrote a row for it to find. */}
         {healthResult?.success && extractedValues.__procedure_log && (
-          <button
+          <Button
             type="button"
             onClick={handleSaveProcedure}
             disabled={savingProcedure || procedureSaved}
-            className={`flex items-center gap-1.5 px-3 py-2 typo-body rounded-modal border transition-colors ${
-              procedureSaved
-                ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
-                : 'border-violet-500/20 text-violet-400/80 hover:bg-violet-500/10 hover:text-violet-400'
-            }`}
-            title={t.vault.auto_cred_extra.save_procedure_title}
-          >
-            {savingProcedure ? (
+            variant="accent"
+            tone="agent"
+            size="md"
+            tooltip={t.vault.auto_cred_extra.save_procedure_title}
+            icon={savingProcedure ? (
               <LoadingSpinner size="sm" />
             ) : procedureSaved ? (
               <CheckCircle2 className="w-3.5 h-3.5" />
             ) : (
               <Database className="w-3.5 h-3.5" />
             )}
+          >
             {procedureSaved ? t.vault.auto_cred.procedure_saved : t.vault.auto_cred.save_procedure}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           onClick={onSave}
           disabled={isSaving || !healthResult?.success}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-emerald-600/20"
-        >
-          {isSaving ? (
+          variant="accent"
+          tone="success"
+          size="md"
+          icon={isSaving ? (
             <LoadingSpinner />
           ) : (
             <Save className="w-4 h-4" />
           )}
+        >
           {t.vault.auto_cred.save_credential}
-        </button>
+        </Button>
       </div>
     </div>
   );

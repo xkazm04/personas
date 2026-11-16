@@ -14,6 +14,8 @@ import { setPendingIncidentDeepLink } from '@/features/overview/sub_incidents/li
 import { triggerKindLabel } from './athenaLabels';
 import { applyClientAction } from './applyClientAction';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * "Athena reached out" card. Rendered inline in the chat transcript at
  * the top of the message list when there are unresolved proactive
@@ -110,23 +112,24 @@ export function ProactiveCard({
           · {triggerKindLabel(t, message.triggerKind)}
         </span>
       </div>
-      <p className="typo-body text-foreground/90">
+      <p className="typo-body text-ink-2">
         {message.message}
       </p>
       {error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 typo-caption text-rose-400">
+        <div className="rounded-card border border-status-error/30 bg-status-error/10 px-2.5 py-1.5 typo-caption text-status-error">
           {error}
         </div>
       )}
       <div className="flex items-center gap-2">
         {/* Tinted primary, not solid: solid bg-primary + its white foreground
             is unreadable under light-primary themes. */}
-        <button
+        <Button
           type="button"
           onClick={() => handle('engage')}
           disabled={busy !== null}
           data-testid="companion-proactive-engage"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/25 bg-primary/15 text-primary hover:bg-primary/25 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+          variant="secondary"
+          size="sm"
         >
           {busy === 'engage' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -134,13 +137,14 @@ export function ProactiveCard({
             <Reply className="w-3.5 h-3.5" />
           )}
           {t.athena.proactive_engage}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={() => handle('dismiss')}
           disabled={busy !== null}
           data-testid="companion-proactive-dismiss"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+          variant="ghost"
+          size="sm"
         >
           {busy === 'dismiss' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -148,7 +152,7 @@ export function ProactiveCard({
             <X className="w-3.5 h-3.5" />
           )}
           {t.athena.proactive_dismiss}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -157,33 +161,33 @@ export function ProactiveCard({
 function accentForTrigger(kind: string): string {
   switch (kind) {
     case 'goal_target_approaching':
-      return 'border-amber-500/30 bg-amber-500/[0.06]';
+      return 'border-status-warning/30 bg-status-warning/10/[0.06]';
     case 'backlog_aging':
-      return 'border-rose-500/30 bg-rose-500/[0.06]';
+      return 'border-status-error/30 bg-status-error/10/[0.06]';
     case 'on_this_day':
-      return 'border-violet-500/30 bg-violet-500/[0.06]';
+      return 'border-hair-2 bg-surface-2/[0.06]';
     case 'cadence_due':
-      return 'border-emerald-500/30 bg-emerald-500/[0.06]';
+      return 'border-status-success/30 bg-status-success/10/[0.06]';
     case 'athena_scheduled':
-      return 'border-sky-500/30 bg-sky-500/[0.06]';
+      return 'border-status-info/30 bg-status-info/10/[0.06]';
     case 'ambient_match':
-      return 'border-cyan-500/30 bg-cyan-500/[0.06]';
+      return 'border-hair-2 bg-surface-2/[0.06]';
     case 'fleet_failed':
     case 'fleet_stuck_dispatched':
-      return 'border-rose-500/30 bg-rose-500/[0.06]';
+      return 'border-status-error/30 bg-status-error/10/[0.06]';
     case 'fleet_awaiting':
     case 'fleet_stale':
-      return 'border-amber-500/30 bg-amber-500/[0.06]';
+      return 'border-status-warning/30 bg-status-warning/10/[0.06]';
     case 'fleet_op_completed':
-      return 'border-emerald-500/30 bg-emerald-500/[0.06]';
+      return 'border-status-success/30 bg-status-success/10/[0.06]';
     case 'incident_blocker':
     case 'credential_reauth':
-      return 'border-rose-500/30 bg-rose-500/[0.06]';
+      return 'border-status-error/30 bg-status-error/10/[0.06]';
     case 'execution_review':
-      return 'border-amber-500/30 bg-amber-500/[0.06]';
+      return 'border-status-warning/30 bg-status-warning/10/[0.06]';
     case 'message_digest':
-      return 'border-sky-500/30 bg-sky-500/[0.06]';
+      return 'border-status-info/30 bg-status-info/10/[0.06]';
     default:
-      return 'border-primary/30 bg-primary/[0.06]';
+      return 'border-primary/30 bg-surface-2';
   }
 }

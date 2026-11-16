@@ -7,6 +7,7 @@ import { AutomationTriggerStep } from './AutomationTriggerStep';
 import { AutomationActionStep } from './AutomationActionStep';
 import { AutomationConditionStep } from './AutomationConditionStep';
 import { AutomationReviewStep } from './AutomationReviewStep';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutomationSetupModalProps {
   open: boolean;
@@ -30,13 +31,13 @@ export function AutomationSetupModal({
       onClose={handleClose}
       titleId="automation-setup-title"
       size="lg"
-      panelClassName="bg-background border border-border/60 rounded-2xl shadow-elevation-4 overflow-hidden"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-hair">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-accent" />
-          <h2 id="automation-setup-title" className="typo-heading text-foreground/90">
+          <h2 id="automation-setup-title" className="typo-heading text-ink-1">
             {s.phase === 'idle' && (s.editAutomation ? t.agents.connectors.auto_modal_configure : t.agents.connectors.auto_modal_add)}
             {s.phase === 'analyzing' && t.agents.connectors.auto_modal_designing}
             {s.phase === 'preview' && t.agents.connectors.auto_modal_review}
@@ -45,9 +46,14 @@ export function AutomationSetupModal({
             {s.phase === 'error' && t.agents.connectors.auto_modal_failed}
           </h2>
         </div>
-        <button type="button" onClick={handleClose} aria-label={t.common.close} className="text-foreground hover:text-foreground transition-colors">
-          <X className="w-4 h-4" />
-        </button>
+        <Button
+          type="button"
+          onClick={handleClose}
+          aria-label={t.common.close}
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+        />
       </div>
 
       <div className="px-6 py-6 max-h-[75vh] overflow-y-auto">
@@ -63,8 +69,7 @@ export function AutomationSetupModal({
               githubRepos={s.githubRepos} githubPerms={s.githubPerms}
               githubRepo={s.githubRepo} setGithubRepo={s.setGithubRepo}
               loadingRepos={s.loadingRepos}
-              zapierZaps={s.zapierZaps} loadingZaps={s.loadingZaps}
-              reposFailed={s.reposFailed} zapsFailed={s.zapsFailed} onRetryListings={s.retryListings}
+              reposFailed={s.reposFailed} onRetryListings={s.retryListings}
               availableUseCases={s.availableUseCases}
               useCaseId={s.useCaseId} setUseCaseId={s.setUseCaseId}
               canDesign={s.canDesign} onDesign={s.handleDesign}
@@ -107,14 +112,15 @@ export function AutomationSetupModal({
 
       {/* Footer -- only in preview phase */}
       {s.phase === 'preview' && (
-        <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-border/60">
-          <button
+        <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-hair">
+          <Button
             type="button"
             onClick={() => { s.design.reset(); s.setDescription(''); s.setLocalPhase(null); s.setDeployError(null); }}
-            className="typo-body text-foreground hover:text-foreground transition-colors"
-          >{t.agents.connectors.auto_start_over}</button>
+            variant="ghost"
+            size="sm"
+          >{t.agents.connectors.auto_start_over}</Button>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={handleClose} className="btn-md border border-border text-foreground hover:bg-secondary/50 transition-colors">{t.common.cancel}</button>
+            <Button variant="secondary" size="md" onClick={handleClose}>{t.common.cancel}</Button>
             <Tooltip
               content={
                 !s.name.trim()
@@ -126,18 +132,18 @@ export function AutomationSetupModal({
               placement="top"
               delay={200}
             >
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => void s.handleDeploy()}
                 // ONE rule for "may deploy": the hook's canDeploy also covers an
                 // out-of-range timeout and a deploy already in flight, which this
                 // inline test used to ignore.
                 disabled={!s.canDeploy || (!s.hasPlatformCredential && s.needsCredential)}
-                className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                icon={<Rocket className="w-3.5 h-3.5" />}
               >
-                <Rocket className="w-3.5 h-3.5" />
                 {t.agents.connectors.auto_deploy_save}
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>

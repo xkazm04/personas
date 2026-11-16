@@ -1,6 +1,12 @@
 import { create } from "zustand";
-import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
-import type { AuthUser, AuthStateResponse } from "@/api/auth/auth";
+import {
+  getAuthState,
+  loginWithGoogle as loginWithGoogleCommand,
+  logoutUser,
+  clearPendingOauth,
+  type AuthUser,
+  type AuthStateResponse,
+} from "@/api/auth/auth";
 import { clearCryptoCache } from "@/lib/utils/platform/crypto";
 import { getActiveTranslations } from "@/i18n/useTranslation";
 import { errMsg } from "./storeTypes";
@@ -38,7 +44,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   initialize: async () => {
     set({ isLoading: true });
     try {
-      const state = await invoke<AuthStateResponse>("get_auth_state");
+      const state = await getAuthState();
       set({
         user: state.user,
         isAuthenticated: state.is_authenticated,
@@ -56,14 +62,14 @@ export const useAuthStore = create<AuthState>()((set) => ({
     clearLoginTimeout();
     set({ isLoading: true, error: null });
     try {
-      await invoke("login_with_google");
+      await loginWithGoogleCommand();
       // Actual state update comes via "auth-state-changed" event.
       // Set a timeout to recover from missed/failed OAuth callbacks.
       loginTimeoutId = setTimeout(() => {
         loginTimeoutId = null;
         const s = useAuthStore.getState();
         if (s.isLoading && !s.isAuthenticated) {
-          void invoke("clear_pending_oauth").catch(silentCatch("authStore:clear_pending_oauth"));
+          void clearPendingOauth().catch(silentCatch("authStore:clear_pending_oauth"));
           set({
             isLoading: false,
             error: getActiveTranslations().auth.login_timed_out,
@@ -72,14 +78,14 @@ export const useAuthStore = create<AuthState>()((set) => ({
       }, 120_000);
     } catch (err) {
       clearLoginTimeout();
-      void invoke("clear_pending_oauth").catch(silentCatch("authStore:clear_pending_oauth"));
+      void clearPendingOauth().catch(silentCatch("authStore:clear_pending_oauth"));
       set({ isLoading: false, error: errMsg(err, "Login failed") });
     }
   },
 
   logout: async () => {
     try {
-      await invoke("logout");
+      await logoutUser();
       clearCryptoCache();
       set({
         user: null,

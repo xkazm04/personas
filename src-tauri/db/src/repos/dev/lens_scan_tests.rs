@@ -90,6 +90,39 @@ fn columns_are_read_by_presence_across_v2_and_v3() {
     assert_eq!(rows.proposals[0]["triaged_from"], "done");
 }
 
+/// Store v4 (tier, risk_class, origin, external_ref): the reader has no version
+/// allowlist, so the new columns reach the wire typed as the store holds them
+/// (tier an integer, risk_class a string), and an untriaged row omits them.
+/// This is the runtime path the decision brief reads (`subjectOf` in the
+/// blueprint's `model/brief.ts`): `lens_scan_snapshot` passes these maps through.
+#[test]
+fn v4_tier_and_risk_class_reach_the_wire_typed() {
+    let s = product_dir("v4");
+    let c = make_store(s.path(), 4);
+    propose(&c, "p1", "proposed");
+    propose(&c, "p2", "proposed");
+    c.execute(
+        "UPDATE proposals SET tier = 2, risk_class = 'money', origin = 'ado', external_ref = 'ado:1234' WHERE id = 'p1'",
+        [],
+    )
+    .unwrap();
+    let (v, rows) = read_rows(&store_file(s.path())).unwrap();
+    assert_eq!(v, 4);
+    let p1 = &rows.proposals[0];
+    assert_eq!(p1["tier"], serde_json::json!(2));
+    assert!(
+        p1["tier"].is_u64(),
+        "tier is a number on the wire, never a string"
+    );
+    assert_eq!(p1["risk_class"], "money");
+    assert_eq!(p1["origin"], "ado");
+    assert_eq!(p1["external_ref"], "ado:1234");
+    let p2 = &rows.proposals[1];
+    assert!(!p2.contains_key("tier"), "an untriaged row omits tier");
+    assert!(!p2.contains_key("risk_class"));
+    assert_eq!(p2["origin"], "scan", "origin defaults to scan");
+}
+
 #[test]
 fn null_columns_are_omitted_never_null() {
     let s = product_dir("nulls");

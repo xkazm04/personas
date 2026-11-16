@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "dda25f18-edf1-415d-82ec-f3700e6cf38b",
+ "subject": "cost-metering",
+ "evaluatedAt": "2026-11-03T23:22:19.423179+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "teams-factory-l2",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:56 The Factory L2 LLM-spend surface shows a 30-day total and a per-feature breakdown with the untagged bucket visible. It shows no ceiling or run-rate projection, rows cannot be opened to see the calls behind them, there is no outlier view, failed-call spend is not shown, and features past the top 12 are reduced to a 'more' caption, so an anomaly in one call class can hide behind a feature total.",
+   "techniques": [
+    {
+     "technique": "spend-observability",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:56 The standard asks for total, then class, then axis, then row. This tab gives the total (line 103) and the per-feature axis, but rows have no drill-down (no onPress), there is no budget or projection, no most-expensive-calls list, no failed-spend series and no default-priced or unattributed share. These are the smells the technique names: 'no way to get from a bar to the calls underneath it' and 'failed-call spend folded invisibly into totals'."
+    },
+    {
+     "technique": "spend-attribution",
+     "verdict": "conformant",
+     "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:41 Spend with no feature tag becomes its own visible 'untagged' row (split by model). It is not dropped or folded into a real feature. Caveat: rows are keyed by the use case's display name rather than a stable id, which conflicts with identity-survives-reuse: a renamed feature splits its history."
+    },
+    {
+     "technique": "usage-ledgers",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/l2/useObservabilityFeeds.ts:47 This context writes no ledger. It reads aggregated pinpoints from the managed project's external LLM tracker over a fixed 30-day window."
+    },
+    {
+     "technique": "price-tables",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:43 Cost arrives already priced by the external tracker. This context has no price table and does no unit-to-currency conversion."
+    }
+   ],
+   "registryProposal": "spend-observability is written for the product's own spend console. The standard should say whether a read-only, per-project summary of a managed project's EXTERNAL tracker (here Langfuse-style pinpoints) owes the full total-to-row reading order and the self-watch instruments, or only a link out to the tracker's own drill-down. As written, every summary card that shows a spend total is a deviation."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T23:22:19.423179+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "cost-metering"
+   ],
+   "techniques": [
+    "price-tables",
+    "spend-attribution",
+    "spend-observability",
+    "usage-ledgers"
+   ],
+   "deviations": 1,
+   "context": "teams-factory-l2",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -18,7 +18,7 @@ export function RecipeHowItRuns({ recipe }: RecipeHowItRunsProps) {
   const { template } = recipe;
 
   return (
-    <section className="rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1">
+    <section className="rounded-card border border-card-border bg-surface-1 p-4 shadow-elevation-1">
       <h4 className="typo-label text-foreground mb-3">
         {t.recipes_catalog.what_it_does_heading}
       </h4>
@@ -26,7 +26,7 @@ export function RecipeHowItRuns({ recipe }: RecipeHowItRunsProps) {
       <SpecRow icon={Calendar} label={t.recipes_catalog.spec_trigger_label}>
         {template.suggestedTrigger?.description ?? t.recipes_catalog.trigger_manual}
         {template.suggestedTrigger?.cron && (
-          <span className="ml-2 typo-label font-mono px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 text-foreground">
+          <span className="ml-2 typo-label font-mono px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-2 text-foreground">
             {template.suggestedTrigger.cron}
           </span>
         )}
@@ -48,7 +48,7 @@ export function RecipeHowItRuns({ recipe }: RecipeHowItRunsProps) {
             {template.toolHints.slice(0, 4).map((tool) => (
               <span
                 key={tool}
-                className="typo-label font-mono px-1.5 py-0.5 rounded border border-card-border/50 bg-secondary/30 text-foreground"
+                className="typo-label font-mono px-1.5 py-0.5 rounded-interactive border border-card-border/50 bg-surface-1 text-foreground"
               >
                 {tool}
               </span>
@@ -86,10 +86,10 @@ function EventChip({ event }: EventChipProps) {
   const dirLabel = emit ? t.recipes_catalog.event_emit_label : t.recipes_catalog.event_listen_label;
   const chip = (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border typo-label font-mono ${
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border typo-label font-mono ${
         emit
           ? 'border-primary/35 bg-primary/10 text-primary'
-          : 'border-card-border/60 bg-secondary/40 text-foreground'
+          : 'border-card-border/60 bg-surface-2 text-foreground'
       }`}
       aria-label={`${dirLabel}: ${event.eventType}`}
     >
@@ -106,7 +106,7 @@ function ChannelChip({ channel }: { channel: string }) {
   const { t } = useTranslation();
   if (channel === 'email') {
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border border-card-border/60 bg-surface-2">
         <Mail className="w-3 h-3 text-foreground" />
         <span className="typo-caption text-foreground">{t.recipes_catalog.channel_email_label}</span>
       </span>
@@ -115,7 +115,7 @@ function ChannelChip({ channel }: { channel: string }) {
   const m = getConnectorMeta(channel);
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-secondary/40"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border bg-surface-2"
       style={{ borderColor: `${m.color}55` }}
     >
       <ConnectorIcon meta={m} size="w-3 h-3" />
@@ -135,7 +135,7 @@ function SpecRow({ icon: Icon, label, children }: SpecRowProps) {
     <div className="flex items-start gap-2 py-2 border-t border-card-border/40 first:border-t-0 first:pt-0">
       <Icon className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
       <span className="typo-caption text-foreground w-24 shrink-0">{label}</span>
-      <span className="flex-1 min-w-0 typo-caption text-foreground/90">{children}</span>
+      <span className="flex-1 min-w-0 typo-caption text-ink-1">{children}</span>
     </div>
   );
 }

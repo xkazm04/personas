@@ -500,7 +500,6 @@ pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<VaultStatus, AppE
 /// plaintext.
 #[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
 pub struct MigrationResult {
     pub migrated: usize,
     pub failed: usize,

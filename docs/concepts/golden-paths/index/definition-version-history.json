@@ -153,7 +153,7 @@
       "resolvedFrom": "basename",
       "verbatim": "GitOpsVersionHistory.tsx"
     },
-    "src/lib/bindings/PersonaVersion.ts": {"count":1,"sections":[7],"contexts":["| ts-rs binding | `src/lib/bindings/PersonaVersion.ts`, exported at `index.ts:640` | **0 importers** |"]},
+    "src/lib/bindings/PersonaVersion.ts": {"count":1,"sections":[7],"contexts":["| ts-rs binding | `src/lib/bindings/PersonaVersion.ts`, exported at `index.ts:640` | **0 importers** |"],"resolved":false},
     "src/lib/bindings/index.ts": {"count":1,"sections":[0],"lines":["640"],"contexts":["`src/lib/bindings/index.ts:640`, and a boot-time orphan scrub that names it"]},
     "test_runner.rs": {"count":2,"sections":[7],"lines":["2006"],"contexts":["`test_runner.rs:2006` (attribution — *\"the `production`-tagged version is the"],"resolved":false},
     "versions.rs": {"count":1,"sections":[7],"lines":["60"],"contexts":["(`versions.rs:60`). On a duplicate, SQLite's choice among the tied rows is"],"resolved":false}

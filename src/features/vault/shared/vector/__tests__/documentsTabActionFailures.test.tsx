@@ -58,7 +58,7 @@ describe('DocumentsTab action failures reach the user', () => {
   it('a failed delete', async () => {
     vi.mocked(kbDeleteDocument).mockRejectedValue(APP_ERROR);
     render(<DocumentsTab kb={KB} onRefresh={() => {}} />);
-    const del = await screen.findByTitle(en.vault.shared.delete_document);
+    const del = await screen.findByLabelText(en.vault.shared.delete_document);
     await act(async () => { fireEvent.click(del); });
     expect(toastSink).toHaveBeenCalledWith(expect.any(String), APP_ERROR);
     expect(screen.getByText('Report')).toBeTruthy();

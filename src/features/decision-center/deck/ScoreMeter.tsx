@@ -47,8 +47,8 @@ export function ScoreMeter({ fact }: { fact: TriageFact & { score: NonNullable<T
           </Tooltip>
         )}
         <span className="ml-auto flex items-baseline gap-1.5">
-          <span className="typo-heading tabular-nums text-foreground">{value}</span>
-          <span className="typo-caption tabular-nums">/{max}</span>
+          <span className="typo-data text-foreground">{value}</span>
+          <span className="typo-data">/{max}</span>
           {word && <span className="au-ink-lamp typo-label">{word}</span>}
         </span>
       </div>

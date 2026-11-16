@@ -1,0 +1,148 @@
+{
+ "schema": "conform-run/1",
+ "worker": "900dce4b-0bd4-45a7-99ae-4e05519fb5e8",
+ "subject": "browser-credential-boundary",
+ "evaluatedAt": "2026-11-08T03:40:38.139679+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "api-vault",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/oauth.rs:1295 The OAuth gateway behind oauthGatewayApi.ts takes an oidcIssuer from the webview and fetches its discovery document through SHARED_HTTP, which has no SSRF-safe resolver and follows redirects by default; the token_endpoint the discovery document returns gets only a string host-suffix check before the client_secret and auth code are POSTed to it through the same client, even though the repo already ships SSRF_SAFE_HTTP for exactly this case.",
+   "techniques": [
+    {
+     "technique": "outbound-fetch-destination-validation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/credentials/oauth.rs:1205 validate_issuer_url judges only an IP literal in the string, never the resolved address. IPv6 private and unique-local ranges are not covered, the verdict is not bound to the connection, redirects are not re-judged, and the custom authorize_url/token_url branch (oauth.rs:2073) is not validated at all before the secret is sent."
+    },
+    {
+     "technique": "broker-proxy-attaches-secret",
+     "verdict": "conformant",
+     "evidence": "src/api/vault/rotation.ts:53 The UI-driven refresh sends only a credential id and the backend loads and attaches the token. The raw-refresh-token IPC door was retired (oauthGatewayApi.ts:65-72)."
+    },
+    {
+     "technique": "omit-the-column-not-the-value",
+     "verdict": "conformant",
+     "evidence": "src/lib/bindings/OAuthStatusResult.ts:17 The poll contract has no token field at all, only booleans plus an opaque session ref, so no token value can reach the webview."
+    },
+    {
+     "technique": "server-sealed-client-roundtrip",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/credentials/crud.rs:69 The OAuth result the renderer brings back is an opaque id into a server-side session table and is redeemed server-side. This is the 'keep it server-side' arm of the technique."
+    }
+   ]
+  },
+  {
+   "context": "supabase-sync-pipeline",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src-tauri/src/cloud/sync/rows.rs:3 The sync writer is a deliberate regime-one client: it holds only the public anon key plus the user's JWT, its projections structurally never select vault or encrypted columns, and it omits user_id so the store defaults the owner from auth.uid().",
+   "techniques": [
+    {
+     "technique": "public-vs-server-env-split",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/cloud/sync/client.rs:5 Only SUPABASE_URL and SUPABASE_ANON_KEY are compiled in, and the code states they are public by design. No service-role key exists in app code; the service_role hits are user connector fields."
+    },
+    {
+     "technique": "omit-the-column-not-the-value",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/cloud/sync/rows.rs:11 Vault tables, per-device ciphertext columns and payload_iv are excluded by shape. Residual: the persona_events payload is value-filtered by a denylist scrubber (key_is_secret plus token prefixes), not omitted."
+    },
+    {
+     "technique": "default-deny-plus-defaulted-owner",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/cloud/sync/rows.rs:14 The owner is defaulted from auth.uid() and deliberately omitted with a comment saying why, and a test enforces it (rows_never_send_user_id). The policy DDL lives in another repo, so the policy-coverage half was not verifiable here."
+    },
+    {
+     "technique": "outbound-fetch-destination-validation",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/cloud/sync/client.rs:22 The destination is fixed by the deployment, which is the technique's own exclusion."
+    },
+    {
+     "technique": "broker-proxy-attaches-secret",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/cloud/sync/client.rs:3 This is regime one by design: there is no privileged upstream to broker."
+    }
+   ]
+  },
+  {
+   "context": "mcp-server",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/mcp_bin.rs:102 personas-mcp is a stdio JSON-RPC sidecar with no browser client, no listening socket, no bundled public key and no web storage; a search of src-tauri/src/mcp_server for anon_key, VITE_, TcpListener and localStorage found none. Its vault reads go out as an outbound client to the app's loopback credential proxy (tools.rs bridge_proxy), so the boundary it touches is owned by the management API's context, not this one.",
+   "techniques": [],
+   "absenceTerms": [
+    "anon_key",
+    "VITE_",
+    "TcpListener",
+    "localStorage"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "browser-credential-boundary",
+   "context": "vault-credentials-components-forms",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "browser-credential-boundary",
+   "context": "vault-shared-playground",
+   "reason": "evidence leans on commands/credentials/api_proxy.rs, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-08T03:40:38.139679+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "browser-credential-boundary"
+   ],
+   "techniques": [
+    "broker-proxy-attaches-secret",
+    "omit-the-column-not-the-value",
+    "outbound-fetch-destination-validation",
+    "server-sealed-client-roundtrip"
+   ],
+   "deviations": 1,
+   "context": "api-vault",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T03:40:38.139679+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "browser-credential-boundary"
+   ],
+   "techniques": [
+    "broker-proxy-attaches-secret",
+    "default-deny-plus-defaulted-owner",
+    "omit-the-column-not-the-value",
+    "outbound-fetch-destination-validation",
+    "public-vs-server-env-split"
+   ],
+   "deviations": 0,
+   "context": "supabase-sync-pipeline",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-08T03:40:38.139679+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "browser-credential-boundary"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "mcp-server",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

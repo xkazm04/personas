@@ -8,6 +8,7 @@ import { resolveWalkthrough } from '../guidance/walkthroughs';
 import { runGuidanceCta } from '../guidance/appActions';
 import { ORB_SIZE } from './AthenaOrb';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 const CAPTION_GAP = 12;
 
 /**
@@ -57,9 +58,6 @@ export function GuideCaption() {
     ? { left: -7, top: 18, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderRight: '7px solid var(--color-primary)' }
     : { right: -7, top: 18, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '7px solid var(--color-primary)' };
 
-  const ctrl =
-    'w-6 h-6 rounded-full flex items-center justify-center text-foreground/70 hover:bg-secondary focus-ring transition-colors disabled:opacity-30 disabled:hover:bg-transparent';
-
   return (
     <div
       data-testid="athena-guide-caption"
@@ -74,7 +72,7 @@ export function GuideCaption() {
         initial={reduceMotion ? false : { opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
-        className="typo-body text-foreground/90"
+        className="typo-body text-ink-2"
       >
         {step.narration(t)}
       </motion.p>
@@ -133,55 +131,59 @@ export function GuideCaption() {
 
       <div className="mt-2 flex items-center justify-between">
         {isMulti ? (
-          <button
-            type="button"
-            data-testid="athena-guide-back"
-            onClick={() => previousGuidance()}
-            disabled={stepIndex === 0}
-            className={ctrl}
-            title={t.athena.guide_back}
-            aria-label={t.athena.guide_back}
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip content={t.athena.guide_back}>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              data-testid="athena-guide-back"
+              onClick={() => previousGuidance()}
+              disabled={stepIndex === 0}
+              aria-label={t.athena.guide_back}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Button>
+          </Tooltip>
         ) : (
           <span />
         )}
 
         <div className="flex items-center gap-1">
           {isMulti && (
-            <button
-              type="button"
-              onClick={() => (playing ? pauseGuidance() : resumeGuidance())}
-              className={ctrl}
-              title={playing ? t.athena.guide_pause : t.athena.guide_resume}
-              aria-label={playing ? t.athena.guide_pause : t.athena.guide_resume}
-            >
-              {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            </button>
+            <Tooltip content={playing ? t.athena.guide_pause : t.athena.guide_resume}>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => (playing ? pauseGuidance() : resumeGuidance())}
+                aria-label={playing ? t.athena.guide_pause : t.athena.guide_resume}
+              >
+                {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              </Button>
+            </Tooltip>
           )}
           {isMulti && (
-            <button
-              type="button"
-              data-testid="athena-guide-skip"
-              onClick={() => advanceGuidance()}
-              className={ctrl}
-              title={t.athena.guide_skip}
-              aria-label={t.athena.guide_skip}
-            >
-              <SkipForward className="w-3.5 h-3.5" />
-            </button>
+            <Tooltip content={t.athena.guide_skip}>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                data-testid="athena-guide-skip"
+                onClick={() => advanceGuidance()}
+                aria-label={t.athena.guide_skip}
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+              </Button>
+            </Tooltip>
           )}
-          <button
-            type="button"
-            data-testid="athena-guide-stop"
-            onClick={() => stopGuidance()}
-            className={ctrl}
-            title={t.athena.guide_stop}
-            aria-label={t.athena.guide_stop}
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip content={t.athena.guide_stop}>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              data-testid="athena-guide-stop"
+              onClick={() => stopGuidance()}
+              aria-label={t.athena.guide_stop}
+            >
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </Tooltip>
         </div>
       </div>
     </div>

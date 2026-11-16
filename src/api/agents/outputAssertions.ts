@@ -1,8 +1,13 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { OutputAssertion } from "@/lib/bindings/OutputAssertion";
+import type { AssertionType } from "@/lib/bindings/AssertionType";
+import type { AssertionFailureAction } from "@/lib/bindings/AssertionFailureAction";
 import type { AssertionResult } from "@/lib/bindings/AssertionResult";
 import type { ExecutionAssertionSummary } from "@/lib/bindings/ExecutionAssertionSummary";
+
+/** Severity values the backend accepts (`info` | `warning` | `critical`); ts-rs exports no type for it. */
+export type AssertionSeverity = "info" | "warning" | "critical";
 
 // ============================================================================
 // Assertion Definitions
@@ -18,10 +23,10 @@ export const createOutputAssertion = (params: {
   personaId: string;
   name: string;
   description?: string;
-  assertionType: string;
+  assertionType: AssertionType;
   config: string;
-  severity?: string;
-  onFailure?: string;
+  severity?: AssertionSeverity;
+  onFailure?: AssertionFailureAction;
 }) => invoke<OutputAssertion>("create_output_assertion", params);
 
 export const updateOutputAssertion = (params: {
@@ -29,8 +34,8 @@ export const updateOutputAssertion = (params: {
   name?: string;
   description?: string;
   config?: string;
-  severity?: string;
-  onFailure?: string;
+  severity?: AssertionSeverity;
+  onFailure?: AssertionFailureAction;
   enabled?: boolean;
 }) => invoke<OutputAssertion>("update_output_assertion", params);
 

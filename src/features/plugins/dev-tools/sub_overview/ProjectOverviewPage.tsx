@@ -36,6 +36,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 
 
@@ -286,8 +288,8 @@ export default function ProjectOverviewPage() {
       <ContentBody>
         {/* ==================== Pipeline (read-only) ==================== */}
         <section className="mb-6">
-          <h2 className="typo-label text-foreground mb-3">{po.pipeline_heading}</h2>
-          <div className="relative overflow-hidden rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-5">
+          <h2 className="typo-section-title mb-3">{po.pipeline_heading}</h2>
+          <div className="bg-surface-1 relative overflow-hidden rounded-modal border border-hair p-5">
             <EditableProjectPipeline
               project={activeProject}
               teams={teams}
@@ -301,23 +303,22 @@ export default function ProjectOverviewPage() {
         {/* ==================== Vital signs strip ==================== */}
         <section className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="typo-label text-foreground"><DebtText k="auto_vital_signs_5bf24670" /></h2>
+            <h2 className="typo-section-title"><DebtText k="auto_vital_signs_5bf24670" /></h2>
             <div className="flex items-center gap-2">
               {lastLoadedAt && (
                 <span className="typo-caption text-foreground">
                   {po.vital_updated_label}{' '}
-                  <RelativeTime timestamp={lastLoadedAt} className="tabular-nums" />
+                  <RelativeTime timestamp={lastLoadedAt} className="num" />
                 </span>
               )}
-              <button
+              <Button variant="ghost" size="icon-sm"
                 type="button"
                 onClick={() => refresh()}
-                title={t.common.refresh}
+                tooltip={t.common.refresh}
                 aria-label={t.common.refresh}
-                className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-foreground ${statsLoading ? 'animate-spin' : ''}`} />
-              </button>
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -379,10 +380,10 @@ export default function ProjectOverviewPage() {
         {todayActivity.length > 0 && (
           <section className="mb-6">
             <div className="flex items-baseline justify-between mb-3">
-              <h2 className="typo-label text-foreground">{po.today_activity_heading}</h2>
-              <span className="typo-caption text-foreground tabular-nums">{todayActivity.length}</span>
+              <h2 className="typo-section-title">{po.today_activity_heading}</h2>
+              <span className="typo-caption text-foreground num">{todayActivity.length}</span>
             </div>
-            <ul className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent divide-y divide-primary/5 max-h-72 overflow-y-auto">
+            <ul className="bg-surface-1 rounded-modal border border-hair divide-y divide-hair max-h-72 overflow-y-auto">
               {todayActivity.map((event) => (
                 <ActivityRow key={event.id} event={event} onJump={handleActivityJump} />
               ))}
@@ -392,8 +393,8 @@ export default function ProjectOverviewPage() {
 
         {/* ==================== Connections rail ==================== */}
         <section>
-          <h2 className="typo-label text-foreground mb-3">{po.connections_heading}</h2>
-          <div className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent divide-y divide-primary/5">
+          <h2 className="typo-section-title mb-3">{po.connections_heading}</h2>
+          <div className="bg-surface-1 rounded-modal border border-hair divide-y divide-hair">
             {/* --- Codebase row --- */}
             <ConnectionRow
               icon={Code2}
@@ -429,19 +430,18 @@ export default function ProjectOverviewPage() {
                       {repoState === 'empty' ? po.go_to_connections : po.go_to_projects}
                     </Button>
                   )}
-                  <button
+                  <Button variant="ghost" size="icon-sm"
                     type="button"
                     onClick={() => setShowRepoChain((v) => !v)}
-                    className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
-                    title={debtText("auto_show_connection_chain_c0a20250")}
+                    tooltip={debtText("auto_show_connection_chain_c0a20250")} aria-label={debtText("auto_show_connection_chain_c0a20250")}
                   >
                     <Settings className="w-3.5 h-3.5 text-foreground" />
-                  </button>
+                  </Button>
                 </div>
               }
             />
             {showRepoChain && (
-              <div className="px-4 py-3 bg-primary/[0.03]">
+              <div className="px-4 py-3 bg-surface-2">
                 {(repoState === 'connected' || repoState === 'error' || repoState === 'unmapped') ? (
                   <ConnectorChain
                     projectName={activeProject.name}
@@ -466,7 +466,7 @@ export default function ProjectOverviewPage() {
             {/* --- Monitoring row --- */}
             <ConnectionRow
               icon={Shield}
-              brandColor="text-red-400"
+              brandColor="text-status-error"
               title="Sentry"
               status={monitorState}
               statusError={monitorError}
@@ -490,19 +490,18 @@ export default function ProjectOverviewPage() {
                       {po.go_to_connections}
                     </Button>
                   )}
-                  <button
+                  <Button variant="ghost" size="icon-sm"
                     type="button"
                     onClick={() => setShowMonitorChain((v) => !v)}
-                    className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
-                    title={debtText("auto_show_connection_chain_c0a20250")}
+                    tooltip={debtText("auto_show_connection_chain_c0a20250")} aria-label={debtText("auto_show_connection_chain_c0a20250")}
                   >
                     <Settings className="w-3.5 h-3.5 text-foreground" />
-                  </button>
+                  </Button>
                 </div>
               }
             />
             {showMonitorChain && (
-              <div className="px-4 py-3 bg-primary/[0.03]">
+              <div className="px-4 py-3 bg-surface-2">
                 {(monitorState === 'connected' || monitorState === 'error' || monitorState === 'unmapped') && (
                   <MonitoringChain
                     projectName={activeProject.name}
@@ -547,11 +546,11 @@ export default function ProjectOverviewPage() {
 type Tone = VitalTone;
 
 const TONE_BG: Record<Tone, string> = {
-  success: 'bg-status-success/10 border-status-success/25',
-  warning: 'bg-status-warning/10 border-status-warning/25',
-  error: 'bg-status-error/10 border-status-error/25',
-  info: 'bg-status-info/10 border-status-info/25',
-  neutral: 'bg-card/40 border-primary/10',
+  success: 'bg-surface-1 border-hair',
+  warning: 'bg-surface-1 border-hair',
+  error: 'bg-surface-1 border-hair',
+  info: 'bg-surface-1 border-hair',
+  neutral: 'bg-surface-1 border-hair',
 };
 const TONE_TEXT: Record<Tone, string> = {
   success: 'text-status-success',
@@ -591,7 +590,7 @@ function VitalTile({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 6) * 0.05, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div
+      <Tooltip content={actionLabel}><div
         draggable={draggable}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
@@ -603,7 +602,6 @@ function VitalTile({
         } : undefined}
         role={onActivate ? 'button' : undefined}
         tabIndex={onActivate ? 0 : undefined}
-        title={actionLabel}
         aria-label={onActivate && actionLabel ? `${label} — ${actionLabel}` : undefined}
         className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-all ${
           draggable ? 'cursor-grab active:cursor-grabbing' : ''
@@ -620,7 +618,7 @@ function VitalTile({
         <div className="h-[1.75rem] flex items-center">
           {loading ? (
             <span
-              className="block h-6 w-12 rounded bg-primary/[0.06] animate-fade-in"
+              className="block h-6 w-12 rounded-interactive bg-surface-2 animate-fade-in"
               style={{ animationDelay: '150ms' }}
               aria-hidden="true"
             />
@@ -637,7 +635,7 @@ function VitalTile({
           )}
         </div>
         <p className="typo-caption text-foreground truncate mt-1">{label}</p>
-      </div>
+      </div></Tooltip>
     </motion.div>
   );
 }
@@ -710,10 +708,10 @@ function MetaPill({
   const cls = tone
     ? `${TONE_BG[tone]} ${TONE_TEXT[tone]}`
     : dim
-      ? 'border-primary/5 bg-card/40 text-foreground'
-      : 'border-primary/10 bg-card/30 text-foreground';
+      ? 'border-hair bg-surface-1 text-foreground'
+      : 'border-hair bg-surface-1 text-foreground';
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-pill border typo-caption ${cls}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border typo-caption ${cls}`}>
       {Icon && <Icon className="w-3 h-3" />}
       <span className="truncate max-w-[200px]">{text}</span>
     </span>
@@ -725,11 +723,11 @@ function MetaPill({
 // ---------------------------------------------------------------------------
 
 const ACTIVITY_META: Record<ActivityKind, { icon: typeof CircleDot; tint: string }> = {
-  scan_run:       { icon: ScanSearch,    tint: 'text-amber-400' },
-  task_created:   { icon: Sparkles,      tint: 'text-blue-400' },
-  task_completed: { icon: CheckCircle2,  tint: 'text-emerald-400' },
-  task_failed:    { icon: XCircle,       tint: 'text-red-400' },
-  goal_signal:    { icon: Target,        tint: 'text-violet-400' },
+  scan_run:       { icon: ScanSearch,    tint: 'text-ink-2' },
+  task_created:   { icon: Sparkles,      tint: 'text-ink-2' },
+  task_completed: { icon: CheckCircle2,  tint: 'text-status-success' },
+  task_failed:    { icon: XCircle,       tint: 'text-status-error' },
+  goal_signal:    { icon: Target,        tint: 'text-role-agent' },
 };
 
 function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: ActivityEvent) => void }) {
@@ -739,20 +737,16 @@ function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: Acti
   const inner = (
     <div className="flex items-center gap-2.5 px-4 py-2">
       <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.tint}`} />
-      <span className="text-md text-foreground truncate flex-1">{event.label}</span>
-      <span className="typo-caption text-foreground tabular-nums shrink-0">{formatRelativeTime(event.timestamp)}</span>
+      <span className="typo-body text-foreground truncate flex-1">{event.label}</span>
+      <span className="typo-caption text-foreground num shrink-0">{formatRelativeTime(event.timestamp)}</span>
     </div>
   );
   return (
     <li>
       {clickable ? (
-        <button
-          type="button"
-          onClick={() => onJump(event)}
-          className="w-full text-left hover:bg-primary/5 transition-colors"
-        >
+        <PressSurface onPress={() => onJump(event)} className="w-full">
           {inner}
-        </button>
+        </PressSurface>
       ) : (
         inner
       )}

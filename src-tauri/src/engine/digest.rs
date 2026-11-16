@@ -43,7 +43,6 @@ pub fn save_config(pool: &DbPool, config: &DigestConfig) -> Result<(), crate::er
 
 /// A single persona's success rate with week-over-week trend.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DigestPersonaTrend {
     pub persona_id: String,
@@ -61,7 +60,6 @@ pub struct DigestPersonaTrend {
 
 /// Top failure category with count.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DigestFailureCategory {
     pub category: String,
@@ -71,7 +69,6 @@ pub struct DigestFailureCategory {
 
 /// Credential health change entry.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DigestCredentialHealth {
     pub credential_name: String,
@@ -80,7 +77,6 @@ pub struct DigestCredentialHealth {
 
 /// Anomaly highlight for the digest.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DigestAnomaly {
     pub metric: String,
@@ -92,7 +88,6 @@ pub struct DigestAnomaly {
 
 /// The full performance digest payload.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PerformanceDigest {
     /// ISO 8601 timestamp when this digest was generated.

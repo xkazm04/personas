@@ -43,7 +43,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
           size="sm"
           icon={<ArrowLeft className="w-3.5 h-3.5" />}
           onClick={onBack}
-          className="text-foreground hover:text-foreground/90"
+          className="text-foreground hover:text-ink-1"
         >
           {t.common.back}
         </Button>

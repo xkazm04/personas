@@ -14,6 +14,7 @@ import type { BlueprintText } from './useBlueprintText';
 import type { Nav } from './useNavigation';
 import type { Writes } from './useWrites';
 import type { ChangesState } from './useChanges';
+import type { FollowState } from './useFocusFollow';
 
 /** What is in flight right now, read off the fleet (the builds this sheet started). */
 export interface LiveState {
@@ -46,6 +47,8 @@ export interface Sheet {
   live: LiveState;
   /** What changed since the operator last looked (the header chip, the plan's highlight, the queue rows'). */
   changes: ChangesState;
+  /** bp's shared focus, followed (a live product only; the fixture has no source and no chip). */
+  follow: FollowState;
   onClose(): void;
 }
 

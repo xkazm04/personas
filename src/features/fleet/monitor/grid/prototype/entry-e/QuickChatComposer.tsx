@@ -93,9 +93,9 @@ export function QuickChatComposer({ card, onClose }: {
       /* 9999 = the ContextMenu layer. The Persona Monitor is a full-screen overlay
          whose stacking sits above 9995, where the house popover (QuickEditPopover)
          lives, so a composer at that layer renders invisible on this surface. */
-      className="fixed z-[9999] overflow-hidden rounded-modal border border-primary/15 bg-background shadow-elevation-4"
+      className="fixed z-[9999] overflow-hidden rounded-modal border border-hair bg-background shadow-elevation-4"
     >
-      <span className="flex items-center gap-2 border-b border-primary/10 bg-secondary/15 px-3 py-2">
+      <span className="flex items-center gap-2 border-b border-hair bg-surface-1 px-3 py-2">
         <span className="min-w-0 flex-1 truncate typo-caption text-foreground">
           {tx(t.monitor.quick_chat_title, { name: card.personaName })}
         </span>
@@ -112,14 +112,13 @@ export function QuickChatComposer({ card, onClose }: {
           }}
           placeholder={t.monitor.quick_chat_placeholder}
           data-testid="entry-e-quick-chat-field"
-          className="w-full resize-none rounded-interactive border border-border bg-secondary/20 px-2 py-1.5 typo-body text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none"
+          className="w-full resize-none rounded-interactive border border-border bg-surface-1 px-2 py-1.5 typo-body text-foreground placeholder:text-ink-3 focus:border-primary/40 focus:outline-none"
         />
         <span className="typo-caption">{t.monitor.quick_chat_hint}</span>
         <span className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="xs" onClick={onClose}>{t.common.cancel}</Button>
           <AsyncButton
-            variant="accent"
-            tone="agent"
+            variant="secondary"
             size="xs"
             icon={<Send className="h-3 w-3" />}
             disabled={text.trim().length === 0}

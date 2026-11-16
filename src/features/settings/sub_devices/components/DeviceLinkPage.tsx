@@ -1,26 +1,36 @@
 /**
- * Settings → Devices. The production-reachable half of the P2P surface:
- * pairing + the paired-device registry.
+ * Settings → Devices, "Your PCs". The production-reachable half of the P2P
+ * surface: this PC, a card per paired PC, the drawer that manages one, and
+ * the guided "Add a PC" wizard.
+ *
+ * The wizard is open while the operator asked for it OR a pairing request is
+ * waiting here, so the receiving PC lands straight on its Approve step.
  *
  * Exposure, bundles, enclaves and the raw diagnostic peer list stay on the
  * dev-only Network tab. This page ships because linking your own two machines
  * is an operator task, not a debugging one.
  */
-import { useCallback } from 'react';
-import { Laptop, WifiOff } from 'lucide-react';
+import { Suspense, useCallback, useState } from 'react';
+import { Laptop, Plus, WifiOff } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { KitHost, Surface } from '@/features/shared/components/kit';
+import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import type { OwnedDevice } from '@/api/network/devices';
 import { useDeviceLink } from '../lib/useDeviceLink';
-import { IncomingPairingPanel } from './IncomingPairingPanel';
-import { NearbyDevicesPanel } from './NearbyDevicesPanel';
-import { PairedDevicesPanel } from './PairedDevicesPanel';
-import { PairingCodeDialog } from './PairingCodeDialog';
-import { PairingRefusalNotice } from './PairingRefusalNotice';
-import { RemoteJobsPanel } from './RemoteJobsPanel';
+import { ThisPcCard } from './ThisPcCard';
+import { DeviceCards } from './DeviceCards';
+import { DeviceDrawer } from './DeviceDrawer';
+import { lazyRetry } from '@/lib/lazyRetry';
+
+// The wizard is opened on demand, so its steps stay out of this page's chunk
+// until the operator asks for it (bundle budget: this chunk grew past tolerance).
+const AddPcDialog = lazyRetry(() =>
+  import('./wizard/AddPcDialog').then((m) => ({ default: m.AddPcDialog })),
+);
 
 export default function DeviceLinkPage() {
   const { t, tx } = useTranslation();
@@ -30,6 +40,14 @@ export default function DeviceLinkPage() {
   const forgetOwnedDevice = useSystemStore((s) => s.forgetOwnedDevice);
 
   const link = useDeviceLink();
+  const [addOpen, setAddOpen] = useState(false);
+  const wizardOpen = addOpen || link.incoming.length > 0;
+  // Mount on first open and keep it mounted, so the close animation still plays.
+  const [wizardMounted, setWizardMounted] = useState(false);
+  if (wizardOpen && !wizardMounted) setWizardMounted(true);
+  const [openPeerId, setOpenPeerId] = useState<string | null>(null);
+  // Read through the live list, so a home change or a sync lands in the open drawer.
+  const openDevice = link.ownedDevices.find((d) => d.peerId === openPeerId) ?? null;
 
   const handleSetHome = useCallback(
     (peerId: string, isHome: boolean) => {
@@ -41,22 +59,34 @@ export default function DeviceLinkPage() {
   );
 
   const handleForget = useCallback(
-    (device: OwnedDevice) => {
+    (device: OwnedDevice) =>
       forgetOwnedDevice(device.peerId)
-        .then(() => addToast(tx(st.forget_device_done, { device: device.displayName }), 'success'))
-        .catch(
-          toastCatch('features/settings/sub_devices/DeviceLinkPage:forget', st.forget_device_failed),
-        );
-    },
+        .then(() => {
+          addToast(tx(st.forget_device_done, { device: device.displayName }), 'success');
+          return true;
+        })
+        .catch((err: unknown) => {
+          toastCatch('features/settings/sub_devices/DeviceLinkPage:forget', st.forget_device_failed)(err);
+          return false;
+        }),
     [forgetOwnedDevice, addToast, tx, st.forget_device_done, st.forget_device_failed],
   );
 
+  const openAdd = useCallback(() => setAddOpen(true), []);
+
   const header = (
     <ContentHeader
-      icon={<Laptop className="w-5 h-5 text-cyan-400" />}
+      icon={<Laptop className="w-5 h-5 text-ink-2" />}
       iconColor="cyan"
       title={st.devices_title}
       subtitle={st.devices_subtitle}
+      actions={
+        link.p2pUnavailable ? undefined : (
+          <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={openAdd} data-testid="devices-add-pc">
+            {st.add_pc}
+          </Button>
+        )
+      }
     />
   );
 
@@ -82,43 +112,35 @@ export default function DeviceLinkPage() {
     <ContentBox data-testid="device-link-page">
       {header}
       <ContentBody centered>
-        <div className="space-y-6">
-          {link.outcome?.kind === 'refused' && (
-            <PairingRefusalNotice outcome={link.outcome} onDismiss={link.dismissOutcome} />
-          )}
+        <KitHost testId="devices-kit">
+          <Surface>
+            <ThisPcCard />
 
-          <IncomingPairingPanel
-            requests={link.incoming}
-            isBusy={link.isBusy}
-            onConfirm={link.confirmPairing}
-            onDecline={link.cancelPairing}
-          />
+            <DeviceCards
+              devices={link.ownedDevices}
+              discoveredPeers={link.discoveredPeers}
+              isLoading={link.ownedDevicesLoading}
+              selectedPeerId={openPeerId}
+              onOpen={(device) => setOpenPeerId(device.peerId)}
+              onAdd={openAdd}
+            />
+          </Surface>
 
-          <PairedDevicesPanel
-            devices={link.ownedDevices}
+          <DeviceDrawer
+            device={openDevice}
             discoveredPeers={link.discoveredPeers}
-            isLoading={link.ownedDevicesLoading}
-            onSetHome={(peerId) => handleSetHome(peerId, true)}
-            onClearHome={(peerId) => handleSetHome(peerId, false)}
+            onClose={() => setOpenPeerId(null)}
+            onSetMain={handleSetHome}
             onForget={handleForget}
           />
-
-          <RemoteJobsPanel />
-
-          <NearbyDevicesPanel
-            peers={link.linkablePeers}
-            isBusy={link.isBusy}
-            onLink={link.startPairing}
-            onRefresh={link.refresh}
-          />
-        </div>
+        </KitHost>
       </ContentBody>
 
-      <PairingCodeDialog
-        request={link.outgoing}
-        busy={link.outgoing ? link.isBusy(link.outgoing.peerId) : false}
-        onCancel={link.cancelPairing}
-      />
+      {wizardMounted && (
+        <Suspense fallback={null}>
+          <AddPcDialog open={wizardOpen} onClose={() => setAddOpen(false)} link={link} />
+        </Suspense>
+      )}
     </ContentBox>
   );
 }

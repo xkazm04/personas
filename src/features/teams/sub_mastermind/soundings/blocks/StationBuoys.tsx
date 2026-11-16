@@ -1,6 +1,7 @@
 // Every project a buoy at its urgency depth. The one region that exists at all
 // three levels: at L1/L2 the stations that are not open shrink to slivers and
 // keep their mark, so the portfolio never disappears behind one project.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import type { CSSProperties } from 'react';
 
 import { buoyDepth, stationSpan } from '../soundingsGeometry';
@@ -62,27 +63,24 @@ export function StationBuoys() {
             <div className="sd-tick" />
             <div className="sd-sldot" />
             <span className="sd-vtag">{s.island.name}</span>
-            <button
+            <PressSurface
               ref={(el) => { if (el) buoyRefs.current.set(s.island.slug, el); else buoyRefs.current.delete(s.island.slug); }}
-              type="button"
               className="sd-buoy"
               data-sd="buoy"
               tabIndex={level === 0 && focus === i ? 0 : -1}
               aria-label={aria}
               data-testid={`sd-buoy-${s.island.slug}`}
-              onClick={(e) => { e.stopPropagation(); if (level === 0) goL1(i); }}
+              onPress={(e) => { e.stopPropagation(); if (level === 0) goL1(i); }}
               onFocus={() => { if (level === 0 && focus !== i) setFocusSlug(s.island.slug); }}
             >
               <span className="sd-nm typo-title-lg">{s.island.name}</span>
               <span className={marked.has(s.island.slug) ? 'sd-bm sd-marked' : 'sd-bm'}><StatusMark status={sm.mark} /></span>
-            </button>
-            <button
-              type="button"
+            </PressSurface>
+            <PressSurface
               className="sd-slbtn"
               tabIndex={-1}
               aria-label={s.island.name}
-              onClick={(e) => { e.stopPropagation(); goL1(i); }}
-            />
+              onPress={(e) => { e.stopPropagation(); goL1(i); }}>{null}</PressSurface>
           </div>
         );
       })}

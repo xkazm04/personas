@@ -366,8 +366,18 @@ export function sweepLeftoverDir(root, dir) {
   const listed = gitTry(root, ['worktree', 'list', '--porcelain']);
   if (listed.ok && listed.out.split(/\r?\n/).some((l) => l.startsWith('worktree ') && norm(l.slice(9)) === norm(dir))) return false;
   unlinkAllLinks(dir);
-  // the gate's processes may still hold files for a moment after they exit (2026-10-25: merged runs'
-  // folders survived the first pass and went the second), so a failed pass is retried a few times
+  return rmTreeRetry(dir);
+}
+
+/**
+ * (dir) => boolean   // true when dir is gone afterwards
+ * `rmdir /s /q` on Windows (a junction goes as a link, never descended; and it copes with the deep
+ * `target/` paths that make `git worktree remove` fail), `fs.rmSync` elsewhere. The caller has
+ * already unlinked every link inside. The gate's processes may still hold files for a moment after
+ * they exit (2026-10-25: merged runs' folders survived the first pass and went the second), so a
+ * failed pass is retried a few times.
+ */
+function rmTreeRetry(dir) {
   for (let attempt = 0; attempt < 4 && fs.existsSync(dir); attempt += 1) {
     if (attempt) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
     try {
@@ -376,6 +386,42 @@ export function sweepLeftoverDir(root, dir) {
     } catch { /* retried, then reported by the caller through the return value */ }
   }
   return !fs.existsSync(dir);
+}
+
+/** Cargo build output inside a worktree: the bulk of its bytes (2026-10-23..28: 7-23 GB each, ~213 GB left behind). */
+export const BUILD_DIRS = ['target', path.join('src-tauri', 'target')];
+
+/**
+ * (worktree) => {pruned: string[], failed: string[]}
+ * Delete only the build output of a worktree that is being KEPT (a released run waits for a retry or
+ * an operator's look): it is rebuilt on demand and is never the work. Source, branch and registration
+ * stay. A `target` that is itself a link is removed as a link.
+ */
+export function pruneBuildOutput(worktree) {
+  if (!worktree || !isUnder(worktree, WORKTREE_ROOT)) throw new Error(`refusing to prune ${worktree}: not under ${WORKTREE_ROOT}`);
+  const out = { pruned: [], failed: [] };
+  for (const rel of BUILD_DIRS) {
+    const dir = path.join(worktree, rel);
+    const st = lstatOrNull(dir);
+    if (!st) continue;
+    if (st.isSymbolicLink()) { unlinkJunction(dir); out.pruned.push(rel); continue; }
+    unlinkAllLinks(dir);
+    (rmTreeRetry(dir) ? out.pruned : out.failed).push(rel);
+  }
+  return out;
+}
+
+/**
+ * (run) => {discarded, ...}
+ * The terminal release: the work is merged, superseded or abandoned, so the worktree goes. Only when
+ * it holds nothing uncommitted; a dirty tree is kept (build output still pruned) and says so.
+ */
+export function discardWorktree(run) {
+  const wt = run.worktree;
+  if (!wt || !fs.existsSync(wt)) return { discarded: true, ...removeWorktree(run) };
+  const st = gitTry(wt, ['status', '--porcelain', '--untracked-files=all']);
+  if (!st.ok || st.out.trim()) return { discarded: false, kept: st.ok ? 'uncommitted changes' : `git status failed: ${st.err}`, ...pruneBuildOutput(wt) };
+  return { discarded: true, ...removeWorktree(run) };
 }
 
 export function removeWorktree(run) {
@@ -387,11 +433,21 @@ export function removeWorktree(run) {
     out.junction = unlinkNodeModules(root, worktree);
     out.links = unlinkAllLinks(worktree);
     if (fs.existsSync(worktree)) {
-      const r = gitTry(root, ['worktree', 'remove', '--force', worktree]);
-      if (!r.ok) throw new Error(`git worktree remove ${worktree}: ${r.err}`);
+      let r = gitTry(root, ['worktree', 'remove', '--force', worktree]);
+      if (!r.ok) {
+        // `git worktree remove` fails halfway on Windows when a deep or locked target/ cannot be
+        // deleted ("failed to delete ..."). This used to throw here, skipping the prune and the leftover
+        // sweep below, and the folder stayed forever (2026-10-23..28: ~213 GB). Clear the build output
+        // ourselves, retry once, and fall through to prune + sweep either way.
+        out.gitError = r.err;
+        out.pruneBuild = pruneBuildOutput(worktree);
+        r = gitTry(root, ['worktree', 'remove', '--force', worktree]);
+        if (r.ok) delete out.gitError;
+      }
     }
     gitTry(root, ['worktree', 'prune']);
     out.removed = sweepLeftoverDir(root, worktree);
+    if (!out.removed && out.gitError) out.error = `git worktree remove ${worktree}: ${out.gitError}`;
   }
   const branch = run.branch;
   if (branch && gitTry(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]).ok

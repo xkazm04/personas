@@ -24,6 +24,8 @@ import { FORGE_ITEM, FORGE_STAGGER } from '../cardMotion';
 import { useTwinExperienceRequest } from '../launcher';
 import { ForgeStyleFan } from './ForgeStyleFan';
 import { useCreateTwin } from './useCreateTwin';
+import { PressSurface } from '@/features/shared/components/buttons';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 interface ForgePhaseProps {
   onClose: () => void;
@@ -96,23 +98,19 @@ export function ForgePhase({ onClose, onCreated }: ForgePhaseProps) {
             {GENDERS.map((g) => {
               const selected = gender === g.id;
               return (
-                <button
-                  type="button"
+                <PressSurface
                   key={g.id}
-                  onClick={() => setGender(g.id)}
+                  onPress={() => setGender(g.id)}
                   aria-pressed={selected}
                   data-testid={`twin-experience-gender-${g.id}`}
-                  className={`focus-ring flex flex-col items-center gap-2 px-3 py-5 rounded-card border-2 transition-colors ${
-                    selected
-                      ? 'border-primary bg-primary/10 shadow-elevation-2'
-                      : 'border-primary/15 bg-card-bg hover:border-primary/40'
-                  }`}
+                  className="flex flex-col items-center gap-2 px-3 py-5 rounded-card border border-hair"
+                  selected={selected}
                 >
                   <span aria-hidden className={`typo-hero leading-none ${g.color}`}>
                     {g.glyph}
                   </span>
                   <span className="typo-label text-foreground">{identity[g.labelKey]}</span>
-                </button>
+                </PressSurface>
               );
             })}
           </div>
@@ -126,22 +124,17 @@ export function ForgePhase({ onClose, onCreated }: ForgePhaseProps) {
               const at = languages.indexOf(locale.code);
               const on = at >= 0;
               return (
-                <button
+                <OptionChip
                   key={locale.code}
-                  type="button"
-                  onClick={() => toggleLanguage(locale.code)}
-                  aria-pressed={on}
+                  onSelect={() => toggleLanguage(locale.code)}
                   data-testid={`twin-experience-language-${locale.code}`}
-                  className={`focus-ring inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border typo-caption transition-colors ${
-                    on ? 'border-primary/40 bg-primary/10 text-foreground' : 'border-primary/15 hover:bg-secondary/50'
-                  }`}
-                >
+                  selected={on}
+                ><span className="inline-flex items-center gap-1.5">
                   {on && <Check className="w-3 h-3 text-primary" aria-hidden />}
                   <span lang={locale.code}>{locale.nativeName}</span>
                   {at === 0 && languages.length > 1 && (
                     <span className="typo-label text-primary">{tx.forge.languagesMain}</span>
-                  )}
-                </button>
+                  )}</span></OptionChip>
               );
             })}
           </div>

@@ -38,18 +38,19 @@ export function RecipeCreateFlow({
     <div
         className="animate-fade-slide-in overflow-hidden"
       >
-        <div className="rounded-modal border border-primary/10 bg-primary/5 p-4 mb-4 space-y-3">
+        <div className="rounded-modal border border-hair bg-primary/5 p-4 mb-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="typo-heading text-foreground flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
               {sh.create_recipe}
             </h4>
-            <button
+            <Button
               onClick={onCancel}
-              className="p-1 rounded-card text-foreground hover:text-foreground/80 hover:bg-muted/30 transition-colors"
+              variant="ghost"
+              size="icon-sm"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
 
           <div>
@@ -68,14 +69,15 @@ export function RecipeCreateFlow({
 
           {/* Generate button */}
           {(generator.phase === 'idle' || generator.phase === 'error') && !generator.draft && (
-            <button
+            <Button
               onClick={onGenerate}
               disabled={!description.trim()}
-              className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              variant="primary"
+              size="md"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
             >
-              <Sparkles className="w-3.5 h-3.5" />
               {sh.generate_with_ai}
-            </button>
+            </Button>
           )}
 
           {/* Progress + Terminal strip */}
@@ -96,7 +98,7 @@ export function RecipeCreateFlow({
 
           {/* Error */}
           {(error || generator.error) && (
-            <div className="rounded-modal border border-red-500/30 bg-red-500/10 px-3 py-2 typo-body text-red-400">
+            <div className="rounded-modal border border-status-error/30 bg-status-error/10 px-3 py-2 typo-body text-status-error">
               {error || generator.error}
             </div>
           )}
@@ -145,7 +147,7 @@ export function RecipeCreateFlow({
               {generator.draft.example_result && (
                 <div>
                   <p className="typo-body text-foreground mb-0.5">{sh.example_result}</p>
-                  <pre className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-3 typo-code text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
+                  <pre className="rounded-card border border-hair bg-surface-1 p-3 typo-code text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
                     {generator.draft.example_result}
                   </pre>
                 </div>
@@ -162,15 +164,16 @@ export function RecipeCreateFlow({
                 >
                   {sh.accept_save}
                 </Button>
-                <button
+                <Button
                   onClick={() => {
                     generator.reset();
                     onGenerate();
                   }}
-                  className="rounded-modal px-3 py-1.5 typo-body text-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                  variant="ghost"
+                  size="sm"
                 >
                   {sh.regenerate}
-                </button>
+                </Button>
               </div>
             </div>
           )}

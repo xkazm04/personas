@@ -123,6 +123,10 @@ pub struct Dispatched {
     /// card's review entry is NOT here — it needs the chat card's id, which
     /// session.rs mints when it persists the card, so it is written there.
     pub note_comments: Vec<crate::db::models::NoteComment>,
+    /// Standup revisions this turn's ops wrote (`standup_decide`), by id.
+    /// session.rs emits one `standup://updated` per entry so an open Standup
+    /// page re-reads the card.
+    pub standup_updates: Vec<String>,
     /// Reports this reply minted (`show_report`), already persisted as
     /// `companion_chat_card` rows (`kind = 'report'`, `status = 'unread'`) with
     /// no episode yet: session.rs stamps the assistant episode onto them once

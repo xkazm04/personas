@@ -663,6 +663,279 @@
   "decay_none": "No facts old enough to decay yet.",
   "page_title": "Athena",
   "page_subtitle": "Setup, memory inspector, and voice configuration for your thinking partner.",
+  "standup": {
+    "page_subtitle": "Reconcile what moved, decide the day and night, and arm the plan Athena runs.",
+    "placeholder": "No standup yet. Open one to reconcile what moved, pick tomorrow's directions and arm the plan.",
+    "title": "Standup",
+    "empty_title": "No standup open",
+    "nothing_title": "Nothing to decide",
+    "nothing_subtitle": "No project needs a direction this time. Arm to keep the away rules, or open the next standup later.",
+    "loading": "Loading the standup",
+    "table_label": "Projects, agent changes and asks, one line each through today, now and tonight",
+    "dismiss": "Dismiss",
+    "amends": "amends rev {n}",
+    "fixture_no_backend": "Fixture: this action needs the live standup backend.",
+    "rev": {
+      "number": "rev {n}",
+      "draft": "draft",
+      "armed": "armed {time}",
+      "ended": "ended"
+    },
+    "voice": {
+      "none": "No standup open.",
+      "decide": "{n} to decide, {w} only you can answer.",
+      "nothing": "Nothing to decide this time.",
+      "all_decided": "Everything decided. Arm when ready.",
+      "return": "Welcome back. Commits moved: {m}, on {p} of your projects.",
+      "ended": "This standup has ended.",
+      "armed": "Armed. {r} running, {d} decided."
+    },
+    "since": {
+      "label": "Since the last standup",
+      "moved": "Commits moved: {n}, on {p} of your projects",
+      "parked": "Asks parked for you: {n}",
+      "running": "Sessions still running: {n}",
+      "created": "created {names}",
+      "from": "from"
+    },
+    "machine": {
+      "label": "Machine",
+      "now_armed": "the plan is running",
+      "now_draft": "now · the standup",
+      "night_empty": "No forecast yet. Decided directions are laid on the night once forecast."
+    },
+    "state": {
+      "proposed": "proposed",
+      "decided": "decided",
+      "running": "running",
+      "done": "done",
+      "skipped": "skipped",
+      "waits": "waits for you",
+      "blank": "no proposal",
+      "filler": "fill",
+      "refused": "refused",
+      "agent_question": "{verb}?",
+      "verb_create": "create",
+      "verb_retune": "retune"
+    },
+    "row": {
+      "moved": "Commits landed since the last standup: {n}",
+      "refused": "held elsewhere",
+      "waits": "only you can answer",
+      "blank": "press E to type the direction",
+      "filler": "fills dead spots, report only",
+      "skipped": "off tonight",
+      "directions": "{n} directions",
+      "hold_night": "Stays parked; nothing that needs it runs"
+    },
+    "cards": {
+      "label": "Athena's directions",
+      "recommended": "Athena's pick",
+      "type_placeholder": "Type the direction for {name} and press Enter"
+    },
+    "groups": {
+      "decide": {
+        "title": "To decide",
+        "past": "Today, from the away log",
+        "now": "Decision",
+        "night": "Tonight (forecast)"
+      },
+      "agents": {
+        "title": "Agent changes",
+        "past": "Why",
+        "now": "Decision",
+        "night": "Effect"
+      },
+      "waits": {
+        "title": "Waits for you",
+        "past": "The ask",
+        "now": "Your call",
+        "night": "Tonight without it"
+      },
+      "blank": {
+        "title": "No proposal",
+        "past": "Today",
+        "now": "State",
+        "night": "Tonight"
+      },
+      "filler": {
+        "title": "Fills dead spots",
+        "past": "Today",
+        "now": "State",
+        "night": "Tonight"
+      },
+      "refused": {
+        "title": "Held elsewhere",
+        "past": "Today",
+        "now": "State",
+        "night": "Tonight"
+      }
+    },
+    "footer": {
+      "keys": "Keyboard keys",
+      "arm": "Arm rev {n}",
+      "end": "End standup",
+      "amend": "Amend: rev {n}"
+    },
+    "rules": {
+      "title": "While you are away",
+      "subtitle": "What Athena decides alone, and what always waits for you.",
+      "subtitle_locked": "The plan is armed: amend it (N) to change the away rules.",
+      "decides_alone": "She decides alone",
+      "always_waits": "Always waits for you",
+      "pushes": "Pushes allowed",
+      "no_pushes": "No push target named: every push parks for you.",
+      "pushes_note": "Only these targets, after the gate and the secret scan. Any other push parks.",
+      "classes": {
+        "scope": "Scope",
+        "goals": "Goals",
+        "dependency_bump": "Dependency bumps",
+        "retune": "Agent retunes",
+        "create_agent": "New agents",
+        "money": "Money",
+        "data": "Data",
+        "schema": "Schema",
+        "secrets": "Secrets",
+        "push": "Pushes not named"
+      },
+      "notes": {
+        "scope": "Narrow or widen a run inside the agreed direction.",
+        "goals": "Reorder or close goals the direction already names.",
+        "dependency_bump": "Patch and minor bumps that pass the gate.",
+        "retune": "Pacing and notes on an existing agent.",
+        "create_agent": "A new agent when a goal needs one; tagged and reported.",
+        "money": "Any spend beyond the caps.",
+        "data": "Canonical data, infra apply, history rewrites.",
+        "schema": "Schema changes beyond the standing rulings.",
+        "secrets": "Credentials, keychain entries, provider keys.",
+        "push": "Any push to a target the plan does not name."
+      }
+    },
+    "dossier": {
+      "close": "Close",
+      "label": "Dossier",
+      "read": "Athena's read",
+      "decided": "Decided direction",
+      "directions": "Directions",
+      "history": "Last standups",
+      "history_armed": "Armed in {n} of the last {of} standups.",
+      "history_unrecorded": "Not recorded yet for this project.",
+      "acts": "Away acts ({n})",
+      "no_acts": "No away acts recorded for this line.",
+      "moved": "What moved",
+      "moved_n": "Commits landed since the last standup: {n}"
+    },
+    "keys": {
+      "title": "Keys",
+      "subtitle": "The standup is keyboard first. Keys never act while you type.",
+      "move": "move between rows",
+      "pick": "pick a direction",
+      "edit": "edit or type your own",
+      "skip": "skip tonight",
+      "talk": "talk it through with Athena",
+      "undo": "undo the decision",
+      "dossier": "open the dossier",
+      "close": "close",
+      "zoom": "zoom the machine row: today / 12 days",
+      "rules": "away rules",
+      "arm": "arm the plan",
+      "amend": "amend: a new revision",
+      "keys": "this card"
+    },
+    "actions": {
+      "open": "Open a standup",
+      "plan": "Plan with Athena",
+      "plan_hint": "Opens Athena’s chat and walks the open cards with you; she writes each decision back here."
+    },
+    "console": {
+      "col": {
+        "name": "Project",
+        "today": "Today",
+        "today_long": "12 days",
+        "decision": "Decision",
+        "tonight": "Tonight"
+      },
+      "meter": {
+        "decided": "decided",
+        "waits": "wait on you",
+        "hint": "{w} wait for you · {p} proposed · {d} decided · {r} running",
+        "empty": "Nothing on the plan yet"
+      },
+      "state_waits": "your call",
+      "since_lead": "since",
+      "since_body": "{moved} commits moved on {p} projects, {parked} asks parked for you",
+      "since_running": "{n} sessions still running",
+      "machine": {
+        "name": "Machine",
+        "idle": "idle tonight",
+        "lanes": "{lanes} lanes",
+        "summary_empty": "No forecast yet",
+        "now": "Clock",
+        "zoom": "Click or press Z for {span}.",
+        "cpu_hint": "Host CPU per bin. Green: an agent ran. Dotted: not recorded.",
+        "cpu_hint_long": "Host CPU over 12 days. Dotted: not recorded.",
+        "lanes_hint": "{lanes} lanes, peak {units} units. Solid: your directions. Grey: fill. Dotted: a dead spot nothing fills ({dead}% of lane time)."
+      },
+      "decision": {
+        "options": "{n} options",
+        "proposed_plain": "Pick one of {n} directions",
+        "agent": "Accept to {verb} this agent",
+        "blank": "No proposal yet. Type the direction",
+        "refused": "Held by a headless master"
+      },
+      "today": {
+        "moved_word": "moved",
+        "moved_hint": "Commits landed since the last standup: {n}"
+      },
+      "history_hint": "Armed in {n} of the last {of} standups",
+      "detail": {
+        "read": "Read",
+        "pick": "Athena's pick",
+        "type": "Type your own",
+        "edit": "Edit the direction",
+        "skip": "Skip tonight",
+        "accept": "Accept",
+        "talk": "Talk it through",
+        "answer": "Answer it with Athena",
+        "dossier": "Dossier",
+        "undo": "Undo"
+      },
+      "footer": {
+        "directions": "directions",
+        "runs": "runs go tonight",
+        "off": "proposed stay off",
+        "resolved": "all resolved",
+        "plan_none": "Nothing goes tonight yet",
+        "rules": "Away rules",
+        "locked": "{n} locked",
+        "help": "Legend and keys",
+        "help_keys": "Press ? for every key"
+      },
+      "kinds": {
+        "push": "Pushes",
+        "dispatch": "Dispatches",
+        "ask_parked": "Asks parked",
+        "ask_delegated": "Asks delegated",
+        "stop": "Stops",
+        "drift": "Drift",
+        "agent_created": "Agents created",
+        "agent_retuned": "Agents retuned",
+        "sweep": "Sweeps",
+        "backfill": "Backfills"
+      }
+    },
+    "chat": {
+      "title": "Standup · rev {n} · {id}",
+      "intro": "Let’s run this standup together in chat, the way /athena --standup does it (revision {n}, standup {id}).",
+      "steps": "Walk the open cards with me one at a time. For each, ground two to four directions in what moved, name your pick, and ask me. When I decide, write it onto the card with standup_decide: one op per card, the direction text and a window, or skip. Agent-change cards are accept or skip. For the settled cards, only ask if something changed. Arming stays mine, on the Standup page: tell me when every card is decided.",
+      "open_head": "Open cards ({n}):",
+      "settled_head": "Already settled ({n}):",
+      "waits_head": "Waiting on me ({n}):",
+      "item": "item",
+      "on_card": "On the card",
+      "your_pick": "your pick"
+    }
+  },
   "tab_setup": "Setup",
   "tab_memory": "Memory",
   "tab_voice": "Voice",

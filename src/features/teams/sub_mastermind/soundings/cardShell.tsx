@@ -3,6 +3,7 @@
 //
 // Split out of SoundingsCard.tsx 2026-10-06 (341 lines, two large components
 // and four hooks in one file).
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { DimNode, IslandEdge } from '../lib/types';
@@ -87,17 +88,16 @@ export function CompareStrip({ stations, g, card, me, label, markFor, related, o
         if (!m) return null;
         const cls = ['sd-cmp-m', s.index === me ? 'sd-me' : '', related?.has(s.index) ? 'sd-rel' : ''].filter(Boolean).join(' ');
         return (
-          <button
+          <PressSurface
             key={s.island.slug}
-            type="button"
             className={cls}
             style={{ left: Math.round(stationCentre(g, s.index) - card.x) }}
             aria-label={s.island.name}
-            onClick={(e) => { e.stopPropagation(); onPick(s.index); }}
+            onPress={(e) => { e.stopPropagation(); onPick(s.index); }}
           >
             <StatusMark status={m.status} style={{ top: compareY(m.band) - 2 }} />
             <span className="sd-ct">{s.island.name}</span>
-          </button>
+          </PressSurface>
         );
       })}
     </div>

@@ -66,13 +66,13 @@ export function StripFrame({
       className="flex flex-shrink-0 flex-col border-b border-border bg-foreground/[0.01]"
     >
       <div className="flex h-7 items-center gap-2 border-b border-border/60 px-3 typo-caption text-foreground">
-        <span className="inline-flex flex-shrink-0 items-center gap-1.5 uppercase tracking-wider opacity-70">
+        <span className="inline-flex flex-shrink-0 items-center gap-1.5 typo-eyebrow text-ink-3">
           <Gauge className="h-3 w-3" aria-hidden />
           {t.monitor.usage_title}
         </span>
         {planCount !== undefined && planCount > 0 && (
           <span
-            className="inline-flex flex-shrink-0 items-center rounded-full border border-border bg-secondary/20 px-2 py-0.5 tabular-nums"
+            className="inline-flex flex-shrink-0 items-center rounded-interactive border border-border bg-surface-1 px-2 py-0.5 num"
             data-testid="fleet-usage-plan-count"
           >
             {tx(t.monitor.usage_plan_count, { count: planCount, max: Math.max(PLAN_SLOTS, planCount) })}
@@ -96,7 +96,7 @@ export function StripFrame({
  * so a warm strip never shows it.
  */
 export function GhostRow() {
-  const bar = 'h-[0.7em] rounded bg-primary/[0.06]';
+  const bar = 'h-[0.7em] rounded-interactive bg-surface-2';
   return (
     <div
       aria-hidden
@@ -104,7 +104,7 @@ export function GhostRow() {
       style={{ animationDelay: '150ms' }}
       data-testid="fleet-usage-ghost-row"
     >
-      <span className="h-4 w-4 flex-shrink-0 rounded-interactive bg-primary/[0.06]" />
+      <span className="h-4 w-4 flex-shrink-0 rounded-interactive bg-surface-2" />
       <span className={`min-w-0 flex-1 ${bar}`} />
       <span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
         <span className={`w-12 ${bar}`} />

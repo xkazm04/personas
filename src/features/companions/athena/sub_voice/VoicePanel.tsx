@@ -9,6 +9,7 @@ import {
   type AthenaTtsEngine,
 } from '@/stores/slices/system/athenaSlice';
 import { lazyRetry } from '@/lib/lazyRetry';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 // The engine panels are the tab's heavy parts (model lists, previews,
 // downloads). They load as their own chunks and arrive one after the other
@@ -110,7 +111,7 @@ function EngineSelectorCard() {
           <label className="typo-title">
             {t.athena.voice_volume_label}
           </label>
-          <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
+          <span className="typo-code text-foreground">{Math.round(volume * 100)}%</span>
         </div>
         <Slider
           min={0}
@@ -136,25 +137,21 @@ interface EngineButtonProps {
 
 function EngineButton({ active, onClick, icon, label, caption }: EngineButtonProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={active}
-      className={`text-left rounded-card border p-3 transition-colors focus-ring ${
-        active
-          ? 'border-cyan-500/50 bg-cyan-500/10'
-          : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
-      }`}
+      className="text-left rounded-card border border-hair p-3"
+      selected={active}
     >
       <div className="flex items-center gap-2">
-        <span className={active ? 'text-cyan-300' : 'text-foreground'}>{icon}</span>
+        <span className={active ? 'text-ink-2' : 'text-foreground'}>{icon}</span>
         <span
-          className={`typo-body ${active ? 'text-cyan-200' : 'text-foreground'}`}
+          className={`typo-body ${active ? 'text-ink-2' : 'text-foreground'}`}
         >
           {label}
         </span>
       </div>
       <p className="typo-caption mt-1">{caption}</p>
-    </button>
+    </PressSurface>
   );
 }

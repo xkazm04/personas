@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
 import { channelTypeLabel, type channelTypes as ChannelTypes } from './ChannelList';
+import Button from '@/features/shared/components/buttons/Button';
 
 type ChannelTypeDef = Pick<(typeof ChannelTypes)[number], 'type' | 'label' | 'labelKey'>;
 
@@ -20,36 +21,38 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
     <Listbox
       ariaLabel={t.agents.connectors.ch_add}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
+          pressed={isOpen}
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="flex items-center gap-2 px-3 py-2 rounded-modal border border-dashed border-primary/20 hover:border-primary/40 typo-body text-foreground hover:text-primary/80 transition-all w-full"
+          className="w-full"
+          icon={<Plus className="w-4 h-4" />}
         >
-          <Plus className="w-4 h-4" />
           {t.agents.connectors.ch_add}
           <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       )}
     >
       {({ close }) => (
         <>
           {available.map((ct) => (
-            <button
+            <Button
               type="button"
               key={ct.type}
               onClick={() => { onAdd(ct.type); close(); }}
               role="option"
               aria-selected={false}
-              className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 typo-body text-foreground transition-colors"
-            >
-              <Bell className="w-4 h-4 text-foreground" />
-              {channelTypeLabel(t, ct)}
-            </button>
+              variant="ghost"
+              size="md"
+              className="w-full"
+              icon={<Bell className="w-4 h-4 text-ink-1" />}
+            >{channelTypeLabel(t, ct)}</Button>
           ))}
           {available.length === 0 && (
-            <div className="px-4 py-2.5 typo-body text-foreground">{t.agents.connectors.ch_all_added}</div>
+            <div className="px-4 py-2.5 typo-body text-ink-1">{t.agents.connectors.ch_all_added}</div>
           )}
         </>
       )}

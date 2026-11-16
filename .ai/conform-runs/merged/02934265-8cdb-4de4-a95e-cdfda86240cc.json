@@ -1,0 +1,80 @@
+{
+ "schema": "conform-run/1",
+ "worker": "02934265-8cdb-4de4-a95e-cdfda86240cc",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T04:21:32.977437+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "db-repos-execution",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active, upsert and purge_expired have no test of their own. Their only caller is ProviderCircuitBreaker::with_persistence (src-tauri/engine/src/failover.rs:202), and every failover test builds the breaker with ::new() (pool: None). That means the positional row.get mapping, the '-N minutes' TTL predicate and the reconstruction of open state after a restart can all break while every suite stays green. Five other files in this context have zero #[test] as well: policy_events, scheduled_retries, test_suites, annotations and credential_recipes.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:48 The TTL restore decision is reached by no test. The failover suite makes the persistence branch unreachable by building every breaker with ::new() (failover.rs:190), and nothing declares or lists that unreached region."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src-tauri/db/src/lib.rs:2466 init_test_db, which every test in this context uses, builds the migrated template once and copies it per test. It probes the copy before handing it over (:2482) and sweeps stale copies once per process (:2406)."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src-tauri/db/src/repos/execution/executions.rs:2834 The cache test picks a cache key unique to itself, so tests running in parallel cannot serve or evict each other's heatmap snapshot."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src-tauri/db/src/repos/execution/executions.rs:4496 The monthly-rollup window test places rows at computed instants instead of waiting on sleeps."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "commands-contest",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "i18n",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "companions-page",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "run-desk",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T04:21:32.977437+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "fixture-economics",
+    "isolation-lanes",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "db-repos-execution",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -74,7 +74,7 @@ export function ProviderSection({
                 onClick={ws.selectAll}
                 variant="link"
                 size="xs"
-                className="text-blue-400 hover:text-blue-300"
+                className="text-status-info hover:text-status-info"
               >
                 {wp.select_all}
               </Button>
@@ -100,7 +100,7 @@ export function ProviderSection({
             size="lg"
             block
             data-testid="vault-workspace-connect"
-            className="bg-blue-600 hover:bg-blue-500"
+            className="bg-status-info hover:bg-status-info"
           >
             {tx(ws.selectedServices.length === 1 ? wp.connect_services_one : wp.connect_services_other, { count: ws.selectedServices.length })}
           </Button>
@@ -110,7 +110,7 @@ export function ProviderSection({
       {/* Authorizing phase */}
       {ws.phase === 'authorizing' && (
         <div className="flex flex-col items-center gap-3 py-8">
-          <LoadingSpinner size="2xl" className="text-blue-400" />
+          <LoadingSpinner size="2xl" className="text-status-info" />
           <p className="typo-body text-foreground text-center">
             {wp.sign_in_browser}
             <br />
@@ -127,18 +127,18 @@ export function ProviderSection({
           <ProvisionProgress states={ws.provisionStates} />
 
           {isDone && (
-            <div className="flex items-center gap-2 p-3 rounded-modal border border-emerald-500/20 bg-emerald-500/5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <p className="typo-body text-emerald-400">
+            <div className="flex items-center gap-2 p-3 rounded-modal border border-hair bg-surface-1">
+              <CheckCircle2 className="w-4 h-4 text-status-success flex-shrink-0" />
+              <p className="typo-body text-status-success">
                 {tx(createdCount === 1 ? wp.credentials_created_one : wp.credentials_created_other, { count: createdCount })}
               </p>
             </div>
           )}
 
           {isError && ws.error && (
-            <div className="flex items-center gap-2 p-3 rounded-modal border border-red-500/20 bg-red-500/5">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <p className="typo-body text-red-400">{ws.error}</p>
+            <div className="flex items-center gap-2 p-3 rounded-modal border border-status-error/20 bg-status-error/5">
+              <AlertCircle className="w-4 h-4 text-status-error flex-shrink-0" />
+              <p className="typo-body text-status-error">{ws.error}</p>
             </div>
           )}
 

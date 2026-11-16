@@ -86,7 +86,7 @@ export function StewardRow({ mandate, mode, modeKnown, held, onOpen }: {
           </span>
           <MirrorMark mirror={mandate.mirror} />
           <SpendMeter used={used} cap={cap} />
-          <span className={`w-5 flex-shrink-0 text-right typo-data tabular-nums ${asking ? 'text-status-warning' : 'text-foreground'}`}>
+          <span className={`w-5 flex-shrink-0 text-right typo-data num ${asking ? 'text-status-warning' : 'text-foreground'}`}>
             {openAsks === null ? '?' : asking ? <Numeric value={openAsks} /> : null}
           </span>
           <Lamp lamp={stewardLamp(mandate)} />

@@ -1,0 +1,86 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d0066858-2298-45a2-abe2-d8315f877c4d",
+  "subject": "readiness-passports",
+  "evaluatedAt": "2026-11-09T23:57:19.945082+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "teams-factory-passport-improve",
+      "subject": "readiness-passports",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:134 scoreAgainstRubric blends automationReadiness dimensions (context, instructions, selfverify, evals, aiflow) and productionReadiness dimensions (ci, tests, security, observability, migrations) into one weighted goldenPct, the cross-axis headline the standard forbids, and that number is what the plan, export, history and atlas quote.",
+      "techniques": [
+        {
+          "technique": "two-axis-readiness",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:134 One weighted % over the RUBRIC, which mixes p.automationReadiness.* and p.productionReadiness.* dims, so the number crosses axes. A delegation improvement moves the same figure as a ship improvement. The earlier verdict cited line 131, which is the per-dim map; the blend is line 134."
+        },
+        {
+          "technique": "blocker-rollups",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:98 The fleet view averages the blended % across projects (fleetGoldenAvg / projectedFleetGolden), and an empty fleet returns 0, not 'not assessed'. buildImprovePlan (improvePlan.ts:89) lists project-by-gap items ranked by estGoldenLift/tier. It never inverts to blockers with projects, incidence or sole-blocker counts."
+        },
+        {
+          "technique": "declined-by-choice",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:71 Every below-target dimension becomes a plan item on every derive. No decline/accept overlay or allow-list exists: grep for declin/dismiss/accepted/waive in improve/ and passport/ found no decline construct. An owner's decided trade-off resurfaces forever."
+        },
+        {
+          "technique": "audit-the-live-system-not-the-plan",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/improve/provenance.ts:12 Per-dimension reasons are built from the observed evidence (has_tests, has_codeql, bound credentials, doc rot counts). The code stays silent rather than repeat a fixed 'no ...' sentence the derive contradicts."
+        }
+      ],
+      "registryProposal": "two-axis-readiness allows a cardinal blend within one axis as a sort key. It could name the archetype-weighted 'golden standard' pattern explicitly: per-archetype targets across both axes are still a cross-axis headline, even when framed as 'fair, tier-scaled tracking'."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "readiness-passports",
+      "context": "notepad-plan",
+      "reason": "conformant with fewer than two techniques shown realized"
+    },
+    {
+      "subject": "readiness-passports",
+      "context": "plugins-dev-tools-projects",
+      "reason": "withdrawn after review: reviewer (sonnet): The not-applicable anchor, standardsConfig.ts:9, is incidental. It says the standards config is shared with the team passport, which points toward a readiness input and does not show that the context computes no readiness. The absence claim rests only on a grep, and the terms searched (readiness, ru"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-09T23:57:19.945082+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "readiness-passports"
+      ],
+      "techniques": [
+        "audit-the-live-system-not-the-plan",
+        "blocker-rollups",
+        "declined-by-choice",
+        "two-axis-readiness"
+      ],
+      "deviations": 1,
+      "context": "teams-factory-passport-improve",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-09T23:57:19.945082+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "readiness-passports"
+      ],
+      "techniques": [
+        "named-vs-capability-metadata",
+        "two-axis-readiness"
+      ],
+      "deviations": 0,
+      "context": "plugins-dev-tools-projects",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

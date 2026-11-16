@@ -66,25 +66,29 @@ const MARKERS: ReadonlyArray<readonly [PairingRefusalCode, RegExp]> = [
 ];
 
 /**
+ * The refusals readable from the error's SHAPE alone: a missing feature, and
+ * the AppError variants the backend gave their own `kind`. Null when only the
+ * message could tell.
+ */
+function structuralRefusal(err: unknown): PairingRefusal | null {
+  if (!isP2pRuntimeError(err)) return { code: 'unavailable', detail: toDetail(err) };
+  if (!isTauriError(err)) return null;
+  const detail = toDetail(err);
+  // The backend gives the most important refusal its own AppError variant, so
+  // classify it structurally and never on message text.
+  if (err.kind === 'device_group_conflict') return { code: 'group_conflict', detail };
+  if (err.kind === 'auth') return { code: 'unauthorized', detail };
+  return null;
+}
+
+/**
  * Classify a rejection thrown by `pair_request` / `pair_confirm` / `pair_cancel`.
  */
 export function classifyPairingRefusal(err: unknown): PairingRefusal {
-  if (!isP2pRuntimeError(err)) {
-    return { code: 'unavailable', detail: toDetail(err) };
-  }
+  const structural = structuralRefusal(err);
+  if (structural) return structural;
 
   const detail = toDetail(err);
-
-  // The backend gives the most important refusal its own AppError variant, so
-  // classify it structurally and never on message text.
-  if (isTauriError(err) && err.kind === 'device_group_conflict') {
-    return { code: 'group_conflict', detail };
-  }
-
-  if (isTauriError(err) && err.kind === 'auth') {
-    return { code: 'unauthorized', detail };
-  }
-
   for (const [code, marker] of MARKERS) {
     if (marker.test(detail)) return { code, detail };
   }
@@ -94,6 +98,16 @@ export function classifyPairingRefusal(err: unknown): PairingRefusal {
   }
 
   return { code: 'unknown', detail };
+}
+
+/**
+ * Classify a rejection of `pair_confirm_code`. Its expected refusals (a wrong
+ * code, nothing pending) arrive as a typed verdict, so what is left to reject
+ * is a failure AFTER the code matched: only the structural reading applies,
+ * and anything else shows the backend's own words. Never the message markers.
+ */
+export function classifyCodeConfirmFailure(err: unknown): PairingRefusal {
+  return structuralRefusal(err) ?? { code: 'unknown', detail: toDetail(err) };
 }
 
 function toDetail(err: unknown): string {

@@ -52,18 +52,18 @@ describe('FleetStatusDots', () => {
   it('threads the reason prop into the console dot title for tooltip', () => {
     render(<FleetStatusDots state="awaiting_input" reason="Notification: permission" />);
     const wrapper = screen.getByTestId('fleet-dots-awaiting_input');
-    const consoleDot = wrapper.querySelector(':scope > span');
+    const consoleDot = wrapper.querySelector('[aria-label]');
     // Exact, not toContain: an unloaded label rendered "undefined — Notification: permission"
     // and a substring match on the reason alone passed it.
-    expect(consoleDot?.getAttribute('title')).toBe('Process alive — Notification: permission');
+    expect(consoleDot?.getAttribute('aria-label')).toBe('Process alive — Notification: permission');
   });
 
   it('falls back to the state label when no reason given', () => {
     render(<FleetStatusDots state="idle" />);
     const wrapper = screen.getByTestId('fleet-dots-idle');
-    const consoleDot = wrapper.querySelector(':scope > span');
+    const consoleDot = wrapper.querySelector('[aria-label]');
     // For an idle session the console is alive, so we expect "Process alive".
-    expect(consoleDot?.getAttribute('title')).toBe('Process alive');
+    expect(consoleDot?.getAttribute('aria-label')).toBe('Process alive');
   });
 
   it('renders only the console dot for hibernated (resumable, no Claude activity)', () => {

@@ -1,0 +1,86 @@
+{
+  "schema": "conform-run/1",
+  "worker": "50ebc12c-1210-4179-821b-70c36e237433",
+  "subject": "agent-instruction-files",
+  "evaluatedAt": "2026-11-02T22:11:02.511121+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "agent-instruction-files",
+      "context": "recipe-build-models",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "teams-teamworkspace",
+      "reason": "withdrawn after review: reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "templates-generated-gallery-cards",
+      "reason": "withdrawn after review: reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "overview-manual-review",
+      "reason": "withdrawn after review: reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "home-learning",
+      "reason": "withdrawn after review: reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-02T22:11:02.511121+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "teams-teamworkspace",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-02T22:11:02.511121+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "templates-generated-gallery-cards",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-02T22:11:02.511121+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "overview-manual-review",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-02T22:11:02.511121+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "home-learning",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

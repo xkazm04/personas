@@ -16,6 +16,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { PLAN_INK } from './planInk';
 import { itemVerdict } from '@/lib/milestone/shipDuality';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 const STARS = [1, 2, 3, 4, 5] as const;
 
@@ -34,12 +36,11 @@ function StarRating({ name, testid, rating, onRate, disabled }: {
         {STARS.map((v) => {
           const filled = rating !== null && v <= rating;
           return (
-            <button
+            <Button variant="ghost" size="icon-sm"
               key={v}
               type="button"
               disabled={disabled}
               onClick={() => onRate(rating === v ? null : v)}
-              className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring disabled:pointer-events-none disabled:opacity-50"
               aria-label={tx(t.ship.rating_aria, { name, value: v })}
               aria-pressed={filled}
             >
@@ -51,12 +52,12 @@ function StarRating({ name, testid, rating, onRate, disabled }: {
                 fill={filled ? 'currentColor' : 'none'}
                 aria-hidden
               />
-            </button>
+            </Button>
           );
         })}
       </span>
       {/* Unrated is a state, not a zero: it says so in words. */}
-      <span className={`typo-caption tabular-nums ${rating === null ? PLAN_INK.neutral : PLAN_INK.warning}`}>
+      <span className={`typo-caption num ${rating === null ? PLAN_INK.neutral : PLAN_INK.warning}`}>
         {rating === null ? t.ship.rating_unrated : tx(t.ship.rating_value, { value: rating })}
       </span>
     </span>
@@ -83,16 +84,15 @@ function NoteEditor({ name, testid, description, onSave, disabled }: {
 
   if (!editing) {
     return (
-      <button
-        type="button"
+      <PressSurface
         disabled={disabled}
-        onClick={() => setEditing(true)}
-        className={`min-w-0 flex-1 text-left typo-caption truncate rounded-interactive px-1 py-0.5 transition-colors hover:bg-foreground/[0.05] focus-ring disabled:pointer-events-none ${description ? 'text-foreground/70' : 'text-foreground/35'}`}
+        onPress={() => setEditing(true)}
         aria-label={tx(t.ship.note_aria, { name })}
         data-testid={testid}
+        className={`min-w-0 flex-1 typo-caption truncate rounded-interactive px-1 py-0.5 ${description ? 'text-ink-2' : 'text-ink-3'}`}
       >
         {description ?? t.ship.note_add}
-      </button>
+      </PressSurface>
     );
   }
   return (
@@ -107,7 +107,7 @@ function NoteEditor({ name, testid, description, onSave, disabled }: {
       }}
       placeholder={t.ship.note_placeholder}
       aria-label={tx(t.ship.note_aria, { name })}
-      className="min-w-0 flex-1 rounded-input border border-foreground/[0.12] bg-transparent px-2 py-0.5 typo-caption text-foreground/90 placeholder:text-foreground/35 focus-ring"
+      className="min-w-0 flex-1 rounded-input border border-foreground/[0.12] bg-transparent px-2 py-0.5 typo-caption text-ink-2 placeholder:text-ink-3 focus-ring"
       data-testid={testid}
     />
   );

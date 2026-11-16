@@ -34,6 +34,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const testResultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dryRunErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // -- Clipboard --
   const { copied: copiedUrl, copy: copyUrl } = useCopyToClipboard();
@@ -43,6 +44,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     return () => {
       if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
       if (testResultTimerRef.current) clearTimeout(testResultTimerRef.current);
+      if (dryRunErrorTimerRef.current) clearTimeout(dryRunErrorTimerRef.current);
     };
   }, []);
 
@@ -74,6 +76,8 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   // -- Dry run ------------------------------------------------------------
 
   const handleDryRun = useCallback(async () => {
+    // A timer left by the previous failure would clear THIS run's error early.
+    if (dryRunErrorTimerRef.current) clearTimeout(dryRunErrorTimerRef.current);
     setDryRunning(true);
     setDryRunResult(null);
     setDryRunError(null);
@@ -83,11 +87,11 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
         setDryRunResult(result.data);
       } else {
         setDryRunError({ message: result.error ?? t.triggers.dry_run_failed });
-        setTimeout(() => setDryRunError(null), 8000);
+        dryRunErrorTimerRef.current = setTimeout(() => setDryRunError(null), 8000);
       }
     } catch (err) {
       setDryRunError({ message: err instanceof Error ? err.message : t.triggers.dry_run_failed });
-      setTimeout(() => setDryRunError(null), 8000);
+      dryRunErrorTimerRef.current = setTimeout(() => setDryRunError(null), 8000);
     } finally {
       setDryRunning(false);
     }

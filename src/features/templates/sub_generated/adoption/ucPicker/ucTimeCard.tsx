@@ -74,10 +74,10 @@ function EventVariant({ eventType, firing }: { eventType: string; firing: boolea
         </svg>
       </div>
       <div className="mt-4 flex flex-col items-center gap-1">
-        <span className="font-mono text-xs uppercase tracking-[0.25em] text-status-info font-semibold">
+        <span className="font-mono typo-eyebrow text-status-info">
           <DebtText k="auto_on_event_284498c2" />
         </span>
-        <span className="font-mono text-base font-bold text-foreground/90 truncate max-w-[180px]">
+        <span className="font-mono typo-section-title text-ink-1 truncate max-w-[180px]">
           {tail}
         </span>
         <span className="typo-caption text-foreground truncate max-w-[180px]">
@@ -110,10 +110,10 @@ function ManualVariant() {
         </svg>
       </div>
       <div className="mt-4 flex flex-col items-center gap-1">
-        <span className="font-mono text-xs uppercase tracking-[0.25em] text-foreground font-semibold">
+        <span className="font-mono typo-eyebrow text-foreground">
           <DebtText k="auto_manual_only_aaf64b3f" />
         </span>
-        <span className="font-mono text-base font-bold text-foreground">—:—</span>
+        <span className="font-mono typo-section-title text-foreground">—:—</span>
         <span className="typo-caption text-foreground"><DebtText k="auto_run_on_demand_548e874e" /></span>
       </div>
     </div>

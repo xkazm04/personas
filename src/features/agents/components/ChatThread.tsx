@@ -33,14 +33,14 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
         {/* Welcome message */}
         {messages.length === 0 && (
           <div className="flex items-start gap-3">
-            <div className="w-7 h-7 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-card bg-surface-1 border border-hair flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="space-y-1.5">
-              <p className="typo-body text-foreground">
+              <p className="typo-body text-ink-1">
                 {t.agents.chat_thread.welcome}
               </p>
-              <p className="typo-body text-foreground">
+              <p className="typo-body text-ink-1">
                 {t.agents.chat_thread.welcome_example}
               </p>
             </div>
@@ -54,16 +54,16 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
             className="animate-fade-slide-in flex items-start gap-3"
           >
             {msg.role === 'user' ? (
-              <div className="w-7 h-7 rounded-card bg-secondary/50 border border-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-3.5 h-3.5 text-foreground" />
+              <div className="w-7 h-7 rounded-card bg-surface-2 border border-hair flex items-center justify-center shrink-0 mt-0.5">
+                <User className="w-3.5 h-3.5 text-ink-1" />
               </div>
             ) : (
-              <div className="w-7 h-7 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-card bg-surface-1 border border-hair flex items-center justify-center shrink-0 mt-0.5">
                 <Bot className="w-3.5 h-3.5 text-primary/60" />
               </div>
             )}
             {msg.role === 'user' ? (
-              <p className="typo-body text-foreground whitespace-pre-wrap pt-1 min-w-0">
+              <p className="typo-body text-ink-1 whitespace-pre-wrap pt-1 min-w-0">
                 {msg.content}
               </p>
             ) : (
@@ -81,7 +81,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
         {/* Thinking indicator */}
         {isThinking && (
           <div className="animate-fade-slide-in flex items-start gap-3">
-            <div className="w-7 h-7 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-card bg-surface-1 border border-hair flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="flex items-center gap-2 pt-1.5">
@@ -90,7 +90,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
                 <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.15s]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" />
               </span>
-              <span className="typo-body text-foreground">{thinkingLabel}</span>
+              <span className="typo-body text-ink-1">{thinkingLabel}</span>
             </div>
           </div>
         )}

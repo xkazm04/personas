@@ -73,7 +73,7 @@ export const FilmRail = memo(function FilmRail({ scene, elapsed, marks, showWind
           }}
         />
       </div>
-      <span className="typo-caption tabular-nums whitespace-nowrap min-w-[150px] text-right text-foreground">
+      <span className="typo-caption tabular-nums whitespace-nowrap min-w-[150px] text-right text-ink-2">
         {running === null && elapsed > 0 && <span className="mr-2">{COPY.clock.paused}</span>}
         {COPY.buildTime} <span className="font-mono">{partial && elapsed < 1 ? COPY.clock.unknown : timecode(elapsed)}</span>
       </span>

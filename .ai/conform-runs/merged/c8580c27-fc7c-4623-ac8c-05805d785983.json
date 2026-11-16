@@ -1,0 +1,4 @@
+{"schema":"conform-run/1","worker":"c8580c27-fc7c-4623-ac8c-05805d785983","subject":"wizard-flows",
+"evaluatedAt":"2026-11-03T00:00:00Z","pairs":[],
+"declined":[{"subject":"wizard-flows","context":"89d44c76-ec4c-4388-843e-503cf6ca2507","reason":"progress-transform is a weak context (lexical-only match on 'progress'/'wizard'/'flows'); its paths are ContentLoader and EstimatedProgressBar, shared loading widgets, not a staged flow. Coverage question for the registry, not judged. The other 7 wizard-flows pairs are already judged at the current digest sha256-b2:e0fac678b7164451 (revision 4), none stale."}],
+"consults":[]}

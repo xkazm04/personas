@@ -6,6 +6,8 @@ import { momentumCounts, MOMENTUM_ORDER, MOMENTUM_TONE, type Momentum } from '..
 import { toggleFilter, type RosterFilter } from '../rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 const ICON: Record<Momentum, LucideIcon> = {
   improving: TrendingUp,
   flat: Minus,
@@ -56,22 +58,15 @@ export function MomentumSummary({
         const Icon = ICON[m];
         const active = filter?.type === 'momentum' && filter.momentum === m;
         return (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onSelect(toggleFilter(filter, { type: 'momentum', momentum: m }))}
-            aria-pressed={active}
-            title={t.director.triage_chip_hint}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-pill typo-caption text-foreground transition-shadow focus-ring"
-            style={{
-              backgroundColor: active ? `color-mix(in oklab, ${MOMENTUM_TONE[m]} 16%, transparent)` : undefined,
-              boxShadow: active ? `inset 0 0 0 1px ${MOMENTUM_TONE[m]}` : undefined,
-            }}
-          >
-            <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: MOMENTUM_TONE[m] }} />
-            <Numeric value={counts[m]} className="font-semibold tabular-nums" />
-            {LABEL[m]}
-          </button>
+          <Tooltip content={t.director.triage_chip_hint} key={m}>
+            <OptionChip
+              onSelect={() => onSelect(toggleFilter(filter, { type: 'momentum', momentum: m }))}
+              selected={active}
+            ><span className="inline-flex items-center gap-1.5">
+              <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: MOMENTUM_TONE[m] }} />
+              <Numeric value={counts[m]} className="font-semibold tabular-nums" />
+              {LABEL[m]}</span></OptionChip>
+          </Tooltip>
         );
       })}
     </div>

@@ -8,6 +8,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { deriveDeskTrail } from '../../setup/desk/trailModel';
 import type { SetupHistoryEntry } from '../../setup/setupContract';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface TableTrailProps {
   history: SetupHistoryEntry[];
   question: string | null;
@@ -24,15 +26,17 @@ export function TableTrail({ history, question }: TableTrailProps) {
   return (
     <div className="w-full max-w-[52rem] mx-auto mb-4" data-testid="setup-desk-trail">
       {trail.earlier.length > 0 && (
-        <button
+        <Button
           type="button"
           onClick={() => setOpen((v) => !v)}
           data-testid="setup-desk-trail-earlier"
-          className="focus-ring flex items-center gap-1 typo-caption text-primary mb-1"
+          variant="ghost"
+          size="icon-sm"
+          className="mb-1"
         >
           {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           {open ? tx.table.earlierHide : fmt(tx.table.earlier, { count: trail.earlier.length })}
-        </button>
+        </Button>
       )}
       <ul className="space-y-2">
         {(open ? trail.earlier : []).concat(trail.recent).map((ex) => (

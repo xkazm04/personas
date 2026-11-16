@@ -72,7 +72,7 @@ export function FindingBadge({
           type="button"
           onClick={() => rows.length > 0 && setOpen((v) => !v)}
           aria-expanded={rows.length > 0 ? open : undefined}
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 typo-data border ${meta.tw} ${
+          className={`inline-flex items-center gap-1 rounded-interactive px-2.5 py-0.5 typo-data border ${meta.tw} ${
             rows.length > 0 ? 'cursor-pointer hover:brightness-125' : 'cursor-default'
           }`}
         >
@@ -85,14 +85,14 @@ export function FindingBadge({
       {open && rows.length > 0 && (
         <span
           role="dialog"
-          className="absolute top-full left-0 mt-1.5 z-30 min-w-60 max-w-80 rounded-modal border border-primary/15 bg-background shadow-elevation-3 p-3"
+          className="absolute top-full left-0 mt-1.5 z-30 min-w-60 max-w-80 rounded-modal border border-hair bg-background shadow-elevation-3 p-3"
         >
           <span className="block typo-label mb-1.5">{t.plugins.dev_triage.origin_evidence}</span>
           <dl className="space-y-1">
             {rows.map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">
                 <dt className="typo-caption shrink-0">{humanize(k)}</dt>
-                <dd className="typo-caption text-foreground tabular-nums text-right break-all">
+                <dd className="typo-caption text-foreground num text-right break-all">
                   {renderValue(v)}
                 </dd>
               </div>

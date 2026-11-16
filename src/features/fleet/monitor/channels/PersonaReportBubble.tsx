@@ -14,7 +14,7 @@ import { MD_CHAT_RHYTHM } from './TalkLine';
  * which collapses markdown's block children (lists, tables, fenced code) into
  * one inline run — so the clamp is a max-height box instead, and the cut is
  * softened with a MASK rather than a gradient overlay: the bubble sits on a
- * translucent `bg-secondary/20` whose effective color no single `from-*` stop
+ * translucent `bg-surface-1` whose effective color no single `from-*` stop
  * can match, and a mask fades whatever is actually behind it.
  */
 const REPORT_PREVIEW_FADE = 'linear-gradient(to bottom, #000 65%, transparent 100%)';
@@ -53,7 +53,7 @@ export const PersonaReportBubble = memo(function PersonaReportBubble({
 
   return (
     <div className="py-1 flex justify-start">
-      <div className="max-w-[78%] min-w-0 px-3 py-2 rounded-card border border-border bg-secondary/20">
+      <div className="max-w-[78%] min-w-0 px-3 py-2 rounded-card border border-border bg-surface-1">
         <span className="flex items-center gap-1.5 mb-0.5">
           <span className="typo-heading text-foreground truncate">
             {item.title ?? t.monitor.conv_persona_report_chip}
@@ -81,7 +81,7 @@ export const PersonaReportBubble = memo(function PersonaReportBubble({
           </div>
         )}
         {item.reportId && (
-          <Button variant="accent" tone="info" size="xs" onClick={openReport} icon={<FileText className="h-3.5 w-3.5" aria-hidden />} className="mt-1.5 whitespace-nowrap">
+          <Button variant="secondary" size="xs" onClick={openReport} icon={<FileText className="h-3.5 w-3.5" aria-hidden />} className="mt-1.5 whitespace-nowrap">
             {t.monitor.conv_persona_report_chip}
           </Button>
         )}

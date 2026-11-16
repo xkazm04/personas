@@ -17,6 +17,7 @@ export function useComposerDraft(teamId: string, members: ChannelMember[]) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    setMentionAt(null);
     try {
       setDraft(localStorage.getItem(DRAFT_PREFIX + teamId) ?? '');
     } catch {

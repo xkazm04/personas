@@ -101,7 +101,7 @@ export function useBacklogColumns({
       // `elapsed` ("8 min", "21 hr"): one line in a fixed width; the column head
       // already says Raised, and the Tooltip carries the full date.
       render: (row) => (
-        <RelativeTime timestamp={row.createdAt} format="elapsed" className="typo-caption tabular-nums" />
+        <RelativeTime timestamp={row.createdAt} format="elapsed" className="typo-data" />
       ),
     });
     return cols;

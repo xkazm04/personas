@@ -27,6 +27,9 @@ import {
   type ConsolidationRun,
 } from '@/api/companion';
 
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons';
+
 /**
  * Rows/cards in the first viewport that play the one-shot entrance cascade
  * when a run/item list lands (35ms stagger via RevealItem, id-guarded so a
@@ -107,24 +110,26 @@ export function ConsolidationReview({
       <header className="flex items-center justify-between gap-2 px-5 py-3 border-b border-foreground/10 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           {onClose && (
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
               aria-label={t.common.close}
+              variant="ghost"
+              size="icon-sm"
             >
               <ArrowLeft className="w-4 h-4" />
-            </button>
+            </Button>
           )}
           <span className="typo-body">
             {t.athena.consolidation_runs_title}
           </span>
         </div>
-        <button
+        <Button
           type="button"
           onClick={startRun}
           disabled={running}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
+          variant="primary"
+          size="sm"
         >
           {running ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -132,7 +137,7 @@ export function ConsolidationReview({
             <Sparkles className="w-3.5 h-3.5" />
           )}
           {t.athena.memory_run_consolidation}
-        </button>
+        </Button>
       </header>
 
       {running && (
@@ -150,7 +155,7 @@ export function ConsolidationReview({
       )}
 
       {error && (
-        <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+        <div className="m-5 rounded-card border border-status-error/30 bg-status-error/10 px-3 py-2 typo-caption text-status-error">
           {error}
         </div>
       )}
@@ -172,11 +177,7 @@ export function ConsolidationReview({
                   hasEntered={(id) => index >= RUN_CASCADE_ROWS || enterRuns.hasEntered(id)}
                   markEntered={enterRuns.markEntered}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setActiveRunId(run.id)}
-                    className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
-                  >
+                  <PressSurface onPress={() => setActiveRunId(run.id)} className="w-full px-5 py-3">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <span className="typo-caption text-foreground">
                         {run.summary
@@ -191,11 +192,11 @@ export function ConsolidationReview({
                       <RelativeTime timestamp={run.triggeredAt} showTooltip={false} />
                     </div>
                     {run.errorText && (
-                      <div className="typo-caption text-rose-400 mt-1 truncate">
+                      <div className="typo-caption text-status-error mt-1 truncate">
                         {run.errorText}
                       </div>
                     )}
-                  </button>
+                  </PressSurface>
                 </RevealItem>
               </li>
             ))}
@@ -213,7 +214,7 @@ export function ConsolidationReview({
 // then, so a fast fetch never paints one. No `animate-pulse`, ever.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 const GHOST_RUN_TITLE_WIDTHS = ['w-48', 'w-36', 'w-40', 'w-32', 'w-44'];
 
 function ConsolidationRunGhostRows() {
@@ -267,17 +268,17 @@ function RunStatusBadge({ run }: { run: ConsolidationRun }) {
       case 'review':
         return {
           label: t.athena.consolidation_run_status_review,
-          tone: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+          tone: 'bg-status-warning/15 text-status-warning border-status-warning/30',
         };
       case 'applied':
         return {
           label: t.athena.consolidation_run_status_applied,
-          tone: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+          tone: 'bg-status-success/15 text-status-success border-status-success/30',
         };
       case 'failed':
         return {
           label: t.athena.consolidation_run_status_failed,
-          tone: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+          tone: 'bg-status-error/15 text-status-error border-status-error/30',
         };
       default:
         return {
@@ -288,7 +289,7 @@ function RunStatusBadge({ run }: { run: ConsolidationRun }) {
   }, [run.status, t]);
   return (
     <span
-      className={`inline-flex shrink-0 items-center px-2 py-0.5 rounded typo-caption border ${cfg.tone}`}
+      className={`inline-flex shrink-0 items-center px-2 py-0.5 rounded-interactive typo-caption border ${cfg.tone}`}
     >
       {cfg.label}
     </span>
@@ -330,28 +331,30 @@ function RunDetail({
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between gap-2 px-5 py-3 border-b border-foreground/10 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <button
+          <Button
             type="button"
             onClick={onBack}
-            className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
             aria-label={t.athena.consolidation_back_to_runs}
-            title={t.athena.consolidation_back_to_runs}
+            tooltip={t.athena.consolidation_back_to_runs}
+            variant="ghost"
+            size="icon-sm"
           >
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </Button>
           <span className="typo-body">
             {t.athena.consolidation_review_title}
           </span>
         </div>
-        <button
+        <Button
           type="button"
           onClick={refresh}
-          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
           aria-label="Refresh"
-          title="Refresh"
+          tooltip="Refresh"
+          variant="ghost"
+          size="icon-sm"
         >
           <RefreshCw className="w-4 h-4" />
-        </button>
+        </Button>
       </header>
 
       <p className="px-5 pt-3 typo-caption text-foreground">
@@ -359,7 +362,7 @@ function RunDetail({
       </p>
 
       {error && (
-        <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+        <div className="m-5 rounded-card border border-status-error/30 bg-status-error/10 px-3 py-2 typo-caption text-status-error">
           {error}
         </div>
       )}
@@ -460,10 +463,10 @@ function ItemCard({
         : t.athena.consolidation_kind_contradict;
   const kindTone =
     item.kind === 'add'
-      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+      ? 'bg-status-success/15 text-status-success border-status-success/30'
       : item.kind === 'update'
-        ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-        : 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+        ? 'bg-status-warning/15 text-status-warning border-status-warning/30'
+        : 'bg-status-error/15 text-status-error border-status-error/30';
 
   return (
     <div
@@ -475,11 +478,11 @@ function ItemCard({
     >
       <div className="flex items-center gap-2 flex-wrap">
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded typo-caption border ${kindTone}`}
+          className={`inline-flex items-center px-2 py-0.5 rounded-interactive typo-caption border ${kindTone}`}
         >
           {kindLabel}
         </span>
-        <code className="typo-caption text-foreground px-1.5 py-0.5 rounded bg-foreground/5">
+        <code className="typo-caption text-foreground px-1.5 py-0.5 rounded-interactive bg-foreground/5">
           {item.scope}/{item.factKey}
         </code>
         <span className="typo-caption text-foreground">
@@ -503,7 +506,7 @@ function ItemCard({
               type="text"
               value={draftKey}
               onChange={(e) => setDraftKey(e.target.value)}
-              className="mt-0.5 w-full bg-foreground/5 rounded px-2 py-1 typo-caption focus-ring"
+              className="mt-0.5 w-full bg-foreground/5 rounded-interactive px-2 py-1 typo-caption focus-ring"
             />
           </label>
           <label className="block">
@@ -512,7 +515,7 @@ function ItemCard({
               value={draftValue}
               onChange={(e) => setDraftValue(e.target.value)}
               rows={4}
-              className="mt-0.5 w-full bg-foreground/5 rounded px-2 py-1 typo-body focus-ring resize-y"
+              className="mt-0.5 w-full bg-foreground/5 rounded-interactive px-2 py-1 typo-body focus-ring resize-y"
             />
           </label>
           <label className="block">
@@ -530,7 +533,7 @@ function ItemCard({
           </label>
         </div>
       ) : (
-        <p className="typo-body text-foreground/85 whitespace-pre-wrap">
+        <p className="typo-body text-ink-2 whitespace-pre-wrap">
           {item.proposedValue}
         </p>
       )}
@@ -549,7 +552,7 @@ function ItemCard({
       {item.supersedesId && (
         <div className="typo-caption text-foreground">
           {t.athena.consolidation_supersedes}:{' '}
-          <code className="px-1 py-0.5 rounded bg-foreground/5">
+          <code className="px-1 py-0.5 rounded-interactive bg-foreground/5">
             {item.supersedesId}
           </code>
         </div>
@@ -559,7 +562,7 @@ function ItemCard({
         <div className="typo-caption text-foreground">
           {t.athena.facts_sources_label}:{' '}
           {item.sources.map((s, i) => (
-            <code key={s} className="ml-1 px-1 py-0.5 rounded bg-foreground/5">
+            <code key={s} className="ml-1 px-1 py-0.5 rounded-interactive bg-foreground/5">
               {s}
               {i < item.sources.length - 1 ? '' : ''}
             </code>
@@ -568,18 +571,19 @@ function ItemCard({
       )}
 
       {error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2 py-1 typo-caption text-rose-400">
+        <div className="rounded-card border border-status-error/30 bg-status-error/10 px-2 py-1 typo-caption text-status-error">
           {error}
         </div>
       )}
 
       {!isResolved && (
         <div className="flex items-center gap-2 pt-1">
-          <button
+          <Button
             type="button"
             onClick={apply}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
+            variant="primary"
+            size="sm"
           >
             {busy === 'apply' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -589,21 +593,23 @@ function ItemCard({
             {editing
               ? t.athena.consolidation_apply_edits
               : t.athena.consolidation_apply}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => setEditing((v) => !v)}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            variant="ghost"
+            size="sm"
           >
             <Edit3 className="w-3.5 h-3.5" />
             {t.athena.consolidation_edit}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={reject}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground hover:bg-foreground/10 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            variant="ghost"
+            size="sm"
           >
             {busy === 'reject' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -611,7 +617,7 @@ function ItemCard({
               <X className="w-3.5 h-3.5" />
             )}
             {t.athena.consolidation_reject}
-          </button>
+          </Button>
         </div>
       )}
     </div>

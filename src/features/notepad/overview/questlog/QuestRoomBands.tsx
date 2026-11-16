@@ -38,7 +38,7 @@ export function QuestRoomBands({
           <section
             key={group.id}
             data-testid={`notepad-questlog-band-${group.id}`}
-            className="rounded-card border border-primary/10 bg-secondary/10 p-4 flex flex-col gap-3"
+            className="rounded-card border border-hair bg-surface-1 p-4 flex flex-col gap-3"
           >
             {group.header}
             <div className="grid grid-cols-3 gap-4 items-start">

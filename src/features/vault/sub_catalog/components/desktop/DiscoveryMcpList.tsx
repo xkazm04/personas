@@ -10,13 +10,13 @@ function McpListGhost() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 animate-fade-in"
+          className="flex items-center gap-3 p-3 rounded-modal border border-hair bg-surface-1 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <span className="w-8 h-8 rounded-card bg-primary/[0.06] shrink-0" />
           <div className="flex-1 min-w-0 space-y-1.5">
-            <span className={`block h-3.5 rounded bg-primary/[0.06] ${GHOST_WIDTHS[i % GHOST_WIDTHS.length]}`} />
-            <span className="block h-2.5 w-40 rounded bg-primary/[0.06]" />
+            <span className={`block h-3.5 rounded-interactive bg-primary/[0.06] ${GHOST_WIDTHS[i % GHOST_WIDTHS.length]}`} />
+            <span className="block h-2.5 w-40 rounded-interactive bg-primary/[0.06]" />
           </div>
         </div>
       ))}

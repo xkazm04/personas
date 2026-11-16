@@ -46,7 +46,7 @@ export const DeviceStrip = memo(function DeviceStrip() {
           <Network className="h-3.5 w-3.5 text-foreground" aria-hidden />
           <span className={`typo-heading ${all ? 'text-primary' : 'text-foreground'}`}>{m.mesh_all}</span>
         </span>
-        <span className="typo-caption tabular-nums">{tx(m.mesh_devices_live, { live, total })}</span>
+        <span className="typo-caption num">{tx(m.mesh_devices_live, { live, total })}</span>
       </Button>
       {self && (
         <DevicePlate device={self} liveness="live" selected={filter === self.peerId} onPick={toggle} />

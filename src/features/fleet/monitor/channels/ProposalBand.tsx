@@ -43,7 +43,7 @@ export const ProposalBand = memo(function ProposalBand({ proposal, onConfirm, on
             const persona = s.suggestedPersonaId ? personaIndex.get(s.suggestedPersonaId) : undefined;
             return (
               <div key={i} className="grid grid-cols-[1.25rem_1fr_auto] items-baseline gap-x-2">
-                <span className="typo-data tabular-nums text-foreground">{i + 1}</span>
+                <span className="typo-data num text-foreground">{i + 1}</span>
                 <span className="min-w-0 truncate typo-body text-foreground">{s.title}</span>
                 {persona ? (
                   <span className="typo-caption" style={{ color: memberColor(persona, s.suggestedPersonaId) }}>{persona.name.replace(/^T:\s*/, '')}</span>

@@ -45,8 +45,8 @@ export function FleetSessionList(p: FleetSessionListProps) {
         />
       )}
       {p.sessions.length === 0 ? (
-        <div className="text-center py-8 px-3 border border-dashed border-primary/10 rounded-modal">
-          <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
+        <div className="text-center py-8 px-3 border border-dashed border-hair rounded-modal">
+          <div className="w-10 h-10 rounded-modal bg-surface-1 border border-hair flex items-center justify-center mx-auto mb-2">
             <TerminalIcon className="w-5 h-5 text-foreground" aria-hidden="true" />
           </div>
           <p className="typo-body text-foreground"><DebtText k="auto_no_sessions_yet_9d7789c9" /></p>
@@ -68,7 +68,7 @@ export function FleetSessionList(p: FleetSessionListProps) {
             <div
               key={g.id}
               data-testid={`fleet-group-${g.id}`}
-              className={idx === 0 ? '' : 'pt-2 mt-2 border-t border-primary/10'}
+              className={idx === 0 ? '' : 'pt-2 mt-2 border-t border-hair'}
             >
               <div className="flex items-center gap-1.5 px-2 mb-1">
                 <GroupIcon className={`w-3.5 h-3.5 ${tone} ${g.id === 'running' ? 'animate-spin' : ''}`} aria-hidden="true" />

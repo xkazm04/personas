@@ -36,6 +36,8 @@ export function useLifecycleInstall(
   const [note, setNote] = useState<InstallNote | null>(null);
   const refetchRef = useRef(refetch);
   refetchRef.current = refetch;
+  // In-flight guard: a second click while the first dispatch is pending would queue two install tasks.
+  const installingRef = useRef(false);
 
   useEffect(() => {
     if (dispatched && snapshot?.projectId === dispatched.projectId && snapshot.installTaskId === dispatched.taskId) {
@@ -47,7 +49,8 @@ export function useLifecycleInstall(
   useEffect(() => { setNote(null); }, [projectId]);
 
   const install = useCallback(async () => {
-    if (!projectId) return;
+    if (!projectId || installingRef.current) return;
+    installingRef.current = true;
     try {
       const taskId = await installLifecycle(projectId);
       if (taskId) {
@@ -61,6 +64,8 @@ export function useLifecycleInstall(
       silentCatch('lifecycle:install')(err);
       const cause = errorText(err);
       setNote({ tone: 'error', text: dl.lc_install_failed, cause });
+    } finally {
+      installingRef.current = false;
     }
   }, [projectId, tx, dl]);
 

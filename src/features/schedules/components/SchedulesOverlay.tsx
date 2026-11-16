@@ -22,8 +22,23 @@ import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipelin
 import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { openExecutionFromLink, openPersonaFromLink } from '@/lib/deepLinks/navigationLinks';
+import { useSystemStore } from '@/stores/systemStore';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
+
+/** The overlay covers the page a chip opens, so it steps aside once something opened. */
+const closeOverlay = () => useSystemStore.getState().setHeaderOverlay('none');
+const openRun = (executionId: string) => {
+  if (openExecutionFromLink(executionId)) closeOverlay();
+};
+const openAgent = (agentId: string) => {
+  void openPersonaFromLink(agentId)
+    .then((opened) => { if (opened) closeOverlay(); })
+    .catch(silentCatch('schedules:open-agent'));
+};
 
 /** Shallow field-equality for the flat generated CronAgent record. Used to
  *  reuse previous ScheduleEntry objects across poll refreshes so the calendar's
@@ -40,8 +55,8 @@ function cronAgentEquals(a: CronAgent, b: CronAgent): boolean {
 function CalendarGhost() {
   return (
     <div aria-hidden className="space-y-2 animate-fade-in" style={{ animationDelay: '150ms' }}>
-      <div className="h-8 rounded-card border border-border/60 bg-primary/[0.04]" />
-      <div className="h-64 rounded-card border border-border/60 bg-primary/[0.04]" />
+      <div className="h-8 rounded-card border border-hair bg-primary/[0.04]" />
+      <div className="h-64 rounded-card border border-hair bg-primary/[0.04]" />
     </div>
   );
 }
@@ -170,26 +185,17 @@ export default function SchedulesOverlay() {
     <div ref={containerRef} className="flex-1 min-h-0 flex flex-col w-full">
     <ContentBox data-testid="schedules-page">
       <ContentHeader
-        icon={<CalendarClock className="w-5 h-5 text-blue-400" />}
+        icon={<CalendarClock className="w-5 h-5 text-status-info" />}
         iconColor="blue"
         title={t.schedules.title}
         actions={
           <div className="flex items-center gap-3">
             {/* Scheduler engine status */}
             {schedulerStats && (
-              <button
-                type="button"
-                onClick={handleToggleScheduler}
-                className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card border transition-colors ${
-                  schedulerStats.running
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
-                    : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
-                }`}
-                title={schedulerStats.running ? t.schedules.engine_running_title : t.schedules.engine_stopped_title}
-              >
+              <Tooltip content={schedulerStats.running ? t.schedules.engine_running_title : t.schedules.engine_stopped_title}><Button variant="accent" tone={schedulerStats.running ? 'success' : 'error'} size="xs" onClick={handleToggleScheduler}>
                 {schedulerStats.running ? (
                   <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
                     {t.schedules.engine_on}
                   </>
                 ) : (
@@ -198,7 +204,7 @@ export default function SchedulesOverlay() {
                     {t.schedules.engine_off}
                   </>
                 )}
-              </button>
+              </Button></Tooltip>
             )}
 
             {/* Stats badges */}
@@ -211,7 +217,7 @@ export default function SchedulesOverlay() {
                 {tx(t.schedules.active_count, { count: activeCount })}
               </StatusBadge>
               {pausedCount > 0 && (
-                <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 text-foreground border border-primary/10">
+                <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-surface-1 text-ink-1 border border-hair">
                   <Pause className="w-3 h-3" />
                   {tx(t.schedules.paused_count, { count: pausedCount })}
                 </span>
@@ -219,15 +225,15 @@ export default function SchedulesOverlay() {
             </div>
 
             {/* Refresh */}
-            <button
+            <Button aria-label={t.schedules.refresh_schedules}
               type="button"
               onClick={() => fetchCronAgents()}
               disabled={loading}
-              className="p-2 rounded-card border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-foreground transition-all disabled:opacity-40"
-              title={t.schedules.refresh_schedules}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+              tooltip={t.schedules.refresh_schedules}
+              variant="secondary"
+              size="icon-sm"
+              icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+            />
           </div>
         }
       >
@@ -236,21 +242,21 @@ export default function SchedulesOverlay() {
       <ContentBody centered>
         {/* Active filter indicator */}
         {filter && (
-          <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 typo-caption text-blue-400/90">
+          <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-status-info/[0.06] border border-status-info/15 typo-caption text-status-info">
             <Filter className="w-3.5 h-3.5 shrink-0" />
             <span>
               {t.schedules.showing_for} <span className="font-semibold">{filter.label}</span>
             </span>
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setFilter(null);
                 window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaIds: null } }));
               }}
-              className="ml-auto px-1.5 py-0.5 rounded-interactive typo-label hover:bg-blue-500/15 transition-colors"
-            >
-              {t.common.clear}
-            </button>
+              variant="ghost"
+              size="xs"
+              className="ml-auto"
+            >{t.common.clear}</Button>
           </div>
         )}
 
@@ -267,7 +273,7 @@ export default function SchedulesOverlay() {
           />
         ) : (
           <Suspense fallback={<CalendarGhost />}>
-            <ScheduleCalendar entries={entries} />
+            <ScheduleCalendar entries={entries} onOpenExecution={openRun} onOpenAgent={openAgent} />
           </Suspense>
         )}
       </ContentBody>

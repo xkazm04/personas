@@ -13,6 +13,6 @@
  */
 
 /** Calm ghost-bar styling for the crash-log placeholder (docs/design/overview-loading.md §C) -- no `animate-pulse`, ever. */
-export const HEALTH_GHOST_BAR = 'rounded bg-primary/[0.06]';
+export const HEALTH_GHOST_BAR = 'rounded-interactive bg-surface-2';
 /** Deterministic width variation so stacked ghost bars read as text, not a barcode. */
 export const HEALTH_GHOST_WIDTHS = ['w-36', 'w-28', 'w-40'];

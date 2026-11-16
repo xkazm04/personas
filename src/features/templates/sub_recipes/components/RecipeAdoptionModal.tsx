@@ -11,6 +11,7 @@ import type { Recipe, BindingValue, RecipeBinding, BindingKind, Eligibility } fr
 import { useRecipeEligibility } from '../useEligibility';
 import { useAdoption } from '../libs/useAdoption';
 import { defaultBindingValues, findMissingBindings } from '../libs/substituteBindings';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RecipeAdoptionModalProps {
   recipe: Recipe;
@@ -92,14 +93,16 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
             </div>
           </div>
           <Tooltip content={t.common.close}>
-            <button
+            <Button
               type="button"
               onClick={onClose}
               aria-label={t.common.close}
-              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 
@@ -150,22 +153,26 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
               </span>
             )}
           </span>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="ml-auto px-3 py-1.5 rounded-interactive border border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
+            variant="secondary"
+            size="sm"
+            className="ml-auto"
           >
             {t.common.cancel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleAdopt}
             disabled={!canAdopt || pending}
-            className="px-4 py-1.5 rounded-interactive border border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 typo-body cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+            variant="accent"
+            tone="highlight"
+            size="md"
+            icon={<Sparkles className="w-3.5 h-3.5" />}
           >
-            <Sparkles className="w-3.5 h-3.5" />
             {pending ? t.recipes_catalog.adopting_label : t.recipes_catalog.adopt_recipe_label}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>
@@ -180,17 +187,18 @@ function NoPersonaState({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   return (
     <div className="text-center py-8">
-      <div className="typo-body text-foreground/85 mb-1">{t.recipes_catalog.no_persona_heading}</div>
+      <div className="typo-body text-ink-1 mb-1">{t.recipes_catalog.no_persona_heading}</div>
       <div className="typo-caption text-foreground mb-4">
         {t.recipes_catalog.no_persona_body}
       </div>
-      <button
+      <Button
         type="button"
         onClick={onClose}
-        className="px-3 py-1.5 rounded-interactive border border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/40 typo-caption cursor-pointer transition-colors"
+        variant="secondary"
+        size="sm"
       >
         {t.common.close}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -205,7 +213,7 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
           <div className="typo-label text-status-warning">
             {t.recipes_catalog.callout_setup_title}
           </div>
-          <div className="typo-caption text-foreground/85 mt-0.5">
+          <div className="typo-caption text-ink-1 mt-0.5">
             {t.recipes_catalog.callout_setup_body}
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
@@ -214,7 +222,7 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
               return (
                 <span
                   key={slug}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded border bg-secondary/40"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border bg-surface-2"
                   style={{ borderColor: m.color + '55' }}
                 >
                   <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
@@ -238,11 +246,11 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
 function IncompatibleCallout({ eligibility }: { eligibility: Eligibility & { state: 'incompatible' } }) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 px-3 py-2.5 rounded-card border border-card-border bg-secondary/40">
+    <div className="mb-4 px-3 py-2.5 rounded-card border border-card-border bg-surface-2">
       <div className="typo-label text-foreground mb-1">
         {t.recipes_catalog.callout_incompatible_title}
       </div>
-      <div className="typo-caption text-foreground/85">{eligibility.reason}</div>
+      <div className="typo-caption text-ink-1">{eligibility.reason}</div>
     </div>
   );
 }
@@ -271,7 +279,7 @@ function BindingField({ binding, value, onChange, error }: BindingFieldProps) {
   const helpEl = binding.description && (
     <div className="typo-caption text-foreground mt-1">{binding.description}</div>
   );
-  const wrapperCls = `rounded-card border bg-secondary/30 px-3 py-2.5 transition-colors ${
+  const wrapperCls = `rounded-card border bg-surface-1 px-3 py-2.5 transition-colors ${
     error ? 'border-status-warning/45 bg-status-warning/8' : 'border-card-border'
   }`;
 
@@ -296,7 +304,7 @@ interface BindingInputProps {
 
 function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
   const { t } = useTranslation();
-  const inputCls = 'w-full px-2.5 py-1.5 rounded-input border border-card-border bg-secondary/40 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/45 transition-colors';
+  const inputCls = 'w-full px-2.5 py-1.5 rounded-input border border-card-border bg-surface-2 typo-caption text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/45 transition-colors';
 
   switch (kind.type) {
     case 'slack-channel': {
@@ -465,18 +473,16 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
               {presets.map((p) => {
                 const isActive = value === p.cron;
                 return (
-                  <button
+                  <Button
                     key={p.cron}
                     type="button"
                     onClick={() => onChange(p.cron)}
-                    className={`px-2 py-1 rounded-full border typo-label transition-colors cursor-pointer ${
-                      isActive
-                        ? 'bg-primary/15 border-primary/35 text-primary'
-                        : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
-                    }`}
+                    variant={isActive ? 'accent' : 'secondary'}
+                    tone={isActive ? 'highlight' : undefined}
+                    size="xs"
                   >
                     {p.label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -499,7 +505,7 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
             {kind.options.map((opt) => {
               const isActive = selected.has(opt.value);
               return (
-                <button
+                <Button
                   key={opt.value}
                   type="button"
                   onClick={() => {
@@ -508,14 +514,12 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
                     else next.add(opt.value);
                     onChange(next.size > 0 ? Array.from(next) : undefined);
                   }}
-                  className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
-                    isActive
-                      ? 'bg-primary/15 border-primary/35 text-primary'
-                      : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
-                  }`}
+                  variant={isActive ? 'accent' : 'secondary'}
+                  tone={isActive ? 'highlight' : undefined}
+                  size="xs"
                 >
                   {opt.label}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -526,18 +530,16 @@ function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
           {kind.options.map((opt) => {
             const isActive = value === opt.value;
             return (
-              <button
+              <Button
                 key={opt.value}
                 type="button"
                 onClick={() => onChange(opt.value)}
-                className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
-                  isActive
-                    ? 'bg-primary/15 border-primary/35 text-primary'
-                    : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
-                }`}
+                variant={isActive ? 'accent' : 'secondary'}
+                tone={isActive ? 'highlight' : undefined}
+                size="xs"
               >
                 {opt.label}
-              </button>
+              </Button>
             );
           })}
         </div>

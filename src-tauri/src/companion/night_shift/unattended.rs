@@ -21,6 +21,14 @@
 //! - `request_approval`: ALWAYS parked. Athena never approves destructive or
 //!   cost-bearing actions unattended; the worker receives an explicit DENIED
 //!   + park note and the item surfaces in the morning report.
+//!
+//! **An ARMED standup comes first** (spark app-standup, WP3): while one is
+//! armed, both watchdogs arm regardless of the night-shift flag and its away
+//! rules decide (`standup::supervisor::judge_worker_ask`): a parked class is
+//! answered with the park note (an approval DENIED), a delegated question is
+//! answered as above and a delegated approval APPROVED, and each act is one
+//! `companion_standup_event` the standup report reads. The night-window path
+//! below runs only when no standup is armed.
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -32,6 +40,8 @@ use crate::companion::brain::oneshot::call_claude_text;
 use crate::companion::model_routing;
 use crate::companion::orchestration::mcp::pending;
 use crate::companion::session::DEFAULT_SESSION_ID;
+use crate::companion::standup::away_rules::{AwayAction, AwayDecision};
+use crate::companion::standup::supervisor;
 use crate::companion::turn_ledger::{self, TurnRecord};
 use crate::AppState;
 
@@ -51,32 +61,67 @@ pub fn spawn_guidance_watchdog(
     question: String,
     context: Option<String>,
 ) {
-    tauri::async_runtime::spawn(async move {
-        let state = app.state::<Arc<AppState>>().inner().clone();
-        if !super::enabled(&state.db) {
-            return;
-        }
-        let delay = Duration::from_secs(super::guidance_minutes(&state.db) * 60);
-        tokio::time::sleep(delay).await;
-        if !pending::is_pending(&request_id) {
-            return; // a human got there first
-        }
-        let Some(plan) = super::active_plan(&state.user_db).ok().flatten() else {
-            return; // no open night window — leave it to the human/TTL
-        };
-        if let Err(e) = answer_guidance(
-            &state,
-            &plan.id,
-            &request_id,
-            &fleet_session_id,
-            &question,
-            context.as_deref(),
-        )
-        .await
-        {
-            tracing::warn!(error = %e, request_id = %request_id, "night_shift: unattended guidance failed (request left for TTL)");
-        }
-    });
+    let watched = request_id.clone();
+    let _detached = crate::background_job::spawn_guarded(
+        "night_guidance_watchdog",
+        watched,
+        async move {
+            let state = app.state::<Arc<AppState>>().inner().clone();
+            if !super::enabled(&state.db) && !standup_armed(&state) {
+                return;
+            }
+            let delay = Duration::from_secs(super::guidance_minutes(&state.db) * 60);
+            tokio::time::sleep(delay).await;
+            if !pending::is_pending(&request_id) {
+                return; // a human got there first
+            }
+            // An ARMED standup owns away asks (spark app-standup, WP3): its away
+            // rules decide, and the act lands in its event ledger.
+            let act = AwayAction::WorkerGuidance {
+                question: &question,
+                context: context.as_deref(),
+            };
+            match supervisor::judge_worker_ask(&state.user_db, &state.db, &fleet_session_id, act) {
+                Ok(Some(judgment)) => {
+                    standup_guidance(
+                        &state,
+                        &judgment,
+                        &request_id,
+                        &fleet_session_id,
+                        &question,
+                        context.as_deref(),
+                    )
+                    .await;
+                    return;
+                }
+                Ok(None) => {}
+                Err(e) => {
+                    // Fail closed: leave it to the human / the TTL.
+                    tracing::warn!(error = %e, request_id = %request_id, "standup: away-rule check of a worker question failed (request left for TTL)");
+                    return;
+                }
+            }
+            let Some(plan) = super::active_plan(&state.user_db).ok().flatten() else {
+                return; // no open night window — leave it to the human/TTL
+            };
+            if let Err(e) = answer_guidance(
+                &state,
+                Some(&plan.id),
+                &request_id,
+                &fleet_session_id,
+                &question,
+                context.as_deref(),
+            )
+            .await
+            {
+                tracing::warn!(error = %e, request_id = %request_id, "night_shift: unattended guidance failed (request left for TTL)");
+            }
+        },
+        |_msg| async move {
+            // The boundary logs the panic; the request stays pending and the
+            // worker's own TTL answers it, the same outcome as a human not replying.
+        },
+    );
 }
 
 /// Arm the approval-parking watchdog. Fire-and-forget.
@@ -87,37 +132,130 @@ pub fn spawn_approval_watchdog(
     action: String,
     rationale: String,
 ) {
-    tauri::async_runtime::spawn(async move {
-        let state = app.state::<Arc<AppState>>().inner().clone();
-        if !super::enabled(&state.db) {
-            return;
-        }
-        tokio::time::sleep(APPROVAL_PARK_DELAY).await;
-        if !pending::is_pending(&request_id) {
-            return;
-        }
-        let Some(plan) = super::active_plan(&state.user_db).ok().flatten() else {
-            return;
-        };
-        park_approval(
-            &state,
-            &plan.id,
-            &request_id,
-            &fleet_session_id,
-            &action,
-            &rationale,
-        );
-    });
+    let watched = request_id.clone();
+    let _detached = crate::background_job::spawn_guarded(
+        "night_approval_watchdog",
+        watched,
+        async move {
+            let state = app.state::<Arc<AppState>>().inner().clone();
+            if !super::enabled(&state.db) && !standup_armed(&state) {
+                return;
+            }
+            tokio::time::sleep(APPROVAL_PARK_DELAY).await;
+            if !pending::is_pending(&request_id) {
+                return;
+            }
+            // An ARMED standup owns away asks (spark app-standup, WP3): a parked
+            // class is denied with a park note, a delegated one approved, and the
+            // act lands in its event ledger.
+            match supervisor::settle_worker_approval(
+                &state.user_db,
+                &state.db,
+                &request_id,
+                &fleet_session_id,
+                &action,
+                &rationale,
+                chrono::Utc::now().timestamp_millis(),
+            ) {
+                Ok(true) => return,
+                Ok(false) => {}
+                Err(e) => {
+                    // Fail closed: leave it to the human / the TTL.
+                    tracing::warn!(error = %e, request_id = %request_id, "standup: away-rule check of a worker approval failed (request left for TTL)");
+                    return;
+                }
+            }
+            let Some(plan) = super::active_plan(&state.user_db).ok().flatten() else {
+                return;
+            };
+            park_approval(
+                &state,
+                &plan.id,
+                &request_id,
+                &fleet_session_id,
+                &action,
+                &rationale,
+            );
+        },
+        |_msg| async move {
+            // The boundary logs the panic; the approval stays pending for the human
+            // (never auto-approved), the fail-closed outcome.
+        },
+    );
 }
 
-async fn answer_guidance(
+/// Whether a standup is armed. A read failure counts as "not armed" here,
+/// logged: this only decides whether a watchdog arms at all, and the
+/// standup check after the wait fails closed on its own.
+fn standup_armed(state: &Arc<AppState>) -> bool {
+    match crate::companion::standup::report::armed(&state.user_db) {
+        Ok(armed) => armed.is_some(),
+        Err(e) => {
+            tracing::warn!(error = %e, "standup: armed-standup read failed in the unattended watchdog");
+            false
+        }
+    }
+}
+
+/// A worker question under an armed standup: parked -> the worker gets the
+/// park note; delegated -> Athena answers it as the night path does. Either
+/// way ONE standup event records it.
+async fn standup_guidance(
     state: &Arc<AppState>,
-    plan_id: &str,
+    judgment: &supervisor::WorkerJudgment,
     request_id: &str,
     fleet_session_id: &str,
     question: &str,
     context: Option<&str>,
-) -> Result<(), crate::error::AppError> {
+) {
+    let now = chrono::Utc::now().timestamp_millis();
+    let answer = match judgment.decision {
+        AwayDecision::Park => {
+            let resolved = pending::resolve(
+                request_id,
+                Ok(serde_json::json!({ "text": supervisor::WORKER_PARK_NOTE })),
+            );
+            resolved.then(|| supervisor::WORKER_PARK_NOTE.to_string())
+        }
+        AwayDecision::Delegate => {
+            match answer_guidance(state, None, request_id, fleet_session_id, question, context)
+                .await
+            {
+                Ok(answer) => answer,
+                Err(e) => {
+                    tracing::warn!(error = %e, request_id = %request_id, "standup: delegated worker question went unanswered (request left for TTL)");
+                    None
+                }
+            }
+        }
+    };
+    // `None`: a human or the TTL got there first, so nothing was decided.
+    if let Some(answer) = answer {
+        if let Err(e) = supervisor::record_worker_ask(
+            &state.user_db,
+            judgment,
+            request_id,
+            question,
+            &answer,
+            now,
+        ) {
+            tracing::warn!(error = %e, request_id = %request_id, "standup: worker-ask event write failed");
+        }
+    }
+}
+
+/// Answer a blocked worker's question as Athena. `plan_id` is the legacy
+/// night plan, when the night window is what armed this (`None` under a
+/// standup). Returns the answer when it reached the worker, `None` when a
+/// human or the TTL resolved the request first.
+async fn answer_guidance(
+    state: &Arc<AppState>,
+    plan_id: Option<&str>,
+    request_id: &str,
+    fleet_session_id: &str,
+    question: &str,
+    context: Option<&str>,
+) -> Result<Option<String>, crate::error::AppError> {
     let (project_label, cwd) = crate::commands::fleet::registry::registry()
         .lookup_meta(fleet_session_id)
         .unwrap_or_else(|| ("unknown".to_string(), String::new()));
@@ -174,7 +312,7 @@ async fn answer_guidance(
     let resolved = pending::resolve(request_id, Ok(serde_json::json!({ "text": answer })));
     if !resolved {
         // Human/TTL raced us — don't log an answer that never reached anyone.
-        return Ok(());
+        return Ok(None);
     }
 
     // Turn ledger — attribution for the spend + the act.
@@ -215,14 +353,14 @@ async fn answer_guidance(
     // Night ledger row.
     let _ = super::record_event(
         &state.user_db,
-        Some(plan_id),
+        plan_id,
         super::EVENT_UNATTENDED_GUIDANCE,
         Some(fleet_session_id),
         Some(&project_label),
         &serde_json::json!({ "question": question, "answer": answer }),
     );
     tracing::info!(request_id = %request_id, "night_shift: answered guidance unattended");
-    Ok(())
+    Ok(Some(answer))
 }
 
 fn park_approval(

@@ -86,7 +86,7 @@ export function ReviewVerdictActions({
   if (rejecting) {
     return (
       <div className="flex flex-col gap-1.5" data-testid={`${testIdPrefix}-reject-form`}>
-        <label className="typo-caption text-foreground/85" htmlFor={`${testIdPrefix}-reason`}>
+        <label className="typo-caption text-ink-2" htmlFor={`${testIdPrefix}-reason`}>
           {t.notepad.review_reject_reason_label}
         </label>
         <textarea
@@ -109,14 +109,14 @@ export function ReviewVerdictActions({
           placeholder={t.notepad.review_reject_reason_placeholder}
           aria-invalid={missing}
           data-testid={`${testIdPrefix}-reason`}
-          className="w-full px-2.5 py-1.5 typo-body rounded-input border border-primary/15 bg-background/70 text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-primary/35 resize-none"
+          className="w-full px-2.5 py-1.5 typo-body rounded-input border border-hair bg-background/70 text-foreground placeholder:text-ink-2 focus:outline-none focus:border-primary/35 resize-none"
         />
         {missing ? (
           <span className="typo-caption text-status-warning" role="alert">
             {t.notepad.review_reject_reason_required}
           </span>
         ) : (
-          <span className="typo-caption text-foreground/85">{t.notepad.review_reject_rerun_hint}</span>
+          <span className="typo-caption text-ink-2">{t.notepad.review_reject_rerun_hint}</span>
         )}
         <div className="flex items-center justify-end gap-1.5">
           <Button variant="ghost" size={size} onClick={() => setRejecting(false)} data-testid={`${testIdPrefix}-reject-cancel`}>
@@ -222,7 +222,7 @@ export function ThreadComposer({
   };
 
   const fieldClass =
-    'flex-1 min-w-0 px-2.5 py-1.5 typo-body rounded-input border border-primary/15 bg-background/70 text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-primary/35';
+    'flex-1 min-w-0 px-2.5 py-1.5 typo-body rounded-input border border-hair bg-background/70 text-foreground placeholder:text-ink-2 focus:outline-none focus:border-primary/35';
   const placeholder = multiline ? t.notepad.thread_composer_placeholder : t.notepad.bubble_comment_placeholder;
 
   return (

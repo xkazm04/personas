@@ -17,11 +17,12 @@ const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const MemoryPanel = lazy(() => import('./sub_memory/MemoryPanel'));
 const VoicePanel = lazy(() => import('./sub_voice/VoicePanel'));
 const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
+const StandupPanel = lazyRetry(() => import('./sub_standup/StandupPanel'));
 
 /**
  * Athena's page — her manager surface inside the Companions section.
  *
- * Her five pages (Create Athena, Setup, Memory, Voice, Decisions) are rows in
+ * Her six pages (Create Athena, Setup, Memory, Voice, Decisions, Standup) are rows in
  * `CompanionsSidebarNav`, and each is a `CompanionsPage` of the form
  * `athena:<tab>`. This page reads the tab half and renders one panel, which is
  * why the Companions router mounts it as ONE branch: switching between her
@@ -42,14 +43,23 @@ export default function AthenaPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<IconCompanion active className="w-5 h-5 text-cyan-400" />}
+        icon={<IconCompanion active className="w-5 h-5 text-ink-2" />}
         iconColor="cyan"
         title={t.athena.page_title}
-        subtitle={t.athena.page_subtitle}
+        subtitle={tab === 'standup' ? t.athena.standup.page_subtitle : t.athena.page_subtitle}
       />
 
-      <ContentBody centered={tab !== 'memory'}>
-        <div key={tab} className="animate-fade-slide-in h-full">
+      {/* Standup is full-bleed (a timetable across the whole body): `flex` + a
+          `flex-1 min-h-0` child instead of the centred, padded scroller. */}
+      <ContentBody centered={tab !== 'memory' && tab !== 'standup'} flex={tab === 'standup'}>
+        <div
+          key={tab}
+          className={
+            tab === 'standup'
+              ? 'animate-fade-slide-in flex-1 min-h-0 flex flex-col'
+              : 'animate-fade-slide-in h-full'
+          }
+        >
           <ErrorBoundary name="Companion">
             <Suspense fallback={<RouteChunkSkeleton variant="body" />}>
               {tab === 'create-athena' && <CreateAthenaPanel />}
@@ -57,6 +67,7 @@ export default function AthenaPage() {
               {tab === 'memory' && <MemoryPanel />}
               {tab === 'voice' && <VoicePanel />}
               {tab === 'decisions' && <DecisionsPanel />}
+              {tab === 'standup' && <StandupPanel />}
             </Suspense>
           </ErrorBoundary>
         </div>

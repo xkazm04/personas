@@ -7,6 +7,7 @@
 // that led with a state colour would be leading with a claim about 14% of
 // itself. The bottom row is the rest of the denominator as small stat cards,
 // the figure dominant and its label underneath, absence included.
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { Estate, EstateProject, KpiTally } from './kpiEstate';
@@ -39,10 +40,10 @@ export function EstateHeadline({
     // The Manifest's header pattern: the title row, then a hairline, then the
     // content - so where the page's own statement ends is visible.
     <header className="space-y-3">
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-primary/10 pb-3">
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-hair pb-3">
         <h2 className="flex items-baseline gap-2">
           {loading ? (
-            <span aria-hidden="true" className="inline-block h-9 w-24 rounded bg-primary/[0.06]" data-testid="kpi-headline-pending" />
+            <span aria-hidden="true" className="inline-block h-9 w-24 rounded-interactive bg-surface-2" data-testid="kpi-headline-pending" />
           ) : (
             <span className={KT.hero}>{`${coveragePct(tally)}%`}</span>
           )}
@@ -97,7 +98,7 @@ function Crumb({
   onClick?: () => void;
 }) {
   const className = `rounded-interactive px-2 py-1 text-left transition-colors ${
-    active ? 'bg-secondary/40' : 'hover:bg-secondary/30'
+    active ? 'bg-surface-1' : 'hover:bg-surface-2'
   }`;
   const body = (
     <>
@@ -113,9 +114,9 @@ function Crumb({
     );
   }
   return (
-    <button type="button" onClick={onClick} className={`${className} focus-ring`}>
+    <PressSurface onPress={onClick} className={`${className} `}>
       {body}
-    </button>
+    </PressSurface>
   );
 }
 
@@ -142,7 +143,7 @@ function Stat({
   return (
     // Label first in the DOM so a screen reader hears "Off track, 0"; the
     // column is reversed so the eye meets the figure first.
-    <div className="relative flex flex-col-reverse overflow-hidden rounded-card border border-card-border bg-gradient-to-b from-secondary/40 to-secondary/10 px-3 py-2">
+    <div className="relative flex flex-col-reverse overflow-hidden rounded-card border border-card-border bg-surface-1 px-3 py-2">
       <span
         aria-hidden="true"
         className="absolute inset-x-0 top-0 h-px"
@@ -151,7 +152,7 @@ function Stat({
       <dt className={KT.meta}>{label}</dt>
       <dd className={`${KT.stat} leading-tight`} style={{ color: lit ? tone : 'var(--foreground)' }}>
         {pending ? (
-          <span aria-hidden="true" className="inline-block h-[1em] w-10 rounded bg-primary/[0.06] align-middle" />
+          <span aria-hidden="true" className="inline-block h-[1em] w-10 rounded-interactive bg-surface-2 align-middle" />
         ) : (
           value ?? t.kpis.overview.read_never
         )}

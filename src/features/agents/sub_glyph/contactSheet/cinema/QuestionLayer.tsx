@@ -14,6 +14,7 @@ import Button from "@/features/shared/components/buttons/Button";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { useQuestionKeys } from "./useQuestionKeys";
 import { COPY } from "./copy";
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 interface QuestionLayerProps {
   question: BuildQuestion;
@@ -41,7 +42,7 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.18, duration: 0.3 }}
-        className="typo-heading-lg text-foreground leading-snug"
+        className="typo-heading-lg text-ink-1 leading-snug"
       >
         {question.question}
       </motion.h2>
@@ -53,14 +54,13 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
           {options.map((opt, i) => {
             const on = draft === opt;
             return (
-              <button
+              <PressSurface
                 key={opt}
                 ref={i === 0 ? firstOpt : undefined}
-                type="button"
                 role="radio"
                 aria-checked={on}
-                onClick={() => onPick(opt)}
-                className="flex items-center gap-3 min-h-[42px] px-3 py-2 rounded-input border text-left typo-body text-foreground transition-colors"
+                onPress={() => onPick(opt)}
+                className="flex items-center gap-3 min-h-[42px] px-3 py-2 rounded-input border"
                 style={{ borderColor: on ? color : "var(--card-border, rgba(255,255,255,0.1))", background: on ? colorWithAlpha(color, 0.12) : undefined }}
               >
                 <span
@@ -70,7 +70,7 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
                   {i + 1}
                 </span>
                 <span>{opt}</span>
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -84,7 +84,7 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
           onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { e.preventDefault(); onNext(); } }}
           placeholder={COPY.ownWords}
           aria-label={COPY.ownWords}
-          className="h-10 px-3 rounded-input border border-card-border bg-transparent typo-body text-foreground outline-none focus:border-foreground/30"
+          className="h-10 px-3 rounded-input border border-card-border bg-transparent typo-body text-ink-1 outline-none focus:border-hair-2"
         />
       )}
 

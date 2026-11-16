@@ -1,7 +1,9 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { SlidersHorizontal } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAppKeyboard, OVERLAY_DISMISS_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
@@ -48,41 +50,40 @@ export const HomeCustomizePopover = memo(function HomeCustomizePopover() {
     return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
 
+  useAppKeyboard(
+    (e) => {
+      if (e.key !== 'Escape') return false;
+      e.preventDefault();
+      setOpen(false);
+      buttonRef.current?.focus();
+      return true;
+    },
+    { enabled: open, priority: OVERLAY_DISMISS_PRIORITY },
+  );
+
   const hiddenCount = hidden.length;
   const onReset = useCallback(() => resetHomeSections(), [resetHomeSections]);
 
   return (
     <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        aria-expanded={open}
-        aria-label={t.overview.dashboard.customize_label}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border border-primary/15 bg-secondary/40 text-foreground typo-caption hover:bg-secondary/60 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
-      >
-        <SlidersHorizontal className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">{t.overview.dashboard.customize_label}</span>
+      <Button variant="secondary" size="sm" ref={buttonRef} onClick={() => setOpen((p) => !p)} aria-expanded={open} aria-label={t.overview.dashboard.customize_label} icon={<SlidersHorizontal className="w-3.5 h-3.5" />}>
+<span className="hidden sm:inline">{t.overview.dashboard.customize_label}</span>
         {hiddenCount > 0 && (
-          <span className="typo-caption font-mono tabular-nums px-1 rounded-interactive bg-primary/10 text-primary">{hiddenCount}</span>
+          <span className="typo-data font-mono px-1 rounded-interactive bg-primary/10 text-primary">{hiddenCount}</span>
         )}
-      </button>
+</Button>
 
       {open && (
         <div
           ref={popoverRef}
-          className="absolute top-full right-0 mt-2 z-50 min-w-[240px] bg-background/95 backdrop-blur-md border border-primary/20 rounded-modal shadow-elevation-3 p-3"
+          className="absolute top-full right-0 mt-2 z-50 min-w-[240px] bg-background/95 backdrop-blur-md border border-hair rounded-modal shadow-elevation-3 p-3"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="typo-caption uppercase tracking-widest text-foreground font-mono">{t.overview.dashboard.customize_title}</span>
+            <span className="typo-eyebrow">{t.overview.dashboard.customize_title}</span>
             {hiddenCount > 0 && (
-              <button
-                type="button"
-                onClick={onReset}
-                className="typo-caption text-primary/80 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 rounded-interactive px-1"
-              >
+              <Button variant="ghost" size="xs" onClick={onReset}>
                 {t.overview.dashboard.customize_reset}
-              </button>
+              </Button>
             )}
           </div>
           <div className="space-y-1">
@@ -90,7 +91,7 @@ export const HomeCustomizePopover = memo(function HomeCustomizePopover() {
               const label = SECTION_LABEL[id](t);
               const visible = !hidden.includes(id);
               return (
-                <div key={id} className="flex items-center justify-between gap-3 px-1.5 py-1.5 rounded-interactive hover:bg-primary/[0.04]">
+                <div key={id} className="flex items-center justify-between gap-3 px-1.5 py-1.5 rounded-interactive hover:bg-surface-2">
                   <span className="typo-body text-foreground truncate">{label}</span>
                   <AccessibleToggle checked={visible} onChange={() => toggleHomeSection(id)} label={label} size="sm" />
                 </div>

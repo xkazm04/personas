@@ -14,8 +14,8 @@ export function getMcpSchema(t: Translations): SchemaFormConfig {
   const s = t.vault.schema_configs.mcp;
   return {
     headerIcon: (
-      <div className="w-9 h-9 rounded-card bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center">
-        <Server className="w-[1.125rem] h-[1.125rem] text-cyan-400" />
+      <div className="w-9 h-9 rounded-card bg-role-highlight/10 border border-role-highlight/25 flex items-center justify-center">
+        <Server className="w-[1.125rem] h-[1.125rem] text-role-highlight" />
       </div>
     ),
     title: s.title,
@@ -48,7 +48,7 @@ export function getMcpSchema(t: Translations): SchemaFormConfig {
       },
     ],
     subTypeLayout: 'flex',
-    subTypeActiveClass: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300',
+    subTypeActiveClass: 'bg-role-highlight/15 border-role-highlight/30 text-role-highlight',
     serviceTypePrefix: 'mcp',
     category: 'mcp',
     connectorColor: '#06B6D4',
@@ -61,7 +61,7 @@ export function getMcpSchema(t: Translations): SchemaFormConfig {
         sectionTitle: s.env_vars_section,
         addLabel: s.env_vars_add,
         emptyMessage: s.env_vars_empty,
-        addButtonClass: 'text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15 border-cyan-500/20',
+        addButtonClass: 'text-role-highlight hover:text-role-highlight bg-role-highlight/10 hover:bg-role-highlight/15 border-role-highlight/20',
       },
     ],
     buildExtraMetadata: (_subTypeId, extras) => ({
@@ -86,8 +86,8 @@ export function getCustomSchema(t: Translations): SchemaFormConfig {
   const s = t.vault.schema_configs.custom;
   return {
     headerIcon: (
-      <div className="w-9 h-9 rounded-card bg-amber-500/10 border border-amber-500/25 flex items-center justify-center">
-        <Link className="w-[1.125rem] h-[1.125rem] text-amber-400" />
+      <div className="w-9 h-9 rounded-card bg-status-warning/10 border border-status-warning/25 flex items-center justify-center">
+        <Link className="w-[1.125rem] h-[1.125rem] text-status-warning" />
       </div>
     ),
     title: s.title,
@@ -135,7 +135,7 @@ export function getCustomSchema(t: Translations): SchemaFormConfig {
       },
     ],
     subTypeLayout: 'grid',
-    subTypeActiveClass: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
+    subTypeActiveClass: 'bg-status-warning/15 border-status-warning/30 text-status-warning',
     serviceTypePrefix: 'custom',
     category: 'custom',
     connectorColor: '#F59E0B',
@@ -174,8 +174,8 @@ export function getDatabaseSchema(t: Translations): SchemaFormConfig {
   const s = t.vault.schema_configs.database;
   return {
     headerIcon: (
-      <div className="w-9 h-9 rounded-card bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center">
-        <Database className="w-[1.125rem] h-[1.125rem] text-emerald-400" />
+      <div className="w-9 h-9 rounded-card bg-status-success/10 border border-status-success/25 flex items-center justify-center">
+        <Database className="w-[1.125rem] h-[1.125rem] text-status-success" />
       </div>
     ),
     title: s.title,
@@ -243,7 +243,7 @@ export function getDatabaseSchema(t: Translations): SchemaFormConfig {
       },
     ],
     subTypeLayout: 'grid',
-    subTypeActiveClass: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
+    subTypeActiveClass: 'bg-status-success/15 border-status-success/30 text-status-success',
     serviceTypePrefix: 'db',
     category: 'database',
     connectorColor: '#3ECF8E',

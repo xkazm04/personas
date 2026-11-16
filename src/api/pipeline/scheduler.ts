@@ -52,8 +52,9 @@ export const clearScheduleMissedRuns = (triggerId: string) =>
  *
  * `error` is the reason this trigger was NOT restored - a missing window, or
  * the backend's own message - and is null on success. `cleared` says whether
- * the missed-runs badge was dropped, which only happens after slots were
- * actually enqueued, so a failed row stays on the list for the next attempt.
+ * the missed-runs badge was dropped, which only happens after the WHOLE window
+ * was enqueued (not `capped`, no `failures`), so a failed or partial row stays
+ * on the list for the next attempt.
  */
 export interface MissedRunBackfill {
   triggerId: string;
@@ -102,6 +103,15 @@ export async function backfillAllMissedRuns(
     try {
       const result = await backfillSchedule(row.triggerId, start, new Date().toISOString());
       let cleared = false;
+      // An Ok answer is not a complete one: `capped` (the per-request slot cap
+      // or the hourly ceiling, which can stop before ANY slot) and `failures`
+      // (slot publishes that errored) both mean part of the gap is still
+      // missing. The badge is the only record of it, so it stays for the next
+      // call - which resumes from the gap the sweep still holds.
+      if (result.capped || result.failures > 0) {
+        out.push({ triggerId: row.triggerId, result, error: null, cleared });
+        continue;
+      }
       try {
         await clearScheduleMissedRuns(row.triggerId);
         cleared = true;

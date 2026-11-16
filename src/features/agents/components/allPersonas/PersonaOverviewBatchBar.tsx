@@ -64,8 +64,8 @@ export function PersonaOverviewBatchBar({
   };
 
   return (
-    <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-2 rounded-modal border border-primary/15 bg-secondary/40 backdrop-blur-sm">
-      <span className="typo-body text-foreground">{tx(t.agents.persona_list.batch_selected, { count })}</span>
+    <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-2 rounded-modal border border-hair bg-surface-2 backdrop-blur-sm">
+      <span className="typo-body text-ink-1">{tx(t.agents.persona_list.batch_selected, { count })}</span>
       <div className="w-px h-4 bg-primary/15" />
       {onMoveToGroup && (
         <PersonaBatchTeamMenu busy={busy} onPick={(id) => void guarded(() => onMoveToGroup(id))} />

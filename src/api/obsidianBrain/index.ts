@@ -251,10 +251,11 @@ const EMPTY_DRIVE_SYNC_RESULT: DriveSyncResult = {
  * IPC ceiling for Drive push/pull. Both run inline: per synced file they make
  * sequential Google calls (`push_to_drive` / `pull_from_drive` in
  * `src-tauri/src/commands/obsidian_brain/drive.rs`) and then save the
- * manifest, so the run grows with the vault, and `drive_client` sets no
- * request deadline. At the 90 s default a few-hundred-note vault reported a
- * failure while the backend kept uploading, and a retry started a second sync
- * racing the first for the same manifest. This matches the 30-minute ceiling
+ * manifest, so the run grows with the vault. Each Google call carries its own
+ * per-call deadline (`drive_client`), but the sync as a whole has none. At the
+ * 90 s default a few-hundred-note vault reported a failure while the backend
+ * kept uploading, and a retry started a second sync racing the first for the
+ * same manifest. This matches the 30-minute ceiling
  * `tauriInvoke.ts` gives other blocking mutations: long enough to wait for the
  * real result, still bounded.
  */

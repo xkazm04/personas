@@ -56,6 +56,17 @@ const PARITY_FIXTURES: Array<[string, ErrorCategory]> = [
   ['Execution failed (exit code 137): Killed', 'transient_process_failure'],
   ['Execution failed (exit code 1): ', 'transient_process_failure'],
   ['App restarted while execution was running', 'transient_process_failure'],
+  // A status code is a standalone token, not any number that contains its digits.
+  ['processed 14013 rows', 'unknown'],
+  ['read 14030 bytes', 'unknown'],
+  ['offset 14290', 'unknown'],
+  ['indexed 40410 items', 'unknown'],
+  ['wrote 5000 records', 'unknown'],
+  ['scanned 15020 entries', 'unknown'],
+  ['moved 5030 rows', 'unknown'],
+  ['retried 15290 jobs', 'unknown'],
+  ['sent 24130 bytes', 'unknown'],
+  ['API error: invalid offset 14003', 'api_error'],
   ['some entirely novel failure', 'unknown'],
 ];
 

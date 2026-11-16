@@ -13,6 +13,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GitHubRepoSelector } from '../GitHubRepoSelector';
 import type { SourceMode } from './pipelineTypes';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface SourceControlStepProps {
   sourceMode: SourceMode;
@@ -77,7 +78,7 @@ export function SourceControlStep({
         <div>
           <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
             {dp.team_binding_label}
-            <span className="typo-caption text-amber-400/80">({dp.field_required})</span>
+            <span className="typo-caption text-status-warning">({dp.field_required})</span>
           </label>
           <ThemedSelect value={teamId ?? ''} onValueChange={(v) => onTeamChange(v || null)}>
             <option value="">{dp.team_binding_none}</option>
@@ -93,7 +94,7 @@ export function SourceControlStep({
         <div data-testid="project-github-connector">
           <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
             {dp.github_connector_label}
-            <span className="typo-caption text-amber-400/80">({dp.field_required})</span>
+            <span className="typo-caption text-status-warning">({dp.field_required})</span>
           </label>
           <ThemedSelect value={prCredentialId ?? ''} onValueChange={(v) => onCredChange(v || null)}>
             <option value="">{dp.team_binding_none}</option>
@@ -108,7 +109,7 @@ export function SourceControlStep({
       <GitHubRepoSelector value={githubUrl} onChange={onGithubUrlChange} credentialId={repoCredentialId} />
       {sourceMode === 'standalone' && prCredentialId && (
         <p className="typo-caption text-foreground -mt-2 flex items-center gap-1.5">
-          <Code2 className="w-3 h-3 text-amber-400/70 flex-shrink-0" />
+          <Code2 className="w-3 h-3 text-ink-2 flex-shrink-0" />
           {dp.repos_from_connector}
         </p>
       )}
@@ -116,7 +117,7 @@ export function SourceControlStep({
       {/* Main branch */}
       <div>
         <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
-          <GitFork className="w-3 h-3 text-amber-400/70" />
+          <GitFork className="w-3 h-3 text-ink-2" />
           {dp.main_branch_label}
           <span className="typo-caption text-foreground">({dp.team_binding_optional})</span>
         </label>
@@ -124,7 +125,7 @@ export function SourceControlStep({
           value={mainBranch}
           onChange={(e) => onMainBranchChange(e.target.value)}
           placeholder={dp.main_branch_placeholder}
-          className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+          className="w-full px-3 py-2.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-foreground focus-ring"
         />
       </div>
 
@@ -139,7 +140,7 @@ export function SourceControlStep({
             value={testEnvUrl}
             onChange={(e) => onTestEnvUrlChange(e.target.value)}
             placeholder={dp.test_env_url_placeholder}
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-3 py-2.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-foreground focus-ring"
           />
         </div>
         <div>
@@ -151,7 +152,7 @@ export function SourceControlStep({
             value={testEnvBranch}
             onChange={(e) => onTestEnvBranchChange(e.target.value)}
             placeholder={dp.test_env_branch_placeholder}
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-3 py-2.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-foreground focus-ring"
           />
         </div>
       </div>
@@ -169,21 +170,17 @@ function ModeButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <PressSurface
+      onPress={onClick}
       aria-pressed={active}
-      className={`flex flex-col items-start gap-1 px-3 py-2.5 text-left border rounded-input transition-colors ${
-        active
-          ? 'bg-amber-500/8 border-amber-500/30'
-          : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
-      }`}
+      className="flex flex-col items-start gap-1 px-3 py-2.5 border border-hair rounded-input"
+      selected={active}
     >
       <span className="flex items-center gap-1.5 typo-caption text-foreground">
-        <Icon className={`w-3.5 h-3.5 ${active ? 'text-amber-400' : 'text-foreground/60'}`} />
+        <Icon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-ink-2'}`} />
         {label}
       </span>
       <span className="typo-caption text-foreground">{hint}</span>
-    </button>
+    </PressSurface>
   );
 }

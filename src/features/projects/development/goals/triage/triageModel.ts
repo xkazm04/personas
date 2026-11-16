@@ -48,7 +48,7 @@ export interface GoalRow {
 }
 
 /** Semantic ink per status. `GOAL_STATUS_META` carries Tailwind palette classes
- *  (`text-teal-300`), which can't be mixed into a `color-mix` wash and which
+ *  (`text-role-external`), which can't be mixed into a `color-mix` wash and which
  *  CLAUDE.md bars from new UI — so the same five statuses map onto status
  *  tokens here instead. */
 export const STATUS_INK: Record<GoalStatus, string> = {

@@ -53,9 +53,9 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
 
       <div className="flex-1 min-w-0 overflow-y-auto">
         {!selected && (
-          <div className="rounded-card border border-primary/10 bg-secondary/15 px-5 py-8 text-center">
+          <div className="rounded-card border border-hair bg-surface-1 px-5 py-8 text-center">
             <p className="typo-title">{d.launch_pick_skill_title}</p>
-            <p className="typo-caption text-foreground/85 mt-1">{d.launch_pick_skill_hint}</p>
+            <p className="typo-caption text-ink-2 mt-1">{d.launch_pick_skill_hint}</p>
           </div>
         )}
 
@@ -65,12 +65,12 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
                 wire fans out from its mid-height. Wide on purpose: the
                 description is meant to be READ here, not glimpsed. */}
             <div className="w-[30rem] flex-shrink-0 flex flex-col justify-center">
-              <div className="rounded-card border border-primary/25 bg-secondary/25 px-5 py-4 shadow-elevation-1">
+              <div className="rounded-card border border-hair bg-surface-1 px-5 py-4 shadow-elevation-1">
                 <div className="flex items-center gap-2 min-w-0">
                   <Cpu className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
                   <span className="typo-title truncate">{selected}</span>
                   {/* muted-ok: structural micro-label (version/category chip beside the title) */}
-                  <span className="typo-label text-foreground/45 flex-shrink-0 ml-auto">
+                  <span className="typo-label text-ink-3 flex-shrink-0 ml-auto">
                     {tx(d.launch_skill_meta, {
                       version: skill?.version ?? '1.0',
                       category: skill?.category ?? d.launch_ungrouped,
@@ -78,7 +78,7 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
                   </span>
                 </div>
                 {skill?.description && (
-                  <p className="typo-body text-foreground/90 mt-2.5 line-clamp-6">{skill.description}</p>
+                  <p className="typo-body text-ink-2 mt-2.5 line-clamp-6">{skill.description}</p>
                 )}
                 {/* Declared argument syntax — the `argument-hint` frontmatter,
                     parsed into one bullet per option/form. Height is cheap
@@ -96,17 +96,17 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
                       {argBullets.map((b) => (
                         <li key={b} className="flex items-center gap-1.5 min-w-0">
                           <span className="w-1 h-1 rounded-full bg-primary/50 flex-shrink-0" aria-hidden />
-                          <code className="typo-caption font-mono text-foreground bg-background/60 border border-primary/10 rounded-interactive px-1.5 py-0.5">
+                          <code className="typo-caption font-mono text-foreground bg-background/60 border border-hair rounded-interactive px-1.5 py-0.5">
                             {b}
                           </code>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="typo-caption text-foreground/85 mt-1 pl-5">{d.launch_args_none}</p>
+                    <p className="typo-caption text-ink-2 mt-1 pl-5">{d.launch_args_none}</p>
                   )}
                 </div>
-                <p className="typo-caption text-foreground/85 mt-2">{d.launch_via_athena_hint}</p>
+                <p className="typo-caption text-ink-2 mt-2">{d.launch_via_athena_hint}</p>
                 {sentProject && (
                   <p className="typo-caption text-status-success animate-fade-in mt-1.5">
                     {d.launch_sent_to_athena}

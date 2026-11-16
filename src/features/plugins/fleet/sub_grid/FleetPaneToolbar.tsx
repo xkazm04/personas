@@ -28,7 +28,7 @@ export function FleetPaneToolbar({ session, switcher, onCompact, onOpenSkills, o
   const canCompact = session.state === 'idle' || session.state === 'awaiting_input' || session.state === 'stale';
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-2 py-1.5 border-b border-primary/10 shrink-0">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-2 py-1.5 border-b border-hair shrink-0">
       {switcher}
       <FleetContextPill
         claudeSessionId={session.claudeSessionId}

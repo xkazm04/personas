@@ -12,6 +12,7 @@ import type { FleetRunSummary } from '@/lib/bindings/FleetRunSummary';
 import { listRuns, runReport } from '@/api/fleet/fleet';
 import { FleetRunSessionRow } from './FleetRunSessionRow';
 import { buildRunMarkdown, formatTokens } from './fleetRunMarkdown';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /**
  * Run harvest — the fleet reports what it delivered.
@@ -73,7 +74,7 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
   return (
     <BaseModal isOpen={open} onClose={onClose} titleId="fleet-harvest-title" size="lg" staggerChildren={false}>
       <div className="flex max-h-[80vh] flex-col" data-testid="fleet-harvest-panel">
-        <div className="flex items-center gap-2 border-b border-primary/10 px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-hair px-4 py-3">
           <h2 id="fleet-harvest-title" className="flex-1 typo-heading-lg">
             {t.plugins.fleet.harvest_title}
           </h2>
@@ -94,22 +95,16 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
         </div>
 
         {runs.length > 1 && (
-          <div className="flex flex-wrap gap-1.5 border-b border-primary/10 px-4 py-2">
+          <div className="flex flex-wrap gap-1.5 border-b border-hair px-4 py-2">
             {runs.map((r) => (
-              <button
+              <OptionChip
                 key={r.runId}
-                type="button"
                 data-testid={`fleet-harvest-run-${r.runId}`}
-                onClick={() => setRunId(r.runId)}
-                aria-pressed={r.runId === runId}
-                className={`rounded-interactive border px-2 py-0.5 typo-caption transition-colors ${
-                  r.runId === runId
-                    ? 'border-primary/40 bg-primary/15 text-foreground'
-                    : 'border-primary/10 bg-secondary/40 hover:bg-secondary/60'
-                }`}
+                onSelect={() => setRunId(r.runId)}
+                selected={r.runId === runId}
               >
                 {`${runLabel(r)} · ${r.finishedCount}/${r.sessionCount}`}
-              </button>
+              </OptionChip>
             ))}
           </div>
         )}
@@ -123,7 +118,7 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
             <EmptyState art="report" title={t.plugins.fleet.harvest_empty} />
           ) : (
             <>
-              <p className="mb-3 typo-caption tabular-nums opacity-80">
+              <p className="mb-3 typo-caption num opacity-80">
                 {interpolate(t.plugins.fleet.harvest_totals, {
                   delivered: shown.totals.finishedCount,
                   total: shown.totals.sessionCount,

@@ -1,0 +1,306 @@
+{
+ "schema": "conform-run/1",
+ "worker": "1bdddf04-b59c-4cb1-86c4-83f6b39abe1b",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-05T23:49:02.246083+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-studio",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/triggers/sub_studio/libs/__tests__/routeCodec.test.ts:44 The route-codec suite claims to assert 'THROUGH THE READER' (:2), but the backend's auto-listener rows are produced by a test-local simulation that hand-writes the `_auto_for_trigger` marker and the schedule/polling/webhook set (:46). Production triggersToRoutes folds listeners by that key (routeCodec.ts:169), Rust writes it at src-tauri/db/src/repos/resources/triggers/definitions.rs:698, and nothing tethers the two, so renaming the key on the Rust side leaves every TS test green while the Studio ledger shows each auto-listener as a phantom route, the exact drift the file says it closes.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/triggers/sub_studio/libs/__tests__/routeCodec.test.ts:44 Two producers can yield the rows (the simulation and the Rust create path), and only the simulation is reached. 'Change the value only at the crossing' (rename the key in definitions.rs) survives the whole TS suite. The same hand-written key sits in cableVitals.test.ts:114 and the useRoutingState tests."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "deviation",
+     "evidence": "src/features/triggers/sub_studio/libs/__tests__/routeCodec.test.ts:46 The simulated backend fixture names its source (definitions.rs) only in a comment, with no rebuild trigger or tripwire. The Rust gate auto_listener_policy_covers_every_trigger_type never names this mirror, so the fixture can validate yesterday's backend."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/features/triggers/sub_studio/libs/__tests__/studioChainContract.test.ts:21 The structural pin strips comments from the Rust haystack, and its needle is a call shape (`config\\s*.get(\"k\")`) that survives rustfmt line breaks (verified against chain.rs:501-502, 587-588)."
+    },
+    {
+     "technique": "derived-selection-must-be-measured",
+     "verdict": "conformant",
+     "evidence": "src/features/triggers/sub_studio/libs/__tests__/studioChainContract.test.ts:36 A matcher that selects nothing fails loudly instead of passing on an empty set."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/triggers/sub_studio/libs/__tests__/routeCodec.test.ts:104 Arranges input in an order that disagrees with the happy path, so an order-dependent fold fails."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/features/triggers/sub_studio/libs/__tests__/studioCommit.test.ts:1 Pure mapping tests declare a DOM-free environment."
+    },
+    {
+     "technique": "approval-snapshots-with-guarded-update",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_studio/libs/__tests__/studioCommit.test.ts:89 Small structures are compared whole with toEqual; no recording is warranted."
+    },
+    {
+     "technique": "recorded-interaction-fixtures",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/hooks/__tests__/useTriggerDetail.test.ts:10 Only the in-process IPC seam is faked; no remote service is involved."
+    }
+   ],
+   "registryProposal": "unreached-decisions-pin-nothing could name the 'test-local simulation of the far side's writer' explicitly: a round trip whose write half is a hand-written stand-in for another language's writer is a second producer, even when the file's write-side keys are already pinned to their readers."
+  },
+  {
+   "context": "hooks-utility-interaction",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts:105 The name claims the key-change save, but the scroll listener has already stored tab-A=600 (:112) before the rerender, so deleting the useLayoutEffect save leaves the test green. The detach save the earlier test announces (':55 detach saves too') is likewise masked by the preceding scroll save. Two of the hook's three save paths are unpinned under names that claim them.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts:105 Where two producers can yield the value, the test must assert the producer. Removing POSITIONS.set in setRef's detach branch or in the key-change layout effect (useScrollRestoration.ts) stays green, so the names overstate."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/hooks/utility/interaction/__tests__/useProgressiveReveal.test.ts:40 The time budget is asserted as a count of scheduler ticks, not elapsed wall time."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts:27 Resets the globalThis position map each test, so no state leaks between tests."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts:6 A cheap in-memory element builder that states what jsdom cannot supply."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/hooks/utility/interaction/__tests__/useMotion.test.ts:16 A regression test whose control is the fix: drop the data-motion read and it fails."
+    },
+    {
+     "technique": "constraint-injection-for-unreachable-tiers",
+     "verdict": "conformant",
+     "evidence": "src/hooks/utility/interaction/__tests__/useMobilePreview.test.ts:14 Injects the phone-build probe so a desktop dev box exercises the mobile tier."
+    }
+   ]
+  },
+  {
+   "context": "cockpit-widget-tests",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:65 The stale deviation is repaired: the four-kinds test now requires each kind to render a non-empty, distinct label, so collapsing metricLabel onto one label fails. The suite's structural pin (widgetKindParity) declares a floor and strips prose.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "conformant",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:65 The name now matches the assertion, which pins the hazard (labels collapsing)."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:23 The haystack has prose removed before matching kind needles."
+    },
+    {
+     "technique": "derived-selection-must-be-measured",
+     "verdict": "conformant",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:58 Every derived source list must be non-empty, so zero selected is a failure."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ModelTierChoiceWidget.test.tsx:62 The ordering test feeds input that disagrees with the pinned order, so removing the sort fails it."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/TemplateSuggestionsFailure.test.tsx:29 Per-test reset of the shared mock."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/TemplateSuggestionsFailure.test.tsx:25 The fixture carries the real IPC rejection shape (a serialized AppError object), which is the invariant the defect lived in."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/TemplateSuggestionsFailure.test.tsx:45 Waits on a condition; no timing claim is made."
+    },
+    {
+     "technique": "approval-snapshots-with-guarded-update",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:42 Small rendered outputs asserted per field; no snapshot needed."
+    },
+    {
+     "technique": "live-app-harness",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/TemplateSuggestionsFailure.test.tsx:57 jsdom rung, not the shipped app. The identifier it uses composes role with entity id."
+    },
+    {
+     "technique": "recorded-interaction-fixtures",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/TemplateSuggestionsFailure.test.tsx:9 Only the in-process IPC wrapper is faked; no remote service."
+    },
+    {
+     "technique": "assert-through-the-reader",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:37 The reader of the emitted kinds is the product's own registry, not a foreign interpreter."
+    },
+    {
+     "technique": "suite-partitioning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/personaStats.test.ts:1 Partition and lane config live in vitest.config.ts, outside this context. The file only declares its environment."
+    },
+    {
+     "technique": "out-of-graph-artifacts",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_cockpit/widgets/__tests__/widgetKindParity.test.ts:34 Reads in-graph app-crate source as a contract; the context ships no detached artifact."
+    }
+   ]
+  },
+  {
+   "context": "companion-ui-controls",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "tests/playwright/athena-guided-walkthrough.spec.ts:142 The only natural-language end-to-end case for the walkthrough has been unconditionally skipped since 2026-05-26 (git blame) with no owner, entry date or expiry. It runs in no lane, unlike the env-gated opt-in at companion-real-claude-workflow.spec.ts:102. One of its two stated release conditions, an orb-aware panel open, looks met since openChatPanel switched to bridgeExec('openCompanion') on 2026-10-20 (companion-bridge.ts:206), yet nobody reviewed the skip.",
+   "techniques": [
+    {
+     "technique": "flake-lifecycle",
+     "verdict": "deviation",
+     "evidence": "tests/playwright/athena-guided-walkthrough.spec.ts:142 Skipped rather than muted, with no owner, date or expiry. Its release condition went stale unreviewed, so a skip like this is indistinguishable from a deletion."
+    },
+    {
+     "technique": "far-side-oracle",
+     "verdict": "conformant",
+     "evidence": "tests/playwright/discord-twin-2-replier.spec.ts:265 Reads the effect back from Discord's API, the system the product does not own."
+    },
+    {
+     "technique": "live-app-harness",
+     "verdict": "conformant",
+     "evidence": "tests/playwright/message-modal-features.spec.ts:108 Locates repeated rows by role plus entity id; a missing row throws (:115) instead of passing."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:38 The tour lane runs on a clean-environment launcher."
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "conformant",
+     "evidence": "tests/playwright/companion-stop-button.spec.ts:14 The deliberately unreached region (real stream cancellation) is declared in the file that bypasses it."
+    },
+    {
+     "technique": "context-starved-executor",
+     "verdict": "not-applicable",
+     "evidence": "tests/playwright/companion-real-claude-workflow.spec.ts:102 These are deterministic bridge-driven journeys, not agent-executed prose journeys. The real-model case is an explicit opt-in."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "triggers-triggers",
+   "reason": "evidence leans on core/src/models/trigger.rs, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-05T23:49:02.246083+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "approval-snapshots-with-guarded-update",
+    "derived-selection-must-be-measured",
+    "fixture-economics",
+    "isolation-lanes",
+    "negative-control-tests",
+    "pin-the-call-not-the-name",
+    "recorded-interaction-fixtures",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "triggers-studio",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-05T23:49:02.246083+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "constraint-injection-for-unreachable-tiers",
+    "fixture-economics",
+    "isolation-lanes",
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "hooks-utility-interaction",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-05T23:49:02.246083+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "approval-snapshots-with-guarded-update",
+    "assert-the-schedule-not-the-stopwatch",
+    "assert-through-the-reader",
+    "derived-selection-must-be-measured",
+    "fixture-economics",
+    "isolation-lanes",
+    "live-app-harness",
+    "negative-control-tests",
+    "out-of-graph-artifacts",
+    "pin-the-call-not-the-name",
+    "recorded-interaction-fixtures",
+    "suite-partitioning",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 0,
+   "context": "cockpit-widget-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-05T23:49:02.246083+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "context-starved-executor",
+    "far-side-oracle",
+    "flake-lifecycle",
+    "isolation-lanes",
+    "live-app-harness",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "companion-ui-controls",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

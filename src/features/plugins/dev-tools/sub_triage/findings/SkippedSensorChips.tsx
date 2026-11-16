@@ -64,7 +64,7 @@ export function SkippedSensorChips({ skipped }: { skipped: string[] }) {
 
   return (
     <div
-      className="px-4 py-2 flex flex-wrap items-center gap-1.5 border-b border-primary/10"
+      className="px-4 py-2 flex flex-wrap items-center gap-1.5 border-b border-hair"
       data-testid="skipped-sensor-chips"
     >
       <Plug className={`w-3 h-3 shrink-0 ${TONE_TEXT.warning}`} aria-hidden />
@@ -78,8 +78,7 @@ export function SkippedSensorChips({ skipped }: { skipped: string[] }) {
         return tab ? (
           <Button
             key={key}
-            variant="accent"
-            tone="warning"
+            variant="secondary"
             size="xs"
             onClick={() => setDevToolsTab(tab)}
             data-testid={`skipped-sensor-wire-${key}`}
@@ -91,7 +90,7 @@ export function SkippedSensorChips({ skipped }: { skipped: string[] }) {
           <span
             key={key}
             data-testid={`skipped-sensor-${key}`}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border typo-caption border-primary/15 bg-secondary/20 text-foreground"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border typo-caption border-hair bg-surface-1 text-foreground"
           >
             {name}
           </span>

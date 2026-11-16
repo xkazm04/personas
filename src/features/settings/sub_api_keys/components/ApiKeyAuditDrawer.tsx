@@ -14,6 +14,8 @@ import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ApiKeyAuditDrawerProps {
   keyId: string;
@@ -22,9 +24,9 @@ interface ApiKeyAuditDrawerProps {
 }
 
 function statusColor(status: number): string {
-  if (status < 300) return 'text-emerald-400';
-  if (status < 500) return 'text-amber-400';
-  return 'text-red-400';
+  if (status < 300) return 'text-status-success';
+  if (status < 500) return 'text-status-warning';
+  return 'text-status-error';
 }
 
 /**
@@ -40,7 +42,7 @@ const auditCache = createModuleCache<string, ApiKeyAuditEntry[]>({ maxSize: 32 }
 
 const CASCADE_ROWS = 10;
 const AUDIT_ROW_H = 32;
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 
 export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawerProps) {
   const { t } = useTranslation();
@@ -83,18 +85,20 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
             <h2 id="api-key-audit-title" className="typo-body text-foreground truncate">{s.audit_title}</h2>
             <p className="typo-caption text-foreground truncate">{keyName}</p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="text-foreground hover:text-foreground transition-colors"
+            aria-label={s.close}
+            variant="ghost"
+            size="icon-sm"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         <div className="p-3 overflow-y-auto">
           {error && (
-            <div className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2 mb-2">
+            <div className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-interactive p-2 mb-2">
               <AlertTriangle size={14} />
               {error}
             </div>
@@ -102,11 +106,11 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
 
           {rows === null && !error ? (
             <>
-              <span className="sr-only" role="status">{s.audit_title}</span>
+              <span className="sr-only" role="status">{s.loading}</span>
               <AuditGhostRows />
             </>
           ) : rows !== null && rows.length === 0 ? (
-            <div className="typo-caption text-foreground py-8 text-center bg-secondary/20 rounded">
+            <div className="typo-caption text-foreground py-8 text-center bg-surface-1 rounded-interactive">
               {s.audit_empty}
             </div>
           ) : rows !== null ? (
@@ -118,26 +122,25 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
                   order={index}
                   hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
                   markEntered={enter.markEntered}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-secondary/20 border border-border/20"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-surface-1 border border-border/20"
                 >
                   <span className={`typo-code ${statusColor(Number(row.status))}`}>
                     {String(row.status)}
                   </span>
                   <span className="typo-code text-foreground w-10 shrink-0">{row.method}</span>
-                  <code className="typo-code text-foreground truncate flex-1" title={row.path}>
+                  <Tooltip content={row.path}><code className="typo-code text-foreground truncate flex-1">
                     {row.path}
-                  </code>
+                  </code></Tooltip>
                   {row.origin && (
-                    <span className="typo-caption text-foreground truncate max-w-[8rem]" title={row.origin}>
+                    <Tooltip content={row.origin}><span className="typo-caption text-foreground truncate max-w-[8rem]">
                       {row.origin}
-                    </span>
+                    </span></Tooltip>
                   )}
-                  <span
+                  <Tooltip content={formatTimestamp(row.at)}><span
                     className="typo-caption text-foreground shrink-0"
-                    title={formatTimestamp(row.at)}
                   >
                     {formatRelativeTime(row.at, '', { dateFallbackDays: 7 })}
-                  </span>
+                  </span></Tooltip>
                 </RevealItem>
               ))}
             </div>
@@ -161,7 +164,7 @@ function AuditGhostRows() {
         return (
           <div
             key={i}
-            className="flex items-center gap-2 px-2.5 rounded-input bg-secondary/20 border border-border/20 animate-fade-in"
+            className="flex items-center gap-2 px-2.5 rounded-input bg-surface-1 border border-border/20 animate-fade-in"
             style={{ height: AUDIT_ROW_H, animationDelay: delay }}
           >
             <span className={`h-3 w-8 ${GHOST_BAR}`} />

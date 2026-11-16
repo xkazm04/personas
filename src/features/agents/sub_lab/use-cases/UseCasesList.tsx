@@ -38,12 +38,12 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
   if (useCases.length === 0) {
     return (
       <div className="text-center py-8 space-y-2">
-        <ListChecks className="w-5 h-5 text-foreground mx-auto" />
-        <p className="typo-body text-foreground">
+        <ListChecks className="w-5 h-5 text-ink-1 mx-auto" />
+        <p className="typo-body text-ink-1">
           {emptyMessage ?? (designContext ? 'No structured use cases found.' : 'No use cases generated yet.')}
         </p>
         {emptyHint && (
-          <p className="typo-body text-foreground">{emptyHint}</p>
+          <p className="typo-body text-ink-1">{emptyHint}</p>
         )}
       </div>
     );
@@ -52,8 +52,8 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <ListChecks className="w-3.5 h-3.5 text-foreground" />
-        <p className="typo-body text-foreground">
+        <ListChecks className="w-3.5 h-3.5 text-ink-1" />
+        <p className="typo-body text-ink-1">
           {useCases.length} {t.shared.use_cases_extra.use_case_singular}{useCases.length !== 1 ? 's' : ''} identified
         </p>
       </div>
@@ -67,22 +67,22 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
           return (
             <div
               key={uc.id || i}
-              className="p-3.5 rounded-xl border border-primary/10 bg-secondary/20"
+              className="p-3.5 rounded-card border border-hair bg-surface-1"
             >
               <div className="flex items-start gap-3">
-                <span className="typo-heading text-foreground mt-0.5 w-5 text-right flex-shrink-0">
+                <span className="typo-heading text-ink-1 mt-0.5 w-5 text-right flex-shrink-0">
                   {i + 1}.
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="typo-heading text-foreground/95">{uc.title}</p>
+                    <p className="typo-heading text-ink-1">{uc.title}</p>
                     {uc.category && catStyle && (
-                      <span className={`px-1.5 py-0.5 typo-label rounded border ${catStyle.bg} ${catStyle.text}`}>
+                      <span className={`px-1.5 py-0.5 typo-label rounded-interactive border ${catStyle.bg} ${catStyle.text}`}>
                         {uc.category.replace('-', ' ')}
                       </span>
                     )}
                   </div>
-                  <p className="typo-body text-foreground mt-1">
+                  <p className="typo-body text-ink-2 mt-1">
                     {uc.description}
                   </p>
                 </div>
@@ -94,7 +94,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
 
       {contextData.summary && (
         <div className="px-1 mt-2">
-          <p className="typo-body text-foreground">
+          <p className="typo-body text-ink-1">
             {contextData.summary}
           </p>
         </div>

@@ -18,7 +18,7 @@ export function DevToolsPageHeader({ icon: Icon, iconNode, title, children, acti
 }) {
   return (
     <div
-      className="flex items-center gap-2 px-6 pt-5 pb-3 border-b border-primary/10 flex-shrink-0"
+      className="flex items-center gap-2 px-6 pt-5 pb-3 border-b border-hair flex-shrink-0"
       data-testid={testId}
     >
       {iconNode ?? (Icon && <Icon className="w-5 h-5 text-primary flex-shrink-0" aria-hidden />)}

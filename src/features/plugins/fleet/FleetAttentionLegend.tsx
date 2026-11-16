@@ -33,7 +33,7 @@ export function FleetAttentionLegend() {
             style={{ backgroundColor: color }}
             aria-hidden="true"
           />
-          <span className="typo-caption text-foreground/80">{label}</span>
+          <span className="typo-caption text-ink-2">{label}</span>
         </li>
       ))}
     </ul>

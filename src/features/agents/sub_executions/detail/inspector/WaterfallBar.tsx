@@ -52,13 +52,13 @@ export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: nu
   return (
     <div className="relative h-5 w-full">
       {/* Track */}
-      <div className="absolute inset-0 bg-primary/5 rounded" />
+      <div className="absolute inset-0 bg-surface-1 rounded-interactive" />
       {/* Bar */}
       <div
         data-span-open={open ? 'true' : undefined}
         className={`absolute top-0.5 bottom-0.5 ${
-          open ? 'rounded-l border-r-2 border-dashed border-primary/50' : 'rounded'
-        } ${isSpanFailure(span) ? 'bg-red-500/40' : config.bg} transition-all`}
+          open ? 'rounded-l border-r-2 border-dashed border-primary/50' : 'rounded-interactive'
+        } ${isSpanFailure(span) ? 'bg-status-error/40' : config.bg} transition-all`}
         style={{
           left: `${leftPct}%`,
           width: `${widthPct}%`,
@@ -68,7 +68,7 @@ export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: nu
       {/* Duration label */}
       {span.duration_ms != null && (
         <span
-          className="absolute top-0 typo-code text-foreground whitespace-nowrap"
+          className="absolute top-0 typo-code text-ink-1 whitespace-nowrap"
           style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}
         >
           {formatDuration(span.duration_ms)}

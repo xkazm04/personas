@@ -1,0 +1,35 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2aefd1f1-f8e2-4c5b-8650-27a15c327a1f",
+ "subject": "codebase-scanning",
+ "evaluatedAt": "2026-11-03T08:39:18.136Z",
+ "pairs": [
+  {
+   "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 The Workspace Knowledge library (practice review modals, harvest dispatch) was retired and its data deleted (registered at mod.rs:53/148); src/features/overview/sub_patterns/ no longer exists and git ls-files lists no PracticeDetailModal/ExtractionMenu, so no code remains here, and the surface was a practice review UI, never a codebase sensor/emission pipeline.",
+   "techniques": [],
+   "registryProposal": "context-map.json still lists overview-patterns (entry points under src/features/overview/sub_patterns/) though the directory was removed by bec576bc8f; the context is a stale ghost - rescan."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "codebase-scanning",
+   "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+   "reason": "plugins-artist-gallery is weak-governed (Artist plugin retired); a weak pair is a coverage question, not judged by default"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:39:18.136Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codebase-scanning"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

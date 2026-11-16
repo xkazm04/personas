@@ -60,7 +60,7 @@ export function RemoteSessionDrawer({ jobId, onClose }: { jobId: string; onClose
       data-testid="remote-session-drawer"
       data-state={state}
     >
-      <div className="flex h-14 flex-shrink-0 items-center justify-between gap-3 border-b border-primary/10 bg-secondary/20 px-5">
+      <div className="flex h-14 flex-shrink-0 items-center justify-between gap-3 border-b border-hair bg-surface-1 px-5">
         <div className="min-w-0">
           <h3 className="truncate typo-heading text-foreground">{title}</h3>
           <p className="flex min-w-0 items-center gap-2 typo-caption text-foreground">
@@ -78,7 +78,7 @@ export function RemoteSessionDrawer({ jobId, onClose }: { jobId: string; onClose
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
         {view.receipt && (
           <section aria-label={m.remote_receipt_title}>
-            <h4 className="typo-label text-primary">{m.remote_receipt_title}</h4>
+            <h4 className="typo-label text-ink-1">{m.remote_receipt_title}</h4>
             <RemoteReceiptLine receipt={view.receipt} className="mt-1 typo-caption" />
           </section>
         )}

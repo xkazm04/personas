@@ -1,4 +1,6 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback, useEffect, useMemo, type CSSProperties } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -27,10 +29,10 @@ import {
   isVideoUrl,
   getSevCfg,
   sevDot,
-  SEV_BADGE_COLORS,
   cardVariants,
   decisionVariants,
 } from './reviewFocusHelpers';
+import { StateMark } from '@/features/shared/components/display/StateMark';
 import { FocusedDecisionCard } from './FocusedDecisionCard';
 import { ActionZone } from './ActionZone';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -45,12 +47,8 @@ import '../libs/workspaceTint.css';
 
 function SeverityBadge({ severity }: { severity: string }) {
   const cfg = getSevCfg(severity);
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
-      {cfg.icon}
-      {cfg.label}
-    </span>
-  );
+  const k = severity.trim().toLowerCase();
+  return <StateMark state={k === 'critical' || k === 'error' ? 'error' : k === 'warning' ? 'warning' : 'info'} label={cfg.label} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,7 +57,7 @@ function SeverityBadge({ severity }: { severity: string }) {
 
 /**
  * Until 2026-10-04 the decision's title and the persona's name were the SAME
- * token (`typo-caption text-foreground`): same size, same 400 weight, same
+ * token (`typo-caption text-ink-2`): same size, same 400 weight, same
  * colour, so nothing separated whose decision this was from what it was about.
  *
  * This is the kit's emphasis recipe (`kit/kit.css`) applied: 600 on a TINTED
@@ -362,26 +360,26 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
   return (
     <div className="flex h-full overflow-hidden">
       {/* ---- Queue Sidebar ---- */}
-      <div className="w-[330px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
-        <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
-          <span className="typo-label text-foreground">{t.overview.review_focus.queue} ({pending.length})</span>
+      <div className="w-[330px] flex-shrink-0 border-r border-hair bg-surface-1 flex flex-col">
+        <div className="px-3 py-2.5 border-b border-hair flex items-center justify-between">
+          <span className="typo-label text-ink-2">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
             {sevCounts.critical > 0 && (
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-red-400" />
-                <span className="typo-caption text-red-400">{sevCounts.critical}</span>
+                <span className="w-2 h-2 rounded-full bg-status-error" />
+                <span className="typo-caption text-status-error">{sevCounts.critical}</span>
               </span>
             )}
             {sevCounts.warning > 0 && (
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="typo-caption text-amber-400">{sevCounts.warning}</span>
+                <span className="w-2 h-2 rounded-full bg-status-warning" />
+                <span className="typo-caption text-status-warning">{sevCounts.warning}</span>
               </span>
             )}
             {sevCounts.info > 0 && (
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-blue-400" />
-                <span className="typo-caption text-blue-400">{sevCounts.info}</span>
+                <span className="w-2 h-2 rounded-full bg-status-info" />
+                <span className="typo-caption text-status-info">{sevCounts.info}</span>
               </span>
             )}
           </div>
@@ -390,10 +388,10 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
           {pending.map((r, i) => {
             const isActive = i === reviewIdx;
             return (
-              <button
+              <PressSurface
                 key={r.id}
-                onClick={() => selectReview(i)}
-                className={`w-full text-left px-3 py-2.5 transition-colors border-l-2 ${isActive ? 'border-l-primary bg-primary/8' : 'border-l-transparent hover:bg-secondary/30'
+                onPress={() => selectReview(i)}
+                className={`w-full  px-3 py-2.5  border-l-2 ${isActive ? 'border-l-primary bg-primary/8' : 'border-l-transparent hover:bg-surface-2'
                   }`}
               >
                 <div className="flex items-center gap-2">
@@ -414,7 +412,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                     className="ml-4 block truncate mt-0.5"
                   />
                 )}
-              </button>
+              </PressSurface>
             );
           })}
         </div>
@@ -423,13 +421,13 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
       {/* ---- Main Content ---- */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Top nav bar */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-primary/10 bg-background/80 backdrop-blur-sm">
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-hair bg-background/80 backdrop-blur-sm">
           <span className="typo-body text-foreground">Review {reviewIdx + 1} of {pending.length}</span>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm" onClick={goPrevReview} disabled={reviewIdx === 0}>
+            <Button variant="ghost" size="icon-sm" aria-label={t.templates.adopt_modal.previous} onClick={goPrevReview} disabled={reviewIdx === 0}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={goNextReview} disabled={reviewIdx >= pending.length - 1}>
+            <Button variant="ghost" size="icon-sm" aria-label={t.templates.adopt_modal.next} onClick={goNextReview} disabled={reviewIdx >= pending.length - 1}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -448,9 +446,9 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className={`w-full ${hasAnyImages ? 'max-w-5xl' : 'max-w-3xl'}`}
             >
-              <div className={`rounded-modal border border-primary/10 ring-1 ${sevCfg.ring} overflow-hidden`} style={{ boxShadow: sevCfg.shadow }}>
+              <div className={`rounded-modal border border-hair ring-1 ${sevCfg.ring} overflow-hidden`} style={{ boxShadow: sevCfg.shadow }}>
                 {/* Severity gradient top bar */}
-                <div className={`h-0.5 bg-gradient-to-r ${sevCfg.gradient}`} />
+                <div className={`h-0.5 ${sevCfg.gradient}`} />
 
                 <div className="p-5 space-y-4">
                   {/* Header */}
@@ -465,40 +463,39 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                     <div className="ml-auto flex flex-col items-end gap-1">
                       {hasMultipleDecisions && (
                         <div className="flex items-center gap-2">
-                          <span className="typo-label text-foreground">
+                          <span className="typo-label text-ink-2">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
-                          <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>
+                          <Button variant="ghost" size="icon-sm" aria-label={t.monitor.quick_prev_decision} onClick={goPrevDecision} disabled={decisionIdx === 0}>
                             <ChevronLeft className="w-3.5 h-3.5" />
                           </Button>
                           <div className="flex items-center gap-1">
                             {decisions.map((d, i) => {
                               const v = decisionVerdicts[d.id];
-                              const dotColor = v === 'accept' ? 'bg-emerald-400' : v === 'reject' ? 'bg-red-400' : i === decisionIdx ? 'bg-primary' : 'bg-foreground/20';
+                              const dotColor = v === 'accept' ? 'bg-status-success' : v === 'reject' ? 'bg-status-error' : i === decisionIdx ? 'bg-primary' : 'bg-foreground/20';
                               return (
-                                <button
+                                <PressSurface
                                   key={d.id}
-                                  onClick={() => { setDecisionDir(i > decisionIdx ? 1 : -1); setDecisionIdx(i); }}
-                                  className={`w-2 h-2 rounded-full transition-all ${dotColor} ${i === decisionIdx ? 'scale-125' : ''}`}
-                                />
+                                  onPress={() => { setDecisionDir(i > decisionIdx ? 1 : -1); setDecisionIdx(i); }}
+                                  aria-label={`${i + 1}/${decisions.length}`}
+                                  className={`w-2 h-2 rounded-full ${dotColor} ${i === decisionIdx ? 'scale-125' : ''}`}
+                                >
+                                  {null}
+                                </PressSurface>
                               );
                             })}
                           </div>
-                          <Button variant="ghost" size="icon-sm" onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1}>
+                          <Button variant="ghost" size="icon-sm" aria-label={t.monitor.quick_next_decision} onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1}>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </Button>
                           {(acceptCount > 0 || rejectCount > 0) && (
-                            <button
-                              onClick={() => setDecisionVerdicts({})}
-                              className="typo-caption text-foreground hover:text-foreground/80 transition-colors"
-                              title={t.overview.review_focus.clear_all_verdicts}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => setDecisionVerdicts({})} tooltip={t.overview.review_focus.clear_all_verdicts}>
                               Clear
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )}
-                      <span className="flex items-center gap-1 typo-caption text-foreground">
+                      <span className="flex items-center gap-1 typo-caption text-ink-2">
                         <Clock className="w-3 h-3" />
                         {formatRelativeTime(current!.created_at)}
                       </span>
@@ -513,7 +510,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
 
                   {/* Description */}
                   {current!.description && (
-                    <MarkdownRenderer content={current!.description} className="typo-body text-foreground/90" />
+                    <MarkdownRenderer content={current!.description} className="typo-body text-ink-2" />
                   )}
 
                   {/* Extra prose context preserved by the backend when
@@ -526,8 +523,8 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   {/* Gallery-level media (single image/video review like art director) */}
                   {galleryImage && !hasDecisions && (
                     <>
-                      <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-                      <div className="rounded-card overflow-hidden border border-primary/10 bg-black/20">
+                      <div className="h-px bg-surface-1" />
+                      <div className="rounded-card overflow-hidden border border-hair bg-black/20">
                         {isVideoUrl(galleryImage) ? (
                           <video
                             src={galleryImage}
@@ -549,7 +546,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   )}
 
                   {/* Decorative divider */}
-                  <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                  <div className="h-px bg-surface-1" />
 
                   {/* ---- Decision content ---- */}
                   {hasDecisions && (
@@ -579,8 +576,8 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                       {/* Summary strip */}
                       {decisions.length > 0 && (acceptCount > 0 || rejectCount > 0) && (
                         <div className="flex items-center gap-3 typo-caption">
-                          {acceptCount > 0 && <span className="text-emerald-400">{acceptCount} accepted</span>}
-                          {rejectCount > 0 && <span className="text-red-400">{rejectCount} rejected</span>}
+                          {acceptCount > 0 && <span className="text-status-success">{acceptCount} accepted</span>}
+                          {rejectCount > 0 && <span className="text-status-error">{rejectCount} rejected</span>}
                           {undecidedCount > 0 && <span className="text-foreground">{undecidedCount} undecided</span>}
                         </div>
                       )}
@@ -593,19 +590,17 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   {/* Suggested actions */}
                   {suggestedActions.length > 0 && (
                     <>
-                      <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                      <div className="h-px bg-surface-1" />
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-1.5 typo-body text-foreground">
                           <Zap className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="font-medium">{t.overview.review_focus.quick_actions}</span>
                         </div>
                         {suggestedActions.map((action, i) => (
-                          <button
+                          <Tooltip content={onDispatchAction ? t.overview.review_focus.carry_out_hint : undefined}><PressSurface
                             key={i}
-                            type="button"
                             disabled={isProcessing}
-                            title={onDispatchAction ? t.overview.review_focus.carry_out_hint : undefined}
-                            onClick={() => {
+                            onPress={() => {
                               if (onDispatchAction) {
                                 onDispatchAction(current!.id, action);
                               } else {
@@ -613,11 +608,11 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                                 setActionNotes(action);
                               }
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 disabled:opacity-50 transition-colors text-left"
+                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-surface-1 border border-hair hover:border-hair"
                           >
                             <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center typo-heading flex-shrink-0">{i + 1}</span>
                             {action}
-                          </button>
+                          </PressSurface></Tooltip>
                         ))}
                       </div>
                     </>
@@ -625,7 +620,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                 </div>
 
                 {/* ---- Bottom Action Bar ---- */}
-                <div className="border-t border-primary/10">
+                <div className="border-t border-hair">
                   <div className="grid grid-cols-3 divide-x divide-primary/10">
                     <ActionZone
                       active={activeAction === 'reject'}
@@ -637,26 +632,26 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                       }}
                       icon={<X className="w-5 h-5" />}
                       label={hasMultipleDecisions ? t.overview.review_focus.reject_all : t.overview.review.reject}
-                      colorClasses="text-red-400 hover:bg-red-500/10"
-                      activeClasses="bg-red-500/10"
+                      colorClasses="text-status-error"
+                      activeClasses="bg-surface-1"
                       notes={actionNotes}
                       onNotesChange={setActionNotes}
                       onConfirm={handleConfirmAction}
                       isProcessing={isProcessing}
-                      confirmColor="bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                      confirmTone="error"
                     />
                     <ActionZone
                       active={activeAction === 'retry'}
                       onClick={() => { setActiveAction(activeAction === 'retry' ? null : 'retry'); setActionNotes(''); }}
                       icon={<RotateCcw className="w-5 h-5" />}
                       label={t.overview.review_focus.retry_with_changes}
-                      colorClasses="text-amber-400 hover:bg-amber-500/10"
-                      activeClasses="bg-amber-500/10"
+                      colorClasses="text-status-warning"
+                      activeClasses="bg-surface-1"
                       notes={actionNotes}
                       onNotesChange={setActionNotes}
                       onConfirm={handleConfirmAction}
                       isProcessing={isProcessing}
-                      confirmColor="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400"
+                      confirmTone="warning"
                     />
                     <ActionZone
                       active={activeAction === 'approve'}
@@ -668,31 +663,31 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                       }}
                       icon={<Check className="w-5 h-5" />}
                       label={hasMultipleDecisions ? t.overview.review_focus.accept_all : t.overview.review.approve}
-                      colorClasses="text-emerald-400 hover:bg-emerald-500/10"
-                      activeClasses="bg-emerald-500/10"
+                      colorClasses="text-status-success"
+                      activeClasses="bg-surface-1"
                       notes={actionNotes}
                       onNotesChange={setActionNotes}
                       onConfirm={handleConfirmAction}
                       isProcessing={isProcessing}
-                      confirmColor="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400"
+                      confirmTone="success"
                     />
                   </div>
-                  <div className="text-center py-1.5 text-[11px] text-foreground border-t border-primary/5">
+                  <div className="text-center py-1.5 typo-caption text-ink-2 border-t border-hair">
                     {hasMultipleDecisions ? (
                       <>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> <DebtText k="auto_reject_this_0105a5cc" />
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8592;</kbd> <DebtText k="auto_reject_this_0105a5cc" />
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> <DebtText k="auto_accept_this_d7066048" />
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8594;</kbd> <DebtText k="auto_accept_this_d7066048" />
                       </>
                     ) : (
                       <>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> Reject
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8592;</kbd> Reject
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> Approve
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8594;</kbd> Approve
                       </>
                     )}
                   </div>

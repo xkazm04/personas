@@ -1,0 +1,21 @@
+/* The Monitor's Morning tab (morning/MorningDeck.tsx, spark roadmap S6): bp's Morning deck in the picker's bp dress.
+   Tokens only (census feature-css-type-literal); a card's tone is read by its rule and its word, never by colour alone. */
+.bp-morning:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: -2px; }
+.mw-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mw-card { border: 1px solid var(--bp-ink-3); border-left-width: 3px; padding: 10px 12px; background: var(--bp-panel); }
+.mw-card[aria-current='true'] { border-color: var(--bp-accent); }
+.mw-tone-good { border-left-color: var(--bp-ink); }
+.mw-tone-warn, .mw-card.mw-tone-bad { border-left-color: var(--bp-amber); }
+.mw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.mw-eye { font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); }
+.mw-top code { font: 400 var(--bp-fs-12) var(--bp-font-mono); color: var(--bp-ink-2); }
+.mw-news { margin-left: 8px; color: var(--bp-amber-2); }
+.mw-h { margin: 4px 0 0; font: 600 var(--bp-fs-16)/1.35 var(--bp-font-sans); color: var(--bp-ink-hi); }
+.mw-lines { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--bp-fs-14); color: var(--bp-ink); }
+.mw-lines li.mw-tone-bad, .mw-lines li.mw-tone-warn { color: var(--bp-amber-2); }
+.mw-brief { margin: 8px 0 0; padding: 5px 8px; border-left: 3px solid var(--bp-ink-3); font-size: var(--bp-fs-14); color: var(--bp-ink); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.mw-brief.rep { border-left-color: var(--bp-amber); }
+.mw-chip { font: 600 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-amber-2); }
+.mw-said { margin: 0 0 12px; padding: 5px 8px; border-left: 3px solid var(--bp-ink-3); font: 500 var(--bp-fs-12) var(--bp-font-mono); color: var(--bp-ink); }
+.mw-said.warn { border-left-color: var(--bp-amber); color: var(--bp-amber-2); }
+.bp-press.pj-bt kbd { margin-right: 6px; font: inherit; opacity: 0.8; }

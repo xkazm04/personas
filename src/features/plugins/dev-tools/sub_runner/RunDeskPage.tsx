@@ -24,6 +24,7 @@ import {
   type TaskStatus, type TaskStatusFilter,
 } from './useTaskQueue';
 import type { DevTask } from '@/lib/bindings/DevTask';
+import { OptionChip } from '@/features/shared/components/forms/OptionChip';
 
 /** Rows "Heal all" may pull past the loaded window. Matches RunDeskControls'
  *  BULK_LIMIT so the two failure-facing buttons act on the same set. */
@@ -185,19 +186,9 @@ export default function RunDeskPage() {
               const count = f === 'all' ? total : counts[f] ?? 0;
               const active = statusFilter === f;
               return (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setStatusFilter(f)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 typo-caption border transition-colors ${
-                    active
-                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                      : 'bg-secondary/30 text-foreground border-primary/10 hover:border-primary/20'
-                  }`}
-                >
+                <OptionChip key={f} onSelect={() => setStatusFilter(f)} selected={active}><span className="inline-flex items-center gap-1.5">
                   {f === 'all' ? t.common.all : tokenLabel(t, 'execution', f)}
-                  <span className="tabular-nums opacity-70">{count}</span>
-                </button>
+                  <span className="num text-ink-3">{count}</span></span></OptionChip>
               );
             })}
           </div>
@@ -205,23 +196,23 @@ export default function RunDeskPage() {
           {/* Queue progress — derived from project-wide counts, not from the
               average of the loaded page. */}
           {total > 0 && (
-            <div className="border border-primary/10 rounded-modal p-4 bg-primary/5">
+            <div className="border border-hair rounded-card p-4 bg-surface-1">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="typo-section-title">{dr.batch_progress}</h3>
-                <div className="flex items-center gap-3 text-[10px] text-foreground">
+                <div className="flex items-center gap-3 typo-caption text-ink-3">
                   {STATUS_ORDER.map((s) =>
                     (counts[s] ?? 0) > 0 ? (
-                      <span key={s} className="tabular-nums">
+                      <span key={s} className="num">
                         {counts[s]} {tokenLabel(t, 'execution', s)}
                       </span>
                     ) : null,
                   )}
                 </div>
               </div>
-              <div className="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
-                <div className="animate-fade-in h-full bg-amber-400 rounded-full" style={{ width: `${overallProgress}%` }} />
+              <div className="w-full h-1.5 bg-surface-2 overflow-hidden">
+                <div className="animate-fade-in h-full bg-primary" style={{ width: `${overallProgress}%` }} />
               </div>
-              <p className="text-[10px] text-foreground mt-1.5 text-right">
+              <p className="typo-data text-ink-3 mt-1.5 text-right">
                 {Math.round(overallProgress)}{dr.percent_overall}
               </p>
             </div>
@@ -245,7 +236,7 @@ export default function RunDeskPage() {
           />
 
           <div>
-            <h3 className="typo-label text-primary mb-3">
+            <h3 className="typo-eyebrow text-ink-3 mb-3">
               {tx(dr.task_queue_count, { count: total })}
             </h3>
 
@@ -256,7 +247,7 @@ export default function RunDeskPage() {
             ) : queueBody === 'error' ? (
               <InlineErrorBanner message={queue.error ?? t.common.unknown_error} onRetry={reload} />
             ) : queueBody === 'empty' ? (
-              <div className="border border-dashed border-primary/10 rounded-modal">
+              <div className="border border-dashed border-hair rounded-card">
                 <EmptyState
                   icon={Play}
                   art="runs"
@@ -284,7 +275,7 @@ export default function RunDeskPage() {
                     <div key={status} className="space-y-2">
                       <div className="flex items-center gap-2">
                         <StatusBadge status={status} />
-                        <span className="text-[10px] text-foreground tabular-nums">{group.length}</span>
+                        <span className="typo-data text-ink-3">{group.length}</span>
                       </div>
                       {group.map((task) => (
                         <TaskCard

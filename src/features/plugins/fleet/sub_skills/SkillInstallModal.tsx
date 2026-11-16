@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import type { SkillInstallResult } from '@/lib/bindings/SkillInstallResult';
 import type { SkillInstallPreview } from '@/api/devTools/devTools';
+import { PressSurface } from '@/features/shared/components/buttons';
 
 interface Props {
   open: boolean;
@@ -98,7 +99,7 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
       onClose={onClose}
       titleId="skill-install-title"
       size="sm"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-5 shadow-elevation-4"
+      panelClassName="bg-background border border-hair rounded-card p-5 shadow-elevation-4"
     >
       <div data-testid="skill-install-modal">
         <div className="flex items-center justify-between mb-4">
@@ -121,29 +122,25 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
             <span className="typo-caption text-foreground mb-1.5 block">
               {fleet.skill_install_target_label}
             </span>
-            <div className="max-h-[220px] overflow-y-auto border border-primary/10 rounded-modal p-1.5 bg-secondary/20 space-y-0.5 mb-3">
+            <div className="max-h-[220px] overflow-y-auto border border-hair rounded-modal p-1.5 bg-surface-1 space-y-0.5 mb-3">
               {projects.map((p) => (
-                <button
+                <PressSurface
                   key={p.id}
-                  type="button"
                   data-testid={`skill-install-target-${p.id}`}
-                  onClick={() => setTargetId(p.id)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left transition-colors ${
-                    targetId === p.id
-                      ? 'bg-primary/10 border border-primary/25'
-                      : 'hover:bg-secondary/40 border border-transparent'
-                  }`}
+                  onPress={() => setTargetId(p.id)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card"
+                  selected={targetId === p.id}
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-foreground shrink-0" aria-hidden="true" />
                   <span className="typo-caption truncate">{p.name}</span>
-                </button>
+                </PressSurface>
               ))}
             </div>
 
             {preview?.targetExists && (
               <div
                 data-testid="skill-install-diff"
-                className="mb-3 rounded-modal border border-status-warning/25 bg-status-warning/10 p-2.5"
+                className="mb-3 rounded-modal border border-hair bg-surface-2 p-2.5"
               >
                 <p className="typo-caption text-status-warning mb-1">
                   {tx(fleet.skill_install_diff_summary, {
@@ -153,7 +150,7 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
                   })}
                 </p>
                 {preview.deltas.length > 0 && (
-                  <ul className="max-h-[110px] overflow-y-auto space-y-0.5 font-mono text-[11px] text-foreground">
+                  <ul className="max-h-[110px] overflow-y-auto space-y-0.5 typo-caption text-foreground">
                     {preview.deltas.map((d) => (
                       <li key={`${d.status}:${d.file}`} className="truncate">
                         <span
@@ -174,7 +171,7 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
                 type="checkbox"
                 checked={overwrite}
                 onChange={(e) => setOverwrite(e.target.checked)}
-                className="rounded"
+                className="rounded-interactive"
               />
               {fleet.skill_install_overwrite}
             </label>

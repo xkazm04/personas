@@ -24,7 +24,7 @@ export function PersonaSelectionScopeBanner({
     <div
       role="status"
       data-testid="roster-selection-scope"
-      className="mx-3 my-1.5 flex items-center justify-center gap-2 rounded-card border border-primary/15 bg-primary/5 px-3 py-1.5 typo-body text-foreground"
+      className="mx-3 my-1.5 flex items-center justify-center gap-2 rounded-card border border-hair bg-surface-1 px-3 py-1.5 typo-body text-ink-1"
     >
       {scope === 'page' ? (
         <>

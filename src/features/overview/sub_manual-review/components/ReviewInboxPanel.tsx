@@ -1,4 +1,7 @@
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 import { useState, useCallback, useMemo, useRef } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { CheckSquare, Square, X, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -99,7 +102,7 @@ export function ReviewInboxPanel({
         {/* Left: Inbox list */}
         <div
           data-inbox-list
-          className={`animate-fade-in flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden`}
+          className={`animate-fade-in flex-shrink-0 border-r border-hair flex flex-col overflow-hidden`}
           style={
             !IS_MOBILE
               ? { width: sidebarWidth != null ? `${sidebarWidth}px` : 'clamp(340px, 30%, 420px)' }
@@ -107,7 +110,7 @@ export function ReviewInboxPanel({
           }
         >
           {reveal.isRevealing && (
-            <div aria-hidden="true" className="flex items-center justify-end gap-1 px-3 py-1 typo-caption text-foreground border-b border-primary/[0.06] flex-shrink-0">
+            <div aria-hidden="true" className="flex items-center justify-end gap-1 px-3 py-1 typo-caption text-ink-2 border-b border-hair flex-shrink-0">
               <AnimatedCounter value={reveal.count} mode="roll" /><span>/</span><Numeric>{filteredReviews.length}</Numeric>
             </div>
           )}
@@ -115,22 +118,22 @@ export function ReviewInboxPanel({
             {revealedReviews.map((review, reviewIndex) => (
               <RevealItem key={review.id} revealId={review.id} order={reviewIndex - reveal.newSince} hasEntered={reviewEnter.hasEntered} markEntered={reviewEnter.markEntered} className="flex items-start">
                 {review.status === 'pending' && (
-                  <button
-                    onClick={(e) => {
+                  <PressSurface
+                    onPress={(e) => {
                       e.stopPropagation();
                       onToggleSelect(review.id);
                     }}
                     role="checkbox"
                     aria-checked={selectedIds.has(review.id)}
                     aria-label={t.overview.dc_select_review}
-                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground hover:text-muted-foreground transition-colors"
+                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground"
                   >
                     {selectedIds.has(review.id) ? (
                       <CheckSquare className="w-3.5 h-3.5 text-primary" />
                     ) : (
                       <Square className="w-3.5 h-3.5" />
                     )}
-                  </button>
+                  </PressSurface>
                 )}
                 <div className={`flex-1 min-w-0 ${review.status !== 'pending' ? 'pl-8' : ''}`}>
                   <InboxItem
@@ -154,14 +157,13 @@ export function ReviewInboxPanel({
 
         {/* Resize handle */}
         {!IS_MOBILE && (
-          <div
+          <Tooltip content={debtText("auto_drag_to_resize_01f90cde")}><div
             onPointerDown={handleResizeStart}
             className="w-1 flex-shrink-0 cursor-col-resize group relative z-10 hover:bg-primary/20 active:bg-primary/30 transition-colors"
-            title={debtText("auto_drag_to_resize_01f90cde")}
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-muted-foreground/20 group-hover:bg-primary/40 transition-colors" />
-          </div>
+          </div></Tooltip>
         )}
 
         {/* Right: Conversation thread (split mode) */}
@@ -192,13 +194,10 @@ export function ReviewInboxPanel({
         {/* Mobile: Full-screen overlay */}
         {IS_MOBILE && activeReview && (
           <div className="fixed inset-0 z-50 bg-background flex flex-col">
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 flex-shrink-0">
-              <button
-                onClick={() => onSelectReview(null)}
-                className="p-2 rounded-card hover:bg-secondary/50 text-foreground"
-              >
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-hair flex-shrink-0">
+              <Button variant="ghost" size="icon-sm" onClick={() => onSelectReview(null)}>
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
               <span className="typo-heading text-foreground truncate">{t.overview.review.review_detail}</span>
             </div>
             <div className="flex-1 overflow-y-auto">

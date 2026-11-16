@@ -6,6 +6,9 @@ pub mod app_master_writeback;
 pub mod architect_adopt;
 pub mod auth;
 pub mod autopilot;
+/// bp link: bp's shared focus and product table, read over loopback from Rust
+/// (the webview cannot reach bp: CSP, CORS and bp's origin guard).
+pub mod bp_link;
 #[cfg(feature = "desktop")]
 pub mod bridge_manifest;
 pub mod byom;

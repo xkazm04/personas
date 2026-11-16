@@ -6,6 +6,8 @@ import { InlineDiffPreview } from './InlineDiffPreview';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 import { Collapse } from '@/features/shared/components/display/Collapse';
+import Button from '@/features/shared/components/buttons/Button';
+import { PressSurface } from '@/features/shared/components/buttons/PressSurface';
 
 
 interface TimelineEntryProps {
@@ -44,45 +46,45 @@ export function TimelineEntry({
       {/* Timeline rail */}
       <div className="flex flex-col items-center flex-shrink-0 w-6">
         {/* Connecting line (top) */}
-        {!isFirst && <div className="w-px flex-1 bg-primary/10" />}
+        {!isFirst && <div className="w-px flex-1 bg-surface-1" />}
 
         {/* Node dot */}
         <div
           className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 transition-colors ${
             isProduction
-              ? 'bg-emerald-400 border-emerald-400/50'
+              ? 'bg-status-success border-status-success/50'
               : version.tag === 'archived'
-                ? 'bg-zinc-500/40 border-zinc-500/30'
-                : 'bg-primary/30 border-primary/20'
+                ? 'bg-surface-2 border-hair'
+                : 'bg-primary/30 border-hair'
           }`}
         />
 
         {/* Connecting line (bottom) */}
-        {!isLast && <div className="w-px flex-1 bg-primary/10" />}
+        {!isLast && <div className="w-px flex-1 bg-surface-1" />}
       </div>
 
       {/* Content card */}
       <div className="flex-1 pb-4 min-w-0">
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="w-full text-left group"
+        <PressSurface
+          onPress={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          className="w-full group"
         >
           <div className="flex items-start gap-2">
             {/* Version number */}
-            <span className="typo-code text-foreground flex-shrink-0">
+            <span className="typo-code text-ink-1 flex-shrink-0">
               v{version.version_number}
             </span>
 
             {/* Tag badge */}
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input text-[10px] font-medium border ${style.bg} ${style.text}`}>
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-caption border ${style.bg} ${style.text}`}>
               <TagIcon className="w-2.5 h-2.5" />
               {version.tag}
             </span>
 
             {/* Baseline badge */}
             {isBaseline && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-input text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-input typo-caption bg-status-warning/15 text-status-warning border border-status-warning/20">
                 <Star className="w-2.5 h-2.5" />
                 baseline
               </span>
@@ -90,60 +92,62 @@ export function TimelineEntry({
 
             {/* Spacer + expand icon */}
             <span className="flex-1" />
-            <span className="text-foreground group-hover:text-muted-foreground/50 transition-colors">
+            <span className="text-ink-1 group-hover:text-ink-3 transition-colors">
               {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </span>
           </div>
 
           {/* Change summary + date */}
           <div className="mt-1 flex items-center gap-2">
-            <p className="typo-caption text-foreground truncate flex-1">
+            <p className="typo-caption text-ink-2 truncate flex-1">
               {version.change_summary || t.agents.lab.no_change_summary}
             </p>
-            <span className="text-[10px] text-foreground flex-shrink-0">
+            <span className="typo-caption text-ink-2 flex-shrink-0">
               {formatRelative(version.created_at)}
             </span>
           </div>
-        </button>
+        </PressSurface>
 
         {/* Expanded content: diff + actions */}
         <Collapse open={expanded} unmountWhenClosed duration={200}>
-          <div className="mt-2 p-3 rounded-card border border-primary/10 bg-secondary/[0.04] space-y-3">
+          <div className="mt-2 p-3 rounded-card border border-hair bg-secondary/[0.04] space-y-3">
             {/* Diff preview */}
             {previousVersion ? (
               <InlineDiffPreview older={previousVersion} newer={version} />
             ) : (
-              <p className="text-[11px] text-foreground italic"><DebtText k="auto_initial_version_no_previous_version_to_com_4630b990" /></p>
+              <p className="typo-caption text-ink-2 italic"><DebtText k="auto_initial_version_no_previous_version_to_com_4630b990" /></p>
             )}
 
             {/* Actions */}
             <div className="flex items-center gap-1.5 pt-1 border-t border-primary/[0.06]">
               {version.tag !== 'production' && (
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onTag(version.id, 'production'); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                >
-                  <Shield className="w-3 h-3" /> {t.agents.lab.promote_action}
-                </button>
+                  variant="accent"
+                  tone="success"
+                  size="xs"
+                  icon={<Shield className="w-3 h-3" />}
+                >{t.agents.lab.promote_action}</Button>
               )}
               {version.tag !== 'archived' && (
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onTag(version.id, 'archived'); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors"
-                >
-                  <Archive className="w-3 h-3" /> {t.agents.lab.archive_action}
-                </button>
+                  variant="secondary"
+                  size="xs"
+                  icon={<Archive className="w-3 h-3" />}
+                >{t.agents.lab.archive_action}</Button>
               )}
               {!isFirst && (
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onRollback(version.id); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
-                >
-                  <RotateCcw className="w-3 h-3" /> {t.agents.lab.rollback_action}
-                </button>
+                  variant="accent"
+                  tone="info"
+                  size="xs"
+                  icon={<RotateCcw className="w-3 h-3" />}
+                >{t.agents.lab.rollback_action}</Button>
               )}
             </div>
           </div>

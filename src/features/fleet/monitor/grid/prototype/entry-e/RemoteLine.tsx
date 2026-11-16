@@ -61,7 +61,7 @@ export const RemoteLine = memo(function RemoteLine({
         <SessionHead label={title} State={state ? sessionStateIcon(state) : CircleHelp} tail={{ ...tail, word: tail.word || !known }} stateLabel={stateLabel} project={null} />
         <span className="ml-auto flex flex-shrink-0 items-center gap-2 pl-1">
           <DeviceGlyph peerId={view.peerId} name={device} />
-          <span className={`flex-shrink-0 typo-data tabular-nums ${tail.kind === 'working' ? 'ae-tone-text' : 'text-foreground'}`}>{tail.age}</span>
+          <span className={`flex-shrink-0 typo-data num ${tail.kind === 'working' ? 'ae-tone-text' : 'text-foreground'}`}>{tail.age}</span>
           <Lamp lamp={tail.lamp} />
         </span>
       </div>

@@ -125,7 +125,7 @@ export function ImportSuccessCelebration({ importResult }: { importResult: Impor
   const [entered, setEntered] = useState(false);
   const outcome = importOutcome(importResult);
   const tone = {
-    success: { box: 'border-emerald-500/20 bg-emerald-500/5', title: 'text-emerald-400', label: st.import_complete },
+    success: { box: 'border-status-success/20 bg-status-success/5', title: 'text-status-success', label: st.import_complete },
     partial: { box: 'border-status-warning/20 bg-status-warning/5', title: 'text-status-warning', label: st.import_partial },
     failed: { box: 'border-status-error/20 bg-status-error/5', title: 'text-status-error', label: st.import_failed },
   }[outcome];
@@ -156,9 +156,9 @@ export function ImportSuccessCelebration({ importResult }: { importResult: Impor
           )}
           {importResult.errors.length > 0 && (
             <div className="mt-2 text-left">
-              <p className="text-red-400">{tx(importResult.errors.length === 1 ? st.import_errors_one : st.import_errors_other, { count: importResult.errors.length })}</p>
+              <p className="text-status-error">{tx(importResult.errors.length === 1 ? st.import_errors_one : st.import_errors_other, { count: importResult.errors.length })}</p>
               {importResult.errors.map((e, i) => (
-                <p key={i} className="text-red-400/80 ml-2">- {e}</p>
+                <p key={i} className="text-status-error/80 ml-2">- {e}</p>
               ))}
             </div>
           )}

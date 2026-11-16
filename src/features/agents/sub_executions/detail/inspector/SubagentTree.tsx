@@ -73,19 +73,19 @@ export function SubagentTree({ executionId }: { executionId: string }) {
   const list = Array.from(agents.entries());
 
   return (
-    <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-2">
-      <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+    <div className="rounded-modal border border-hair bg-surface-2 p-4 space-y-2">
+      <div className="typo-eyebrow text-ink-1 flex items-center gap-1">
         <Network className="w-3 h-3" />
         {e.subagents} ({list.length})
       </div>
       <div className="space-y-1.5">
         {list.map(([taskId, a]) => (
-          <div key={taskId} className="rounded-input bg-secondary/40 px-2.5 py-1.5">
+          <div key={taskId} className="rounded-input bg-surface-2 px-2.5 py-1.5">
             <div className="flex items-center justify-between gap-3">
-              <span className="typo-body text-foreground truncate">
+              <span className="typo-body text-ink-1 truncate">
                 {a.desc || a.type}
               </span>
-              <span className="typo-code text-foreground/90 shrink-0">
+              <span className="typo-code text-ink-1 shrink-0">
                 {/* Backend/CLI status token -- resolved through the catalog so
                     it is not the one untranslated word in a translated row.
                     `tokenLabel` falls back to the raw token for a status the
@@ -95,7 +95,7 @@ export function SubagentTree({ executionId }: { executionId: string }) {
               </span>
             </div>
             {a.last ? (
-              <div className="typo-code text-foreground/90 mt-1 line-clamp-2 break-words">
+              <div className="typo-code text-ink-1 mt-1 line-clamp-2 break-words">
                 {a.last}
               </div>
             ) : null}

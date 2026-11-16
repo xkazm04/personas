@@ -110,7 +110,7 @@ export function AthenaChatCanvasNote({ note }: { note: CanvasNote }) {
         {note.ok ? (
           <Frame className="w-3.5 h-3.5 text-primary/70" />
         ) : (
-          <TriangleAlert className="w-3.5 h-3.5 text-amber-400" />
+          <TriangleAlert className="w-3.5 h-3.5 text-status-warning" />
         )}
       </span>
       <span className="min-w-0 typo-caption text-foreground">

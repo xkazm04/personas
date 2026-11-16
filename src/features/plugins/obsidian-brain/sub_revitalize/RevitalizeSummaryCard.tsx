@@ -3,6 +3,8 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { RevitalizeSummary } from '@/api/obsidianBrain';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface RevitalizeSummaryCardProps {
   summary: RevitalizeSummary;
   vaultName: string | null;
@@ -30,51 +32,51 @@ export default function RevitalizeSummaryCard({
     {
       label: ob.revitalize_stat_deleted,
       value: <Numeric value={summary.filesDeleted} />,
-      tone: 'border-red-500/20 bg-red-500/5 text-red-400',
+      tone: 'border-status-error/20 bg-status-error/5 text-status-error',
     },
     {
       label: ob.revitalize_stat_merged,
       value: <Numeric value={summary.filesMerged} />,
-      tone: 'border-violet-500/20 bg-violet-500/5 text-violet-300',
+      tone: 'border-hair-2 bg-surface-2 text-ink-2',
     },
     {
       label: ob.revitalize_stat_updated,
       value: <Numeric value={summary.filesUpdated} />,
-      tone: 'border-cyan-500/20 bg-cyan-500/5 text-cyan-300',
+      tone: 'border-hair-2 bg-surface-2 text-ink-2',
     },
     {
       label: ob.revitalize_stat_reviewed,
       value: <Numeric value={summary.filesReviewed} />,
-      tone: 'border-primary/15 bg-secondary/20 text-foreground',
+      tone: 'border-hair bg-surface-1 text-ink-1',
     },
     {
       label: ob.revitalize_stat_tokens_saved,
       value: <Numeric value={tokensSaved} unit="compact" />,
-      tone: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400',
+      tone: 'border-status-success/20 bg-status-success/5 text-status-success',
     },
     {
       label: ob.revitalize_stat_notes_delta,
       value: (
         <span className="inline-flex items-baseline gap-1.5">
           <Numeric value={summary.notesBefore} />
-          <span aria-hidden className="typo-caption text-foreground/90">→</span>
+          <span aria-hidden className="typo-caption text-ink-2">→</span>
           <Numeric value={summary.notesAfter} />
         </span>
       ),
-      tone: 'border-primary/15 bg-secondary/20 text-foreground',
+      tone: 'border-hair bg-surface-1 text-ink-1',
     },
   ];
 
   return (
-    <div className="rounded-modal border border-violet-500/25 bg-violet-500/5 overflow-hidden animate-fade-slide-in">
+    <div className="rounded-modal border border-hair-2 bg-surface-2 overflow-hidden animate-fade-slide-in">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-violet-500/15">
-        <div className="w-10 h-10 rounded-modal border border-violet-500/25 bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-          <MoonStar className="w-5 h-5 text-violet-300" />
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-hair-2">
+        <div className="w-10 h-10 rounded-modal border border-hair-2 bg-surface-2 flex items-center justify-center flex-shrink-0">
+          <MoonStar className="w-5 h-5 text-ink-2" />
         </div>
         <div className="min-w-0">
-          <h3 className="typo-heading-lg text-violet-200">{ob.revitalize_summary_title}</h3>
-          <p className="typo-caption text-foreground/90 truncate">
+          <h3 className="typo-heading-lg text-ink-2">{ob.revitalize_summary_title}</h3>
+          <p className="typo-caption text-ink-2 truncate">
             {tx(ob.revitalize_summary_vault, {
               name: vaultName ?? '—',
               duration: formatDuration(summary.durationSecs),
@@ -89,7 +91,7 @@ export default function RevitalizeSummaryCard({
           {tiles.map((tile) => (
             <div key={tile.label} className={`rounded-card border px-3 py-2.5 ${tile.tone}`}>
               <div className="typo-heading-lg">{tile.value}</div>
-              <p className="typo-caption text-foreground/90 mt-0.5">{tile.label}</p>
+              <p className="typo-caption text-ink-2 mt-0.5">{tile.label}</p>
             </div>
           ))}
         </div>
@@ -98,7 +100,7 @@ export default function RevitalizeSummaryCard({
         {summary.summary && (
           <div>
             <p className="typo-label typo-section-title mb-1.5">{ob.revitalize_model_summary}</p>
-            <p className="typo-body text-foreground">{summary.summary}</p>
+            <p className="typo-body text-ink-1">{summary.summary}</p>
           </div>
         )}
 
@@ -108,8 +110,8 @@ export default function RevitalizeSummaryCard({
             <p className="typo-label typo-section-title mb-1.5">{ob.revitalize_highlights}</p>
             <ul className="space-y-1.5">
               {summary.highlights.map((h, i) => (
-                <li key={i} className="flex items-start gap-2 typo-body text-foreground">
-                  <Sparkles className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
+                <li key={i} className="flex items-start gap-2 typo-body text-ink-1">
+                  <Sparkles className="w-3.5 h-3.5 text-ink-2 flex-shrink-0 mt-0.5" />
                   <span className="min-w-0">{h}</span>
                 </li>
               ))}
@@ -119,22 +121,24 @@ export default function RevitalizeSummaryCard({
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-1">
-          <button
+          <Button
             type="button"
             onClick={onDismiss}
-            className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-card bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors focus-ring"
+            variant="ghost"
+            size="icon-sm"
           >
             <Check className="w-3.5 h-3.5" />
             {ob.revitalize_done}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onRunAgain}
-            className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-card text-foreground border border-primary/15 hover:bg-secondary/40 transition-colors focus-ring"
+            variant="ghost"
+            size="icon-sm"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {ob.revitalize_run_again}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

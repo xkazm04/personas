@@ -21,7 +21,7 @@ import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import { GoalStatusBadge } from '../GoalStatusBadge';
 
 /** Neutral chip for team-side statuses (queued/running/awaiting_review/…). */
-export const TEAM_CHIP = 'text-foreground border-primary/15 bg-primary/5';
+export const TEAM_CHIP = 'text-foreground border-hair bg-surface-1';
 
 export function Section({ icon: Icon, label, children, flush = false }: {
   icon: typeof Target;
@@ -30,9 +30,9 @@ export function Section({ icon: Icon, label, children, flush = false }: {
   flush?: boolean;
 }) {
   return (
-    <div className={flush ? '' : 'pt-3 mt-3 border-t border-primary/10'}>
+    <div className={flush ? '' : 'pt-3 mt-3 border-t border-hair'}>
       <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-3.5 h-3.5 text-primary" />
+        <Icon className="w-3.5 h-3.5 text-ink-3" />
         <h3 className={MODAL_SECTION_HEAD}>{label}</h3>
       </div>
       {children}

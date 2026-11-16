@@ -22,9 +22,9 @@ export interface LaneSignal {
 }
 
 export const LANE_SIGNAL: Record<GoalLane, LaneSignal> = {
-  your_turn: { icon: User, tint: 'text-amber-400', rail: 'border-l-amber-400/70', labelKey: 'your_turn' },
-  agent_turn: { icon: Bot, tint: 'text-blue-400', rail: 'border-l-blue-400/70', labelKey: 'agents_turn' },
-  done: { icon: CheckCircle2, tint: 'text-emerald-400', rail: undefined, labelKey: 'done' },
+  your_turn: { icon: User, tint: 'text-status-warning', rail: 'border-l-status-warning/70', labelKey: 'your_turn' },
+  agent_turn: { icon: Bot, tint: 'text-status-info', rail: 'border-l-status-info/70', labelKey: 'agents_turn' },
+  done: { icon: CheckCircle2, tint: 'text-status-success', rail: undefined, labelKey: 'done' },
 };
 
 export function laneSignal(status: string): LaneSignal {

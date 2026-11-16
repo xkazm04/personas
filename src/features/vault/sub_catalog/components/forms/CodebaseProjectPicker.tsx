@@ -10,6 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { extractMessage } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface DevProject {
@@ -122,33 +123,35 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
             value={credentialName ?? ''}
             onChange={(e) => onCredentialNameChange(e.target.value)}
             placeholder={multiSelect ? 'My Codebases' : 'My Codebase'}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-hair rounded-modal text-foreground typo-body placeholder:text-ink-3 focus-ring focus-visible:border-primary/40 transition-all"
           />
         </div>
       )}
 
       {loadError ? (
         <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center">
-            <AlertTriangle className="w-7 h-7 text-amber-400/80" />
+          <div className="w-14 h-14 rounded-card bg-status-warning/10 border border-status-warning/15 flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-status-warning/80" />
           </div>
           <div className="space-y-1">
             <p className="typo-body text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
             <p className="typo-caption text-foreground max-w-xs break-words">{resolveErrorTranslated(t, extractMessage(loadError.raw)).message}</p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => void loadProjects()}
-            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+            variant="accent"
+            tone="warning"
+            size="md"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
             Retry
-          </button>
+          </Button>
         </div>
       ) : !loading && projects.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center">
-            <Code2 className="w-7 h-7 text-indigo-400/60" />
+          <div className="w-14 h-14 rounded-card bg-role-agent/10 border border-role-agent/15 flex items-center justify-center">
+            <Code2 className="w-7 h-7 text-role-agent/60" />
           </div>
           <div className="space-y-1">
             <p className="typo-body text-foreground">{t.common.no_results}</p>
@@ -156,14 +159,15 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
               {ps.add_project_first}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={goToDevTools}
-            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
+            variant="secondary"
+            size="md"
+            iconRight={<ArrowRight className="w-3.5 h-3.5" />}
           >
             {ps.go_to_dev_tools}
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
       ) : (
         <>
@@ -187,21 +191,24 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
       )}
 
       <div className="flex gap-2 pt-2">
-        <button
+        <Button
           type="button"
           onClick={handleSave}
           disabled={!hasSelection}
-          className="flex-1 px-4 py-2 rounded-card typo-body bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          variant="ghost"
+          size="md"
+          className="flex-1"
         >
           {multiSelect ? `Connect ${selectedIds.size} Project${selectedIds.size !== 1 ? 's' : ''}` : 'Connect Project'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-card typo-body text-foreground hover:text-foreground/70 transition-colors"
+          variant="ghost"
+          size="md"
         >
           {t.common.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -214,13 +221,13 @@ function ProjectListGhost() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="w-full flex items-start gap-3 p-3 rounded-modal border border-primary/10 animate-fade-in"
+          className="w-full flex items-start gap-3 p-3 rounded-modal border border-hair animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="w-5 h-5 mt-0.5 rounded bg-primary/[0.06] shrink-0" />
+          <span className="w-5 h-5 mt-0.5 rounded-interactive bg-primary/[0.06] shrink-0" />
           <div className="min-w-0 flex-1 space-y-1.5">
-            <span className={`block h-3.5 rounded bg-primary/[0.06] ${widths[i % widths.length]}`} />
-            <span className="block h-2.5 w-56 rounded bg-primary/[0.06]" />
+            <span className={`block h-3.5 rounded-interactive bg-primary/[0.06] ${widths[i % widths.length]}`} />
+            <span className="block h-2.5 w-56 rounded-interactive bg-primary/[0.06]" />
           </div>
         </div>
       ))}

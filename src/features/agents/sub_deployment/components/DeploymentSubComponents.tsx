@@ -14,11 +14,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 export function statusIcon(s: DeployStatus) {
   switch (s) {
-    case 'active': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-    case 'paused': return <PauseCircle className="w-3.5 h-3.5 text-amber-400" />;
-    case 'failed': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-    case 'file-based': return <FileText className="w-3.5 h-3.5 text-sky-400" />;
-    default: return <AlertCircle className="w-3.5 h-3.5 text-foreground" />;
+    case 'active': return <CheckCircle2 className="w-3.5 h-3.5 text-status-success" />;
+    case 'paused': return <PauseCircle className="w-3.5 h-3.5 text-status-warning" />;
+    case 'failed': return <XCircle className="w-3.5 h-3.5 text-status-error" />;
+    case 'file-based': return <FileText className="w-3.5 h-3.5 text-status-info" />;
+    default: return <AlertCircle className="w-3.5 h-3.5 text-ink-1" />;
   }
 }
 
@@ -30,7 +30,7 @@ export function SummaryCard({
   icon: Icon,
   label,
   value,
-  color = 'text-foreground',
+  color = 'text-ink-1',
   connected,
 }: {
   icon: typeof Activity;
@@ -41,8 +41,8 @@ export function SummaryCard({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="px-3 py-2.5 rounded-modal bg-secondary/30 border border-primary/10 flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-card bg-secondary/50 border border-primary/15 flex items-center justify-center flex-shrink-0">
+    <div className="px-3 py-2.5 rounded-modal bg-surface-1 border border-hair flex items-center gap-2.5">
+      <div className="w-8 h-8 rounded-card bg-surface-2 border border-hair flex items-center justify-center flex-shrink-0">
         <Icon className={`w-4 h-4 ${color}`} />
       </div>
       <div className="min-w-0">
@@ -51,11 +51,11 @@ export function SummaryCard({
             whatever the previous value was (0 on first mount) to the new
             one every time `value` changes, including the settle after fetch. */}
         <AnimatedCounter value={value} className={`typo-data-lg ${color}`} />
-        <div className="typo-caption text-foreground flex items-center gap-1">
+        <div className="typo-caption text-ink-2 flex items-center gap-1">
           {label}
           {connected !== undefined && (
             <>
-              <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
+              <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-status-success' : 'bg-muted-foreground/30'}`} />
               {/* The dot is colour alone (WCAG 1.4.1); the state is also text. */}
               <span className="sr-only">{connected ? t.common.connected : t.common.disconnected}</span>
             </>

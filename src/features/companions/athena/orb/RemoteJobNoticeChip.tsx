@@ -23,6 +23,8 @@ import { activeRemoteJobNotice } from '@/lib/network/remoteJobNotice';
 import { useAthenaStore } from '../athenaStore';
 import { ORB_SIZE } from './AthenaOrb';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const CHIP_GAP = 12;
 /**
  * How often the expiry sweep runs. A notice clears on its own TTL, so the
@@ -66,7 +68,7 @@ export function RemoteJobNoticeChip() {
   const Icon =
     notice.phase === 'started' ? Laptop : notice.phase === 'completed' ? CircleCheck : CircleAlert;
   const tone =
-    notice.phase === 'failed' ? 'text-status-warning' : notice.phase === 'completed' ? 'text-primary' : 'text-cyan-400';
+    notice.phase === 'failed' ? 'text-status-warning' : notice.phase === 'completed' ? 'text-primary' : 'text-ink-2';
 
   // Dock BELOW the orb — the decision bubble and the guide caption both claim
   // the space above it, so the notice never competes for the same pixels.
@@ -92,7 +94,7 @@ export function RemoteJobNoticeChip() {
     >
       <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${tone}`} aria-hidden />
       <span className="min-w-0 flex-1">
-        <span className="typo-caption text-foreground/90 block break-words">{label}</span>
+        <span className="typo-caption text-ink-2 block break-words">{label}</span>
         {notice.phase !== 'started' && notice.summary && (
           <span
             data-testid="remote-job-notice-summary"
@@ -102,16 +104,18 @@ export function RemoteJobNoticeChip() {
           </span>
         )}
       </span>
-      <button
+      <Button
         type="button"
         onClick={() => dismissRemoteJobNotice(notice.jobId)}
         data-testid="remote-job-notice-dismiss"
         aria-label={st.remote_notice_dismiss}
-        title={st.remote_notice_dismiss}
-        className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full text-foreground hover:bg-secondary transition-colors focus-ring"
+        tooltip={st.remote_notice_dismiss}
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
       >
         <X className="w-3 h-3" aria-hidden />
-      </button>
+      </Button>
     </motion.div>
   );
 }

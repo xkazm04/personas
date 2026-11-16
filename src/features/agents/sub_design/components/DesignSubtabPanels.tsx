@@ -140,7 +140,7 @@ export function DesignConnectorsPanel() {
             readOnly
           />
           {provisioning !== null && (
-            <div className="border border-violet-500/20 rounded-modal overflow-hidden">
+            <div className="border border-role-agent/20 rounded-modal overflow-hidden">
               <CredentialDesignModal
                 open
                 embedded
