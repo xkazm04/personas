@@ -12,7 +12,7 @@
  * the strips are already beneath it in the same left-to-right order. The end
  * state is identical; only the journey is skipped.
  */
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { CHANNEL_ORDER, type ChannelId } from '../model/channels';
 
@@ -95,6 +95,24 @@ export function useDescent(
   const [animating, setAnimating] = useState(false);
   const from = useRef<Rects | null>(null);
   const index = useRef(0);
+  // Every settle timer, so an unmount cancels them: a timer that outlives the
+  // component calls setState after teardown (CI 44844074145: "window is not
+  // defined" out of the descent test, an unhandled error that failed the job).
+  const timers = useRef(new Set<number>());
+  const later = useCallback((fn: () => void, ms: number) => {
+    const id = window.setTimeout(() => {
+      timers.current.delete(id);
+      fn();
+    }, ms);
+    timers.current.add(id);
+  }, []);
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      pending.forEach((id) => window.clearTimeout(id));
+      pending.clear();
+    };
+  }, []);
 
   const descend = useCallback(
     (i: number) => {
@@ -116,7 +134,7 @@ export function useDescent(
         const cell = rects.cells[CHANNEL_ORDER[i] ?? 1];
         if (cell) flip(el, cell, 90 + i * STEP_MS, IN_MS);
       });
-      window.setTimeout(
+      later(
         () => {
           clear(origin);
           strips.forEach(clear);
@@ -125,7 +143,7 @@ export function useDescent(
         90 + strips.length * STEP_MS + IN_MS + 20,
       );
     },
-    [],
+    [later],
   );
 
   const ascend = useCallback(() => {
@@ -161,8 +179,8 @@ export function useDescent(
       const cell = target.cells[CHANNEL_ORDER[i] ?? 1];
       if (cell) back(el, cell, (strips.length - 1 - i) * 14);
     });
-    window.setTimeout(land, OUT_MS + (strips.length - 1) * 14 + 40);
-  }, [deepRef, ledgerRef, onLand, reduced]);
+    later(land, OUT_MS + (strips.length - 1) * 14 + 40);
+  }, [deepRef, ledgerRef, later, onLand, reduced]);
 
   return { layer, animating, descend, ascend, playIn };
 }
