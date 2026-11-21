@@ -310,18 +310,19 @@ async fn poll_one_trigger(
             }
         };
 
-        // Compute content hash
-        let current_hash = compute_content_hash(&body);
-
-        let content_changed = match &previous_hash {
-            Some(prev) => prev != &current_hash,
-            None => true, // First poll -- always fire
-        };
+        // The observation is (status class, body hash): a transition in either
+        // is a change. Hashing the body alone made a 200 -> 404 with an equal
+        // (or empty) body invisible, and made every outage fire "changed"
+        // twice (error page in, recovery out).
+        let body_hash = compute_content_hash(&body);
+        let (current_hash, change) =
+            observe_change(previous_hash.as_deref(), status.as_u16(), &body_hash);
+        let observation_changed = previous_hash.as_deref() != Some(current_hash.as_str());
 
         // Compute next schedule time up-front (needed for both paths)
         let next = sched_logic::compute_next_trigger_at(&trigger, now);
 
-        if content_changed {
+        if observation_changed {
             // Atomically update the content hash AND advance the schedule via CAS.
             // If another poll cycle already updated the hash (race), the CAS returns
             // false and we skip the event publish to prevent duplicates.
@@ -337,11 +338,17 @@ async fn poll_one_trigger(
 
                     // CAS succeeded -- safe to publish the event
                     let event_type = sched_logic::trigger_event_type(&trigger);
+                    let Some(change) = change else {
+                        // State recorded (e.g. recovery to the last good body):
+                        // nothing a consumer needs to hear about.
+                        return;
+                    };
                     let payload = serde_json::json!({
                         "url": url,
                         "status_code": status.as_u16(),
-                        "content_changed": true,
-                        "content_hash": current_hash,
+                        "content_changed": change == PollChange::Content,
+                        "change": change.as_str(),
+                        "content_hash": body_hash,
                         "body_preview": crate::utils::text::truncate_on_char_boundary(&body, 2000),
                     });
 
@@ -400,6 +407,95 @@ async fn poll_one_trigger(
     }
 }
 
+/// What a poll observed, relative to the previous observation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PollChange {
+    /// Success response whose body differs from the last successful body.
+    Content,
+    /// The resource answered 404 / 410: it left.
+    Gone,
+    /// The source is failing (5xx, or a non-gone 4xx such as 401/403/429).
+    Failing,
+}
+
+impl PollChange {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            PollChange::Content => "content",
+            PollChange::Gone => "gone",
+            PollChange::Failing => "failing",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum StatusClass {
+    Success,
+    Gone,
+    Failing,
+}
+
+fn status_class(status: u16) -> StatusClass {
+    match status {
+        200..=399 => StatusClass::Success,
+        404 | 410 => StatusClass::Gone,
+        _ => StatusClass::Failing,
+    }
+}
+
+/// Split a stored observation key into (class, last successful body hash).
+/// Success keys are the bare body hash (the pre-status format, so hashes
+/// stored by older builds read as success); non-success keys are
+/// `gone|<last good hash>` / `failing|<last good hash>`.
+fn parse_observation(key: &str) -> (StatusClass, &str) {
+    if let Some(rest) = key.strip_prefix("gone|") {
+        (StatusClass::Gone, rest)
+    } else if let Some(rest) = key.strip_prefix("failing|") {
+        (StatusClass::Failing, rest)
+    } else {
+        (StatusClass::Success, key)
+    }
+}
+
+/// Decide the new stored observation key and whether this poll is an event.
+///
+/// - success -> success: an event when the body hash differs.
+/// - success -> gone / failing: a transition event, whatever the body.
+/// - failing -> gone: an event (the resource left).
+/// - gone -> failing, and same-class repeats: no event, key unchanged.
+/// - gone / failing -> success: compared against the last *successful* body,
+///   so recovering to unchanged content records state without an event.
+/// - first poll: always an event, of the observed class.
+pub fn observe_change(
+    previous: Option<&str>,
+    status: u16,
+    body_hash: &str,
+) -> (String, Option<PollChange>) {
+    let class = status_class(status);
+    let Some(prev) = previous else {
+        return match class {
+            StatusClass::Success => (body_hash.to_string(), Some(PollChange::Content)),
+            StatusClass::Gone => ("gone|".to_string(), Some(PollChange::Gone)),
+            StatusClass::Failing => ("failing|".to_string(), Some(PollChange::Failing)),
+        };
+    };
+    let (prev_class, last_good) = parse_observation(prev);
+    match (prev_class, class) {
+        (_, StatusClass::Success) => {
+            let change = (last_good != body_hash).then_some(PollChange::Content);
+            (body_hash.to_string(), change)
+        }
+        (StatusClass::Success | StatusClass::Failing, StatusClass::Gone) => {
+            (format!("gone|{last_good}"), Some(PollChange::Gone))
+        }
+        (StatusClass::Success, StatusClass::Failing) => {
+            (format!("failing|{last_good}"), Some(PollChange::Failing))
+        }
+        // gone -> gone, gone -> failing, failing -> failing: one state.
+        _ => (prev.to_string(), None),
+    }
+}
+
 /// Compute SHA-256 hash of content, returned as hex string.
 pub fn compute_content_hash(content: &str) -> String {
     let mut hasher = Sha256::new();
@@ -423,6 +519,63 @@ mod tests {
         let hash1 = compute_content_hash("hello world");
         let hash2 = compute_content_hash("hello world!");
         assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn status_transition_at_equal_body_is_a_change() {
+        let h = compute_content_hash("{}");
+        // 200 -> 404 with the same body used to read as "no change".
+        let (key, change) = observe_change(Some(&h), 404, &h);
+        assert_eq!(change, Some(PollChange::Gone));
+        assert_ne!(key, h);
+        // Repeated 404s are one state.
+        let (key2, change2) = observe_change(Some(&key), 404, &h);
+        assert_eq!((key2.as_str(), change2), (key.as_str(), None));
+        // Coming back with the old body is not a content change.
+        let (key3, change3) = observe_change(Some(&key2), 200, &h);
+        assert_eq!((key3.as_str(), change3), (h.as_str(), None));
+    }
+
+    #[test]
+    fn outage_fires_once_not_two_content_changes() {
+        let good = compute_content_hash("page v1");
+        let err_a = compute_content_hash("<h1>502 Bad Gateway</h1>");
+        let err_b = compute_content_hash("<h1>503 Unavailable</h1>");
+        let (k1, c1) = observe_change(Some(&good), 502, &err_a);
+        assert_eq!(c1, Some(PollChange::Failing));
+        let (k2, c2) = observe_change(Some(&k1), 503, &err_b);
+        assert_eq!(c2, None);
+        let (k3, c3) = observe_change(Some(&k2), 200, &good);
+        assert_eq!(c3, None, "recovery compares against the last good body");
+        assert_eq!(k3, good);
+        // Recovery to new content is a content change.
+        let newer = compute_content_hash("page v2");
+        assert_eq!(
+            observe_change(Some(&k2), 200, &newer).1,
+            Some(PollChange::Content)
+        );
+    }
+
+    #[test]
+    fn plain_body_change_and_first_poll_still_fire() {
+        let a = compute_content_hash("a");
+        let b = compute_content_hash("b");
+        assert_eq!(
+            observe_change(None, 200, &a),
+            (a.clone(), Some(PollChange::Content))
+        );
+        assert_eq!(observe_change(Some(&a), 200, &a).1, None);
+        assert_eq!(
+            observe_change(Some(&a), 200, &b).1,
+            Some(PollChange::Content)
+        );
+        let (gone_key, c) = observe_change(None, 410, &a);
+        assert_eq!(c, Some(PollChange::Gone));
+        // failing -> gone: the resource left.
+        let (fk, _) = observe_change(Some(&a), 500, &b);
+        assert_eq!(observe_change(Some(&fk), 404, &b).1, Some(PollChange::Gone));
+        // gone -> failing: one non-success state.
+        assert_eq!(observe_change(Some(&gone_key), 500, &b).1, None);
     }
 
     #[test]

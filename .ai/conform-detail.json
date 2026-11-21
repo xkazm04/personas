@@ -5674,6 +5674,13 @@
           "evaluatedAt": "2026-10-12T11:46:49.000Z",
           "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
           "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 casts untyped sub-nav ids (id as DevToolsTab / ObsidianBrainTab / TwinTab at :120-122) from hand-kept arrays, while only top-level sections derive from the registry; src/features/shared/chrome/sidebar/sidebarData.ts:163 records this exact cast having shipped a blank page",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -7656,26 +7663,24 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:05:34.000Z",
-      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:72 a hand-written TS readiness predicate instead of a projection of the backend resolver. The header popover and the Design badge share it, but the policy that actually refuses (src-tauri/src/commands/design/connector_readiness.rs:767) is a different one, so the surface understates what blocks."
+        },
         {
           "technique": "gate-laddering",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/personas.rs:142 the binding rung (the command) carries no copy of the check the UI rung enforces"
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable. src-tauri/src/commands/core/personas.rs:142 set_persona_enabled re-checks nothing, and src/features/fleet/monitor/grid/orchestration/OrchestrationLedger.tsx:147 enables through it with no readiness check. The only binding rung, the run gate, checks a different predicate."
         },
         {
           "technique": "refusal-names-a-reachable-remedy",
           "verdict": "realized",
-          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:19 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy",
-          "carriedFrom": "2026-10-09"
-        },
-        {
-          "technique": "policy-projection",
-          "verdict": "realized",
-          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:45 one resolver feeds both the header popover and the Design-tab badge, so the reason list and the badge count cannot drift",
-          "carriedFrom": "2026-10-09"
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:81 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy."
         }
       ],
       "superseded": [
@@ -7685,6 +7690,13 @@
           "evaluatedAt": "2026-10-09T15:40:00.000Z",
           "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
           "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :217 update_persona re-check nothing, so any other caller enables a persona with no trigger or missing credentials - a UI-only courtesy, not a gate",
+          "evaluatedAt": "2026-10-16T18:05:34.000Z",
+          "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -8355,6 +8367,13 @@
           "evaluatedAt": "2026-10-12T11:46:49.000Z",
           "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
           "reason": "replaced by 3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/uiSlice.ts:542 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:115 persists settingsTab with no restore validation (only sidebarSection is checked, :262), so a retired id makes src/features/settings/components/SettingsPage.tsx:73 tabComponents[tab] undefined and Settings crashes to its boundary",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -8411,6 +8430,13 @@
           "evaluatedAt": "2026-10-12T11:46:49.000Z",
           "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
           "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:76 renders the TEAM-gated Approvals tab (src/features/shared/chrome/sidebar/sidebarData.ts:87) with no tier check and src/stores/slices/overview/overviewSlice.ts:288 setOverviewTab writes any id, so src/features/overview/sub_reports/components/ReportDetailModal.tsx:239 (reached from the ungated Messages tab) opens a destination the sidebar hides below TEAM",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -8449,6 +8475,13 @@
           "evaluatedAt": "2026-10-14T13:00:00.000Z",
           "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
           "reason": "replaced by 9cae4014-f256-4158-ae01-faed20b94c70"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn still runs with --dangerously-skip-permissions and full native tools (cwd home, :338) while the host's approval card (src/features/companions/athena/ApprovalCard.tsx:10) only receives Athena's self-declared propose_action ops; no permission-prompt route exists, so the child's own Bash/Write never reach the human who is present. (context-map.json lists zero filePaths for this context and its entry_points name the removed src/features/plugins/companion/; judged on the moved src/features/companions/athena/ components the description names.)",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-1",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -8566,6 +8599,13 @@
           "evaluatedAt": "2026-10-14T07:51:38.000Z",
           "worker": "e3892d60-d932-4e8e-9fe8-1cf2cc251907",
           "reason": "replaced by 342d0f4c-6cc6-4864-bd28-1a06d837dcca"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret/code via crate::SHARED_HTTP (default redirects, no resolved-address check) to a token URL that is caller-supplied (line 2073, unvalidated) or taken from an OIDC discovery response, while the repo's SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:30) goes unused; a name resolving inward or a redirect carries the secret to an internal target.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -8638,6 +8678,13 @@
           "evaluatedAt": "2026-10-10T11:25:36.000Z",
           "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
           "reason": "replaced by 900dce4b-0bd4-45a7-99ae-4e05519fb5e8"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/vault/autoCredBrowser.ts:18 start_auto_cred_browser returns AutoCredBrowserResult whose extracted_values (src/lib/bindings/AutoCredBrowserResult.ts:4) carry the raw secrets Rust just extracted, so plaintext credentials cross into the webview tier - unlike the OAuth path (oauthSessionRef, src/lib/bindings/CreateCredentialInput.ts:13) and foraging (masked, import-by-id) which keep them in Rust.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -8715,6 +8762,13 @@
           "evaluatedAt": "2026-10-10T11:25:36.000Z",
           "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
           "reason": "replaced by 4a54bb07-14fc-4d71-a2fa-e821e7a979ee"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:121 the whitelist binds a site to a vault credential by id only, persisted via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79), so no secret value enters the webview context.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -12177,6 +12231,13 @@
           "evaluatedAt": "2026-10-16T17:40:51.000Z",
           "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
           "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 the leaderboard computes a composite score per persona from production health signals (input at :20 is PersonaHealthSignal[]), ranking personas doing different jobs on live traffic; there is no shared case set and no provider x model target matrix, so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-4",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -12248,6 +12309,13 @@
           "evaluatedAt": "2026-10-15T00:01:42.608Z",
           "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
           "reason": "replaced by b01c9590-0b8c-47cd-ad27-8b749342539d"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 a new BYOM routing rule maps task_complexity to a provider/model, which is runtime dispatch policy (the builder-side model-routing subject the golden path explicitly excludes), not production of benchmark evidence; a grep of all 18 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-4",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -12848,6 +12916,20 @@
           "evaluatedAt": "2026-10-09T17:37:37.000Z",
           "worker": "d3586c5a-c4f5-48dc-ba6f-f81f31a9b347",
           "reason": "replaced by 1bdddf04-b59c-4cb1-86c4-83f6b39abe1b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 handles a tab-memory testid missing past the polling deadline by adding a warn annotation and returning green (the same at :257). The technique says a deadline expiring with nothing found must be reported as a failure, but here it is reported as a pass.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "older than the verdict the map holds"
+        },
+        {
+          "state": "deviation",
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 a missing tab-memory testid past the polling deadline still adds a warn annotation and returns, so the live-app spec reports green over an assertion it never reached.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-9",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -14094,6 +14176,13 @@
           "evaluatedAt": "2026-10-21T17:22:13.000Z",
           "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
           "reason": "replaced by 675a90ed-f8f2-45a8-875d-3876769e93b4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/overview/memories.ts:154 deleteAllMemories exposes delete_all, which hard-DELETEs every non-core memory (src-tauri/db/src/repos/core/memories.rs:1506) and writes no fact_key tombstone, unlike the single delete (memories.rs:1436); the user's bulk forget is therefore re-derivable by the next consolidation pass, and batchDeleteMemories (memories.ts:189 -> memories.rs:1205) has the same gap.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -14133,38 +14222,34 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:05:34.000Z",
-      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
         {
           "technique": "refusal-names-a-reachable-remedy",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:104 the remedy, applied as worded, cannot clear the ambiguity refusal at :961"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:104 the remedy, applied as worded, cannot clear the ambiguity refusal from :961; it makes it worse."
         },
         {
           "technique": "false-positive-economics",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:767 persona_live_blockers resolves readiness by connector name from vault-global state (persona_declared_connectors :695 reads names only), so a persona whose credentialLinks binds one of two same-service credentials is refused at every run",
-          "carriedFrom": "2026-10-10"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:767 persona_live_blockers resolves readiness from connector names against vault-global state, so a persona whose credentialLinks binds one of two same-service credentials is refused at every run."
         },
         {
           "technique": "unmeasurable-criteria",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:548 a blank connector declaration and :619 an unwired probe arm both fail closed as Misconfigured instead of reading as ready",
-          "carriedFrom": "2026-10-10"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:546 a blank connector declaration, and :615 a global-probe connector with no probe arm, both fail closed as Misconfigured instead of reading as ready."
         },
         {
           "technique": "policy-projection",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:3 one resolver serves adopt, promote and run gate; :1230 the gallery's readiness is derived from it instead of a parallel TS computation",
-          "carriedFrom": "2026-10-10"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:1230 the gallery's readiness is derived from the one resolver adopt, promote and the run gate share, replacing the TS computation that disagreed by construction."
         },
         {
           "technique": "severity-by-construction",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/template_adopt.rs:40 the inert adoption integrity gate was removed rather than left as decoration, and :52 labels the surviving verifier a detector, not a gate",
-          "carriedFrom": "2026-10-10"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/design/template_adopt.rs:52 the surviving integrity verifier is labelled a detector, not a gate, after the inert gate was removed rather than left as decoration."
         }
       ],
       "superseded": [
@@ -14174,6 +14259,13 @@
           "evaluatedAt": "2026-10-10T01:09:48.799Z",
           "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
           "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:961 an exact service_type match with 2+ vault credentials resolves to None and :584 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' adds a candidate and cannot clear it; persona_live_blockers :763 never reads design_context.credentialLinks, so a correctly bound persona is refused with a remedy that makes it worse",
+          "evaluatedAt": "2026-10-16T18:05:34.000Z",
+          "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -14182,9 +14274,9 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:21:17.000Z",
-      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [],
       "superseded": [
         {
@@ -14193,6 +14285,13 @@
           "evaluatedAt": "2026-10-10T01:09:48.799Z",
           "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
           "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck turns one human reviewer verdict into one backend write; no mechanism here computes a verdict over a tree, change or release, so the quality-gates precondition does not hold (hitl-approval territory)",
+          "evaluatedAt": "2026-10-21T17:21:17.000Z",
+          "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -14418,28 +14517,31 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-11-07",
-      "evaluatedTs": "2026-11-07T01:49:22.463Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-5",
       "techniques": [
         {
           "technique": "entitlement-gating",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:68 A hand-copied constant (platform.ts:102 DEV_MODE_SECTIONS = plugins) instead of the registry gate. Still unfixed."
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:68 a second gate list instead of the one policy authority; registry.ts:85 and platform.ts:103 contradict each other for 'plugins'"
         },
         {
           "technique": "navigation-model",
-          "verdict": "conformant",
-          "evidence": "src/features/home/components/HomePage.tsx:67 A persisted or unavailable Home tab is checked against the build and falls back to a defined default, never a blank page."
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/HomeWelcome.tsx:68 card ids from a hand-kept NAV_CARDS list are cast unchecked into setSidebarSection"
         },
         {
           "technique": "lazy-section-loading",
           "verdict": "conformant",
-          "evidence": "src/features/home/components/HomePage.tsx:22 Every Home tab chunk uses lazyRetry, other tabs are prefetched (schedulePrefetchOtherHomeTabs), and each sits under a Suspense fallback."
+          "evidence": "src/features/home/components/HomePage.tsx:22 Every Home tab chunk uses lazyRetry, other tabs are prefetched (schedulePrefetchOtherHomeTabs), and each sits under a Suspense fallback.",
+          "carriedFrom": "2026-11-07"
         },
         {
           "technique": "badge-and-attention",
           "verdict": "conformant",
-          "evidence": "src/features/home/sub_welcome/useResumeContext.ts:55 The ranked resume signal records acknowledgement as a stored mark the derivation reads, with a 24h decay window, so 'seen' is state rather than display."
+          "evidence": "src/features/home/sub_welcome/useResumeContext.ts:55 The ranked resume signal records acknowledgement as a stored mark the derivation reads, with a 24h decay window, so 'seen' is state rather than display.",
+          "carriedFrom": "2026-11-07"
         }
       ],
       "superseded": [
@@ -14463,14 +14565,15 @@
           "evaluatedAt": "2026-10-12T11:46:49.000Z",
           "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
           "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed",
+          "evaluatedAt": "2026-10-12",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-5"
         }
-      ],
-      "withdrawn": {
-        "worker": "26218cfa-e4d2-488a-97bb-46b1f7835afd",
-        "state": "deviation",
-        "at": "2026-11-07T01:57:36.981105+00:00",
-        "reason": "reviewer (sonnet): The evidence says the default tier is TEAM, but uiModes.ts:46-47 defaults BUILD_MAX_TIER to BUILDER, so Welcome and the rail only disagree on TEAM-capped builds; the hand-copied DEV_MODE_SECTIONS set at NavigationGrid.tsx:68 is real, but the stated disagreement does not happen by default."
-      }
+      ]
     },
     "83a8a744-2036-4e3e-9654-6fcec82334ff/app-shell": {
       "context": "plugins-obsidian-brain",
@@ -14518,6 +14621,13 @@
           "evaluatedAt": "2026-10-12T11:46:49.000Z",
           "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
           "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 splits its six sub-panels with plain React lazy(), skipping the repo's retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19 uses, so a transient chunk-fetch blip goes straight to the error boundary instead of retrying first",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -14572,6 +14682,13 @@
           "evaluatedAt": "2026-10-10T01:21:20.000Z",
           "worker": "f962e23a-8b51-4235-8a81-c59b5f5c31a9",
           "reason": "replaced by 937af4ca-5f42-4e3a-9c47-7caa4da8dc34"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:2049 the text extractor behind the Twin toolbar's page draft (src/features/browser/twinDraftLane.ts:245 -> twin.rs:1177) still falls back to returning raw stdout when no result/assistant text parses, and :2034 accepts a result event without checking is_error, so a CLI error envelope or noise can be typed into the user's page box as a 'draft'.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-1",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -15735,18 +15852,21 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:32.000Z",
-      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-4",
       "techniques": [
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/macros.rs:392 run/result semantics are delegated to per-mode lab modules not in this context."
+        },
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/db/src/model_routing.rs:13 resolves one (model, effort) per persona by selector precedence; no targets x cases run or scorecard is produced here",
-          "carriedFrom": "2026-10-10"
+          "evidence": "src-tauri/db/src/model_routing.rs:7 the model-selection code in this context resolves a runtime (model, effort) cascade, which is routing territory, not a benchmark target declaration."
         }
       ],
-      "registryProposal": "Re-judged against rev 12 (rev 11 -> 12 only added the stale-cancelling settler rule to async-run-queue-with-cancel, which does not touch this precondition). The earlier evidence said routing was the only relevant code, but lab_crud and AUTO_OPTIMIZE_PREFIX also live here.",
       "superseded": [
         {
           "state": "not-applicable",
@@ -15754,6 +15874,13 @@
           "evaluatedAt": "2026-10-10T02:06:36.108Z",
           "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
           "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/model_routing.rs:1 db substrate: its model-selection code is the runtime routing cascade (model-routing territory); the lab code it holds is generic CRUD (src-tauri/db/src/macros.rs:386) and a settings key (src-tauri/db/src/settings_keys.rs:171), while lab run creation and finalization are judged under db-repos-lab",
+          "evaluatedAt": "2026-10-21T12:44:32.000Z",
+          "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+          "reason": "replaced by cloud-20261031-personas-4"
         }
       ]
     },
@@ -15857,6 +15984,13 @@
           "evaluatedAt": "2026-10-17T00:57:12.869Z",
           "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
           "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:151 the build wizard's simulation runs one draft persona on one chosen capability (a dry-run preview, per :4), not the same cases across provider x model targets; a grep of all 6 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-4",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -16130,6 +16264,13 @@
           "evaluatedAt": "2026-10-21T12:44:32.000Z",
           "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
           "reason": "replaced by faa8a94e-800a-417f-b054-7eea09fbf115"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:25 the Overview shell records that the former Leaderboard/Health tabs were consolidated into Mission Control; the context is dashboard shell plus install/config health popups, and a grep of all 21 files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|compare-model hit only that comment, so no benchmark run or scorecard lives here.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-4",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -16428,6 +16569,20 @@
           "evaluatedAt": "2026-10-10T02:23:06.000Z",
           "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
           "reason": "replaced by c8292b35-17bc-47bf-a5d6-350d683f6732"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust sets are literal copies (:30) and the file reads no Rust source, so a change to VALID_CHANNELS in src-tauri/src/commands/infrastructure/twin.rs leaves it green: the named decision is unreached and the claim overstates the guard.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "older than the verdict the map holds"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust side is a hand-copied literal list (:30) and the file never reads twin.rs, so a Rust-only change to VALID_CHANNELS stays green - the claim the file makes is the one it does not pin.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-9",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -17007,6 +17162,13 @@
           "evaluatedAt": "2026-10-21T17:22:13.000Z",
           "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
           "reason": "replaced by 967d004d-d36d-4adf-9777-760532d8c107"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:485 the deck promises a rejected idea's reason becomes a constraint memory the scanners read back, but the scanner's read-back builds its rejected list from titles only (src-tauri/src/commands/infrastructure/idea_scanner.rs:596) and labels every rejected idea, machine-decided ones included, as human-triaged (idea_scanner.rs:130), so the reason never reaches the scan and an advisory machine verdict is recalled as a human ruling.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -17565,6 +17727,13 @@
           "evaluatedAt": "2026-10-10T00:00:00.000Z",
           "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
           "reason": "replaced by 5ac4b274-fb2d-405c-bdb3-c55225c9d6b3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/agents/evolution.ts:104 the capability-probe door every readiness gate consumes still documents that a rejection means 'binary missing OR no working subscription session' with no way to tell them apart, so install-vs-log-in repair advice must be guessed from message text.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-1",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -17599,8 +17768,9 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T23:11:09.380Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [],
       "superseded": [
         {
@@ -17616,14 +17786,15 @@
           "evaluatedAt": "2026-10-10T11:25:36.000Z",
           "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
           "reason": "replaced by 4a54bb07-14fc-4d71-a2fa-e821e7a979ee"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; no file in this context references credential/secret/vault (re-grepped 2026-10-10, files unchanged since the 2026-10-03 verdict) - the credential binding lives in site-whitelist-management",
+          "evaluatedAt": "2026-10-10",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-6"
         }
-      ],
-      "withdrawn": {
-        "worker": "4a54bb07-14fc-4d71-a2fa-e821e7a979ee",
-        "state": "not-applicable",
-        "at": "2026-11-06T23:12:54.262117+00:00",
-        "reason": "reviewer (sonnet): The anchor browserStore.ts:25 is an import line, so it doesn't show that credential material is absent. The not-applicable rests only on a keyword grep, and this context's PageSlot hosts the embedded webview, which is where cookies and session material would sit."
-      }
+      ]
     },
     "19e4120b-6020-4103-8a3d-a9fd0e13640b/structured-output": {
       "context": "plugins-research-lab-reports",
@@ -18476,6 +18647,13 @@
           "evaluatedAt": "2026-10-17T00:57:12.869Z",
           "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
           "reason": "replaced by b01c9590-0b8c-47cd-ad27-8b749342539d"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:51 forces the companion streaming flag to test a UI control; the context is 32 Playwright/UI test files, and a grep for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model found only a prose 'judge copy quality' comment in tours-explore.spec.ts, so no benchmark operation exists here.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-4",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -19863,32 +20041,29 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T16:09:25.243Z",
-      "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
         {
           "technique": "enforcement-binding",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the real door bypasses the gate"
-        },
-        {
-          "technique": "unmeasurable-criteria",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:105 requirements the gate could not verify fail closed with a named reason instead of scoring Eligible",
-          "carriedFrom": "2026-10-12"
-        },
-        {
-          "technique": "gate-liveness",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:370 seeded known-bad input (corrupt tool requirements) asserted to refuse; siblings at :291, :319, :419 prove the other refusal branches red",
-          "carriedFrom": "2026-10-12"
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the real door writes the use case through mutateUseCases and bypasses adopt_recipe_for_persona."
         },
         {
           "technique": "chokepoint-tag-registry",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the underlying capability (appending a recipe use case to design_context) is not confined to the gated wrapper; nothing proves adoption routes through recipe_adoption.rs",
-          "carriedFrom": "2026-10-12"
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 appending a recipe use case to design_context is not confined to the gated wrapper, and nothing proves adoption routes through recipe_adoption.rs."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:105 requirements the gate could not verify refuse with a named reason instead of scoring Eligible."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:370 a seeded known-bad input (corrupt tool requirements) is asserted to refuse, proving the refusal branch red."
         }
       ],
       "superseded": [
@@ -19898,6 +20073,13 @@
           "evaluatedAt": "2026-10-12T11:42:13.122Z",
           "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
           "reason": "replaced by 15fb2a27-f979-4772-98da-54430e6be7a7"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses on Incompatible, but the command (registered src-tauri/src/ipc_shards/shard_2.rs:206) has no frontend caller (only src/lib/commandNames.generated.ts:25) while UI adoption writes via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
+          "evaluatedAt": "2026-10-15T16:09:25.243Z",
+          "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -20210,20 +20392,19 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-11-07",
-      "evaluatedTs": "2026-11-07T02:53:06.481Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
       "techniques": [
         {
           "technique": "host-routed-approval-round-trip",
           "verdict": "not-applicable",
-          "evidence": "src/features/companions/athena/TurnSummaryChip.tsx:37 only scrolls to the ApprovalCard list; the approval surface and its deviation live in companion-chat-bubbles",
-          "carriedFrom": "2026-10-12"
+          "evidence": "src/features/companions/athena/TurnSummaryChip.tsx:37 only scrolls to the ApprovalCard list; the approval surface belongs to companion-chat-bubbles"
         },
         {
           "technique": "thread-custody-across-resume",
           "verdict": "not-applicable",
-          "evidence": "src/features/companions/athena/NarrationThread.tsx:12 the trail is session-scoped display state, not a stored child thread id",
-          "carriedFrom": "2026-10-12"
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:7 the trail is session-scoped display state, not a stored child thread id"
         }
       ],
       "superseded": [
@@ -20233,14 +20414,15 @@
           "evaluatedAt": "2026-10-12T11:52:43.000Z",
           "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
           "reason": "replaced by bbb500cf-60c4-43c1-bc2b-0ea4b122e866"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:7 renders already-parsed beats and tool calls of Athena's turn and DevOpLedger.tsx:46 reads a persisted dev-op ledger; nothing here spawns, probes, resumes or approves for a CLI child - Athena's spawn stance and approval routing are judged on companion-chat-bubbles",
+          "evaluatedAt": "2026-10-12",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-1"
         }
-      ],
-      "withdrawn": {
-        "worker": "bbb500cf-60c4-43c1-bc2b-0ea4b122e866",
-        "state": "not-applicable",
-        "at": "2026-11-07T02:53:47.145428+00:00",
-        "reason": "reviewer (sonnet): The anchor NarrationThread.tsx:25 is only an `import type { NarrationEntry, StoredNarration }` line, so it doesn't show that nothing spawns or resumes a CLI child; the empty-search claim also covers a directory (athena) that mentions spawning CLI sessions in athenaStore.ts and attentionKinds.ts, and"
-      }
+      ]
     },
     "0f1b56ac-cd96-4355-993e-dc445a20e63e/structured-output": {
       "context": "fleet-monitor-channels",
@@ -21249,23 +21431,26 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T01:25:38.538Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-9",
       "techniques": [
-        {
-          "technique": "fixture-economics",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:768 The tests' fixture is neither built nor committed, so the world they certify differs per machine and is empty on the runner."
-        },
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:830 The judge-panel contract runs over a population that the comment at :828 says contains no judged runs, and no engagement count is published beside the green result."
+          "evidence": "src-tauri/src/commands/eval_runs.rs:827 the test reports ok with zero engagement; the decision rule requires engagement published beside the verdict (no-difference over an unengaged population is blindness) and a test name that does not overstate."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:768 The tests' fixture is neither built nor committed, so the world they certify differs per machine and is empty on the runner.",
+          "carriedFrom": "2026-11-06"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/execution/lab.rs:1613 Each test gets its own copy of the template database. Its seed (:1617) is a raw INSERT that bypasses the persona write door."
+          "evidence": "src-tauri/src/commands/execution/lab.rs:1613 Each test gets its own copy of the template database. Its seed (:1617) is a raw INSERT that bypasses the persona write door.",
+          "carriedFrom": "2026-11-06"
         },
         {
           "technique": "negative-control-tests",
@@ -21322,6 +21507,7 @@
           "carriedFrom": "2026-10-12"
         }
       ],
+      "registryProposal": "",
       "superseded": [
         {
           "state": "deviation",
@@ -21329,14 +21515,22 @@
           "evaluatedAt": "2026-10-12T16:43:32.807Z",
           "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
           "reason": "replaced by 43bc9b1b-b2e2-4394-ba2b-af71c0849330"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test loops over summaries with an archive containing zero judged runs and passes vacuously without asserting any judge panel contract.",
+          "evaluatedAt": "2026-10-12",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged loops and passes without asserting anything. detail_loads_and_resolves_verdict likewise returns green at :814 when no scorecard run exists. The judge contract is unreached and the failure looks the same as a pass.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "replaced by cloud-20261031-personas-9"
         }
-      ],
-      "withdrawn": {
-        "worker": "43bc9b1b-b2e2-4394-ba2b-af71c0849330",
-        "state": "deviation",
-        "at": "2026-11-06T01:26:34.105451+00:00",
-        "reason": "reviewer (sonnet): The claim that CI has an empty archive and every data assertion skips is contradicted by the repo: docs/tests/autonomy-eval/runs/.gitignore only ignores run-*/ and longitudinal-*.json, and a golden _example-run/ (scorecard.json, judge.json, run.json and others) is committed. list_summaries() (eval_r"
-      }
+      ]
     },
     "c5f662f2-458b-4b5d-b03b-e4acf8f54049/test-harness": {
       "context": "plugins-dev-tools-projects",
@@ -21802,6 +21996,13 @@
           "evaluatedAt": "2026-10-22T19:48:16.584Z",
           "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
           "reason": "replaced by 8a0aea52-3f1c-40aa-abb9-f02337e865a8"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/athenaStore.ts:501 the store only mirrors the backend's recall-preview event for display, session-scoped, and a grep of athenaStore.ts for memory|recall|remember|persist|insert|fact finds no write, distillation or recall of agent memory; the pipeline lives in the Rust brain (companion-brain). Note: this context's file_paths in context-map.json are empty and its entry_points name src/features/plugins/companion/, which does not exist, so the store was located by its description.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -23413,6 +23614,13 @@
           "evaluatedAt": "2026-10-12T18:34:37.368Z",
           "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:140 apply_locale_overlay deep-merges a committed <id>.<lang>.json onto canonical and zips arrays by index with no recorded canonical baseline; the zh overlay's connections carry only 'label' (scripts/templates/_team_presets/backlog-execution.zh.json:14), so a reorder of canonical connections silently attaches Chinese labels to the wrong edges and the structural validation cannot see it.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -23505,6 +23713,13 @@
           "evaluatedAt": "2026-10-12T18:34:37.368Z",
           "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:25 the list_team_presets/get_team_preset commands serve locale overlays and declare them partial (absent fields fall through to canonical, line 26: ship name + description first, member translations later), so one preset is served as translated headings over English body - the fragment-level splice canonical-fallback-serving forbids, with no per-unit staleness check.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -23597,6 +23812,13 @@
           "evaluatedAt": "2026-10-12T18:34:37.368Z",
           "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:13 the context only reads the generated Translations type to label channel cards; grep for locale|translat|i18n|language|lang finds no catalog, registry, overlay or MT path.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -25854,6 +26076,13 @@
           "evaluatedAt": "2026-10-16T17:35:00.000Z",
           "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
           "reason": "replaced by 5ec1b579-1cff-4d91-b808-ac49490a5320"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; a grep of the context's 38 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus hits only comments, so no native capability, foreign window or synthesized input exists here",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -26077,19 +26306,19 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:35:00.000Z",
-      "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-5",
       "techniques": [
-        {
-          "technique": "native-side-owns-the-target-set",
-          "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:4 imports are in-app glyph modules only; the context invokes no native command"
-        },
         {
           "technique": "non-stealing-overlay",
           "verdict": "not-applicable",
           "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 in-document layer, not a host window"
+        },
+        {
+          "technique": "native-side-owns-the-target-set",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:4 imports are in-app glyph modules; no native command is invoked"
         },
         {
           "technique": "query-transparent-overlay",
@@ -26105,6 +26334,13 @@
           "evaluatedAt": "2026-10-13T11:30:27.173Z",
           "worker": "5776a53e-f892-4da5-8247-972bc619bce1",
           "reason": "replaced by 56ce4ae4-545b-46a2-b62f-fdadbbf66288"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute layer over the in-page sigil; none of the context's 10 files imports @/api or @tauri-apps, so it reaches no native capability and no native command - revision 4's command-target technique has nothing to bound here either",
+          "evaluatedAt": "2026-10-16T17:35:00.000Z",
+          "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
+          "reason": "replaced by cloud-20261031-personas-5"
         }
       ]
     },
@@ -27169,11 +27405,19 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:51:20.657Z",
-      "worker": "060add9e-72cd-42fb-990f-f3b3f8d21f83",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-5",
       "techniques": [],
-      "registryProposal": "matcher pairing app-shell here is a lexical resonance on badge (badge-and-attention concerns nav-slot attention, not a chip in a form row); route by the subject precondition."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/personaCore/PersonaCoreEntry.tsx:35 mounts a dimension badge plus its configurator modal inside a host page; the context has no primary nav, section vocabulary, entitlement gate or lazy section, so app-shell (the persistent frame around pages) has no precondition here",
+          "evaluatedAt": "2026-10-14T07:51:20.657Z",
+          "worker": "060add9e-72cd-42fb-990f-f3b3f8d21f83",
+          "reason": "replaced by cloud-20261031-personas-5"
+        }
+      ]
     },
     "969f50a2-b70d-41e3-b573-284a75a67425/agent-memory": {
       "context": "prompt-assembly-engine",
@@ -27475,6 +27719,13 @@
           "evaluatedAt": "2026-10-14T13:00:00.000Z",
           "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
           "reason": "replaced by 5ac4b274-fb2d-405c-bdb3-c55225c9d6b3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 the agent_ir fix pass is a generate-shaped one-shot (JSON in, JSON out) yet still spawns with --dangerously-skip-permissions and cwd = the operator's home (:210), so a 'generate' call holds write access over the whole home directory.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-1",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -27698,6 +27949,13 @@
           "evaluatedAt": "2026-10-16T18:04:48.459Z",
           "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
           "reason": "replaced by 675a90ed-f8f2-45a8-875d-3876769e93b4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 build_consolidation_prompt stamps each episode with its created_at but the prompt (fn at :1197) never states now nor instructs the model to resolve relative dates against the episode instant, so a deferred or replayed pass leaves the grounding to the model and can mis-date relative facts silently.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -27747,6 +28005,13 @@
           "evaluatedAt": "2026-10-22T02:42:36.000Z",
           "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
           "reason": "replaced by 302c293a-ee3e-4c56-9494-2f04e0ba6e06"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 the recall strip renders nothing when nothing was consulted, and the preview it reads (src/api/companion.ts:2351) has no failure field because both recall_for arms collapse a retrieval error into an empty Recall (src-tauri/src/companion/prompt/recall.rs:27, :50); a down store is shown, and treated, as novelty.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -28558,6 +28823,20 @@
           "evaluatedAt": "2026-10-14T09:14:39.000Z",
           "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
           "reason": "replaced by 4272f6d9-7fd1-4ca4-b44c-50b04d805835"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 flips the seeded persona_executions row to 'completed' with a raw UPDATE after creating it through the repo door (:99), bypassing the executions status transitions and asserting no invariant afterwards, so the fixture can hold states the product's write path never produces.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "older than the verdict the map holds"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 the test-bridge seeder still flips the persona_executions row to 'completed' with a raw UPDATE after creating it through the repo, so the seeded run skips the product's status-transition door and can hold a state the product could never write.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-9",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -28673,10 +28952,16 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:29:49.324Z",
-      "worker": "19727a7e-86fc-4ad1-81af-40929dcb7669",
-      "techniques": [],
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_health/agentHealth.ts:152 the grade gates nothing. Its absence handling (an 'undetermined' issue that never moves the status, and a throw when the telemetry pipeline errored) matches the technique's shape, but no refusal reads the grade."
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -28684,6 +28969,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 19727a7e-86fc-4ad1-81af-40929dcb7669"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_health/healthScoring.ts:55 computeHealthScore returns a grade painted by the editor badge and Arena herald (src/features/agents/sub_health/healthScoring.ts:26); the only \"blocked\" status (src/features/agents/sub_health/types.ts:67) is mapped from text (useHealthCheck.ts:93) and no path refuses a run, save or deploy on it, so no refusal precondition holds - diagnostic, not a gate. Re-checked at revision 54.",
+          "evaluatedAt": "2026-10-14T09:29:49.324Z",
+          "worker": "19727a7e-86fc-4ad1-81af-40929dcb7669",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -29402,6 +29694,13 @@
           "evaluatedAt": "2026-10-15T12:00:00.000Z",
           "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
           "reason": "replaced by 302c293a-ee3e-4c56-9494-2f04e0ba6e06"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:3 the 'rollup' is a digest card composed deterministically from the turn ledger with no model call and no store family merged; the context's only memory touch is the on_this_day read of raw episodes/reflections (src-tauri/src/companion/proactive/triggers.rs:584) from an append-only log that is never deleted (src-tauri/src/companion/brain/episodic.rs:5). Grep of proactive/ for episodic::|semantic::|insert_fact|remember|companion_node|companion_fact|retrieval:: finds no write or distillation outside a test fixture.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -31074,6 +31373,13 @@
           "evaluatedAt": "2026-10-16T17:45:00.000Z",
           "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/api/pipeline/triggers.ts:20 the context is IPC wrappers for persona triggers/scheduler/workflows (invoke list_all_triggers); grep over all 11 files for locale|translat|i18n|language|lang hits only a 'natural-language' comment (src/api/pipeline/assignments.ts:77), so no translation store, registry or MT request exists here.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -31093,6 +31399,13 @@
           "evaluatedAt": "2026-10-16T17:45:00.000Z",
           "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/lib/credentials/connectorRoles.ts:145 the context only consumes the app's translation bundle (resolveRoleLabel(r, t?)) over a static connector catalog; grep for locale|translat|i18n|language|lang hits only bundle consumers and an API param doc, no locale registry, translation store or MT request.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -33862,6 +34175,13 @@
           "evaluatedAt": "2026-10-21T12:44:16.000Z",
           "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 runtime persona prompt assembly; grep for locale|translat|i18n|language|lang over the 8 files hits only a 'natural-language' comment (capabilities.rs:406), so no translation request or store is built here.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -36785,6 +37105,13 @@
           "evaluatedAt": "2026-10-21T12:44:16.000Z",
           "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:23 the sole i18n touch is consuming resolveErrorTranslated; grep for locale|translat|i18n|language|lang over the 6 files finds no translation storage, movement or serving - 'matrix' is the persona build UI.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -36804,6 +37131,13 @@
           "evaluatedAt": "2026-10-21T12:44:16.000Z",
           "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
           "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 the context runs design reviews over template sources; grep for locale|translat|i18n|language|lang over its 9 files returns zero hits.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -37890,33 +38224,40 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-11-07",
-      "evaluatedTs": "2026-11-07T03:30:41.403Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-5",
       "techniques": [
         {
           "technique": "native-owned-stream",
-          "verdict": "conformant",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 The view is a pure renderer of the local bus, and the background-execution listener catches runs the user is not looking at. Display buffers have hard caps (MAX_STREAM_LINES=5000 at useCorrelatedCliStream.ts:78)."
+          "verdict": "realized",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 listen() on EXECUTION_STATUS emitted by the native runner (src-tauri/src/engine/runner/mod.rs:745); the view is a renderer of what it is handed and owns no stream"
         },
         {
           "technique": "native-side-owns-the-target-set",
-          "verdict": "conformant",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:57 Log replay sends an execution id plus the caller persona. The native get_execution_log_lines looks up the execution, checks its owner, and resolves the log itself."
-        },
-        {
-          "technique": "observer-perturbation",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useReasoningTrace.ts:86 The traces read the product's own runner events. Liveness (silence_ms) is computed by the native owner and only displayed here. There is no structural query over a foreign application."
-        },
-        {
-          "technique": "capability-presence-contract",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:2 The only native surface used is the event bus, which every host this shell targets provides; there is no single-host capability to classify."
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:20 the only command import is getExecutionLogLines, an information read the discriminator excludes"
         },
         {
           "technique": "non-stealing-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:164 Output goes into React state rendered in the app's own views; these hooks create no native surface."
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus; no window or overlay is placed"
+        },
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useAiHealingStream.ts:2 again only the event bus, present on every host the app ships to; no host-specific capability is reached"
+        },
+        {
+          "technique": "permission-gate-vector",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:2 host import is the event bus only; no OS grant is consulted (grep of the 11 files for alwaysOnTop, globalShortcut, getCurrentWindow, invoke found none)"
+        },
+        {
+          "technique": "observer-perturbation",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:86 The traces read the product's own runner events. Liveness (silence_ms) is computed by the native owner and only displayed here. There is no structural query over a foreign application.",
+          "carriedFrom": "2026-11-07"
         },
         {
           "technique": "query-transparent-overlay",
@@ -37935,12 +38276,6 @@
           "verdict": "not-applicable",
           "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol",
           "carriedFrom": "2026-10-21"
-        },
-        {
-          "technique": "permission-gate-vector",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol",
-          "carriedFrom": "2026-10-21"
         }
       ],
       "superseded": [
@@ -37950,14 +38285,15 @@
           "evaluatedAt": "2026-10-21T17:55:31.762Z",
           "worker": "8d819755-f96f-4df7-96ca-6e716addef91",
           "reason": "replaced by 9a9f73df-3f58-4889-80fc-314cae8afb00"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 execution output/status are produced by the native runner (src-tauri/src/engine/runner/mod.rs:737) and the hooks only subscribe on the local bus and render - no connection, reconnect or backoff state lives in the throttleable view",
+          "evaluatedAt": "2026-10-21",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-5"
         }
-      ],
-      "withdrawn": {
-        "worker": "9a9f73df-3f58-4889-80fc-314cae8afb00",
-        "state": "conformant",
-        "at": "2026-11-07T03:31:18.347819+00:00",
-        "reason": "reviewer (sonnet): The technique anchored at usePersonaExecution.ts:2 says the event bus is the only native surface used. But usePersonaExecution.ts:20 imports getExecutionLogLines from '@/api/agents/executions', which calls the native get_execution_log_lines command. The seat's own technique at line 57 says so too, s"
-      }
+      ]
     },
     "b0cf3902-0739-40a8-8c76-ae594f41421b/native-shell-integration": {
       "context": "plugins-dev-tools-context",
@@ -38025,6 +38361,13 @@
           "evaluatedAt": "2026-10-21T17:55:31.762Z",
           "worker": "8d819755-f96f-4df7-96ca-6e716addef91",
           "reason": "replaced by 5ec1b579-1cff-4d91-b808-ac49490a5320"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is confined natively to the project's registered root by canonicalize plus component-wise starts_with (:735) and refused otherwise; the scan itself runs natively and the page only renders its events",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -39214,6 +39557,13 @@
           "evaluatedAt": "2026-10-22T02:44:00.000Z",
           "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
           "reason": "replaced by 02934265-8cdb-4de4-a95e-cdfda86240cc"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active, like upsert and purge_expired, has no test (0 #[test] in the file). Its only caller, the restart-restore path at src-tauri/engine/src/failover.rs:206, is never built with a pool by any failover test, so a broken TTL filter or is_open decode would ship green.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -39982,44 +40332,55 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T03:09:33.000Z",
-      "worker": "27110a84-3f92-44f0-8524-95d4327695e6",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-5",
       "techniques": [
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "realized",
-          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:716 target dir derived natively from settings + project slug; :850 deletion set limited to native-stamped notes not in the active set"
-        },
-        {
-          "technique": "capability-presence-contract",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:708 an absent vault returns vaultConfigured=false rather than an error or an empty success, and src/features/teams/sub_mastermind/lib/MemorySection.tsx:77 hides the vault actions when none is configured"
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:819 dir = vault_project_dir(root, project.name) re-derived from the project id; :954 removal set restricted to files carrying a personas_id not in the active set, hand-authored notes never touched"
         },
         {
           "technique": "native-owned-stream",
           "verdict": "realized",
-          "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:50 embeds FleetTerminalPane, whose output the Rust reader keeps buffering regardless of view attachment (src/features/plugins/fleet/FleetTerminalPane.tsx:38)"
+          "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:50 embeds FleetTerminalPane, whose PTY output the Rust reader keeps buffering while the view is detached (src/features/plugins/fleet/FleetTerminalPane.tsx:37)"
         },
         {
           "technique": "non-stealing-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:47 popovers are in-document layers inside the canvas shell, not native windows over foreign apps"
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:47 popovers are absolute layers inside the canvas shell, not native windows over foreign apps"
         },
         {
-          "technique": "query-transparent-overlay",
+          "technique": "capability-presence-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:47 no surface is placed over another application"
+          "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:28 vault presence is user configuration (a configured path), not a per-host capability; it does correctly hide the vault actions when absent (:77)"
         },
         {
           "technique": "permission-gate-vector",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:9 only app-owned commands are reached; no OS-granted capability"
+          "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:22 the context reaches app-owned commands only (listContexts, memory/vault commands); no OS-granted capability"
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:47 no surface is placed over another application",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "layout-resolved-input-synthesis",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:9 no input is synthesized into a foreign application"
+          "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:9 no input is synthesized into a foreign application",
+          "carriedFrom": "2026-10-22"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:716 vault projection/import take only a project id (src/features/teams/sub_mastermind/lib/MemorySection.tsx:36); the native side resolves the write root from stored config and deletes only notes it stamped with personas_id (:850), so the renderer cannot pick a directory or a deletion set",
+          "evaluatedAt": "2026-10-22T03:09:33.000Z",
+          "worker": "27110a84-3f92-44f0-8524-95d4327695e6",
+          "reason": "replaced by cloud-20261031-personas-5"
         }
       ]
     },
@@ -40028,14 +40389,14 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T03:09:33.000Z",
-      "worker": "27110a84-3f92-44f0-8524-95d4327695e6",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-5",
       "techniques": [
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "realized",
-          "evidence": "src-tauri/src/commands/core/gallery.rs:260 publish builds name/blueprint natively from the team id; src-tauri/src/commands/teams/teams.rs:71 delete by id with a native-side refusal while a pipeline runs"
+          "evidence": "src-tauri/src/commands/core/gallery.rs:290 build_team_blueprint(team_id) re-derives the published content natively; src-tauri/src/commands/teams/teams.rs:71 delete by id refused natively while a pipeline runs"
         },
         {
           "technique": "capability-presence-contract",
@@ -40050,20 +40411,30 @@
         {
           "technique": "native-owned-stream",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 request/response calls only; the view holds no long-lived stream"
+          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 request/response team commands only; no listen() in the context's 29 files, so the view holds no long-lived stream"
         },
         {
           "technique": "permission-gate-vector",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 app-owned DB commands only; no OS grant"
+          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:3 app-owned DB commands only; no OS grant"
         },
         {
           "technique": "layout-resolved-input-synthesis",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 no input synthesis into a foreign app"
+          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 no input synthesis into a foreign app",
+          "carriedFrom": "2026-10-22"
         }
       ],
-      "registryProposal": "not a registry defect: context-map.json still lists src/features/teams/sub_teamWorkspace/TeamList.tsx, CreateTeamForm.tsx and teamStudio/AssignmentReplay.tsx, which no longer exist - a context rescan is owed"
+      "registryProposal": "native-shell-integration rev 5: the frontmatter lists 10 techniques but the golden path's 'The techniques' list names only 8 - native-side-owns-the-target-set and host-forwarded-key-contract are never linked from the prose, so a reader walking the path misses the technique most pairs in this repo actually turn on",
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/core/gallery.rs:260 the outward publish and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) send only a team id; the native side re-derives the payload and refuses a delete while a pipeline runs (src-tauri/src/commands/teams/teams.rs:71); no other native-only capability is reached",
+          "evaluatedAt": "2026-10-22T03:09:33.000Z",
+          "worker": "27110a84-3f92-44f0-8524-95d4327695e6",
+          "reason": "replaced by cloud-20261031-personas-5"
+        }
+      ]
     },
     "19f3a6a0-f733-47d1-94b4-a1256c8a92fc/native-shell-integration": {
       "context": "glyph-command-panel",
@@ -40111,6 +40482,13 @@
           "evaluatedAt": "2026-10-22T03:09:33.000Z",
           "worker": "27110a84-3f92-44f0-8524-95d4327695e6",
           "reason": "replaced by 5ec1b579-1cff-4d91-b808-ac49490a5320"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; a grep of the context's 19 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus finds no host import (the only keydown listener is window-scoped at :65), so no native capability, foreign surface or input synthesis exists here",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -40202,22 +40580,48 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T12:00:00.000Z",
-      "worker": "d780b612-16c4-4f59-ad85-801cb8438f0e",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:92 'Mirrors ByomPolicy::validate()' is a second hand-walked enumeration rather than a map over the backend's (src/api/system/byom.ts:32 is unused). The two codes currently agree, but no test pins them together."
+        },
+        {
+          "technique": "gate-laddering",
+          "verdict": "realized",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:156 the UI refusal is a courtesy rung. The binding refusal sits at the action, src-tauri/db/src/byom.rs:293, where ByomPolicy::save refuses any Error-severity warning whoever calls it."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "realized",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:152 a policy that failed to load or is corrupt refuses the save instead of overwriting the stored policy with defaults."
+        },
         {
           "technique": "self-reported-gate-inputs",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/byom.rs:378 the gate's tag input is an optional persona field; absent means no rule applies instead of refusal"
+          "evidence": "src-tauri/db/src/byom.rs:378 the gate's tag input is an optional persona field; absent means no rule applies instead of refusal",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "enforcement-binding",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2017 the policy is bound at the run door and a corrupt policy aborts the execution"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2017 the policy is bound at the run door and a corrupt policy aborts the execution",
+          "carriedFrom": "2026-10-22"
         }
       ],
-      "registryProposal": "quality-gates is repo/pipeline-shaped; 60+ of its 90 map pairs are UI contexts matched on vocabulary (gate, verdict, pipeline). Consider a precondition note so display surfaces route to not-applicable."
+      "registryProposal": "The prior verdict's self-reported-gate-inputs finding (the compliance tag is the optional persona template_category, so absence passes) lives in src-tauri/db/src/byom.rs, outside this UI context's file list. This context surfaces it honestly (byomHelpers.ts:122). Judge it under whichever context owns db/src/byom.rs.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/byom.rs:378 compliance rules match persona template_category (src-tauri/src/engine/runner/mod.rs:2054) so personas without a category pass an empty tag set and the restriction fails OPEN, reported only as a Warning; the corrupt-policy path at runner/mod.rs:2017 does fail closed",
+          "evaluatedAt": "2026-10-22T12:00:00.000Z",
+          "worker": "d780b612-16c4-4f59-ad85-801cb8438f0e",
+          "reason": "replaced by cloud-20261031-personas-7"
+        }
+      ]
     },
     "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/agent-memory": {
       "context": "commands-core",
@@ -40282,6 +40686,13 @@
           "evaluatedAt": "2026-10-22T12:00:00.000Z",
           "worker": "fe870690-5a4d-48ed-875a-217a1e2c96f1",
           "reason": "replaced by db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile inserts each article beside its sources and, by its own comment, links them only in body text: members are neither superseded nor taken out of default reads, so the store grows by the article instead of shrinking in what it recalls.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -40567,6 +40978,13 @@
           "evaluatedAt": "2026-10-22T12:00:00.000Z",
           "worker": "3461d0d3-94a7-4457-b3cc-698aff97d3e2",
           "reason": "replaced by 5ec1b579-1cff-4d91-b808-ac49490a5320"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 the Workspace Knowledge practice library this context described was retired; context-map.json lists 0 filePaths for it and git ls-files finds no src/features/overview/sub_patterns file, so there is no code for the subject's precondition to hold in",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -40594,12 +41012,36 @@
       "context": "commands-curator",
       "subject": "quality-gates",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:37.037Z",
-      "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
-      "techniques": [],
-      "registryProposal": "dispatch.rs:291 states the hook-bypass prohibition (--no-verify, LEFTHOOK=0) only as prompt prose to dispatched workers, so prose-rule-drift would apply to whichever layer holds the mechanical deny in target repos; the context itself has no such layer to judge."
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
+      "techniques": [
+        {
+          "technique": "prose-rule-drift",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:290 an action-shaped prohibition (force-push, gate bypass, discarding work) written into the brief and enforced nowhere at the action. The dispatcher controls the spawn argv (src-tauri/src/commands/curator/tick.rs:727) but passes no disallowed-tools set."
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:140 vet_autonomous refuses a skill with no documented invocation and names the reachable exit (only an explicit operator request may name it). The next arm quotes the file's own argument hint."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:574 the test drives undocumented skills through vet_autonomous and asserts the refusal, proving the gate red."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:115 vet_autonomous refuses an invocation the app would invent, which is dispatch validation not a quality gate; line 291 only instructs workers not to bypass repo hooks and builds none",
+          "evaluatedAt": "2026-10-22T19:48:37.037Z",
+          "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
+          "reason": "replaced by cloud-20261031-personas-7"
+        }
+      ]
     },
     "d5c5e7fe-6353-41eb-800b-dc11adee0775/prompt-assembly": {
       "context": "engine-project-tracking",
@@ -41475,24 +41917,35 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T01:45:42.766Z",
-      "worker": "3eaa9f71-84d6-4c42-a0d5-4ada584cc511",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-9",
       "techniques": [
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "deviation",
-          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The ordering claim rests on a bare identifier needle ('POLL_DEADLINE'), which the technique names as a failure. The second needle, 'sleep(POLL_INTERVAL)', does carry an argument list. The sibling parity tests handle the other settings well: they strip comments from the haystack and require at least one match."
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:51 ordering rests on the bare identifier `POLL_DEADLINE`, not a needle prose cannot spell such as `elapsed() >= POLL_DEADLINE` (the decision rule: an ordering claim never rests on a bare identifier)."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:46 the backend budget is read from the real Rust source (`HTTP_TIMEOUT` in http_clients.rs) at run time rather than a copied constant, so the parity claim reaches the decision it names."
         },
         {
           "technique": "derived-selection-must-be-measured",
           "verdict": "conformant",
-          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:39 Each source-text extraction requires at least one match and agreement across all matches, so a matcher that finds nothing fails instead of passing."
-        },
+          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:39 Each source-text extraction requires at least one match and agreement across all matches, so a matcher that finds nothing fails instead of passing.",
+          "carriedFrom": "2026-10-24"
+        }
+      ],
+      "registryProposal": "",
+      "superseded": [
         {
-          "technique": "unreached-decisions-pin-nothing",
-          "verdict": "conformant",
-          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:91 Asserts the timeout argument actually passed across the IPC mock, not only the helper's computed budget, and does this for both producers (trigger and webhook test)."
+          "state": "deviation",
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The check that the deadline comes before the sleep relies on the first place the bare identifier POLL_DEADLINE appears in the Rust function, so a check moved after the sleep would stay green if any earlier non-comment use of the name (for example a `let` alias) were left above it.",
+          "evaluatedAt": "2026-10-24T01:45:42.766Z",
+          "worker": "3eaa9f71-84d6-4c42-a0d5-4ada584cc511",
+          "reason": "replaced by cloud-20261031-personas-9"
         }
       ]
     },
@@ -41605,14 +42058,29 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T03:09:11.686Z",
-      "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts:42 budgetUnreadable refuses to save a budget the field cannot read rather than let it read as 'no cap'. That is the honest-absence rule applied to the gate's configuration. The gate that reads the cap lives outside this context."
+        },
         {
           "technique": "waiver-names-its-finding",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:63 Consumer-side waiver of a rule set to 'warn' (eslint.config.js:70), not the design of a blocking gate's escape hatch. It names its rule but gives no reason, which is a suppression-hygiene concern (dead-code subject), not this technique's."
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:63 Consumer-side waiver of a rule set to 'warn' (eslint.config.js:70), not the design of a blocking gate's escape hatch. It names its rule but gives no reason, which is a suppression-hygiene concern (dead-code subject), not this technique's.",
+          "carriedFrom": "2026-10-24"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 The 'gate' here is a runtime pairing-approval modal, not a check on the tree. Searching components/ and libs/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files. The context only consumes the lint gate through one waiver and builds no gate machinery.",
+          "evaluatedAt": "2026-10-24T03:09:11.686Z",
+          "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -44112,7 +44580,16 @@
       "evaluatedAt": "2026-11-03",
       "evaluatedTs": "2026-11-03T08:18:34.659Z",
       "worker": "94850a18-eec6-419b-907a-d77681f97e5e",
-      "techniques": []
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/deploymentTypes.ts:9 the context's row type is a cloud/GitLab deployment target; a grep of all 54 context files for memor|recall|remember|episod|consolidat finds only comments (timeAgo hoisting, timer bookkeeping, unmount retention), so no agent memory store is written, distilled or recalled here and the subject's precondition is absent.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-3",
+          "reason": "older than the verdict the map holds"
+        }
+      ]
     },
     "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/agent-memory": {
       "context": "triggers-studio",
@@ -46212,6 +46689,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 4a54bb07-14fc-4d71-a2fa-e821e7a979ee"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:295 queries run via executeDbQuery(credentialId, sql) into the privileged execute_db_query (src-tauri/src/commands/credentials/db_schema.rs:223), so the database credential is attached in Rust and never held by the tab.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-6",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -46307,6 +46791,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 26218cfa-e4d2-488a-97bb-46b1f7835afd"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:116 the editor's tabs are a page-owned strip writing page state (setEditorTab), the depth app-shell hands to the page beyond its two levels; a grep of the context's 36 files for setSidebarSection, NAV_SECTIONS, navigation/registry, passesGates, sidebarData and lazyRetry finds none, so no shell nav, slot or section loading lives here",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-5",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -46315,33 +46806,40 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-11-07",
-      "evaluatedTs": "2026-11-07T02:10:32.376Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
-          "technique": "broker-proxy-attaches-secret",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:84 The Rust side redeems the reference and attaches the refresh token; the webview submits intent, never the credential."
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "realized",
+          "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:86 the client carries back only a server-issued one-time session ref, not token material."
         },
         {
-          "technique": "server-sealed-client-roundtrip",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:86 The server-produced OAuth result goes round the client as an opaque id into server state (the technique's keep-it-server-side branch), not as a client-carried value the server must trust."
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "realized",
+          "evidence": "src/features/vault/sub_credentials/components/picker/ResourcePicker.tsx:101 resource listing sends credentialId + spec id; Rust attaches the credential."
         },
         {
           "technique": "omit-the-column-not-the-value",
-          "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/credential.rs:40 The legacy encrypted blob is skipped from the serialized and TS shape these panels receive; the field-metadata binding carries isSensitive but no value column."
-        },
-        {
-          "technique": "outbound-fetch-destination-validation",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:59 The only data-borne address is opened in the user's own browser with no credential attached; the technique exempts fetches made from the user's network position."
+          "verdict": "realized",
+          "evidence": "src/lib/bindings/PersonaCredential.ts:24 the credential shape these panels consume has no secret column."
         },
         {
           "technique": "aggregate-view-not-base-table",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:69 Usage figures arrive as server-computed aggregates over IPC. No anonymous role reaches a hosted store, so the regime-one view/grant precondition does not hold."
+          "evidence": "src/api/vault/credentials.ts:21 data reaches the webview only through IPC into Rust-owned SQLite; no browser-held store grant."
+        },
+        {
+          "technique": "default-deny-plus-defaulted-owner",
+          "verdict": "not-applicable",
+          "evidence": "package.json:162 the only data client is @tauri-apps/api; no anonymous role or row policy exists."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:59 The only data-borne address is opened in the user's own browser with no credential attached; the technique exempts fetches made from the user's network position.",
+          "carriedFrom": "2026-11-07"
         }
       ],
       "superseded": [
@@ -46352,36 +46850,34 @@
           "worker": null,
           "reason": "replaced by ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8"
         }
-      ],
-      "withdrawn": {
-        "worker": "ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8",
-        "state": "conformant",
-        "at": "2026-11-07T02:12:43.256850+00:00",
-        "reason": "reviewer (sonnet): The anchors (workspace/useWorkspaceConnect.ts, gateway/PendingAuthModal.tsx, and the Rust model) are not among this context's files, which are all in components/features/. The workspace and gateway directories belong to other contexts. My grep of components/features/ found no credential handling in "
-      }
+      ]
     },
     "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/browser-credential-boundary": {
       "context": "lib-credentials",
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-11-07",
-      "evaluatedTs": "2026-11-07T02:10:32.376Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
           "technique": "broker-proxy-attaches-secret",
           "verdict": "not-applicable",
-          "evidence": "src/lib/credentials/remediationExecutor.ts:42 Only a credential id leaves this module; attachment happens in the backend context judged separately."
+          "evidence": "src/lib/credentials/remediationExecutor.ts:42 Only a credential id leaves this module; attachment happens in the backend context judged separately.",
+          "carriedFrom": "2026-11-07"
         },
         {
           "technique": "omit-the-column-not-the-value",
           "verdict": "not-applicable",
-          "evidence": "src/lib/credentials/parseCredentialLedger.ts:31 Parses the non-secret metadata JSON; no secret-bearing shape is defined here."
+          "evidence": "src/lib/credentials/parseCredentialLedger.ts:31 Parses the non-secret metadata JSON; no secret-bearing shape is defined here.",
+          "carriedFrom": "2026-11-07"
         },
         {
           "technique": "public-vs-server-env-split",
           "verdict": "not-applicable",
-          "evidence": "src/lib/credentials/catalogApiEndpoints.ts:4 Endpoint metadata is bundled as public catalog data with no auth material, and no env value is read anywhere in the directory."
+          "evidence": "src/lib/credentials/catalogApiEndpoints.ts:4 Endpoint metadata is bundled as public catalog data with no auth material, and no env value is read anywhere in the directory.",
+          "carriedFrom": "2026-11-07"
         }
       ],
       "superseded": [
@@ -46392,13 +46888,7 @@
           "worker": null,
           "reason": "replaced by ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8"
         }
-      ],
-      "withdrawn": {
-        "worker": "ca6c5a52-ea3e-4fa9-b0b6-01be560a1bb8",
-        "state": "not-applicable",
-        "at": "2026-11-07T02:12:43.405471+00:00",
-        "reason": "reviewer (sonnet): The anchor remediationExecutor.ts:42 sits in executeAutoRotate and does not show that no credential value is held in this directory. It is an incidental line. The absence search also missed the right terms: the directory has no hits for the cited terms but does contain other credential-adjacent code"
-      }
+      ]
     },
     "cbb061cf-5c61-49d4-80d8-98b8f9b40600/native-shell-integration": {
       "context": "browser-webview-control",
@@ -46554,6 +47044,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by d5fd826c-7224-4efb-ae2d-d7489d83c886"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2386 persona executions (children that read connector and web content) spawn via CliProcessDriver::spawn, whose builder (src-tauri/engine/src/cli_process.rs:1092) inherits the full host environment with only a denylist - including the app's own bearer PERSONAS_API_KEY set on the parent at boot (src-tauri/src/boot/finalize.rs:52) - although a scrubbed allowlist spawn already exists and is used only for lens-scan.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-1",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -46584,6 +47081,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by d5fd826c-7224-4efb-ae2d-d7489d83c886"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:805 the prior not-applicable was wrong: this context spawns the Claude CLI (via ai_artifact_flow.rs:455) to drive a Playwright browser over third-party sites, and its only stance control is --allowedTools mcp__playwright__* layered on build_cli_args' --dangerously-skip-permissions (src-tauri/engine/src/prompt/cli_args.rs:107); --allowedTools pre-approves rather than restricts, so a child reading untrusted web pages keeps Bash/Write in the app's inherited cwd with the full host env.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-1",
+          "reason": "older than the verdict the map holds"
         }
       ]
     },
@@ -46829,8 +47333,9 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-11-08",
-      "evaluatedTs": "2026-11-08T03:09:57.448Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-5",
       "techniques": [],
       "superseded": [
         {
@@ -46840,13 +47345,7 @@
           "worker": null,
           "reason": "replaced by 3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2"
         }
-      ],
-      "withdrawn": {
-        "worker": "3a8963a0-d7d6-4fe6-9f56-a29dbd6bc0a2",
-        "state": "not-applicable",
-        "at": "2026-11-08T03:11:25.082861+00:00",
-        "reason": "reviewer (sonnet): The not-applicable anchor RelativeTime.tsx:2 is an import line that sits in the context but does not itself show that the shell vocabulary is absent. The claim rests only on a grep over directories, and the cited line is incidental."
-      }
+      ]
     },
     "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/app-shell": {
       "context": "fleet-monitor-shell",

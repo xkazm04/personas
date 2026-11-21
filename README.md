@@ -219,7 +219,7 @@ Switch at runtime in **Settings → Appearance → Interface Mode**. Builder is 
 
 | Dependency | Version | Check command |
 |-----------|---------|---------------|
-| [Node.js](https://nodejs.org/) | >= 20 | `node --version` |
+| [Node.js](https://nodejs.org/) | >= 22 (`.nvmrc`) | `node --version` |
 | [Rust](https://www.rust-lang.org/tools/install) | via `rustup`; the repo pins its toolchain in `rust-toolchain.toml` | `rustc --version` |
 | WebView2 Runtime | bundled with Windows 10+ | none |
 | C++ Build Tools | MSVC (Visual Studio) | none |

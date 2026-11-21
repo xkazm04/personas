@@ -209,6 +209,33 @@ const PROACTIVE_DELIVERED_EXPIRY_WINDOW: &str = "-7 days";
 /// the correct outcome and the one the old code could never reach.
 const PROACTIVE_QUEUED_EXPIRY_WINDOW: &str = "-1 day";
 
+/// Trigger kinds that fire once and never restate their case, so the
+/// "expire and let the trigger re-fire" reasoning above does not hold for
+/// them: `on_this_day` latches per calendar date, `conversation_resume` once
+/// per process, `ambient_match` once per matched item. They are released
+/// before re-firing kinds when the daily cap binds, and expire only past
+/// their own relevance window ([`one_shot_expiry_window`]).
+const ONE_SHOT_KINDS: &[&str] = &["on_this_day", "conversation_resume", "ambient_match"];
+
+/// How long a queued one-shot notice stays relevant. `on_this_day` is about
+/// the day itself, so it keeps the one-day window; the others stay true for
+/// a week ("pick up where you left off", "this matches what you follow").
+fn one_shot_expiry_window(kind: &str) -> &'static str {
+    match kind {
+        "on_this_day" => PROACTIVE_QUEUED_EXPIRY_WINDOW,
+        _ => "-7 days",
+    }
+}
+
+/// SQL list of [`ONE_SHOT_KINDS`] for `IN (...)`. The names are constants.
+fn one_shot_kinds_sql() -> String {
+    ONE_SHOT_KINDS
+        .iter()
+        .map(|k| format!("'{k}'"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// Same, for Athena's own `schedule_proactive` commitments — deliberately far
 /// more generous than [`PROACTIVE_QUEUED_EXPIRY_WINDOW`]. A scheduled check-in
 /// was explicitly asked for and has **no re-fire path**: no trigger will ever
@@ -233,14 +260,33 @@ fn sweep_lifecycle(conn: &Connection) {
     //    unblock their own dedupe on the way out, so the trigger can restate
     //    the case with current data.
     if let Err(e) = conn.execute(
-        "UPDATE companion_proactive_message
-         SET status = 'expired'
-         WHERE status = 'queued'
-           AND scheduled_for IS NULL
-           AND datetime(created_at) < datetime('now', ?1)",
+        &format!(
+            "UPDATE companion_proactive_message
+             SET status = 'expired'
+             WHERE status = 'queued'
+               AND scheduled_for IS NULL
+               AND trigger_kind NOT IN ({})
+               AND datetime(created_at) < datetime('now', ?1)",
+            one_shot_kinds_sql()
+        ),
         params![PROACTIVE_QUEUED_EXPIRY_WINDOW],
     ) {
         tracing::warn!(error = %e, "proactive: stale-queued sweep failed");
+    }
+    // 1b. One-shot kinds never re-fire, so they are not expired on the
+    //     re-firing kinds' one-day clock, only past their own relevance window.
+    for kind in ONE_SHOT_KINDS {
+        if let Err(e) = conn.execute(
+            "UPDATE companion_proactive_message
+             SET status = 'expired'
+             WHERE status = 'queued'
+               AND scheduled_for IS NULL
+               AND trigger_kind = ?1
+               AND datetime(created_at) < datetime('now', ?2)",
+            params![kind, one_shot_expiry_window(kind)],
+        ) {
+            tracing::warn!(error = %e, kind, "proactive: stale one-shot sweep failed");
+        }
     }
     // 2. Scheduled commitments whose moment passed so long ago that honouring
     //    them would be noise. Future-dated rows never match (their
@@ -383,7 +429,8 @@ pub fn insert_scheduled(
 /// - **Volume unchanged.** [`budget::GLOBAL_DAILY_CAP`] and the per-kind caps
 ///   are untouched; this only decides *which* observations get to spend them.
 ///
-/// Oldest-first, so the earliest commitment wins the remaining budget. A
+/// Rows with no re-fire path (scheduled check-ins, [`ONE_SHOT_KINDS`]) first,
+/// then oldest-first, so the earliest commitment wins the remaining budget. A
 /// per-kind cap only skips its own row (`continue`) — the old code `break`-ed
 /// the whole pass on any refusal, letting one capped kind starve every kind
 /// behind it in `collect_all` order. Only the global ceiling stops the loop.
@@ -404,13 +451,18 @@ pub fn release_pending(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>, AppEr
     let mut due: Vec<ProactiveMessage> = Vec::new();
     {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        // Rows with no re-fire path (scheduled check-ins and one-shot kinds)
+        // go first: a re-firing kind that misses today's cap restates itself
+        // later, a one-shot that misses it is gone.
+        let mut stmt = conn.prepare(&format!(
             "SELECT id, trigger_kind, trigger_ref, message, status, created_at, delivered_at, resolved_at, scheduled_for
              FROM companion_proactive_message
              WHERE status = 'queued'
                AND (scheduled_for IS NULL OR datetime(scheduled_for) <= datetime('now'))
-             ORDER BY COALESCE(scheduled_for, created_at) ASC",
-        )?;
+             ORDER BY CASE WHEN scheduled_for IS NOT NULL OR trigger_kind IN ({}) THEN 0 ELSE 1 END,
+                      COALESCE(scheduled_for, created_at) ASC",
+            one_shot_kinds_sql()
+        ))?;
         let mut rows = stmt.query([])?;
         while let Some(row) = rows.next()? {
             due.push(ProactiveMessage {
@@ -809,6 +861,75 @@ mod tests {
         assert_eq!(status_of(&pool, &fresh.id), "queued");
         assert_eq!(release_pending(&pool).unwrap().len(), 1);
         assert_eq!(status_of(&pool, &fresh.id), "delivered");
+    }
+
+    /// When the daily ceiling binds, a one-shot notice (which will never
+    /// re-fire) must win a slot over older re-firing nudges, which restate
+    /// themselves on a later day.
+    #[test]
+    fn one_shot_notice_is_released_before_refiring_kinds_when_the_cap_binds() {
+        let pool = test_pool();
+        for i in 0..6 {
+            seed(
+                &pool,
+                &format!("inc{i}"),
+                "incident_blocker",
+                "datetime('now','-3 hours')",
+                "NULL",
+            );
+            seed(
+                &pool,
+                &format!("msg{i}"),
+                "message_attention",
+                "datetime('now','-3 hours')",
+                "NULL",
+            );
+        }
+        seed(
+            &pool,
+            "ambient",
+            "ambient_match",
+            "datetime('now','-1 hours')",
+            "NULL",
+        );
+        let released = release_pending(&pool).unwrap();
+        assert_eq!(released.len(), budget::GLOBAL_DAILY_CAP as usize);
+        assert_eq!(status_of(&pool, "ambient"), "delivered");
+    }
+
+    /// A one-shot that waited past a day is not expired on the re-firing
+    /// kinds' clock; `on_this_day`, whose relevance is the day, still is.
+    #[test]
+    fn one_shot_notice_outlives_the_refire_expiry_window() -> Result<(), r2d2::Error> {
+        let pool = test_pool();
+        seed(
+            &pool,
+            "resume",
+            "conversation_resume",
+            "datetime('now','-3 days')",
+            "NULL",
+        );
+        seed(
+            &pool,
+            "otd",
+            "on_this_day",
+            "datetime('now','-3 days')",
+            "NULL",
+        );
+        seed(
+            &pool,
+            "ancient",
+            "ambient_match",
+            "datetime('now','-10 days')",
+            "NULL",
+        );
+        let conn = pool.get()?;
+        sweep_lifecycle(&conn);
+        drop(conn);
+        assert_eq!(status_of(&pool, "resume"), "queued");
+        assert_eq!(status_of(&pool, "otd"), "expired");
+        assert_eq!(status_of(&pool, "ancient"), "expired");
+        Ok(())
     }
 
     /// A queued row still inside its window is delivered, not expired.

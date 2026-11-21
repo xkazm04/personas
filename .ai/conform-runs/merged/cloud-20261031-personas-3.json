@@ -1,0 +1,166 @@
+{
+  "worker": "cloud-20261031-personas-3",
+  "evaluatedAt": "2026-10-31",
+  "pairs": [
+    {
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_deployment/components/deploymentTypes.ts:9 the context's row type is a cloud/GitLab deployment target; a grep of all 54 context files for memor|recall|remember|episod|consolidat finds only comments (timeAgo hoisting, timer bookkeeping, unmount retention), so no agent memory store is written, distilled or recalled here and the subject's precondition is absent.",
+      "techniques": []
+    },
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:485 the deck promises a rejected idea's reason becomes a constraint memory the scanners read back, but the scanner's read-back builds its rejected list from titles only (src-tauri/src/commands/infrastructure/idea_scanner.rs:596) and labels every rejected idea, machine-decided ones included, as human-triaged (idea_scanner.rs:130), so the reason never reaches the scan and an advisory machine verdict is recalled as a human ruling.",
+      "techniques": [
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:130 the prompt header says 'the human triaged these away' over a list drawn from every status=rejected idea, though dev_tools.rs:833 records automated rejections as advisory decisions; the evidence's author is lost at the read door."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:832 only a human rejection becomes an importance-8 constraint; an automated one is an importance-5 advisory decision (:833)."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:596 the rejection check handed to the proposer is a title list with the instruction to skip 'close variants', not a whole-claim identity, and it drops the reason the memory row now carries."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:784 the reviewer's rejection reason is now appended to the decision memory as a 'Reason:' line, resolving the prior finding that 'Already done' and 'Not worth it' were stored identically."
+        }
+      ]
+    },
+    {
+      "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/overview/memories.ts:154 deleteAllMemories exposes delete_all, which hard-DELETEs every non-core memory (src-tauri/db/src/repos/core/memories.rs:1506) and writes no fact_key tombstone, unlike the single delete (memories.rs:1436); the user's bulk forget is therefore re-derivable by the next consolidation pass, and batchDeleteMemories (memories.ts:189 -> memories.rs:1205) has the same gap.",
+      "techniques": [
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 bulk delete removes rows with no key bar; only the single-row delete calls tombstone_fact (memories.rs:1436), so 'a deliberate forget bars re-derivation' holds for one path of three."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 the bulk purge is scoped tier != 'core', so the user-pinned identity tier cannot be wiped by the unscoped call."
+        }
+      ]
+    },
+    {
+      "context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile inserts each article beside its sources and, by its own comment, links them only in body text: members are neither superseded nor taken out of default reads, so the store grows by the article instead of shrinking in what it recalls.",
+      "techniques": [
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 no supersede link or member demotion; and memory_compile.rs:225 admits a two-member family, below the technique's family-needs-three bar."
+        },
+        {
+          "technique": "scope-before-similarity",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:237 the compiled article is written with use_case_id None, so the merged item does not inherit its members' capability scope."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/core/memories.rs:556 a low LLM review score on a user-pinned core memory is treated as kept, never deleted."
+        }
+      ]
+    },
+    {
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 build_consolidation_prompt stamps each episode with its created_at but the prompt (fn at :1197) never states now nor instructs the model to resolve relative dates against the episode instant, so a deferred or replayed pass leaves the grounding to the model and can mis-date relative facts silently.",
+      "techniques": [
+        {
+          "technique": "observation-clock",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 instants are printed per episode with no grounding instruction and no labelled now, the 'grounding is an instruction, not a hope' failure."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1211 every proposal must cite at least one source episode_id; supersedence goes by demotion (src-tauri/src/companion/brain/semantic.rs:221)."
+        },
+        {
+          "technique": "filter-at-the-id-door",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:740 vector hits are reloaded by id with importance > 0, so retired nodes cannot re-enter through the vector lane."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:773 retire_expired_facts retires facts past their own expires_at by importance=0, an expiry distinct from a deliberate forget."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/identity.rs:9 identity-layer edits are anchored diffs each gated by an approval card."
+        }
+      ]
+    },
+    {
+      "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/companions/athena/athenaStore.ts:501 the store only mirrors the backend's recall-preview event for display, session-scoped, and a grep of athenaStore.ts for memory|recall|remember|persist|insert|fact finds no write, distillation or recall of agent memory; the pipeline lives in the Rust brain (companion-brain). Note: this context's file_paths in context-map.json are empty and its entry_points name src/features/plugins/companion/, which does not exist, so the store was located by its description.",
+      "techniques": []
+    },
+    {
+      "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/RecallStrip.tsx:68 the recall strip renders nothing when nothing was consulted, and the preview it reads (src/api/companion.ts:2351) has no failure field because both recall_for arms collapse a retrieval error into an empty Recall (src-tauri/src/companion/prompt/recall.rs:27, :50); a down store is shown, and treated, as novelty.",
+      "techniques": [
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:50 .unwrap_or_default() turns failed recall into empty recall; a grep for recall_failed|recallFailed|recall_error|recall_unavailable|memory_unavailable across src and src-tauri/src finds no status signal anywhere downstream."
+        }
+      ]
+    },
+    {
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/companion/proactive/rollup.rs:3 the 'rollup' is a digest card composed deterministically from the turn ledger with no model call and no store family merged; the context's only memory touch is the on_this_day read of raw episodes/reflections (src-tauri/src/companion/proactive/triggers.rs:584) from an append-only log that is never deleted (src-tauri/src/companion/brain/episodic.rs:5). Grep of proactive/ for episodic::|semantic::|insert_fact|remember|companion_node|companion_fact|retrieval:: finds no write or distillation outside a test fixture.",
+      "techniques": [
+        {
+          "technique": "rollup-compaction",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:3 deterministic audit digest, not a pass that supersedes a family of memory items."
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-31T00:00:00Z",
+      "bundle": "software-engineering",
+      "subjects": ["agent-memory"],
+      "techniques": ["observation-clock", "recall-injection", "decay-and-forgetting", "memory-governance", "pending-beliefs-live-apart", "memory-value-model", "rollup-compaction", "scope-before-similarity", "consolidation", "filter-at-the-id-door"],
+      "deviations": 5
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "worker": "cloud-20261031-personas-5",
+  "evaluatedAt": "2026-10-31",
+  "pairs": [
+    {
+      "context": "19f3a6a0-f733-47d1-94b4-a1256c8a92fc",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; a grep of the context's 19 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus finds no host import (the only keydown listener is window-scoped at :65), so no native capability, foreign surface or input synthesis exists here",
+      "techniques": [
+        {"technique": "native-side-owns-the-target-set", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ConnectorTableScopeRow.tsx:18 the only native reach goes through useTableIntrospection, a read (introspectDbTables), which the technique's discriminator excludes"},
+        {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 a modal picker shell inside the document, not a host window over another application"},
+        {"technique": "capability-presence-contract", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerEventPickerModal.tsx:16 reads the agent store only; no host capability is offered"}
+      ]
+    },
+    {
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/execution/usePersonaExecution.ts:389 the view only subscribes to EXECUTION_STATUS, which the native runner emits (src-tauri/src/engine/runner/mod.rs:745), so execution status keeps arriving whether or not the view is shown; every other technique's precondition is absent (only the event bus is imported from the host)",
+      "techniques": [
+        {"technique": "native-owned-stream", "verdict": "realized", "evidence": "src/hooks/execution/usePersonaExecution.ts:389 listen() on EXECUTION_STATUS emitted by the native runner (src-tauri/src/engine/runner/mod.rs:745); the view is a renderer of what it is handed and owns no stream"},
+        {"technique": "native-side-owns-the-target-set", "verdict": "not-applicable", "evidence": "src/hooks/execution/usePersonaExecution.ts:20 the only command import is getExecutionLogLines, an information read the discriminator excludes"},
+        {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus; no window or overlay is placed"},
+        {"technique": "capability-presence-contract", "verdict": "not-applicable", "evidence": "src/hooks/execution/useAiHealingStream.ts:2 again only the event bus, present on every host the app ships to; no host-specific capability is reached"},
+        {"technique": "permission-gate-vector", "verdict": "not-applicable", "evidence": "src/hooks/execution/usePersonaExecution.ts:2 host import is the event bus only; no OS grant is consulted (grep of the 11 files for alwaysOnTop, globalShortcut, getCurrentWindow, invoke found none)"}
+      ]
+    },
+    {
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:819 the vault write target is derived natively from the vault setting plus the project's own name, and the renderer (src/features/teams/sub_mastermind/lib/MemorySection.tsx:9) sends only a project id; the projection's deletions are limited to native-stamped notes no longer active (:954)",
+      "techniques": [
+        {"technique": "native-side-owns-the-target-set", "verdict": "realized", "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:819 dir = vault_project_dir(root, project.name) re-derived from the project id; :954 removal set restricted to files carrying a personas_id not in the active set, hand-authored notes never touched"},
+        {"technique": "native-owned-stream", "verdict": "realized", "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:50 embeds FleetTerminalPane, whose PTY output the Rust reader keeps buffering while the view is detached (src/features/plugins/fleet/FleetTerminalPane.tsx:37)"},
+        {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:47 popovers are absolute layers inside the canvas shell, not native windows over foreign apps"},
+        {"technique": "capability-presence-contract", "verdict": "not-applicable", "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:28 vault presence is user configuration (a configured path), not a per-host capability; it does correctly hide the vault actions when absent (:77)"},
+        {"technique": "permission-gate-vector", "verdict": "not-applicable", "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:22 the context reaches app-owned commands only (listContexts, memory/vault commands); no OS-granted capability"}
+      ]
+    },
+    {
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 the Workspace Knowledge practice library this context described was retired; context-map.json lists 0 filePaths for it and git ls-files finds no src/features/overview/sub_patterns file, so there is no code for the subject's precondition to hold in",
+      "techniques": [],
+      "registryProposal": "not a registry defect: overview-patterns is an empty context (0 files, entry points gone) and should be dropped from context-map.json on the next scan"
+    },
+    {
+      "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute overlay over the in-page sigil stage; a grep of the context's 7 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow, setFocus and keydown returns nothing, so no native surface or capability is involved",
+      "techniques": [
+        {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 in-document layer, not a host window"},
+        {"technique": "native-side-owns-the-target-set", "verdict": "not-applicable", "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:4 imports are in-app glyph modules; no native command is invoked"}
+      ]
+    },
+    {
+      "context": "b0cf3902-0739-40a8-8c76-ae594f41421b",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is confined natively to the project's registered root by canonicalize plus component-wise starts_with (:735) and refused otherwise; the scan itself runs natively and the page only renders its events",
+      "techniques": [
+        {"technique": "native-side-owns-the-target-set", "verdict": "realized", "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:735 component-wise starts_with on canonicalized paths (normalise-then-compare, whole segments) refuses a root outside the project; other crossings send a project id (src/features/plugins/dev-tools/sub_context/useUseCases.ts:111)"},
+        {"technique": "native-owned-stream", "verdict": "realized", "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:281 the page renders CONTEXT_GEN_OUTPUT events from a native background scan instead of owning the work"},
+        {"technique": "capability-presence-contract", "verdict": "not-applicable", "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410 every crossing is a product command present on every host; no OS capability is offered or gated"},
+        {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:7 the 'overlay' is an in-document log panel; no host window is placed"},
+        {"technique": "permission-gate-vector", "verdict": "not-applicable", "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapHealth.tsx:90 app-owned command by project id; no OS grant (grep of the 16 files for alwaysOnTop, globalShortcut, getCurrentWindow found none)"}
+      ]
+    },
+    {
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; a grep of the context's 38 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus hits only comments, so no native capability, foreign window or synthesized input exists here",
+      "techniques": [
+        {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 in-document surface covering the app, not a host window over another application"},
+        {"technique": "capability-presence-contract", "verdict": "not-applicable", "evidence": "src/features/shared/components/layout/ContentLayout.tsx:39 a document content area; no per-host capability class to declare"}
+      ]
+    },
+    {
+      "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/src/commands/core/gallery.rs:290 the outward publish builds its blueprint natively from the team id the renderer sends (src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx:6), and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) sends only an id that src-tauri/src/commands/teams/teams.rs:71 can refuse",
+      "techniques": [
+        {"technique": "native-side-owns-the-target-set", "verdict": "realized", "evidence": "src-tauri/src/commands/core/gallery.rs:290 build_team_blueprint(team_id) re-derives the published content natively; src-tauri/src/commands/teams/teams.rs:71 delete by id refused natively while a pipeline runs"},
+        {"technique": "capability-presence-contract", "verdict": "not-applicable", "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx:6 every command reached is answered on every host; nothing host-absent is offered"},
+        {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/teams/sub_teamWorkspace/presetStudio/PresetConnectionGraph.tsx:88 setFocus is in-graph hover state, not window focus; no native overlay"},
+        {"technique": "native-owned-stream", "verdict": "not-applicable", "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 request/response team commands only; no listen() in the context's 29 files, so the view holds no long-lived stream"},
+        {"technique": "permission-gate-vector", "verdict": "not-applicable", "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:3 app-owned DB commands only; no OS grant"}
+      ],
+      "registryProposal": "native-shell-integration rev 5: the frontmatter lists 10 techniques but the golden path's 'The techniques' list names only 8 - native-side-owns-the-target-set and host-forwarded-key-contract are never linked from the prose, so a reader walking the path misses the technique most pairs in this repo actually turn on"
+    },
+    {
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:116 the editor's tabs are a page-owned strip writing page state (setEditorTab), the depth app-shell hands to the page beyond its two levels; a grep of the context's 36 files for setSidebarSection, NAV_SECTIONS, navigation/registry, passesGates, sidebarData and lazyRetry finds none, so no shell nav, slot or section loading lives here",
+      "techniques": [
+        {"technique": "nav-hierarchy", "verdict": "not-applicable", "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:107 tab defs filtered by tier inside the page - page-owned depth, not a shell level"}
+      ]
+    },
+    {
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/display/RelativeTime.tsx:28 the context is generic display/formatting primitives (relative time, portal tooltip at src/features/shared/components/display/Tooltip.tsx:2, filter pills) reused by every feature; a grep of its 33 files for setSidebarSection, NAV_SECTIONS, navigation/registry, passesGates, sidebarData and minTier finds none (the one lazy() is the charting library in src/features/shared/charts/RechartsWrapper.tsx:14, not a section)",
+      "techniques": []
+    },
+    {
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:68 filters Welcome cards with the hand-copied DEV_MODE_SECTIONS set (src/lib/utils/platform/platform.ts:103 'plugins') instead of the registry's passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier the rail offers Plugins (registry.ts:85 minTier TEAM) while Welcome hides it - two authorities disagree on one entrance",
+      "techniques": [
+        {"technique": "entitlement-gating", "verdict": "deviation", "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:68 a second gate list instead of the one policy authority; registry.ts:85 and platform.ts:103 contradict each other for 'plugins'"},
+        {"technique": "navigation-model", "verdict": "deviation", "evidence": "src/features/home/sub_welcome/HomeWelcome.tsx:68 card ids from a hand-kept NAV_CARDS list are cast unchecked into setSidebarSection"}
+      ]
+    },
+    {
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:76 renders the TEAM-gated Approvals tab (src/features/shared/chrome/sidebar/sidebarData.ts:87) with no tier check and src/stores/slices/overview/overviewSlice.ts:288 setOverviewTab writes any id, so src/features/overview/sub_reports/components/ReportDetailModal.tsx:239 (reached from the ungated Messages tab) opens a destination the sidebar hides below TEAM",
+      "techniques": [
+        {"technique": "entitlement-gating", "verdict": "deviation", "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:76 destination renders without consulting the gate the nav entry uses (sidebarData.ts:87 minTier TEAM); hidden entry, reachable destination"},
+        {"technique": "lazy-section-loading", "verdict": "realized", "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:14 every subtab is split through lazyRetry (retry, then stated failure) under a per-tab ErrorBoundary and route skeleton"}
+      ]
+    },
+    {
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_glyph/personaCore/PersonaCoreEntry.tsx:20 the context is a badge whose configurator opens in the host page's own surface; a grep of its 13 files for setSidebarSection, NAV_SECTIONS, navigation/registry, sidebarData and lazyRetry finds none - 'badge' here is a form chip, not nav attention",
+      "techniques": []
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 splits its six sub-panels with plain React lazy(), skipping the repo's retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19 uses, so a transient chunk-fetch blip goes straight to the error boundary instead of retrying first",
+      "techniques": [
+        {"technique": "lazy-section-loading", "verdict": "deviation", "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 lazy() with no automatic retry - the technique's 'retry once or twice automatically' step is missing"}
+      ]
+    },
+    {
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 casts untyped sub-nav ids (id as DevToolsTab / ObsidianBrainTab / TwinTab at :120-122) from hand-kept arrays, while only top-level sections derive from the registry; src/features/shared/chrome/sidebar/sidebarData.ts:163 records this exact cast having shipped a blank page",
+      "techniques": [
+        {"technique": "navigation-model", "verdict": "deviation", "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 sub-nav ids enter the navigate door through an unchecked cast, so a vocabulary drift compiles and renders blank"}
+      ]
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/uiSlice.ts:542 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:115 persists settingsTab with no restore validation (only sidebarSection is checked, :262), so a retired id makes src/features/settings/components/SettingsPage.tsx:73 tabComponents[tab] undefined and Settings crashes to its boundary",
+      "techniques": [
+        {"technique": "navigation-model", "verdict": "deviation", "evidence": "src/stores/systemStore.ts:115 persisted sub-destination restored without validation against the current vocabulary (prohibition 4); same shape for homeTab/cloudTab at :100/:108"}
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {"ts": "2026-10-31T00:00:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set", "native-owned-stream", "non-stealing-overlay", "capability-presence-contract", "permission-gate-vector"], "deviations": 0},
+    {"ts": "2026-10-31T00:00:00Z", "bundle": "software-engineering", "subjects": ["app-shell"], "techniques": ["navigation-model", "entitlement-gating", "lazy-section-loading", "nav-hierarchy"], "deviations": 5}
+  ]
+}
