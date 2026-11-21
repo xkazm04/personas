@@ -92,6 +92,7 @@
       ],
       "resolved": false
     },
+    "QuickAnswerReviewStepper.tsx": {"count":1,"sections":[7],"lines":["63"],"contexts":["`QuickAnswerReviewStepper.tsx:63` · `useUnifiedTriage.ts:493` · `AutomationCard.tsx:39` ·"],"resolved":false},
     "RecipePicker.tsx": {"count":1,"sections":[7],"lines":["75"],"contexts":["is not merely mislabelled, it is invisible). `RecipePicker.tsx:75` is a fourth variety: it computes"],"resolved":false},
     "ScanComparePicker.tsx": {
       "count": 1,
@@ -219,14 +220,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "PersonaSelectorModal.tsx"
-    },
-    "src/features/agents/quick-answer/QuickAnswerReviewStepper.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["63"],
-      "contexts": ["`QuickAnswerReviewStepper.tsx:63` · `useUnifiedTriage.ts:493` · `AutomationCard.tsx:39` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "QuickAnswerReviewStepper.tsx"
     },
     "src/features/agents/quick-answer/triage/useUnifiedTriage.ts": {
       "count": 1,

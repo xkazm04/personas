@@ -1,4 +1,4 @@
-// The findings ledger's one model (PORTED from bp src/components/ledger/useLedger.ts, its derivations as pure
+// The findings ledger's one model (PORTED from bp src/components/ledger/useLedger.ts @ 7eec7d5, its derivations as pure
 // functions): every proposal of the store as a Finding read against the plan, the lens columns, the status counts,
 // the filters, the packs (oldest first, each with its items and the ones the filters keep), the status chips of a
 // scope, the matrix rows, the keyboard order and what a decision acts on. Nothing here writes: the store's statuses are

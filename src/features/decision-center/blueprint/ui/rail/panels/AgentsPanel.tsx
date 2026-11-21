@@ -1,4 +1,4 @@
-// A · Agents (PORTED from bp src/components/rail/wide/agents.tsx): the list holds an overview row, the store's
+// A · Agents (PORTED from bp src/components/rail/wide/agents.tsx @ 519c80f): the list holds an overview row, the store's
 // lens-scan runs (newest first) and the runs this sheet started (the dock console's `start` lines, by their
 // `personas:<uuid>` label). The detail reads the selection in full: a run's progress, clock and activity log; a start's
 // command line and items; or the overview, the store's latest lines.

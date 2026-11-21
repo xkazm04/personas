@@ -1,4 +1,4 @@
-// The findings ledger's triage rules (PORTED from bp src/lib/train/rules.ts and the constants of
+// The findings ledger's triage rules (PORTED from bp src/lib/train/rules.ts @ 7eec7d5 and the constants of
 // src/components/ledger/useLedger.ts). Pure. They only decide what the ledger OFFERS and how it orders and marks rows;
 // the store owns the transitions, and a refused move comes back as its own `skipped[]` row (the dock console prints it).
 import type { Verdict } from '@/lib/lensScan/compare';

@@ -61,3 +61,17 @@
 .bp-selbar .btn.go { background: var(--bp-mint-2); border-color: var(--bp-mint-2); color: var(--bp-on-mint); font-weight: 600; }
 .bp-selbar .btn.no { border-color: var(--bp-red); color: var(--bp-red-2); }
 .bp-selbar .btn kbd { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); border: 1px solid currentColor; padding: 1px 4px; }
+
+/* ---------- the readiness callout (bp #callout.ga, spark bp-sync WP3): 330 px on the plan's right, an amber frame */
+.bp-callout { position: absolute; z-index: 6; right: 92px; top: 120px; width: 330px; max-height: calc(100% - 120px - var(--bp-bb) - 150px); overflow: auto; background: var(--bp-card); border: 1.5px solid var(--bp-red); padding: 12px 14px; font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); color: var(--bp-ink); box-shadow: 0 10px 40px var(--bp-shadow); scrollbar-width: thin; }
+.bp-callout.ga { border-color: var(--bp-amber); }
+.bp-callout h4 { margin: 0 0 4px; font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-3); color: var(--bp-ink-2); text-transform: uppercase; }
+.bp-callout .big { font: 600 var(--bp-fs-24)/1.1 var(--bp-font-sans); margin: 2px 0 8px; padding-right: 80px; color: var(--bp-ink-hi); }
+.bp-callout .row { display: flex; justify-content: space-between; border-top: 1px solid var(--bp-ink-4); padding: 3px 0; color: var(--bp-ink-2); }
+.bp-callout .x { position: absolute; right: 8px; top: 8px; border: 1px solid var(--bp-ink-3); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); color: var(--bp-ink-2); padding: 3px 6px; text-transform: uppercase; }
+.bp-callout .x:hover { border-color: var(--bp-ink); color: var(--bp-ink-hi); }
+.bp-callout .ready-line { margin: 0 0 8px; font: 500 var(--bp-fs-14)/1.4 var(--bp-font-mono); color: var(--bp-ink-hi); }
+.bp-callout .sub { margin-top: 8px; font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-2); color: var(--bp-ink-2); text-transform: uppercase; }
+.bp-callout .lnk { display: block; width: 100%; padding: 2px 0; text-align: left; font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); color: var(--bp-ink); }
+.bp-callout .lnk:hover { color: var(--bp-ink-hi); text-decoration: underline; }
+.bp-callout .lnk .dim { color: var(--bp-ink-2); }

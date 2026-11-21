@@ -259,3 +259,24 @@
   .pg-hero { grid-template-columns: 1fr; }
   .pg-mrs .mr { grid-template-columns: minmax(0, 1fr) 76px auto; } .pg-mrs .tg { grid-column: 1 / 4; }
 }
+
+/* ---------- what clears it (bp page.css .pg-clrs, spark bp-sync WP3): the verified steps under a lens tab's health,
+   each covered step with its proposal chip */
+.pg-clrs { margin: 12px 0 0; }
+.pg-clrs h4 { margin: 0 0 4px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); border: 0; padding: 0; }
+.pg-clr { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
+.pg-clr li { font-size: var(--bp-fs-14); line-height: 1.4; color: var(--bp-ink); overflow-wrap: anywhere; }
+.pg-clr em { margin-left: 8px; font: 500 var(--bp-fs-12) var(--bp-font-mono); font-style: normal; text-transform: uppercase; color: var(--bp-ink-2); }
+.pg-clr em.bad { color: var(--bp-red-2); }
+.pg-clr em.watch { color: var(--bp-amber-2); }
+.pg-clr .cov { display: inline-block; margin-left: 8px; padding: 0 6px; border: 1px solid var(--bp-ink-3); font: 500 var(--bp-fs-12) var(--bp-font-mono); color: var(--bp-ink-2); white-space: nowrap; }
+.pg-clr .cov.ok { color: var(--bp-mint-2); }
+.pg-clr .cov.short { color: var(--bp-amber-2); }
+.pg-clr .cov.worse { color: var(--bp-red-2); }
+.pg-clrs .blk, .pg-clrs .wrs { margin: 4px 0 0; font-size: var(--bp-fs-13); line-height: 1.4; color: var(--bp-ink-2); }
+
+/* ---------- changed between A and B (bp page.css .pg-cmp; .pg-cmpgrid is the built-item compare, unrelated) */
+.pg-dcmp { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--bp-ink-3); border-left: 5px solid var(--bp-accent); }
+.pg-dcmp ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+.pg-dcmp li { font: 400 var(--bp-fs-14)/1.4 var(--bp-font-mono); color: var(--bp-ink); overflow-wrap: anywhere; }
+.pg-dcmp li.first { color: var(--bp-ink-2); }

@@ -1,4 +1,4 @@
-// Time travel and the recent window, as pure functions (PORTED from bp src/lib/model/aggregates.ts stageAt / deltaWin /
+// Time travel and the recent window, as pure functions (PORTED from bp src/lib/model/aggregates.ts @ 7eec7d5 stageAt / deltaWin /
 // countsOf and Engine.isNow): the drawing at a date replays every feature's stage from the events log (the map's
 // revision list); a feature not yet added on that date has no stage and is drawn as "not yet drawn". The recent window
 // (the rail's View, `viewDays`) decides which features fly the delta triangle: a stage change within that many days

@@ -1,5 +1,5 @@
 // What the In packs table, the decision bar and the matrix need of every pack item (PORTED from bp
-// src/components/ledger/train/ItemRow.tsx useItemFacts, as a pure function): the verdict (compare.ts verdictOf,
+// src/components/ledger/train/ItemRow.tsx @ 48171a1 useItemFacts, as a pure function): the verdict (compare.ts verdictOf,
 // noise-aware), before / after of its own metric, its screens and runs, the attempt chain, and whether it failed or
 // would ship flagged. One pass over the measurements and the shots.
 import { runStats, verdictOf, type LensFields, type Verdict } from '@/lib/lensScan/compare';

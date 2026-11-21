@@ -1,10 +1,13 @@
-// Fixtures and ribbon segments (PORTED from bp src/engine/render/plan.ts makeGeom / healthMarks / lensVerdict /
+// Fixtures and ribbon segments (PORTED from bp apps/web/src/engine/render/plan.ts @ 93f30b0 makeGeom / healthMarks / lensVerdict /
 // paintTile / ribSeg, near verbatim at u = 1): a feature's stage fill and stroke (ink only), its trouble cloud or
 // watch tick, the delta triangle when its stage moved in the last week, the lens marks, the "?" over the unmeasured,
 // and at fixture scale its code, evidence line, name (doubling at L3) and trouble stamp.
 // EDIT (port): bp's blast-radius and GA filters and its swarm chips are not brought (no such modes here). Time travel
 // (Stage D) is bp's: the stage is the one on the drawn date (e.stageOf), and the trouble marks, lens verdicts and live
 // values speak of now only; the delta window is the rail's View days (bp S.delta).
+// EDIT (port, spark bp-sync WP2, re-pinned from 36c6126 to 93f30b0): on a past date the trouble marks draw the REPLAYED
+// health (syncMarks.markHealth over engine/replay.ts), none where a pair could not be replayed; a fixture carries the
+// comparison's chips (syncMarks.compareMarks) when two dates are compared. The lens verdicts and stamps stay now-only.
 import type { Feature } from '../standard/load';
 import type { TileNode } from '../model/layout';
 import { clamp, smooth } from './camera';
@@ -14,6 +17,7 @@ import { composeGeneral, expandedRect, lensContent, lensMarks, type MarkArgs, ty
 import { unknownFill } from './patterns';
 import { drawText } from './text';
 import { deltaWin } from './travel';
+import { compareMarks, markHealth } from './syncMarks';
 import { sxv, syv, type View } from './view';
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -91,7 +95,8 @@ export function ribSeg(e: Engine, ctx: CanvasRenderingContext2D, f: Feature, x: 
   const Lv = e.live(f);
   stageFill(ctx, th, st, x, y, w, h, Lv.rolloutPct, Lv.progressPct);
   if (!st || st === 'specified' || st === 'idea') { stageStroke(ctx, th, st, aa, 1); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.setLineDash([]); ctx.globalAlpha = aa; }
-  if (st && e.isNow) healthMarks(e, ctx, e.mixS.top ? f.lens[e.mixS.top]?.h ?? 'unmeasured' : f.health, x, y, w, h, true, 1);
+  const hm = st ? markHealth(e, f) : null;
+  if (hm) healthMarks(e, ctx, hm, x, y, w, h, true, 1);
   if (st && moved(e, f)) deltaMark(e, ctx, x + w * 0.9, y, clamp((w * 0.9) / 9, 4, 8));
   const g = makeGeom(x, y, w, h, 'ribbon', k);
   marks(e, ctx, g, f);
@@ -126,11 +131,12 @@ export function paintTile(e: Engine, ctx: CanvasRenderingContext2D, v: View, T: 
   stageFill(ctx, th, st, x, y, w, h, Lv.rolloutPct, Lv.progressPct);
   stageStroke(ctx, th, st, a, w < 30 ? 1 : 1.5); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   ctx.setLineDash([]); ctx.globalAlpha = a;
-  const top = e.mixS.top;
-  if (st && e.isNow) healthMarks(e, ctx, top ? f.lens[top]?.h ?? 'unmeasured' : f.health, x, y, w, h, false, 1);
+  const hm = st ? markHealth(e, f) : null;
+  if (hm) healthMarks(e, ctx, hm, x, y, w, h, false, 1);
   if (st && moved(e, f)) deltaMark(e, ctx, x + w, y, clamp(w / 9, 4, 8));
   marks(e, ctx, g, f);
   ctx.globalAlpha = a;
+  compareMarks(e, ctx, f, x, y, w, h);
   if (vd.unk > 0.004) unknownFill(ctx, th, g.body.x, g.body.y, g.body.w, g.body.h, 1, a * Math.min(1, vd.unk));
   ctx.textBaseline = 'alphabetic';
   e.budget.of++;

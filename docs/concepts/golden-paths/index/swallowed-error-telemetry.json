@@ -179,14 +179,6 @@
       "resolvedFrom": "basename",
       "verbatim": "BrokerPanel.tsx"
     },
-    "src/hooks/database/useSchemaProposal.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["125"],
-      "contexts": ["silently skipped with `continue`) · `useSchemaProposal.ts:125` (counts consecutive errors while"],
-      "resolvedFrom": "basename",
-      "verbatim": "useSchemaProposal.ts"
-    },
     "src/hooks/utility/timing/usePolling.ts": {
       "count": 2,
       "sections": [5,7],
@@ -208,6 +200,7 @@
     "src/lib/silentFailureTelemetry.ts": {"count":3,"sections":[3,6,7],"lines":["1-18","139-169"],"contexts":["- **`src/lib/silentFailureTelemetry.ts` — `recordSwallow(tag, message, err)`** (`:86`). Per-tag"]},
     "src/lib/utils/parseJson.ts": {"count":4,"sections":[6,9],"lines":["2-9","6"],"contexts":["- `src/lib/utils/parseJson.ts:2-9` — the canonical **legitimate** bindingless catch."]},
     "src/stores/storeTypes.ts": {"count":2,"sections":[3,6],"lines":["114-119"],"contexts":["- **`src/stores/storeTypes.ts` — `reportError(err, fallback, set, { action })`** (`:100`). The"]},
-    "src/test/eslint-rules/customRules.test.ts": {"count":2,"sections":[9],"lines":["366"],"contexts":["is a RuleTester fixture (`src/test/eslint-rules/customRules.test.ts:366`). (3) `.claude/CLAUDE.md`"]}
+    "src/test/eslint-rules/customRules.test.ts": {"count":2,"sections":[9],"lines":["366"],"contexts":["is a RuleTester fixture (`src/test/eslint-rules/customRules.test.ts:366`). (3) `.claude/CLAUDE.md`"]},
+    "useSchemaProposal.ts": {"count":1,"sections":[7],"lines":["125"],"contexts":["silently skipped with `continue`) · `useSchemaProposal.ts:125` (counts consecutive errors while"],"resolved":false}
   }
 }

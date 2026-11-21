@@ -1,4 +1,4 @@
-// A lens on the drawing, from its manifest alone (PORTED from bp src/variants/subtle/expression.ts, the expression
+// A lens on the drawing, from its manifest alone (PORTED from bp src/variants/subtle/expression.ts @ 4cc573b, the expression
 // bp's index page draws, and bp src/lib/model/lens.ts lensContent / fieldPart / lensAggregate). General: one slot per
 // enabled lens along a fixture's top edge, each a glyph in its health colour and a short rail in the lens's line type
 // measuring `presentation.measures`. A lone lens: its glyph at the head of the strip and its line type laid across

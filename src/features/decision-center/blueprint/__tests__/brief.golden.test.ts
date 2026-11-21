@@ -1,8 +1,9 @@
 // @vitest-environment node
 /**
  * The decision brief's port (model/brief.ts), held by bp's own golden: every case of bp's
- * docs/concepts/decision-brief/golden.json, run through the port, must come out deep-equal AND byte for byte (the same
- * document bp's scripts/brief-golden.ts writes). When bp changes the brief, its golden changes in the same commit
+ * packages/schema/golden/decision-brief.json (docs/concepts/decision-brief/golden.json is its byte-identical mirror),
+ * run through the port, must come out deep-equal AND byte for byte (the same document bp's scripts/brief-golden.ts
+ * writes). When bp changes the brief, its golden changes in the same commit
  * (bp's check:decision-brief refuses otherwise); re-copy the golden, update GOLDEN_PIN, and this goes red until the
  * port follows. The pins are also what bp's cross-repo drift report reads (ROADMAP E5).
  */
@@ -15,8 +16,8 @@ import { emptyScan, type Pack, type Proposal, type Run } from '@/lib/lensScan/wi
 
 /** bp's golden as copied: its path in bp, the bp commit it was copied at, and the sha256 of its LF bytes. */
 const GOLDEN_PIN = {
-  path: 'docs/concepts/decision-brief/golden.json',
-  commit: '51e193e',
+  path: 'packages/schema/golden/decision-brief.json',
+  commit: '93f30b0',
   sha256: '24174161fab145ba1836bebfa35c7a4751145f65608ef6bce4675ac3005cb9d7',
 } as const;
 /** The port's header: bp's path, the commit and the sha256 of bp's file there. */

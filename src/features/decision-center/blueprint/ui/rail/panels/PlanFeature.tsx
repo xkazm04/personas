@@ -1,4 +1,4 @@
-// The Plan workbench's feature detail (PORTED from bp src/components/rail/wide/plan.tsx FeatureDetail): where it is,
+// The Plan workbench's feature detail (PORTED from bp src/components/rail/wide/plan.tsx @ 36c6126 FeatureDetail): where it is,
 // its stage and general health, the work waiting on it, open it or show it on the plan, and every lens's health with
 // the rule's reason.
 // EDIT (port): bp's "agents on it" and "questions on it" come from its simulated swarm; here the figures are the store's

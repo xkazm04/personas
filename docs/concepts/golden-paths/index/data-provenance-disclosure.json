@@ -78,6 +78,7 @@
       "resolved": false
     },
     "NightRun.ts": {"count":2,"sections":[7,9],"lines":["29"],"contexts":["`ExecutionPreview.ts:22,26,30`, `ExecutionDashboardData.ts:9`, `NightRun.ts:29`"],"resolved":false},
+    "PerformanceDigest.ts": {"count":1,"sections":[7],"lines":["46"],"contexts":["(`projectedCostUsd` sitting beside `monthSpendUsd`), `PerformanceDigest.ts:46`, `RoutingClaim.ts:8`."],"resolved":false},
     "PrSignalsBand.tsx": {
       "count": 1,
       "sections": [6],
@@ -588,14 +589,6 @@
       "contexts": ["`ExecutionPreview.ts:22,26,30`, `ExecutionDashboardData.ts:9`, `NightRun.ts:29`"],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionPreview.ts"
-    },
-    "src/lib/bindings/PerformanceDigest.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["46"],
-      "contexts": ["(`projectedCostUsd` sitting beside `monthSpendUsd`), `PerformanceDigest.ts:46`, `RoutingClaim.ts:8`."],
-      "resolvedFrom": "basename",
-      "verbatim": "PerformanceDigest.ts"
     },
     "src/lib/bindings/RoutingClaim.ts": {
       "count": 1,

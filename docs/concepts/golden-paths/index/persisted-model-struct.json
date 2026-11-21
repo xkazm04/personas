@@ -44,6 +44,14 @@
       ],
       "resolved": false
     },
+    "MigrationResult.ts": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| `src/lib/bindings/` (31 files) · `src/api/**` (27 of 30 import sites) | **31 orphan bindings**: a generated `.ts` whose Rust `struct`/`enum`/`type` no longer exists anywhere in `src-tauri/`. **28 a…"
+      ],
+      "resolved": false
+    },
     "api-schema.d.ts": {
       "count": 1,
       "sections": [6],
@@ -563,15 +571,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "MemoryReviewProposal.ts"
-    },
-    "src/lib/bindings/MigrationResult.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "| `src/lib/bindings/` (31 files) · `src/api/**` (27 of 30 import sites) | **31 orphan bindings**: a generated `.ts` whose Rust `struct`/`enum`/`type` no longer exists anywhere in `src-tauri/`. **28 a…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "MigrationResult.ts"
     },
     "src/lib/bindings/PersonaExecution.ts": {
       "count": 1,

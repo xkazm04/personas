@@ -15,6 +15,11 @@ import type { Nav } from './useNavigation';
 import type { Writes } from './useWrites';
 import type { ChangesState } from './useChanges';
 import type { FollowState } from './useFocusFollow';
+import type { SyncModels } from './useSyncModels';
+import type { TroubleWalk } from './useTroubleWalk';
+
+/** spark bp-sync WP2: the trouble index, replayed health, the date comparison, readiness and the trouble walk. */
+export type SyncState = SyncModels & TroubleWalk;
 
 /** What is in flight right now, read off the fleet (the builds this sheet started). */
 export interface LiveState {
@@ -49,6 +54,8 @@ export interface Sheet {
   changes: ChangesState;
   /** bp's shared focus, followed (a live product only; the fixture has no source and no chip). */
   follow: FollowState;
+  /** spark bp-sync WP2 (cmpA and the readiness scope themselves are `ui.cmpA` / `ui.ready`; the travelled date is `ui.asOf`). */
+  sync: SyncState;
   onClose(): void;
 }
 

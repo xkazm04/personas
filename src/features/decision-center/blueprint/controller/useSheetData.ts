@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import type { BlueprintActions, BlueprintData } from '../source';
 import { buildPlan, type Plan } from '../model/plan';
+import type { Feature } from '../standard/load';
 import { sameJson } from '../model/same';
 import { buildWork, type Work } from '../model/work';
 import { silentCatch } from '@/lib/silentCatch';
@@ -19,6 +20,20 @@ export interface SheetData {
   reload(): Promise<boolean>;
   /** When the last read finished (ms), whoever asked for it; the live refresh throttles on it. */
   readAt: MutableRefObject<number>;
+  /**
+   * The health version (bp sim.healthV, spark bp-sync WP2): moves on every read that changes any feature's health or
+   * trouble. This is the ONE place it is bumped: health here is the map's facets, so it can move only when a read brings
+   * a new map (mergeRead keeps the old one by identity otherwise) and the new plan judges some feature differently.
+   * The trouble index (flags, "Trouble by lens", the trouble walk) rebuilds on it.
+   */
+  healthV: number;
+}
+
+/** What a plan says about health, as one string: two plans with the same signature flag the same features. */
+export function healthSig(fs: readonly Feature[]): string {
+  let s = '';
+  for (const f of fs) { s += f.id + ':' + f.health; for (const t of f.trouble) s += ',' + t.lens + '=' + t.h; s += ';'; }
+  return s;
 }
 
 const sameMap = (a: BlueprintData, b: BlueprintData): boolean => a.events === b.events && sameJson(a.structure, b.structure);
@@ -49,6 +64,13 @@ export function useSheetData(initial: BlueprintData, actions: BlueprintActions):
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const plan = useMemo(() => buildPlan(data.structure, data.events), [data.structure, data.events]);
   const work = useMemo(() => buildWork(plan.L, data.scan), [plan, data.scan]);
+  // bumped in a memo over the plan, idempotently (a second run over the same plan finds the same signature)
+  const health = useRef({ sig: '', v: 0 });
+  const healthV = useMemo(() => {
+    const h = health.current, sig = healthSig(plan.S.features);
+    if (sig !== h.sig) { if (h.sig) h.v++; h.sig = sig; }
+    return h.v;
+  }, [plan]);
   const reload = useCallback(async () => {
     const mine = latest.next();
     try {
@@ -61,5 +83,5 @@ export function useSheetData(initial: BlueprintData, actions: BlueprintActions):
       return false;
     }
   }, [actions, latest]);
-  return { data, plan, work, reload, readAt };
+  return { data, plan, work, reload, readAt, healthV };
 }

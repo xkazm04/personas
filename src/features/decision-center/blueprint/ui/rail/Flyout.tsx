@@ -1,4 +1,4 @@
-// bp's rail flyout (PORTED from bp src/components/Dock.tsx:157-209, the flyout host): a panel over the plan to the
+// bp's rail flyout (PORTED from bp src/components/Dock.tsx:157-209 @ 36c6126, the flyout host): a panel over the plan to the
 // rail's left, one at a time. Its header carries the item's glyph in its tone, the title in caps and an Esc chip; the
 // body is a wide workbench (Agents, Plan with the Legend, View). Mounted by BlueprintSheet while `ui.flyout` is set:
 // the item again, the Esc ladder, the chip or a press outside the panel and the rail closes it, and focus goes back to

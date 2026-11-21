@@ -1,4 +1,4 @@
-// bp's selection bar (PORTED from bp src/components/Overlays.tsx SelBar, blueprint.css #selbar / .btn): the items picked
+// bp's selection bar (PORTED from bp src/components/Overlays.tsx @ 7eec7d5 SelBar, blueprint.css #selbar / .btn): the items picked
 // with Space or Shift+click (`ui.selected`), what they are, and the batch moves their statuses allow, each ONE store call
 // over every picked id (`writes.decideMany` / `writes.askMany`, which asks the note first when the move wants one). The
 // store answers per item; the bar never withholds an id it guesses would be refused. Esc clears (the sheet's ladder).

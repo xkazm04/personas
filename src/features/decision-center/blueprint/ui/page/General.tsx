@@ -10,6 +10,7 @@ import { Press } from '../Press';
 import { useAsOf } from './bits';
 import { BusinessSection, hasBusiness } from './Business';
 import { CodeTree } from './CodeTree';
+import { CompareSection } from './Compare';
 import { Activity, Dependencies } from './Links';
 import { Sec, Stagger } from './motion';
 import { stageView } from './readings';
@@ -63,6 +64,7 @@ export function GeneralTab({ f }: { f: Feature }) {
       </div>
       <div className="pg-cols">
         <Stagger className="pg-main">
+          <CompareSection fid={f.id} />
           <Sec label={B.pg_sec_tiles}><h4 className="pg-h">{tx(B.cards_all, { count: s.plan.lenses.length })}</h4><StatTiles f={f} /></Sec>
           <Sec label={B.pg_sec_work}><WorkSection fid={f.id} lens="general" /></Sec>
           {hasBusiness(f) ? <Sec label={B.pg_sec_business}><BusinessSection f={f} /></Sec> : null}

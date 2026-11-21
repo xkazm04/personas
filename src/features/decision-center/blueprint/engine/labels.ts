@@ -1,4 +1,4 @@
-// Place labels (PORTED from bp src/engine/render/plan.ts drawBayTags / drawRoomLabels / drawWingLabels /
+// Place labels (PORTED from bp apps/web/src/engine/render/plan.ts @ 93f30b0 drawBayTags / drawRoomLabels / drawWingLabels /
 // drawChronology, near verbatim at u = 1): boxed bay tags (code | NAME | count), room names (on a 92% label plate
 // when they float) with their 13 px aggregate line, wing titles with the circled letter, the RFI pin with the
 // wing's waiting count, the 7 px stacked stage bar and "N features · N live · ..." with a right-aligned
@@ -7,6 +7,8 @@
 // pin stands alone on that line; bp's room illustrations and campus building label are not brought. bp keeps 38 px
 // clear of a room's pin while its simulation runs; here the room pins are the waiting work, so the room is kept
 // clear whenever any work is waiting.
+// EDIT (port, spark bp-sync WP2, re-pinned from 36c6126 to 93f30b0): with two dates compared, room and wing labels add
+// bp's "N changed" in the accent (Engine.cmpCount over model/compare.ts changedIn), after "N in trouble".
 import type { Feature } from '../standard/load';
 import { generalHealth } from '../standard/present';
 import { healthOf, type Counts } from '../model/aggregates';
@@ -103,10 +105,13 @@ function drawRoomLabels(e: Engine, ctx: CanvasRenderingContext2D, v: View, B: Bl
       if (y === r.y + 8) R.labelBox = { x: (x - 6 - ox) / k, y: (y - 3 - oy) / k, w: (pw + 12) / k, h: (blockH + 8) / k };
       lines.forEach((l, i) => drawText(ctx, l, x, y + lh * (i + 0.8), tx.f(fs, 600), th.inkHi, null, ls));
       if (inHeader && hh >= blockH + 34 && y === r.y + 8) {
-        const ag = aggParts(e, R.feats), af = tx.f(13, 500), avail = r.w - 28 - (ag.trouble ? 92 : 0) - (r.w > 420 && hh > 70 ? 110 : 0) - (pins ? 38 : 0);
-        const s = tx.fit(ag.lens ?? ag.general, avail, af);
+        const ag = aggParts(e, R.feats), af = tx.f(13, 500), cm = e.cmpCount(R.id, R.feats);
+        const avail = r.w - 28 - (ag.trouble ? 92 : 0) - (cm ? 92 : 0) - (r.w > 420 && hh > 70 ? 110 : 0) - (pins ? 38 : 0);
+        const s = tx.fit(ag.lens ?? ag.general, avail, af), sf = tx.f(13, 600);
         if (s) drawText(ctx, s, x, y + blockH + 17, af, ag.lens ? e.accentOf(top) : th.inkA(0.8));
-        if (ag.trouble && s) drawText(ctx, e.words.inTrouble(ag.trouble), x + tx.w(s, af) + 12, y + blockH + 17, tx.f(13, 600), th.red2);
+        let tx0 = s ? x + tx.w(s, af) + 12 : x;
+        if (ag.trouble && s) { const t0 = e.words.inTrouble(ag.trouble); drawText(ctx, t0, tx0, y + blockH + 17, sf, th.red2); tx0 += tx.w(t0, sf) + 12; }
+        if (cm && s) drawText(ctx, e.words.changed(cm), tx0, y + blockH + 17, sf, th.accent);
       }
       ctx.globalAlpha = 1;
     }
@@ -129,11 +134,13 @@ function drawWingLabels(e: Engine, ctx: CanvasRenderingContext2D, v: View, B: Bl
     const ag = aggParts(e, W.feats);
     if (top && e.isNow) drawHealthBar(ctx, th, x, base - 6, wdt, 7, healthOf(W.feats, top)); else drawStageBar(ctx, th, x, base - 6, wdt, 7, ag.c);
     const af = tx.f(13, 500), tf = tx.f(13, 600), parts = ag.lens ?? ag.general, shortParts = ag.lensShort ?? ag.generalShort;
-    const trS = ag.trouble ? e.words.inTrouble(ag.trouble) : '', tr = ag.trouble ? tx.w(trS, tf) + 10 : 0;
+    const trS = ag.trouble ? e.words.inTrouble(ag.trouble) : '', tw = ag.trouble ? tx.w(trS, tf) + 10 : 0;
+    const cm = e.cmpCount(W.id, W.feats), cmS = cm ? e.words.changed(cm) : '', tr = tw + (cm ? tx.w(cmS, tf) + 10 : 0);
     let s = tx.fit(parts, wdt - tr, af);
     if (s && !s.includes('·')) s = tx.fit(shortParts, wdt - tr, af) ?? s;
     if (s) drawText(ctx, s, x, base - 14, af, ag.lens ? e.accentOf(top) : th.ink, th.halo);
     if (ag.trouble) { ctx.textAlign = 'right'; drawText(ctx, trS, x + wdt, base - 14, tf, th.red2, th.halo); ctx.textAlign = 'left'; }
+    if (cm) { ctx.textAlign = 'right'; drawText(ctx, cmS, x + wdt - tw, base - 14, tf, th.accent, th.halo); ctx.textAlign = 'left'; }
     // the swarm line's place: the wing's RFI pin and how many asks wait there (bp draws it beside the agent survey marks)
     const asks = asksOf(e, W.feats), sy = base - 32;
     if (asks.n) {

@@ -1,5 +1,6 @@
-// The Plan workbench's overview (PORTED from bp src/components/rail/wide/plan.tsx Overview): the legend of the sheet
-// in view, trouble by lens (a lens opens its sheet), the drawing's title block and the keys.
+// The Plan workbench's overview (PORTED from bp src/components/rail/wide/plan.tsx @ 36c6126 Overview): the legend of the sheet
+// in view, trouble by lens (a lens opens its sheet; counted by the sheet's trouble index, spark bp-sync WP2), the
+// drawing's title block and the keys.
 import { useMemo } from 'react';
 import '../../../styles/counts.css';
 import type { CSSProperties } from 'react';
@@ -19,13 +20,20 @@ import { TitleBlockTbk } from './TitleBlockTbk';
 const KEYS: Partial<Record<KeyAct, keyof BpText>> = {
   enter: 'key_enter', back: 'key_back', wingNext: 'key_wing_next', wingPrev: 'key_wing_prev', site: 'key_site', zoomOut: 'key_zoom_out', zoomIn: 'key_zoom_in',
   find: 'key_find', lens: 'key_lens', ledger: 'key_ledger', timeline: 'key_timeline', help: 'key_help',
+  troubleNext: 'key_trouble_next', troublePrev: 'key_trouble_prev', pinA: 'key_pin_a', ready: 'key_ready',
 };
 const KEY_GROUPS: readonly KeyGroup[] = ['move', 'walk', 'sheets'];
 
 export function PlanOverview() {
   const s = useSheet();
   const { B, tx } = s.text;
-  const kc = useMemo(() => Object.fromEntries(s.plan.lenses.map((d) => [d.id, lensFigures(s.plan.S.features, d.id)])), [s.plan]);
+  // bad and watch from the sheet's trouble index (it follows every read that re-judges health); `measured` from the map
+  const { trouble } = s.sync;
+  const kc = useMemo(() => {
+    const tc = trouble.counts();
+    return Object.fromEntries(s.plan.lenses.map((d) => [d.id, { ...lensFigures(s.plan.S.features, d.id), bad: tc[d.id]?.bad ?? 0, watch: tc[d.id]?.watch ?? 0 }]));
+  // a new index per health version (useSyncModels), so its identity is the key
+  }, [s.plan, trouble]);
   const L = s.ui.lens === 'general' ? null : s.plan.LENS[s.ui.lens] ?? null;
   return (
     <>

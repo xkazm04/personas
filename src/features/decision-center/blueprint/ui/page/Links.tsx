@@ -1,6 +1,7 @@
 // What a feature leans on and what leans on it, and its recent activity (bp sheet/SheetBody.tsx FeatureLinks, Activity;
-// page/General.tsx Dependencies). A linked feature opens its own page. bp's blast radius stays out (operator: outside
-// the brief), so the Used-by list carries no blast count and no plan overlay.
+// page/General.tsx Dependencies). A linked feature opens its own page. bp's blast-radius MODE (B, its plan overlay and
+// its callout) stays out (operator: outside the brief), so the Used-by list carries no blast count and no plan overlay;
+// the blast radius is read where a decision needs it, on a waiting card's decision brief (model/brief.ts, the blast fact).
 import { useMemo } from 'react';
 import { useSheet } from '../../controller/SheetContext';
 import { stageWord } from '../../controller/useBlueprintText';

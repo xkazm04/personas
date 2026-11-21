@@ -1,13 +1,17 @@
-// The hover card's bodies (PORTED from bp src/components/Overlays.tsx HoverBody): a fixture (kicker, name, the plain
+// The hover card's bodies (PORTED from bp apps/web/src/components/Overlays.tsx @ 93f30b0 HoverBody): a fixture (kicker, name, the plain
 // stage on the date shown, the lens's evidence, what is in trouble and what waits), a place (a room or, at the site
 // level, its wing: kicker, name, summary, the 8 px stacked stage bar and its counts) and a cluster of trouble flags.
 // EDIT (port): bp's agent, pin and swarm lines and the 96x64 place illustration have no data here and are not brought.
+// spark bp-sync WP3: a place under a lens view at now says bp's placeWords parts (engine/place-words: the lens's verdict,
+// bad, to watch) and its trouble line names the lens; under General (or travelled) the stage parts stay, as before.
 import type { Sheet } from '../../controller/SheetContext';
 import type { Feature } from '../../standard/load';
 import type { RoomNode, WingNode } from '../../model/layout';
 import { lensContent } from '../../engine/lens';
 import { countsAt } from '../../engine/travel';
 import { figures } from '../../model/counts';
+import { placeParts, placeWords } from '../../engine/place-words';
+import { syncWords } from '../../controller/syncWords';
 import type { FlagBox } from '../../engine/types';
 import { formatPercent } from '@/lib/utils/formatters';
 
@@ -50,10 +54,12 @@ export function TileBody({ s, f, flag }: { s: Sheet; f: Feature; flag: FlagBox |
 export function PlaceBody({ s, o }: { s: Sheet; o: RoomNode | WingNode }) {
   const { B, tx } = s.text, e = s.engine, now = !e || e.isNow, W = s.words;
   const c = countsAt(o.feats, (f) => (e ? e.stageOf(f) : f.stage)), tot = Math.max(1, c.n);
-  const bad = now ? figures(o.feats).bad : 0;
   const room = o.kind === 'room';
   const kick = room ? tx(B.hov_room_kicker, { letter: o.wing.def.letter, wing: o.wing.def.name }) : tx(B.hov_wing_kicker, { letter: o.def.letter });
-  const parts = [W.featuresN(c.n), W.live(c.live + c.flagged), W.building(c.build), W.onPaper(c.paper)];
+  const pw = now && s.ui.lens !== 'general' ? placeWords(s.plan.L, s.plan, o.kind, o.id, s.ui.lens, s.ui.asOf ?? s.plan.S.asOf, s.plan.S.asOf, s.ui.viewDays) : null;
+  const lens = pw?.lensPart ? pw : null;
+  const parts = lens ? placeParts(lens, syncWords(s.text, W).place) : [W.featuresN(c.n), W.live(c.live + c.flagged), W.building(c.build), W.onPaper(c.paper)];
+  const bad = lens ? lens.bad : now ? figures(o.feats).bad : 0;
   const segs: [number, string][] = [[c.live, 'a85'], [c.flagged, 'a50'], [c.build, 'a25'], [c.paper + c.none, 'a08']];
   return (
     <>
@@ -64,8 +70,8 @@ export function PlaceBody({ s, o }: { s: Sheet; o: RoomNode | WingNode }) {
         {segs.map(([n, a]) => (n ? <i key={a} className={a} style={{ width: (100 * n) / tot + '%' }} /> : null))}
         {c.dep ? <i className="dep" style={{ width: (100 * c.dep) / tot + '%' }} /> : null}
       </div>
-      <div className="e">{parts.join(' · ')}</div>
-      {bad > 0 && <div className="t">{W.inTrouble(bad)}</div>}
+      <div className="e" data-testid="blueprint-hov-parts">{parts.join(' · ')}</div>
+      {bad > 0 && <div className="t">{lens?.lensName ? tx(B.sync_in_trouble_under, { count: bad, lens: lens.lensName }) : W.inTrouble(bad)}</div>}
       <div className="h">{B.hov_hint_place}</div>
     </>
   );

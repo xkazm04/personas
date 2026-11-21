@@ -1,4 +1,4 @@
-// The Agents workbench's detail pane (PORTED from bp src/components/rail/wide/agents.tsx JobDetail and Overview): a
+// The Agents workbench's detail pane (PORTED from bp src/components/rail/wide/agents.tsx @ 519c80f JobDetail and Overview): a
 // run read in full (status, phase, figures, progress, times, its activity as the log), a run this sheet started (its
 // label, command line and items), or the overview (the store's latest lines, each flying to its feature).
 // EDIT (port): bp's job log tail is the run's activity rows here (the store keeps no log); its Cancel, crew detail and

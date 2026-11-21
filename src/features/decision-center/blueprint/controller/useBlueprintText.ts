@@ -46,6 +46,7 @@ export function useEngineWords({ B, tx, language }: BlueprintText): EngineWords 
     bad: (n) => tx(B.count_bad, { count: n }),
     unmeasured: (n) => tx(B.count_unmeasured, { count: n }),
     inTrouble: (n) => tx(B.count_in_trouble, { count: n }),
+    changed: (n) => tx(B.sync_changed, { count: n }),
     waiting: (n) => tx(B.count_waiting, { count: n }),
     oldestWork: B.chrono_oldest,
     newestWork: B.chrono_newest,

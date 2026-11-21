@@ -1,4 +1,4 @@
-// The camera (PORTED from bp src/engine/camera.ts, with the prototype's level scales). World <-> screen, fits,
+// The camera (PORTED from bp src/engine/camera.ts @ 17e3e3a, with the prototype's level scales). World <-> screen, fits,
 // fly-to with a pull-back bump, wheel zoom about the cursor, and the LEVEL CHAIN: the best-covered wing, room and
 // bay under the view centre, and how deep the camera has entered (L0 site .. L3 bay).
 //

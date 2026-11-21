@@ -352,14 +352,6 @@
       "isDir": true
     },
     "src/hooks/": {"count":1,"sections":[12],"contexts":["scan — and this leaf's own inventory never widened its search past `src/lib/` to the `src/hooks/`"],"resolved":false,"isDir":true},
-    "src/hooks/database/useSchemaProposal.ts": {
-      "count": 2,
-      "sections": [6,12],
-      "lines": ["207"],
-      "contexts": ["`useSchemaProposal.ts:207` invalidates after applying a schema change, which is the half almost"],
-      "resolvedFrom": "basename",
-      "verbatim": "useSchemaProposal.ts"
-    },
     "src/hooks/database/useTableIntrospection.ts": {
       "count": 5,
       "sections": [3,6,9,12],
@@ -563,6 +555,7 @@
       ],
       "resolved": false
     },
+    "useSchemaProposal.ts": {"count":2,"sections":[6,12],"lines":["207"],"contexts":["`useSchemaProposal.ts:207` invalidates after applying a schema change, which is the half almost"],"resolved":false},
     "vibeman/src/app/features/Context/sub_ContextGroups/lib/gradientUtils.ts": {
       "count": 1,
       "sections": [6],

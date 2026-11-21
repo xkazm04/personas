@@ -58,7 +58,9 @@ export interface BlueprintData {
   events: string;
   /** The store, as bp's wire: column names, NULL columns omitted. */
   scan: ScanSnapshot;
-  /** `PRAGMA user_version` of the store when it was read (1 to 4 today; v4 adds tier, risk_class, origin and external_ref to proposals). */
+  /** `PRAGMA user_version` of the store when it was read (1 to 5 today; v4 adds tier, risk_class, origin and
+   *  external_ref to proposals, v5 the scan-finding/1 columns: impact, confidence, effort, score, band, mvp,
+   *  predicted_verdict, proof and the rest). */
   storeVersion: number;
 }
 

@@ -45,6 +45,15 @@
       ],
       "resolved": false
     },
+    "agents/quick-answer/QuickAnswerBody.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["58"],
+      "contexts": [
+        "| `agents/sub_lab/use-cases/UseCaseHistory.tsx:63` · `onboarding/components/TemplatePickerStep.tsx:50` · `onboarding/components/DesktopDiscoveryStep.tsx:64` · `plugins/dev-tools/sub_projects/GitHubRe…"
+      ],
+      "resolved": false
+    },
     "agents/sub_glyph/GlyphCinemaLayout.tsx": {
       "count": 1,
       "sections": [7],
@@ -134,16 +143,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/components/allPersonas/PersonaConfigPanel.tsx"
-    },
-    "src/features/agents/quick-answer/QuickAnswerBody.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["58"],
-      "contexts": [
-        "| `agents/sub_lab/use-cases/UseCaseHistory.tsx:63` · `onboarding/components/TemplatePickerStep.tsx:50` · `onboarding/components/DesktopDiscoveryStep.tsx:64` · `plugins/dev-tools/sub_projects/GitHubRe…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/quick-answer/QuickAnswerBody.tsx"
     },
     "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx": {
       "count": 1,

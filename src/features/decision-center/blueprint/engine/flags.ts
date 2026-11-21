@@ -1,11 +1,16 @@
-// Trouble flags (PORTED from bp src/engine/render/flags.ts, near verbatim at u = 1): every lens that is bad or on
+// Trouble flags (PORTED from bp apps/web/src/engine/render/flags.ts @ 93f30b0, near verbatim at u = 1): every lens that is bad or on
 // watch for a feature raises a flag over it, drawn at the live camera on top of every other layer at an on-screen
 // size that does not shrink with the zoom (32 px on the site plan, up to 44 px over large tiles; watch is 0.8 of
 // bad). Flags that would collide merge into one cluster flag with a count. Over a tile, flags stand in registry
 // order across its top edge; on a ribbon segment, over its middle. A flag steps clear of the room label in its
 // header, of a room label pinned to the top of the view, and of the wing's title stack.
 // EDIT (port): bp's `?flags=0` switch and its GA / lens-key dimming filters are not brought.
+// EDIT (port, spark bp-sync WP2, re-pinned from cc98836 to 93f30b0): the flags read the trouble index (engine/trouble.ts,
+// rebuilt on the health version, so a feature that turns bad after load is flagged without reopening the sheet), and on
+// a travelled date the replayed health (engine/replay.ts): a pair not replayable by then raises no flag, never today's.
+import type { Feature } from '../standard/load';
 import type { RoomNode, WingNode } from '../model/layout';
+import type { PastTrouble } from './replay';
 import { RH } from '../model/layout';
 import { clamp } from './camera';
 import type { Engine } from './Engine';
@@ -55,12 +60,12 @@ export function layoutFlags(e: Engine, v: View, lod: number): FlagBox[] {
   // merge distance: generous on the site and wing plans (a few markers per room), tight over tiles
   const gap = tile ? 4 : 4 + 22 * (1 - lod / 0.5);
   const cands: FlagBox[] = [], out: FlagBox[] = [];
-  for (const f of e.plan.S.features) {
-    if (!f.trouble.length) continue;
-    const r = featRect(e, v, f.id, lod, sr); if (!r) continue;
-    if (r.x > v.FW + 60 || r.x + r.w < -60 || r.y > v.FH + 80 || r.y < -80) continue;
+  const visit = (f: Feature, troubles: readonly PastTrouble[]): void => {
+    if (!troubles.length) return;
+    const r = featRect(e, v, f.id, lod, sr); if (!r) return;
+    if (r.x > v.FW + 60 || r.x + r.w < -60 || r.y > v.FH + 80 || r.y < -80) return;
     const S = sizeOf(r, tile), tl = e.plan.L.TILE[f.id];
-    for (const t of f.trouble) {
+    for (const t of troubles) {
       if (!m.p(t.lens)) continue;
       const li = ids.indexOf(t.lens); if (li < 0) continue;
       const s = t.h === 'bad' ? S : S * 0.8, w = s * 1.1, tip = tipOf(s);
@@ -77,7 +82,10 @@ export function layoutFlags(e: Engine, v: View, lod: number): FlagBox[] {
       if (tl) { const wb = wingBox(e, v, tl.wing, tb); if (wb) x = clear(x, tipY - tip - s, w, s, wb.x, wb.y, wb.w, wb.h); }
       cands.push({ x, y: tipY - tip - s, w, h: s, tipX, tipY, bad: t.h === 'bad', lens: t.lens, fid: f.id, fids: [f.id], lenses: [t.lens] });
     }
-  }
+  };
+  // at now the trouble index (the live model until an index is handed over); on a past date the replayed rows only
+  if (e.isNow) for (const f of e.trouble?.all() ?? e.plan.S.features) visit(f, f.trouble);
+  else for (const row of e.replay?.troubled ?? []) visit(row.f, row.trouble);
   cands.sort(byPlace);
   for (const c of cands) {
     const hit = out.find((o) => c.x < o.x + o.w + gap && c.x + c.w + gap > o.x && c.y < o.y + o.h + tipOf(o.h) + gap && c.y + c.h + tipOf(c.h) + gap > o.y);

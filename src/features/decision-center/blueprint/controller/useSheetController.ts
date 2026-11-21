@@ -21,6 +21,10 @@ import { useNavigation } from './useNavigation';
 import { useSheetData } from './useSheetData';
 import { useSheetKeys } from './useSheetKeys';
 import { useWrites, type Say } from './useWrites';
+import { syncWords } from './syncWords';
+import { useSpokenPlan } from './useSpokenPlan';
+import { useSyncModels } from './useSyncModels';
+import { useTroubleWalk } from './useTroubleWalk';
 
 interface Props {
   data: BlueprintData;
@@ -34,7 +38,7 @@ interface Props {
 export function useSheetController({ data: initial, actions, onClose, initialFeature, initialPlace }: Props) {
   const text = useBlueprintText();
   const words = useEngineWords(text);
-  const { data, plan, work, reload, readAt } = useSheetData(initial, actions);
+  const { data, plan, work, reload, readAt, healthV } = useSheetData(initial, actions);
   const [ui, dispatch] = useReducer(uiReducer, undefined, () => initialUi());
   const view = useRef(new ViewStore()).current;
   const tip = useRef(new TipStore()).current;
@@ -71,6 +75,12 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   const changes = useChanges(data.scan, engine);
   const writes = useWrites({ actions, work, ui, dispatch, reload, say, sent: changes.sent });
   const hooks = useEngineHooks({ engine, plan, work, lens: ui.lens, nav, dispatch, tip });
+  // spark bp-sync WP2: the trouble index, replay, comparison and readiness; the spoken plan; the trouble walk
+  const models = useSyncModels({ plan, data, work, healthV, ui, dispatch, engine, view, nav, text });
+  const sw = useMemo(() => syncWords({ B, tx, language: text.language }, words), [B, tx, text.language, words]);
+  const spoken = useSpokenPlan({ engine, view, plan, ui, dispatch, words: sw });
+  const walk = useTroubleWalk({ plan, ui, trouble: models.trouble, nav, spoken, words: sw, text, dispatch });
+  const sync = useMemo(() => ({ ...models, ...walk }), [models, walk]);
   const follow = useFocusFollow({ follower: actions.follow, projectId: data.product.projectId, plan, nav, dispatch, text, ready: engine !== null, initialPlace });
 
   // Enter takes the recommended answer (owner decision D14): Decline with the repeat's note when the brief found a repeat
@@ -83,7 +93,7 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
     return true;
   }, [current, data, plan, writes]);
 
-  useSheetKeys({ plan, ui, dispatch, levelNow: () => (engine ? engine.cam.level().n : 0), nav, writes, current, onClose, takeRecommended, sayEnterHint: () => dispatch({ type: 'say', text: B.say_enter_hint }) });
+  useSheetKeys({ plan, ui, dispatch, sync, levelNow: () => (engine ? engine.cam.level().n : 0), nav, writes, current, onClose, takeRecommended, sayEnterHint: () => dispatch({ type: 'say', text: B.say_enter_hint }) });
 
   // open at the item the caller named, once the camera exists
   const opened = useRef(false);
@@ -97,8 +107,8 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   }, [engine, initialFeature, plan, nav]);
 
   const sheet = useMemo<Sheet>(
-    () => ({ data, actions, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, changes, follow, onClose }),
-    [data, actions, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, changes, follow, onClose],
+    () => ({ data, actions, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, changes, follow, sync, onClose }),
+    [data, actions, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, changes, follow, sync, onClose],
   );
   return { sheet, words, hooks, tip, setEngine };
 }

@@ -2,11 +2,13 @@
 // big beside it (an override says who holds it and until when), then the evidence fields as cards, then the rest
 // (how many follows the reader's density: a simple reader gets a few and the rest folded away, a dense one gets
 // everything open). On a past date health has no history: the headline is the scan's reading by then, else nothing.
+// Under the health, at now only: what clears it (ClearSteps, spark bp-sync WP3).
 import { useSheet } from '../../controller/SheetContext';
 import { DENSITY_COUNT, reasonOf } from '../../standard/present';
 import { fval, type Feature, type LensDef } from '../../standard/load';
 import type { LensField } from '../../standard/types';
 import { useAsOf, useHealthWord, Val } from './bits';
+import { ClearSteps } from './ClearSteps';
 import { Sec } from './motion';
 import { valueView } from './readings';
 import { usePerson } from './Record';
@@ -49,6 +51,7 @@ export function Body({ f, d }: { f: Feature; d: LensDef }) {
           {!past && fl?.ov ? (
             <p className="ov"><b>{tx(B.pg_held_at, { health: word(fl.ov.health).toUpperCase() })}</b> {tx(B.pg_held_by, { by: person(fl.ov.by).name, until: dayFmt(language, fl.ov.until) })}{fl.why ? ' ' + tx(B.pg_rules_say, { why: fl.why }) : ''}</p>
           ) : null}
+          {past ? null : <ClearSteps f={f} d={d} />}
         </div>
       </Sec>
       {past ? <Sec label={B.pg_not_recorded}><p className="pg-nr">{tx(B.pg_nr_section, { date: dayFmt(language, t) })}</p></Sec> : null}

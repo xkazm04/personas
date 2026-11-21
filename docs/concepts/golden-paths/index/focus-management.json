@@ -66,6 +66,7 @@
     "GenerateHypothesesModal.tsx": {"count":1,"sections":[7],"lines":["191"],"contexts":["`GenerateHypothesesModal.tsx:191` · `TwinPicker.tsx:213` · `CommandPalette.tsx:421` ·"],"resolved":false},
     "GoalCard.tsx": {"count":1,"sections":[7],"lines":["37"],"contexts":["`ToneConsole.tsx:159` · `GoalCard.tsx:37` · `AssetCard.tsx:150` ·"],"resolved":false},
     "MessageDetailModal.tsx": {"count":1,"sections":[7],"lines":["172"],"contexts":["`MessageDetailModal.tsx:172` · `IncidentsInbox.tsx:365`."],"resolved":false},
+    "PairedDevicesPanel.tsx": {"count":1,"sections":[7],"lines":["170"],"contexts":["`RemoteJobsPanel.tsx:163` · `PairedDevicesPanel.tsx:170` · `DispatchChooser.tsx:138` ·"],"resolved":false},
     "PracticeDetailModal.tsx": {"count":1,"sections":[7],"lines":["99"],"contexts":["`PracticeDetailModal.tsx:99` · `BacklogDetailModal.tsx:110` ·"],"resolved":false},
     "PrototypeTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
     "RecipePlaygroundModal.tsx": {"count":1,"sections":[7],"contexts":["`HealingIssueModal.tsx`, `RecipePlaygroundModal.tsx`."],"resolved":false},
@@ -295,14 +296,6 @@
       "contexts": ["`ByomRoutingRules.tsx:69,96,108,122` · `ByomComplianceRules.tsx:83,112` ·"],
       "resolvedFrom": "basename",
       "verbatim": "ByomRoutingRules.tsx"
-    },
-    "src/features/settings/sub_devices/components/PairedDevicesPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["170"],
-      "contexts": ["`RemoteJobsPanel.tsx:163` · `PairedDevicesPanel.tsx:170` · `DispatchChooser.tsx:138` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "PairedDevicesPanel.tsx"
     },
     "src/features/settings/sub_devices/components/RemoteInstructionComposer.tsx": {
       "count": 1,

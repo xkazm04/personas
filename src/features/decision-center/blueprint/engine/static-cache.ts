@@ -1,4 +1,4 @@
-// PORTED from bp src/engine/render/static-cache.ts verbatim; EDIT (port): the camera type is a plain {x, y, k}, the
+// PORTED from bp src/engine/render/static-cache.ts @ 5c075aa verbatim; EDIT (port): the camera type is a plain {x, y, k}, the
 // context is checked for null (strict TS), and `patch` is dropped (bp's simulation patches; nothing here does).
 // The static layer cache. The plan (walls, fills, tiles, lens marks, labels) is rastered once into an
 // offscreen bitmap that covers the viewport plus a margin, at the zoom of the moment (the "bucket").

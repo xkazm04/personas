@@ -131,6 +131,15 @@
       ],
       "resolved": false
     },
+    "hooks/database/useSchemaProposal.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["103"],
+      "contexts": [
+        "**Terminal polls that should be `useBackgroundSnapshot` (9):** `hooks/database/useSchemaProposal.ts:103` · `vault/sub_databases/tabs/ChatTab.tsx:92` · `plugins/dev-tools/sub_context/useUseCases.ts:81…"
+      ],
+      "resolved": false
+    },
     "lib.rs": {
       "count": 8,
       "sections": [3,5,7],
@@ -1094,14 +1103,6 @@
       "resolved": false,
       "isDir": true
     },
-    "src/hooks/database/useSchemaProposal.ts": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["103"],
-      "contexts": ["| `useSchemaProposal.ts:103` · `composeTask.ts:75` · `studioStore.ts:280` | 1.5 s | 5s | 3.3× slower |"],
-      "resolvedFrom": "basename",
-      "verbatim": "useSchemaProposal.ts"
-    },
     "src/hooks/design/core/useBackgroundRebuild.ts": {
       "count": 1,
       "sections": [6],
@@ -1272,6 +1273,7 @@
         "- **Putting the polled data in the effect's dep array.** `useTeamDeliberations.ts:118-133` polls `refreshDetail(selectedId)` from an effect whose deps include `detail` — the very object the poll repl…"
       ],
       "resolved": false
-    }
+    },
+    "useSchemaProposal.ts": {"count":1,"sections":[7],"lines":["103"],"contexts":["| `useSchemaProposal.ts:103` · `composeTask.ts:75` · `studioStore.ts:280` | 1.5 s | 5s | 3.3× slower |"],"resolved":false}
   }
 }

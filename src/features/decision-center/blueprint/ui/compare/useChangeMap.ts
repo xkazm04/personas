@@ -1,4 +1,4 @@
-// The change maps of the compare panel's shot pairs (PORTED from bp train/compare/useChangeMap.ts): each pair is
+// The change maps of the compare panel's shot pairs (PORTED from bp train/compare/useChangeMap.ts @ 4044c29): each pair is
 // computed once per session (the shared createModuleCache, keyed by product and the two shot ids, bounded) by changeMap.worker.ts, so walking
 // items back and forth never recomputes and the main thread does no pixel work. Where Worker or OffscreenCanvas is
 // missing, or the worker cannot start, the pair is computed on the main thread instead. A failed pair is not cached:

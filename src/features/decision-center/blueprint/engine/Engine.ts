@@ -1,4 +1,4 @@
-// The blueprint's canvas engine (PORTED from bp src/engine/Engine.ts: its frame, its static raster cache and its
+// The blueprint's canvas engine (PORTED from bp apps/web/src/engine/Engine.ts @ 93f30b0: its frame, its static raster cache and its
 // dynamic layers). It owns one canvas the page hands it, the camera, the colour theme and the frame loop. The plan
 // (grid, walls, fixtures, labels) is rastered once into an offscreen bitmap (static-cache.ts) and only transformed
 // while the camera moves, re-rastered when it settles; pins, hover, selection, the current item and the trouble
@@ -7,6 +7,12 @@
 // EDIT (port): bp's simulation, scans, lasso, intro, phone layout, UI scale U and its spring-tweened lens mix are
 // not brought (no data for them here, or the page owns them); the lens switches at once. Time travel (bp S.t), the
 // recent window (bp S.delta, here the rail's View days) and the picked items' rings (bp drawTargets) are (Stage D).
+// EDIT (port, spark bp-sync WP2, re-pinned from 36c6126 to 93f30b0): bp's trouble index, replayed health, date comparison
+// and readiness scope reach the frame as plain inputs (setTrouble, setReplay, setCompare, setScope); the sheet's
+// controller owns and rebuilds them (controller/useSyncModels.ts), never this class, and their drawing lives in
+// syncMarks.ts and flags.ts. The raster key reads ReplayIndex.version (bp k.rv) and the comparison (bp k.cv). bp's
+// trouble route, spoken plan and readyScope live in the controller (useTroubleWalk, useSpokenPlan, model/readyScope);
+// the engine only reports when the camera last moved (`restFrom`) so the spoken plan can wait for it to rest.
 import type { Feature, Stage } from '../standard/load';
 import type { Scalar } from '../standard/types';
 import type { Plan } from '../model/plan';
@@ -27,6 +33,11 @@ import { StaticCache, deviceRes } from './static-cache';
 import type { FeatureLive } from './lens';
 import type { View } from './view';
 import type { EngineWords, FlagBox, Focus, Hooks } from './types';
+import type { TroubleIndex } from './trouble';
+import type { ReplayIndex } from './replay';
+import type { Comparison } from '../model/compare';
+import { changedIn } from '../model/compare';
+import { drawScope } from './syncMarks';
 
 /** The lens mix (bp lens/mix.ts, at rest): which lens dominates, and each lens's presence and expansion. */
 export interface Mix { top: string | null; p(lens: string): 0 | 1; x(lens: string): 0 | 1 }
@@ -59,6 +70,13 @@ export class Engine {
   /** How many feature names the last raster drew, of how many tiles it considered (the level bar's NAMES cell). */
   budget = { names: 0, of: 0 };
   dirty = true;
+  /** spark bp-sync WP2: the trouble index (flags read it), replayed health on a travelled date, the comparison, the readiness scope. */
+  trouble: TroubleIndex | null = null;
+  replay: ReplayIndex | null = null;
+  cmp: Comparison | null = null;
+  scope: ReadonlySet<string> | null = null;
+  /** performance.now() when the camera last moved (the spoken plan waits for it to rest). */
+  restFrom = 0;
   mixS: Mix = { top: null, p: () => 1, x: () => 0 };
   readonly hooks: Hooks;
   /** The one-shot marks of features that just changed; the frame loop runs for them only while they decay. */
@@ -76,6 +94,8 @@ export class Engine {
   private offFonts: () => void;
   private liveRec = { rolloutPct: 0, progressPct: 0, f: null as Feature | null };
   private liveView: FeatureLive;
+  private rasterReplay: { r: ReplayIndex | null; v: number } = { r: null, v: -1 };
+  private cmpCounts = new Map<string, number>();
 
   constructor(cv: HTMLCanvasElement, host: HTMLElement, plan: Plan, words: EngineWords, hooks: Hooks) {
     const ctx = cv.getContext('2d');
@@ -114,6 +134,20 @@ export class Engine {
   setFocus(f: Focus | null): void { this.focus = f; this.dirty = true; }
   setAt(d: string | null): void { if (d !== this.at) { this.at = d; this.bump(); } }
   setViewDays(n: number): void { if (n !== this.viewDays) { this.viewDays = n; this.bump(); } }
+  setTrouble(t: TroubleIndex | null): void { this.trouble = t; this.dirty = true; }
+  /** Replayed health: the raster re-keys on the index's version at the next frame (bp k.rv). */
+  setReplay(r: ReplayIndex | null): void { this.replay = r; this.dirty = true; }
+  setCompare(c: Comparison | null): void { if (c !== this.cmp) { this.cmp = c; this.cmpCounts.clear(); this.bump(); } }
+  setScope(ids: ReadonlySet<string> | null): void { this.scope = ids; this.dirty = true; }
+  /** How many features of a place changed between the compared dates (a label's "N changed"), cached per comparison. */
+  cmpCount(id: string, fs: readonly Feature[]): number {
+    const c = this.cmp; if (!c) return 0;
+    let n = this.cmpCounts.get(id);
+    if (n === undefined) { n = changedIn(c, fs); this.cmpCounts.set(id, n); }
+    return n;
+  }
+  /** The camera is flying (an animation runs): not at rest. */
+  get flying(): boolean { return !!this.cam.anim; }
   setPicked(ids: readonly string[]): void { this.picked = ids; this.pickedF = new Set(ids.map((id) => this.work.byId.get(id)?.fid ?? '')); this.dirty = true; }
   /** Drawn as it stands now (bp isNow): trouble, verdicts, pins and live values speak of now only. `day`: the date drawn. */
   get isNow(): boolean { return this.at === null || this.at >= this.plan.S.asOf; }
@@ -122,7 +156,7 @@ export class Engine {
   stageOf(f: Feature): Stage | null { return stageOfAt(f, this.at, this.plan.S.asOf); }
   /** A new plan (another product, or its map changed): the camera re-fits. */
   setPlan(plan: Plan): void {
-    this.plan = plan; this.placed = false; this.focus = null; this.walls = buildWalls(plan.L);
+    this.plan = plan; this.placed = false; this.focus = null; this.walls = buildWalls(plan.L); this.cmpCounts.clear();
     this.cam.setLayout(plan.L); this.resize(); this.syncLens(); this.bump();
   }
 
@@ -179,7 +213,7 @@ export class Engine {
   private tick(now: number): void {
     const c = this.cam, s = this.sig;
     if (c.step(now) || c.moved) { this.dirty = true; c.moved = false; }
-    if (c.x !== s.x || c.y !== s.y || c.k !== s.k) { s.x = c.x; s.y = c.y; s.k = c.k; this.lastCamMove = now; this.dirty = true; }
+    if (c.x !== s.x || c.y !== s.y || c.k !== s.k) { s.x = c.x; s.y = c.y; s.k = c.k; this.lastCamMove = now; this.restFrom = performance.now(); this.dirty = true; }
     if ((this.focus || this.pickedF.size) && !c.reduced()) this.dirty = true;
     if (this.flashes.step(now)) this.dirty = true;
     if (this.settlePending && now - this.lastCamMove > SETTLE_MS) this.dirty = true;
@@ -193,6 +227,8 @@ export class Engine {
     ctx.setTransform(this.RES, 0, 0, this.RES, 0, 0);
     ctx.clearRect(0, 0, FW, FH);
     this.mixS = this.mix();
+    const rr = this.rasterReplay, rp = this.replay;
+    if (rp !== rr.r || (rp && rp.version !== rr.v)) { rr.r = rp; rr.v = rp ? rp.version : -1; this.ver++; }
     const lod = cam.lod(), st = this.cache.check(cam, this.ver, FW, FH, lod);
     const gesture = !!cam.anim || now - this.lastCamMove <= SETTLE_MS;
     if (st === 'stale' || (st === 'transform' && !gesture)) {
@@ -204,10 +240,11 @@ export class Engine {
     drawTargets(this, ctx, v, lod);
     drawChanged(this, ctx, v, lod, now);
     drawOverlays(this, ctx, v, lod, now);
+    drawScope(this, ctx, v, lod);
     if (this.isNow) drawPins(this, ctx, v, lod, now);
     drawFocus(this, ctx, v, lod, now);
-    // trouble flags over everything: the first thing to find on the plan (they speak of now: none on a past date)
-    this.flags = this.isNow ? layoutFlags(this, v, lod) : [];
+    // trouble flags over everything: the first thing to find on the plan (on a past date: replayed health only)
+    this.flags = layoutFlags(this, v, lod);
     drawFlags(this, ctx, this.flags, this.hotFlag);
   }
   /** The whole static plan at raster view `v`. */

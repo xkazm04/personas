@@ -1,4 +1,4 @@
-// The change map's worker (PORTED from bp train/compare/changeMap.worker.ts): decodes a before/after pair, draws both
+// The change map's worker (PORTED from bp train/compare/changeMap.worker.ts @ 4044c29): decodes a before/after pair, draws both
 // at the before's size on an OffscreenCanvas and runs model/ledgerPixels.ts diffPixels over them, so the main thread
 // does no pixel work. A source is a URL (fetched and decoded here) or an ImageBitmap the page decoded itself: Chrome
 // cannot decode an SVG in a worker (the fixture's screens are SVG), so a URL that fails to decode answers

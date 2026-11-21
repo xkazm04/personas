@@ -1,8 +1,9 @@
 // The sheet's keyboard: ONE handler over the ONE keymap (model/keymap.ts). It registers above the Decision Deck
 // (priority 85) and is exclusive, so a key the sheet does not name never reaches the deck behind it, and Esc climbs
-// (overlay, armed build, rail flyout, selection, compare panel, L4 sheet, timeline panel, time travel, the ledger
-// page, then level by level) and only at the site closes the sheet: one press
-// never closes two layers. Y, R, S and U triage the current item (WP4b) wherever it is: the store answers. Typing in a field is left alone; the field's own React handler owns Enter, Esc and the arrows.
+// (overlay, armed build, rail flyout, selection, compare panel, L4 sheet, readiness, the trouble walk, timeline panel,
+// the compared baseline A, time travel, the ledger page, then level by level) and only at the site closes the sheet: one
+// press never closes two layers. spark bp-sync WP2: P pins / unpins A, G toggles readiness, N / Shift+N walk the
+// trouble; while a walk is active Enter opens its current stop (on that stop's own sheet, Enter is D14 again). Y, R, S and U triage the current item (WP4b) wherever it is: the store answers. Typing in a field is left alone; the field's own React handler owns Enter, Esc and the arrows.
 import { useRef } from 'react';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { actOf, lensIndexOfKey } from '../model/keymap';
@@ -11,15 +12,18 @@ import type { WorkItem } from '../model/work';
 import type { UiAction, UiState } from '../state/uiState';
 import type { Nav } from './useNavigation';
 import type { Writes } from './useWrites';
+import type { SyncState } from './SheetContext';
 import type { Dispatch } from 'react';
 
 /** Above the Decision Deck's Esc (DECK_PRIORITY 85) and below the command palette (90). */
 export const BLUEPRINT_PRIORITY = 88;
 
-interface Deps {
+export interface SheetKeyDeps {
   plan: Plan;
   ui: UiState;
   dispatch: Dispatch<UiAction>;
+  /** The comparison, readiness and trouble-walk verbs (spark bp-sync WP2). */
+  sync: Pick<SyncState, 'togglePin' | 'unpinA' | 'toggleReady' | 'walk' | 'stepWalk' | 'endWalk'>;
   /** The camera's level right now (0..3), read from the camera itself, never from a snapshot of the last frame. */
   levelNow: () => number;
   nav: Nav;
@@ -35,7 +39,7 @@ const MODIFIERS: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', 'Meta
 const isField = (t: EventTarget | null): boolean => t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function useSheetKeys(d: Deps): void {
+export function useSheetKeys(d: SheetKeyDeps): void {
   const ref = useRef(d);
   ref.current = d;
   // A focused button owns Enter only for a person who TABBED to it. Focus left on a control by a click or by the modal's
@@ -59,14 +63,17 @@ function trapTab(e: KeyboardEvent): boolean {
   return false;
 }
 
-function back(d: Deps): void {
+function back(d: SheetKeyDeps): void {
   if (d.ui.overlay) { d.dispatch({ type: 'overlay', overlay: null }); return; }
   if (d.ui.armed) { d.writes.disarm(); return; }
   if (d.ui.flyout) { d.dispatch({ type: 'flyout', id: null }); return; }
   if (d.ui.selected.length) { d.dispatch({ type: 'selectClear' }); return; }
   if (d.ui.compare) { d.nav.compare(null); return; }
   if (d.ui.sheet) { d.nav.closeSheet(); return; }
+  if (d.ui.ready) { d.dispatch({ type: 'ready', scope: null }); return; }
+  if (d.sync.walk) { d.sync.endWalk(); return; }
   if (d.ui.timelineOpen) { d.dispatch({ type: 'timeline', open: false }); return; }
+  if (d.ui.cmpA) { d.sync.unpinA(); return; }
   if (d.ui.asOf) { d.dispatch({ type: 'asOf', date: null }); return; }
   if (d.ui.page === 'ledger') { d.dispatch({ type: 'page', page: 'plan' }); return; }
   const n = d.levelNow();
@@ -74,7 +81,8 @@ function back(d: Deps): void {
   d.onClose();
 }
 
-function handle(d: Deps, e: KeyboardEvent, tabbed: boolean): boolean {
+/** One key event through the keymap (exported for the key-order tests); true when the sheet took it. */
+export function handle(d: SheetKeyDeps, e: KeyboardEvent, tabbed: boolean): boolean {
   if (e.key === 'Tab') return trapTab(e);
   if (e.ctrlKey || e.metaKey || e.altKey) return false;
   // the key sheet closes on ANY key (a bare modifier is not one)
@@ -111,7 +119,14 @@ function handle(d: Deps, e: KeyboardEvent, tabbed: boolean): boolean {
     case 'ledger': dispatch({ type: 'page' }); break;
     case 'timeline': dispatch({ type: 'timeline' }); break;
     case 'select': if (d.current) dispatch({ type: 'select', id: d.current.id }); break;
+    case 'pinA': d.sync.togglePin(); break;
+    case 'ready': d.sync.toggleReady(); break;
+    case 'troubleNext': d.sync.stepWalk(1); break;
+    case 'troublePrev': d.sync.stepWalk(-1); break;
     case 'enter': {
+      // a trouble walk's current stop opens on Enter (its own sheet open: D14 below)
+      const w = d.sync.walk;
+      if (w && ui.sheet !== w.fid) { nav.openSheet(w.fid); break; }
       // on the L4 sheet, Enter takes the current item's recommended answer (owner decision D14), else says the keys
       if (ui.sheet) { if (!d.takeRecommended()) d.sayEnterHint(); break; }
       const n = d.levelNow();

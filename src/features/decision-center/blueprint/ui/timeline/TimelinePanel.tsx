@@ -1,4 +1,4 @@
-// bp's expanded timeline (PORTED from bp src/components/BaseBar.tsx BaseBar + timeline.css #tlpanel): a 96 px panel that
+// bp's expanded timeline (PORTED from bp src/components/BaseBar.tsx @ cd68faf BaseBar + timeline.css #tlpanel): a 96 px panel that
 // slides up OVER the plan (it never moves the plan) with the key plan, the clock (the as-of date) and the revisions
 // chart, whose handle travels in time (`ui.asOf`). Mounted by BlueprintSheet while `ui.timelineOpen` (T, or the strip's
 // TIMELINE press); T again, or Esc, closes it through the sheet's keymap.

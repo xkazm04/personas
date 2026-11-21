@@ -1,4 +1,4 @@
-// The ledger's small marks (PORTED from bp src/components/ledger/train/ui/Marks.tsx): a status, a verdict, a metric's
+// The ledger's small marks (PORTED from bp src/components/ledger/train/ui/Marks.tsx @ 48171a1): a status, a verdict, a metric's
 // before -> after, a lens tag and the sample tag. One component per visual thing; every surface of the ledger (and the
 // compare panel) renders these. Shape first, colour second (never colour alone); the words are the sheet's language.
 import { memo } from 'react';

@@ -1,4 +1,4 @@
-// PORTED from bp src/lib/train/pixels.ts (the change map's pixel maths). Pure and dependency free, so the worker
+// PORTED from bp src/lib/train/pixels.ts @ 4044c29 (the change map's pixel maths). Pure and dependency free, so the worker
 // (ui/compare/changeMap.worker.ts), the main-thread fallback and the tests run the same code. EDIT (port): indexed reads
 // go through `at()` for noUncheckedIndexedAccess; the words are returned as data (pixFacts) and phrased by the panel
 // in the sheet's language instead of bp's English sentences.

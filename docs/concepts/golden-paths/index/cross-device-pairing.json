@@ -36,6 +36,14 @@
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["Per the §9 calibration note, `ci.yml` is red on 10 pre-existing failures, so a gate that lives only"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "Cargo.toml": {"count":1,"sections":[0],"lines":["57"],"contexts":["`desktop + ml + p2p` (`Cargo.toml:57`). **The shipped product has this code; the operator's daily"],"resolved":false},
+    "IncomingPairingPanel.tsx": {
+      "count": 3,
+      "sections": [0,5,7],
+      "lines": ["72-80"],
+      "contexts": ["| **`IncomingPairingPanel.tsx:72-80` — \"Codes match, pair\"** | **none.** `variant=\"primary\"`, rightmost position, focusable on mount, no checkbox, no re-type, no dwell |"],
+      "resolved": false
+    },
+    "PairedDevicesPanel.tsx": {"count":2,"sections":[0,7],"lines":["127-143"],"contexts":["two-step `InlineConfirm` (`PairedDevicesPanel.tsx:127-143`); **granting** trust to a new one is one"],"resolved":false},
     "api/remote/devices/route.ts": {"count":2,"sections":[],"lines":["62","99"],"contexts":["`device_id` is wholly unauthenticated (`api/remote/devices/route.ts:62` checks presence only),"],"resolved":false},
     "app/webhook/route.ts": {"count":1,"sections":[],"lines":["125"],"contexts":["against GitHub (`app/webhook/route.ts:125` `installationMatchesOwner`). **Nobody uses public-key"],"resolved":false},
     "auth.rs": {"count":1,"sections":[],"lines":["38"],"contexts":["(`auth.rs:38`)."],"resolved":false},
@@ -354,22 +362,6 @@
       "verbatim": "FleetSettingsPage.tsx"
     },
     "src/features/settings/sub_devices/**": {"count":1,"sections":[],"contexts":["`src/features/settings/sub_devices/**` (8 components + `pairingMachine.ts` + `pairingRefusal.ts`),"],"resolved":false,"isDir":true},
-    "src/features/settings/sub_devices/components/IncomingPairingPanel.tsx": {
-      "count": 3,
-      "sections": [0,5,7],
-      "lines": ["72-80"],
-      "contexts": ["| **`IncomingPairingPanel.tsx:72-80` — \"Codes match, pair\"** | **none.** `variant=\"primary\"`, rightmost position, focusable on mount, no checkbox, no re-type, no dwell |"],
-      "resolvedFrom": "basename",
-      "verbatim": "IncomingPairingPanel.tsx"
-    },
-    "src/features/settings/sub_devices/components/PairedDevicesPanel.tsx": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["127-143"],
-      "contexts": ["two-step `InlineConfirm` (`PairedDevicesPanel.tsx:127-143`); **granting** trust to a new one is one"],
-      "resolvedFrom": "basename",
-      "verbatim": "PairedDevicesPanel.tsx"
-    },
     "src/features/settings/sub_devices/lib/pairingMachine.ts": {
       "count": 2,
       "sections": [7],

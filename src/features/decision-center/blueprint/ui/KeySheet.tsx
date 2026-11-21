@@ -12,6 +12,7 @@ const TEXT: Record<KeyAct, keyof BpText> = {
   accept: 'key_accept', rework: 'key_rework', descope: 'key_descope', reopen: 'key_reopen',
   enter: 'key_enter', back: 'key_back', wingNext: 'key_wing_next', wingPrev: 'key_wing_prev', site: 'key_site', zoomOut: 'key_zoom_out', zoomIn: 'key_zoom_in',
   lens: 'key_lens', help: 'key_help', ledger: 'key_ledger', timeline: 'key_timeline', select: 'key_select',
+  troubleNext: 'key_trouble_next', troublePrev: 'key_trouble_prev', pinA: 'key_pin_a', ready: 'key_ready',
 };
 
 /** The key sheet (?): the one keymap, in five groups. Any key closes it (the sheet's handler does that). */

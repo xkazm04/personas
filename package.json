@@ -50,6 +50,7 @@
     "check:catalog-boundary": "node scripts/refactor/classify-shared.mjs --check",
     "orphans": "node scripts/analysis/orphan-modules.mjs",
     "census": "node scripts/census/check-corpus-integrity.mjs && node scripts/census/run-census.mjs",
+    "bp:drift": "node scripts/bp/port-drift.mjs",
     "census:check": "node scripts/census/run-census.mjs --check",
     "census:test": "node scripts/census/self-test.mjs",
     "gp:index": "node scripts/census/build-golden-path-index.mjs",

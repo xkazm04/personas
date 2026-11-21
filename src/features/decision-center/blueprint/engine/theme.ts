@@ -1,4 +1,4 @@
-// Canvas colours (PORTED from bp src/engine/theme.ts). bp reads its CSS tokens off <html>; here they are bp's own
+// Canvas colours (PORTED from bp src/engine/theme.ts @ 3ea7514). bp reads its CSS tokens off <html>; here they are bp's own
 // palette as `--bp-*` on `.bp-scope` (theme/bp-tokens.css, verbatim), resolved through a probe element inside the
 // sheet so the canvas and the DOM can never disagree. The browser may report a colour as `color(srgb r g b / a)`,
 // not `rgb()`, so `parseColor` reads both. Patterns are bp's: cached per theme and ANCHORED TO THE WORLD (the static

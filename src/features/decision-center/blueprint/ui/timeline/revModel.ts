@@ -1,4 +1,4 @@
-// The revisions chart's model (PORTED from bp BaseBar.tsx Revisions): its geometry, the stacked stage bands (features
+// The revisions chart's model (PORTED from bp BaseBar.tsx @ cd68faf Revisions): its geometry, the stacked stage bands (features
 // by stage per weekly snapshot), the milestones and releases it flags, and its label candidates, as one pure function
 // of the panel's size, the map, the time shown and the words. Revisions.tsx only draws what this returns.
 // EDIT (port): bp's simulated hour ahead and its live-run zone are not drawn here: the history takes the width, less a

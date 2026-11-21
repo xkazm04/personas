@@ -1,4 +1,4 @@
-// The wide flyouts' frame (PORTED from bp src/components/rail/wide/shell.tsx, near verbatim): an optional strip over two
+// The wide flyouts' frame (PORTED from bp src/components/rail/wide/shell.tsx @ 36c6126, near verbatim): an optional strip over two
 // panes (a list on the left, the selected item read in full on the right). Both panes scroll on their own; the flyout
 // body never scrolls. J/K and the arrows walk the list while focus is anywhere in the panel (except a text field), and
 // never reach the sheet's keymap.

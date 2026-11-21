@@ -40,6 +40,7 @@ import { TimelinePanel } from './ui/timeline/TimelinePanel';
 import type { FocusPlace } from './model/focus';
 import { DecisionCard } from './ui/overlays/DecisionCard';
 import { SelBar } from './ui/overlays/SelBar';
+import { ReadyCallout } from './ui/overlays/ReadyCallout';
 
 export interface BlueprintSheetProps {
   data: BlueprintData;
@@ -83,6 +84,7 @@ export function BlueprintSheet({ data, actions, onClose, initialFeature, initial
             <HoverTip store={tip} />
             {sheet.ui.page === 'plan' && <DecisionCard />}
             <SelBar />
+            <ReadyCallout />
             {sheet.ui.timelineOpen && <TimelinePanel />}
             <FeatureSheet />
             {sheet.ui.page === 'ledger' && <LedgerPage />}

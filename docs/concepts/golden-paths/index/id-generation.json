@@ -110,6 +110,15 @@
       "contexts": ["| `id TEXT PRIMARY KEY` **without** `NOT NULL` | **299** statements / 29 files | `incremental.rs` 114 · `schema.rs` 73 · `lib.rs` 30 · `initial.rs` 21 · `fk_hygiene.rs` 12 · 24 more files |"],
       "resolved": false
     },
+    "night_plan.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["156"],
+      "contexts": [
+        "| **width 12 (48 bits) — the post-`d96f085ff` standard:** `companion/util.rs:11` called from `dispatcher.rs:3172`, `session.rs:727`, `turn_ledger.rs:317`, `projects.rs:117`, `backlog_triage.rs:197`,…"
+      ],
+      "resolved": false
+    },
     "packages/worker/src/config.ts": {
       "count": 1,
       "sections": [2],
@@ -447,16 +456,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "companion/jobs/mod.rs"
-    },
-    "src-tauri/src/companion/jobs/night_plan.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["156"],
-      "contexts": [
-        "| **width 12 (48 bits) — the post-`d96f085ff` standard:** `companion/util.rs:11` called from `dispatcher.rs:3172`, `session.rs:727`, `turn_ledger.rs:317`, `projects.rs:117`, `backlog_triage.rs:197`,…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "night_plan.rs"
     },
     "src-tauri/src/companion/proactive/mod.rs": {
       "count": 1,
